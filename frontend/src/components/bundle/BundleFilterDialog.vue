@@ -1,0 +1,192 @@
+<template>
+  <el-dialog
+    v-model="dialogVisible"
+    title="同梱設定"
+    width="560px"
+    :close-on-click-modal="false"
+    :destroy-on-close="false"
+  >
+    <div class="bundle-filter">
+      <div class="bundle-filter__actions">
+        <el-checkbox
+          :indeterminate="isIndeterminate"
+          :model-value="isAllChecked"
+          @change="handleToggleAll"
+        >
+          すべて選択
+        </el-checkbox>
+        <div class="bundle-filter__actions-right">
+          <span class="bundle-filter__count">
+            選択中 {{ innerSelected.length }} / {{ fields.length }}
+          </span>
+          <el-button text size="small" @click="handleClear">クリア</el-button>
+        </div>
+      </div>
+
+      <div class="bundle-filter__list">
+        <el-checkbox-group v-model="innerSelected">
+          <div
+            v-for="field in fields"
+            :key="field.key"
+            class="bundle-filter__item"
+          >
+            <el-checkbox :label="field.key">
+              <div class="bundle-filter__label">
+                {{ field.title }}
+              </div>
+              <div v-if="field.description" class="bundle-filter__desc">
+                {{ field.description }}
+              </div>
+            </el-checkbox>
+          </div>
+        </el-checkbox-group>
+      </div>
+    </div>
+
+    <template #footer>
+      <el-button @click="handleCancel">キャンセル</el-button>
+      <el-button type="primary" @click="handleSave">保存</el-button>
+    </template>
+  </el-dialog>
+</template>
+
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import type { CheckboxValueType } from 'element-plus'
+
+export interface BundleFieldOption {
+  key: string
+  title: string
+  description?: string
+}
+
+const props = withDefaults(
+  defineProps<{
+    modelValue: boolean
+    fields: BundleFieldOption[]
+    selectedKeys?: string[]
+  }>(),
+  {
+    modelValue: false,
+    fields: () => [],
+    selectedKeys: () => [],
+  },
+)
+
+const emits = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void
+  (e: 'update:selectedKeys', value: string[]): void
+  (e: 'save', value: string[]): void
+}>()
+
+const dialogVisible = computed({
+  get: () => props.modelValue,
+  set: (val: boolean) => emits('update:modelValue', val),
+})
+
+const innerSelected = ref<string[]>([...props.selectedKeys])
+
+watch(
+  () => props.selectedKeys,
+  (val) => {
+    innerSelected.value = Array.isArray(val) ? [...val] : []
+  },
+)
+
+const isAllChecked = computed(() => {
+  if (!props.fields.length) return false
+  return innerSelected.value.length === props.fields.length
+})
+
+const isIndeterminate = computed(() => {
+  if (!props.fields.length) return false
+  const len = innerSelected.value.length
+  return len > 0 && len < props.fields.length
+})
+
+const handleToggleAll = (checked: CheckboxValueType) => {
+  if (checked) {
+    innerSelected.value = props.fields.map((f) => f.key)
+  } else {
+    innerSelected.value = []
+  }
+}
+
+const handleClear = () => {
+  innerSelected.value = []
+}
+
+const handleCancel = () => {
+  dialogVisible.value = false
+}
+
+const handleSave = () => {
+  const result = [...innerSelected.value]
+  emits('update:selectedKeys', result)
+  emits('save', result)
+  dialogVisible.value = false
+}
+</script>
+
+<style scoped>
+.bundle-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bundle-filter__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.bundle-filter__actions-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bundle-filter__count {
+  color: #606266;
+  font-size: 13px;
+}
+
+.bundle-filter__list {
+  max-height: 420px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+}
+
+.bundle-filter__item {
+  padding: 10px 8px;
+  border-bottom: 1px solid #f2f3f5;
+}
+
+.bundle-filter__item:last-child {
+  border-bottom: none;
+}
+
+.bundle-filter__label {
+  font-weight: 600;
+  color: #303133;
+}
+
+.bundle-filter__desc {
+  color: #909399;
+  font-size: 13px;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+</style>
+
+
+
+
+
+
+

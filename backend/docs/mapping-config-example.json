@@ -1,0 +1,144 @@
+{
+  "configType": "shipment-order",
+  "name": "乐天CSV映射配置示例",
+  "description": "用于映射乐天下载的CSV文件到订单数据库结构",
+  "isDefault": true,
+  "mappings": [
+    {
+      "type": "direct",
+      "targetField": "refs.orderNo",
+      "sourceColumns": ["注文番号"],
+      "required": true
+    },
+    {
+      "type": "direct",
+      "targetField": "refs.deliveryNo",
+      "sourceColumns": ["配送番号"],
+      "defaultValue": "1"
+    },
+    {
+      "type": "merge",
+      "targetField": "parties.recipient.name",
+      "sourceColumns": ["お届け先氏名（姓）", "お届け先氏名（名）"],
+      "transform": "trim"
+    },
+    {
+      "type": "direct",
+      "targetField": "parties.recipient.phone",
+      "sourceColumns": ["お届け先電話番号"],
+      "transform": "trim"
+    },
+    {
+      "type": "direct",
+      "targetField": "parties.recipient.postalCode",
+      "sourceColumns": ["お届け先郵便番号"],
+      "transform": "trim"
+    },
+    {
+      "type": "merge",
+      "targetField": "parties.recipient.address.full",
+      "sourceColumns": ["お届け先都道府県", "お届け先市区町村", "お届け先番地", "お届け先建物名"],
+      "transform": "trim"
+    },
+    {
+      "type": "direct",
+      "targetField": "parties.recipient.address.prefecture",
+      "sourceColumns": ["お届け先都道府県"]
+    },
+    {
+      "type": "direct",
+      "targetField": "parties.recipient.address.city",
+      "sourceColumns": ["お届け先市区町村"]
+    },
+    {
+      "type": "direct",
+      "targetField": "parties.recipient.address.line1",
+      "sourceColumns": ["お届け先番地"]
+    },
+    {
+      "type": "direct",
+      "targetField": "parties.recipient.address.line2",
+      "sourceColumns": ["お届け先建物名"]
+    },
+    {
+      "type": "split",
+      "targetField": "delivery.deliveryDate",
+      "sourceColumns": ["お届け希望日時"],
+      "separator": " ",
+      "splitIndex": 0,
+      "transform": "date",
+      "transformParams": {
+        "sourceFormat": "YYYY/MM/DD",
+        "targetFormat": "YYYY-MM-DD"
+      }
+    },
+    {
+      "type": "split",
+      "targetField": "delivery.timeSlot",
+      "sourceColumns": ["お届け希望日時"],
+      "separator": " ",
+      "splitIndex": 1,
+      "transform": "trim"
+    },
+    {
+      "type": "direct",
+      "targetField": "package.pieces",
+      "sourceColumns": ["数量"],
+      "transform": "number",
+      "defaultValue": 1
+    },
+    {
+      "type": "direct",
+      "targetField": "package.weightKg",
+      "sourceColumns": ["重量"],
+      "transform": "number"
+    },
+    {
+      "type": "direct",
+      "targetField": "payment.method",
+      "sourceColumns": ["決済方法"],
+      "transform": "lowercase",
+      "defaultValue": "prepaid"
+    },
+    {
+      "type": "direct",
+      "targetField": "payment.codAmount",
+      "sourceColumns": ["代金引換金額"],
+      "transform": "number"
+    },
+    {
+      "type": "direct",
+      "targetField": "parties.shipper.name",
+      "sourceColumns": ["ショップ名"],
+      "required": true
+    },
+    {
+      "type": "direct",
+      "targetField": "parties.shipper.phone",
+      "sourceColumns": ["ショップ電話番号"]
+    },
+    {
+      "type": "merge",
+      "targetField": "parties.shipper.address.full",
+      "sourceColumns": ["ショップ住所1", "ショップ住所2"],
+      "transform": "trim"
+    },
+    {
+      "type": "direct",
+      "targetField": "contents.labelText",
+      "sourceColumns": ["お届け先氏名"],
+      "transform": "trim"
+    },
+    {
+      "type": "direct",
+      "targetField": "delivery.shipDate",
+      "sourceColumns": ["出荷予定日"],
+      "transform": "date",
+      "transformParams": {
+        "sourceFormat": "YYYY年MM月DD日",
+        "targetFormat": "YYYY-MM-DD"
+      }
+    }
+  ]
+}
+

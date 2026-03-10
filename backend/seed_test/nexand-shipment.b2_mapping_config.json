@@ -1,0 +1,613 @@
+[{
+  "_id": {
+    "$oid": "6785a1b2c3d4e5f6a7b8c9d0"
+  },
+  "schemaVersion": 2,
+  "tenantId": "default-tenant",
+  "configType": "order-to-carrier",
+  "name": "ヤマトB2 自動化用",
+  "description": "B2 Cloud 自動化連携用マッピング（API経由）",
+  "isDefault": false,
+  "carrierId": "693a02038923851c8294a3da",
+  "carrierCode": "yamato_b2",
+  "carrierName": "ヤマト運輸B2",
+  "mappings": [
+    {
+      "targetField": "お客様管理番号",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "orderNumber",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": []
+      },
+      "required": false
+    },
+    {
+      "targetField": "送り状種類",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "invoiceType",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": []
+      },
+      "required": true
+    },
+    {
+      "targetField": "クール区分",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "coolType",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": []
+      },
+      "required": false
+    },
+    {
+      "targetField": "出荷予定日",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "shipPlanDate",
+          "pipeline": {
+            "steps": [
+              {
+                "id": "step-date-format-1",
+                "plugin": "date.format",
+                "params": {
+                  "format": "YYYY/MM/DD"
+                },
+                "enabled": true
+              }
+            ]
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "required": true
+    },
+    {
+      "targetField": "お届け予定日",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "deliveryDatePreference",
+          "pipeline": {
+            "steps": [
+              {
+                "id": "step-date-format-2",
+                "plugin": "date.format",
+                "params": {
+                  "format": "YYYY/MM/DD"
+                },
+                "enabled": true
+              }
+            ]
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "required": false
+    },
+    {
+      "targetField": "配達時間帯",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "deliveryTimeSlot",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": []
+      },
+      "required": false
+    },
+    {
+      "targetField": "お届け先電話番号",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "recipientPhone",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": []
+      },
+      "required": true
+    },
+    {
+      "targetField": "お届け先郵便番号",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "recipientPostalCode",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": []
+      },
+      "required": true
+    },
+    {
+      "targetField": "お届け先都道府県",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "recipientAddressPrefecture",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "required": true
+    },
+    {
+      "targetField": "お届け先市区郡町村",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "recipientAddressCity",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "required": true
+    },
+    {
+      "targetField": "お届け先町・番地",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "recipientAddressStreet",
+          "pipeline": {
+            "steps": [
+              {
+                "id": "step-slice-1",
+                "plugin": "jp.sliceByWidth",
+                "params": {
+                  "startWidth": 1,
+                  "endWidth": 32
+                },
+                "enabled": true
+              }
+            ]
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "required": true
+    },
+    {
+      "targetField": "お届け先アパートマンション名",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "recipientAddressStreet",
+          "pipeline": {
+            "steps": [
+              {
+                "id": "step-slice-2",
+                "plugin": "jp.sliceByWidth",
+                "params": {
+                  "startWidth": 33,
+                  "endWidth": 64
+                },
+                "enabled": true
+              }
+            ]
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "required": false
+    },
+    {
+      "targetField": "お届け先名",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "recipientName",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": []
+      },
+      "required": true
+    },
+    {
+      "targetField": "敬称",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "honorific",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": []
+      },
+      "required": false
+    },
+    {
+      "targetField": "ご依頼主電話番号",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "senderPhone",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": []
+      },
+      "required": true
+    },
+    {
+      "targetField": "ご依頼主郵便番号",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "senderPostalCode",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": []
+      },
+      "required": true
+    },
+    {
+      "targetField": "ご依頼主都道府県",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "senderAddressPrefecture",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "required": true
+    },
+    {
+      "targetField": "ご依頼主市区郡町村",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "senderAddressCity",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "required": true
+    },
+    {
+      "targetField": "ご依頼主町・番地",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "senderAddressStreet",
+          "pipeline": {
+            "steps": [
+              {
+                "id": "step-slice-5",
+                "plugin": "jp.sliceByWidth",
+                "params": {
+                  "startWidth": 1,
+                  "endWidth": 32
+                },
+                "enabled": true
+              }
+            ]
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "required": true
+    },
+    {
+      "targetField": "ご依頼主アパートマンション",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "senderAddressStreet",
+          "pipeline": {
+            "steps": [
+              {
+                "id": "step-slice-6",
+                "plugin": "jp.sliceByWidth",
+                "params": {
+                  "startWidth": 33,
+                  "endWidth": 64
+                },
+                "enabled": true
+              }
+            ]
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "required": false
+    },
+    {
+      "targetField": "ご依頼主名",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "senderName",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": []
+      },
+      "required": true
+    },
+    {
+      "targetField": "品名１",
+      "inputs": [
+        {
+          "id": "products-input",
+          "type": "column",
+          "column": "products",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": [
+          {
+            "id": "product-to-string",
+            "plugin": "product.toString",
+            "enabled": true
+          },
+          {
+            "id": "step-slice-7",
+            "plugin": "jp.sliceByWidth",
+            "params": {
+              "startWidth": 1,
+              "endWidth": 50
+            },
+            "enabled": true
+          }
+        ]
+      },
+      "required": true
+    },
+    {
+      "targetField": "品名２",
+      "inputs": [
+        {
+          "id": "products-input",
+          "type": "column",
+          "column": "products",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": [
+          {
+            "id": "product-to-string",
+            "plugin": "product.toString",
+            "enabled": true
+          },
+          {
+            "id": "step-slice-8",
+            "plugin": "jp.sliceByWidth",
+            "params": {
+              "startWidth": 51,
+              "endWidth": 100
+            },
+            "enabled": true
+          }
+        ]
+      },
+      "required": false
+    },
+    {
+      "targetField": "記事",
+      "inputs": [
+        {
+          "id": "src-0",
+          "type": "column",
+          "column": "customerManagementNumber",
+          "pipeline": {
+            "steps": []
+          }
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": []
+      },
+      "required": false
+    },
+    {
+      "targetField": "荷扱い１",
+      "inputs": [
+        {
+          "id": "handling-tags-input",
+          "type": "column",
+          "column": "handlingTags"
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": [
+          {
+            "id": "array-index-0",
+            "plugin": "array.index",
+            "params": {
+              "index": 0
+            },
+            "enabled": true
+          }
+        ]
+      },
+      "required": false
+    },
+    {
+      "targetField": "荷扱い２",
+      "inputs": [
+        {
+          "id": "handling-tags-input",
+          "type": "column",
+          "column": "handlingTags"
+        }
+      ],
+      "combine": {
+        "plugin": "combine.first"
+      },
+      "outputPipeline": {
+        "steps": [
+          {
+            "id": "array-index-1",
+            "plugin": "array.index",
+            "params": {
+              "index": 1
+            },
+            "enabled": true
+          }
+        ]
+      },
+      "required": false
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-12-18T08:28:19.928Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-13T00:00:00.000Z"
+  },
+  "__v": 0
+}]

@@ -1,0 +1,280 @@
+[{
+  "_id": {
+    "$oid": "695b3fdfe1e655450169154d"
+  },
+  "tenantId": "default",
+  "name": "出荷リスト(商品）",
+  "targetType": "shipment-list-picking",
+  "columns": [
+    {
+      "id": "col_1767587807418_obqxlr5wv",
+      "type": "single",
+      "label": "SKU管理番号",
+      "width": "auto",
+      "order": 0,
+      "field": "sku",
+      "renderType": "text",
+      "children": []
+    },
+    {
+      "id": "col_1767587807418_pfkp0hcyg",
+      "type": "single",
+      "label": "商品名",
+      "width": "auto",
+      "order": 1,
+      "field": "name",
+      "renderType": "text",
+      "children": []
+    },
+    {
+      "id": "col_1767587807418_qfr5xnocp",
+      "type": "single",
+      "label": "検品コード ",
+      "width": 110,
+      "order": 2,
+      "field": "barcode",
+      "renderType": "barcode",
+      "barcodeConfig": {
+        "format": "code128",
+        "width": 140,
+        "height": 40
+      },
+      "children": []
+    },
+    {
+      "id": "col_1767628762609_wewxijjzb",
+      "type": "single",
+      "label": "検品コード (バーコード)",
+      "width": "auto",
+      "order": 3,
+      "field": "barcode",
+      "renderType": "text",
+      "children": []
+    },
+    {
+      "id": "col_1767628655580_ang9ihx3d",
+      "type": "single",
+      "label": "数量",
+      "width": "auto",
+      "order": 4,
+      "field": "totalQuantity",
+      "renderType": "text",
+      "children": []
+    }
+  ],
+  "styles": {
+    "fontSize": 9,
+    "headerBgColor": "#2a3474",
+    "headerTextColor": "#ffffff",
+    "borderColor": "#cccccc",
+    "cellPadding": 4,
+    "horizontalAlign": "left"
+  },
+  "pageSize": "A4",
+  "pageOrientation": "portrait",
+  "pageMargins": [
+    5,
+    5,
+    5,
+    5
+  ],
+  "header": {
+    "enabled": true,
+    "text": "出力時間 - {{date}}",
+    "fontSize": 10,
+    "alignment": "right"
+  },
+  "footer": {
+    "enabled": false,
+    "text": "111111111111111",
+    "fontSize": 9,
+    "alignment": "center"
+  },
+  "pageNumber": {
+    "enabled": true,
+    "position": "footer",
+    "alignment": "right",
+    "format": "full"
+  },
+  "documentTitle": {
+    "enabled": true,
+    "text": "出荷リスト(商品）",
+    "fontSize": 16,
+    "alignment": "center"
+  },
+  "isDefault": false,
+  "createdAt": {
+    "$date": "2026-01-05T04:36:47.759Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-05T15:59:30.371Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "695b4f34b8e478496f5676de"
+  },
+  "tenantId": "default",
+  "name": "出荷リスト",
+  "targetType": "shipment-detail-list",
+  "columns": [
+    {
+      "id": "col_1767592179056_n5xmgvlq4",
+      "type": "single",
+      "label": "お客様管理番号",
+      "width": 200,
+      "order": 0,
+      "field": "customerManagementNumber",
+      "renderType": "barcode",
+      "barcodeConfig": {
+        "format": "code128",
+        "width": 200,
+        "height": 60
+      },
+      "children": []
+    },
+    {
+      "id": "col_1767591993536_rj7tbuqso",
+      "type": "multi",
+      "label": "出荷情報",
+      "width": "auto",
+      "order": 1,
+      "children": [
+        {
+          "id": "col_1767591993536_2si21v4kw",
+          "label": "商品",
+          "field": "products",
+          "renderType": "text"
+        },
+        {
+          "id": "col_1767592006924_o8fmrbmed",
+          "label": "お客様管理番号",
+          "field": "customerManagementNumber",
+          "renderType": "text"
+        },
+        {
+          "id": "col_1767592017138_ez774ow66",
+          "label": "配送会社",
+          "field": "carrierName",
+          "renderType": "text"
+        },
+        {
+          "id": "col_1767592029731_x39o5a9fd",
+          "label": "送り状種類",
+          "field": "invoiceTypeName",
+          "renderType": "text"
+        },
+        {
+          "id": "col_1767593478014_sznlwesdd",
+          "label": "出荷予定日",
+          "field": "shipPlanDate",
+          "renderType": "date",
+          "dateFormat": "YYYY/MM/DD"
+        }
+      ]
+    },
+    {
+      "id": "col_1767592043134_67hy8aalm",
+      "type": "multi",
+      "label": "商品情報",
+      "width": "auto",
+      "order": 2,
+      "children": [
+        {
+          "id": "col_1767592043134_y7oj0viwt",
+          "label": "商品",
+          "field": "products",
+          "renderType": "text"
+        },
+        {
+          "id": "col_1767592068214_hqnfnrpbo",
+          "label": "商品総数",
+          "field": "productTotalQuantity",
+          "renderType": "text"
+        }
+      ]
+    },
+    {
+      "id": "col_1767592086311_f167fembz",
+      "type": "multi",
+      "label": "送付先情報",
+      "width": "auto",
+      "order": 3,
+      "children": [
+        {
+          "id": "col_1767592086311_9f80ipsoa",
+          "label": "送付先郵便番号",
+          "field": "recipientPostalCode",
+          "renderType": "text"
+        },
+        {
+          "id": "col_1767592096563_r1wbr8y9q",
+          "label": "送付先住所",
+          "field": "recipientAddress",
+          "renderType": "text"
+        },
+        {
+          "id": "col_1767592102526_2d89p4jk1",
+          "label": "送付先名",
+          "field": "recipientName",
+          "renderType": "text"
+        },
+        {
+          "id": "col_1767592111518_vdpfxpx58",
+          "label": "送付先電話番号",
+          "field": "recipientPhone",
+          "renderType": "text"
+        }
+      ]
+    }
+  ],
+  "styles": {
+    "fontSize": 9,
+    "headerBgColor": "#2a3474",
+    "headerTextColor": "#ffffff",
+    "borderColor": "#cccccc",
+    "cellPadding": 4,
+    "horizontalAlign": "left"
+  },
+  "pageSize": "A4",
+  "pageOrientation": "landscape",
+  "pageMargins": [
+    5,
+    5,
+    5,
+    5
+  ],
+  "header": {
+    "enabled": true,
+    "text": "出力時間 - {{datetime}}",
+    "fontSize": 6,
+    "alignment": "right"
+  },
+  "footer": {
+    "enabled": false,
+    "text": "",
+    "fontSize": 9,
+    "alignment": "center"
+  },
+  "pageNumber": {
+    "enabled": true,
+    "position": "footer",
+    "alignment": "right",
+    "format": "full"
+  },
+  "documentTitle": {
+    "enabled": true,
+    "text": "出荷リスト",
+    "fontSize": 16,
+    "alignment": "center"
+  },
+  "isDefault": false,
+  "createdAt": {
+    "$date": "2026-01-05T05:42:12.470Z"
+  },
+  "updatedAt": {
+    "$date": "2026-01-05T15:45:58.490Z"
+  },
+  "__v": 0
+}]

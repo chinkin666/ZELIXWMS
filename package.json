@@ -1,0 +1,21 @@
+{
+  "name": "nexand-shipment-manager",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo for Nexand 出荷管理システム",
+  "workspaces": [
+    "backend",
+    "frontend",
+    "mobile"
+  ],
+  "scripts": {
+    "postinstall": "npm run bootstrap --workspaces --if-present",
+    "lint": "npm run lint --workspace backend",
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:prod": "npm run dev:prod --workspace frontend"
+  }
+}
+
+
+
+

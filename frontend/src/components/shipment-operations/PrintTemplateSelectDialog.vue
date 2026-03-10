@@ -1,0 +1,348 @@
+<template>
+  <el-dialog v-model="visible" title="印刷テンプレートを選択" width="980px">
+    <div class="dialog-content">
+      <div class="template-selector">
+        <el-form>
+          <el-form-item label="テンプレート">
+            <el-select
+              v-model="selectedTemplateId"
+              placeholder="印刷テンプレートを選択してください"
+              style="width: 100%"
+              filterable
+            >
+              <el-option
+                v-for="template in templates"
+                :key="template.id"
+                :label="template.name"
+                :value="template.id"
+              >
+                <div style="display: flex; justify-content: space-between; align-items: center">
+                  <span>{{ template.name }}</span>
+                  <span style="color: #909399; font-size: 12px">
+                    {{ template.canvas.widthMm }}mm × {{ template.canvas.heightMm }}mm
+                  </span>
+                </div>
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <div class="preview-section">
+        <div class="preview-header">
+          <div class="preview-title">
+            <span>プレビュー</span>
+            <span v-if="orders.length > 0" class="page-info">
+              （{{ currentIndex + 1 }} / {{ orders.length }}）
+            </span>
+          </div>
+          <div class="preview-actions">
+            <el-button-group v-if="orders.length > 1">
+              <el-button
+                size="small"
+                :disabled="currentIndex === 0"
+                @click="goToPrevious"
+              >
+                前へ
+              </el-button>
+              <el-button
+                size="small"
+                :disabled="currentIndex >= orders.length - 1"
+                @click="goToNext"
+              >
+                次へ
+              </el-button>
+            </el-button-group>
+            <el-button
+              v-if="imageUrl"
+              size="small"
+              style="margin-left: 8px"
+              @click="downloadPreviewPng"
+            >
+              プレビューをダウンロード
+            </el-button>
+          </div>
+        </div>
+        <div class="preview">
+          <div v-if="rendering" class="loading">プレビューを生成中...</div>
+          <div v-else-if="error" class="error">{{ error }}</div>
+          <div v-else-if="!imageUrl && selectedTemplateId && orders.length > 0" class="placeholder">
+            プレビュー生成までお待ちください
+          </div>
+          <div v-else-if="!selectedTemplateId" class="placeholder">
+            テンプレートを選択してプレビューを表示
+          </div>
+          <div v-else-if="orders.length === 0" class="placeholder">
+            プレビュー可能な注文がありません
+          </div>
+          <img v-else :src="imageUrl" class="preview-img" />
+        </div>
+      </div>
+    </div>
+
+    <template #footer>
+      <el-button @click="visible = false">キャンセル</el-button>
+      <el-button type="primary" :disabled="!selectedTemplateId" @click="handleConfirm">
+        確定
+      </el-button>
+    </template>
+  </el-dialog>
+</template>
+
+<script setup lang="ts">
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import { fetchPrintTemplates, fetchPrintTemplate } from '@/api/printTemplates'
+import type { PrintTemplate } from '@/types/printTemplate'
+import type { OrderDocument } from '@/types/order'
+import type { OrderSourceCompany } from '@/types/orderSourceCompany'
+import { fetchOrderSourceCompanyById } from '@/api/orderSourceCompany'
+import { renderTemplateToPngBlob } from '@/utils/print/renderTemplateToPng'
+
+const props = defineProps<{
+  modelValue: boolean
+  carrierId?: string
+  orders?: OrderDocument[]
+}>()
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', v: boolean): void
+  (e: 'confirm', template: PrintTemplate): void
+}>()
+
+const visible = computed({
+  get: () => props.modelValue,
+  set: (v) => emit('update:modelValue', v),
+})
+
+const templates = ref<PrintTemplate[]>([])
+const selectedTemplateId = ref<string>('')
+const loading = ref(false)
+const rendering = ref(false)
+const error = ref<string>('')
+const imageUrl = ref<string>('')
+let lastObjectUrl: string | null = null
+const orderSourceCompany = ref<OrderSourceCompany | null>(null)
+const currentIndex = ref(0)
+const orders = computed(() => props.orders || [])
+const currentOrder = computed(() => orders.value[currentIndex.value] || null)
+
+watch(
+  () => props.modelValue,
+  async (v) => {
+    if (v) {
+      currentIndex.value = 0
+      await loadTemplates()
+      await loadOrderSourceCompany()
+    } else {
+      selectedTemplateId.value = ''
+      cleanupImage()
+      orderSourceCompany.value = null
+      currentIndex.value = 0
+    }
+  },
+)
+
+watch(
+  () => [selectedTemplateId.value, currentIndex.value],
+  () => {
+    if (visible.value && selectedTemplateId.value && currentOrder.value) {
+      queueAutoRender()
+    } else {
+      cleanupImage()
+    }
+  },
+)
+
+onBeforeUnmount(() => cleanupImage())
+
+function cleanupImage() {
+  error.value = ''
+  imageUrl.value = ''
+  if (lastObjectUrl) {
+    URL.revokeObjectURL(lastObjectUrl)
+    lastObjectUrl = null
+  }
+}
+
+let autoRenderTimer: number | null = null
+function queueAutoRender() {
+  if (autoRenderTimer) window.clearTimeout(autoRenderTimer)
+  autoRenderTimer = window.setTimeout(() => {
+    autoRenderTimer = null
+    void handleRender()
+  }, 300)
+}
+
+async function handleRender() {
+  if (!selectedTemplateId.value || !currentOrder.value) return
+
+  rendering.value = true
+  error.value = ''
+
+  try {
+    cleanupImage()
+    
+    // Load OrderSourceCompany for current order
+    await loadOrderSourceCompany()
+    
+    // Fetch full template details
+    const template = await fetchPrintTemplate(selectedTemplateId.value)
+    
+    const blob = await renderTemplateToPngBlob(
+      template,
+      currentOrder.value,
+      { exportDpi: 203, background: 'white' },
+      orderSourceCompany.value,
+    )
+    const url = URL.createObjectURL(blob)
+    lastObjectUrl = url
+    imageUrl.value = url
+  } catch (e: any) {
+    error.value = e?.message || String(e)
+    console.error('Preview render error:', e)
+  } finally {
+    rendering.value = false
+  }
+}
+
+async function loadOrderSourceCompany() {
+  if (!currentOrder.value?.orderSourceCompanyId) {
+    orderSourceCompany.value = null
+    return
+  }
+  try {
+    orderSourceCompany.value = await fetchOrderSourceCompanyById(currentOrder.value.orderSourceCompanyId)
+  } catch (e) {
+    console.error('Failed to load OrderSourceCompany:', e)
+    orderSourceCompany.value = null
+  }
+}
+
+const goToPrevious = () => {
+  if (currentIndex.value > 0) {
+    currentIndex.value--
+  }
+}
+
+const goToNext = () => {
+  if (currentIndex.value < orders.value.length - 1) {
+    currentIndex.value++
+  }
+}
+
+const loadTemplates = async () => {
+  if (loading.value) return
+  loading.value = true
+  try {
+    const params: { carrierId?: string } = {}
+    if (props.carrierId) {
+      params.carrierId = props.carrierId
+    }
+    const fetched = await fetchPrintTemplates(params)
+    templates.value = fetched
+  } catch (e: any) {
+    console.error('Failed to load print templates:', e)
+    ElMessage.error(e?.message || 'テンプレートの読み込みに失敗しました')
+    templates.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+const downloadPreviewPng = () => {
+  if (!imageUrl.value || !currentOrder.value) return
+  const a = document.createElement('a')
+  a.href = imageUrl.value
+  a.download = `preview-${currentOrder.value?.orderNumber || currentOrder.value?._id || 'print'}.png`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+}
+
+const handleConfirm = () => {
+  const template = templates.value.find((t) => t.id === selectedTemplateId.value)
+  if (!template) {
+    ElMessage.error('テンプレートを選択してください')
+    return
+  }
+  emit('confirm', template)
+  visible.value = false
+}
+</script>
+
+<style scoped>
+.dialog-content {
+  display: flex;
+  gap: 20px;
+  min-height: 500px;
+}
+
+.template-selector {
+  flex: 0 0 300px;
+}
+
+.preview-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.preview-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-info {
+  font-weight: normal;
+  color: #909399;
+  font-size: 14px;
+}
+
+.preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview {
+  flex: 1;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 4px;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 450px;
+}
+
+.loading,
+.placeholder {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.error {
+  color: #b91c1c;
+  padding: 12px;
+  text-align: center;
+}
+
+.preview-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+</style>
+
