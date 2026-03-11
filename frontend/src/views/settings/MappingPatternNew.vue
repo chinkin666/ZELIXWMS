@@ -4,27 +4,26 @@
       <div class="top-left">
         <div class="field">
           <div class="label">レイアウトタイプ</div>
-          <el-select v-model="configType" size="small" style="width: 260px" @change="onConfigTypeChange" :disabled="isLocked">
-            <el-option label="送り状データ" value="order-to-carrier" />
-            <el-option label="出荷予定データ" value="ec-company-to-order" />
-            <el-option label="出荷明細リスト出力(csv)" value="order-to-sheet" />
-            <el-option label="商品マスタ" value="product" />
-            <el-option label="ご依頼主マスタ" value="order-source-company" />
-          </el-select>
+          <select v-model="configType" class="o-input" style="width: 260px" @change="onConfigTypeChange" :disabled="isLocked">
+            <option value="order-to-carrier">送り状データ</option>
+            <option value="ec-company-to-order">出荷予定データ</option>
+            <option value="order-to-sheet">出荷明細リスト出力(csv)</option>
+            <option value="product">商品マスタ</option>
+            <option value="order-source-company">ご依頼主マスタ</option>
+          </select>
         </div>
         <div class="field" v-if="configType === 'order-to-carrier'">
           <div class="label">配送会社</div>
-          <el-select
+          <select
             v-model="carrierId"
-            filterable
-            size="small"
+            class="o-input"
             style="width: 260px"
-            placeholder="配送会社を選択"
             @change="onCarrierChange"
             :disabled="isLocked"
           >
-            <el-option v-for="c in carrierOptions" :key="c._id" :label="c.name" :value="c._id" />
-          </el-select>
+            <option value="" disabled>配送会社を選択</option>
+            <option v-for="c in carrierOptions" :key="c._id" :value="c._id">{{ c.name }}</option>
+          </select>
         </div>
         <div
           class="field"
@@ -36,21 +35,20 @@
         >
           <div class="label">ファイルアップロード</div>
           <div class="upload-row">
-            <el-upload
-              action=""
-              :auto-upload="false"
-              :show-file-list="false"
+            <input
+              ref="fileInputRef"
+              type="file"
               accept=".csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-              @change="onFileSelect"
-            >
-              <el-button type="primary" plain>ファイルを選択</el-button>
-            </el-upload>
-            <el-select v-model="encoding" size="small" style="width: 160px">
-              <el-option label="Shift_JIS (既定)" value="shift_jis" />
-              <el-option label="UTF-8" value="utf-8" />
-              <el-option label="UTF-8 (BOM)" value="utf-8-sig" />
-              <el-option label="GBK/GB18030" value="gbk" />
-            </el-select>
+              class="hidden-input"
+              @change="onNativeFileSelect"
+            />
+            <button class="o-btn o-btn-primary" @click="fileInputRef?.click()">ファイルを選択</button>
+            <select v-model="encoding" class="o-input" style="width: 160px">
+              <option value="shift_jis">Shift_JIS (既定)</option>
+              <option value="utf-8">UTF-8</option>
+              <option value="utf-8-sig">UTF-8 (BOM)</option>
+              <option value="gbk">GBK/GB18030</option>
+            </select>
           </div>
           <div class="hint">CSV/TSV をアップロードすると右側 入力元（Source）にプレビューされます</div>
         </div>
@@ -58,21 +56,21 @@
       <div class="top-right">
         <div class="field">
           <div class="label">サンプルデータ</div>
-          <el-button size="small" @click="loadSampleOrders">注文サンプルを読み込む</el-button>
+          <button class="o-btn o-btn-secondary" @click="loadSampleOrders">注文サンプルを読み込む</button>
         </div>
         <div class="field">
           <div class="label">レイアウト名</div>
-          <el-input v-model="configName" size="small" style="width: 200px" placeholder="レイアウト名を入力" />
+          <input v-model="configName" class="o-input" style="width: 200px" placeholder="レイアウト名を入力" />
         </div>
         <div class="field">
           <div class="label">説明</div>
-          <el-input v-model="configDescription" size="small" style="width: 200px" placeholder="説明（任意）" />
+          <input v-model="configDescription" class="o-input" style="width: 200px" placeholder="説明（任意）" />
         </div>
         <div class="field">
-          <el-button type="primary" size="small" @click="handleSave" :disabled="!canSave">
+          <button class="o-btn o-btn-primary" @click="handleSave" :disabled="!canSave">
             保存
-          </el-button>
-          <el-button size="small" @click="handleLoad" style="margin-left: 8px">読み込み</el-button>
+          </button>
+          <button class="o-btn o-btn-secondary" @click="handleLoad" style="margin-left: 8px">読み込み</button>
         </div>
       </div>
     </div>
@@ -84,106 +82,124 @@
           <!-- order-to-sheet 自定义字段管理 -->
           <template v-if="configType === 'order-to-sheet'">
             <div class="custom-target-controls">
-              <el-input
+              <input
                 v-model="newCustomTargetField"
-                size="small"
+                class="o-input"
                 placeholder="新しい出力項目名"
                 style="width: 160px; margin-left: 16px"
                 @keyup.enter="addCustomTargetField"
               />
-              <el-button type="primary" size="small" @click="addCustomTargetField" :disabled="!newCustomTargetField.trim()">
+              <button class="o-btn o-btn-primary" @click="addCustomTargetField" :disabled="!newCustomTargetField.trim()">
                 追加
-              </el-button>
-              <el-button
-                type="danger"
-                size="small"
-                plain
+              </button>
+              <button
+                class="o-btn o-btn-danger"
                 @click="removeSelectedCustomTargetField"
                 :disabled="!selectedTarget || !isCustomTargetField(selectedTarget.field)"
               >
                 選択項目を削除
-              </el-button>
+              </button>
             </div>
           </template>
         </div>
-        <el-table
-          :data="targetRowsComputed"
-          border
-          height="520"
-          highlight-current-row
-          @current-change="onSelectTarget"
-          class="target-table"
-          :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
-          :default-expand-all="true"
-          row-key="field"
-        >
-          <el-table-column prop="required" label="必須" width="70">
-            <template #default="{ row }">
-              <el-tag :type="row.required ? 'danger' : 'info'" size="small">
-                {{ row.required ? '必須' : '任意' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="field" label="項目名" min-width="220">
-            <template #default="{ row }">
-              <div 
-                :class="{ 'product-child-item': row.field?.startsWith('products.0') }"
-                style="display: flex; align-items: center; gap: 4px"
-              >
-                <span>{{ row.label || row.field }}</span>
-                <el-tag v-if="row.isExpandable" size="small" type="info" style="margin-left: 4px">展開のみ</el-tag>
-                <el-tooltip
-                  v-if="getFieldHint(row.field)"
-                  :content="getFieldHint(row.field)"
-                  placement="top"
-                  effect="dark"
+        <div class="target-table-wrap" style="height: 520px; overflow-y: auto;">
+          <table class="o-list-table target-table">
+            <thead>
+              <tr>
+                <th style="width: 70px">必須</th>
+                <th style="min-width: 220px">項目名</th>
+                <th style="min-width: 240px">変換内容</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template v-for="row in targetRowsComputed" :key="row.field">
+                <tr
+                  :class="{ 'row-selected': selectedTarget?.field === row.field }"
+                  @click="onSelectTarget(row)"
+                  style="cursor: pointer"
                 >
-                  <el-icon style="color: #909399; cursor: help; font-size: 14px">
-                    <InfoFilled />
-                  </el-icon>
-                </el-tooltip>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column label="変換内容" min-width="240">
-            <template #default="{ row }">
-              <!-- 如果是可展开的 products，显示其子项的映射 -->
-              <template v-if="row.isExpandable && row.field === 'products' && row.children">
-                <div v-for="child in row.children" :key="child.field" style="margin-bottom: 4px">
-                  <span class="pipeline-chip" v-if="mappings[child.field]" style="display: inline-block; font-size: 11px">
-                    {{ child.label }}: {{ summaryForMapping(mappings[child.field]) }}
-                  </span>
-                  <span class="pipeline-chip empty" v-else style="display: inline-block; font-size: 11px">
-                    {{ child.label }}: 未設定
-                  </span>
-                </div>
+                  <td>
+                    <span class="o-badge" :class="row.required ? 'o-badge-danger' : 'o-badge-info'">
+                      {{ row.required ? '必須' : '任意' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div
+                      :class="{ 'product-child-item': row.field?.startsWith('products.0') }"
+                      style="display: flex; align-items: center; gap: 4px"
+                    >
+                      <span>{{ row.label || row.field }}</span>
+                      <span v-if="row.isExpandable" class="o-badge o-badge-info" style="margin-left: 4px">展開のみ</span>
+                      <span
+                        v-if="getFieldHint(row.field)"
+                        :title="getFieldHint(row.field) ?? ''"
+                        style="color: #909399; cursor: help; font-size: 14px"
+                      >&#9432;</span>
+                    </div>
+                  </td>
+                  <td>
+                    <!-- 如果是可展开的 products，显示其子项的映射 -->
+                    <template v-if="row.isExpandable && row.field === 'products' && row.children">
+                      <div v-for="child in row.children" :key="child.field" style="margin-bottom: 4px">
+                        <span class="pipeline-chip" v-if="mappings[child.field]" style="display: inline-block; font-size: 11px">
+                          {{ child.label }}: {{ summaryForMapping(mappings[child.field]) }}
+                        </span>
+                        <span class="pipeline-chip empty" v-else style="display: inline-block; font-size: 11px">
+                          {{ child.label }}: 未設定
+                        </span>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <span class="pipeline-chip" v-if="mappings[row.field]">
+                        {{ summaryForMapping(mappings[row.field]) }}
+                      </span>
+                      <span class="pipeline-chip empty" v-else>未設定</span>
+                    </template>
+                  </td>
+                </tr>
+                <!-- Render children rows for tree-like products -->
+                <template v-if="row.isExpandable && row.children">
+                  <tr
+                    v-for="child in row.children"
+                    :key="child.field"
+                    :class="{ 'row-selected': selectedTarget?.field === child.field }"
+                    @click="onSelectTarget(child)"
+                    style="cursor: pointer; background-color: #f9fafc"
+                  >
+                    <td>
+                      <span class="o-badge" :class="child.required ? 'o-badge-danger' : 'o-badge-info'">
+                        {{ child.required ? '必須' : '任意' }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="product-child-item" style="display: flex; align-items: center; gap: 4px">
+                        <span>{{ child.label || child.field }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="pipeline-chip" v-if="mappings[child.field]">
+                        {{ summaryForMapping(mappings[child.field]) }}
+                      </span>
+                      <span class="pipeline-chip empty" v-else>未設定</span>
+                    </td>
+                  </tr>
+                </template>
               </template>
-              <template v-else>
-                <span class="pipeline-chip" v-if="mappings[row.field]">
-                  {{ summaryForMapping(mappings[row.field]) }}
-                </span>
-                <span class="pipeline-chip empty" v-else>未設定</span>
-              </template>
-            </template>
-          </el-table-column>
-        </el-table>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="middle-buttons">
         <!-- 特殊字段：products 本身不能被设置（只能设置子项） -->
         <template v-if="selectedTarget?.isExpandable && selectedTarget?.field === 'products'">
-          <el-alert
-            type="info"
-            :closable="false"
-            show-icon
-            style="margin-bottom: 10px"
-          >
+          <div class="o-alert o-alert-info" style="margin-bottom: 10px">
             「商品」は展開のみ可能です。子項目（SKU、数量、商品名）を選択して設定してください。
-          </el-alert>
-          <el-button type="danger" plain :disabled="!selectedTarget" @click="clearSelected">
+          </div>
+          <button class="o-btn o-btn-danger" :disabled="!selectedTarget" @click="clearSelected">
             クリア
-          </el-button>
-          <el-button type="danger" plain @click="clearAll">全てクリア</el-button>
+          </button>
+          <button class="o-btn o-btn-danger" @click="clearAll">全てクリア</button>
         </template>
 
         <!-- 特殊字段：handlingTags / barcode(string[]) 的专用按钮 -->
@@ -193,145 +209,154 @@
             (configType === 'product' && selectedTarget?.field === 'barcode')
           "
         >
-          <el-button
-            v-if="configType === 'product' && selectedTarget.field === 'barcode'"
-            type="primary"
+          <button
+            v-if="configType === 'product' && selectedTarget?.field === 'barcode'"
+            class="o-btn o-btn-primary"
             :disabled="!selectedTarget"
             @click="openBarcodeMappingDialog"
           >
             バーコードレイアウト設定
-          </el-button>
-          <el-button
-            v-if="selectedTarget.field === 'handlingTags'"
-            type="primary"
+          </button>
+          <button
+            v-if="selectedTarget?.field === 'handlingTags'"
+            class="o-btn o-btn-primary"
             :disabled="!selectedTarget"
             @click="openHandlingTagsMappingDialog"
           >
             荷扱いタグレイアウト設定
-          </el-button>
-          <el-button type="danger" plain :disabled="!selectedTarget" @click="clearSelected">
+          </button>
+          <button class="o-btn o-btn-danger" :disabled="!selectedTarget" @click="clearSelected">
             クリア
-          </el-button>
-          <el-button type="danger" plain @click="clearAll">全てクリア</el-button>
+          </button>
+          <button class="o-btn o-btn-danger" @click="clearAll">全てクリア</button>
         </template>
 
         <!-- Source 选择 product 时的特殊按钮 -->
         <template v-else-if="selectedSources.length === 1 && selectedSources[0]?.name === 'products'">
-          <el-button
-            type="primary"
+          <button
+            class="o-btn o-btn-primary"
             :disabled="!selectedTarget"
             @click="openProductToStringTransform"
           >
             商品を文字列に変換
-          </el-button>
-          <el-button type="danger" plain :disabled="!selectedTarget" @click="clearSelected">
+          </button>
+          <button class="o-btn o-btn-danger" :disabled="!selectedTarget" @click="clearSelected">
             クリア
-          </el-button>
-          <el-button type="danger" plain @click="clearAll">全てクリア</el-button>
+          </button>
+          <button class="o-btn o-btn-danger" @click="clearAll">全てクリア</button>
         </template>
 
         <!-- Source 选择 handlingTags 时的特殊按钮 -->
         <template v-else-if="selectedSources.length === 1 && selectedSources[0]?.name === 'handlingTags'">
-          <el-button
-            type="primary"
+          <button
+            class="o-btn o-btn-primary"
             :disabled="!selectedTarget"
             @click="openHandlingTagsIndexDialog"
           >
             配列要素を取得
-          </el-button>
-          <el-button type="danger" plain :disabled="!selectedTarget" @click="clearSelected">
+          </button>
+          <button class="o-btn o-btn-danger" :disabled="!selectedTarget" @click="clearSelected">
             クリア
-          </el-button>
-          <el-button type="danger" plain @click="clearAll">全てクリア</el-button>
+          </button>
+          <button class="o-btn o-btn-danger" @click="clearAll">全てクリア</button>
         </template>
 
         <!-- 默认按钮 -->
         <template v-else>
           <!-- order-to-sheet 快捷添加按钮 -->
-          <el-button
+          <button
             v-if="configType === 'order-to-sheet'"
-            type="success"
+            class="o-btn o-btn-success"
             :disabled="selectedSources.length !== 1"
             @click="handleQuickAddFromSource"
           >
             &lt;&lt; 項目を追加
-          </el-button>
-          <el-button
-            type="primary"
-            plain
+          </button>
+          <button
+            class="o-btn o-btn-primary"
             :disabled="!selectedTarget || selectedSources.length === 0"
             @click="handleDirectLink"
           >
             &lt;&lt; 紐付け
-          </el-button>
-          <el-button
-            type="warning"
-            plain
+          </button>
+          <button
+            class="o-btn o-btn-warning"
             :disabled="!selectedTarget"
             @click="handleAddLiteral"
           >
             固定値を追加
-          </el-button>
-          <el-button
-            type="primary"
+          </button>
+          <button
+            class="o-btn o-btn-primary"
             :disabled="!selectedTarget"
             @click="openTransformDialog"
           >
             &lt;&lt; 変換付き紐付け
-          </el-button>
-          <el-button
-            type="info"
-            plain
+          </button>
+          <button
+            class="o-btn o-btn-secondary"
             :disabled="!selectedTarget"
             @click="openDetailDialog"
           >
             紐付け項目の詳細設定
-          </el-button>
-          <el-button type="danger" plain :disabled="!selectedTarget" @click="clearSelected">
+          </button>
+          <button class="o-btn o-btn-danger" :disabled="!selectedTarget" @click="clearSelected">
             クリア
-          </el-button>
-          <el-button type="danger" plain @click="clearAll">全てクリア</el-button>
+          </button>
+          <button class="o-btn o-btn-danger" @click="clearAll">全てクリア</button>
         </template>
       </div>
 
       <div class="table-card">
         <div class="table-title">入力元（Source）</div>
-        <el-table
-          :data="sourceRowsComputed"
-          border
-          height="520"
-          @row-click="onSelectSource"
-          class="source-table"
-          :empty-text="sourceTableEmptyText"
-        >
-          <el-table-column prop="name" label="項目名" min-width="240">
-            <template #default="{ row }">
-              <el-checkbox
-                :model-value="isSourceSelected(row)"
-                style="margin-right: 8px; pointer-events: none"
-              />
-              {{ row.label || row.name }}
-            </template>
-          </el-table-column>
-          <el-table-column label="使用中の出力先" min-width="200">
-            <template #default="{ row }">
-              <div class="used-by-targets">
-                <el-tag
-                  v-for="targetField in getUsedByTargets(row.name)"
-                  :key="targetField"
-                  size="small"
-                  type="info"
-                  style="margin-right: 4px; margin-bottom: 4px"
-                >
-                  {{ getTargetDisplayName(targetField) }}
-                </el-tag>
-                <span v-if="getUsedByTargets(row.name).length === 0" class="empty-text">
-                  未使用
-                </span>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="source-table-wrap" style="height: 520px; overflow-y: auto;">
+          <table class="o-list-table source-table">
+            <thead>
+              <tr>
+                <th style="min-width: 240px">項目名</th>
+                <th style="min-width: 200px">使用中の出力先</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-if="sourceRowsComputed.length === 0">
+                <td colspan="2" style="text-align: center; color: #999; padding: 20px">
+                  {{ sourceTableEmptyText }}
+                </td>
+              </tr>
+              <tr
+                v-for="row in sourceRowsComputed"
+                :key="row.name"
+                @click="onSelectSource(row)"
+                :class="{ 'row-selected': isSourceSelected(row) }"
+                style="cursor: pointer"
+              >
+                <td>
+                  <input
+                    type="checkbox"
+                    :checked="isSourceSelected(row)"
+                    style="margin-right: 8px; pointer-events: none"
+                  />
+                  {{ row.label || row.name }}
+                </td>
+                <td>
+                  <div class="used-by-targets">
+                    <span
+                      v-for="targetField in getUsedByTargets(row.name)"
+                      :key="targetField"
+                      class="o-badge o-badge-info"
+                      style="margin-right: 4px; margin-bottom: 4px"
+                    >
+                      {{ getTargetDisplayName(targetField) }}
+                    </span>
+                    <span v-if="getUsedByTargets(row.name).length === 0" class="empty-text">
+                      未使用
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -385,8 +410,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { InfoFilled } from '@element-plus/icons-vue'
 import { fetchShipmentOrders } from '@/api/shipmentOrders'
 import { getOrderFieldDefinitions } from '@/types/order'
 import { getProductFieldDefinitions } from '@/types/product'
@@ -460,6 +483,9 @@ const configName = ref<string>('')
 const configDescription = ref<string>('')
 const currentConfigId = ref<string | null>(null)
 
+// File input ref for native upload
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
 // Locked mode - when navigating from carrier automation settings
 const isLocked = ref(false)
 
@@ -531,7 +557,7 @@ const getAllOrderSourceFields = (): SourceRow[] => {
       name: def.dataKey!,
       label: def.title || def.dataKey!,
     }))
-  
+
   // 将 products 字段移到数组最后
   const productsIndex = fields.findIndex((f) => f.name === 'products')
   if (productsIndex !== -1) {
@@ -541,7 +567,7 @@ const getAllOrderSourceFields = (): SourceRow[] => {
       fields.push(productsField)
     }
   }
-  
+
   return fields
 }
 
@@ -593,19 +619,19 @@ const addCustomTargetField = () => {
   const fieldName = newCustomTargetField.value.trim()
   if (!fieldName) return
   if (customTargetFields.value.includes(fieldName)) {
-    ElMessage.warning('この項目名は既に存在します')
+    alert('この項目名は既に存在します')
     return
   }
   customTargetFields.value = [...customTargetFields.value, fieldName]
   newCustomTargetField.value = ''
-  ElMessage.success('項目を追加しました')
+  alert('項目を追加しました')
 }
 
 const removeSelectedCustomTargetField = () => {
   if (!selectedTarget.value) return
   const fieldToRemove = selectedTarget.value.field
   if (!customTargetFields.value.includes(fieldToRemove)) {
-    ElMessage.warning('この項目は削除できません')
+    alert('この項目は削除できません')
     return
   }
   // Remove from customTargetFields
@@ -615,7 +641,7 @@ const removeSelectedCustomTargetField = () => {
   delete next[fieldToRemove]
   mappings.value = next
   selectedTarget.value = null
-  ElMessage.success('項目を削除しました')
+  alert('項目を削除しました')
 }
 
 const isCustomTargetField = (field: string): boolean => {
@@ -635,7 +661,7 @@ const handleQuickAddFromSource = () => {
 
   // 如果该字段名已存在，提示用户
   if (customTargetFields.value.includes(fieldName)) {
-    ElMessage.warning(`「${fieldName}」は既に存在します`)
+    alert(`「${fieldName}」は既に存在します`)
     return
   }
 
@@ -660,7 +686,7 @@ const handleQuickAddFromSource = () => {
   // 清空选择
   selectedSources.value = []
 
-  ElMessage.success(`「${fieldName}」を追加しました`)
+  alert(`「${fieldName}」を追加しました`)
 }
 
 const sampleRows = ref<Record<string, any>[]>([])
@@ -717,13 +743,13 @@ const getFieldHint = (field: string): string | null => {
 // 获取 target 字段的详细说明
 const getTargetDescription = (field: string): string | null => {
   if (!field) return null
-  
+
   // 如果是 order-to-carrier，从 carrier 的 formatDefinition 获取
   if (configType.value === 'order-to-carrier' && selectedCarrier.value?.formatDefinition?.columns) {
     const col = selectedCarrier.value.formatDefinition.columns.find((c: any) => c.name === field)
     return col?.description || null
   }
-  
+
   // 如果是 ec-company-to-order，从 order 字段定义获取
   if (configType.value === 'ec-company-to-order') {
     const def = orderFieldDefinitions.find((d) => d.dataKey === field)
@@ -735,7 +761,7 @@ const getTargetDescription = (field: string): string | null => {
     const def = productFieldDefinitions.find((d: any) => d.dataKey === field)
     return (def as any)?.description || null
   }
-  
+
   return null
 }
 
@@ -746,7 +772,7 @@ const targetRowsComputed = computed<TargetRow[]>(() => {
     const cols: any[] | undefined = selectedCarrier.value?.formatDefinition?.columns
     if (cols && cols.length) {
       const rows = cols.map((c) => ({ field: c.name, required: !!c.required }))
-      
+
       // 查找 products 字段，将其展开为树形结构并移到最后
       const productsIndex = rows.findIndex((r) => r.field === 'products')
       if (productsIndex !== -1) {
@@ -754,10 +780,10 @@ const targetRowsComputed = computed<TargetRow[]>(() => {
         productsRow.label = '商品'
         productsRow.isExpandable = true // 标记为可展开但不可设置
         productsRow.children = [
-          { field: 'products.0.sku', required: true, label: '商品SKU管理番号（1件目）' }, // SKU是必须项
-          { field: 'products.0.quantity', required: true, label: '数量（1件目）' }, // 数量是必须项
-          { field: 'products.0.name', required: false, label: '商品名（1件目）' }, // 商品名是可选项
-          { field: 'products.0.barcode', required: false, label: '商品バーコード（1件目）' }, // バーコードは任意
+          { field: 'products.0.sku', required: true, label: '商品SKU管理番号（1件目）' },
+          { field: 'products.0.quantity', required: true, label: '数量（1件目）' },
+          { field: 'products.0.name', required: false, label: '商品名（1件目）' },
+          { field: 'products.0.barcode', required: false, label: '商品バーコード（1件目）' },
         ]
         // 将 products 移到数组最后
         rows.splice(productsIndex, 1)
@@ -789,7 +815,7 @@ const targetRowsComputed = computed<TargetRow[]>(() => {
       { field: 'senderPhone', required: true, label: '電話' },
     ]
   }
-  
+
   // 对于 ec-company-to-order，也需要展开 products
   const rows: TargetRow[] = [...targetOrderFields]
   const productsIndex = rows.findIndex((r) => r.field === 'products')
@@ -798,10 +824,10 @@ const targetRowsComputed = computed<TargetRow[]>(() => {
     productsRow.label = '商品'
     productsRow.isExpandable = true
     productsRow.children = [
-      { field: 'products.0.sku', required: true, label: '商品SKU管理番号（1件目）' }, // SKU是必须项
-      { field: 'products.0.quantity', required: true, label: '数量（1件目）' }, // 数量是必须项
-      { field: 'products.0.name', required: false, label: '商品名（1件目）' }, // 商品名是可选项
-      { field: 'products.0.barcode', required: false, label: '商品バーコード（1件目）' }, // バーコードは任意
+      { field: 'products.0.sku', required: true, label: '商品SKU管理番号（1件目）' },
+      { field: 'products.0.quantity', required: true, label: '数量（1件目）' },
+      { field: 'products.0.name', required: false, label: '商品名（1件目）' },
+      { field: 'products.0.barcode', required: false, label: '商品バーコード（1件目）' },
     ]
     // 将 products 移到数组最后
     rows.splice(productsIndex, 1)
@@ -845,7 +871,7 @@ const loadConfigForEdit = async (configId: string) => {
   try {
     const config = await getMappingConfigById(configId)
     if (!config) {
-      ElMessage.warning('設定が見つかりませんでした')
+      alert('設定が見つかりませんでした')
       return
     }
 
@@ -877,7 +903,7 @@ const loadConfigForEdit = async (configId: string) => {
       // 将提取的字段添加到 sourceUploadRows
       sourceUploadRows.value = Array.from(sourceFields).map((field) => ({
         name: field,
-        label: field, // 可以后续优化，如果有字段标签映射的话
+        label: field,
       }))
     }
 
@@ -885,12 +911,12 @@ const loadConfigForEdit = async (configId: string) => {
     currentConfigId.value = config._id
     configName.value = config.name || ''
     configDescription.value = config.description || ''
-    
+
     // 设置 carrierId（如果是 order-to-carrier 类型，需要在设置 configType 之前）
     if (config.configType === 'order-to-carrier' && config.carrierId) {
       carrierId.value = config.carrierId
     }
-    
+
     // 最后设置 configType，这会触发 watch 清空 mappings，所以需要在 nextTick 后恢复
     console.log('[loadConfigForEdit] Setting configType to:', config.configType, 'current:', configType.value)
     configType.value = config.configType || 'ec-company-to-order'
@@ -905,10 +931,10 @@ const loadConfigForEdit = async (configId: string) => {
       await loadSampleOrders()
     }
 
-    ElMessage.success('設定を読み込みました')
+    alert('設定を読み込みました')
   } catch (e: any) {
     console.error(e)
-    ElMessage.error(e?.message || '設定の読み込みに失敗しました')
+    alert(e?.message || '設定の読み込みに失敗しました')
   }
 }
 
@@ -989,7 +1015,7 @@ const loadCarriers = async () => {
     carrierOptions.value = await fetchCarriers()
   } catch (e: any) {
     console.error(e)
-    ElMessage.error(e?.message || '配送会社一覧の取得に失敗しました')
+    alert(e?.message || '配送会社一覧の取得に失敗しました')
   }
 }
 
@@ -1036,26 +1062,24 @@ watch(
 const parseSheetToRows = (wb: any): Record<string, any>[] => {
   if (!wb.SheetNames || wb.SheetNames.length === 0) return []
   const sheet = wb.Sheets[wb.SheetNames[0]]
-  
+
   // 手动读取单元格，使用原始显示值（cell.w），避免 XLSX 自动格式化日期
-  // 这样保持 Excel/CSV 中实际显示的值，不进行任何转换
   const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1')
   const headers: string[] = []
   const rows: Record<string, any>[] = []
-  
+
   // 读取表头（第一行）
   for (let col = range.s.c; col <= range.e.c; col++) {
     const cellAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col })
     const cell = sheet[cellAddress]
-    // 使用 cell.w（显示值）如果存在，否则使用原始值转换为字符串
     const value = cell?.w != null ? String(cell.w) : (cell?.v != null ? String(cell.v) : '')
     headers.push(value.trim())
   }
-  
+
   // 过滤空表头
   const validHeaders = headers.filter((h) => h)
   if (validHeaders.length === 0) return []
-  
+
   // 读取数据行（从第二行开始）
   for (let row = range.s.r + 1; row <= range.e.r; row++) {
     const obj: Record<string, any> = {}
@@ -1063,14 +1087,12 @@ const parseSheetToRows = (wb: any): Record<string, any>[] => {
       const col = range.s.c + colIndex
       const cellAddress = XLSX.utils.encode_cell({ r: row, c: col })
       const cell = sheet[cellAddress]
-      // 使用 cell.w（显示值）如果存在，否则使用原始值转换为字符串
-      // 这样保持 Excel/CSV 中实际显示的值，不进行任何转换
       const value = cell?.w != null ? String(cell.w) : (cell?.v != null ? String(cell.v) : '')
       obj[header] = value
     })
     rows.push(obj)
   }
-  
+
   return rows
 }
 
@@ -1106,8 +1128,10 @@ const parseFileForPreview = async (file: File): Promise<Record<string, any>[]> =
   return isExcel ? parseExcelFile(file) : parseCsvFile(file)
 }
 
-const onFileSelect = async (fileEvent: any) => {
-  const file = (fileEvent?.raw || fileEvent?.file) as File | undefined
+// Native file input handler (replaces el-upload @change)
+const onNativeFileSelect = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input?.files?.[0]
   if (!file) return
   try {
     const rows = await parseFileForPreview(file)
@@ -1115,11 +1139,13 @@ const onFileSelect = async (fileEvent: any) => {
     sourceUploadRows.value = headers.map((h) => ({ name: h }))
     sampleRows.value = rows.slice(0, 5)
 
-    ElMessage.success('アップロード済みのヘッダーを読み込みました')
+    alert('アップロード済みのヘッダーを読み込みました')
   } catch (e: any) {
     console.error(e)
-    ElMessage.error(e?.message || 'ファイルの解析に失敗しました')
+    alert(e?.message || 'ファイルの解析に失敗しました')
   }
+  // Reset input so same file can be selected again
+  if (input) input.value = ''
 }
 
 const loadSampleOrders = async () => {
@@ -1127,17 +1153,15 @@ const loadSampleOrders = async () => {
     const orders = await fetchShipmentOrders({ limit: 5 })
     const first = orders[0]
     if (!first) {
-      ElMessage.warning('サンプル注文が取得できませんでした')
+      alert('サンプル注文が取得できませんでした')
       return
     }
     // Do not overwrite Source table rows with sample keys.
-    // Keep Source table based on order field definitions (labels),
-    // and only load sampleRows for preview/value lookup.
     sampleRows.value = orders.slice(0, 5).map((o: any) => o)
-    ElMessage.success('注文サンプルを読み込みました')
+    alert('注文サンプルを読み込みました')
   } catch (e: any) {
     console.error(e)
-    ElMessage.error(e?.message || 'サンプル取得に失敗しました')
+    alert(e?.message || 'サンプル取得に失敗しました')
   }
 }
 
@@ -1148,7 +1172,7 @@ const onSelectTarget = (row: TargetRow | null) => {
     selectedSources.value = []
     return
   }
-  
+
   // 当target改变时，清空已选中的sources
   if (selectedTarget.value?.field !== row?.field) {
     selectedSources.value = []
@@ -1188,7 +1212,7 @@ const handleDirectLink = () => {
     required: selectedTarget.value.required,
   }
   mappings.value = { ...mappings.value, [selectedTarget.value.field]: mapping }
-  ElMessage.success('紐付けました')
+  alert('紐付けました')
 }
 
 const handleAddLiteral = async () => {
@@ -1203,17 +1227,13 @@ const handleAddLiteral = async () => {
     required: selectedTarget.value.required,
   }
   mappings.value = { ...mappings.value, [selectedTarget.value.field]: mapping }
-  ElMessage.success('固定値を設定しました')
+  alert('固定値を設定しました')
 }
 
 const promptLiteral = (): Promise<string | null> => {
   return new Promise((resolve) => {
-    ElMessageBox.prompt('固定値を入力してください', '固定値', {
-      confirmButtonText: 'OK',
-      cancelButtonText: 'キャンセル',
-    })
-      .then(({ value }) => resolve(value))
-      .catch(() => resolve(null))
+    const value = prompt('固定値を入力してください')
+    resolve(value)
   })
 }
 
@@ -1235,7 +1255,7 @@ const applyDetailMapping = (mapping: TransformMapping) => {
   mappings.value = { ...mappings.value, [mapping.targetField]: mapping }
   detailDialogVisible.value = false
   preSelectedSources.value = []
-  ElMessage.success('詳細設定を更新しました')
+  alert('詳細設定を更新しました')
 }
 
 // 移除 openProductMappingDialog 和 applyProductMapping（不再需要）
@@ -1248,7 +1268,7 @@ const openHandlingTagsMappingDialog = () => {
 const applyHandlingTagsMapping = (mapping: TransformMapping) => {
   mappings.value = { ...mappings.value, [mapping.targetField]: mapping }
   handlingTagsMappingDialogVisible.value = false
-  ElMessage.success('荷扱いタグレイアウトを設定しました')
+  alert('荷扱いタグレイアウトを設定しました')
 }
 
 const openProductToStringTransform = () => {
@@ -1287,7 +1307,7 @@ const openProductToStringTransform = () => {
   }
 
   mappings.value = { ...mappings.value, [selectedTarget.value.field]: mapping }
-  ElMessage.success('商品を文字列に変換するレイアウトを設定しました')
+  alert('商品を文字列に変換するレイアウトを設定しました')
 }
 
 const openHandlingTagsIndexDialog = () => {
@@ -1300,7 +1320,7 @@ const openHandlingTagsIndexDialog = () => {
 const applyHandlingTagsIndex = (mapping: TransformMapping) => {
   mappings.value = { ...mappings.value, [mapping.targetField]: mapping }
   handlingTagsIndexDialogVisible.value = false
-  ElMessage.success('配列要素を取得するレイアウトを設定しました')
+  alert('配列要素を取得するレイアウトを設定しました')
 }
 
 const openBarcodeMappingDialog = () => {
@@ -1312,7 +1332,7 @@ const openBarcodeMappingDialog = () => {
 const applyBarcodeMapping = (mapping: TransformMapping) => {
   mappings.value = { ...mappings.value, [mapping.targetField]: mapping }
   barcodeMappingDialogVisible.value = false
-  ElMessage.success('バーコードレイアウトを設定しました')
+  alert('バーコードレイアウトを設定しました')
 }
 
 const onCarrierChange = () => {
@@ -1326,20 +1346,20 @@ const clearSelected = () => {
   const next = { ...mappings.value }
   delete next[selectedTarget.value.field]
   mappings.value = next
-  ElMessage.success('クリアしました')
+  alert('クリアしました')
 }
 
 const clearAll = () => {
   mappings.value = {}
-  ElMessage.success('全てクリアしました')
+  alert('全てクリアしました')
 }
 
 const summaryForMapping = (mapping?: TransformMapping) => {
   if (!mapping) return '未設定'
   if (!mapping.inputs || mapping.inputs.length === 0) return '未設定'
-  
+
   const parts: string[] = []
-  
+
   // 显示所有 inputs 的信息
   mapping.inputs.forEach((input, idx) => {
     let inputLabel = ''
@@ -1350,31 +1370,31 @@ const summaryForMapping = (mapping?: TransformMapping) => {
     } else if (input.type === 'generated') {
       inputLabel = `生成(${input.generator || ''})`
     }
-    
+
     const inputSteps = input.pipeline?.steps?.length || 0
     if (inputSteps > 0) {
       inputLabel += `[${inputSteps}]`
     }
-    
+
     if (mapping.inputs.length > 1) {
       parts.push(`${idx + 1}.${inputLabel}`)
     } else {
       parts.push(inputLabel)
     }
   })
-  
+
   // 显示 combine 信息（如果有多个 inputs）
   if (mapping.inputs.length > 1) {
     const combinePlugin = mapping.combine?.plugin || 'combine.first'
     parts.push(`→${combinePlugin.replace('combine.', '')}`)
   }
-  
+
   // 显示 output pipeline steps
   const outputSteps = mapping.outputPipeline?.steps?.length || 0
   if (outputSteps > 0) {
     parts.push(`→出力[${outputSteps}]`)
   }
-  
+
   return parts.join(' ')
 }
 
@@ -1425,7 +1445,7 @@ const canSave = computed(() => {
 
 const handleSave = async () => {
   if (!canSave.value) {
-    ElMessage.warning('レイアウト名を入力し、少なくとも1つのマッピングを設定してください')
+    alert('レイアウト名を入力し、少なくとも1つのマッピングを設定してください')
     return
   }
 
@@ -1443,15 +1463,15 @@ const handleSave = async () => {
 
     if (currentConfigId.value) {
       await updateMappingConfig(currentConfigId.value, dto)
-      ElMessage.success('設定を更新しました')
+      alert('設定を更新しました')
     } else {
       const result = await createMappingConfig(dto)
       currentConfigId.value = result._id
-      ElMessage.success('設定を保存しました')
+      alert('設定を保存しました')
     }
   } catch (e: any) {
     console.error(e)
-    ElMessage.error(e?.message || '保存に失敗しました')
+    alert(e?.message || '保存に失敗しました')
   }
 }
 
@@ -1459,7 +1479,7 @@ const handleLoad = async () => {
   try {
     const configs = await getAllMappingConfigs(configType.value)
     if (configs.length === 0) {
-      ElMessage.info('読み込める設定がありません')
+      alert('読み込める設定がありません')
       return
     }
 
@@ -1470,16 +1490,15 @@ const handleLoad = async () => {
     }))
 
     const labels = options.map((o) => o.label)
-    const { value: selectedIndexStr } = await ElMessageBox.prompt('設定を選択してください', '設定を読み込む', {
-      confirmButtonText: '読み込む',
-      cancelButtonText: 'キャンセル',
-      inputType: 'textarea',
-      inputPlaceholder: labels.map((l, i) => `${i}: ${l}`).join('\n') + '\n\n番号を入力:',
-    })
+    const selectedIndexStr = prompt(
+      '設定を選択してください\n\n' + labels.map((l, i) => `${i}: ${l}`).join('\n') + '\n\n番号を入力:'
+    )
+
+    if (selectedIndexStr === null) return
 
     const selectedIndex = parseInt(selectedIndexStr || '0', 10)
     if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= options.length) {
-      ElMessage.warning('無効な選択です')
+      alert('無効な選択です')
       return
     }
 
@@ -1488,7 +1507,7 @@ const handleLoad = async () => {
 
     const config = selected.config
     if (config.schemaVersion !== 2) {
-      ElMessage.warning('この設定は v2 形式ではありません。v2 形式の設定を選択してください。')
+      alert('この設定は v2 形式ではありません。v2 形式の設定を選択してください。')
       return
     }
 
@@ -1527,11 +1546,11 @@ const handleLoad = async () => {
       }))
     }
 
-    ElMessage.success('設定を読み込みました')
+    alert('設定を読み込みました')
   } catch (e: any) {
     if (e !== 'cancel') {
       console.error(e)
-      ElMessage.error(e?.message || '読み込みに失敗しました')
+      alert(e?.message || '読み込みに失敗しました')
     }
   }
 }
@@ -1577,6 +1596,10 @@ const handleLoad = async () => {
   align-items: center;
 }
 
+.hidden-input {
+  display: none;
+}
+
 .tables-row {
   display: grid;
   grid-template-columns: 1.2fr 160px 1fr;
@@ -1608,9 +1631,30 @@ const handleLoad = async () => {
   flex-wrap: wrap;
 }
 
-.target-table,
-.source-table {
+.o-list-table {
   width: 100%;
+  border-collapse: collapse;
+}
+.o-list-table th,
+.o-list-table td {
+  border: 1px solid var(--o-border-color, #dee2e6);
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 13px;
+}
+.o-list-table th {
+  background: var(--o-gray-100, #f8f9fa);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.o-list-table tbody tr:hover {
+  background: #f5f7fa;
+}
+
+.row-selected {
+  background: #ecf5ff !important;
 }
 
 .middle-buttons {
@@ -1668,48 +1712,111 @@ const handleLoad = async () => {
   font-size: 12px;
 }
 
-/* 商品子项的样式：添加左边距，使其明显属于商品 */
-:deep(.target-table .el-table__row) {
-  &.el-table__row--level-1 {
-    background-color: #f9fafc;
-  }
-}
-
-:deep(.target-table .product-child-item) {
+/* 商品子项的样式 */
+.product-child-item {
   padding-left: 20px;
   position: relative;
-  
-  &::before {
-    content: '└';
-    position: absolute;
-    left: 8px;
-    color: #c0c4cc;
-    font-weight: normal;
-  }
 }
 
-/* 增强展开按钮的可见性 */
-:deep(.target-table .el-table__expand-icon) {
-  font-size: 16px;
-  color: #409eff;
-  font-weight: bold;
-  transition: all 0.2s;
-  
-  &:hover {
-    color: #66b1ff;
-    transform: scale(1.1);
-  }
+.product-child-item::before {
+  content: '\2514';
+  position: absolute;
+  left: 8px;
+  color: #c0c4cc;
+  font-weight: normal;
 }
 
-:deep(.target-table .el-table__expand-icon--expanded) {
-  color: #409eff;
+/* o-badge styles */
+.o-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.o-badge-danger {
+  background: #fef0f0;
+  color: #f56c6c;
+}
+.o-badge-info {
+  background: #f4f4f5;
+  color: #909399;
 }
 
-/* 为可展开的行添加视觉提示 */
-:deep(.target-table .el-table__row[class*="is-expanded"]) {
-  .el-table__expand-icon {
-    color: #409eff;
-  }
+/* o-alert styles */
+.o-alert {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.5;
 }
+.o-alert-info {
+  background: #f4f4f5;
+  color: #909399;
+  border: 1px solid #e9e9eb;
+}
+
+/* Button styles */
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  background: #fff;
+  color: #606266;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.o-btn:hover { background: #f5f7fa; border-color: #c0c4cc; }
+.o-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.o-btn-primary {
+  background: var(--o-primary, #714B67);
+  color: #fff;
+  border-color: var(--o-primary, #714B67);
+}
+.o-btn-primary:hover { opacity: 0.85; }
+
+.o-btn-secondary {
+  background: #fff;
+  color: #606266;
+  border-color: #dcdfe6;
+}
+
+.o-btn-danger {
+  background: #fff;
+  color: #f56c6c;
+  border-color: #fbc4c4;
+}
+.o-btn-danger:hover { background: #fef0f0; }
+
+.o-btn-warning {
+  background: #fff;
+  color: #e6a23c;
+  border-color: #f5dab1;
+}
+.o-btn-warning:hover { background: #fdf6ec; }
+
+.o-btn-success {
+  background: #67c23a;
+  color: #fff;
+  border-color: #67c23a;
+}
+.o-btn-success:hover { opacity: 0.85; }
+
+/* Input styles */
+.o-input {
+  padding: 6px 10px;
+  border: 1px solid var(--o-border-color, #dee2e6);
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.o-input:focus { border-color: var(--o-primary, #714B67); }
 </style>
-

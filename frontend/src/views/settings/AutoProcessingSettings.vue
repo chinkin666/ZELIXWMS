@@ -6,13 +6,15 @@
         <p class="page-subtitle">注文の状態変更時に自動的に実行されるルールを管理します。ドラッグで並び替えでき、上にあるルールが優先的に実行されます。</p>
       </div>
       <div class="page-actions">
-        <el-button type="primary" :icon="Plus" @click="openCreate">ルールを追加</el-button>
+        <button class="o-btn o-btn-primary" @click="openCreate">ルールを追加</button>
       </div>
     </div>
 
-    <div class="rules-list" v-loading="isLoading">
-      <div v-if="rules.length === 0" class="empty-state">
-        <el-empty description="自動処理ルールがありません" />
+    <div class="rules-list">
+      <div v-if="isLoading" class="loading-state">読み込み中...</div>
+
+      <div v-else-if="rules.length === 0" class="empty-state">
+        <p>自動処理ルールがありません</p>
       </div>
 
       <draggable
@@ -26,31 +28,30 @@
         <template #item="{ element: rule }">
           <div class="rule-card" :class="{ disabled: !rule.enabled }">
             <div class="drag-handle">
-              <el-icon :size="18"><Rank /></el-icon>
+              <span style="font-size:18px;color:#c0c4cc">&#x2630;</span>
             </div>
 
             <div class="rule-info">
               <div class="rule-header">
                 <span class="rule-name">{{ rule.name }}</span>
-                <el-tag
-                  :type="rule.enabled ? 'success' : 'info'"
-                  size="small"
+                <span
+                  class="o-badge"
+                  :class="rule.enabled ? 'o-badge-success' : 'o-badge-info'"
                 >
                   {{ rule.enabled ? '有効' : '無効' }}
-                </el-tag>
-                <el-tag
-                  :type="rule.triggerMode === 'auto' ? '' : 'warning'"
-                  size="small"
+                </span>
+                <span
+                  class="o-badge"
+                  :class="rule.triggerMode === 'auto' ? 'o-badge-primary' : 'o-badge-warning'"
                 >
                   {{ rule.triggerMode === 'auto' ? '自動' : '手動' }}
-                </el-tag>
-                <el-tag
+                </span>
+                <span
                   v-if="rule.allowRerun"
-                  type="info"
-                  size="small"
+                  class="o-badge o-badge-info"
                 >
                   再実行可
-                </el-tag>
+                </span>
               </div>
               <div class="rule-details">
                 <span
@@ -68,22 +69,24 @@
             </div>
 
             <div class="rule-actions">
-              <el-switch
-                :model-value="rule.enabled"
-                @change="(val: boolean) => handleEnableChange(rule, val)"
-              />
-              <el-button type="primary" plain size="small" @click="openEdit(rule)">編集</el-button>
-              <el-button
-                type="success"
-                plain
-                size="small"
+              <label class="o-toggle">
+                <input
+                  type="checkbox"
+                  :checked="rule.enabled"
+                  @change="handleEnableChange(rule, ($event.target as HTMLInputElement).checked)"
+                />
+                <span class="o-toggle-slider"></span>
+              </label>
+              <button class="o-btn o-btn-sm o-btn-outline-primary" @click="openEdit(rule)">編集</button>
+              <button
+                class="o-btn o-btn-sm o-btn-outline-success"
                 @click="handleManualRun(rule)"
-                :loading="runningRuleId === rule._id"
+                :disabled="runningRuleId === rule._id"
               >
-                手動で実行する
-              </el-button>
-              <el-button type="info" plain size="small" @click="duplicateRule(rule)">複製</el-button>
-              <el-button type="danger" plain size="small" @click="confirmDelete(rule)">削除</el-button>
+                {{ runningRuleId === rule._id ? '実行中...' : '手動で実行する' }}
+              </button>
+              <button class="o-btn o-btn-sm o-btn-outline-secondary" @click="duplicateRule(rule)">複製</button>
+              <button class="o-btn o-btn-sm o-btn-outline-danger" @click="confirmDelete(rule)">削除</button>
             </div>
           </div>
         </template>
@@ -101,8 +104,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Plus, Rank } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { useToast } from '@/composables/useToast'
 import draggable from 'vuedraggable'
 import {
   fetchAutoProcessingRules,
@@ -116,6 +118,8 @@ import type { AutoProcessingRule, AutoProcessingRuleFormData } from '@/types/aut
 import { TRIGGER_EVENT_LABELS, type TriggerEvent } from '@/types/autoProcessingRule'
 import AutoProcessingRuleFormDialog from '@/components/auto-processing/AutoProcessingRuleFormDialog.vue'
 
+const { show: showToast } = useToast()
+
 const rules = ref<AutoProcessingRule[]>([])
 const isLoading = ref(false)
 const dialogVisible = ref(false)
@@ -128,7 +132,7 @@ const loadRules = async () => {
   try {
     rules.value = await fetchAutoProcessingRules()
   } catch (e: any) {
-    ElMessage.error(e.message || 'ルールの取得に失敗しました')
+    showToast(e.message || 'ルールの取得に失敗しました', 'danger')
   } finally {
     isLoading.value = false
   }
@@ -150,15 +154,15 @@ const handleSubmit = async (data: AutoProcessingRuleFormData) => {
   try {
     if (isEditing.value && editingRule.value) {
       await updateAutoProcessingRule(editingRule.value._id, data)
-      ElMessage.success('ルールを更新しました')
+      showToast('ルールを更新しました', 'success')
     } else {
       await createAutoProcessingRule(data)
-      ElMessage.success('ルールを作成しました')
+      showToast('ルールを作成しました', 'success')
     }
     dialogVisible.value = false
     await loadRules()
   } catch (e: any) {
-    ElMessage.error(e.message || '保存に失敗しました')
+    showToast(e.message || '保存に失敗しました', 'danger')
   }
 }
 
@@ -166,54 +170,35 @@ const handleEnableChange = async (rule: AutoProcessingRule, enabled: boolean) =>
   try {
     await updateAutoProcessingRule(rule._id, { enabled })
     rule.enabled = enabled
-    ElMessage.success(enabled ? 'ルールを有効にしました' : 'ルールを無効にしました')
+    showToast(enabled ? 'ルールを有効にしました' : 'ルールを無効にしました', 'success')
   } catch (e: any) {
-    ElMessage.error(e.message || '更新に失敗しました')
+    showToast(e.message || '更新に失敗しました', 'danger')
   }
 }
 
 const confirmDelete = async (rule: AutoProcessingRule) => {
+  if (!confirm(`ルール「${rule.name}」を削除しますか？`)) return
   try {
-    await ElMessageBox.confirm(
-      `ルール「${rule.name}」を削除しますか？`,
-      '削除の確認',
-      {
-        confirmButtonText: '削除',
-        cancelButtonText: 'キャンセル',
-        type: 'warning',
-      },
-    )
     await deleteAutoProcessingRule(rule._id)
-    ElMessage.success('ルールを削除しました')
+    showToast('ルールを削除しました', 'success')
     await loadRules()
   } catch (e: any) {
-    if (e !== 'cancel') {
-      ElMessage.error(e.message || '削除に失敗しました')
-    }
+    showToast(e.message || '削除に失敗しました', 'danger')
   }
 }
 
 const handleManualRun = async (rule: AutoProcessingRule) => {
+  if (!confirm(`ルール「${rule.name}」を手動で実行しますか？条件に合致するすべての注文に対して動作が実行されます。`)) return
   try {
-    await ElMessageBox.confirm(
-      `ルール「${rule.name}」を手動で実行しますか？条件に合致するすべての注文に対して動作が実行されます。`,
-      '手動実行の確認',
-      {
-        confirmButtonText: '実行',
-        cancelButtonText: 'キャンセル',
-        type: 'warning',
-      },
-    )
     runningRuleId.value = rule._id
     const result = await runAutoProcessingRule(rule._id)
-    ElMessage.success(
+    showToast(
       `実行完了: ${result.data.matched}件一致 / ${result.data.executed}件実行` +
       (result.data.errors > 0 ? ` / ${result.data.errors}件エラー` : ''),
+      'success',
     )
   } catch (e: any) {
-    if (e !== 'cancel') {
-      ElMessage.error(e.message || '手動実行に失敗しました')
-    }
+    showToast(e.message || '手動実行に失敗しました', 'danger')
   } finally {
     runningRuleId.value = null
   }
@@ -227,10 +212,10 @@ const duplicateRule = async (rule: AutoProcessingRule) => {
       name: `${rule.name}_copy`,
       enabled: false,
     })
-    ElMessage.success('ルールを複製しました')
+    showToast('ルールを複製しました', 'success')
     await loadRules()
   } catch (e: any) {
-    ElMessage.error(e.message || 'ルールの複製に失敗しました')
+    showToast(e.message || 'ルールの複製に失敗しました', 'danger')
   }
 }
 
@@ -239,7 +224,7 @@ const onDragEnd = async () => {
     const orderedIds = rules.value.map((r) => r._id)
     await reorderAutoProcessingRules(orderedIds)
   } catch (e: any) {
-    ElMessage.error(e.message || '優先順位の更新に失敗しました')
+    showToast(e.message || '優先順位の更新に失敗しました', 'danger')
     await loadRules()
   }
 }
@@ -264,13 +249,13 @@ onMounted(() => {
 .page-title {
   font-size: 24px;
   font-weight: 600;
-  color: #303133;
+  color: var(--o-gray-700, #303133);
   margin: 0 0 8px 0;
 }
 
 .page-subtitle {
   font-size: 14px;
-  color: #909399;
+  color: var(--o-gray-500, #909399);
   margin: 0;
 }
 
@@ -279,14 +264,52 @@ onMounted(() => {
   gap: 12px;
 }
 
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  cursor: pointer;
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-700, #303133);
+  transition: 0.2s;
+  white-space: nowrap;
+}
+.o-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.o-btn-primary { background: var(--o-brand-primary, #714b67); color: #fff; border-color: var(--o-brand-primary, #714b67); }
+.o-btn-sm { padding: 4px 10px; font-size: 13px; }
+.o-btn-outline-primary { background: transparent; color: var(--o-brand-primary, #714b67); border-color: var(--o-brand-primary, #714b67); }
+.o-btn-outline-secondary { background: transparent; color: var(--o-gray-600, #909399); border-color: var(--o-gray-600, #909399); }
+.o-btn-outline-success { background: transparent; color: #67c23a; border-color: #67c23a; }
+.o-btn-outline-danger { background: transparent; color: #f56c6c; border-color: #f56c6c; }
+
+.o-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.o-badge-success { background: #f0f9eb; color: #67c23a; }
+.o-badge-info { background: #f4f4f5; color: #909399; }
+.o-badge-primary { background: #ecf5ff; color: #409eff; }
+.o-badge-warning { background: #fdf6ec; color: #e6a23c; }
+
+.o-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+.o-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.o-toggle-slider { width: 40px; height: 20px; background: var(--o-toggle-off, #c0c4cc); border-radius: 10px; transition: 0.2s; position: relative; }
+.o-toggle-slider::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: 0.2s; }
+.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #714b67); }
+.o-toggle input:checked + .o-toggle-slider::after { left: 22px; }
+
 .rules-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+.loading-state,
 .empty-state {
   padding: 60px 0;
+  text-align: center;
+  color: var(--o-gray-500, #909399);
 }
 
 .rule-card {
@@ -295,7 +318,7 @@ onMounted(() => {
   gap: 16px;
   padding: 16px 20px;
   background: white;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--o-border-color, #e4e7ed);
   border-radius: 8px;
   transition: box-shadow 0.2s;
 }
@@ -313,13 +336,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   cursor: grab;
-  color: #c0c4cc;
   padding: 4px;
   flex-shrink: 0;
-}
-
-.drag-handle:hover {
-  color: #909399;
 }
 
 .drag-handle:active {
@@ -347,7 +365,7 @@ onMounted(() => {
 .rule-name {
   font-size: 15px;
   font-weight: 500;
-  color: #303133;
+  color: var(--o-gray-700, #303133);
 }
 
 .rule-details {
@@ -374,7 +392,7 @@ onMounted(() => {
 
 .rule-memo {
   font-size: 13px;
-  color: #909399;
+  color: var(--o-gray-500, #909399);
   margin-top: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -386,30 +404,5 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-}
-
-.rule-actions :deep(.el-button) {
-  margin: 0;
-  min-width: 54px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  border-width: 1px;
-}
-
-.rule-actions :deep(.el-button--primary.is-plain) {
-  border-color: var(--el-color-primary);
-}
-
-.rule-actions :deep(.el-button--info.is-plain) {
-  border-color: var(--el-color-info);
-}
-
-.rule-actions :deep(.el-button--success.is-plain) {
-  border-color: var(--el-color-success);
-}
-
-.rule-actions :deep(.el-button--danger.is-plain) {
-  border-color: var(--el-color-danger);
 }
 </style>

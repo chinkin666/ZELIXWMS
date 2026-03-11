@@ -3,12 +3,12 @@
     <div class="analysis-header">
       <h3 class="analysis-title">スキーマ分析</h3>
       <div class="analysis-meta">
-        <el-tag type="info" size="small">{{ orders.length }} 件</el-tag>
+        <span class="o-badge o-badge-info">{{ orders.length }} 件</span>
       </div>
     </div>
 
     <div v-if="orders.length === 0" class="no-data">
-      <el-empty description="分析対象のデータがありません" />
+      <div class="empty-state">分析対象のデータがありません</div>
     </div>
 
     <div v-else class="fields-list">
@@ -326,7 +326,6 @@ const analysisResults = computed<FieldAnalysisData[]>(() => {
   flex-direction: column;
   height: 100%;
 }
-
 .analysis-header {
   display: flex;
   justify-content: space-between;
@@ -335,26 +334,26 @@ const analysisResults = computed<FieldAnalysisData[]>(() => {
   border-bottom: 1px solid #ebeef5;
   background: #fafafa;
 }
-
 .analysis-title {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
   color: #303133;
 }
-
 .analysis-meta {
   display: flex;
   gap: 8px;
 }
-
 .no-data {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
+.empty-state {
+  color: #909399;
+  font-size: 14px;
+}
 .fields-list {
   flex: 1;
   overflow-y: auto;

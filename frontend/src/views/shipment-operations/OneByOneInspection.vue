@@ -3,9 +3,9 @@
     <!-- 左侧面板 -->
     <div class="left-panel">
       <div class="left-panel__header">
-        <el-button :icon="ArrowLeft" size="small" @click="handleGoBack">戻る</el-button>
+        <button class="o-btn o-btn-secondary o-btn-sm" @click="handleGoBack">&larr; 戻る</button>
         <h2 class="page-title">1-1検品</h2>
-        <el-button type="danger" size="small" @click="handleClear">クリア</el-button>
+        <button class="o-btn o-btn-danger o-btn-sm" @click="handleClear">クリア</button>
       </div>
 
       <!-- ピッキング指示No -->
@@ -24,27 +24,26 @@
 
       <!-- 扫描输入框 -->
       <div class="scan-input-section">
-        <el-input
-          ref="scanInputRef"
-          v-model="inputValue"
-          class="scan-input"
-          :placeholder="mode === 'order' ? '注文をスキャン...' : '商品をスキャン...'"
-          size="large"
-          @keyup.enter="handleInput"
-        >
-          <template #suffix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
+        <div class="scan-input-wrapper">
+          <input
+            ref="scanInputRef"
+            v-model="inputValue"
+            type="text"
+            class="scan-input"
+            :placeholder="mode === 'order' ? '注文をスキャン...' : '商品をスキャン...'"
+            @keyup.enter="handleInput"
+          />
+          <span class="scan-input-icon">&#128269;</span>
+        </div>
       </div>
 
       <!-- 自动印刷开关 -->
       <div class="auto-print-section">
-        <el-switch
-          v-model="autoPrintEnabled"
-          active-text="検品完了時 送り状自動出力"
-          @change="saveAutoPrintSetting"
-        />
+        <label class="o-toggle">
+          <input type="checkbox" v-model="autoPrintEnabled" @change="saveAutoPrintSetting" />
+          <span class="o-toggle-slider"></span>
+          <span class="o-toggle-label">検品完了時 送り状自動出力</span>
+        </label>
       </div>
 
       <!-- 商品画像 -->
@@ -98,35 +97,40 @@
       <!-- 商品表格 -->
       <div class="product-table-section">
         <template v-if="currentOrder">
-          <el-table
-            :data="inspectionItems"
-            border
-            :style="{ width: '100%' }"
-            :row-class-name="getRowClassName"
-          >
-            <el-table-column prop="name" label="商品名" min-width="180" />
-            <el-table-column prop="sku" label="SKU" min-width="140" />
-            <el-table-column label="検品コード（バーコード）" min-width="160">
-              <template #default="{ row }">
-                {{ row.barcodes.join(', ') || '-' }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="totalQuantity" label="出荷指示数" width="110" align="center" />
-            <el-table-column label="検品数" width="110" align="center" class-name="col-inspected">
-              <template #default="{ row }">
-                <div class="cell-inspected" @click.stop="handleCellClick(row)">
-                  {{ row.inspectedQuantity }}
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="残数" width="110" align="center" class-name="col-remaining">
-              <template #default="{ row }">
-                <div class="cell-remaining" @click.stop="handleCellClick(row)">
-                  {{ row.remainingQuantity }}
-                </div>
-              </template>
-            </el-table-column>
-          </el-table>
+          <table class="o-list-table o-list-table-border" style="width: 100%">
+            <thead>
+              <tr>
+                <th style="min-width: 180px">商品名</th>
+                <th style="min-width: 140px">SKU</th>
+                <th style="min-width: 160px">検品コード（バーコード）</th>
+                <th style="width: 110px; text-align: center">出荷指示数</th>
+                <th style="width: 110px; text-align: center" class="col-inspected">検品数</th>
+                <th style="width: 110px; text-align: center" class="col-remaining">残数</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="row in inspectionItems"
+                :key="row.productIndex"
+                :class="getRowClassName({ row })"
+              >
+                <td>{{ row.name }}</td>
+                <td>{{ row.sku }}</td>
+                <td>{{ row.barcodes.join(', ') || '-' }}</td>
+                <td style="text-align: center">{{ row.totalQuantity }}</td>
+                <td class="col-inspected" style="padding: 0">
+                  <div class="cell-inspected" @click.stop="handleCellClick(row)">
+                    {{ row.inspectedQuantity }}
+                  </div>
+                </td>
+                <td class="col-remaining" style="padding: 0">
+                  <div class="cell-remaining" @click.stop="handleCellClick(row)">
+                    {{ row.remainingQuantity }}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </template>
         <div v-else class="empty-table-hint">
           注文をスキャンすると商品一覧が表示されます
@@ -175,13 +179,11 @@
     />
 
     <!-- 手動印刷確認ダイアログ -->
-    <el-dialog
-      v-model="completionDialogVisible"
+    <ODialog
+      :open="completionDialogVisible"
       title="検品完了"
-      width="980px"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
+      size="lg"
+      @close="handleCompletionDialogClose"
     >
       <div class="completion-message">
         <p>すべての商品の検品が完了しました。</p>
@@ -203,61 +205,85 @@
       </div>
 
       <template #footer>
-        <el-button @click="handleCompletionConfirmNoPrint">確認（印刷なし）</el-button>
-        <el-button
-          type="primary"
+        <button class="o-btn o-btn-secondary" @click="handleCompletionConfirmNoPrint">確認（印刷なし）</button>
+        <button
+          class="o-btn o-btn-primary"
           :disabled="(currentPdfSource === 'local' && (!printImageUrl || printRendering)) || (currentPdfSource === 'b2-webapi' && !currentOrder?.trackingId)"
           @click="handlePrint"
         >
           印刷
-        </el-button>
+        </button>
       </template>
-    </el-dialog>
+    </ODialog>
 
     <!-- 注文一覧ダイアログ -->
-    <el-dialog
-      v-model="orderListDialogVisible"
+    <ODialog
+      :open="orderListDialogVisible"
       title="注文一覧"
-      width="800px"
+      size="lg"
+      @close="orderListDialogVisible = false"
     >
       <div class="order-list-section">
         <h4>未検品（{{ pendingOrders.length }}件）</h4>
-        <el-table :data="pendingOrders" border size="small" max-height="250">
-          <el-table-column prop="orderNumber" label="出荷管理No" width="200" />
-          <el-table-column prop="customerManagementNumber" label="お客様管理番号" min-width="180" />
-          <el-table-column prop="trackingId" label="伝票番号" width="160" />
-          <el-table-column label="商品数" width="80" align="center">
-            <template #default="{ row }">
-              {{ Array.isArray(row.products) ? row.products.reduce((s: number, p: any) => s + (p.quantity || 1), 0) : 0 }}
-            </template>
-          </el-table-column>
-        </el-table>
+        <div style="max-height: 250px; overflow: auto">
+          <table class="o-list-table o-list-table-border" style="width: 100%">
+            <thead>
+              <tr>
+                <th style="width: 200px">出荷管理No</th>
+                <th style="min-width: 180px">お客様管理番号</th>
+                <th style="width: 160px">伝票番号</th>
+                <th style="width: 80px; text-align: center">商品数</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in pendingOrders" :key="String(row._id)">
+                <td>{{ row.orderNumber }}</td>
+                <td>{{ row.customerManagementNumber }}</td>
+                <td>{{ row.trackingId }}</td>
+                <td style="text-align: center">
+                  {{ Array.isArray(row.products) ? row.products.reduce((s: number, p: any) => s + (p.quantity || 1), 0) : 0 }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
       <div class="order-list-section">
         <h4>検品済（{{ processedOrdersData.length }}件）</h4>
-        <el-table v-loading="loadingProcessedOrders" :data="processedOrdersData" border size="small" max-height="250">
-          <el-table-column prop="orderNumber" label="出荷管理No" width="200" />
-          <el-table-column prop="customerManagementNumber" label="お客様管理番号" min-width="180" />
-          <el-table-column prop="trackingId" label="伝票番号" width="160" />
-          <el-table-column label="商品数" width="80" align="center">
-            <template #default="{ row }">
-              {{ Array.isArray(row.products) ? row.products.reduce((s: number, p: any) => s + (p.quantity || 1), 0) : 0 }}
-            </template>
-          </el-table-column>
-        </el-table>
+        <div style="max-height: 250px; overflow: auto">
+          <div v-if="loadingProcessedOrders" style="text-align: center; padding: 16px; color: #909399">読み込み中...</div>
+          <table v-else class="o-list-table o-list-table-border" style="width: 100%">
+            <thead>
+              <tr>
+                <th style="width: 200px">出荷管理No</th>
+                <th style="min-width: 180px">お客様管理番号</th>
+                <th style="width: 160px">伝票番号</th>
+                <th style="width: 80px; text-align: center">商品数</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in processedOrdersData" :key="String(row._id)">
+                <td>{{ row.orderNumber }}</td>
+                <td>{{ row.customerManagementNumber }}</td>
+                <td>{{ row.trackingId }}</td>
+                <td style="text-align: center">
+                  {{ Array.isArray(row.products) ? row.products.reduce((s: number, p: any) => s + (p.quantity || 1), 0) : 0 }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
       <template #footer>
-        <el-button @click="orderListDialogVisible = false">閉じる</el-button>
+        <button class="o-btn o-btn-secondary" @click="orderListDialogVisible = false">閉じる</button>
       </template>
-    </el-dialog>
+    </ODialog>
 
     <!-- 誤スキャン警告ダイアログ -->
-    <el-dialog
-      v-model="wrongScanDialogVisible"
-      width="500px"
-      :close-on-click-modal="false"
-      :show-close="false"
-      class="wrong-scan-dialog"
+    <ODialog
+      :open="wrongScanDialogVisible"
+      size="sm"
+      @close="wrongScanDialogVisible = false"
     >
       <div class="wrong-scan-content">
         <div class="wrong-scan-icon">!</div>
@@ -268,56 +294,56 @@
         <div class="wrong-scan-hint">
           現在の注文（{{ currentOrder?.orderNumber }}）に含まれない商品がスキャンされました。
         </div>
-        <el-button
-          type="danger"
-          size="large"
-          class="wrong-scan-close-btn"
+        <button
+          class="o-btn o-btn-danger wrong-scan-close-btn"
           @click="wrongScanDialogVisible = false"
         >
           確認して閉じる
-        </el-button>
+        </button>
       </div>
-    </el-dialog>
+      <template #footer><span></span></template>
+    </ODialog>
 
     <!-- 手動検品数調整ダイアログ -->
-    <el-dialog
-      v-model="adjustDialogVisible"
+    <ODialog
+      :open="adjustDialogVisible"
       title="検品数を調整"
-      width="400px"
+      size="sm"
+      @close="adjustDialogVisible = false"
     >
       <div v-if="adjustTarget" class="adjust-dialog-content">
         <p>{{ adjustTarget.name }}</p>
-        <el-input-number
-          v-model="adjustValue"
+        <input
+          ref="adjustInputRef"
+          v-model.number="adjustValue"
+          type="number"
+          class="o-input"
           :min="0"
           :max="adjustTarget.totalQuantity"
+          style="width: 120px"
         />
         <span class="adjust-hint"> / {{ adjustTarget.totalQuantity }}</span>
       </div>
       <template #footer>
         <div class="adjust-dialog-footer">
-          <span class="adjust-shortcuts">ESC キャンセル ／ F1 確定</span>
+          <span class="adjust-shortcuts">ESC キャンセル / F1 確定</span>
           <div>
-            <el-button @click="adjustDialogVisible = false">キャンセル</el-button>
-            <el-button type="primary" @click="handleAdjustConfirm">確定</el-button>
+            <button class="o-btn o-btn-secondary" @click="adjustDialogVisible = false">キャンセル</button>
+            <button class="o-btn o-btn-primary" @click="handleAdjustConfirm">確定</button>
           </div>
         </div>
       </template>
-    </el-dialog>
+    </ODialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import {
-  ElButton, ElInput, ElMessage, ElMessageBox, ElDialog,
-  ElTable, ElTableColumn, ElSwitch, ElInputNumber, ElIcon,
-} from 'element-plus'
-import { ArrowLeft, Search } from '@element-plus/icons-vue'
 import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vue'
 import ChangeInvoiceTypeDialog from '@/components/dialogs/ChangeInvoiceTypeDialog.vue'
 import SplitOrderDialog from '@/components/dialogs/SplitOrderDialog.vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import type { OrderDocument } from '@/types/order'
 import type { Carrier } from '@/types/carrier'
 import type { Product } from '@/types/product'
@@ -381,7 +407,7 @@ const lastScannedProduct = ref<ScannedProductInfo | null>(null)
 
 // Input
 const inputValue = ref('')
-const scanInputRef = ref<InstanceType<typeof ElInput> | null>(null)
+const scanInputRef = ref<HTMLInputElement | null>(null)
 
 // Product cache
 const productCache = new Map<string, Product>()
@@ -412,6 +438,7 @@ let lastPrintObjectUrl: string | null = null
 const adjustDialogVisible = ref(false)
 const adjustTarget = ref<InspectionItem | null>(null)
 const adjustValue = ref(0)
+const adjustInputRef = ref<HTMLInputElement | null>(null)
 
 // Unconfirm
 const unconfirmDialogVisible = ref(false)
@@ -531,8 +558,7 @@ const scannedProductImageSrc = computed(() => {
 
 function focusScanInput() {
   nextTick(() => {
-    const el = scanInputRef.value?.$el?.querySelector('input') as HTMLInputElement | null
-    el?.focus()
+    scanInputRef.value?.focus()
   })
 }
 
@@ -652,16 +678,12 @@ function handleInput() {
 
 function handleOrderMatch(input: string) {
   if (pendingOrders.value.length === 0) {
-    ElMessage.info('処理待ちの注文がありません')
+    alert('処理待ちの注文がありません')
     return
   }
 
   let matched: OrderDocument | null = null
   for (const order of pendingOrders.value) {
-    // Only skip orders that have been locally inspected in this session
-    // (they are already removed from pendingOrders by finishCurrentOrder,
-    //  so no extra check needed here — backend isInspected is intentionally ignored
-    //  to allow re-inspection of previously inspected orders)
     const vals = getOrderMatchingValues(order)
     if (vals.includes(input)) {
       matched = order
@@ -670,7 +692,7 @@ function handleOrderMatch(input: string) {
   }
 
   if (!matched) {
-    ElMessage.warning(`マッチする注文が見つかりません: ${input}`)
+    alert(`マッチする注文が見つかりません: ${input}`)
     focusScanInput()
     return
   }
@@ -736,28 +758,19 @@ function checkCompletion() {
   const alreadyPrinted = !!(currentOrder.value as any)?.status?.printed?.isPrinted
 
   if (alreadyPrinted) {
-    // Ask whether to print again
-    ElMessageBox.confirm(
-      'この注文は既に印刷済みです。もう一度印刷しますか？',
-      '印刷確認',
-      {
-        confirmButtonText: '印刷する',
-        cancelButtonText: '印刷しない',
-        type: 'warning',
-      },
-    ).then(() => {
+    if (confirm('この注文は既に印刷済みです。もう一度印刷しますか？')) {
       // User chose to print again
       if (autoPrintEnabled.value) {
         triggerAutoPrint()
       } else {
         completionDialogVisible.value = true
       }
-    }).catch(() => {
+    } else {
       // User chose not to print - mark inspected only and finish
       markOrderInspectedOnly().then(() => {
         finishCurrentOrder()
       })
-    })
+    }
     return
   }
 
@@ -779,9 +792,8 @@ async function triggerAutoPrint() {
 
   try {
     if (pdfSource === 'b2-webapi') {
-      // Use b2-webapi to fetch PDF directly
       if (!currentOrder.value.trackingId) {
-        ElMessage.error('追跡番号がありません（B2 CloudからPDFを取得できません）')
+        alert('追跡番号がありません（B2 CloudからPDFを取得できません）')
         completionDialogVisible.value = true
         return
       }
@@ -789,27 +801,25 @@ async function triggerAutoPrint() {
       await printPdfBlob(pdfBlob, { title: `Print ${currentOrder.value.orderNumber || ''}`.trim(), templateType: 'b2-cloud' })
       const config = getPrintConfig()
       if (config.method === 'local-bridge') {
-        ElMessage.success('印刷ジョブを送信しました')
+        alert('印刷ジョブを送信しました')
       } else {
-        ElMessage.success('印刷を開始しました')
+        alert('印刷を開始しました')
       }
       await markOrderCompleted()
       finishCurrentOrder()
     } else {
-      // Use local template rendering
       await renderPrintPreview()
       if (printImageUrl.value && printTemplate.value && currentOrder.value) {
         await executePrint()
         await markOrderCompleted()
         finishCurrentOrder()
       } else {
-        // Fallback to manual dialog
         completionDialogVisible.value = true
       }
     }
   } catch (e: any) {
     console.error('Auto print failed:', e)
-    ElMessage.error(`自動印刷に失敗しました: ${e?.message || String(e)}`)
+    alert(`自動印刷に失敗しました: ${e?.message || String(e)}`)
     completionDialogVisible.value = true
   }
 }
@@ -824,14 +834,12 @@ async function renderPrintPreview() {
   printError.value = ''
   cleanupPrintImage()
 
-  // Check PDF source
   const pdfSource = resolvePdfSource(currentOrder.value.carrierId, currentOrder.value.invoiceType, {
     carriers: carriers.value,
     carrierAutomationConfig: carrierAutomationConfigCache.value,
   })
   currentPdfSource.value = pdfSource
 
-  // For b2-webapi, we don't render a local preview - just show placeholder
   if (pdfSource === 'b2-webapi') {
     if (!currentOrder.value.trackingId) {
       printError.value = '追跡番号がありません（B2 CloudからPDFを取得できません）'
@@ -866,7 +874,6 @@ async function renderPrintPreview() {
     const fullTemplate = await fetchPrintTemplate(template.id)
     printTemplate.value = fullTemplate
 
-    // 印刷前获取包含 carrierRawRow 的完整数据
     const [fullOrder] = await fetchShipmentOrdersByIds<OrderDocument>(
       [currentOrder.value._id!],
       { includeRawData: true },
@@ -896,15 +903,12 @@ function findDefaultTemplate(order: OrderDocument, allTemplates: PrintTemplate[]
   const invoiceType = order?.invoiceType
   if (!carrierId || !invoiceType) return null
 
-  // Use the new resolution logic
   const templateId = resolvePrintTemplateId(carrierId, invoiceType, {
     carriers: carriers.value,
     carrierAutomationConfig: carrierAutomationConfigCache.value,
   })
 
   if (!templateId) return null
-
-  // Find the template in allTemplates by id
   return allTemplates.find((t) => t.id === templateId) || null
 }
 
@@ -919,9 +923,9 @@ async function executePrint() {
 
   const config = getPrintConfig()
   if (config.method === 'local-bridge') {
-    ElMessage.success('印刷ジョブを送信しました')
+    alert('印刷ジョブを送信しました')
   } else {
-    ElMessage.success('印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）')
+    alert('印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）')
   }
 }
 
@@ -935,7 +939,7 @@ async function markOrderCompleted() {
     ])
   } catch (e: any) {
     console.error('Failed to update order status:', e)
-    ElMessage.warning(`ステータス更新に失敗しました: ${e?.message || String(e)}`)
+    alert(`ステータス更新に失敗しました: ${e?.message || String(e)}`)
   }
 }
 
@@ -946,14 +950,13 @@ async function markOrderInspectedOnly() {
     await updateShipmentOrderStatus(orderId, 'mark-inspected')
   } catch (e: any) {
     console.error('Failed to update order status:', e)
-    ElMessage.warning(`ステータス更新に失敗しました: ${e?.message || String(e)}`)
+    alert(`ステータス更新に失敗しました: ${e?.message || String(e)}`)
   }
 }
 
 function finishCurrentOrder() {
   if (currentOrder.value?._id) {
     const orderId = String(currentOrder.value._id)
-    // Move from pending to processed
     pendingOrders.value = pendingOrders.value.filter(o => String(o._id) !== orderId)
     if (!processedOrderIds.value.includes(orderId)) {
       processedOrderIds.value.push(orderId)
@@ -961,12 +964,10 @@ function finishCurrentOrder() {
     saveOrdersToStorage()
   }
 
-  // Reset state
   cleanupPrintImage()
   completionDialogVisible.value = false
   lastScannedProduct.value = null
 
-  // Auto-chain: if there's a queued split order, enter it automatically
   if (splitOrderQueue.value.length > 0) {
     const nextId = splitOrderQueue.value.shift()!
     const nextOrder = pendingOrders.value.find(o => String(o._id) === nextId)
@@ -974,7 +975,7 @@ function finishCurrentOrder() {
       currentOrder.value = nextOrder
       mode.value = 'product'
       initializeInspectionItems()
-      ElMessage.success(`分割注文 ${nextOrder.orderNumber || nextId} に自動移動しました`)
+      alert(`分割注文 ${nextOrder.orderNumber || nextId} に自動移動しました`)
       focusScanInput()
       return
     }
@@ -992,18 +993,17 @@ async function handlePrint() {
 
   try {
     if (currentPdfSource.value === 'b2-webapi') {
-      // Fetch and print PDF from b2-webapi
       if (!currentOrder.value.trackingId) {
-        ElMessage.error('追跡番号がありません')
+        alert('追跡番号がありません')
         return
       }
       const pdfBlob = await yamatoB2FetchBatchPdf([currentOrder.value.trackingId])
       await printPdfBlob(pdfBlob, { title: `Print ${currentOrder.value.orderNumber || ''}`.trim(), templateType: 'b2-cloud' })
       const config = getPrintConfig()
       if (config.method === 'local-bridge') {
-        ElMessage.success('印刷ジョブを送信しました')
+        alert('印刷ジョブを送信しました')
       } else {
-        ElMessage.success('印刷を開始しました')
+        alert('印刷を開始しました')
       }
     } else {
       await executePrint()
@@ -1012,13 +1012,17 @@ async function handlePrint() {
     finishCurrentOrder()
   } catch (e: any) {
     console.error('Print error:', e)
-    ElMessage.error(`印刷に失敗しました: ${e?.message || String(e)}`)
+    alert(`印刷に失敗しました: ${e?.message || String(e)}`)
   }
 }
 
 async function handleCompletionConfirmNoPrint() {
   await markOrderInspectedOnly()
   finishCurrentOrder()
+}
+
+function handleCompletionDialogClose() {
+  // Do nothing - user must use footer buttons
 }
 
 function cleanupPrintImage() {
@@ -1059,11 +1063,8 @@ function handleAdjustConfirm() {
 watch(adjustDialogVisible, (v) => {
   if (v) {
     nextTick(() => {
-      const inputEl = document.querySelector('.adjust-dialog-content .el-input-number input') as HTMLInputElement | null
-      if (inputEl) {
-        inputEl.focus()
-        inputEl.select()
-      }
+      adjustInputRef.value?.focus()
+      adjustInputRef.value?.select()
     })
   } else {
     focusScanInput()
@@ -1086,7 +1087,6 @@ function openUnconfirmDialog() {
   unconfirmDialogVisible.value = true
 }
 
-/** Remove current order from all lists and reset inspection state */
 function removeCurrentOrderAndReset() {
   if (currentOrder.value?._id) {
     const orderId = String(currentOrder.value._id)
@@ -1111,7 +1111,6 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
   isUnconfirming.value = true
   try {
     if (builtIn) {
-      // Built-in carrier: use B2 unconfirm (deletes from B2 Cloud + resets status)
       const result = await yamatoB2Unconfirm([orderId], reason, { skipCarrierDelete })
       if (result.success) {
         let message = '確認を取り消しました'
@@ -1122,12 +1121,11 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
             ? `（B2 Cloudから${result.b2DeleteResult.deleted}件削除）`
             : `（B2 Cloud削除失敗: ${result.b2DeleteResult.error}）`
         }
-        ElMessage.success(message)
+        alert(message)
       }
     } else {
-      // Non-built-in carrier: simple status unconfirm
       await updateShipmentOrderStatus(orderId, 'unconfirm', 'confirm')
-      ElMessage.success('確認を取り消しました')
+      alert('確認を取り消しました')
     }
 
     removeCurrentOrderAndReset()
@@ -1135,19 +1133,13 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
   } catch (e: any) {
     if (builtIn && isCarrierDeleteError(e)) {
       isUnconfirming.value = false
-      try {
-        await ElMessageBox.confirm(
-          `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？`,
-          'B2 Cloud削除エラー',
-          { confirmButtonText: 'スキップして続行', cancelButtonText: 'キャンセル', type: 'warning' },
-        )
+      if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？`)) {
         await handleUnconfirmConfirm(reason, true)
         return
-      } catch {
-        return
       }
+      return
     }
-    ElMessage.error(e?.message || '確認取消に失敗しました')
+    alert(e?.message || '確認取消に失敗しました')
     unconfirmDialogVisible.value = false
   } finally {
     isUnconfirming.value = false
@@ -1178,8 +1170,7 @@ async function handleChangeInvoiceTypeConfirm(newInvoiceType: string, skipCarrie
       if (result.carrierDeleteSkipped) message += '（B2 Cloud削除スキップ）'
 
       if (builtIn && result.resubmittedCount > 0) {
-        // Built-in carrier: reload order and continue inspection
-        ElMessage.success(message)
+        alert(message)
         currentOrder.value = await fetchShipmentOrder(orderId)
         initializeInspectionItems()
         changeInvoiceTypeDialogVisible.value = false
@@ -1187,29 +1178,22 @@ async function handleChangeInvoiceTypeConfirm(newInvoiceType: string, skipCarrie
         return
       }
 
-      // Non-built-in carrier: remove from list, exit inspection
-      ElMessage.success(message)
+      alert(message)
       removeCurrentOrderAndReset()
     } else {
-      ElMessage.error(result.errors?.join(', ') || '送り状種類変更に失敗しました')
+      alert(result.errors?.join(', ') || '送り状種類変更に失敗しました')
     }
     changeInvoiceTypeDialogVisible.value = false
   } catch (e: any) {
     if (builtIn && isCarrierDeleteError(e)) {
       isChangingInvoiceType.value = false
-      try {
-        await ElMessageBox.confirm(
-          `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？`,
-          'B2 Cloud削除エラー',
-          { confirmButtonText: 'スキップして続行', cancelButtonText: 'キャンセル', type: 'warning' },
-        )
+      if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？`)) {
         await handleChangeInvoiceTypeConfirm(newInvoiceType, true)
         return
-      } catch {
-        return
       }
+      return
     }
-    ElMessage.error(e?.message || '送り状種類変更に失敗しました')
+    alert(e?.message || '送り状種類変更に失敗しました')
     changeInvoiceTypeDialogVisible.value = false
   } finally {
     isChangingInvoiceType.value = false
@@ -1233,14 +1217,12 @@ async function handleSplitOrderConfirm(request: SplitOrderRequest, skipCarrierDe
     if (result.success) {
       let message = `注文を${result.splitOrders.length}件に分割しました`
       if (result.carrierDeleteSkipped) message += '（B2 Cloud削除スキップ）'
-      ElMessage.success(message)
+      alert(message)
 
-      // Remove original order
       const originalId = String(currentOrder.value?._id)
       pendingOrders.value = pendingOrders.value.filter(o => String(o._id) !== originalId)
 
       if (builtIn) {
-        // Built-in carrier: fetch split orders, auto-chain through them
         const newOrderIds = result.splitOrders.map(so => so.orderId)
         let newOrders: OrderDocument[] = []
         if (newOrderIds.length > 0) {
@@ -1264,8 +1246,6 @@ async function handleSplitOrderConfirm(request: SplitOrderRequest, skipCarrierDe
           lastScannedProduct.value = null
         }
       } else {
-        // Non-built-in carrier: remove from list, exit inspection
-        // (split orders are in unconfirmed state, need manual carrier re-upload)
         totalOrderCount.value = pendingOrders.value.length + processedOrderIds.value.length
         saveOrdersToStorage()
         currentOrder.value = null
@@ -1275,25 +1255,19 @@ async function handleSplitOrderConfirm(request: SplitOrderRequest, skipCarrierDe
         focusScanInput()
       }
     } else {
-      ElMessage.error(result.errors?.join(', ') || '注文分割に失敗しました')
+      alert(result.errors?.join(', ') || '注文分割に失敗しました')
     }
     splitOrderDialogVisible.value = false
   } catch (e: any) {
     if (builtIn && isCarrierDeleteError(e)) {
       isSplittingOrder.value = false
-      try {
-        await ElMessageBox.confirm(
-          `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして続行しますか？`,
-          'B2 Cloud削除エラー',
-          { confirmButtonText: 'スキップして続行', cancelButtonText: 'キャンセル', type: 'warning' },
-        )
+      if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして続行しますか？`)) {
         await handleSplitOrderConfirm(request, true)
         return
-      } catch {
-        return
       }
+      return
     }
-    ElMessage.error(e?.message || '注文分割に失敗しました')
+    alert(e?.message || '注文分割に失敗しました')
     splitOrderDialogVisible.value = false
   } finally {
     isSplittingOrder.value = false
@@ -1329,7 +1303,7 @@ async function loadOrdersFromStorage(): Promise<void> {
     }
   } catch (e) {
     console.error('Failed to load orders from storage:', e)
-    ElMessage.error('保存された注文の読み込みに失敗しました')
+    alert('保存された注文の読み込みに失敗しました')
   }
 }
 
@@ -1355,10 +1329,8 @@ function handleClear() {
 // ─── Initialize ───────────────────────────────────────────────────────
 
 onMounted(async () => {
-  // Read route params
   orderGroupId.value = (route.query.orderGroupId as string) || null
 
-  // Load data in parallel
   try {
     await Promise.all([
       fetchCarriers().then((data) => { carriers.value = data }),
@@ -1378,9 +1350,7 @@ onMounted(async () => {
     console.error('Failed to load initial data:', e)
   }
 
-  // Load orders
   if (orderGroupId.value) {
-    // Load orders by group from API
     try {
       const q: Record<string, any> = {
         'status.confirm.isConfirmed': { operator: 'is', value: true },
@@ -1399,40 +1369,34 @@ onMounted(async () => {
       pendingOrders.value = result.items
     } catch (e) {
       console.error('Failed to load orders by group:', e)
-      ElMessage.error('注文の読み込みに失敗しました')
+      alert('注文の読み込みに失敗しました')
     }
   } else {
-    // Load from localStorage (existing flow)
     await loadOrdersFromStorage()
   }
 
   totalOrderCount.value = pendingOrders.value.length + processedOrderIds.value.length
 
   if (pendingOrders.value.length === 0 && processedOrderIds.value.length === 0) {
-    ElMessage.warning('検品対象の注文がありません。一覧ページに戻ります。')
+    alert('検品対象の注文がありません。一覧ページに戻ります。')
     router.push('/shipment-operations/tasks')
     return
   }
 
-  // Register F-key listener
   document.addEventListener('keydown', handleFKeyDown)
-
   focusScanInput()
 })
 
 // ─── F-Key Bar ────────────────────────────────────────────────────────
 
 interface FKeyDef {
-  key: string        // Display label: "ESC", "F1" .. "F12"
-  code: string       // KeyboardEvent.key value
-  label: string      // Function description (empty = unassigned)
-  labelOnly?: string // Display label but no action (placeholder)
+  key: string
+  code: string
+  label: string
+  labelOnly?: string
   action?: () => void
 }
 
-// --- F-Key actions ---
-
-/** F1: 直前取消 — undo last product scan */
 function fkeyUndoLastScan() {
   if (!lastScannedProduct.value || mode.value !== 'product') return
   const lastSku = lastScannedProduct.value.sku
@@ -1440,13 +1404,12 @@ function fkeyUndoLastScan() {
   if (item) {
     item.inspectedQuantity--
     item.remainingQuantity++
-    ElMessage.info(`${item.name} の検品を1つ取り消しました`)
+    alert(`${item.name} の検品を1つ取り消しました`)
   }
   lastScannedProduct.value = null
   focusScanInput()
 }
 
-/** F2: 注文クリア — clear current order, back to order scan mode */
 function fkeyClearCurrentOrder() {
   if (!currentOrder.value) return
   currentOrder.value = null
@@ -1454,10 +1417,9 @@ function fkeyClearCurrentOrder() {
   inspectionItems.value = []
   lastScannedProduct.value = null
   focusScanInput()
-  ElMessage.info('注文をクリアしました')
+  alert('注文をクリアしました')
 }
 
-/** F5: 数量修正 — open adjust dialog for last scanned product */
 function fkeyAdjustQuantity() {
   if (!lastScannedProduct.value || mode.value !== 'product') return
   const item = inspectionItems.value.find(i => i.sku === lastScannedProduct.value!.sku)
@@ -1467,19 +1429,16 @@ function fkeyAdjustQuantity() {
   adjustDialogVisible.value = true
 }
 
-/** F6: 注文分割 — open split dialog, then chain through split orders */
 function fkeySplitOrder() {
   if (!currentOrder.value) return
   openSplitOrderDialogFn()
 }
 
-/** F9: 確認取消 — open unconfirm dialog */
 function fkeyUnconfirm() {
   if (!currentOrder.value) return
   openUnconfirmDialog()
 }
 
-/** F11: 種類変更 — open change invoice type dialog */
 function fkeyChangeInvoiceType() {
   if (!currentOrder.value) return
   openChangeInvoiceTypeDialogFn()
@@ -1502,7 +1461,6 @@ const fKeyDefs: FKeyDef[] = [
 ]
 
 function handleFKeyDown(e: KeyboardEvent) {
-  // When adjust dialog is open, intercept ESC (cancel) and F1 (confirm)
   if (adjustDialogVisible.value) {
     if (e.key === 'Escape') {
       e.preventDefault()
@@ -1610,16 +1568,34 @@ onBeforeUnmount(() => {
   padding: 8px 0;
 }
 
-.scan-input :deep(.el-input__wrapper) {
-  font-size: 18px;
-  padding: 12px 16px;
-  border: 2px solid #e6a23c;
-  background: #fffef5;
+.scan-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.scan-input :deep(.el-input__wrapper):focus-within {
+.scan-input {
+  width: 100%;
+  font-size: 18px;
+  padding: 12px 40px 12px 16px;
+  border: 2px solid #e6a23c;
+  border-radius: 4px;
+  background: #fffef5;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.scan-input:focus {
   border-color: #409eff;
   background: #fff;
+}
+
+.scan-input-icon {
+  position: absolute;
+  right: 12px;
+  color: #909399;
+  font-size: 16px;
+  pointer-events: none;
 }
 
 /* ─── Auto Print Toggle ──────────────────── */
@@ -1627,6 +1603,43 @@ onBeforeUnmount(() => {
   padding: 8px 0;
   display: flex;
   align-items: center;
+}
+
+.o-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.o-toggle input { display: none; }
+
+.o-toggle-slider {
+  width: 40px;
+  height: 20px;
+  background: #dcdfe6;
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.o-toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.o-toggle input:checked + .o-toggle-slider {
+  background: #409eff;
+}
+.o-toggle input:checked + .o-toggle-slider::after {
+  transform: translateX(20px);
 }
 
 /* ─── Product Image ──────────────────────── */
@@ -1708,58 +1721,26 @@ onBeforeUnmount(() => {
   color: #303133;
 }
 
-.stat-inspected-block {
-  background: #81B337;
-}
-
+.stat-inspected-block { background: #81B337; }
 .stat-inspected-block .stat-label,
-.stat-inspected-block .stat-value {
-  color: #fff;
-}
+.stat-inspected-block .stat-value { color: #fff; }
 
-.stat-remaining-block {
-  background: #1F3A5F;
-}
-
+.stat-remaining-block { background: #1F3A5F; }
 .stat-remaining-block .stat-label,
-.stat-remaining-block .stat-value {
-  color: #fff;
-}
+.stat-remaining-block .stat-value { color: #fff; }
 
-.stat-orders {
-  background: #ecf5ff;
-}
+.stat-orders { background: #ecf5ff; }
+.stat-orders .stat-value { color: #409eff; font-size: 18px; }
 
-.stat-orders .stat-value {
-  color: #409eff;
-  font-size: 18px;
-}
-
-.stat-clickable {
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.stat-clickable:hover {
-  opacity: 0.8;
-}
+.stat-clickable { cursor: pointer; transition: opacity 0.2s; }
+.stat-clickable:hover { opacity: 0.8; }
 
 /* ─── Order List Dialog ─────────────────── */
-.order-list-section {
-  margin-bottom: 16px;
-}
-
-.order-list-section h4 {
-  margin: 0 0 8px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #303133;
-}
+.order-list-section { margin-bottom: 16px; }
+.order-list-section h4 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #303133; }
 
 /* ─── Product Table ──────────────────────── */
-.product-table-section {
-  flex: 1;
-}
+.product-table-section { flex: 1; }
 
 .empty-table-hint {
   display: flex;
@@ -1772,11 +1753,29 @@ onBeforeUnmount(() => {
   border-radius: 8px;
 }
 
-/* ─── Inspected / Remaining cell blocks ── */
-:deep(.col-inspected .cell),
-:deep(.col-remaining .cell) {
-  padding: 0;
+/* ─── Table styles ───────────────────────── */
+.o-list-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
 }
+.o-list-table-border th,
+.o-list-table-border td {
+  border: 1px solid #ebeef5;
+  padding: 8px 12px;
+}
+.o-list-table th {
+  background: #f5f7fa;
+  font-weight: 600;
+  color: #606266;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.o-list-table td { color: #303133; }
+
+/* ─── Inspected / Remaining cell blocks ── */
+.col-inspected, .col-remaining { padding: 0 !important; }
 
 .cell-inspected,
 .cell-remaining {
@@ -1792,34 +1791,13 @@ onBeforeUnmount(() => {
   min-height: 48px;
 }
 
-.cell-inspected {
-  background: #81B337;
-}
+.cell-inspected { background: #81B337; }
+.cell-remaining { background: #1F3A5F; }
+.cell-inspected:hover { background: #6f9e2d; }
+.cell-remaining:hover { background: #162d4a; }
 
-.cell-remaining {
-  background: #1F3A5F;
-}
-
-.cell-inspected:hover {
-  background: #6f9e2d;
-}
-
-.cell-remaining:hover {
-  background: #162d4a;
-}
-
-:deep(.col-inspected),
-:deep(.col-remaining) {
-  padding: 0 !important;
-}
-
-:deep(.row-completed) {
-  background-color: #f0f9eb !important;
-}
-
-:deep(.row-completed:hover > td) {
-  background-color: #e1f3d8 !important;
-}
+.row-completed { background-color: #f0f9eb !important; }
+.row-completed:hover td { background-color: #e1f3d8 !important; }
 
 /* ─── Wrong scan warning dialog ──────────── */
 .wrong-scan-content {
@@ -1843,23 +1821,9 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 
-.wrong-scan-title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #f56c6c;
-}
-
-.wrong-scan-detail {
-  font-size: 16px;
-  color: #303133;
-}
-
-.wrong-scan-hint {
-  font-size: 13px;
-  color: #909399;
-  text-align: center;
-  max-width: 360px;
-}
+.wrong-scan-title { font-size: 22px; font-weight: 700; color: #f56c6c; }
+.wrong-scan-detail { font-size: 16px; color: #303133; }
+.wrong-scan-hint { font-size: 13px; color: #909399; text-align: center; max-width: 360px; }
 
 .wrong-scan-close-btn {
   width: 240px;
@@ -1899,29 +1863,11 @@ onBeforeUnmount(() => {
   font-family: inherit;
 }
 
-.fkey-btn:last-child {
-  border-right: none;
-}
-
-.fkey-btn:hover:not(.fkey-btn--disabled) {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.fkey-btn:active:not(.fkey-btn--disabled) {
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.fkey-btn--disabled {
-  cursor: default;
-  opacity: 0.3;
-}
-
-.fkey-btn__key {
-  font-size: 10px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.5);
-  line-height: 1;
-}
+.fkey-btn:last-child { border-right: none; }
+.fkey-btn:hover:not(.fkey-btn--disabled) { background: rgba(255, 255, 255, 0.1); }
+.fkey-btn:active:not(.fkey-btn--disabled) { background: rgba(255, 255, 255, 0.18); }
+.fkey-btn--disabled { cursor: default; opacity: 0.3; }
+.fkey-btn__key { font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.5); line-height: 1; }
 
 .fkey-btn__label {
   font-size: 11px;
@@ -1944,11 +1890,7 @@ onBeforeUnmount(() => {
   margin-bottom: 16px;
 }
 
-.completion-message p {
-  margin: 6px 0;
-  font-size: 14px;
-  color: #303133;
-}
+.completion-message p { margin: 6px 0; font-size: 14px; color: #303133; }
 
 .print-preview-section {
   border: 1px solid #e5e7eb;
@@ -1968,23 +1910,9 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 
-.preview-img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.rendering,
-.placeholder {
-  color: #6b7280;
-  font-size: 14px;
-}
-
-.error {
-  color: #b91c1c;
-  font-size: 14px;
-  text-align: center;
-}
+.preview-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.rendering, .placeholder { color: #6b7280; font-size: 14px; }
+.error { color: #b91c1c; font-size: 14px; text-align: center; }
 
 .preview-b2-cloud {
   display: flex;
@@ -2008,17 +1936,8 @@ onBeforeUnmount(() => {
   border: 2px solid #ca8a04;
 }
 
-.b2-cloud-text {
-  color: #854d0e;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.b2-cloud-tracking {
-  color: #a16207;
-  font-size: 14px;
-  font-family: monospace;
-}
+.b2-cloud-text { color: #854d0e; font-size: 16px; font-weight: 600; }
+.b2-cloud-tracking { color: #a16207; font-size: 14px; font-family: monospace; }
 
 /* ─── Adjust Dialog ──────────────────────── */
 .adjust-dialog-content {
@@ -2028,16 +1947,8 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
 }
 
-.adjust-dialog-content p {
-  width: 100%;
-  margin: 0 0 8px;
-  font-weight: 500;
-}
-
-.adjust-hint {
-  font-size: 13px;
-  color: #909399;
-}
+.adjust-dialog-content p { width: 100%; margin: 0 0 8px; font-weight: 500; }
+.adjust-hint { font-size: 13px; color: #909399; }
 
 .adjust-dialog-footer {
   display: flex;
@@ -2046,8 +1957,44 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
-.adjust-shortcuts {
-  font-size: 12px;
-  color: #909399;
+.adjust-shortcuts { font-size: 12px; color: #909399; }
+
+/* ─── Button styles ──────────────────────── */
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  background: #fff;
+  color: #606266;
+  line-height: 1.5;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
+.o-btn:hover { border-color: #409eff; color: #409eff; }
+.o-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.o-btn-sm { padding: 4px 10px; font-size: 12px; }
+
+.o-btn-primary { background: #409eff; color: #fff; border-color: #409eff; }
+.o-btn-primary:hover { background: #66b1ff; border-color: #66b1ff; }
+
+.o-btn-danger { background: #f56c6c; color: #fff; border-color: #f56c6c; }
+.o-btn-danger:hover { background: #f78989; border-color: #f78989; }
+
+.o-btn-secondary { background: #fff; color: #606266; border-color: #dcdfe6; }
+.o-btn-secondary:hover { border-color: #409eff; color: #409eff; }
+
+.o-input {
+  padding: 8px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+.o-input:focus { border-color: #409eff; }
 </style>

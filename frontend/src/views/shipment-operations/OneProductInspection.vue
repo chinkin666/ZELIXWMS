@@ -3,9 +3,9 @@
     <!-- 左侧面板 -->
     <div class="left-panel">
       <div class="left-panel__header">
-        <el-button :icon="ArrowLeft" size="small" @click="handleGoBack">戻る</el-button>
+        <button class="o-btn o-btn-secondary o-btn-sm" @click="handleGoBack">&larr; 戻る</button>
         <h2 class="page-title">出荷検品</h2>
-        <el-button type="danger" size="small" @click="handleClear">クリア</el-button>
+        <button class="o-btn o-btn-danger o-btn-sm" @click="handleClear">クリア</button>
       </div>
 
       <!-- ピッキング指示No -->
@@ -16,27 +16,26 @@
 
       <!-- 扫描输入框 -->
       <div class="scan-input-section">
-        <el-input
-          ref="scanInputRef"
-          v-model="inputValue"
-          class="scan-input"
-          placeholder="商品をスキャン..."
-          size="large"
-          @keyup.enter="handleScan"
-        >
-          <template #suffix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
+        <div class="scan-input-wrapper">
+          <input
+            ref="scanInputRef"
+            v-model="inputValue"
+            type="text"
+            class="scan-input"
+            placeholder="商品をスキャン..."
+            @keyup.enter="handleScan"
+          />
+          <span class="scan-input-icon">&#128269;</span>
+        </div>
       </div>
 
       <!-- 自动印刷开关 -->
       <div class="auto-print-section">
-        <el-switch
-          v-model="autoPrintEnabled"
-          active-text="検品完了時 送り状自動出力"
-          @change="saveAutoPrintSetting"
-        />
+        <label class="o-toggle">
+          <input type="checkbox" v-model="autoPrintEnabled" @change="saveAutoPrintSetting" />
+          <span class="o-toggle-slider"></span>
+          <span class="o-toggle-label">検品完了時 送り状自動出力</span>
+        </label>
       </div>
 
       <!-- 大数字（当前匹配行号） -->
@@ -101,31 +100,40 @@
 
       <!-- 订单表格 -->
       <div class="order-table-section">
-        <el-table
-          ref="orderTableRef"
-          :data="tableRows"
-          border
-          :style="{ width: '100%' }"
-          :row-class-name="getRowClassName"
-          height="calc(100vh - 200px)"
-        >
-          <el-table-column prop="no" label="No" width="60" align="center" />
-          <el-table-column prop="trackingId" label="伝票番号" width="150" />
-          <el-table-column prop="carrierName" label="配送業者" width="120" />
-          <el-table-column prop="invoiceTypeName" label="送り状種類" width="110" />
-          <el-table-column prop="productName" label="商品名" min-width="120" />
-          <el-table-column prop="sku" label="SKU" min-width="170" />
-          <el-table-column prop="barcode" label="検品コード（バーコード）" min-width="220" />
-          <el-table-column label="出荷指示数" width="100" align="center">
-            <template #default>1</template>
-          </el-table-column>
-          <el-table-column label="検品数" width="80" align="center">
-            <template #default="{ row }">{{ row.isInspected ? 1 : 0 }}</template>
-          </el-table-column>
-          <el-table-column label="残数" width="80" align="center">
-            <template #default="{ row }">{{ row.isInspected ? 0 : 1 }}</template>
-          </el-table-column>
-        </el-table>
+        <table ref="orderTableRef" class="o-list-table o-list-table-border" style="width: 100%">
+          <thead>
+            <tr>
+              <th style="width: 60px; text-align: center">No</th>
+              <th style="width: 150px">伝票番号</th>
+              <th style="width: 120px">配送業者</th>
+              <th style="width: 110px">送り状種類</th>
+              <th style="min-width: 120px">商品名</th>
+              <th style="min-width: 170px">SKU</th>
+              <th style="min-width: 220px">検品コード（バーコード）</th>
+              <th style="width: 100px; text-align: center">出荷指示数</th>
+              <th style="width: 80px; text-align: center">検品数</th>
+              <th style="width: 80px; text-align: center">残数</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="row in tableRows"
+              :key="row.orderId"
+              :class="getRowClassName({ row })"
+            >
+              <td style="text-align: center">{{ row.no }}</td>
+              <td>{{ row.trackingId }}</td>
+              <td>{{ row.carrierName }}</td>
+              <td>{{ row.invoiceTypeName }}</td>
+              <td>{{ row.productName }}</td>
+              <td>{{ row.sku }}</td>
+              <td>{{ row.barcode }}</td>
+              <td style="text-align: center">1</td>
+              <td style="text-align: center">{{ row.isInspected ? 1 : 0 }}</td>
+              <td style="text-align: center">{{ row.isInspected ? 0 : 1 }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -154,13 +162,11 @@
     />
 
     <!-- 手動印刷確認ダイアログ -->
-    <el-dialog
-      v-model="completionDialogVisible"
+    <ODialog
+      :open="completionDialogVisible"
       title="検品完了"
-      width="980px"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
+      size="lg"
+      @close="handleCompletionClose"
     >
       <div class="completion-message">
         <p>検品が完了しました。</p>
@@ -182,24 +188,22 @@
       </div>
 
       <template #footer>
-        <el-button @click="handleCompletionConfirmNoPrint">確認（印刷なし）</el-button>
-        <el-button
-          type="primary"
+        <button class="o-btn o-btn-secondary" @click="handleCompletionConfirmNoPrint">確認（印刷なし）</button>
+        <button
+          class="o-btn o-btn-primary"
           :disabled="(currentPdfSource === 'local' && (!printImageUrl || printRendering)) || (currentPdfSource === 'b2-webapi' && !currentMatchedOrder?.trackingId)"
           @click="handlePrint"
         >
           印刷
-        </el-button>
+        </button>
       </template>
-    </el-dialog>
+    </ODialog>
 
     <!-- 誤スキャン警告ダイアログ -->
-    <el-dialog
-      v-model="wrongScanDialogVisible"
-      width="500px"
-      :close-on-click-modal="false"
-      :show-close="false"
-      class="wrong-scan-dialog"
+    <ODialog
+      :open="wrongScanDialogVisible"
+      size="sm"
+      @close="closeWrongScanDialog"
     >
       <div class="wrong-scan-content">
         <div class="wrong-scan-icon">!</div>
@@ -210,28 +214,23 @@
         <div class="wrong-scan-hint">
           未検品の注文の中に、このバーコード/SKUに一致する商品が見つかりませんでした。
         </div>
-        <el-button
-          type="danger"
-          size="large"
-          class="wrong-scan-close-btn"
+        <button
+          class="o-btn o-btn-danger wrong-scan-close-btn"
           @click="closeWrongScanDialog"
         >
           確認して閉じる（F1）
-        </el-button>
+        </button>
       </div>
-    </el-dialog>
+      <template #footer><span></span></template>
+    </ODialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import {
-  ElButton, ElInput, ElMessage, ElMessageBox, ElDialog,
-  ElTable, ElTableColumn, ElSwitch, ElIcon,
-} from 'element-plus'
-import { ArrowLeft, Search } from '@element-plus/icons-vue'
 import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import type { OrderDocument } from '@/types/order'
 import type { Carrier } from '@/types/carrier'
 import type { Product } from '@/types/product'
@@ -296,7 +295,7 @@ const currentMatchedProduct = ref<ProductInfo | null>(null)
 
 // Input
 const inputValue = ref('')
-const scanInputRef = ref<InstanceType<typeof ElInput> | null>(null)
+const scanInputRef = ref<HTMLInputElement | null>(null)
 
 // Product cache
 const productCache = new Map<string, Product>()
@@ -332,7 +331,7 @@ const wrongScanDialogVisible = ref(false)
 const wrongScanValue = ref('')
 
 // Table ref
-const orderTableRef = ref<InstanceType<typeof ElTable> | null>(null)
+const orderTableRef = ref<HTMLTableElement | null>(null)
 
 // ─── Computed ─────────────────────────────────────────────────────────
 
@@ -398,8 +397,7 @@ function resolveImageUrl(url?: string): string {
 
 function focusScanInput() {
   nextTick(() => {
-    const el = scanInputRef.value?.$el?.querySelector('input') as HTMLInputElement | null
-    el?.focus()
+    scanInputRef.value?.focus()
   })
 }
 
@@ -491,9 +489,9 @@ function handleScan() {
 
 function scrollToRow(index: number) {
   nextTick(() => {
-    const tableEl = orderTableRef.value?.$el
+    const tableEl = orderTableRef.value
     if (!tableEl) return
-    const rows = tableEl.querySelectorAll('.el-table__body tr')
+    const rows = tableEl.querySelectorAll('tbody tr')
     if (rows[index]) {
       rows[index].scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
@@ -506,19 +504,14 @@ async function handleOrderCompletion(order: OrderDocument) {
   const alreadyPrinted = !!(order as any)?.status?.printed?.isPrinted
 
   if (alreadyPrinted) {
-    try {
-      await ElMessageBox.confirm(
-        'この注文は既に印刷済みです。もう一度印刷しますか？',
-        '印刷確認',
-        { confirmButtonText: '印刷する', cancelButtonText: '印刷しない', type: 'warning' },
-      )
+    if (confirm('この注文は既に印刷済みです。もう一度印刷しますか？')) {
       // User chose to print
       if (autoPrintEnabled.value) {
         await triggerAutoPrint(order)
       } else {
         completionDialogVisible.value = true
       }
-    } catch {
+    } else {
       // User chose not to print - mark inspected only
       await markOrderInspectedOnly(order)
       markLocallyInspected(String(order._id))
@@ -551,7 +544,7 @@ async function triggerAutoPrint(order: OrderDocument) {
     if (pdfSource === 'b2-webapi') {
       // Use b2-webapi to fetch PDF directly
       if (!order.trackingId) {
-        ElMessage.error('追跡番号がありません（B2 CloudからPDFを取得できません）')
+        alert('追跡番号がありません（B2 CloudからPDFを取得できません）')
         completionDialogVisible.value = true
         return
       }
@@ -559,9 +552,9 @@ async function triggerAutoPrint(order: OrderDocument) {
       await printPdfBlob(pdfBlob, { title: `Print ${order.orderNumber || ''}`.trim(), templateType: 'b2-cloud' })
       const config = getPrintConfig()
       if (config.method === 'local-bridge') {
-        ElMessage.success('印刷ジョブを送信しました')
+        alert('印刷ジョブを送信しました')
       } else {
-        ElMessage.success('印刷を開始しました')
+        alert('印刷を開始しました')
       }
       await markOrderCompleted(order)
       markLocallyInspected(String(order._id))
@@ -579,7 +572,7 @@ async function triggerAutoPrint(order: OrderDocument) {
     }
   } catch (e: any) {
     console.error('Auto print failed:', e)
-    ElMessage.error(`自動印刷に失敗しました: ${e?.message || String(e)}`)
+    alert(`自動印刷に失敗しました: ${e?.message || String(e)}`)
     completionDialogVisible.value = true
   }
 }
@@ -686,9 +679,9 @@ async function executePrint(order: OrderDocument) {
 
   const config = getPrintConfig()
   if (config.method === 'local-bridge') {
-    ElMessage.success('印刷ジョブを送信しました')
+    alert('印刷ジョブを送信しました')
   } else {
-    ElMessage.success('印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）')
+    alert('印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）')
   }
 }
 
@@ -702,7 +695,7 @@ async function markOrderCompleted(order: OrderDocument) {
     ])
   } catch (e: any) {
     console.error('Failed to update order status:', e)
-    ElMessage.warning(`ステータス更新に失敗しました: ${e?.message || String(e)}`)
+    alert(`ステータス更新に失敗しました: ${e?.message || String(e)}`)
   }
 }
 
@@ -713,7 +706,7 @@ async function markOrderInspectedOnly(order: OrderDocument) {
     await updateShipmentOrderStatus(orderId, 'mark-inspected')
   } catch (e: any) {
     console.error('Failed to update order status:', e)
-    ElMessage.warning(`ステータス更新に失敗しました: ${e?.message || String(e)}`)
+    alert(`ステータス更新に失敗しました: ${e?.message || String(e)}`)
   }
 }
 
@@ -728,6 +721,10 @@ function cleanupPrintImage() {
 
 // ─── Manual Dialog Handlers ───────────────────────────────────────────
 
+function handleCompletionClose() {
+  // Do nothing on close - user must use footer buttons
+}
+
 async function handlePrint() {
   if (!currentMatchedOrder.value) return
 
@@ -735,16 +732,16 @@ async function handlePrint() {
     if (currentPdfSource.value === 'b2-webapi') {
       // Fetch and print PDF from b2-webapi
       if (!currentMatchedOrder.value.trackingId) {
-        ElMessage.error('追跡番号がありません')
+        alert('追跡番号がありません')
         return
       }
       const pdfBlob = await yamatoB2FetchBatchPdf([currentMatchedOrder.value.trackingId])
       await printPdfBlob(pdfBlob, { title: `Print ${currentMatchedOrder.value.orderNumber || ''}`.trim(), templateType: 'b2-cloud' })
       const config = getPrintConfig()
       if (config.method === 'local-bridge') {
-        ElMessage.success('印刷ジョブを送信しました')
+        alert('印刷ジョブを送信しました')
       } else {
-        ElMessage.success('印刷を開始しました')
+        alert('印刷を開始しました')
       }
     } else {
       await executePrint(currentMatchedOrder.value)
@@ -754,7 +751,7 @@ async function handlePrint() {
     completionDialogVisible.value = false
   } catch (e: any) {
     console.error('Print error:', e)
-    ElMessage.error(`印刷に失敗しました: ${e?.message || String(e)}`)
+    alert(`印刷に失敗しました: ${e?.message || String(e)}`)
   }
 }
 
@@ -816,11 +813,11 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
             ? `（B2 Cloudから${result.b2DeleteResult.deleted}件削除）`
             : `（B2 Cloud削除失敗: ${result.b2DeleteResult.error}）`
         }
-        ElMessage.success(message)
+        alert(message)
       }
     } else {
       await updateShipmentOrderStatus(orderId, 'unconfirm', 'confirm')
-      ElMessage.success('確認を取り消しました')
+      alert('確認を取り消しました')
     }
 
     removeOrderAndReset(orderId)
@@ -828,19 +825,13 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
   } catch (e: any) {
     if (builtIn && isCarrierDeleteError(e)) {
       isUnconfirming.value = false
-      try {
-        await ElMessageBox.confirm(
-          `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？`,
-          'B2 Cloud削除エラー',
-          { confirmButtonText: 'スキップして続行', cancelButtonText: 'キャンセル', type: 'warning' },
-        )
+      if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？`)) {
         await handleUnconfirmConfirm(reason, true)
         return
-      } catch {
-        return
       }
+      return
     }
-    ElMessage.error(e?.message || '確認取消に失敗しました')
+    alert(e?.message || '確認取消に失敗しました')
     unconfirmDialogVisible.value = false
   } finally {
     isUnconfirming.value = false
@@ -869,7 +860,7 @@ function fkeyUndoLastScan() {
     next.delete(orderId)
     inspectedOrderIds.value = next
     saveProcessedToStorage()
-    ElMessage.info('直前の検品を取り消しました')
+    alert('直前の検品を取り消しました')
   }
   currentMatchedOrder.value = null
   currentMatchedRowNo.value = null
@@ -881,7 +872,7 @@ async function fkeyReprint() {
   if (!currentMatchedOrder.value) return
   const orderId = String(currentMatchedOrder.value._id)
   if (!inspectedOrderIds.value.has(orderId)) {
-    ElMessage.warning('検品済みの注文を選択してください')
+    alert('検品済みの注文を選択してください')
     return
   }
 
@@ -895,16 +886,16 @@ async function fkeyReprint() {
     if (pdfSource === 'b2-webapi') {
       // Reprint from b2-webapi
       if (!currentMatchedOrder.value.trackingId) {
-        ElMessage.error('追跡番号がありません')
+        alert('追跡番号がありません')
         return
       }
       const pdfBlob = await yamatoB2FetchBatchPdf([currentMatchedOrder.value.trackingId])
       await printPdfBlob(pdfBlob, { title: `Print ${currentMatchedOrder.value.orderNumber || ''}`.trim(), templateType: 'b2-cloud' })
       const config = getPrintConfig()
       if (config.method === 'local-bridge') {
-        ElMessage.success('印刷ジョブを送信しました')
+        alert('印刷ジョブを送信しました')
       } else {
-        ElMessage.success('印刷を開始しました')
+        alert('印刷を開始しました')
       }
     } else {
       // Reprint using local template
@@ -912,11 +903,11 @@ async function fkeyReprint() {
       if (printImageUrl.value && printTemplate.value) {
         await executePrint(currentMatchedOrder.value)
       } else {
-        ElMessage.error('印刷プレビューの生成に失敗しました')
+        alert('印刷プレビューの生成に失敗しました')
       }
     }
   } catch (e: any) {
-    ElMessage.error(`再出力に失敗しました: ${e?.message || String(e)}`)
+    alert(`再出力に失敗しました: ${e?.message || String(e)}`)
   }
 }
 
@@ -1048,7 +1039,7 @@ onMounted(async () => {
   }
 
   if (orderIds.length === 0) {
-    ElMessage.warning('検品対象の注文がありません。一覧ページに戻ります。')
+    alert('検品対象の注文がありません。一覧ページに戻ります。')
     router.push('/shipment-operations/tasks')
     return
   }
@@ -1057,7 +1048,7 @@ onMounted(async () => {
     allOrders.value = await fetchShipmentOrdersByIds<OrderDocument>(orderIds)
   } catch (e) {
     console.error('Failed to load orders:', e)
-    ElMessage.error('注文の読み込みに失敗しました')
+    alert('注文の読み込みに失敗しました')
     return
   }
 
@@ -1149,16 +1140,34 @@ onBeforeUnmount(() => {
   padding: 8px 0;
 }
 
-.scan-input :deep(.el-input__wrapper) {
-  font-size: 18px;
-  padding: 12px 16px;
-  border: 2px solid #e6a23c;
-  background: #fffef5;
+.scan-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.scan-input :deep(.el-input__wrapper):focus-within {
+.scan-input {
+  width: 100%;
+  font-size: 18px;
+  padding: 12px 40px 12px 16px;
+  border: 2px solid #e6a23c;
+  border-radius: 4px;
+  background: #fffef5;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.scan-input:focus {
   border-color: #409eff;
   background: #fff;
+}
+
+.scan-input-icon {
+  position: absolute;
+  right: 12px;
+  color: #909399;
+  font-size: 16px;
+  pointer-events: none;
 }
 
 /* ─── Auto Print Toggle ──────────────────── */
@@ -1166,6 +1175,43 @@ onBeforeUnmount(() => {
   padding: 8px 0;
   display: flex;
   align-items: center;
+}
+
+.o-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.o-toggle input { display: none; }
+
+.o-toggle-slider {
+  width: 40px;
+  height: 20px;
+  background: #dcdfe6;
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.o-toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.o-toggle input:checked + .o-toggle-slider {
+  background: #409eff;
+}
+.o-toggle input:checked + .o-toggle-slider::after {
+  transform: translateX(20px);
 }
 
 /* ─── Large Row Number ───────────────────── */
@@ -1311,26 +1357,50 @@ onBeforeUnmount(() => {
 /* ─── Order Table ────────────────────────── */
 .order-table-section {
   flex: 1;
+  overflow: auto;
+  max-height: calc(100vh - 200px);
 }
 
-:deep(.row-inspected) {
+.o-list-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+.o-list-table-border th,
+.o-list-table-border td {
+  border: 1px solid #ebeef5;
+  padding: 8px 12px;
+}
+.o-list-table th {
+  background: #f5f7fa;
+  font-weight: 600;
+  color: #606266;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.o-list-table td {
+  color: #303133;
+}
+
+.row-inspected {
   background-color: #81B337 !important;
 }
 
-:deep(.row-inspected td) {
+.row-inspected td {
   color: #fff !important;
   background-color: #81B337 !important;
 }
 
-:deep(.row-inspected:hover > td) {
+.row-inspected:hover td {
   background-color: #6f9e2d !important;
 }
 
-:deep(.row-active) {
+.row-active {
   background-color: #ecf5ff !important;
 }
 
-:deep(.row-active td) {
+.row-active td {
   background-color: #ecf5ff !important;
 }
 
@@ -1532,4 +1602,34 @@ onBeforeUnmount(() => {
   font-size: 14px;
   font-family: monospace;
 }
+
+/* ─── Button styles ──────────────────────── */
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  background: #fff;
+  color: #606266;
+  line-height: 1.5;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.o-btn:hover { border-color: #409eff; color: #409eff; }
+.o-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.o-btn-sm { padding: 4px 10px; font-size: 12px; }
+
+.o-btn-primary { background: #409eff; color: #fff; border-color: #409eff; }
+.o-btn-primary:hover { background: #66b1ff; border-color: #66b1ff; }
+
+.o-btn-danger { background: #f56c6c; color: #fff; border-color: #f56c6c; }
+.o-btn-danger:hover { background: #f78989; border-color: #f78989; }
+
+.o-btn-secondary { background: #fff; color: #606266; border-color: #dcdfe6; }
+.o-btn-secondary:hover { border-color: #409eff; color: #409eff; }
 </style>

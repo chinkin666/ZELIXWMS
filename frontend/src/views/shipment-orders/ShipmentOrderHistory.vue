@@ -56,8 +56,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
-import { ElButton, ElMessage } from 'element-plus'
-import type { HeaderClassNameGetter } from 'element-plus'
+import { useToast } from '@/composables/useToast'
 import Table from '@/components/table/OrderTable.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
 import OrderViewDialog from '@/components/shipment-orders/OrderViewDialog.vue'
@@ -70,6 +69,8 @@ import { fetchCarriers } from '@/api/carrier'
 import type { Carrier } from '@/types/carrier'
 import { fetchProducts } from '@/api/product'
 import type { Product } from '@/types/product'
+const { showError, showSuccess, showWarning } = useToast()
+
 type SortOrder = 'asc' | 'desc' | null
 
 type OrderRow = Record<string, any>
@@ -130,7 +131,7 @@ const handleView = async (row: any) => {
     selectedOrder.value = await fetchShipmentOrder(String(id))
     viewDialogVisible.value = true
   } catch (e: any) {
-    ElMessage.error(e?.message || '詳細の取得に失敗しました')
+    showError(e?.message || '詳細の取得に失敗しました')
   }
 }
 
@@ -160,7 +161,7 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
 }
 
 const handleSave = (_payload: Record<string, { operator: Operator; value: any }>) => {
-  ElMessage.success('検索条件を保存しました（ダミー）')
+  showSuccess('検索条件を保存しました（ダミー）')
 }
 
 const tableColumns = computed(() => {
@@ -172,16 +173,7 @@ const tableColumns = computed(() => {
     fixed: 'right' as const,
     align: 'center' as const,
     cellRenderer: ({ rowData }: { rowData: any }) =>
-      h(
-        ElButton,
-        {
-          type: 'primary',
-          size: 'small',
-          plain: true,
-          onClick: () => handleView(rowData),
-        },
-        () => '詳細',
-      ),
+      h('button', { class: 'o-btn o-btn-primary o-btn-sm', onClick: () => handleView(rowData) }, '詳細'),
   }
 
   const cols = [
@@ -195,7 +187,7 @@ const headerGroupingConfig = computed<HeaderGroupingConfig>(() => {
   return buildOrderHeaderGroupingConfig(baseColumns.value as any)
 })
 
-const headerClass: HeaderClassNameGetter<any> = () => ''
+const headerClass = () => ''
 
 const tableProps = computed(() => ({}))
 
@@ -204,7 +196,7 @@ const loadCarriers = async () => {
     carriers.value = await fetchCarriers({ enabled: true })
   } catch (e) {
     console.error(e)
-    ElMessage.warning('配送会社マスタの取得に失敗しました')
+    showWarning('配送会社マスタの取得に失敗しました')
   }
 }
 
@@ -229,7 +221,7 @@ const loadOrders = async () => {
     displayRows.value = result.items
     totalItems.value = result.total
   } catch (e: any) {
-    ElMessage.error(e?.message || '出荷実績の取得に失敗しました')
+    showError(e?.message || '出荷実績の取得に失敗しました')
   }
 }
 

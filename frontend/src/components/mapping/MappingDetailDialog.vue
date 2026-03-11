@@ -1,95 +1,92 @@
 <template>
-  <el-dialog v-model="visibleProxy" width="1000px" :title="title" destroy-on-close>
+  <ODialog
+    :open="visibleProxy"
+    :title="title"
+    @close="visibleProxy = false"
+    width="1000px"
+  >
     <div class="layout">
       <div class="left">
-        <el-form label-width="140px" :model="form">
-          <el-form-item label="対象フィールド（出力先）">
+        <div class="mapping-form">
+          <div class="o-form-group">
+            <label class="o-form-label">対象フィールド（出力先）</label>
             <span>{{ target ? getTargetDisplayName(target.field) : '未選択' }}</span>
-          </el-form-item>
+          </div>
 
-          <el-form-item label="必須">
+          <div class="o-form-group">
+            <label class="o-form-label">必須</label>
             <span>{{ target?.required ? 'はい' : 'いいえ' }}</span>
-          </el-form-item>
+          </div>
 
-          <el-form-item v-if="targetDescription" label="説明">
+          <div v-if="targetDescription" class="o-form-group">
+            <label class="o-form-label">説明</label>
             <div class="field-description">{{ targetDescription }}</div>
-          </el-form-item>
+          </div>
 
-          <el-form-item label="デフォルト値">
-            <el-input v-model="form.defaultValue" placeholder="空の場合のデフォルト値（任意）" />
-          </el-form-item>
+          <div class="o-form-group">
+            <label class="o-form-label">デフォルト値</label>
+            <input class="o-input" v-model="form.defaultValue" placeholder="空の場合のデフォルト値（任意）" style="width: 100%" />
+          </div>
 
-          <el-form-item label="入力">
+          <div class="o-form-group">
+            <label class="o-form-label">入力</label>
             <div class="inputs-list">
               <div v-for="(input, idx) in form.inputs" :key="input.id" class="input-item">
                 <div class="input-header">
                   <div class="input-drag-handle">
-                    <el-button
-                      type="info"
-                      size="small"
-                      text
+                    <button
+                      class="o-btn o-btn-sm o-btn-secondary"
                       :disabled="idx === 0"
                       @click="moveInputUp(idx)"
                       title="上へ移動"
-                    >
-                      <el-icon><ArrowUp /></el-icon>
-                    </el-button>
-                    <el-button
-                      type="info"
-                      size="small"
-                      text
+                      style="padding: 0 4px; line-height: 1"
+                    >&#9650;</button>
+                    <button
+                      class="o-btn o-btn-sm o-btn-secondary"
                       :disabled="idx === form.inputs.length - 1"
                       @click="moveInputDown(idx)"
                       title="下へ移動"
-                    >
-                      <el-icon><ArrowDown /></el-icon>
-                    </el-button>
+                      style="padding: 0 4px; line-height: 1"
+                    >&#9660;</button>
                   </div>
                   <span class="input-number">{{ idx + 1 }}</span>
-                  <el-select
+                  <select
+                    class="o-input o-input-sm"
                     v-model="input.type"
-                    size="small"
                     style="width: 120px"
                     @change="onInputTypeChange(idx)"
                   >
-                    <el-option label="列" value="column" />
-                    <el-option label="固定値" value="literal" />
-                  </el-select>
+                    <option value="column">列</option>
+                    <option value="literal">固定値</option>
+                  </select>
 
-                  <el-select
+                  <select
                     v-if="input.type === 'column'"
+                    class="o-input o-input-sm"
                     v-model="input.column"
-                    filterable
-                    placeholder="列を選択"
-                    size="small"
                     style="width: 200px; margin-left: 8px"
                   >
-                    <el-option
+                    <option value="" disabled>列を選択</option>
+                    <option
                       v-for="col in availableColumns"
                       :key="col"
-                      :label="col"
                       :value="col"
-                    />
-                  </el-select>
+                    >{{ col }}</option>
+                  </select>
 
-                  <el-input
+                  <input
                     v-if="input.type === 'literal'"
+                    class="o-input o-input-sm"
                     v-model="input.value"
                     placeholder="固定値"
-                    size="small"
                     style="width: 200px; margin-left: 8px"
                   />
 
-
-                  <el-button
-                    type="danger"
-                    size="small"
-                    text
+                  <button
+                    class="o-btn o-btn-sm o-btn-danger"
                     @click="removeInput(idx)"
                     style="margin-left: 8px"
-                  >
-                    削除
-                  </el-button>
+                  >削除</button>
                 </div>
 
                 <div v-if="input.type === 'column'" class="input-pipeline">
@@ -101,49 +98,38 @@
                   >
                     <div class="step-header">
                       <span class="step-number">{{ stepIdx + 1 }}</span>
-                      <el-select
+                      <select
+                        class="o-input o-input-sm"
                         v-model="step.plugin"
-                        placeholder="プラグイン"
-                        size="small"
                         style="width: 180px"
                         @change="onInputStepPluginChange(idx, stepIdx)"
                       >
-                        <el-option
+                        <option value="" disabled>プラグイン</option>
+                        <option
                           v-for="p in transformPlugins"
                           :key="p.name"
-                          :label="p.nameJa || p.name"
                           :value="p.name"
-                        />
-                      </el-select>
-                      <el-tooltip
+                        >{{ p.nameJa || p.name }}</option>
+                      </select>
+                      <span
                         v-if="step.plugin && getPluginDescription(step.plugin)"
-                        :content="getPluginDescription(step.plugin)"
-                        placement="top"
-                        effect="dark"
-                        :popper-options="{ modifiers: [{ name: 'computeStyles', options: { adaptive: false } }] }"
-                        raw-content
-                      >
-                        <el-icon class="plugin-help-icon">
-                          <QuestionFilled />
-                        </el-icon>
-                      </el-tooltip>
-                      <el-button
-                        type="danger"
-                        size="small"
-                        text
+                        class="plugin-help-icon"
+                        :title="getPluginDescription(step.plugin)?.replace(/<br>/g, '\n') || ''"
+                      >&#63;</span>
+                      <button
+                        class="o-btn o-btn-sm o-btn-danger"
                         @click="removeInputStep(idx, stepIdx)"
                         style="margin-left: 8px"
-                      >
-                        削除
-                      </el-button>
+                      >削除</button>
                     </div>
                     <div
                       v-if="step.plugin && inputStepFields[idx]?.[stepIdx]"
                       class="step-params"
                     >
-                      <!-- lookup.map 特殊处理：键值对编辑器 -->
+                      <!-- lookup.map 特殊处理：键値対編集器 -->
                       <template v-if="step.plugin === 'lookup.map'">
-                        <el-form-item label="レイアウトテーブル" style="margin-bottom: 8px">
+                        <div class="o-form-group" style="margin-bottom: 8px">
+                          <label class="o-form-label">レイアウトテーブル</label>
                           <div class="key-value-editor">
                             <div
                               v-for="entry in getLookupMapEntries(step.params)"
@@ -151,62 +137,57 @@
                               class="key-value-row"
                               style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                             >
-                              <el-input
-                                :model-value="entry.key"
+                              <input
+                                class="o-input o-input-sm"
+                                :value="entry.key"
                                 placeholder="キー（入力値）"
-                                size="small"
                                 style="width: 130px"
-                                @change="(val: string) => updateLookupMapEntryKey(step.params, entry.key, val)"
+                                @change="(e: Event) => updateLookupMapEntryKey(step.params, entry.key, (e.target as HTMLInputElement).value)"
                               />
                               <span style="color: #909399">→</span>
-                              <el-input
-                                :model-value="entry.value"
+                              <input
+                                class="o-input o-input-sm"
+                                :value="entry.value"
                                 placeholder="値（出力値）"
-                                size="small"
                                 style="flex: 1"
-                                @input="(val: string) => updateLookupMapEntryValue(step.params, entry.key, val)"
+                                @input="(e: Event) => updateLookupMapEntryValue(step.params, entry.key, (e.target as HTMLInputElement).value)"
                               />
-                              <el-button
-                                type="danger"
-                                size="small"
-                                text
+                              <button
+                                class="o-btn o-btn-sm o-btn-danger"
                                 @click="removeLookupMapEntry(step.params, entry.key)"
-                              >
-                                削除
-                              </el-button>
+                              >削除</button>
                             </div>
-                            <el-button
-                              type="primary"
-                              plain
-                              size="small"
+                            <button
+                              class="o-btn o-btn-sm o-btn-primary"
                               @click="addLookupMapEntry(step.params)"
                               style="margin-top: 4px"
-                            >
-                              + レイアウト追加
-                            </el-button>
+                            >+ レイアウト追加</button>
                           </div>
-                        </el-form-item>
-                        <el-form-item
+                        </div>
+                        <div
                           v-for="field in inputStepFields[idx][stepIdx].filter((f) => f.key !== 'cases')"
                           :key="field.key"
-                          :label="field.label"
+                          class="o-form-group"
                           style="margin-bottom: 4px"
                         >
-                          <el-input
+                          <label class="o-form-label">{{ field.label }}</label>
+                          <input
                             v-if="field.type === 'string'"
+                            class="o-input o-input-sm"
                             v-model="step.params[field.key]"
                             :placeholder="field.placeholder"
-                            size="small"
+                            style="width: 100%"
                           />
-                          <el-switch
-                            v-else-if="field.type === 'boolean'"
-                            v-model="step.params[field.key]"
-                          />
-                        </el-form-item>
+                          <label v-else-if="field.type === 'boolean'" class="o-toggle">
+                            <input type="checkbox" v-model="step.params[field.key]" />
+                            <span class="o-toggle-slider"></span>
+                          </label>
+                        </div>
                       </template>
                       <!-- lookup.contains 特殊処理：部分一致ルール編集器 -->
                       <template v-else-if="step.plugin === 'lookup.contains'">
-                        <el-form-item label="部分一致ルール" style="margin-bottom: 8px">
+                        <div class="o-form-group" style="margin-bottom: 8px">
+                          <label class="o-form-label">部分一致ルール</label>
                           <div class="key-value-editor">
                             <div
                               v-for="(rule, ruleIdx) in (step.params.rules || [])"
@@ -214,60 +195,55 @@
                               class="key-value-row"
                               style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                             >
-                              <el-input
+                              <input
+                                class="o-input o-input-sm"
                                 v-model="rule.search"
                                 placeholder="検索文字列（含む）"
-                                size="small"
                                 style="width: 150px"
                               />
                               <span style="color: #909399">→</span>
-                              <el-input
+                              <input
+                                class="o-input o-input-sm"
                                 v-model="rule.value"
                                 placeholder="出力値"
-                                size="small"
                                 style="flex: 1"
                               />
-                              <el-button
-                                type="danger"
-                                size="small"
-                                text
+                              <button
+                                class="o-btn o-btn-sm o-btn-danger"
                                 @click="removeLookupContainsRule(step.params, Number(ruleIdx))"
-                              >
-                                削除
-                              </el-button>
+                              >削除</button>
                             </div>
-                            <el-button
-                              type="primary"
-                              plain
-                              size="small"
+                            <button
+                              class="o-btn o-btn-sm o-btn-primary"
                               @click="addLookupContainsRule(step.params)"
                               style="margin-top: 4px"
-                            >
-                              + ルール追加
-                            </el-button>
+                            >+ ルール追加</button>
                           </div>
-                        </el-form-item>
-                        <el-form-item
+                        </div>
+                        <div
                           v-for="field in inputStepFields[idx][stepIdx].filter((f) => f.key !== 'rules')"
                           :key="field.key"
-                          :label="field.label"
+                          class="o-form-group"
                           style="margin-bottom: 4px"
                         >
-                          <el-input
+                          <label class="o-form-label">{{ field.label }}</label>
+                          <input
                             v-if="field.type === 'string'"
+                            class="o-input o-input-sm"
                             v-model="step.params[field.key]"
                             :placeholder="field.placeholder"
-                            size="small"
+                            style="width: 100%"
                           />
-                          <el-switch
-                            v-else-if="field.type === 'boolean'"
-                            v-model="step.params[field.key]"
-                          />
-                        </el-form-item>
+                          <label v-else-if="field.type === 'boolean'" class="o-toggle">
+                            <input type="checkbox" v-model="step.params[field.key]" />
+                            <span class="o-toggle-slider"></span>
+                          </label>
+                        </div>
                       </template>
                       <!-- string.replace 特殊処理：置換ルール編集器 -->
                       <template v-else-if="step.plugin === 'string.replace'">
-                        <el-form-item label="置換ルール" style="margin-bottom: 8px">
+                        <div class="o-form-group" style="margin-bottom: 8px">
+                          <label class="o-form-label">置換ルール</label>
                           <div class="key-value-editor">
                             <div
                               v-for="(rule, ruleIdx) in (step.params.rules || [])"
@@ -275,58 +251,51 @@
                               class="key-value-row"
                               style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                             >
-                              <el-input
+                              <input
+                                class="o-input o-input-sm"
                                 v-model="rule.search"
                                 placeholder="検索文字列"
-                                size="small"
                                 style="width: 120px"
                               />
                               <span style="color: #909399">→</span>
-                              <el-input
+                              <input
+                                class="o-input o-input-sm"
                                 v-model="rule.replace"
                                 placeholder="置換後"
-                                size="small"
                                 style="width: 120px"
                               />
-                              <el-input-number
-                                v-model="rule.count"
+                              <input
+                                type="number"
+                                class="o-input o-input-sm"
+                                v-model.number="rule.count"
                                 :min="0"
                                 placeholder="回数"
-                                size="small"
                                 style="width: 80px"
-                                controls-position="right"
                               />
                               <span style="color: #909399; font-size: 11px">回(0=全部)</span>
-                              <el-button
-                                type="danger"
-                                size="small"
-                                text
+                              <button
+                                class="o-btn o-btn-sm o-btn-danger"
                                 @click="removeStringReplaceRule(step.params, Number(ruleIdx))"
-                              >
-                                削除
-                              </el-button>
+                              >削除</button>
                             </div>
-                            <el-button
-                              type="primary"
-                              plain
-                              size="small"
+                            <button
+                              class="o-btn o-btn-sm o-btn-primary"
                               @click="addStringReplaceRule(step.params)"
                               style="margin-top: 4px"
-                            >
-                              + ルール追加
-                            </el-button>
+                            >+ ルール追加</button>
                           </div>
-                        </el-form-item>
+                        </div>
                       </template>
-                      <!-- date.parse 和 date.format 的特殊处理 -->
+                      <!-- date.parse / date.format 特殊処理 -->
                       <template v-else-if="step.plugin === 'date.parse' || step.plugin === 'date.format'">
-                        <el-form-item
+                        <div
                           v-for="field in inputStepFields[idx][stepIdx]"
                           :key="field.key"
-                          :label="field.label"
+                          class="o-form-group"
                           style="margin-bottom: 4px"
                         >
-                          <!-- formats 数组（date.parse） -->
+                          <label class="o-form-label">{{ field.label }}</label>
+                          <!-- formats 配列（date.parse） -->
                           <template v-if="field.key === 'formats' && step.plugin === 'date.parse'">
                             <div class="date-formats-editor">
                               <div
@@ -335,140 +304,134 @@
                                 class="date-format-row"
                                 style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                               >
-                                <el-select
+                                <select
+                                  class="o-input o-input-sm"
                                   v-model="step.params.formats[fmtIdx]"
-                                  size="small"
                                   style="flex: 1; min-width: 280px"
-                                  placeholder="日付形式を選択"
                                   @change="onDateParseFormatsChanged(step)"
                                 >
-                                  <el-option
+                                  <option value="" disabled>日付形式を選択</option>
+                                  <option
                                     v-for="opt in field.options"
                                     :key="opt.value"
-                                    :label="opt.label"
                                     :value="opt.value"
-                                  />
-                                </el-select>
-                                <el-button
-                                  type="danger"
-                                  size="small"
-                                  text
+                                  >{{ opt.label }}</option>
+                                </select>
+                                <button
+                                  class="o-btn o-btn-sm o-btn-danger"
                                   @click="step.params.formats.splice(fmtIdx, 1)"
-                                >
-                                  削除
-                                </el-button>
+                                >削除</button>
                               </div>
-                              <el-button
-                                type="primary"
-                                plain
-                                size="small"
+                              <button
+                                class="o-btn o-btn-sm o-btn-primary"
                                 @click="addDateFormat(step.params)"
                                 style="margin-top: 4px"
-                              >
-                                + 形式を追加
-                              </el-button>
+                              >+ 形式を追加</button>
                             </div>
                           </template>
-                          <!-- precision 选择 -->
-                          <el-select
+                          <!-- precision 選択 -->
+                          <select
                             v-else-if="field.key === 'precision'"
+                            class="o-input o-input-sm"
                             v-model="step.params[field.key]"
-                            size="small"
                             style="width: 100%"
                           >
-                            <el-option label="日精度（YYYY-MM-DD）" value="date" />
-                            <el-option label="秒精度（ISO形式）" value="datetime" />
-                          </el-select>
-                          <!-- format/dateFormat/timeFormat 下拉选择 -->
-                          <el-select
+                            <option value="date">日精度（YYYY-MM-DD）</option>
+                            <option value="datetime">秒精度（ISO形式）</option>
+                          </select>
+                          <!-- format/dateFormat/timeFormat ドロップダウン -->
+                          <select
                             v-else-if="field.type === 'select' && (field.key === 'format' || field.key === 'dateFormat' || field.key === 'timeFormat')"
+                            class="o-input o-input-sm"
                             v-model="step.params[field.key]"
-                            size="small"
                             style="width: 100%; min-width: 280px"
-                            :placeholder="field.placeholder"
                           >
-                            <el-option
+                            <option value="" disabled>{{ field.placeholder || '選択' }}</option>
+                            <option
                               v-for="opt in field.options"
                               :key="opt.value"
-                              :label="opt.label"
                               :value="opt.value"
-                            />
-                          </el-select>
-                          <!-- 其他字段 -->
-                          <el-input
+                            >{{ opt.label }}</option>
+                          </select>
+                          <!-- その他のフィールド -->
+                          <input
                             v-else-if="field.type === 'string'"
+                            class="o-input o-input-sm"
                             v-model="step.params[field.key]"
                             :placeholder="field.placeholder"
-                            size="small"
+                            style="width: 100%"
                           />
-                          <el-input-number
+                          <input
                             v-else-if="field.type === 'number'"
-                            v-model="step.params[field.key]"
+                            type="number"
+                            class="o-input o-input-sm"
+                            v-model.number="step.params[field.key]"
                             :min="field.min"
                             :max="field.max"
-                            size="small"
                             style="width: 100%"
                           />
-                          <el-select
+                          <select
                             v-else-if="field.type === 'select'"
+                            class="o-input o-input-sm"
                             v-model="step.params[field.key]"
-                            size="small"
                             style="width: 100%"
                           >
-                            <el-option
+                            <option
                               v-for="opt in field.options"
                               :key="opt.value"
-                              :label="opt.label"
                               :value="opt.value"
-                            />
-                          </el-select>
-                          <el-switch
-                            v-else-if="field.type === 'boolean'"
-                            v-model="step.params[field.key]"
-                          />
-                        </el-form-item>
+                            >{{ opt.label }}</option>
+                          </select>
+                          <label v-else-if="field.type === 'boolean'" class="o-toggle">
+                            <input type="checkbox" v-model="step.params[field.key]" />
+                            <span class="o-toggle-slider"></span>
+                          </label>
+                        </div>
                       </template>
-                      <!-- http.fetchJson 特殊处理：bodyParams 编辑器 -->
+                      <!-- http.fetchJson 特殊処理：bodyParams 編集器 -->
                       <template v-else-if="step.plugin === 'http.fetchJson'">
-                        <el-form-item
+                        <div
                           v-for="field in inputStepFields[idx][stepIdx].filter((f) => f.key !== 'bodyParams')"
                           :key="field.key"
-                          :label="field.label"
+                          class="o-form-group"
                           style="margin-bottom: 4px"
                         >
-                          <el-input
+                          <label class="o-form-label">{{ field.label }}</label>
+                          <input
                             v-if="field.type === 'string'"
+                            class="o-input o-input-sm"
                             v-model="step.params[field.key]"
                             :placeholder="field.placeholder"
-                            size="small"
+                            style="width: 100%"
                           />
-                          <el-input-number
+                          <input
                             v-else-if="field.type === 'number'"
-                            v-model="step.params[field.key]"
+                            type="number"
+                            class="o-input o-input-sm"
+                            v-model.number="step.params[field.key]"
                             :min="field.min"
                             :max="field.max"
-                            size="small"
                             style="width: 100%"
                           />
-                          <el-select
+                          <select
                             v-else-if="field.type === 'select'"
+                            class="o-input o-input-sm"
                             v-model="step.params[field.key]"
-                            size="small"
                             style="width: 100%"
                           >
-                            <el-option
+                            <option
                               v-for="opt in field.options"
                               :key="opt.value"
-                              :label="opt.label"
                               :value="opt.value"
-                            />
-                          </el-select>
-                        </el-form-item>
-                        <el-form-item
+                            >{{ opt.label }}</option>
+                          </select>
+                        </div>
+                        <div
                           v-if="['POST', 'PUT', 'PATCH'].includes(step.params.method || 'GET')"
-                          label="Body パラメータ"
+                          class="o-form-group"
                           style="margin-bottom: 8px"
                         >
+                          <label class="o-form-label">Body パラメータ</label>
                           <div class="body-params-editor">
                             <div
                               v-for="(param, paramIdx) in (step.params.bodyParams || [])"
@@ -476,67 +439,58 @@
                               class="body-param-row"
                               style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                             >
-                              <el-input
+                              <input
+                                class="o-input o-input-sm"
                                 v-model="param.key"
                                 placeholder="パラメータ名"
-                                size="small"
                                 style="width: 150px"
                               />
-                              <el-select
+                              <select
+                                class="o-input o-input-sm"
                                 v-model="param.source"
-                                size="small"
                                 style="width: 120px"
                                 @change="onBodyParamSourceChange(param)"
                               >
-                                <el-option label="固定値" value="literal" />
-                                <el-option label="列から取得" value="column" />
-                              </el-select>
-                              <el-input
+                                <option value="literal">固定値</option>
+                                <option value="column">列から取得</option>
+                              </select>
+                              <input
                                 v-if="param.source === 'literal'"
+                                class="o-input o-input-sm"
                                 v-model="param.value"
                                 placeholder="固定値"
-                                size="small"
                                 style="flex: 1"
                               />
-                              <el-select
+                              <select
                                 v-else-if="param.source === 'column'"
+                                class="o-input o-input-sm"
                                 v-model="param.column"
-                                filterable
-                                placeholder="列を選択"
-                                size="small"
                                 style="flex: 1"
                               >
-                                <el-option
+                                <option value="" disabled>列を選択</option>
+                                <option
                                   v-for="col in availableColumns"
                                   :key="col"
-                                  :label="col"
                                   :value="col"
-                                />
-                              </el-select>
-                              <el-button
-                                type="danger"
-                                size="small"
-                                text
+                                >{{ col }}</option>
+                              </select>
+                              <button
+                                class="o-btn o-btn-sm o-btn-danger"
                                 @click="removeBodyParam(step.params, Number(paramIdx))"
-                              >
-                                削除
-                              </el-button>
+                              >削除</button>
                             </div>
-                            <el-button
-                              type="primary"
-                              plain
-                              size="small"
+                            <button
+                              class="o-btn o-btn-sm o-btn-primary"
                               @click="addBodyParam(step.params)"
                               style="margin-top: 4px"
-                            >
-                              + パラメータ追加
-                            </el-button>
+                            >+ パラメータ追加</button>
                           </div>
-                        </el-form-item>
+                        </div>
                       </template>
-                      <!-- string.insertSymbol 特殊处理：positions 编辑器 -->
+                      <!-- string.insertSymbol 特殊処理：positions 編集器 -->
                       <template v-else-if="step.plugin === 'string.insertSymbol'">
-                        <el-form-item label="挿入位置" style="margin-bottom: 8px">
+                        <div class="o-form-group" style="margin-bottom: 8px">
+                          <label class="o-form-label">挿入位置</label>
                           <div class="positions-editor">
                             <div
                               v-for="(pos, posIdx) in (step.params.positions || [])"
@@ -544,110 +498,104 @@
                               class="position-row"
                               style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                             >
-                              <el-input-number
-                                v-model="step.params.positions[posIdx]"
+                              <input
+                                type="number"
+                                class="o-input o-input-sm"
+                                v-model.number="step.params.positions[posIdx]"
                                 :min="0"
                                 placeholder="位置（0から始まる）"
-                                size="small"
                                 style="flex: 1"
                               />
-                              <el-button
-                                type="danger"
-                                size="small"
-                                text
+                              <button
+                                class="o-btn o-btn-sm o-btn-danger"
                                 :disabled="(step.params.positions || []).length <= 1"
                                 @click="removeInsertSymbolPosition(step.params, Number(posIdx))"
-                              >
-                                削除
-                              </el-button>
+                              >削除</button>
                             </div>
-                            <el-button
-                              type="primary"
-                              plain
-                              size="small"
+                            <button
+                              class="o-btn o-btn-sm o-btn-primary"
                               @click="addInsertSymbolPosition(step.params)"
                               style="margin-top: 4px"
-                            >
-                              + 位置追加
-                            </el-button>
+                            >+ 位置追加</button>
                           </div>
-                        </el-form-item>
-                        <el-form-item
+                        </div>
+                        <div
                           v-for="field in inputStepFields[idx][stepIdx].filter((f) => f.key !== 'positions')"
                           :key="field.key"
-                          :label="field.label"
+                          class="o-form-group"
                           style="margin-bottom: 4px"
                         >
-                          <el-input
+                          <label class="o-form-label">{{ field.label }}</label>
+                          <input
                             v-if="field.type === 'string'"
+                            class="o-input o-input-sm"
                             v-model="step.params[field.key]"
                             :placeholder="field.placeholder"
-                            size="small"
+                            style="width: 100%"
                           />
-                        </el-form-item>
+                        </div>
                       </template>
-                      <!-- 其他插件的默认处理 -->
+                      <!-- その他プラグインのデフォルト処理 -->
                       <template v-else>
-                        <el-form-item
+                        <div
                           v-for="field in inputStepFields[idx][stepIdx]"
                           :key="field.key"
-                          :label="field.label"
+                          class="o-form-group"
                           style="margin-bottom: 4px"
                         >
-                          <el-input
+                          <label class="o-form-label">{{ field.label }}</label>
+                          <input
                             v-if="field.type === 'string'"
+                            class="o-input o-input-sm"
                             v-model="step.params[field.key]"
                             :placeholder="field.placeholder"
-                            size="small"
+                            style="width: 100%"
                           />
-                          <el-input-number
+                          <input
                             v-else-if="field.type === 'number'"
-                            v-model="step.params[field.key]"
+                            type="number"
+                            class="o-input o-input-sm"
+                            v-model.number="step.params[field.key]"
                             :min="field.min"
                             :max="field.max"
-                            size="small"
                             style="width: 100%"
                           />
-                          <el-select
+                          <select
                             v-else-if="field.type === 'select'"
+                            class="o-input o-input-sm"
                             v-model="step.params[field.key]"
-                            size="small"
                             style="width: 100%"
                           >
-                            <el-option
+                            <option
                               v-for="opt in field.options"
                               :key="opt.value"
-                              :label="opt.label"
                               :value="opt.value"
-                            />
-                          </el-select>
-                          <el-switch
-                            v-else-if="field.type === 'boolean'"
-                            v-model="step.params[field.key]"
-                          />
-                        </el-form-item>
+                            >{{ opt.label }}</option>
+                          </select>
+                          <label v-else-if="field.type === 'boolean'" class="o-toggle">
+                            <input type="checkbox" v-model="step.params[field.key]" />
+                            <span class="o-toggle-slider"></span>
+                          </label>
+                        </div>
                       </template>
                     </div>
                   </div>
-                  <el-button
-                    type="primary"
-                    plain
-                    size="small"
+                  <button
+                    class="o-btn o-btn-sm o-btn-primary"
                     @click="addInputStep(idx)"
                     style="margin-top: 4px"
-                  >
-                    + 入力変換を追加
-                  </el-button>
+                  >+ 入力変換を追加</button>
                 </div>
               </div>
-              <el-button type="primary" plain size="small" @click="addInput" style="margin-top: 8px">
+              <button class="o-btn o-btn-sm o-btn-primary" @click="addInput" style="margin-top: 8px">
                 + 入力変換を追加
-              </el-button>
+              </button>
             </div>
-          </el-form-item>
+          </div>
 
 
-          <el-form-item label="出力パイプライン">
+          <div class="o-form-group">
+            <label class="o-form-label">出力パイプライン</label>
             <div class="pipeline-steps">
               <div
                 v-for="(step, stepIdx) in form.outputPipelineSteps"
@@ -656,46 +604,35 @@
               >
                 <div class="step-header">
                   <span class="step-number">{{ stepIdx + 1 }}</span>
-                  <el-select
+                  <select
+                    class="o-input o-input-sm"
                     v-model="step.plugin"
-                    placeholder="プラグイン"
-                    size="small"
                     style="width: 180px"
                     @change="onOutputStepPluginChange(stepIdx)"
                   >
-                    <el-option
+                    <option value="" disabled>プラグイン</option>
+                    <option
                       v-for="p in transformPlugins"
                       :key="p.name"
-                      :label="p.nameJa || p.name"
                       :value="p.name"
-                    />
-                  </el-select>
-                  <el-tooltip
+                    >{{ p.nameJa || p.name }}</option>
+                  </select>
+                  <span
                     v-if="step.plugin && getPluginDescription(step.plugin)"
-                    :content="getPluginDescription(step.plugin)"
-                    placement="top"
-                    effect="dark"
-                    :popper-options="{ modifiers: [{ name: 'computeStyles', options: { adaptive: false } }] }"
-                    raw-content
-                  >
-                    <el-icon class="plugin-help-icon">
-                      <QuestionFilled />
-                    </el-icon>
-                  </el-tooltip>
-                  <el-button
-                    type="danger"
-                    size="small"
-                    text
+                    class="plugin-help-icon"
+                    :title="getPluginDescription(step.plugin)?.replace(/<br>/g, '\n') || ''"
+                  >&#63;</span>
+                  <button
+                    class="o-btn o-btn-sm o-btn-danger"
                     @click="removeOutputStep(stepIdx)"
                     style="margin-left: 8px"
-                  >
-                    削除
-                  </el-button>
+                  >削除</button>
                 </div>
                 <div v-if="step.plugin && outputStepFields[stepIdx]" class="step-params">
-                  <!-- lookup.map 特殊处理：键值对编辑器 -->
+                  <!-- lookup.map 特殊処理：キー値対編集器 -->
                   <template v-if="step.plugin === 'lookup.map'">
-                    <el-form-item label="レイアウトテーブル" style="margin-bottom: 8px">
+                    <div class="o-form-group" style="margin-bottom: 8px">
+                      <label class="o-form-label">レイアウトテーブル</label>
                       <div class="key-value-editor">
                         <div
                           v-for="entry in getLookupMapEntries(step.params)"
@@ -703,62 +640,57 @@
                           class="key-value-row"
                           style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                         >
-                          <el-input
-                            :model-value="entry.key"
+                          <input
+                            class="o-input o-input-sm"
+                            :value="entry.key"
                             placeholder="キー（入力値）"
-                            size="small"
                             style="width: 200px"
-                            @change="(val: string) => updateLookupMapEntryKey(step.params, entry.key, val)"
+                            @change="(e: Event) => updateLookupMapEntryKey(step.params, entry.key, (e.target as HTMLInputElement).value)"
                           />
                           <span style="color: #909399">→</span>
-                          <el-input
-                            :model-value="entry.value"
+                          <input
+                            class="o-input o-input-sm"
+                            :value="entry.value"
                             placeholder="値（出力値）"
-                            size="small"
                             style="flex: 1"
-                            @input="(val: string) => updateLookupMapEntryValue(step.params, entry.key, val)"
+                            @input="(e: Event) => updateLookupMapEntryValue(step.params, entry.key, (e.target as HTMLInputElement).value)"
                           />
-                          <el-button
-                            type="danger"
-                            size="small"
-                            text
+                          <button
+                            class="o-btn o-btn-sm o-btn-danger"
                             @click="removeLookupMapEntry(step.params, entry.key)"
-                          >
-                            削除
-                          </el-button>
+                          >削除</button>
                         </div>
-                        <el-button
-                          type="primary"
-                          plain
-                          size="small"
+                        <button
+                          class="o-btn o-btn-sm o-btn-primary"
                           @click="addLookupMapEntry(step.params)"
                           style="margin-top: 4px"
-                        >
-                          + レイアウト追加
-                        </el-button>
+                        >+ レイアウト追加</button>
                       </div>
-                    </el-form-item>
-                    <el-form-item
+                    </div>
+                    <div
                       v-for="field in outputStepFields[stepIdx].filter((f) => f.key !== 'cases')"
                       :key="field.key"
-                      :label="field.label"
+                      class="o-form-group"
                       style="margin-bottom: 4px"
                     >
-                      <el-input
+                      <label class="o-form-label">{{ field.label }}</label>
+                      <input
                         v-if="field.type === 'string'"
+                        class="o-input o-input-sm"
                         v-model="step.params[field.key]"
                         :placeholder="field.placeholder"
-                        size="small"
+                        style="width: 100%"
                       />
-                      <el-switch
-                        v-else-if="field.type === 'boolean'"
-                        v-model="step.params[field.key]"
-                      />
-                    </el-form-item>
+                      <label v-else-if="field.type === 'boolean'" class="o-toggle">
+                        <input type="checkbox" v-model="step.params[field.key]" />
+                        <span class="o-toggle-slider"></span>
+                      </label>
+                    </div>
                   </template>
                   <!-- lookup.contains 特殊処理：部分一致ルール編集器 -->
                   <template v-else-if="step.plugin === 'lookup.contains'">
-                    <el-form-item label="部分一致ルール" style="margin-bottom: 8px">
+                    <div class="o-form-group" style="margin-bottom: 8px">
+                      <label class="o-form-label">部分一致ルール</label>
                       <div class="key-value-editor">
                         <div
                           v-for="(rule, ruleIdx) in (step.params.rules || [])"
@@ -766,60 +698,55 @@
                           class="key-value-row"
                           style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                         >
-                          <el-input
+                          <input
+                            class="o-input o-input-sm"
                             v-model="rule.search"
                             placeholder="検索文字列（含む）"
-                            size="small"
                             style="width: 150px"
                           />
                           <span style="color: #909399">→</span>
-                          <el-input
+                          <input
+                            class="o-input o-input-sm"
                             v-model="rule.value"
                             placeholder="出力値"
-                            size="small"
                             style="flex: 1"
                           />
-                          <el-button
-                            type="danger"
-                            size="small"
-                            text
+                          <button
+                            class="o-btn o-btn-sm o-btn-danger"
                             @click="removeLookupContainsRule(step.params, Number(ruleIdx))"
-                          >
-                            削除
-                          </el-button>
+                          >削除</button>
                         </div>
-                        <el-button
-                          type="primary"
-                          plain
-                          size="small"
+                        <button
+                          class="o-btn o-btn-sm o-btn-primary"
                           @click="addLookupContainsRule(step.params)"
                           style="margin-top: 4px"
-                        >
-                          + ルール追加
-                        </el-button>
+                        >+ ルール追加</button>
                       </div>
-                    </el-form-item>
-                    <el-form-item
+                    </div>
+                    <div
                       v-for="field in outputStepFields[stepIdx].filter((f) => f.key !== 'rules')"
                       :key="field.key"
-                      :label="field.label"
+                      class="o-form-group"
                       style="margin-bottom: 4px"
                     >
-                      <el-input
+                      <label class="o-form-label">{{ field.label }}</label>
+                      <input
                         v-if="field.type === 'string'"
+                        class="o-input o-input-sm"
                         v-model="step.params[field.key]"
                         :placeholder="field.placeholder"
-                        size="small"
+                        style="width: 100%"
                       />
-                      <el-switch
-                        v-else-if="field.type === 'boolean'"
-                        v-model="step.params[field.key]"
-                      />
-                    </el-form-item>
+                      <label v-else-if="field.type === 'boolean'" class="o-toggle">
+                        <input type="checkbox" v-model="step.params[field.key]" />
+                        <span class="o-toggle-slider"></span>
+                      </label>
+                    </div>
                   </template>
                   <!-- string.replace 特殊処理：置換ルール編集器 -->
                   <template v-else-if="step.plugin === 'string.replace'">
-                    <el-form-item label="置換ルール" style="margin-bottom: 8px">
+                    <div class="o-form-group" style="margin-bottom: 8px">
+                      <label class="o-form-label">置換ルール</label>
                       <div class="key-value-editor">
                         <div
                           v-for="(rule, ruleIdx) in (step.params.rules || [])"
@@ -827,90 +754,85 @@
                           class="key-value-row"
                           style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                         >
-                          <el-input
+                          <input
+                            class="o-input o-input-sm"
                             v-model="rule.search"
                             placeholder="検索文字列"
-                            size="small"
                             style="width: 120px"
                           />
                           <span style="color: #909399">→</span>
-                          <el-input
+                          <input
+                            class="o-input o-input-sm"
                             v-model="rule.replace"
                             placeholder="置換後"
-                            size="small"
                             style="width: 120px"
                           />
-                          <el-input-number
-                            v-model="rule.count"
+                          <input
+                            type="number"
+                            class="o-input o-input-sm"
+                            v-model.number="rule.count"
                             :min="0"
                             placeholder="回数"
-                            size="small"
                             style="width: 80px"
-                            controls-position="right"
                           />
                           <span style="color: #909399; font-size: 11px">回(0=全部)</span>
-                          <el-button
-                            type="danger"
-                            size="small"
-                            text
+                          <button
+                            class="o-btn o-btn-sm o-btn-danger"
                             @click="removeStringReplaceRule(step.params, Number(ruleIdx))"
-                          >
-                            削除
-                          </el-button>
+                          >削除</button>
                         </div>
-                        <el-button
-                          type="primary"
-                          plain
-                          size="small"
+                        <button
+                          class="o-btn o-btn-sm o-btn-primary"
                           @click="addStringReplaceRule(step.params)"
                           style="margin-top: 4px"
-                        >
-                          + ルール追加
-                        </el-button>
+                        >+ ルール追加</button>
                       </div>
-                    </el-form-item>
+                    </div>
                   </template>
-                  <!-- http.fetchJson 特殊处理：bodyParams 编辑器 -->
+                  <!-- http.fetchJson 特殊処理：bodyParams 編集器 -->
                   <template v-else-if="step.plugin === 'http.fetchJson'">
-                    <el-form-item
+                    <div
                       v-for="field in outputStepFields[stepIdx].filter((f) => f.key !== 'bodyParams')"
                       :key="field.key"
-                      :label="field.label"
+                      class="o-form-group"
                       style="margin-bottom: 4px"
                     >
-                      <el-input
+                      <label class="o-form-label">{{ field.label }}</label>
+                      <input
                         v-if="field.type === 'string'"
+                        class="o-input o-input-sm"
                         v-model="step.params[field.key]"
                         :placeholder="field.placeholder"
-                        size="small"
+                        style="width: 100%"
                       />
-                      <el-input-number
+                      <input
                         v-else-if="field.type === 'number'"
-                        v-model="step.params[field.key]"
+                        type="number"
+                        class="o-input o-input-sm"
+                        v-model.number="step.params[field.key]"
                         :min="field.min"
                         :max="field.max"
-                        size="small"
                         style="width: 100%"
                       />
-                      <el-select
+                      <select
                         v-else-if="field.type === 'select'"
+                        class="o-input o-input-sm"
                         v-model="step.params[field.key]"
-                        size="small"
                         style="width: 100%"
                       >
-                        <el-option
+                        <option
                           v-for="opt in field.options"
                           :key="opt.value"
-                          :label="opt.label"
                           :value="opt.value"
-                        />
-                      </el-select>
-                    </el-form-item>
-                    <el-form-item
+                        >{{ opt.label }}</option>
+                      </select>
+                    </div>
+                    <div
                       v-if="['POST', 'PUT', 'PATCH'].includes(step.params.method || 'GET')"
-                      label="Body パラメータ"
+                      class="o-form-group"
                       style="margin-bottom: 8px"
                     >
+                      <label class="o-form-label">Body パラメータ</label>
                       <div class="body-params-editor">
                         <div
                           v-for="(param, paramIdx) in (step.params.bodyParams || [])"
@@ -918,73 +840,64 @@
                           class="body-param-row"
                           style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                         >
-                          <el-input
+                          <input
+                            class="o-input o-input-sm"
                             v-model="param.key"
                             placeholder="パラメータ名"
-                            size="small"
                             style="width: 150px"
                           />
-                          <el-select
+                          <select
+                            class="o-input o-input-sm"
                             v-model="param.source"
-                            size="small"
                             style="width: 120px"
                             @change="onBodyParamSourceChange(param)"
                           >
-                            <el-option label="固定値" value="literal" />
-                            <el-option label="列から取得" value="column" />
-                          </el-select>
-                          <el-input
+                            <option value="literal">固定値</option>
+                            <option value="column">列から取得</option>
+                          </select>
+                          <input
                             v-if="param.source === 'literal'"
+                            class="o-input o-input-sm"
                             v-model="param.value"
                             placeholder="固定値"
-                            size="small"
                             style="flex: 1"
                           />
-                          <el-select
+                          <select
                             v-else-if="param.source === 'column'"
+                            class="o-input o-input-sm"
                             v-model="param.column"
-                            filterable
-                            placeholder="列を選択"
-                            size="small"
                             style="flex: 1"
                           >
-                            <el-option
+                            <option value="" disabled>列を選択</option>
+                            <option
                               v-for="col in availableColumns"
                               :key="col"
-                              :label="col"
                               :value="col"
-                            />
-                          </el-select>
-                          <el-button
-                            type="danger"
-                            size="small"
-                            text
+                            >{{ col }}</option>
+                          </select>
+                          <button
+                            class="o-btn o-btn-sm o-btn-danger"
                             @click="removeBodyParam(step.params, Number(paramIdx))"
-                          >
-                            削除
-                          </el-button>
+                          >削除</button>
                         </div>
-                        <el-button
-                          type="primary"
-                          plain
-                          size="small"
+                        <button
+                          class="o-btn o-btn-sm o-btn-primary"
                           @click="addBodyParam(step.params)"
                           style="margin-top: 4px"
-                        >
-                          + パラメータ追加
-                        </el-button>
+                        >+ パラメータ追加</button>
                       </div>
-                    </el-form-item>
+                    </div>
                   </template>
-                  <!-- date.parse 和 date.format 的特殊处理 -->
+                  <!-- date.parse / date.format 特殊処理 -->
                   <template v-else-if="step.plugin === 'date.parse' || step.plugin === 'date.format'">
-                    <el-form-item
+                    <div
                       v-for="field in outputStepFields[stepIdx]"
                       :key="field.key"
-                      :label="field.label"
+                      class="o-form-group"
                       style="margin-bottom: 4px"
                     >
-                      <!-- formats 数组（date.parse） -->
+                      <label class="o-form-label">{{ field.label }}</label>
+                      <!-- formats 配列（date.parse） -->
                       <template v-if="field.key === 'formats' && step.plugin === 'date.parse'">
                         <div class="date-formats-editor">
                           <div
@@ -993,102 +906,94 @@
                             class="date-format-row"
                             style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                           >
-                            <el-select
+                            <select
+                              class="o-input o-input-sm"
                               v-model="step.params.formats[fmtIdx]"
-                              size="small"
                               style="flex: 1; min-width: 280px"
-                              placeholder="日付形式を選択"
                               @change="onDateParseFormatsChanged(step)"
                             >
-                              <el-option
+                              <option value="" disabled>日付形式を選択</option>
+                              <option
                                 v-for="opt in field.options"
                                 :key="opt.value"
-                                :label="opt.label"
                                 :value="opt.value"
-                              />
-                            </el-select>
-                            <el-button
-                              type="danger"
-                              size="small"
-                              text
+                              >{{ opt.label }}</option>
+                            </select>
+                            <button
+                              class="o-btn o-btn-sm o-btn-danger"
                               @click="step.params.formats.splice(fmtIdx, 1)"
-                            >
-                              削除
-                            </el-button>
+                            >削除</button>
                           </div>
-                          <el-button
-                            type="primary"
-                            plain
-                            size="small"
+                          <button
+                            class="o-btn o-btn-sm o-btn-primary"
                             @click="addDateFormat(step.params)"
                             style="margin-top: 4px"
-                          >
-                            + 形式を追加
-                          </el-button>
+                          >+ 形式を追加</button>
                         </div>
                       </template>
-                      <!-- precision 选择 -->
-                      <el-select
+                      <!-- precision 選択 -->
+                      <select
                         v-else-if="field.key === 'precision'"
+                        class="o-input o-input-sm"
                         v-model="step.params[field.key]"
-                        size="small"
                         style="width: 100%"
                       >
-                        <el-option label="日精度（YYYY-MM-DD）" value="date" />
-                        <el-option label="秒精度（ISO形式）" value="datetime" />
-                      </el-select>
-                      <!-- format/dateFormat/timeFormat 下拉选择 -->
-                      <el-select
+                        <option value="date">日精度（YYYY-MM-DD）</option>
+                        <option value="datetime">秒精度（ISO形式）</option>
+                      </select>
+                      <!-- format/dateFormat/timeFormat ドロップダウン -->
+                      <select
                         v-else-if="field.type === 'select' && (field.key === 'format' || field.key === 'dateFormat' || field.key === 'timeFormat')"
+                        class="o-input o-input-sm"
                         v-model="step.params[field.key]"
-                        size="small"
                         style="width: 100%; min-width: 280px"
-                        :placeholder="field.placeholder"
                       >
-                        <el-option
+                        <option value="" disabled>{{ field.placeholder || '選択' }}</option>
+                        <option
                           v-for="opt in field.options"
                           :key="opt.value"
-                          :label="opt.label"
                           :value="opt.value"
-                        />
-                      </el-select>
-                      <!-- 其他字段 -->
-                      <el-input
+                        >{{ opt.label }}</option>
+                      </select>
+                      <!-- その他のフィールド -->
+                      <input
                         v-else-if="field.type === 'string'"
+                        class="o-input o-input-sm"
                         v-model="step.params[field.key]"
                         :placeholder="field.placeholder"
-                        size="small"
+                        style="width: 100%"
                       />
-                      <el-input-number
+                      <input
                         v-else-if="field.type === 'number'"
-                        v-model="step.params[field.key]"
+                        type="number"
+                        class="o-input o-input-sm"
+                        v-model.number="step.params[field.key]"
                         :min="field.min"
                         :max="field.max"
-                        size="small"
                         style="width: 100%"
                       />
-                      <el-select
+                      <select
                         v-else-if="field.type === 'select'"
+                        class="o-input o-input-sm"
                         v-model="step.params[field.key]"
-                        size="small"
                         style="width: 100%"
                       >
-                        <el-option
+                        <option
                           v-for="opt in field.options"
                           :key="opt.value"
-                          :label="opt.label"
                           :value="opt.value"
-                        />
-                      </el-select>
-                      <el-switch
-                        v-else-if="field.type === 'boolean'"
-                        v-model="step.params[field.key]"
-                      />
-                    </el-form-item>
+                        >{{ opt.label }}</option>
+                      </select>
+                      <label v-else-if="field.type === 'boolean'" class="o-toggle">
+                        <input type="checkbox" v-model="step.params[field.key]" />
+                        <span class="o-toggle-slider"></span>
+                      </label>
+                    </div>
                   </template>
-                  <!-- string.insertSymbol 特殊处理：positions 编辑器 -->
+                  <!-- string.insertSymbol 特殊処理：positions 編集器 -->
                   <template v-else-if="step.plugin === 'string.insertSymbol'">
-                    <el-form-item label="挿入位置" style="margin-bottom: 8px">
+                    <div class="o-form-group" style="margin-bottom: 8px">
+                      <label class="o-form-label">挿入位置</label>
                       <div class="positions-editor">
                         <div
                           v-for="(pos, posIdx) in (step.params.positions || [])"
@@ -1096,103 +1001,96 @@
                           class="position-row"
                           style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                         >
-                          <el-input-number
-                            v-model="step.params.positions[posIdx]"
+                          <input
+                            type="number"
+                            class="o-input o-input-sm"
+                            v-model.number="step.params.positions[posIdx]"
                             :min="0"
                             placeholder="位置（0から始まる）"
-                            size="small"
                             style="flex: 1"
                           />
-                          <el-button
-                            type="danger"
-                            size="small"
-                            text
+                          <button
+                            class="o-btn o-btn-sm o-btn-danger"
                             :disabled="(step.params.positions || []).length <= 1"
                             @click="removeInsertSymbolPosition(step.params, Number(posIdx))"
-                          >
-                            削除
-                          </el-button>
+                          >削除</button>
                         </div>
-                        <el-button
-                          type="primary"
-                          plain
-                          size="small"
+                        <button
+                          class="o-btn o-btn-sm o-btn-primary"
                           @click="addInsertSymbolPosition(step.params)"
                           style="margin-top: 4px"
-                        >
-                          + 位置追加
-                        </el-button>
+                        >+ 位置追加</button>
                       </div>
-                    </el-form-item>
-                    <el-form-item
+                    </div>
+                    <div
                       v-for="field in outputStepFields[stepIdx].filter((f) => f.key !== 'positions')"
                       :key="field.key"
-                      :label="field.label"
+                      class="o-form-group"
                       style="margin-bottom: 4px"
                     >
-                      <el-input
+                      <label class="o-form-label">{{ field.label }}</label>
+                      <input
                         v-if="field.type === 'string'"
+                        class="o-input o-input-sm"
                         v-model="step.params[field.key]"
                         :placeholder="field.placeholder"
-                        size="small"
+                        style="width: 100%"
                       />
-                    </el-form-item>
+                    </div>
                   </template>
-                  <!-- 其他插件的默认处理 -->
+                  <!-- その他プラグインのデフォルト処理 -->
                   <template v-else>
-                    <el-form-item
+                    <div
                       v-for="field in outputStepFields[stepIdx]"
                       :key="field.key"
-                      :label="field.label"
+                      class="o-form-group"
                       style="margin-bottom: 4px"
                     >
-                      <el-input
+                      <label class="o-form-label">{{ field.label }}</label>
+                      <input
                         v-if="field.type === 'string'"
+                        class="o-input o-input-sm"
                         v-model="step.params[field.key]"
                         :placeholder="field.placeholder"
-                        size="small"
+                        style="width: 100%"
                       />
-                      <el-input-number
+                      <input
                         v-else-if="field.type === 'number'"
-                        v-model="step.params[field.key]"
+                        type="number"
+                        class="o-input o-input-sm"
+                        v-model.number="step.params[field.key]"
                         :min="field.min"
                         :max="field.max"
-                        size="small"
                         style="width: 100%"
                       />
-                      <el-select
+                      <select
                         v-else-if="field.type === 'select'"
+                        class="o-input o-input-sm"
                         v-model="step.params[field.key]"
-                        size="small"
                         style="width: 100%"
                       >
-                        <el-option
+                        <option
                           v-for="opt in field.options"
                           :key="opt.value"
-                          :label="opt.label"
                           :value="opt.value"
-                        />
-                      </el-select>
-                      <el-switch
-                        v-else-if="field.type === 'boolean'"
-                        v-model="step.params[field.key]"
-                      />
-                    </el-form-item>
+                        >{{ opt.label }}</option>
+                      </select>
+                      <label v-else-if="field.type === 'boolean'" class="o-toggle">
+                        <input type="checkbox" v-model="step.params[field.key]" />
+                        <span class="o-toggle-slider"></span>
+                      </label>
+                    </div>
                   </template>
                 </div>
               </div>
-              <el-button
-                type="primary"
-                plain
-                size="small"
+              <button
+                class="o-btn o-btn-sm o-btn-primary"
                 @click="addOutputStep"
                 style="margin-top: 4px"
-              >
-                + 出力変換を追加
-              </el-button>
+              >+ 出力変換を追加</button>
             </div>
-          </el-form-item>
-        </el-form>
+          </div>
+        </div>
       </div>
       <div class="right">
         <div class="preview-title">プレビュー</div>
@@ -1210,15 +1108,15 @@
       </div>
     </div>
     <template #footer>
-      <el-button @click="visibleProxy = false">キャンセル</el-button>
-      <el-button type="primary" @click="handleSubmit">保存</el-button>
+      <button class="o-btn o-btn-secondary" @click="visibleProxy = false">キャンセル</button>
+      <button class="o-btn o-btn-primary" @click="handleSubmit">保存</button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, watch, ref, onMounted } from 'vue'
-import { ArrowUp, ArrowDown, QuestionFilled } from '@element-plus/icons-vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import { getTransformPlugins, type TransformPluginInfo, type TransformPipeline, type TransformStep, type TransformMapping, type InputSource } from '@/api/mappingConfig'
 import { jsonSchemaToFormFields, buildParamsFromForm, type FormField } from '@/utils/transformForm'
 import { runTransformMapping } from '@/utils/transformRunner'
@@ -1263,7 +1161,7 @@ const orderFieldDefinitions = getOrderFieldDefinitions()
 // 获取 target 字段的详细说明
 const targetDescription = computed<string | null>(() => {
   if (!props.target?.field) return null
-  
+
   // 如果是 order-to-carrier，从 carrier 的 formatDefinition 获取
   if (props.configType === 'order-to-carrier' && props.carrierId && props.carrierOptions) {
     const carrier = props.carrierOptions.find((c) => c._id === props.carrierId)
@@ -1272,13 +1170,13 @@ const targetDescription = computed<string | null>(() => {
       return col?.description || null
     }
   }
-  
+
   // 如果是 ec-company-to-order，从 order 字段定义获取
   if (props.configType === 'ec-company-to-order') {
     const def = orderFieldDefinitions.find((d) => d.dataKey === props.target?.field)
     return def?.description || null
   }
-  
+
   return null
 })
 
@@ -1398,31 +1296,31 @@ watch(
 // 获取字段显示名称
 const getFieldDisplayName = (fieldKey: string): string => {
   if (!fieldKey) return ''
-  
+
   // 从 orderFieldDefinitions 中查找
   const fieldDef = orderFieldDefinitions.find((f) => f.key === fieldKey || f.dataKey === fieldKey)
   if (fieldDef?.title) return fieldDef.title
-  
+
   // 尝试匹配基础字段名（处理嵌套路径）
   const baseField = fieldKey.split('.')[0]
   if (baseField) {
     const baseDef = orderFieldDefinitions.find((f) => f.key === baseField || f.dataKey === baseField)
     if (baseDef?.title) return baseDef.title
   }
-  
+
   return fieldKey
 }
 
 // 获取 Source 显示名称
 const getSourceDisplayName = (sourceKey: string): string => {
   if (!sourceKey) return ''
-  
+
   // 如果 preSelectedSources 中有对应的 source，使用其 label
   if (props.preSelectedSources) {
     const source = props.preSelectedSources.find((s) => s.name === sourceKey)
     if (source?.label) return source.label
   }
-  
+
   // 否则从 orderFieldDefinitions 中查找
   return getFieldDisplayName(sourceKey)
 }
@@ -1430,12 +1328,12 @@ const getSourceDisplayName = (sourceKey: string): string => {
 // 获取 Target 显示名称
 const getTargetDisplayName = (targetKey: string): string => {
   if (!targetKey) return ''
-  
+
   // 如果 target 有 label，使用它
   if (props.target && 'label' in props.target && (props.target as any).label) {
     return (props.target as any).label
   }
-  
+
   // 否则从 orderFieldDefinitions 中查找
   return getFieldDisplayName(targetKey)
 }
@@ -1452,13 +1350,13 @@ const referencedSources = computed(() => {
   return form.inputs.filter((i) => i.type === 'column').map((i) => i.column || '')
 })
 
-// 预览值（使用 transformRunner 确保与实际导入一致）
+// 预览值（使用 transformRunner 确保与实際導入一致）
 const previewValue = ref<string>('（計算中...）')
 
 // 构建当前的 TransformMapping 对象（用于预览）
 const buildCurrentMapping = (): TransformMapping | null => {
   if (form.inputs.length === 0) return null
-  
+
   const inputs: InputSource[] = form.inputs.map((inp): InputSource | null => {
     const pipelineSteps: TransformStep[] = inp.pipelineSteps
       .filter((s) => s.plugin) // 只包含已选择插件的步骤
@@ -1468,10 +1366,10 @@ const buildCurrentMapping = (): TransformMapping | null => {
         params: s.params || {},
         enabled: true,
       }))
-    
-    const pipeline: TransformPipeline | undefined = 
+
+    const pipeline: TransformPipeline | undefined =
       pipelineSteps.length > 0 ? { steps: pipelineSteps } : undefined
-    
+
     if (inp.type === 'column') {
       return {
         id: inp.id,
@@ -1491,7 +1389,7 @@ const buildCurrentMapping = (): TransformMapping | null => {
     return null
   })
   .filter((inp): inp is InputSource => inp !== null)
-  
+
   const outputSteps: TransformStep[] = form.outputPipelineSteps
     .filter((s) => s.plugin)
     .map((s) => ({
@@ -1500,9 +1398,9 @@ const buildCurrentMapping = (): TransformMapping | null => {
       params: s.params || {},
       enabled: true,
     }))
-  
+
   const combinePlugin = inputs.length > 1 ? 'combine.concat' : 'combine.first'
-  
+
   return {
     targetField: props.target?.field || '',
     inputs,
@@ -1523,13 +1421,13 @@ watch(
       previewValue.value = '（サンプルなし）'
       return
     }
-    
+
     const mapping = buildCurrentMapping()
     if (!mapping) {
       previewValue.value = '（入力なし）'
       return
     }
-    
+
     try {
       const result = await runTransformMapping(mapping, props.sampleRow)
       // 格式化显示结果
@@ -1634,7 +1532,7 @@ const onInputStepPluginChange = (inputIdx: number, stepIdx: number) => {
   if (pluginInfo?.paramsSchema) {
     if (!inputStepFields.value[inputIdx]) inputStepFields.value[inputIdx] = []
     let fields = jsonSchemaToFormFields(pluginInfo.paramsSchema)
-    
+
     // 特殊处理：date.parse、date.format 和 date.addDays 的格式字段
     if (step.plugin === 'date.parse' || step.plugin === 'date.format' || step.plugin === 'date.addDays') {
       fields = fields.map((field) => {
@@ -1676,7 +1574,7 @@ const onInputStepPluginChange = (inputIdx: number, stepIdx: number) => {
         } as FormField,
       ]
     }
-    
+
     inputStepFields.value[inputIdx][stepIdx] = fields
     // 保存现有的参数值（从数据库加载时保留已保存的值）
     const existingParams = { ...step.params }
@@ -1777,7 +1675,7 @@ const onOutputStepPluginChange = (stepIdx: number) => {
   const pluginInfo = transformPlugins.value.find((p) => p.name === step.plugin)
   if (pluginInfo?.paramsSchema) {
     let fields = jsonSchemaToFormFields(pluginInfo.paramsSchema)
-    
+
     // 特殊处理：date.parse、date.format 和 date.addDays 的格式字段
     if (step.plugin === 'date.parse' || step.plugin === 'date.format' || step.plugin === 'date.addDays') {
       fields = fields.map((field) => {
@@ -1818,7 +1716,7 @@ const onOutputStepPluginChange = (stepIdx: number) => {
         } as FormField,
       ]
     }
-    
+
     outputStepFields.value[stepIdx] = fields
     // 保存现有的参数值（从数据库加载时保留已保存的值）
     const existingParams = { ...step.params }
@@ -1918,7 +1816,7 @@ const getDateFormatOptions = (plugin: string, fieldKey: string): Array<{ label: 
     { label: 'YYYY-MM-DD HH:mm (分まで)', value: 'YYYY-MM-DD HH:mm', precision: 'datetime' },
     { label: 'YYYY/MM/DD HH:mm (分まで)', value: 'YYYY/MM/DD HH:mm', precision: 'datetime' },
   ]
-  
+
   if (plugin === 'date.parse') {
     if (fieldKey === 'formats') {
       // formats 是数组，需要特殊处理
@@ -1945,7 +1843,7 @@ const getDateFormatOptions = (plugin: string, fieldKey: string): Array<{ label: 
       ]
     }
   }
-  
+
   return []
 }
 
@@ -2318,4 +2216,13 @@ const handleSubmit = () => {
 .plugin-help-icon:hover {
   color: #409eff;
 }
+.o-form-group { margin-bottom: 1rem; }
+.o-form-label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 0.25rem; }
+.o-input-sm { font-size: 12px; padding: 2px 6px; height: 26px; }
+.o-toggle { position: relative; display: inline-block; width: 40px; height: 20px; cursor: pointer; }
+.o-toggle input { opacity: 0; width: 0; height: 0; }
+.o-toggle-slider { position: absolute; inset: 0; background: #ccc; border-radius: 20px; transition: background .2s; }
+.o-toggle-slider::before { content: ''; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform .2s; }
+.o-toggle input:checked + .o-toggle-slider { background: #714b67; }
+.o-toggle input:checked + .o-toggle-slider::before { transform: translateX(20px); }
 </style>

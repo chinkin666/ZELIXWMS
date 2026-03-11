@@ -6,13 +6,15 @@
         <p class="page-subtitle">検品グループを管理します。ドラッグで並び替えできます。</p>
       </div>
       <div class="page-actions">
-        <el-button type="primary" :icon="Plus" @click="openCreate">グループを追加</el-button>
+        <button class="o-btn o-btn-primary" @click="openCreate">グループを追加</button>
       </div>
     </div>
 
-    <div class="groups-list" v-loading="isLoading">
-      <div v-if="groups.length === 0" class="empty-state">
-        <el-empty description="検品グループがありません" />
+    <div class="groups-list">
+      <div v-if="isLoading" class="loading-state">読み込み中...</div>
+
+      <div v-else-if="groups.length === 0" class="empty-state">
+        <p>検品グループがありません</p>
       </div>
 
       <draggable
@@ -29,13 +31,13 @@
             :class="{ disabled: !group.enabled }"
           >
             <div class="drag-handle">
-              <el-icon :size="18"><Rank /></el-icon>
+              <span style="font-size:18px;color:#c0c4cc">&#x2630;</span>
             </div>
 
             <div class="group-info">
               <div class="group-name">
                 {{ group.name }}
-                <el-tag v-if="!group.enabled" type="info" size="small">無効</el-tag>
+                <span v-if="!group.enabled" class="o-badge o-badge-info">無効</span>
               </div>
               <div class="group-meta">
                 <span class="group-id">{{ group.orderGroupId }}</span>
@@ -44,12 +46,16 @@
             </div>
 
             <div class="group-actions">
-              <el-switch
-                :model-value="group.enabled"
-                @change="(val: boolean) => handleEnableChange(group, val)"
-              />
-              <el-button type="primary" plain size="small" @click="openEdit(group)">編集</el-button>
-              <el-button type="danger" plain size="small" @click="confirmDelete(group)">削除</el-button>
+              <label class="o-toggle">
+                <input
+                  type="checkbox"
+                  :checked="group.enabled"
+                  @change="handleEnableChange(group, ($event.target as HTMLInputElement).checked)"
+                />
+                <span class="o-toggle-slider"></span>
+              </label>
+              <button class="o-btn o-btn-sm o-btn-outline-primary" @click="openEdit(group)">編集</button>
+              <button class="o-btn o-btn-sm o-btn-outline-danger" @click="confirmDelete(group)">削除</button>
             </div>
           </div>
         </template>
@@ -68,8 +74,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Plus, Rank } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { useToast } from '@/composables/useToast'
 import draggable from 'vuedraggable'
 import {
   fetchOrderGroups,
@@ -80,6 +85,8 @@ import {
 } from '@/api/orderGroup'
 import type { OrderGroup, OrderGroupFormData } from '@/types/orderGroup'
 import OrderGroupFormDialog from '@/components/order-group/OrderGroupFormDialog.vue'
+
+const { show: showToast } = useToast()
 
 const groups = ref<OrderGroup[]>([])
 const isLoading = ref(false)
@@ -92,7 +99,7 @@ const loadGroups = async () => {
   try {
     groups.value = await fetchOrderGroups()
   } catch (e: any) {
-    ElMessage.error(e.message || '検品グループの取得に失敗しました')
+    showToast(e.message || '検品グループの取得に失敗しました', 'danger')
   } finally {
     isLoading.value = false
   }
@@ -114,15 +121,15 @@ const handleSubmit = async (data: OrderGroupFormData) => {
   try {
     if (isEditing.value && editingGroup.value) {
       await updateOrderGroup(editingGroup.value._id, data)
-      ElMessage.success('検品グループを更新しました')
+      showToast('検品グループを更新しました', 'success')
     } else {
       await createOrderGroup(data)
-      ElMessage.success('検品グループを作成しました')
+      showToast('検品グループを作成しました', 'success')
     }
     dialogVisible.value = false
     await loadGroups()
   } catch (e: any) {
-    ElMessage.error(e.message || '保存に失敗しました')
+    showToast(e.message || '保存に失敗しました', 'danger')
   }
 }
 
@@ -130,30 +137,20 @@ const handleEnableChange = async (group: OrderGroup, enabled: boolean) => {
   try {
     await updateOrderGroup(group._id, { enabled })
     group.enabled = enabled
-    ElMessage.success(enabled ? 'グループを有効にしました' : 'グループを無効にしました')
+    showToast(enabled ? 'グループを有効にしました' : 'グループを無効にしました', 'success')
   } catch (e: any) {
-    ElMessage.error(e.message || '更新に失敗しました')
+    showToast(e.message || '更新に失敗しました', 'danger')
   }
 }
 
 const confirmDelete = async (group: OrderGroup) => {
+  if (!confirm(`検品グループ「${group.name}」を削除しますか？このグループに属する注文のグループ設定もクリアされます。`)) return
   try {
-    await ElMessageBox.confirm(
-      `検品グループ「${group.name}」を削除しますか？このグループに属する注文のグループ設定もクリアされます。`,
-      '削除の確認',
-      {
-        confirmButtonText: '削除',
-        cancelButtonText: 'キャンセル',
-        type: 'warning',
-      }
-    )
     await deleteOrderGroup(group._id)
-    ElMessage.success('検品グループを削除しました')
+    showToast('検品グループを削除しました', 'success')
     await loadGroups()
   } catch (e: any) {
-    if (e !== 'cancel') {
-      ElMessage.error(e.message || '削除に失敗しました')
-    }
+    showToast(e.message || '削除に失敗しました', 'danger')
   }
 }
 
@@ -162,7 +159,7 @@ const onDragEnd = async () => {
     const orderedIds = groups.value.map((g) => g._id)
     await reorderOrderGroups(orderedIds)
   } catch (e: any) {
-    ElMessage.error(e.message || '優先順位の更新に失敗しました')
+    showToast(e.message || '優先順位の更新に失敗しました', 'danger')
     await loadGroups()
   }
 }
@@ -187,13 +184,13 @@ onMounted(() => {
 .page-title {
   font-size: 24px;
   font-weight: 600;
-  color: #303133;
+  color: var(--o-gray-700, #303133);
   margin: 0 0 8px 0;
 }
 
 .page-subtitle {
   font-size: 14px;
-  color: #909399;
+  color: var(--o-gray-500, #909399);
   margin: 0;
 }
 
@@ -202,14 +199,46 @@ onMounted(() => {
   gap: 12px;
 }
 
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  cursor: pointer;
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-700, #303133);
+  transition: 0.2s;
+  white-space: nowrap;
+}
+.o-btn-primary { background: var(--o-brand-primary, #714b67); color: #fff; border-color: var(--o-brand-primary, #714b67); }
+.o-btn-sm { padding: 4px 10px; font-size: 13px; }
+.o-btn-outline-primary { background: transparent; color: var(--o-brand-primary, #714b67); border-color: var(--o-brand-primary, #714b67); }
+.o-btn-outline-danger { background: transparent; color: #f56c6c; border-color: #f56c6c; }
+
+.o-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.o-badge-info { background: #f4f4f5; color: #909399; }
+
+.o-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+.o-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.o-toggle-slider { width: 40px; height: 20px; background: var(--o-toggle-off, #c0c4cc); border-radius: 10px; transition: 0.2s; position: relative; }
+.o-toggle-slider::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: 0.2s; }
+.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #714b67); }
+.o-toggle input:checked + .o-toggle-slider::after { left: 22px; }
+
 .groups-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+.loading-state,
 .empty-state {
   padding: 60px 0;
+  text-align: center;
+  color: var(--o-gray-500, #909399);
 }
 
 .group-card {
@@ -218,7 +247,7 @@ onMounted(() => {
   gap: 16px;
   padding: 16px 20px;
   background: white;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--o-border-color, #e4e7ed);
   border-radius: 8px;
   transition: box-shadow 0.2s;
 }
@@ -236,13 +265,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   cursor: grab;
-  color: #c0c4cc;
   padding: 4px;
   flex-shrink: 0;
-}
-
-.drag-handle:hover {
-  color: #909399;
 }
 
 .drag-handle:active {
@@ -263,7 +287,7 @@ onMounted(() => {
 .group-name {
   font-size: 15px;
   font-weight: 500;
-  color: #303133;
+  color: var(--o-gray-700, #303133);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -284,7 +308,7 @@ onMounted(() => {
 
 .group-description {
   font-size: 13px;
-  color: #909399;
+  color: var(--o-gray-500, #909399);
 }
 
 .group-actions {
@@ -292,22 +316,5 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
-}
-
-.group-actions :deep(.el-button) {
-  margin: 0;
-  min-width: 54px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  border-width: 1px;
-}
-
-.group-actions :deep(.el-button--primary.is-plain) {
-  border-color: var(--el-color-primary);
-}
-
-.group-actions :deep(.el-button--danger.is-plain) {
-  border-color: var(--el-color-danger);
 }
 </style>

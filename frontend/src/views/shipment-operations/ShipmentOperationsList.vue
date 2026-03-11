@@ -14,7 +14,12 @@
     />
 
     <div class="between-controls">
-      <label class="switch-label">印刷済みのみ表示 <el-switch v-model="showPrintedOnly" /></label>
+      <label class="switch-label">印刷済みのみ表示
+        <label class="o-toggle">
+          <input type="checkbox" v-model="showPrintedOnly">
+          <span class="o-toggle-slider"></span>
+        </label>
+      </label>
     </div>
 
     <Table
@@ -54,26 +59,27 @@
       total-label="表示件数"
     >
       <template #right>
-        <el-button
+        <button
+          class="o-btn o-btn-secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleCustomExportClick"
         >
           出荷明細リスト出力(csv)
-        </el-button>
-        <el-button
+        </button>
+        <button
+          class="o-btn o-btn-secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleFormExportClick"
         >
           出荷明細リスト出力(pdf)
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="isMarkingShipped"
-          :disabled="tableSelectedKeys.length === 0"
+        </button>
+        <button
+          class="o-btn o-btn-primary"
+          :disabled="tableSelectedKeys.length === 0 || isMarkingShipped"
           @click="handleMarkShipped"
         >
-          出荷完了
-        </el-button>
+          {{ isMarkingShipped ? '処理中...' : '出荷完了' }}
+        </button>
       </template>
     </OrderBottomBar>
 
@@ -104,8 +110,6 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref, watch } from 'vue'
-import { ElButton, ElMessage, ElSpace } from 'element-plus'
-import type { HeaderClassNameGetter } from 'element-plus'
 import Table from '@/components/table/OrderTable.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
@@ -121,7 +125,6 @@ import { fetchCarriers } from '@/api/carrier'
 import type { Carrier } from '@/types/carrier'
 import { fetchProducts } from '@/api/product'
 import type { Product } from '@/types/product'
-import { ElMessageBox } from 'element-plus'
 import type { OrderDocument } from '@/types/order'
 import { yamatoB2Unconfirm, isCarrierDeleteError } from '@/api/carrierAutomation'
 
@@ -217,7 +220,7 @@ const handleView = async (row: any) => {
     selectedOrder.value = await fetchShipmentOrder(String(id))
     viewDialogVisible.value = true
   } catch (e: any) {
-    ElMessage.error(e?.message || '詳細の取得に失敗しました')
+    alert(e?.message || '詳細の取得に失敗しました')
   }
 }
 
@@ -232,29 +235,16 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
     if (skipCarrierDelete && row._unconfirmReason) {
       reason = row._unconfirmReason
     } else {
-      // 使用 ElMessageBox.prompt 获取理由输入
-      const { value } = await ElMessageBox.prompt(
-        `注文番号: ${row.orderNumber || id}\n確認を取り消し、未確認状態に戻します。\nB2 Cloud連携を使用している場合、B2 Cloudからも削除されます。`,
-        '確認取消',
-        {
-          confirmButtonText: '確認取消',
-          cancelButtonText: 'キャンセル',
-          inputPlaceholder: '取消理由を入力してください（内部データとして記録されます）',
-          inputValidator: (value: string) => {
-            if (!value || value.trim() === '') {
-              return '理由を入力してください'
-            }
-            return true
-          },
-          type: 'warning',
-        },
+      const inputReason = prompt(
+        `注文番号: ${row.orderNumber || id}\n確認を取り消し、未確認状態に戻します。\nB2 Cloud連携を使用している場合、B2 Cloudからも削除されます。\n\n取消理由を入力してください（内部データとして記録されます）`
       )
 
-      if (!value || value.trim() === '') {
-        ElMessage.warning('理由を入力してください')
+      if (inputReason === null) return // cancelled
+      if (!inputReason.trim()) {
+        alert('理由を入力してください')
         return
       }
-      reason = value.trim()
+      reason = inputReason.trim()
       // 保存理由以便重试时使用
       row._unconfirmReason = reason
     }
@@ -273,30 +263,18 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
             message += `（B2 Cloud削除失敗: ${result.b2DeleteResult.error}）`
           }
         }
-        ElMessage.success(message)
+        alert(message)
       }
       await loadOrders()
     } catch (e: any) {
       // B2削除エラーの場合はスキップ確認ダイアログを表示
       if (isCarrierDeleteError(e)) {
         isUnconfirming.value = false
-        try {
-          await ElMessageBox.confirm(
-            `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）`,
-            'B2 Cloud削除エラー',
-            {
-              confirmButtonText: 'スキップして続行',
-              cancelButtonText: 'キャンセル',
-              type: 'warning',
-            }
-          )
-          // スキップして再実行
+        if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）`)) {
           await handleUnconfirm(row, true)
           return
-        } catch {
-          // キャンセルされた場合
-          return
         }
+        return
       }
       throw e
     } finally {
@@ -304,7 +282,7 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
     }
   } catch (e: any) {
     if (e === 'cancel') return
-    ElMessage.error(e?.message || '確認取消に失敗しました')
+    alert(e?.message || '確認取消に失敗しました')
     isUnconfirming.value = false
   }
 }
@@ -333,15 +311,15 @@ const handleFormExportClick = () => {
 
 const handleMarkShipped = async () => {
   if (tableSelectedKeys.value.length === 0) {
-    ElMessage.warning('出荷完了行を選択してください')
+    alert('出荷完了行を選択してください')
     return
   }
 
   try {
-    const selectedRows = displayRows.value.filter((row: any) => 
+    const selectedRows = displayRows.value.filter((row: any) =>
       tableSelectedKeys.value.includes(row._id)
     )
-    
+
     const orderNumbers = selectedRows
       .map((row: any) => row.orderNumber || row._id)
       .filter(Boolean)
@@ -349,53 +327,44 @@ const handleMarkShipped = async () => {
     const orderNumbersText = orderNumbers.length > 0 ? orderNumbers.join(', ') : ''
     const moreText = selectedRows.length > 5 ? `他${selectedRows.length - 5}件` : ''
 
-    await ElMessageBox.confirm(
-      `選択した${tableSelectedKeys.value.length}件の出荷を完了にしますか？\n${orderNumbersText}${moreText ? `\n${moreText}` : ''}`,
-      '出荷完了確認',
-      {
-        confirmButtonText: '完了にする',
-        cancelButtonText: 'キャンセル',
-        type: 'info',
-        dangerouslyUseHTMLString: false,
-      },
-    )
+    if (!confirm(`選択した${tableSelectedKeys.value.length}件の出荷を完了にしますか？\n${orderNumbersText}${moreText ? `\n${moreText}` : ''}`)) return
 
     isMarkingShipped.value = true
     const ids = tableSelectedKeys.value.map((key) => String(key)).filter(Boolean)
-    
+
     if (ids.length === 0) {
-      ElMessage.warning('有効なIDがありません')
+      alert('有効なIDがありません')
       isMarkingShipped.value = false
       return
     }
-    
+
     try {
       console.log('Marking shipped for ids:', ids)
       const result = await updateShipmentOrderStatusBulk(ids, 'mark-shipped')
       console.log('Mark shipped result:', result)
-      
+
       if (result && result.modifiedCount !== undefined) {
         if (result.modifiedCount > 0) {
-          ElMessage.success(`${result.modifiedCount}件の出荷を完了にしました`)
+          alert(`${result.modifiedCount}件の出荷を完了にしました`)
         } else {
-          ElMessage.warning('更新されたレコードがありません。既に出荷完了になっている可能性があります。')
+          alert('更新されたレコードがありません。既に出荷完了になっている可能性があります。')
         }
       } else {
-        ElMessage.success(`${ids.length}件の出荷を完了にしました`)
+        alert(`${ids.length}件の出荷を完了にしました`)
       }
-      
+
       // 清空选择并重新加载列表
       tableSelectedKeys.value = []
       await loadOrders()
     } catch (e: any) {
       console.error('Error marking shipped:', e)
-      ElMessage.error(e?.message || '出荷完了の更新に失敗しました')
+      alert(e?.message || '出荷完了の更新に失敗しました')
     } finally {
       isMarkingShipped.value = false
     }
   } catch (e: any) {
     if (e === 'cancel') return
-    ElMessage.error(e?.message || '出荷完了の更新に失敗しました')
+    alert(e?.message || '出荷完了の更新に失敗しました')
     isMarkingShipped.value = false
   }
 }
@@ -410,7 +379,7 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
 }
 
 const handleSave = (_payload: Record<string, { operator: Operator; value: any }>) => {
-  ElMessage.success('検索条件を保存しました（ダミー）')
+  alert('検索条件を保存しました（ダミー）')
 }
 
 const tableColumns = computed(() => {
@@ -423,29 +392,26 @@ const tableColumns = computed(() => {
     align: 'center' as const,
     cellRenderer: ({ rowData }: { rowData: any }) =>
       h(
-        ElSpace,
-        { size: 8 },
-        () => [
+        'div',
+        { style: 'display:inline-flex;gap:8px;' },
+        [
           h(
-            ElButton,
+            'button',
             {
-              type: 'primary',
-              size: 'small',
-              plain: true,
+              class: 'o-btn o-btn-primary o-btn-sm',
               onClick: () => handleView(rowData),
             },
-            () => '詳細',
+            '詳細',
           ),
           h(
-            ElButton,
+            'button',
             {
-              type: 'warning',
-              size: 'small',
-              plain: true,
-              loading: isUnconfirming.value,
+              class: 'o-btn o-btn-sm',
+              style: 'border-color:#e6a23c;color:#e6a23c;background:transparent;',
+              disabled: isUnconfirming.value,
               onClick: () => handleUnconfirm(rowData),
             },
-            () => '確認取消',
+            '確認取消',
           ),
         ],
       ),
@@ -462,7 +428,7 @@ const headerGroupingConfig = computed<HeaderGroupingConfig>(() => {
   return buildOrderHeaderGroupingConfig(baseColumns.value as any)
 })
 
-const headerClass: HeaderClassNameGetter<any> = () => ''
+const headerClass = (): string => ''
 
 const tableProps = computed(() => ({}))
 
@@ -471,7 +437,7 @@ const loadCarriers = async () => {
     carriers.value = await fetchCarriers()
   } catch (e) {
     console.error(e)
-    ElMessage.warning('配送会社マスタの取得に失敗しました')
+    alert('配送会社マスタの取得に失敗しました')
   }
 }
 
@@ -515,7 +481,7 @@ const loadOrders = async () => {
 
     rows.value = all
   } catch (e: any) {
-    ElMessage.error(e?.message || '出荷予定の取得に失敗しました')
+    alert(e?.message || '出荷予定の取得に失敗しました')
   } finally {
     isLoadingOrders.value = false
   }
@@ -623,4 +589,11 @@ onMounted(async () => {
 ::v-deep(.error-cell) {
   background-color: #ffebee !important;
 }
+
+.o-toggle { position:relative; display:inline-flex; align-items:center; cursor:pointer; }
+.o-toggle input { position:absolute; opacity:0; width:0; height:0; }
+.o-toggle-slider { width:40px; height:20px; background:var(--o-toggle-off, #ccc); border-radius:10px; transition:0.2s; position:relative; }
+.o-toggle-slider::after { content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; top:2px; left:2px; transition:0.2s; }
+.o-toggle input:checked + .o-toggle-slider { background:var(--o-brand-primary, #714B67); }
+.o-toggle input:checked + .o-toggle-slider::after { left:22px; }
 </style>

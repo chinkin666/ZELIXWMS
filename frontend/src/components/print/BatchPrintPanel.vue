@@ -4,9 +4,7 @@
       <div v-if="visible" class="batch-print-panel">
         <div class="panel-header">
           <span class="panel-title">一括印刷</span>
-          <el-button text circle @click="handleClose" :disabled="printing">
-            <el-icon><Close /></el-icon>
-          </el-button>
+          <button class="o-btn o-btn-sm" style="border:none; background:none; font-size:18px; cursor:pointer" @click="handleClose" :disabled="printing">✕</button>
         </div>
 
         <div class="panel-content">
@@ -14,14 +12,17 @@
           <div class="settings-section">
             <div class="setting-row">
               <span class="setting-label">DPI</span>
-              <el-select v-model="exportDpi" size="small" style="width: 80px" :disabled="printing">
-                <el-option label="203" :value="203" />
-                <el-option label="300" :value="300" />
-              </el-select>
+              <select class="o-input" v-model.number="exportDpi" style="width: 80px" :disabled="printing">
+                <option :value="203">203</option>
+                <option :value="300">300</option>
+              </select>
             </div>
             <div class="setting-row">
               <span class="setting-label">印刷済み登録</span>
-              <el-switch v-model="recordPrinted" size="small" :disabled="printing" />
+              <label class="o-toggle">
+                <input type="checkbox" v-model="recordPrinted" :disabled="printing" />
+                <span class="o-toggle-slider"></span>
+              </label>
             </div>
           </div>
 
@@ -48,14 +49,16 @@
 
             <!-- Progress -->
             <div v-if="printing" class="progress-section">
-              <el-progress :percentage="progressPercent" :status="progressStatus" />
+              <div class="progress-bar-container">
+                <div class="progress-bar" :class="progressStatus" :style="{ width: progressPercent + '%' }"></div>
+              </div>
               <div class="progress-text">{{ progressText }}</div>
             </div>
 
             <!-- Result -->
             <div v-if="printResult" class="result-section" :class="printResult.type">
-              <el-icon v-if="printResult.type === 'success'"><CircleCheck /></el-icon>
-              <el-icon v-else><CircleClose /></el-icon>
+              <span v-if="printResult.type === 'success'">&#10003;</span>
+              <span v-else>&#10007;</span>
               <span>{{ printResult.message }}</span>
             </div>
           </div>
@@ -64,7 +67,7 @@
           <div v-if="errorItems.length > 0" class="error-section">
             <div class="error-header" @click="showErrors = !showErrors">
               <span>エラー詳細 ({{ errorItems.length }}件)</span>
-              <el-icon :class="{ rotated: showErrors }"><ArrowDown /></el-icon>
+              <span class="arrow-icon" :class="{ rotated: showErrors }">&#9660;</span>
             </div>
             <Transition name="expand">
               <div v-if="showErrors" class="error-list">
@@ -78,13 +81,13 @@
         </div>
 
         <div class="panel-footer">
-          <el-button @click="handleClose" :disabled="printing || saving">キャンセル</el-button>
-          <el-button @click="handleSavePdf" :loading="saving" :disabled="totalCount === 0 || printing">
+          <button class="o-btn o-btn-secondary" @click="handleClose" :disabled="printing || saving">キャンセル</button>
+          <button class="o-btn o-btn-secondary" @click="handleSavePdf" :disabled="totalCount === 0 || printing || saving">
             {{ saving ? '保存中...' : 'PDFを保存' }}
-          </el-button>
-          <el-button type="primary" @click="handlePrint" :loading="printing" :disabled="totalCount === 0 || saving">
+          </button>
+          <button class="o-btn o-btn-primary" @click="handlePrint" :disabled="totalCount === 0 || saving || printing">
             {{ printing ? '印刷中...' : '印刷開始' }}
-          </el-button>
+          </button>
         </div>
       </div>
     </Transition>
@@ -93,8 +96,6 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Close, CircleCheck, CircleClose, ArrowDown } from '@element-plus/icons-vue'
 import type { OrderDocument } from '@/types/order'
 import type { PrintTemplate } from '@/types/printTemplate'
 import type { Carrier } from '@/types/carrier'
@@ -285,7 +286,7 @@ async function handlePrint() {
         printedOrderIds.push(...localItems.value.map((i) => String(i.order._id)))
       } catch (e: any) {
         console.error('[BatchPrint] Failed to print local items:', e)
-        ElMessage.error(`印刷エラー: ${e?.message || e}`)
+        alert(`印刷エラー: ${e?.message || e}`)
         failCount += localItems.value.length
       }
     }
@@ -478,7 +479,6 @@ onBeforeUnmount(() => {
   flex-direction: column;
   z-index: 1000;
 }
-
 .panel-header {
   display: flex;
   align-items: center;
@@ -487,197 +487,49 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid #e5e7eb;
   background: #f9fafb;
 }
-
-.panel-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.panel-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-}
-
-.settings-section {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.setting-row:last-child {
-  margin-bottom: 0;
-}
-
-.setting-label {
-  font-size: 14px;
-  color: #374151;
-}
-
-.status-section {
-  margin-bottom: 16px;
-}
-
-.status-counts {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.count-item {
-  background: #f3f4f6;
-  border-radius: 8px;
-  padding: 12px;
-  text-align: center;
-}
-
-.count-item.count-local {
-  background: #dcfce7;
-}
-
-.count-item.count-b2 {
-  background: #fef9c3;
-}
-
-.count-item.count-error {
-  background: #fee2e2;
-}
-
-.count-value {
-  display: block;
-  font-size: 24px;
-  font-weight: 700;
-  color: #111827;
-}
-
-.count-label {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.progress-section {
-  margin-bottom: 12px;
-}
-
-.progress-text {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #6b7280;
-  text-align: center;
-}
-
-.result-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 8px;
-  font-size: 14px;
-}
-
-.result-section.success {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.result-section.error {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.error-section {
-  border-top: 1px solid #e5e7eb;
-  padding-top: 16px;
-}
-
-.error-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  font-size: 14px;
-  color: #dc2626;
-  padding: 8px 0;
-}
-
-.error-header .el-icon {
-  transition: transform 0.2s;
-}
-
-.error-header .el-icon.rotated {
-  transform: rotate(180deg);
-}
-
-.error-list {
-  max-height: 200px;
-  overflow-y: auto;
-  margin-top: 8px;
-}
-
-.error-item {
-  display: flex;
-  flex-direction: column;
-  padding: 8px;
-  background: #fef2f2;
-  border-radius: 4px;
-  margin-bottom: 8px;
-  font-size: 12px;
-}
-
-.error-order {
-  font-weight: 500;
-  color: #991b1b;
-}
-
-.error-message {
-  color: #dc2626;
-  margin-top: 2px;
-}
-
-.panel-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 12px 16px;
-  border-top: 1px solid #e5e7eb;
-  background: #f9fafb;
-}
-
+.panel-title { font-size: 16px; font-weight: 600; color: #111827; }
+.panel-content { flex: 1; overflow-y: auto; padding: 16px; }
+.settings-section { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.setting-row:last-child { margin-bottom: 0; }
+.setting-label { font-size: 14px; color: #374151; }
+.status-section { margin-bottom: 16px; }
+.status-counts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+.count-item { background: #f3f4f6; border-radius: 8px; padding: 12px; text-align: center; }
+.count-item.count-local { background: #dcfce7; }
+.count-item.count-b2 { background: #fef9c3; }
+.count-item.count-error { background: #fee2e2; }
+.count-value { display: block; font-size: 24px; font-weight: 700; color: #111827; }
+.count-label { font-size: 12px; color: #6b7280; }
+.progress-section { margin-bottom: 12px; }
+.progress-bar-container { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+.progress-bar { height: 100%; background: #409eff; border-radius: 3px; transition: width 0.3s ease; }
+.progress-bar.success { background: #67c23a; }
+.progress-bar.exception { background: #f56c6c; }
+.progress-text { margin-top: 8px; font-size: 13px; color: #6b7280; text-align: center; }
+.result-section { display: flex; align-items: center; gap: 8px; padding: 12px; border-radius: 8px; font-size: 14px; }
+.result-section.success { background: #dcfce7; color: #166534; }
+.result-section.error { background: #fee2e2; color: #991b1b; }
+.error-section { border-top: 1px solid #e5e7eb; padding-top: 16px; }
+.error-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 14px; color: #dc2626; padding: 8px 0; }
+.arrow-icon { transition: transform 0.2s; font-size: 10px; }
+.arrow-icon.rotated { transform: rotate(180deg); }
+.error-list { max-height: 200px; overflow-y: auto; margin-top: 8px; }
+.error-item { display: flex; flex-direction: column; padding: 8px; background: #fef2f2; border-radius: 4px; margin-bottom: 8px; font-size: 12px; }
+.error-order { font-weight: 500; color: #991b1b; }
+.error-message { color: #dc2626; margin-top: 2px; }
+.panel-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 12px 16px; border-top: 1px solid #e5e7eb; background: #f9fafb; }
+/* Toggle */
+.o-toggle { position:relative; display:inline-block; width:40px; height:20px; cursor:pointer; }
+.o-toggle input { opacity:0; width:0; height:0; }
+.o-toggle-slider { position:absolute; inset:0; background:#ccc; border-radius:20px; transition:background .2s; }
+.o-toggle-slider::before { content:''; position:absolute; left:2px; top:2px; width:16px; height:16px; background:#fff; border-radius:50%; transition:transform .2s; }
+.o-toggle input:checked + .o-toggle-slider { background:#714b67; }
+.o-toggle input:checked + .o-toggle-slider::before { transform:translateX(20px); }
 /* Animations */
-.slide-in-enter-active,
-.slide-in-leave-active {
-  transition: transform 0.3s ease;
-}
-
-.slide-in-enter-from,
-.slide-in-leave-to {
-  transform: translateX(100%);
-}
-
-.expand-enter-active,
-.expand-leave-active {
-  transition: all 0.2s ease;
-  overflow: hidden;
-}
-
-.expand-enter-from,
-.expand-leave-to {
-  max-height: 0;
-  opacity: 0;
-}
-
-.expand-enter-to,
-.expand-leave-from {
-  max-height: 200px;
-  opacity: 1;
-}
+.slide-in-enter-active, .slide-in-leave-active { transition: transform 0.3s ease; }
+.slide-in-enter-from, .slide-in-leave-to { transform: translateX(100%); }
+.expand-enter-active, .expand-leave-active { transition: all 0.2s ease; overflow: hidden; }
+.expand-enter-from, .expand-leave-to { max-height: 0; opacity: 0; }
+.expand-enter-to, .expand-leave-from { max-height: 200px; opacity: 1; }
 </style>

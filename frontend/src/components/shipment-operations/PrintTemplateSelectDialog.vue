@@ -1,31 +1,24 @@
 <template>
-  <el-dialog v-model="visible" title="印刷テンプレートを選択" width="980px">
+  <ODialog :open="visible" title="印刷テンプレートを選択" @close="visible = false" width="980px">
     <div class="dialog-content">
       <div class="template-selector">
-        <el-form>
-          <el-form-item label="テンプレート">
-            <el-select
-              v-model="selectedTemplateId"
-              placeholder="印刷テンプレートを選択してください"
-              style="width: 100%"
-              filterable
+        <div class="o-form-group">
+          <label class="o-form-label">テンプレート</label>
+          <select
+            class="o-input"
+            v-model="selectedTemplateId"
+            style="width: 100%"
+          >
+            <option value="" disabled>印刷テンプレートを選択してください</option>
+            <option
+              v-for="template in templates"
+              :key="template.id"
+              :value="template.id"
             >
-              <el-option
-                v-for="template in templates"
-                :key="template.id"
-                :label="template.name"
-                :value="template.id"
-              >
-                <div style="display: flex; justify-content: space-between; align-items: center">
-                  <span>{{ template.name }}</span>
-                  <span style="color: #909399; font-size: 12px">
-                    {{ template.canvas.widthMm }}mm × {{ template.canvas.heightMm }}mm
-                  </span>
-                </div>
-              </el-option>
-            </el-select>
-          </el-form-item>
-        </el-form>
+              {{ template.name }} ({{ template.canvas.widthMm }}mm x {{ template.canvas.heightMm }}mm)
+            </option>
+          </select>
+        </div>
       </div>
 
       <div class="preview-section">
@@ -37,30 +30,30 @@
             </span>
           </div>
           <div class="preview-actions">
-            <el-button-group v-if="orders.length > 1">
-              <el-button
-                size="small"
+            <div v-if="orders.length > 1" class="btn-group">
+              <button
+                class="o-btn o-btn-sm o-btn-secondary"
                 :disabled="currentIndex === 0"
                 @click="goToPrevious"
               >
                 前へ
-              </el-button>
-              <el-button
-                size="small"
+              </button>
+              <button
+                class="o-btn o-btn-sm o-btn-secondary"
                 :disabled="currentIndex >= orders.length - 1"
                 @click="goToNext"
               >
                 次へ
-              </el-button>
-            </el-button-group>
-            <el-button
+              </button>
+            </div>
+            <button
               v-if="imageUrl"
-              size="small"
+              class="o-btn o-btn-sm o-btn-secondary"
               style="margin-left: 8px"
               @click="downloadPreviewPng"
             >
               プレビューをダウンロード
-            </el-button>
+            </button>
           </div>
         </div>
         <div class="preview">
@@ -81,17 +74,17 @@
     </div>
 
     <template #footer>
-      <el-button @click="visible = false">キャンセル</el-button>
-      <el-button type="primary" :disabled="!selectedTemplateId" @click="handleConfirm">
+      <button class="o-btn o-btn-secondary" @click="visible = false">キャンセル</button>
+      <button class="o-btn o-btn-primary" :disabled="!selectedTemplateId" @click="handleConfirm">
         確定
-      </el-button>
+      </button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import ODialog from '@/components/odoo/ODialog.vue'
 import { fetchPrintTemplates, fetchPrintTemplate } from '@/api/printTemplates'
 import type { PrintTemplate } from '@/types/printTemplate'
 import type { OrderDocument } from '@/types/order'
@@ -182,13 +175,13 @@ async function handleRender() {
 
   try {
     cleanupImage()
-    
+
     // Load OrderSourceCompany for current order
     await loadOrderSourceCompany()
-    
+
     // Fetch full template details
     const template = await fetchPrintTemplate(selectedTemplateId.value)
-    
+
     const blob = await renderTemplateToPngBlob(
       template,
       currentOrder.value,
@@ -243,7 +236,7 @@ const loadTemplates = async () => {
     templates.value = fetched
   } catch (e: any) {
     console.error('Failed to load print templates:', e)
-    ElMessage.error(e?.message || 'テンプレートの読み込みに失敗しました')
+    alert(e?.message || 'テンプレートの読み込みに失敗しました')
     templates.value = []
   } finally {
     loading.value = false
@@ -263,7 +256,7 @@ const downloadPreviewPng = () => {
 const handleConfirm = () => {
   const template = templates.value.find((t) => t.id === selectedTemplateId.value)
   if (!template) {
-    ElMessage.error('テンプレートを選択してください')
+    alert('テンプレートを選択してください')
     return
   }
   emit('confirm', template)
@@ -272,22 +265,9 @@ const handleConfirm = () => {
 </script>
 
 <style scoped>
-.dialog-content {
-  display: flex;
-  gap: 20px;
-  min-height: 500px;
-}
-
-.template-selector {
-  flex: 0 0 300px;
-}
-
-.preview-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
+.dialog-content { display: flex; gap: 20px; min-height: 500px; }
+.template-selector { flex: 0 0 300px; }
+.preview-section { flex: 1; display: flex; flex-direction: column; }
 .preview-header {
   display: flex;
   justify-content: space-between;
@@ -296,25 +276,10 @@ const handleConfirm = () => {
   font-weight: 600;
   color: #303133;
 }
-
-.preview-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.page-info {
-  font-weight: normal;
-  color: #909399;
-  font-size: 14px;
-}
-
-.preview-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+.preview-title { display: flex; align-items: center; gap: 8px; }
+.page-info { font-weight: normal; color: #909399; font-size: 14px; }
+.preview-actions { display: flex; align-items: center; gap: 8px; }
+.btn-group { display: flex; gap: 4px; }
 .preview {
   flex: 1;
   border: 1px solid #e5e7eb;
@@ -326,23 +291,9 @@ const handleConfirm = () => {
   justify-content: center;
   min-height: 450px;
 }
-
-.loading,
-.placeholder {
-  color: #6b7280;
-  font-size: 14px;
-}
-
-.error {
-  color: #b91c1c;
-  padding: 12px;
-  text-align: center;
-}
-
-.preview-img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
+.loading, .placeholder { color: #6b7280; font-size: 14px; }
+.error { color: #b91c1c; padding: 12px; text-align: center; }
+.preview-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.o-form-group { margin-bottom:1rem; }
+.o-form-label { display:block; font-size:13px; font-weight:500; color:#374151; margin-bottom:0.25rem; }
 </style>
-

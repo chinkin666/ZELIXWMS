@@ -1,116 +1,108 @@
 <template>
-  <el-dialog
-    v-model="visible"
+  <ODialog
+    :open="visible"
     :title="title"
+    @close="visible = false"
     width="560px"
-    :close-on-click-modal="false"
   >
     <div class="bulk-edit__meta">
       <div>選択中件数：<strong>{{ selectedCount }}</strong></div>
     </div>
 
-    <el-form label-width="120px">
-      <el-form-item label="対象列">
-        <el-select
-          v-model="selectedColumnKey"
-          filterable
-          clearable
-          style="width: 100%"
-          placeholder="列を選択"
-        >
-          <el-option
-            v-for="col in columns"
-            :key="String(col.key)"
-            :label="col.title ?? String(col.key)"
-            :value="String(col.key)"
-          />
-        </el-select>
-      </el-form-item>
+    <div class="o-form-group">
+      <label class="o-form-label">対象列</label>
+      <select
+        class="o-input"
+        v-model="selectedColumnKey"
+        style="width: 100%"
+      >
+        <option value="" disabled>列を選択</option>
+        <option
+          v-for="col in columns"
+          :key="String(col.key)"
+          :value="String(col.key)"
+        >{{ col.title ?? String(col.key) }}</option>
+      </select>
+    </div>
 
-      <el-form-item label="設定値" :disabled="!selectedColumn">
-        <el-select
-          v-if="valueInputKind === 'select'"
-          v-model="value"
-          filterable
-          clearable
-          style="width: 100%"
-          placeholder="値を選択"
-        >
-          <el-option
-            v-for="opt in options"
-            :key="String(opt.value)"
-            :label="opt.label"
-            :value="opt.value"
-          />
-        </el-select>
+    <div class="o-form-group">
+      <label class="o-form-label">設定値</label>
+      <select
+        v-if="valueInputKind === 'select'"
+        class="o-input"
+        v-model="value"
+        style="width: 100%"
+      >
+        <option value="" disabled>値を選択</option>
+        <option
+          v-for="opt in options"
+          :key="String(opt.value)"
+          :value="opt.value"
+        >{{ opt.label }}</option>
+      </select>
 
-        <el-input-number
-          v-else-if="valueInputKind === 'number'"
-          v-model="value"
-          style="width: 100%"
-          :min="selectedColumn?.min"
-          :max="selectedColumn?.max"
-          :precision="selectedColumn?.precision ?? 0"
-          placeholder="数値を入力"
-        />
+      <input
+        v-else-if="valueInputKind === 'number'"
+        type="number"
+        class="o-input"
+        v-model.number="value"
+        style="width: 100%"
+        :min="selectedColumn?.min"
+        :max="selectedColumn?.max"
+        placeholder="数値を入力"
+      />
 
-        <el-date-picker
-          v-else-if="valueInputKind === 'date'"
-          v-model="value"
-          :type="selectedColumn?.fieldType === 'dateOnly' ? 'date' : 'datetime'"
-          style="width: 100%"
-          :format="
-            selectedColumn?.fieldType === 'dateOnly'
-              ? (selectedColumn?.dateFormat || 'YYYY/MM/DD')
-              : (selectedColumn?.dateFormat || 'YYYY-MM-DD HH:mm:ss')
-          "
-          :value-format="selectedColumn?.fieldType === 'dateOnly' ? 'YYYY/MM/DD' : 'YYYY-MM-DDTHH:mm:ss.SSS[Z]'"
-          :placeholder="selectedColumn?.fieldType === 'dateOnly' ? '日付を選択' : '日時を選択'"
-        />
+      <input
+        v-else-if="valueInputKind === 'date'"
+        :type="selectedColumn?.fieldType === 'dateOnly' ? 'date' : 'datetime-local'"
+        class="o-input"
+        v-model="value"
+        style="width: 100%"
+      />
 
-        <el-select
-          v-else-if="valueInputKind === 'boolean'"
-          v-model="value"
-          clearable
-          style="width: 100%"
-          placeholder="はい/いいえ"
-        >
-          <el-option label="はい" :value="true" />
-          <el-option label="いいえ" :value="false" />
-        </el-select>
+      <select
+        v-else-if="valueInputKind === 'boolean'"
+        class="o-input"
+        v-model="value"
+        style="width: 100%"
+      >
+        <option value="" disabled>はい/いいえ</option>
+        <option :value="true">はい</option>
+        <option :value="false">いいえ</option>
+      </select>
 
-        <el-input
-          v-else
-          v-model="value"
-          clearable
-          placeholder="文字列を入力"
-        />
-      </el-form-item>
+      <input
+        v-else
+        class="o-input"
+        v-model="value"
+        placeholder="文字列を入力"
+        style="width: 100%"
+      />
+    </div>
 
-      <el-form-item label="既存値">
-        <el-switch
-          v-model="overwrite"
-          inline-prompt
-          active-text="上書き"
-          inactive-text="保持"
-        />
-      </el-form-item>
-    </el-form>
+    <div class="o-form-group">
+      <label class="o-form-label">既存値</label>
+      <label class="o-toggle">
+        <input type="checkbox" v-model="overwrite" />
+        <span class="o-toggle-slider"></span>
+      </label>
+      <span style="margin-left: 8px; font-size: 13px; color: #606266">{{ overwrite ? '上書き' : '保持' }}</span>
+    </div>
 
     <template #footer>
       <div class="bulk-edit__footer">
-        <el-button @click="visible = false">キャンセル</el-button>
-        <el-button type="primary" :disabled="!selectedColumn" @click="confirm">
+        <button class="o-btn o-btn-secondary" @click="visible = false">キャンセル</button>
+        <button class="o-btn o-btn-primary" :disabled="!selectedColumn" @click="confirm">
           確定
-        </el-button>
+        </button>
       </div>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import ODialog from '@/components/odoo/ODialog.vue'
 
 type AnyColumn = Record<string, any>
 
@@ -186,7 +178,6 @@ watch(
   () => props.modelValue,
   (isOpen) => {
     if (isOpen) {
-      // 保持上次选择的列，但重置值，避免误操作
       resetValueForColumn(selectedColumn.value)
     }
   },
@@ -195,12 +186,12 @@ watch(
 const confirm = () => {
   const col = selectedColumn.value
   if (!col) {
-    ElMessage.warning('対象列を選択してください')
+    alert('対象列を選択してください')
     return
   }
   const dataKey = typeof col.dataKey === 'string' ? col.dataKey : typeof col.key === 'string' ? col.key : ''
   if (!dataKey) {
-    ElMessage.warning('列の dataKey が無効です')
+    alert('列の dataKey が無効です')
     return
   }
   emit('confirm', {
@@ -222,12 +213,17 @@ const confirm = () => {
   display: flex;
   justify-content: space-between;
 }
-
 .bulk-edit__footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
+.o-form-group { margin-bottom:1rem; }
+.o-form-label { display:block; font-size:13px; font-weight:500; color:#374151; margin-bottom:0.25rem; }
+.o-toggle { position:relative; display:inline-block; width:40px; height:20px; cursor:pointer; }
+.o-toggle input { opacity:0; width:0; height:0; }
+.o-toggle-slider { position:absolute; inset:0; background:#ccc; border-radius:20px; transition:background .2s; }
+.o-toggle-slider::before { content:''; position:absolute; left:2px; top:2px; width:16px; height:16px; background:#fff; border-radius:50%; transition:transform .2s; }
+.o-toggle input:checked + .o-toggle-slider { background:#714b67; }
+.o-toggle input:checked + .o-toggle-slider::before { transform:translateX(20px); }
 </style>
-
-

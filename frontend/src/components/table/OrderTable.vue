@@ -1,135 +1,371 @@
 <template>
   <div ref="tableContainerRef" class="nex-table" @click="handleTableClick">
     <div class="nex-table__wrapper">
-      <el-table
-        ref="tableRef"
-        :data="displayData"
-        :row-key="(row: any) => String(row[rowKey as string] ?? row.id ?? '')"
-        :highlight-current-row="false"
-        :border="true"
-        :cell-class-name="getCellClassName"
-        :row-class-name="getRowClassName"
-        :reserve-selection="paginationEnabled"
-        v-bind="tableProps"
-      >
-        <!-- 选择列 -->
-        <el-table-column
-          v-if="rowSelectionEnabled"
-          type="selection"
-          width="40"
-          fixed="left"
-          align="center"
-          class-name="selection-column"
-        />
+      <table class="o-list-table">
+        <thead>
+          <tr>
+            <!-- Selection column header -->
+            <th
+              v-if="rowSelectionEnabled"
+              class="selection-column"
+              style="width: 40px; text-align: center;"
+            >
+              <input
+                type="checkbox"
+                :checked="isAllCurrentPageSelected"
+                :indeterminate="isIndeterminate"
+                @change="handleSelectAllToggle"
+              />
+            </th>
 
-        <!-- 同梱列 -->
-        <el-table-column
-          v-if="hasBundleColumn"
-          :label="bundleColumn?.title || '同梱'"
-          :width="bundleColumn?.width || 110"
-          fixed="left"
-          align="center"
-        >
-          <template #default="{ row }">
-            <BundleCell
-              v-if="bundleColumn?.cellRenderer"
-              :renderer="bundleColumn.cellRenderer"
-              :row-data="row"
-            />
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
+            <!-- Bundle column header -->
+            <th
+              v-if="hasBundleColumn"
+              :style="{ width: (bundleColumn?.width || 110) + 'px', textAlign: 'center' }"
+            >
+              {{ bundleColumn?.title || '同梱' }}
+            </th>
 
-        <!-- 根据 headerGroupingConfig 生成分类列 -->
-        <template v-for="(group, groupIndex) in categoryGroups" :key="`category-${groupIndex}`">
-          <!-- 出荷情報：特殊处理，使用多级表头，一个表头横跨3列 -->
-          <el-table-column
-            v-if="group.title === '出荷情報'"
-            :min-width="group.minWidth || 200"
-          >
-            <template #header>
+            <!-- Category group headers -->
+            <th
+              v-for="(group, groupIndex) in categoryGroups"
+              :key="`category-header-${groupIndex}`"
+              :style="{
+                minWidth: (group.title === '商品情報' ? 340 : (group.title === '出荷情報' ? 640 : (group.minWidth || 200))) + 'px',
+              }"
+            >
               <div class="category-header">
                 <span class="category-header-title">{{ group.title }}</span>
-                <el-popover
-                  v-model:visible="sortPopoverVisible[group.title]"
-                  placement="bottom"
-                  :width="200"
-                  :trigger="[]"
-                  :hide-after="0"
-                  :popper-options="{ strategy: 'fixed' }"
-                >
-                  <template #reference>
-                    <el-button
-                      :icon="getSortIcon(group.title)"
-                      size="small"
-                      text
-                      class="sort-button"
-                      @click.stop="toggleSortPopover(group.title)"
-                    />
-                  </template>
-                  <div class="sort-popover-content" @click.stop>
+                <div class="sort-dropdown-wrapper">
+                  <button
+                    class="sort-button"
+                    title="並べ替え"
+                    @click.stop="toggleSortPopover(group.title)"
+                  >
+                    <span v-if="getSortOrderForGroup(group.title) === 'asc'">&#9650;</span>
+                    <span v-else-if="getSortOrderForGroup(group.title) === 'desc'">&#9660;</span>
+                    <span v-else>&#9650;</span>
+                  </button>
+                  <div
+                    v-if="sortPopoverVisible[group.title]"
+                    class="sort-dropdown"
+                    @click.stop
+                  >
                     <div class="sort-order-buttons">
-                      <el-button
-                        :type="getSortOrderForGroup(group.title) === 'asc' ? 'primary' : 'default'"
-                        size="small"
-                        :icon="ArrowUp"
+                      <button
+                        :class="['o-btn', 'o-btn-sm', getSortOrderForGroup(group.title) === 'asc' ? 'o-btn-primary' : 'o-btn-secondary']"
                         @click="setSortOrderForGroup(group.title, 'asc')"
                       >
-                        昇順
-                      </el-button>
-                      <el-button
-                        :type="getSortOrderForGroup(group.title) === 'desc' ? 'primary' : 'default'"
-                        size="small"
-                        :icon="ArrowDown"
+                        &#9650; 昇順
+                      </button>
+                      <button
+                        :class="['o-btn', 'o-btn-sm', getSortOrderForGroup(group.title) === 'desc' ? 'o-btn-primary' : 'o-btn-secondary']"
                         @click="setSortOrderForGroup(group.title, 'desc')"
                       >
-                        降順
-                      </el-button>
+                        &#9660; 降順
+                      </button>
                     </div>
-                    <el-select
-                      v-model="sortFieldForGroup[group.title]"
-                      placeholder="並べ替え列を選択"
-                      size="small"
-                      style="width: 100%; margin-top: 8px;"
-                      @change="handleSortFieldChange(group.title)"
+                    <select
+                      class="o-input sort-field-select"
+                      :value="sortFieldForGroup[group.title] || ''"
+                      @change="handleSortFieldSelectChange(group.title, $event)"
                     >
-                      <el-option
+                      <option value="" disabled>並べ替え列を選択</option>
+                      <option
                         v-for="field in group.fields"
                         :key="field.key"
-                        :label="field.label"
                         :value="field.dataKey"
-                      />
-                    </el-select>
-                    <el-button
+                      >
+                        {{ field.label }}
+                      </option>
+                    </select>
+                    <button
                       v-if="getSortInfoForGroup(group.title)"
-                      class="clear-sort-button"
-                      size="small"
-                      plain
+                      class="o-btn o-btn-sm clear-sort-button"
                       style="width: 100%; margin-top: 8px;"
                       @click="clearSortForGroup(group.title)"
                     >
                       クリア
-                    </el-button>
+                    </button>
                   </div>
-                </el-popover>
+                </div>
               </div>
               <div v-if="getSortInfoForGroup(group.title)" class="sort-info">
                 並べ替え: {{ getSortInfoForGroup(group.title) }}
               </div>
-            </template>
-            <!-- 第一列：出荷管理No、お客様管理番号 -->
-            <el-table-column
-              :min-width="290"
-              class-name="shipment-sub-column-1"
-              fixed="left"
+            </th>
+
+            <!-- Action column header -->
+            <th
+              v-if="hasActionColumn"
+              style="width: 120px; text-align: center;"
             >
-              <template #header>
-                <span style="display: none;"></span>
+              操作
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="(row, rowIndex) in displayData"
+            :key="String((row as any)[rowKey as string] ?? (row as any).id ?? rowIndex)"
+            :class="getRowClassName({ row })"
+          >
+            <!-- Selection column -->
+            <td
+              v-if="rowSelectionEnabled"
+              class="selection-column"
+              style="text-align: center; vertical-align: top;"
+            >
+              <input
+                type="checkbox"
+                :checked="isRowSelected(row)"
+                @change="handleRowCheckboxChange(row, $event)"
+              />
+            </td>
+
+            <!-- Bundle column -->
+            <td
+              v-if="hasBundleColumn"
+              style="text-align: center; vertical-align: top;"
+            >
+              <BundleCell
+                v-if="bundleColumn?.cellRenderer"
+                :renderer="bundleColumn.cellRenderer"
+                :row-data="row"
+              />
+              <span v-else>-</span>
+            </td>
+
+            <!-- Category group cells -->
+            <td
+              v-for="(group, groupIndex) in categoryGroups"
+              :key="`category-cell-${groupIndex}`"
+              style="vertical-align: top;"
+            >
+              <!-- 出荷情報: special 3-sub-column layout -->
+              <template v-if="group.title === '出荷情報'">
+                <div class="shipment-cell-layout">
+                  <!-- Sub-column 1: orderNumber, customerManagementNumber, ecCompanyId, trackingId -->
+                  <div class="shipment-sub-col">
+                    <div class="category-cell">
+                      <div
+                        v-for="field in getShipmentFieldsByGroup(group.fields, 1)"
+                        :key="field.key"
+                        class="category-field"
+                        :class="{ 'field-error': hasFieldError(row, field) }"
+                      >
+                        <span class="field-label">{{ field.label }}: </span>
+                        <span class="field-value">{{ formatFieldValue(row, field) }}</span>
+                      </div>
+                      <!-- 同梱相関 tag -->
+                      <div v-if="shouldShowBundleTags(row)" class="bundle-tags">
+                        <InfoTag
+                          v-if="isBundled(row)"
+                          content="同梱済"
+                          :width="50"
+                          :height="18"
+                          backgroundColor="#e3f2fd"
+                          borderColor="#2196f3"
+                          textColor="#1565c0"
+                          :borderRadius="2"
+                          :borderWidth="1"
+                          :absolute="false"
+                        />
+                        <InfoTag
+                          v-else-if="canBundle(row)"
+                          content="同梱可能"
+                          :width="60"
+                          :height="18"
+                          backgroundColor="#e3f2fd"
+                          borderColor="#2196f3"
+                          textColor="#1565c0"
+                          :borderRadius="2"
+                          :borderWidth="1"
+                          :absolute="false"
+                        />
+                      </div>
+                      <!-- 状態標籤 -->
+                      <div v-if="shouldShowStatusTags(row)" class="status-tags">
+                        <template v-if="getStatusTag(row, 'carrierReceipt')">
+                          <InfoTag
+                            :content="getStatusTag(row, 'carrierReceipt')!"
+                            :width="80"
+                            :height="18"
+                            backgroundColor="#f0f9ff"
+                            borderColor="#409eff"
+                            textColor="#409eff"
+                            :borderRadius="2"
+                            :borderWidth="1"
+                            :absolute="false"
+                          />
+                        </template>
+                        <template v-if="getStatusTag(row, 'confirm')">
+                          <InfoTag
+                            :content="getStatusTag(row, 'confirm')!"
+                            :width="60"
+                            :height="18"
+                            backgroundColor="#f4f4f5"
+                            borderColor="#909399"
+                            textColor="#606266"
+                            :borderRadius="2"
+                            :borderWidth="1"
+                            :absolute="false"
+                          />
+                        </template>
+                        <template v-if="getStatusTag(row, 'inspected')">
+                          <InfoTag
+                            :content="getStatusTag(row, 'inspected')!"
+                            :width="60"
+                            :height="18"
+                            backgroundColor="#f0f9eb"
+                            borderColor="#67c23a"
+                            textColor="#67c23a"
+                            :borderRadius="2"
+                            :borderWidth="1"
+                            :absolute="false"
+                          />
+                        </template>
+                        <template v-if="getStatusTag(row, 'printed')">
+                          <InfoTag
+                            :content="getStatusTag(row, 'printed')!"
+                            :width="60"
+                            :height="18"
+                            backgroundColor="#fdf6ec"
+                            borderColor="#e6a23c"
+                            textColor="#e6a23c"
+                            :borderRadius="2"
+                            :borderWidth="1"
+                            :absolute="false"
+                          />
+                        </template>
+                        <template v-if="getStatusTag(row, 'shipped')">
+                          <InfoTag
+                            :content="getStatusTag(row, 'shipped')!"
+                            :width="60"
+                            :height="18"
+                            backgroundColor="#f0f9ff"
+                            borderColor="#67c23a"
+                            textColor="#67c23a"
+                            :borderRadius="2"
+                            :borderWidth="1"
+                            :absolute="false"
+                          />
+                        </template>
+                        <template v-if="getStatusTag(row, 'ecExported')">
+                          <InfoTag
+                            :content="getStatusTag(row, 'ecExported')!"
+                            :width="80"
+                            :height="18"
+                            backgroundColor="#fef0f0"
+                            borderColor="#f56c6c"
+                            textColor="#f56c6c"
+                            :borderRadius="2"
+                            :borderWidth="1"
+                            :absolute="false"
+                          />
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Sub-column 2: carrierId, invoiceType, coolType -->
+                  <div class="shipment-sub-col">
+                    <div class="category-cell">
+                      <div
+                        v-for="field in getShipmentFieldsByGroup(group.fields, 2)"
+                        :key="field.key"
+                        class="category-field"
+                        :class="{ 'field-error': hasFieldError(row, field) }"
+                      >
+                        <span class="field-label">{{ field.label }}: </span>
+                        <template v-if="field.key === 'coolType'">
+                          <InfoTag
+                            v-if="getCoolTypeValue(row, field)"
+                            :content="getCoolTypeLabel(row, field)"
+                            :width="getCoolTypeTagWidth(row, field)"
+                            :height="18"
+                            :backgroundColor="getCoolTypeColor(row, field).bg"
+                            :borderColor="getCoolTypeColor(row, field).border"
+                            :textColor="getCoolTypeColor(row, field).text"
+                            :borderRadius="2"
+                            :borderWidth="1"
+                            :absolute="false"
+                          />
+                          <span v-else class="field-value">-</span>
+                        </template>
+                        <span v-else class="field-value">{{ formatFieldValue(row, field) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Sub-column 3: shipPlanDate, deliveryDatePreference, deliveryTimeSlot, handlingTags -->
+                  <div class="shipment-sub-col">
+                    <div class="category-cell">
+                      <div
+                        v-for="field in getShipmentFieldsByGroup(group.fields, 3)"
+                        :key="field.key"
+                        class="category-field"
+                        :class="{ 'field-error': hasFieldError(row, field) }"
+                      >
+                        <span class="field-label">{{ field.label }}: </span>
+                        <span class="field-value">{{ formatFieldValue(row, field) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </template>
-              <template #default="{ row }">
+
+              <!-- 商品情報: product display -->
+              <template v-else-if="group.title === '商品情報'">
+                <div class="product-cell">
+                  <template v-if="getOrderProducts(row).length > 0">
+                    <div
+                      v-for="(product, productIndex) in getOrderProducts(row)"
+                      :key="`product-${productIndex}`"
+                      class="product-item"
+                    >
+                      <img
+                        :src="resolveProductImageUrl(getProductImageUrl(product))"
+                        class="product-image"
+                        @error="(e: Event) => { (e.target as HTMLImageElement).src = noImageSrc }"
+                      />
+                      <div class="product-info">
+                        <div class="product-field">
+                          <span class="product-label">商品名: </span>
+                          <span class="product-value">{{ getProductNameFromProduct(product) }}</span>
+                        </div>
+                        <div class="product-field">
+                          <span class="product-label">SKU管理番号: </span>
+                          <span class="product-value">{{ product.inputSku || product.sku || '-' }}</span>
+                        </div>
+                        <div class="product-field">
+                          <span class="product-label">検品コード: </span>
+                          <span class="product-value">{{ getProductInspectionCodeFromProduct(product) }}</span>
+                        </div>
+                        <div v-if="product.subtotal !== undefined && product.subtotal !== null" class="product-field">
+                          <span class="product-label">金額: </span>
+                          <span class="product-value">{{ formatPrice(product.subtotal) }}</span>
+                        </div>
+                      </div>
+                      <InfoTag
+                        v-if="product.quantity"
+                        :content="`${product.quantity}個`"
+                        class="product-quantity-tag"
+                      />
+                    </div>
+                    <!-- 合計金額 -->
+                    <div v-if="getOrderTotalPrice(row)" class="product-total">
+                      <span class="product-total-label">合計金額: </span>
+                      <span class="product-total-value">{{ formatPrice(getOrderTotalPrice(row)) }}</span>
+                    </div>
+                  </template>
+                  <div v-else class="product-empty">-</div>
+                </div>
+              </template>
+
+              <!-- Other categories: normal display -->
+              <template v-else>
                 <div class="category-cell">
                   <div
-                    v-for="field in getShipmentFieldsByGroup(group.fields, 1)"
+                    v-for="field in group.fields"
                     :key="field.key"
                     class="category-field"
                     :class="{ 'field-error': hasFieldError(row, field) }"
@@ -137,446 +373,57 @@
                     <span class="field-label">{{ field.label }}: </span>
                     <span class="field-value">{{ formatFieldValue(row, field) }}</span>
                   </div>
-                  <!-- 同梱相关 tag -->
-                  <div v-if="shouldShowBundleTags(row)" class="bundle-tags">
-                    <InfoTag
-                      v-if="isBundled(row)"
-                      content="同梱済"
-                      :width="50"
-                      :height="18"
-                      backgroundColor="#e3f2fd"
-                      borderColor="#2196f3"
-                      textColor="#1565c0"
-                      :borderRadius="2"
-                      :borderWidth="1"
-                      :absolute="false"
-                    />
-                    <InfoTag
-                      v-else-if="canBundle(row)"
-                      content="同梱可能"
-                      :width="60"
-                      :height="18"
-                      backgroundColor="#e3f2fd"
-                      borderColor="#2196f3"
-                      textColor="#1565c0"
-                      :borderRadius="2"
-                      :borderWidth="1"
-                      :absolute="false"
-                    />
-                  </div>
-                  <!-- 状态标签 -->
-                  <div v-if="shouldShowStatusTags(row)" class="status-tags">
-                    <template v-if="getStatusTag(row, 'carrierReceipt')">
-                      <InfoTag
-                        :content="getStatusTag(row, 'carrierReceipt')!"
-                        :width="80"
-                        :height="18"
-                        backgroundColor="#f0f9ff"
-                        borderColor="#409eff"
-                        textColor="#409eff"
-                        :borderRadius="2"
-                        :borderWidth="1"
-                        :absolute="false"
-                      />
-                    </template>
-                    <template v-if="getStatusTag(row, 'confirm')">
-                      <InfoTag
-                        :content="getStatusTag(row, 'confirm')!"
-                        :width="60"
-                        :height="18"
-                        backgroundColor="#f4f4f5"
-                        borderColor="#909399"
-                        textColor="#606266"
-                        :borderRadius="2"
-                        :borderWidth="1"
-                        :absolute="false"
-                      />
-                    </template>
-                    <template v-if="getStatusTag(row, 'inspected')">
-                      <InfoTag
-                        :content="getStatusTag(row, 'inspected')!"
-                        :width="60"
-                        :height="18"
-                        backgroundColor="#f0f9eb"
-                        borderColor="#67c23a"
-                        textColor="#67c23a"
-                        :borderRadius="2"
-                        :borderWidth="1"
-                        :absolute="false"
-                      />
-                    </template>
-                    <template v-if="getStatusTag(row, 'printed')">
-                      <InfoTag
-                        :content="getStatusTag(row, 'printed')!"
-                        :width="60"
-                        :height="18"
-                        backgroundColor="#fdf6ec"
-                        borderColor="#e6a23c"
-                        textColor="#e6a23c"
-                        :borderRadius="2"
-                        :borderWidth="1"
-                        :absolute="false"
-                      />
-                    </template>
-                    <template v-if="getStatusTag(row, 'shipped')">
-                      <InfoTag
-                        :content="getStatusTag(row, 'shipped')!"
-                        :width="60"
-                        :height="18"
-                        backgroundColor="#f0f9ff"
-                        borderColor="#67c23a"
-                        textColor="#67c23a"
-                        :borderRadius="2"
-                        :borderWidth="1"
-                        :absolute="false"
-                      />
-                    </template>
-                    <template v-if="getStatusTag(row, 'ecExported')">
-                      <InfoTag
-                        :content="getStatusTag(row, 'ecExported')!"
-                        :width="80"
-                        :height="18"
-                        backgroundColor="#fef0f0"
-                        borderColor="#f56c6c"
-                        textColor="#f56c6c"
-                        :borderRadius="2"
-                        :borderWidth="1"
-                        :absolute="false"
-                      />
-                    </template>
-                  </div>
                 </div>
               </template>
-            </el-table-column>
-            
-            <!-- 第二列：配送会社、送り状種類、クール区分 -->
-            <el-table-column
-              :min-width="180"
-              class-name="shipment-sub-column-2"
-            >
-              <template #header>
-                <span style="display: none;"></span>
-              </template>
-              <template #default="{ row }">
-                <div class="category-cell">
-                  <div
-                    v-for="field in getShipmentFieldsByGroup(group.fields, 2)"
-                    :key="field.key"
-                    class="category-field"
-                    :class="{ 'field-error': hasFieldError(row, field) }"
-                  >
-                    <span class="field-label">{{ field.label }}: </span>
-                    <template v-if="field.key === 'coolType'">
-                      <InfoTag
-                        v-if="getCoolTypeValue(row, field)"
-                        :content="getCoolTypeLabel(row, field)"
-                        :width="getCoolTypeTagWidth(row, field)"
-                        :height="18"
-                        :backgroundColor="getCoolTypeColor(row, field).bg"
-                        :borderColor="getCoolTypeColor(row, field).border"
-                        :textColor="getCoolTypeColor(row, field).text"
-                        :borderRadius="2"
-                        :borderWidth="1"
-                        :absolute="false"
-                      />
-                      <span v-else class="field-value">-</span>
-                    </template>
-                    <span v-else class="field-value">{{ formatFieldValue(row, field) }}</span>
-                  </div>
-                </div>
-              </template>
-            </el-table-column>
-            
-            <!-- 第三列：出荷予定日、お届け日指定、お届け時間帯、荷扱い -->
-            <el-table-column
-              :min-width="170"
-              class-name="shipment-sub-column-3"
-            >
-              <template #header>
-                <span style="display: none;"></span>
-              </template>
-              <template #default="{ row }">
-                <div class="category-cell">
-                  <div
-                    v-for="field in getShipmentFieldsByGroup(group.fields, 3)"
-                    :key="field.key"
-                    class="category-field"
-                    :class="{ 'field-error': hasFieldError(row, field) }"
-                  >
-                    <span class="field-label">{{ field.label }}: </span>
-                    <span class="field-value">{{ formatFieldValue(row, field) }}</span>
-                  </div>
-                </div>
-              </template>
-            </el-table-column>
-          </el-table-column>
-          
-          <!-- 商品情報：特殊处理，一个订单多个商品时，在单元格内显示多行 -->
-          <el-table-column
-            v-else-if="group.title === '商品情報'"
-            :min-width="340"
-          >
-            <template #header>
-              <div class="category-header">
-                <span class="category-header-title">{{ group.title }}</span>
-                <el-popover
-                  v-model:visible="sortPopoverVisible[group.title]"
-                  placement="bottom"
-                  :width="200"
-                  :trigger="[]"
-                  :hide-after="0"
-                  :popper-options="{ strategy: 'fixed' }"
-                >
-                  <template #reference>
-                    <el-button
-                      :icon="getSortIcon(group.title)"
-                      size="small"
-                      text
-                      class="sort-button"
-                      @click.stop="toggleSortPopover(group.title)"
-                    />
-                  </template>
-                  <div class="sort-popover-content" @click.stop>
-                    <div class="sort-order-buttons">
-                      <el-button
-                        :type="getSortOrderForGroup(group.title) === 'asc' ? 'primary' : 'default'"
-                        size="small"
-                        :icon="ArrowUp"
-                        @click="setSortOrderForGroup(group.title, 'asc')"
-                      >
-                        昇順
-                      </el-button>
-                      <el-button
-                        :type="getSortOrderForGroup(group.title) === 'desc' ? 'primary' : 'default'"
-                        size="small"
-                        :icon="ArrowDown"
-                        @click="setSortOrderForGroup(group.title, 'desc')"
-                      >
-                        降順
-                      </el-button>
-                    </div>
-                    <el-select
-                      v-model="sortFieldForGroup[group.title]"
-                      placeholder="並べ替え列を選択"
-                      size="small"
-                      style="width: 100%; margin-top: 8px;"
-                      @change="handleSortFieldChange(group.title)"
-                    >
-                      <el-option
-                        v-for="field in group.fields"
-                        :key="field.key"
-                        :label="field.label"
-                        :value="field.dataKey"
-                      />
-                    </el-select>
-                    <el-button
-                      v-if="getSortInfoForGroup(group.title)"
-                      class="clear-sort-button"
-                      size="small"
-                      plain
-                      style="width: 100%; margin-top: 8px;"
-                      @click="clearSortForGroup(group.title)"
-                    >
-                      クリア
-                    </el-button>
-                  </div>
-                </el-popover>
-              </div>
-              <div v-if="getSortInfoForGroup(group.title)" class="sort-info">
-                並べ替え: {{ getSortInfoForGroup(group.title) }}
-              </div>
-            </template>
-            <template #default="{ row }">
-              <div class="product-cell">
-                <template v-if="getOrderProducts(row).length > 0">
-                  <div
-                    v-for="(product, productIndex) in getOrderProducts(row)"
-                    :key="`product-${productIndex}`"
-                    class="product-item"
-                  >
-                    <img
-                      :src="resolveProductImageUrl(getProductImageUrl(product))"
-                      class="product-image"
-                      @error="(e: Event) => { (e.target as HTMLImageElement).src = noImageSrc }"
-                    />
-                    <div class="product-info">
-                      <div class="product-field">
-                        <span class="product-label">商品名: </span>
-                        <span class="product-value">{{ getProductNameFromProduct(product) }}</span>
-                      </div>
-                      <div class="product-field">
-                        <span class="product-label">SKU管理番号: </span>
-                        <span class="product-value">{{ product.inputSku || product.sku || '-' }}</span>
-                      </div>
-                      <div class="product-field">
-                        <span class="product-label">検品コード: </span>
-                        <span class="product-value">{{ getProductInspectionCodeFromProduct(product) }}</span>
-                      </div>
-                      <div v-if="product.subtotal !== undefined && product.subtotal !== null" class="product-field">
-                        <span class="product-label">金額: </span>
-                        <span class="product-value">{{ formatPrice(product.subtotal) }}</span>
-                      </div>
-                    </div>
-                    <InfoTag
-                      v-if="product.quantity"
-                      :content="`${product.quantity}個`"
-                      class="product-quantity-tag"
-                    />
-                  </div>
-                  <!-- 合計金額 -->
-                  <div v-if="getOrderTotalPrice(row)" class="product-total">
-                    <span class="product-total-label">合計金額: </span>
-                    <span class="product-total-value">{{ formatPrice(getOrderTotalPrice(row)) }}</span>
-                  </div>
-                </template>
-                <div v-else class="product-empty">-</div>
-              </div>
-            </template>
-          </el-table-column>
-          
-          <!-- 其他分类：正常显示 -->
-          <el-table-column
-            v-else
-            :min-width="group.minWidth || 200"
-            :fixed="groupIndex === 0 && rowSelectionEnabled ? 'left' : false"
-          >
-            <template #header>
-              <div class="category-header">
-                <span class="category-header-title">{{ group.title }}</span>
-                <el-popover
-                  v-model:visible="sortPopoverVisible[group.title]"
-                  placement="bottom"
-                  :width="200"
-                  :trigger="[]"
-                  :hide-after="0"
-                  :popper-options="{ strategy: 'fixed' }"
-                >
-                  <template #reference>
-                    <el-button
-                      :icon="getSortIcon(group.title)"
-                      size="small"
-                      text
-                      class="sort-button"
-                      @click.stop="toggleSortPopover(group.title)"
-                    />
-                  </template>
-                  <div class="sort-popover-content" @click.stop>
-                    <div class="sort-order-buttons">
-                      <el-button
-                        :type="getSortOrderForGroup(group.title) === 'asc' ? 'primary' : 'default'"
-                        size="small"
-                        :icon="ArrowUp"
-                        @click="setSortOrderForGroup(group.title, 'asc')"
-                      >
-                        昇順
-                      </el-button>
-                      <el-button
-                        :type="getSortOrderForGroup(group.title) === 'desc' ? 'primary' : 'default'"
-                        size="small"
-                        :icon="ArrowDown"
-                        @click="setSortOrderForGroup(group.title, 'desc')"
-                      >
-                        降順
-                      </el-button>
-                    </div>
-                    <el-select
-                      v-model="sortFieldForGroup[group.title]"
-                      placeholder="並べ替え列を選択"
-                      size="small"
-                      style="width: 100%; margin-top: 8px;"
-                      @change="handleSortFieldChange(group.title)"
-                    >
-                      <el-option
-                        v-for="field in group.fields"
-                        :key="field.key"
-                        :label="field.label"
-                        :value="field.dataKey"
-                      />
-                    </el-select>
-                    <el-button
-                      v-if="getSortInfoForGroup(group.title)"
-                      class="clear-sort-button"
-                      size="small"
-                      plain
-                      style="width: 100%; margin-top: 8px;"
-                      @click="clearSortForGroup(group.title)"
-                    >
-                      クリア
-                    </el-button>
-                  </div>
-                </el-popover>
-              </div>
-              <div v-if="getSortInfoForGroup(group.title)" class="sort-info">
-                並べ替え: {{ getSortInfoForGroup(group.title) }}
-              </div>
-            </template>
-            <template #default="{ row }">
-              <div class="category-cell">
-                <div
-                  v-for="field in group.fields"
-                  :key="field.key"
-                  class="category-field"
-                  :class="{ 'field-error': hasFieldError(row, field) }"
-                >
-                  <span class="field-label">{{ field.label }}: </span>
-                  <span class="field-value">{{ formatFieldValue(row, field) }}</span>
-                </div>
-              </div>
-            </template>
-          </el-table-column>
-        </template>
+            </td>
 
-        <!-- 操作列 -->
-        <el-table-column
-          v-if="hasActionColumn"
-          label="操作"
-          width="120"
-          fixed="right"
-          align="center"
-        >
-          <template #default="{ row }">
-            <ActionCell
-              v-if="actionColumn?.cellRenderer"
-              :renderer="actionColumn.cellRenderer"
-              :row-data="row"
-            />
-            <div v-else class="action-buttons">
-              <el-button
-                type="primary"
-                size="small"
-                plain
-                @click="handleEdit(row)"
-              >
-                編集
-              </el-button>
-              <el-button
-                type="danger"
-                size="small"
-                plain
-                @click="handleDelete(row)"
-              >
-                削除
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+            <!-- Action column -->
+            <td
+              v-if="hasActionColumn"
+              style="text-align: center; vertical-align: top;"
+            >
+              <ActionCell
+                v-if="actionColumn?.cellRenderer"
+                :renderer="actionColumn.cellRenderer"
+                :row-data="row"
+              />
+              <div v-else class="action-buttons">
+                <button
+                  class="o-btn o-btn-primary o-btn-sm"
+                  @click="handleEdit(row)"
+                >
+                  編集
+                </button>
+                <button
+                  class="o-btn o-btn-danger o-btn-sm"
+                  @click="handleDelete(row)"
+                >
+                  削除
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="displayData.length === 0">
+            <td
+              :colspan="totalColumnCount"
+              style="text-align: center; padding: 20px; color: #909399;"
+            >
+              データがありません
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <div
       v-if="paginationEnabled"
       class="nex-table__pagination"
     >
-      <el-pagination
-        background
-        layout="total, sizes, prev, pager, next, jumper"
+      <OPager
         :total="totalItems"
-        :page-size="innerPageSize"
-        :page-sizes="pageSizes"
-        :current-page="innerCurrentPage"
-        :pager-count="paginationMode === 'server' ? 7 : 7"
-        @current-change="handlePageChange"
-        @size-change="handlePageSizeChange"
+        :offset="pagerOffset"
+        :limit="innerPageSize"
+        @update:offset="handlePagerOffsetChange"
       />
     </div>
 
@@ -592,24 +439,12 @@
 
 <script setup lang="ts">
 import { computed, h, ref, toRefs, watch, onMounted, onUnmounted, defineComponent, nextTick } from 'vue'
-import {
-  ElCheckbox,
-  ElTable,
-  ElTableColumn,
-  ElButton,
-  ElSpace,
-  ElMessage,
-  ElSelect,
-  ElOption,
-  ElPopover,
-} from 'element-plus'
-import { ArrowUp, ArrowDown } from '@element-plus/icons-vue'
-import type { CheckboxValueType } from 'element-plus'
 import type { HeaderGroupingConfig } from './tableHeaderGroup'
 import { getNestedValue, setNestedValue } from '@/utils/nestedObject'
 import { naturalSort } from '@/utils/naturalSort'
 import { mergeBarcodesWithSku } from '@/utils/barcode'
 import BulkEditDialog from './BulkEditDialog.vue'
+import OPager from '@/components/odoo/OPager.vue'
 import { LINK_COLOR } from '@/theme/config'
 import type { Product } from '@/types/product'
 import InfoTag from './InfoTag.vue'
@@ -625,7 +460,7 @@ const resolveProductImageUrl = (url?: string): string => {
 }
 
 
-// 操作列渲染组件
+// 操作列渲染組件
 const ActionCell = defineComponent({
   name: 'ActionCell',
   props: {
@@ -642,7 +477,6 @@ const ActionCell = defineComponent({
     return () => {
       try {
         const result = props.renderer({ rowData: props.rowData })
-        // 包装结果，使其垂直排列
         return h('div', { class: 'action-cell-wrapper' }, [result])
       } catch (e) {
         console.error('Error rendering action cell:', e)
@@ -652,7 +486,7 @@ const ActionCell = defineComponent({
   },
 })
 
-// 同梱列渲染组件
+// 同梱列渲染組件
 const BundleCell = defineComponent({
   name: 'BundleCell',
   props: {
@@ -709,26 +543,26 @@ const props = withDefaults(
     total?: number
     currentPage?: number
     tableProps?: Record<string, unknown>
-    // 行选择
+    // 行選択
     rowSelectionEnabled?: boolean
     selectedKeys?: Array<RowKey>
-    // 表头分组相关
+    // 表頭分組相関
     headerGroupingEnabled?: boolean
     headerGroupingConfig?: HeaderGroupingConfig
-    // 排序相关
+    // 排序相関
     sortEnabled?: boolean
     sortMode?: SortMode
     sortBy?: string | null
     sortOrder?: SortOrder
-    // 表头批量编辑（统一编辑）
+    // 表頭批量編集（統一編集）
     bulkEditEnabled?: boolean
-    // 批量删除
+    // 批量削除
     batchDeleteEnabled?: boolean
-    // 商品信息（用于显示検品コード等）
+    // 商品情報（用于显示検品コード等）
     products?: Product[] | Map<string, Product>
-    // 是否显示同梱相关 tag（仅用于 /shipment-orders/create 页面）
+    // 是否显示同梱相関 tag（仅用于 /shipment-orders/create 页面）
     showBundleTags?: boolean
-    // 是否显示状态标签（用于 /shipment-orders/history 页面）
+    // 是否显示状態標籤（用于 /shipment-orders/history 页面）
     showStatusTags?: boolean
     // 同梱判断字段（用于计算同梱可能性）
     bundleFilterKeys?: string[]
@@ -809,7 +643,7 @@ const {
 const innerPageSize = ref(props.pageSize)
 const innerCurrentPage = ref(props.currentPage)
 
-// 行选择内部状态
+// 行選択内部状態
 const innerSelectedKeys = ref<Array<RowKey>>([...(props.selectedKeys ?? [])])
 
 watch(
@@ -835,10 +669,118 @@ watch(
   },
 )
 
-// 根据字段 key 判断所属分类（直接使用 order.ts 中的分类定义）
+// Row selection helpers
+const isRowSelected = (row: RowData): boolean => {
+  const keyField = rowKey.value as string
+  const key = (row as any)?.[keyField]
+  return key !== undefined && key !== null && innerSelectedKeys.value.includes(key)
+}
+
+const isAllCurrentPageSelected = computed(() => {
+  if (displayData.value.length === 0) return false
+  const keyField = rowKey.value as string
+  return displayData.value.every((row) => {
+    const key = (row as any)?.[keyField]
+    return key !== undefined && key !== null && innerSelectedKeys.value.includes(key)
+  })
+})
+
+const isIndeterminate = computed(() => {
+  if (displayData.value.length === 0) return false
+  const keyField = rowKey.value as string
+  const selectedCount = displayData.value.filter((row) => {
+    const key = (row as any)?.[keyField]
+    return key !== undefined && key !== null && innerSelectedKeys.value.includes(key)
+  }).length
+  return selectedCount > 0 && selectedCount < displayData.value.length
+})
+
+const handleSelectAllToggle = (event: Event) => {
+  const checked = (event.target as HTMLInputElement).checked
+  const keyField = rowKey.value as string
+
+  if (checked) {
+    // Select all - when client pagination, select ALL filtered data rows (cross-page)
+    if (paginationEnabled.value && paginationMode.value === 'client') {
+      const allDataKeys = new Set(
+        filteredData.value.map((row) => (row as any)?.[keyField]).filter((k: any) => k !== undefined && k !== null),
+      )
+      const finalKeys = Array.from(allDataKeys)
+      innerSelectedKeys.value = finalKeys
+      const allSelectedRows = filteredData.value.filter((row) => allDataKeys.has((row as any)?.[keyField]))
+      emits('update:selectedKeys', finalKeys)
+      emits('selection-change', { selectedKeys: finalKeys, selectedRows: allSelectedRows, isSelectAllTriggered: true })
+    } else {
+      const currentPageKeys = displayData.value
+        .map((row) => (row as any)?.[keyField])
+        .filter((k: any) => k !== undefined && k !== null)
+      const newKeys = new Set([...innerSelectedKeys.value, ...currentPageKeys])
+      const finalKeys = Array.from(newKeys)
+      innerSelectedKeys.value = finalKeys
+      const keySet = new Set(finalKeys)
+      const allSelectedRows = filteredData.value.filter((row) => keySet.has((row as any)?.[keyField]))
+      emits('update:selectedKeys', finalKeys)
+      emits('selection-change', { selectedKeys: finalKeys, selectedRows: allSelectedRows, isSelectAllTriggered: true })
+    }
+  } else {
+    // Deselect
+    const allDataKeys = new Set(
+      filteredData.value.map((row) => (row as any)?.[keyField]).filter((k: any) => k !== undefined && k !== null),
+    )
+    const wasAllSelected =
+      allDataKeys.size > 0 &&
+      allDataKeys.size === innerSelectedKeys.value.length &&
+      Array.from(allDataKeys).every((key) => innerSelectedKeys.value.includes(key))
+
+    if (wasAllSelected && paginationEnabled.value && paginationMode.value === 'client') {
+      innerSelectedKeys.value = []
+      emits('update:selectedKeys', [])
+      emits('selection-change', { selectedKeys: [], selectedRows: [], isSelectAllTriggered: false })
+    } else {
+      const currentPageKeys = new Set(
+        displayData.value.map((row) => (row as any)?.[keyField]).filter((k: any) => k !== undefined && k !== null),
+      )
+      const finalKeys = innerSelectedKeys.value.filter((key) => !currentPageKeys.has(key))
+      innerSelectedKeys.value = finalKeys
+      const keySet = new Set(finalKeys)
+      const allSelectedRows = filteredData.value.filter((row) => keySet.has((row as any)?.[keyField]))
+      emits('update:selectedKeys', finalKeys)
+      emits('selection-change', { selectedKeys: finalKeys, selectedRows: allSelectedRows, isSelectAllTriggered: false })
+    }
+  }
+}
+
+const handleRowCheckboxChange = (row: RowData, event: Event) => {
+  const checked = (event.target as HTMLInputElement).checked
+  const keyField = rowKey.value as string
+  const key = (row as any)?.[keyField]
+  if (key === undefined || key === null) return
+
+  let finalKeys: Array<RowKey>
+  if (checked) {
+    finalKeys = [...innerSelectedKeys.value, key]
+  } else {
+    finalKeys = innerSelectedKeys.value.filter((k) => k !== key)
+  }
+  innerSelectedKeys.value = finalKeys
+
+  const keySet = new Set(finalKeys)
+  const allSelectedRows = filteredData.value.filter((r) => keySet.has((r as any)?.[keyField]))
+  emits('update:selectedKeys', finalKeys)
+  emits('selection-change', { selectedKeys: finalKeys, selectedRows: allSelectedRows })
+}
+
+// Total column count for empty-row colspan
+const totalColumnCount = computed(() => {
+  let count = categoryGroups.value.length
+  if (rowSelectionEnabled.value) count++
+  if (hasBundleColumn.value) count++
+  if (hasActionColumn.value) count++
+  return count
+})
+
+// 根据字段 key 判断所属分類
 const getFieldCategory = (key: string): string | null => {
-  // 根据 order.ts 中的注释定义分类
-  // (出荷情報) ECモール, 出荷管理No, お客様管理番号, 配送会社, 送り状種類, クール区分, 出荷予定日, お届け日指定, お届け時間帯, 荷扱い
   const shipmentKeys = new Set([
     'ecCompanyId',
     'orderNumber',
@@ -852,45 +794,40 @@ const getFieldCategory = (key: string): string | null => {
     'handlingTags',
     'trackingId',
   ])
-  
-  // (商品情報) 商品
+
   const productKeys = new Set(['products'])
-  
-  // (送付先情報) 送付先郵便番号, 送付先住所, 送付先名, 送付先電話番号, 敬称
+
   const recipientKeys = new Set([
     'recipient.postalCode',
     'recipient.prefecture',
     'recipient.city',
     'recipient.street',
-    'recipientAddress', // 組合せ表示用
+    'recipientAddress',
     'recipient.name',
     'recipient.phone',
     'honorific',
   ])
 
-  // (ご依頼主情報) 依頼主郵便番号, 依頼主住所, 依頼主名, 依頼主電話番号
   const senderKeys = new Set([
     'sender.postalCode',
     'sender.prefecture',
     'sender.city',
     'sender.street',
-    'senderAddress', // 組合せ表示用
+    'senderAddress',
     'sender.name',
     'sender.phone',
   ])
 
-  // (注文者情報) 注文者郵便番号, 注文者住所, 注文者名, 注文者電話番号
   const ordererKeys = new Set([
     'orderer.postalCode',
     'orderer.prefecture',
     'orderer.city',
     'orderer.street',
-    'ordererAddress', // 組合せ表示用
+    'ordererAddress',
     'orderer.name',
     'orderer.phone',
   ])
-  
-  // (その他) 作成日時, 更新日時, 印刷日時, 取り込み日時等
+
   const otherKeys = new Set([
     'createdAt',
     'updatedAt',
@@ -904,21 +841,20 @@ const getFieldCategory = (key: string): string | null => {
     'statusPrintedIsPrinted',
     'statusShippedIsShipped',
   ])
-  
+
   if (shipmentKeys.has(key)) return '出荷情報'
   if (productKeys.has(key)) return '商品情報'
   if (recipientKeys.has(key)) return '送付先情報'
   if (senderKeys.has(key)) return 'ご依頼主情報'
   if (ordererKeys.has(key)) return '注文者情報'
   if (otherKeys.has(key)) return 'その他'
-  
-  // 如果字段不在预定义列表中，根据 key 的前缀判断
+
   if (key.startsWith('status')) return 'その他'
-  
+
   return null
 }
 
-// 地址拆分字段（需要合并显示的字段）
+// 地址拆分字段
 const addressSplitFields = new Set([
   'recipient.prefecture',
   'recipient.city',
@@ -931,20 +867,20 @@ const addressSplitFields = new Set([
   'orderer.street',
 ])
 
-// 地址合并字段映射（拆分字段前缀 -> 合并后显示的 key 和 label）
+// 地址合併字段映射
 const addressCombinedFieldMap: Record<string, { key: string; label: string }> = {
   'recipient': { key: 'recipientAddress', label: '送付先住所' },
   'sender': { key: 'senderAddress', label: 'ご依頼主住所' },
   'orderer': { key: 'ordererAddress', label: '注文者住所' },
 }
 
-// 不在表格中显示的字段（完全排除）
+// 不在表格中显示的字段
 const excludedFields = new Set([
   'carrierData.yamato.hatsuBaseNo1',
   'carrierData.yamato.hatsuBaseNo2',
 ])
 
-// 从 columns 直接构建分类组（不依赖 headerGroupingConfig 的计数）
+// 从 columns 直接构建分類組
 const categoryGroups = computed<CategoryGroup[]>(() => {
   if (!columns.value) {
     return []
@@ -952,28 +888,22 @@ const categoryGroups = computed<CategoryGroup[]>(() => {
 
   const cols = columns.value || []
 
-  // 按分类分组字段
   const categoryMap = new Map<string, CategoryGroup['fields']>()
-  // 追踪已添加的地址合并字段（避免重复添加）
   const addedAddressFields = new Set<string>()
 
-  // 按照 columns 的顺序处理字段
   for (const col of cols) {
     const key = col.key || col.dataKey
     if (!key || key === 'actions' || key === '__selection__' || key === '__bundle__') {
       continue
     }
 
-    // 跳过排除的字段
     if (excludedFields.has(String(key))) {
       continue
     }
 
     const keyStr = String(key)
 
-    // 跳过地址拆分字段，替换为合并字段
     if (addressSplitFields.has(keyStr)) {
-      // 确定地址前缀（recipient, sender, orderer）
       let prefix = ''
       if (keyStr.startsWith('recipient')) prefix = 'recipient'
       else if (keyStr.startsWith('sender')) prefix = 'sender'
@@ -997,7 +927,6 @@ const categoryGroups = computed<CategoryGroup[]>(() => {
                 key: combined.key,
                 dataKey: combined.key,
                 title: combined.label,
-                // 标记为合并地址字段，供 formatFieldValue 使用
                 _isCombinedAddress: true,
                 _addressPrefix: prefix,
               },
@@ -1008,14 +937,12 @@ const categoryGroups = computed<CategoryGroup[]>(() => {
       continue
     }
 
-    // 跳过旧的合并地址字段（如果 columns 中有的话）
     if (keyStr === 'recipientAddress' || keyStr === 'senderAddress' || keyStr === 'ordererAddress') {
       continue
     }
 
     const category = getFieldCategory(keyStr)
     if (!category) {
-      // 未知字段归类到"その他"
       if (!categoryMap.has('その他')) {
         categoryMap.set('その他', [])
       }
@@ -1040,7 +967,6 @@ const categoryGroups = computed<CategoryGroup[]>(() => {
     }
   }
 
-  // 按照固定顺序构建 groups
   const categoryOrder = ['出荷情報', '商品情報', '送付先情報', 'ご依頼主情報', 'その他']
   const groups: CategoryGroup[] = []
 
@@ -1058,11 +984,11 @@ const categoryGroups = computed<CategoryGroup[]>(() => {
   return groups
 })
 
-// 构建商品信息 Map（从 products prop）
+// 构建商品情報 Map
 const productMap = computed<Map<string, Product>>(() => {
   const map = new Map<string, Product>()
   if (!productsProp.value) return map
-  
+
   if (Array.isArray(productsProp.value)) {
     for (const product of productsProp.value) {
       if (product.sku) {
@@ -1072,11 +998,11 @@ const productMap = computed<Map<string, Product>>(() => {
   } else if (productsProp.value instanceof Map) {
     return productsProp.value
   }
-  
+
   return map
 })
 
-// 获取商品图片URL：优先使用订单快照，回退到 productMap 查找
+// 获取商品图片URL
 const getProductImageUrl = (product: any): string | undefined => {
   if (product.imageUrl) return product.imageUrl
   const sku = product.productSku || product.inputSku
@@ -1119,19 +1045,17 @@ const formatPrice = (price: number | undefined | null): string => {
 
 // 注文の合計金額を取得
 const getOrderTotalPrice = (row: RowData): number | null => {
-  // _productsMeta.totalPrice から取得
   const totalPrice = (row as any)?._productsMeta?.totalPrice
   if (typeof totalPrice === 'number' && totalPrice > 0) {
     return totalPrice
   }
-  // フォールバック：products から計算
   const products = getOrderProducts(row)
   if (!products || products.length === 0) return null
   const sum = products.reduce((acc: number, p: any) => acc + (p.subtotal || 0), 0)
   return sum > 0 ? sum : null
 }
 
-// クール区分相关函数
+// クール区分相関函数
 const coolTypeMap: Record<string, string> = {
   '0': '通常',
   '1': '冷凍',
@@ -1154,11 +1078,10 @@ const getCoolTypeLabel = (row: RowData, field: CategoryGroup['fields'][0]): stri
 
 const getCoolTypeTagWidth = (row: RowData, field: CategoryGroup['fields'][0]): number => {
   const label = getCoolTypeLabel(row, field)
-  // 根据文字长度动态计算宽度：通常=40, 冷蔵=40, 冷凍=40
   if (label === '通常') return 40
   if (label === '冷蔵') return 40
   if (label === '冷凍') return 40
-  return 50 // 默认宽度
+  return 50
 }
 
 const getCoolTypeColor = (row: RowData, field: CategoryGroup['fields'][0]): { bg: string; border: string; text: string } => {
@@ -1166,8 +1089,7 @@ const getCoolTypeColor = (row: RowData, field: CategoryGroup['fields'][0]): { bg
   if (!value) {
     return { bg: '#f5f5f5', border: '#cecece', text: '#909399' }
   }
-  
-  // 根据不同的クール区分值设置不同的颜色
+
   switch (value) {
     case '0': // 通常
       return { bg: '#e8f5e9', border: '#4caf50', text: '#2e7d32' }
@@ -1180,7 +1102,7 @@ const getCoolTypeColor = (row: RowData, field: CategoryGroup['fields'][0]): { bg
   }
 }
 
-// 排序相关状态
+// 排序相関状態
 const sortPopoverVisible = ref<Record<string, boolean>>({})
 const sortFieldForGroup = ref<Record<string, string>>({})
 const sortOrderForGroup = ref<Record<string, 'asc' | 'desc' | null>>({})
@@ -1191,10 +1113,10 @@ const getSortConfigKey = (): string => {
   return pageKey ? `order-table-sort-${pageKey}` : 'order-table-sort-default'
 }
 
-// 从 localStorage 加载排序配置
+// 从 localStorage 加載排序配置
 const loadSortConfig = () => {
   if (!pageKeyProp.value) return
-  
+
   try {
     const key = getSortConfigKey()
     const saved = localStorage.getItem(key)
@@ -1206,7 +1128,6 @@ const loadSortConfig = () => {
       if (config.sortOrderForGroup) {
         sortOrderForGroup.value = config.sortOrderForGroup
       }
-      // 如果有保存的配置，应用排序
       if (Object.keys(sortFieldForGroup.value).length > 0) {
         nextTick(() => {
           applySorting()
@@ -1221,7 +1142,7 @@ const loadSortConfig = () => {
 // 保存排序配置到 localStorage
 const saveSortConfig = () => {
   if (!pageKeyProp.value) return
-  
+
   try {
     const key = getSortConfigKey()
     const config = {
@@ -1234,7 +1155,7 @@ const saveSortConfig = () => {
   }
 }
 
-// 监听排序配置变化并保存
+// 監聴排序配置変化并保存
 watch(
   [sortFieldForGroup, sortOrderForGroup],
   () => {
@@ -1243,47 +1164,42 @@ watch(
   { deep: true }
 )
 
-// 组件挂载时加载排序配置
+// 組件挂載時加載排序配置
 onMounted(() => {
   loadSortConfig()
 })
 
 // 切换排序弹窗
 const toggleSortPopover = (groupTitle: string) => {
-  // 关闭其他弹窗
   for (const [title, visible] of Object.entries(sortPopoverVisible.value)) {
     if (title !== groupTitle && visible) {
       sortPopoverVisible.value[title] = false
     }
   }
-  // 切换当前弹窗
   sortPopoverVisible.value[groupTitle] = !sortPopoverVisible.value[groupTitle]
 }
 
-// 点击表格外部时关闭所有弹窗
+// 点击表格外部時関閉所有弹窗
 const handleTableClick = (event: MouseEvent) => {
   const target = event.target as HTMLElement
-  // 如果点击的是弹窗内部或按钮，不关闭
   if (
-    target.closest('.el-popover') ||
+    target.closest('.sort-dropdown') ||
     target.closest('.sort-button') ||
-    target.closest('.el-select-dropdown') ||
-    target.closest('.sort-popover-content')
+    target.closest('.sort-dropdown-wrapper')
   ) {
     return
   }
-  // 关闭所有弹窗
   for (const title in sortPopoverVisible.value) {
     sortPopoverVisible.value[title] = false
   }
 }
 
-// 获取排序图标
-const getSortIcon = (groupTitle: string): any => {
+// 获取排序图标 - no longer returns component, handled in template with unicode
+const getSortIcon = (groupTitle: string): string => {
   const order = sortOrderForGroup.value[groupTitle]
-  if (order === 'asc') return ArrowUp
-  if (order === 'desc') return ArrowDown
-  return ArrowUp
+  if (order === 'asc') return 'up'
+  if (order === 'desc') return 'down'
+  return 'up'
 }
 
 // 设置排序顺序
@@ -1292,9 +1208,8 @@ const setSortOrderForGroup = (groupTitle: string, order: 'asc' | 'desc') => {
   applySorting()
 }
 
-// 处理排序字段变化
+// 处理排序字段変化
 const handleSortFieldChange = (groupTitle: string) => {
-  // 清除其他分类的排序字段（每个分类只能选择一个）
   for (const [title, field] of Object.entries(sortFieldForGroup.value)) {
     if (title !== groupTitle && field) {
       sortFieldForGroup.value[title] = ''
@@ -1302,10 +1217,16 @@ const handleSortFieldChange = (groupTitle: string) => {
     }
   }
   applySorting()
-  // 保持弹窗打开
   nextTick(() => {
     sortPopoverVisible.value[groupTitle] = true
   })
+}
+
+// Handle native select change for sort field
+const handleSortFieldSelectChange = (groupTitle: string, event: Event) => {
+  const value = (event.target as HTMLSelectElement).value
+  sortFieldForGroup.value[groupTitle] = value
+  handleSortFieldChange(groupTitle)
 }
 
 // 清除排序规则
@@ -1313,34 +1234,31 @@ const clearSortForGroup = (groupTitle: string) => {
   sortFieldForGroup.value[groupTitle] = ''
   sortOrderForGroup.value[groupTitle] = null
   applySorting()
-  // 关闭弹窗
   sortPopoverVisible.value[groupTitle] = false
 }
 
-// 获取分类的排序顺序
+// 获取分類的排序顺序
 const getSortOrderForGroup = (groupTitle: string): 'asc' | 'desc' | null => {
   return sortOrderForGroup.value[groupTitle] || null
 }
 
-// 获取分类的排序信息（用于显示）
+// 获取分類的排序情報（用于显示）
 const getSortInfoForGroup = (groupTitle: string): string => {
   const field = sortFieldForGroup.value[groupTitle]
   const order = sortOrderForGroup.value[groupTitle]
   if (!field || !order) return ''
-  
-  // 找到字段的标签
+
   const group = categoryGroups.value.find(g => g.title === groupTitle)
   if (!group) return ''
   const fieldInfo = group.fields.find(f => f.dataKey === field)
   if (!fieldInfo) return ''
-  
+
   const orderSymbol = order === 'asc' ? '↑' : '↓'
   return `${fieldInfo.label} ${orderSymbol}`
 }
 
-// 应用排序
+// 応用排序
 const applySorting = () => {
-  // 收集所有分类的排序规则
   const sortRules: Array<{ field: string; order: 'asc' | 'desc' }> = []
   for (const [groupTitle, field] of Object.entries(sortFieldForGroup.value)) {
     if (field && sortOrderForGroup.value[groupTitle]) {
@@ -1350,10 +1268,8 @@ const applySorting = () => {
       })
     }
   }
-  
-  // 如果有排序规则，更新 sortBy 和 sortOrder
+
   if (sortRules.length > 0) {
-    // 使用第一个排序规则作为主要排序
     const primarySort = sortRules[0]
     if (primarySort) {
       emits('update:sortBy', primarySort.field)
@@ -1370,27 +1286,23 @@ const applySorting = () => {
   }
 }
 
-// 同梱相关函数
+// 同梱相関函数
 const isBundled = (row: RowData): boolean => {
   const sourceRawRows = (row as any).sourceRawRows
   return Array.isArray(sourceRawRows) && sourceRawRows.length > 1
 }
 
 const canBundle = (row: RowData): boolean => {
-  // 优先使用 _bundleGroupSize（如果存在）
   const bundleGroupSize = (row as any)._bundleGroupSize
   if (typeof bundleGroupSize === 'number' && bundleGroupSize >= 2) {
     return true
   }
 
-  // 如果没有 _bundleGroupSize，但有 bundleFilterKeys，则计算同梱可能性
   if (bundleFilterKeysProp.value && bundleFilterKeysProp.value.length > 0) {
     const keys = bundleFilterKeysProp.value
-    // 计算当前行的同梱 key (use getNestedValue for nested paths like 'recipient.postalCode')
     const keyParts = keys.map((k) => getNestedValue(row as any, k) ?? '')
     const currentKey = JSON.stringify(keyParts)
 
-    // 检查是否有其他行具有相同的 key
     let count = 0
     for (const otherRow of data.value) {
       const otherKeyParts = keys.map((k) => getNestedValue(otherRow as any, k) ?? '')
@@ -1410,7 +1322,7 @@ const shouldShowBundleTags = (row: RowData): boolean => {
   return isBundled(row) || canBundle(row)
 }
 
-// 状态标签相关函数
+// 状態標籤相関函数
 const shouldShowStatusTags = (row: RowData): boolean => {
   if (!showStatusTags.value) return false
   const status = (row as any)?.status || {}
@@ -1467,18 +1379,13 @@ const bundleColumn = computed(() => {
   return columns.value?.find((col) => col.key === '__bundle__' || col.dataKey === '__bundle__')
 })
 
-// 获取出荷情報字段的分组（用于多级表头）
+// 获取出荷情報字段的分組（用于多级表頭）
 const getShipmentFieldsByGroup = (fields: CategoryGroup['fields'], group: number): CategoryGroup['fields'] => {
-  // group 1: 出荷管理No、お客様管理番号、伝票番号（最下面）
-  // group 2: 配送会社、送り状種類、クール区分
-  // group 3: 出荷予定日、お届け日指定、お届け時間帯、荷扱い
-  
   const group1Keys = new Set(['orderNumber', 'customerManagementNumber', 'ecCompanyId', 'trackingId'])
   const group2Keys = new Set(['carrierId', 'invoiceType', 'coolType'])
   const group3Keys = new Set(['shipPlanDate', 'deliveryDatePreference', 'deliveryTimeSlot', 'handlingTags'])
-  
+
   if (group === 1) {
-    // 确保 trackingId 在最后
     const filtered = fields.filter(f => group1Keys.has(f.key))
     return filtered.sort((a, b) => {
       if (a.key === 'trackingId') return 1
@@ -1493,10 +1400,9 @@ const getShipmentFieldsByGroup = (fields: CategoryGroup['fields'], group: number
   return []
 }
 
-// 格式化日期时间为 YYYYMMDD HH:MM:SS 格式（如果只精确到日，则不显示时分秒）
+// 格式化日期時間
 const formatDateTime = (dateValue: any): string => {
   if (!dateValue) return '-'
-  
   let date: Date
   if (typeof dateValue === 'string') {
     date = new Date(dateValue)
@@ -1505,32 +1411,30 @@ const formatDateTime = (dateValue: any): string => {
   } else {
     return String(dateValue)
   }
-  
+
   if (isNaN(date.getTime())) {
     return String(dateValue)
   }
-  
+
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
   const hours = date.getHours()
   const minutes = date.getMinutes()
   const seconds = date.getSeconds()
-  
-  // 如果时分秒都是0，说明只精确到日，不显示时分秒
+
   if (hours === 0 && minutes === 0 && seconds === 0) {
     return `${year}${month}${day}`
   }
-  
-  // 否则显示完整的日期时间
+
   const hoursStr = String(hours).padStart(2, '0')
   const minutesStr = String(minutes).padStart(2, '0')
   const secondsStr = String(seconds).padStart(2, '0')
-  
+
   return `${year}${month}${day} ${hoursStr}:${minutesStr}:${secondsStr}`
 }
 
-// 判断字段是否为时间字段
+// 判断字段是否為時間字段
 const isDateTimeField = (fieldKey: string): boolean => {
   const dateTimeKeys = new Set([
     'createdAt',
@@ -1548,7 +1452,7 @@ const isDateTimeField = (fieldKey: string): boolean => {
   return dateTimeKeys.has(fieldKey) || fieldKey.includes('At') || fieldKey.includes('Date')
 }
 
-// 组合地址字段（用空格连接）
+// 組合地址字段
 const combineAddressFields = (row: RowData, prefix: string): string => {
   const addressObj = (row as any)[prefix]
   const parts = [
@@ -1561,12 +1465,10 @@ const combineAddressFields = (row: RowData, prefix: string): string => {
 
 // 格式化字段值
 const formatFieldValue = (row: RowData, field: CategoryGroup['fields'][0]): string => {
-  // 如果是合并地址字段，组合拆分字段的值
   if (field.column?._isCombinedAddress && field.column?._addressPrefix) {
     return combineAddressFields(row, field.column._addressPrefix)
   }
 
-  // 如果字段有 cellRenderer，优先使用 cellRenderer
   if (field.column?.cellRenderer && typeof field.column.cellRenderer === 'function') {
     try {
       const rendered = field.column.cellRenderer({ rowData: row })
@@ -1574,7 +1476,6 @@ const formatFieldValue = (row: RowData, field: CategoryGroup['fields'][0]): stri
         return String(rendered)
       }
     } catch (e) {
-      // 如果 cellRenderer 出错，继续使用默认格式化
       console.warn('cellRenderer error:', e)
     }
   }
@@ -1584,7 +1485,6 @@ const formatFieldValue = (row: RowData, field: CategoryGroup['fields'][0]): stri
     return '-'
   }
 
-  // 如果是时间字段，格式化时间
   if (isDateTimeField(field.key)) {
     return formatDateTime(value)
   }
@@ -1600,19 +1500,15 @@ const formatFieldValue = (row: RowData, field: CategoryGroup['fields'][0]): stri
 
 // 检查字段是否有错误
 const hasFieldError = (row: RowData, field: CategoryGroup['fields'][0]): boolean => {
-  // 如果是组合地址字段，检查对应的拆分字段是否为空（必填字段）
   if (field.column?._isCombinedAddress && field.column?._addressPrefix) {
     const prefix = field.column._addressPrefix as string
-    // 注文者地址是可选的，不检查错误
     if (prefix === 'orderer') {
       return false
     }
-    // recipient 和 sender 地址是必填的
     const addressObj = (row as any)[prefix]
     const prefecture = addressObj?.prefecture
     const city = addressObj?.city
     const street = addressObj?.street
-    // 检查是否有任何拆分字段为空
     const isEmpty = (val: any) => val === undefined || val === null || val === '' || val === '-'
     if (isEmpty(prefecture) || isEmpty(city) || isEmpty(street)) {
       return true
@@ -1620,7 +1516,6 @@ const hasFieldError = (row: RowData, field: CategoryGroup['fields'][0]): boolean
     return false
   }
 
-  // 从 tableProps 中获取 cellProps 函数
   const cellProps = (rawTableProps.value as any)?.cellProps
   if (typeof cellProps === 'function') {
     try {
@@ -1633,7 +1528,7 @@ const hasFieldError = (row: RowData, field: CategoryGroup['fields'][0]): boolean
   return false
 }
 
-// 获取单元格类名
+// 获取单元格類名
 const getCellClassName = ({ row, column }: { row: RowData; column: any }) => {
   const cellProps = (rawTableProps.value as any)?.cellProps
   if (typeof cellProps === 'function') {
@@ -1647,7 +1542,7 @@ const getCellClassName = ({ row, column }: { row: RowData; column: any }) => {
   return ''
 }
 
-// 获取行类名
+// 获取行類名
 const getRowClassName = ({ row }: { row: RowData }) => {
   if (props.rowClassName) {
     return props.rowClassName(row)
@@ -1655,33 +1550,17 @@ const getRowClassName = ({ row }: { row: RowData }) => {
   return ''
 }
 
-// 从操作列的 cellRenderer 中提取按钮的 onClick 处理函数
-const getActionHandlers = (row: RowData) => {
-  const col = actionColumn.value
-  if (!col?.cellRenderer) {
-    return { onEdit: null, onDelete: null }
-  }
-
-  // 尝试从 cellRenderer 中提取处理函数
-  // 由于 cellRenderer 返回的是 VNode，我们需要通过其他方式获取
-  // 这里我们通过分析 cellRenderer 的代码结构来提取
-  // 实际上，更好的方式是让外部通过 props 传入处理函数
-  // 暂时返回 null，由模板中的按钮直接调用 cellRenderer
-  return { onEdit: null, onDelete: null }
-}
-
-// 处理编辑 - 通过渲染操作列的 cellRenderer 来获取按钮
+// 处理編集
 const handleEdit = (row: RowData) => {
-  // 这个方法不会被直接调用，因为按钮在模板中已经通过 cellRenderer 渲染
-  // 如果需要，可以通过 emit 事件
+  // placeholder - handled by cellRenderer
 }
 
-// 处理删除
+// 处理削除
 const handleDelete = (row: RowData) => {
-  // 同上
+  // placeholder - handled by cellRenderer
 }
 
-// 批量编辑相关
+// 批量編集相関
 const bulkEditVisible = ref(false)
 
 const isEmptyForBulkEdit = (val: any): boolean => {
@@ -1738,12 +1617,12 @@ const applyBulkEdit = (payload: {
   if (!dataKey) return
 
   if (!rowSelectionEnabled.value) {
-    ElMessage.warning('行選択が有効ではありません')
+    console.warn('行選択が有効ではありません')
     return
   }
 
   if (!innerSelectedKeys.value.length) {
-    ElMessage.warning('左側のチェックで編集対象の行を選択してください')
+    console.warn('左側のチェックで編集対象の行を選択してください')
     return
   }
 
@@ -1771,43 +1650,47 @@ const applyBulkEdit = (payload: {
     selectedRows,
   })
 
-  ElMessage.success(`一括編集：${changed}件更新しました`)
+  console.log(`一括編集：${changed}件更新しました`)
 }
 
 const handleBatchDeleteClick = () => {
   if (!batchDeleteEnabled.value) return
   if (!rowSelectionEnabled.value) {
-    ElMessage.warning('行選択が有効ではありません')
+    console.warn('行選択が有効ではありません')
     return
   }
   if (!innerSelectedKeys.value.length) {
-    ElMessage.warning('削除する行を選択してください')
+    console.warn('削除する行を選択してください')
     return
   }
 
   const keySet = new Set(innerSelectedKeys.value)
   const selectedRows = data.value.filter((row) => keySet.has((row as any)?.[rowKey.value as string]))
-  
+
   emits('batch-delete', {
     selectedKeys: [...innerSelectedKeys.value],
     selectedRows,
   })
 }
 
-// 分页相关
+// 分頁相関
 const totalItems = computed(() => {
   if (!paginationEnabled.value) {
     return filteredData.value.length
   }
-  // 服务器端分页：必须使用 props.total，如果没有传递则使用 0 或 data.length 作为后备
   if (paginationMode.value === 'server') {
-    // 服务器端分页时，total 应该由外部提供
-    // 如果没有提供，可能是数据还没加载，使用 0 或者 data.length
     return props.total !== undefined ? props.total : (data.value.length || 0)
   }
-  // 客户端分页：使用实际数据长度
   return filteredData.value.length
 })
+
+// OPager offset (0-based)
+const pagerOffset = computed(() => (innerCurrentPage.value - 1) * innerPageSize.value)
+
+const handlePagerOffsetChange = (newOffset: number) => {
+  const newPage = Math.floor(newOffset / innerPageSize.value) + 1
+  handlePageChange(newPage)
+}
 
 // 前端排序函数
 const sortData = (dataToSort: RowData[]): RowData[] => {
@@ -1823,7 +1706,6 @@ const sortData = (dataToSort: RowData[]): RowData[] => {
   const sortField = sortBy.value
 
   sorted.sort((a, b) => {
-    // Use getNestedValue to support nested keys like 'recipient.postalCode'
     const aValue = getNestedValue(a as any, sortField)
     const bValue = getNestedValue(b as any, sortField)
 
@@ -1887,25 +1769,19 @@ const normalizedGlobalSearchText = computed(() => String(props.globalSearchText 
 const rowMatchesGlobalSearch = (row: RowData, queryLower: string): boolean => {
   if (!queryLower) return true
   try {
-    // Search through all visible fields (derived from `columns` via `categoryGroups`)
     const allFields = categoryGroups.value.flatMap((g) => g.fields)
     for (const field of allFields) {
       const text = formatFieldValue(row, field)
       if (text && text !== '-' && String(text).toLowerCase().includes(queryLower)) return true
     }
 
-    // Also check product metadata fields (even if tableVisible: false)
     const productMeta = row._productsMeta as { names?: string[]; skus?: string[]; barcodes?: string[] } | undefined
     if (productMeta) {
-      // Check product names
       if (productMeta.names?.some((n) => n.toLowerCase().includes(queryLower))) return true
-      // Check product SKUs
       if (productMeta.skus?.some((s) => s.toLowerCase().includes(queryLower))) return true
-      // Check product barcodes
       if (productMeta.barcodes?.some((b) => b.toLowerCase().includes(queryLower))) return true
     }
   } catch (e) {
-    // fallback: do not filter out on error
     return true
   }
   return false
@@ -1936,119 +1812,42 @@ const displayData = computed(() => {
   return result.slice(start, start + innerPageSize.value)
 })
 
-// 移除固定高度，让表格根据内容自动调整
-
 const tableContainerRef = ref<HTMLElement | null>(null)
-const tableRef = ref<InstanceType<typeof ElTable> | null>(null)
 
-// 防止循环触发的标志
-const isUpdatingSelection = ref(false)
-
-// 跟踪上一次的数据 ID 列表（用于检测数据变化）
-const lastDataIds = ref<Set<RowKey>>(new Set())
-
-// 数据变化保护标志 - 当数据正在变化时，忽略 el-table 触发的 selection-change 事件
-const isDataChanging = ref(false)
-
-// 同步当前页的选中状态（当页面切换或数据变化时）
-watch(
-  [displayData, innerSelectedKeys],
-  () => {
-    if (!rowSelectionEnabled.value || !tableRef.value) return
-    if (isUpdatingSelection.value) return // 防止循环触发
-
-    const keyField = rowKey.value as string
-    const selectedKeySet = new Set(innerSelectedKeys.value)
-
-    isUpdatingSelection.value = true
-    // 同时设置数据变化标志，防止 selection-change 事件干扰
-    isDataChanging.value = true
-
-    // 不使用 clearSelection()，而是精确设置每行的选中状态
-    // 这样可以避免触发不必要的 selection-change 事件
-    nextTick(() => {
-      if (!tableRef.value) {
-        isUpdatingSelection.value = false
-        isDataChanging.value = false
-        return
-      }
-
-      // 遍历当前页的所有行，设置正确的选中状态
-      for (const row of displayData.value) {
-        const key = (row as any)?.[keyField]
-        if (key !== undefined && key !== null) {
-          const shouldBeSelected = selectedKeySet.has(key)
-          tableRef.value.toggleRowSelection(row, shouldBeSelected)
-        }
-      }
-
-      // 延迟重置标志，确保所有 selection-change 事件都被忽略
-      setTimeout(() => {
-        isUpdatingSelection.value = false
-        isDataChanging.value = false
-      }, 100)
-    })
-  },
-  { immediate: true, flush: 'post' },
-)
-
-// 监听 data 变化，当数据完全重新加载时（例如 loadOrders），需要恢复选中状态
-// 这个 watch 需要在 handleSelectionChange 之前处理，防止数据变化导致的选中状态被误清除
+// 監聴 data 変化，当数据完全重新加載時，需要恢复選中状態
 watch(
   () => data.value,
   (newData, oldData) => {
     if (!rowSelectionEnabled.value) return
 
-    // 设置数据变化保护标志，防止 el-table 的 selection-change 事件清除选中状态
-    isDataChanging.value = true
-
-    // 更新数据 ID 集合
     const keyField = rowKey.value as string
     const newIds = new Set(
       newData.map((row) => (row as any)?.[keyField]).filter((k: any) => k !== undefined && k !== null)
     )
 
-    // 如果是数据刷新（数据长度相近或有重叠），保持选中状态
-    // 只清除不再存在的选中项
     if (innerSelectedKeys.value.length > 0) {
       const validKeys = innerSelectedKeys.value.filter(key => newIds.has(key))
       if (validKeys.length !== innerSelectedKeys.value.length) {
-        // 只保留仍然存在于新数据中的选中项
         innerSelectedKeys.value = validKeys
         emits('update:selectedKeys', validKeys)
       }
     }
-
-    lastDataIds.value = newIds
-
-    // 延迟重置数据变化保护标志，确保 el-table 的 selection-change 事件被忽略
-    nextTick(() => {
-      setTimeout(() => {
-        isDataChanging.value = false
-      }, 100)
-    })
   },
   { deep: false }
 )
 
 const handlePageChange = (page: number) => {
-  // 设置数据变化保护标志，防止翻页时 el-table 的 selection-change 事件清除选中状态
-  isDataChanging.value = true
   innerCurrentPage.value = page
   emits('update:currentPage', page)
   emits('page-change', { page, pageSize: innerPageSize.value, mode: paginationMode.value })
-  // 翻页后的选中状态恢复由 displayData watch 处理
 }
 
 const handlePageSizeChange = (size: number) => {
-  // 设置数据变化保护标志，防止改变页大小时 el-table 的 selection-change 事件清除选中状态
-  isDataChanging.value = true
   innerPageSize.value = size
   innerCurrentPage.value = 1
   emits('update:pageSize', size)
   emits('update:currentPage', 1)
   emits('page-change', { page: 1, pageSize: size, mode: paginationMode.value })
-  // 翻页后的选中状态恢复由 displayData watch 处理
 }
 
 watch(
@@ -2081,123 +1880,19 @@ watch(
   { immediate: true },
 )
 
-// 处理行选择变化（支持跨页选择）
-const handleSelectionChange = (selection: RowData[]) => {
-  // 如果正在更新选中状态，忽略此次变化（防止循环触发）
-  if (isUpdatingSelection.value) return
-
-  // 如果数据正在变化（例如编辑行、加载数据），忽略此次变化
-  // 这是为了防止 el-table 在数据变化时触发的空选择事件清除用户的选中状态
-  if (isDataChanging.value) return
-
-  const keyField = rowKey.value as string
-
-  // 获取当前页的所有行的 key
-  const currentPageKeys = new Set(
-    displayData.value.map((row) => (row as any)?.[keyField]).filter((k: any) => k !== undefined && k !== null)
-  )
-
-  // 获取当前页被选中的行的 key
-  const selectedKeysInCurrentPage = new Set(
-    selection.map((row) => (row as any)?.[keyField]).filter((k: any) => k !== undefined && k !== null)
-  )
-
-  // 判断是否是全选操作（当前页所有行都被选中）
-  const isSelectAllCurrentPage = currentPageKeys.size > 0 &&
-    currentPageKeys.size === selectedKeysInCurrentPage.size &&
-    Array.from(currentPageKeys).every(key => selectedKeysInCurrentPage.has(key))
-
-  // 判断是否是取消全选操作（当前页所有行都被取消选中）
-  const isDeselectAllCurrentPage = currentPageKeys.size > 0 &&
-    selectedKeysInCurrentPage.size === 0
-  
-  // 判断之前是否已经全选了所有数据（使用 filteredData 而不是 data，以便在有过滤时只选择显示的数据）
-  const allDataKeys = new Set(
-    filteredData.value.map((row) => (row as any)?.[keyField]).filter((k: any) => k !== undefined && k !== null)
-  )
-  const wasAllSelected = allDataKeys.size > 0 &&
-    allDataKeys.size === innerSelectedKeys.value.length &&
-    Array.from(allDataKeys).every(key => innerSelectedKeys.value.includes(key))
-  
-  let finalKeys: Array<RowKey>
-  
-  // 如果是全选操作，且之前没有全选所有数据，则选择所有数据
-  if (isSelectAllCurrentPage && !wasAllSelected && paginationEnabled.value && paginationMode.value === 'client') {
-    // 选择所有数据
-    finalKeys = Array.from(allDataKeys)
-  } 
-  // 如果是取消全选操作，且之前已经全选了所有数据，则取消所有页的选择
-  else if (isDeselectAllCurrentPage && wasAllSelected && paginationEnabled.value && paginationMode.value === 'client') {
-    // 取消全选：清空所有选择
-    finalKeys = []
-  }
-  // 如果当前页全选，且之前已经全选了所有数据，则取消全选（只取消当前页）
-  else if (isSelectAllCurrentPage && wasAllSelected) {
-    // 取消全选：移除当前页的所有 key
-    const newSelectedKeys = new Set(innerSelectedKeys.value)
-    for (const key of currentPageKeys) {
-      newSelectedKeys.delete(key)
-    }
-    finalKeys = Array.from(newSelectedKeys)
-  }
-  // 否则，正常处理当前页的选择变化
-  else {
-    // 合并全局选择状态：
-    // 1. 移除当前页的所有 key（无论之前是否选中）
-    // 2. 添加当前页新选中的 key
-    const newSelectedKeys = new Set(innerSelectedKeys.value)
-    
-    // 移除当前页的所有 key
-    for (const key of currentPageKeys) {
-      newSelectedKeys.delete(key)
-    }
-    
-    // 添加当前页新选中的 key
-    for (const key of selectedKeysInCurrentPage) {
-      newSelectedKeys.add(key)
-    }
-    
-    finalKeys = Array.from(newSelectedKeys)
-  }
-  
-  innerSelectedKeys.value = finalKeys
-  
-  // 获取所有选中的行数据（包括不在当前页的，但限于过滤后的数据）
-  const keySet = new Set(finalKeys)
-  const allSelectedRows = filteredData.value.filter((row) => keySet.has((row as any)?.[keyField]))
-  
-  emits('update:selectedKeys', finalKeys)
-  emits('selection-change', { selectedKeys: finalKeys, selectedRows: allSelectedRows, isSelectAllTriggered: isSelectAllCurrentPage })
-}
-
-// 合并 tableProps（排除 cellProps，因为已经在 getCellClassName 中处理）
-const tableProps = computed(() => {
-  const { cellProps, ...rest } = rawTableProps.value ?? {}
-  return {
-    ...rest,
-    onSelectionChange: handleSelectionChange,
-  }
-})
-
-// 暴露方法和状态给父组件
+// 暴露方法和状態给父組件
 defineExpose({
-  // 打开一括修正对话框
   openBulkEdit: () => {
     if (!showBulkEditButton.value) {
-      ElMessage.warning('一括修正は利用できません')
+      console.warn('一括修正は利用できません')
       return
     }
     bulkEditVisible.value = true
   },
-  // 触发一括删除
   triggerBatchDelete: handleBatchDeleteClick,
-  // 当前选中的行 keys
   selectedKeys: innerSelectedKeys,
-  // 是否显示一括修正按钮
   showBulkEditButton,
-  // 是否启用一括删除
   batchDeleteEnabled,
-  // 可一括编辑的列
   bulkEditableColumns,
 })
 </script>
@@ -2215,18 +1910,43 @@ defineExpose({
   overflow: visible;
 }
 
-/* 确保表格不产生滚动条，根据内容自动调整高度 */
-:deep(.el-table) {
-  overflow: visible !important;
+.o-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ebeef5;
+  table-layout: auto;
 }
 
-:deep(.el-table__body-wrapper) {
-  overflow: visible !important;
-  max-height: none !important;
+.o-list-table thead th {
+  background-color: #fafafa;
+  color: v-bind('LINK_COLOR');
+  font-size: 13px;
+  font-weight: normal;
+  vertical-align: top;
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid #ebeef5;
+  border-right: 1px solid #ebeef5;
 }
 
-:deep(.el-table__inner-wrapper) {
-  overflow: visible !important;
+.o-list-table thead th:last-child {
+  border-right: none;
+}
+
+.o-list-table tbody td {
+  font-size: 12px;
+  vertical-align: top;
+  padding: 10px;
+  border-bottom: 1px solid #ebeef5;
+  border-right: 1px solid #ebeef5;
+}
+
+.o-list-table tbody td:last-child {
+  border-right: none;
+}
+
+.o-list-table tbody tr:hover {
+  background-color: #f5f7fa;
 }
 
 .nex-table__pagination {
@@ -2247,63 +1967,16 @@ defineExpose({
   gap: 8px;
 }
 
-/* 表头样式：使用 LINK_COLOR，13px */
-:deep(.el-table__header) {
-  font-size: 13px;
+/* Selection column */
+.selection-column {
+  width: 40px;
 }
 
-:deep(.el-table__header th) {
-  background-color: transparent;
-  color: v-bind('LINK_COLOR');
-  font-size: 13px;
-  font-weight: normal;
-  vertical-align: top;
-  text-align: left;
-  padding: 10px;
+.selection-column input[type="checkbox"] {
+  cursor: pointer;
 }
 
-/* 隐藏空白表头单元格（子列的空表头） */
-/* 隐藏出荷情報子列的表头单元格 - 通过查找包含隐藏 span 的表头单元格 */
-:deep(.el-table__header th:has(span[style*="display: none"])) {
-  display: none !important;
-  width: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  visibility: hidden !important;
-  height: 0 !important;
-  line-height: 0 !important;
-  overflow: hidden !important;
-}
-
-/* 如果 :has() 不支持，使用备用方案：隐藏空的表头单元格 */
-:deep(.el-table__header th .cell:empty),
-:deep(.el-table__header th .cell:has(span[style*="display: none"])) {
-  display: none !important;
-}
-
-/* 对于多级表头的第二行（子表头行），隐藏空白单元格 */
-:deep(.el-table__header tr:last-child th:has(.cell:empty)),
-:deep(.el-table__header tr:last-child th:has(span[style*="display: none"])) {
-  display: none !important;
-  width: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-}
-
-/* 表格内容：12px */
-:deep(.el-table__body) {
-  font-size: 12px;
-}
-
-:deep(.el-table__body td) {
-  font-size: 12px;
-
-  vertical-align: top;
-}
-
-/* 分类单元格样式 */
+/* 分類单元格様式 */
 .category-cell {
   flex-direction: column;
   gap: 4px;
@@ -2337,7 +2010,7 @@ defineExpose({
   color: #f56c6c;
 }
 
-/* 状态标签容器 */
+/* 状態標籤容器 */
 .status-tags {
   display: flex;
   flex-wrap: wrap;
@@ -2353,7 +2026,7 @@ defineExpose({
   flex-wrap: wrap;
 }
 
-/* 分类表头样式 */
+/* 分類表頭様式 */
 .category-header {
   display: flex;
   align-items: center;
@@ -2366,20 +2039,49 @@ defineExpose({
 }
 
 .sort-button {
-  padding: 0;
+  padding: 2px 6px;
   min-height: auto;
   margin-left: 8px;
   color: #00798F;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
 }
 
-.sort-popover-content {
-  padding: 4px 0;
+.sort-button:hover {
+  color: #005a6b;
+}
+
+.sort-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.sort-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 100;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
 }
 
 .sort-order-buttons {
   display: flex;
   gap: 8px;
   justify-content: center;
+}
+
+.sort-field-select {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 13px;
+  padding: 4px 8px;
 }
 
 .clear-sort-button {
@@ -2399,7 +2101,30 @@ defineExpose({
   text-align: left;
 }
 
-/* 商品单元格样式 - 与其他列保持一致 */
+/* Shipment 3-column layout within a single td */
+.shipment-cell-layout {
+  display: flex;
+  gap: 0;
+  width: 100%;
+}
+
+.shipment-sub-col {
+  flex: 1;
+  min-width: 0;
+  padding: 0 8px;
+  border-right: 1px solid #ebeef5;
+}
+
+.shipment-sub-col:first-child {
+  padding-left: 0;
+}
+
+.shipment-sub-col:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+/* 商品单元格様式 */
 .product-cell {
   display: flex;
   flex-direction: column;
@@ -2484,25 +2209,9 @@ defineExpose({
   flex: 1;
 }
 
-
-/* 错误单元格样式 */
-:deep(.error-cell) {
+/* 错误单元格様式 */
+.error-cell {
   background-color: #ffebee !important;
-}
-
-/* 表格边框 */
-:deep(.el-table) {
-  border: 1px solid #ebeef5;
-}
-
-:deep(.el-table th),
-:deep(.el-table td) {
-  border-right: 1px solid #ebeef5;
-}
-
-:deep(.el-table th:last-child),
-:deep(.el-table td:last-child) {
-  border-right: none;
 }
 
 /* 操作列包装器 */
@@ -2511,14 +2220,6 @@ defineExpose({
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
-}
-
-/* 强制 ElSpace 垂直排列 */
-.action-cell-wrapper :deep(.el-space) {
-  display: flex;
-  flex-direction: column !important;
-  align-items: center;
   gap: 12px;
 }
 
@@ -2532,91 +2233,72 @@ defineExpose({
   padding: 4px;
 }
 
-/* 操作列按钮样式 */
-.action-cell-wrapper .el-button,
-.action-buttons .el-button {
-  margin: 0;
-  min-width: 54px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  border-width: 1px;
-}
-
-/* 操作列按钮 - 描边颜色与文字颜色一致 */
-.action-cell-wrapper .el-button--primary.is-plain,
-.action-buttons .el-button--primary.is-plain {
-  border-color: var(--el-color-primary);
-}
-
-.action-cell-wrapper .el-button--danger.is-plain,
-.action-buttons .el-button--danger.is-plain {
-  border-color: var(--el-color-danger);
-}
-
-.action-cell-wrapper :deep(.el-space .el-button) {
-  margin: 2px;
-  min-width: 54px;
-  border-width: 1px;
-}
-
-.action-cell-wrapper :deep(.el-space .el-button--primary.is-plain) {
-  border-color: var(--el-color-primary);
-}
-
-.action-cell-wrapper :deep(.el-space .el-button--danger.is-plain) {
-  border-color: var(--el-color-danger);
-}
-
-/* 操作列单元格样式 */
-:deep(.el-table__body td:has(.action-buttons)),
-:deep(.el-table__body td:has(.action-cell-wrapper)) {
-  vertical-align: top;
-}
-
-/* 选择列样式 */
-:deep(.selection-column) {
-  text-align: center;
-}
-
-:deep(.selection-column .cell) {
-  display: flex;
+/* Button styles */
+.o-btn {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  align-items: flex-start;
-  padding: 10px 0;
+  padding: 8px 16px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  background: #fff;
+  color: #303133;
+  white-space: nowrap;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
-:deep(.selection-column th),
-:deep(.selection-column td) {
-  text-align: center;
-  vertical-align: top;
-  padding: 10px 0;
+.o-btn:hover {
+  background-color: #f5f7fa;
 }
 
-:deep(.selection-column .el-checkbox) {
-  margin: 0;
+.o-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-/* 滚动条样式 - 一直显示水平滚动条 */
-:deep(.el-scrollbar__bar.is-horizontal) {
-  opacity: 1 !important;
-  height: 8px;
+.o-btn-primary {
+  background-color: #00798F;
+  border-color: #00798F;
+  color: #fff;
 }
 
-:deep(.el-scrollbar__thumb) {
-  background-color: rgba(144, 147, 153, 0.5);
+.o-btn-primary:hover {
+  background-color: #006577;
 }
 
-:deep(.el-scrollbar__thumb:hover) {
-  background-color: rgba(144, 147, 153, 0.7);
+.o-btn-danger {
+  background-color: #f56c6c;
+  border-color: #f56c6c;
+  color: #fff;
 }
 
-:deep(.el-table__body-wrapper) {
-  overflow-x: auto !important;
+.o-btn-danger:hover {
+  background-color: #e04848;
 }
 
-:deep(.el-table__body-wrapper .el-scrollbar__bar.is-horizontal) {
-  opacity: 1 !important;
-  display: block !important;
+.o-btn-secondary {
+  background-color: #fff;
+  border-color: #dee2e6;
+  color: #303133;
+}
+
+.o-btn-sm {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.o-input {
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.o-input:focus {
+  border-color: #00798F;
 }
 </style>

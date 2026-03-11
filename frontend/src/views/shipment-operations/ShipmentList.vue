@@ -22,8 +22,18 @@
     />
 
     <div class="between-controls">
-      <label class="switch-label">検品済み表示 <el-switch v-model="showInspected" /></label>
-      <label class="switch-label">印刷済み表示 <el-switch v-model="showPrinted" /></label>
+      <label class="switch-label">検品済み表示
+        <label class="o-toggle">
+          <input type="checkbox" v-model="showInspected">
+          <span class="o-toggle-slider"></span>
+        </label>
+      </label>
+      <label class="switch-label">印刷済み表示
+        <label class="o-toggle">
+          <input type="checkbox" v-model="showPrinted">
+          <span class="o-toggle-slider"></span>
+        </label>
+      </label>
     </div>
 
     <OrderGroupSelector
@@ -71,63 +81,66 @@
       total-label="表示件数"
     >
       <template #left>
-        <el-button
-          type="warning"
-          size="small"
-          plain
-          :disabled="tableSelectedKeys.length === 0"
-          :loading="isUnconfirming"
+        <button
+          class="o-btn o-btn-sm"
+          style="border-color:#e6a23c;color:#e6a23c;background:transparent;"
+          :disabled="tableSelectedKeys.length === 0 || isUnconfirming"
           @click="openBatchUnconfirmDialog"
         >
-          一括確認取消
-        </el-button>
+          {{ isUnconfirming ? '処理中...' : '一括確認取消' }}
+        </button>
       </template>
       <template #right>
-        <el-button
+        <button
+          class="o-btn o-btn-secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handlePickingListClick"
         >
           ピッキングリスト出力
-        </el-button>
-        <el-button
+        </button>
+        <button
+          class="o-btn o-btn-secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleCustomExportClick"
         >
           出荷明細リスト出力(csv)
-        </el-button>
-        <el-button
+        </button>
+        <button
+          class="o-btn o-btn-secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleShipmentDetailListClick"
         >
           出荷明細リスト出力(pdf)
-        </el-button>
-        <el-button
-          type="primary"
+        </button>
+        <button
+          class="o-btn o-btn-primary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handlePrintClick"
         >
           送り状印刷
-        </el-button>
-        <el-button
-          type="success"
+        </button>
+        <button
+          class="o-btn o-btn-secondary"
+          style="border-color:#67c23a;color:#67c23a;"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleOneByOneStart"
         >
           1-1検品開始
-        </el-button>
-        <el-button
-          type="warning"
+        </button>
+        <button
+          class="o-btn o-btn-sm"
+          style="border-color:#e6a23c;color:#e6a23c;background:transparent;"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleNByOneStart"
         >
           N-1検品開始
-        </el-button>
-        <el-button
-          type="default"
+        </button>
+        <button
+          class="o-btn o-btn-secondary"
           @click="schemaAnalysisDrawerVisible = true"
         >
           データ分析
-        </el-button>
+        </button>
       </template>
     </OrderBottomBar>
 
@@ -177,18 +190,22 @@
       @confirm="handleSplitOrderConfirm"
     />
 
-    <el-drawer
-      v-model="schemaAnalysisDrawerVisible"
-      title="スキーマ分析"
-      direction="rtl"
-      size="50%"
-    >
-      <OrderSchemaAnalysis
-        :orders="displayRows as OrderDocument[]"
-        :carriers="carriers"
-        @filter="handleSchemaFilter"
-      />
-    </el-drawer>
+    <!-- Schema Analysis Drawer (native slide-over panel) -->
+    <div v-if="schemaAnalysisDrawerVisible" class="drawer-overlay" @click.self="schemaAnalysisDrawerVisible = false">
+      <div class="drawer-panel">
+        <div class="drawer-header">
+          <h3 class="drawer-title">スキーマ分析</h3>
+          <button class="drawer-close" @click="schemaAnalysisDrawerVisible = false">&times;</button>
+        </div>
+        <div class="drawer-body">
+          <OrderSchemaAnalysis
+            :orders="displayRows as OrderDocument[]"
+            :carriers="carriers"
+            @filter="handleSchemaFilter"
+          />
+        </div>
+      </div>
+    </div>
 
     <CustomExportDialog
       v-model="customExportDialogVisible"
@@ -201,8 +218,6 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElButton, ElDrawer, ElMessage, ElMessageBox, ElSpace } from 'element-plus'
-import type { HeaderClassNameGetter } from 'element-plus'
 import Table from '@/components/table/OrderTable.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
@@ -405,7 +420,7 @@ const loadPrintTemplates = async () => {
     localStorage.setItem('allPrintTemplatesCache', JSON.stringify(templates))
   } catch (e) {
     console.error('Failed to load print templates:', e)
-    ElMessage.warning('印刷テンプレートの読み込みに失敗しました')
+    alert('印刷テンプレートの読み込みに失敗しました')
   }
 }
 
@@ -417,7 +432,7 @@ const handleView = async (row: any) => {
     selectedOrder.value = await fetchShipmentOrder(String(id))
     viewDialogVisible.value = true
   } catch (e: any) {
-    ElMessage.error(e?.message || '詳細の取得に失敗しました')
+    alert(e?.message || '詳細の取得に失敗しました')
   }
 }
 
@@ -455,8 +470,6 @@ const openChangeInvoiceTypeDialog = (row: any) => {
 }
 
 // B2削除エラーハンドリング共通ヘルパー
-// - エラーがB2削除エラーの場合、スキップ確認ダイアログを表示してリトライ
-// - B2削除エラーでない場合は false を返す（呼び出し元で処理）
 const handleB2DeleteErrorWithRetry = async (
   error: unknown,
   loadingRef: { value: boolean },
@@ -464,19 +477,8 @@ const handleB2DeleteErrorWithRetry = async (
 ): Promise<boolean> => {
   if (!isCarrierDeleteError(error)) return false
   loadingRef.value = false
-  try {
-    await ElMessageBox.confirm(
-      `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${error.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）`,
-      'B2 Cloud削除エラー',
-      {
-        confirmButtonText: 'スキップして続行',
-        cancelButtonText: 'キャンセル',
-        type: 'warning',
-      }
-    )
+  if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${(error as any).error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）`)) {
     await retryFn()
-  } catch {
-    // キャンセルされた場合
   }
   return true
 }
@@ -500,13 +502,13 @@ const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrie
       }
       if (result.requiresManualUpload) {
         message += '。手動連携の注文は運送会社への再登録が必要です。'
-        ElMessage.warning(message)
+        alert(message)
       } else {
-        ElMessage.success(message)
+        alert(message)
       }
     } else {
       const errorMsg = result.errors?.join(', ') || '送り状種類変更に失敗しました'
-      ElMessage.error(errorMsg)
+      alert(errorMsg)
     }
     await loadOrders()
     changeInvoiceTypeDialogVisible.value = false
@@ -516,7 +518,7 @@ const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrie
       () => handleChangeInvoiceTypeConfirm(newInvoiceType, true)
     )
     if (!handled) {
-      ElMessage.error(e?.message || '送り状種類変更に失敗しました')
+      alert(e?.message || '送り状種類変更に失敗しました')
       changeInvoiceTypeDialogVisible.value = false
     }
   } finally {
@@ -549,7 +551,7 @@ const handleUnconfirmConfirm = async (reason: string, skipCarrierDelete = false)
           message += `（B2 Cloud削除失敗: ${result.b2DeleteResult.error}）`
         }
       }
-      ElMessage.success(message)
+      alert(message)
     }
     await loadOrders()
     unconfirmDialogVisible.value = false
@@ -563,7 +565,7 @@ const handleUnconfirmConfirm = async (reason: string, skipCarrierDelete = false)
       () => handleUnconfirmConfirm(reason, true)
     )
     if (!handled) {
-      ElMessage.error(e?.message || '確認取消に失敗しました')
+      alert(e?.message || '確認取消に失敗しました')
       unconfirmDialogVisible.value = false
     }
   } finally {
@@ -579,7 +581,7 @@ const openSplitOrderDialog = (row: any) => {
     (sum: number, p: any) => sum + (p.quantity || 0), 0
   )
   if (totalQty <= 1) {
-    ElMessage.warning('商品が1つの注文は分割できません')
+    alert('商品が1つの注文は分割できません')
     return
   }
   splitOrderTarget.value = row as OrderDocument
@@ -602,10 +604,10 @@ const handleSplitOrderConfirm = async (splitGroups: SplitOrderRequest['splitGrou
       if (result.carrierDeleteSkipped) {
         message += '（B2 Cloud削除スキップ）'
       }
-      ElMessage.success(message)
+      alert(message)
     } else {
       const errorMsg = result.errors?.join(', ') || '注文分割に失敗しました'
-      ElMessage.error(errorMsg)
+      alert(errorMsg)
     }
     await loadOrders()
     splitOrderDialogVisible.value = false
@@ -615,7 +617,7 @@ const handleSplitOrderConfirm = async (splitGroups: SplitOrderRequest['splitGrou
       () => handleSplitOrderConfirm(splitGroups, true)
     )
     if (!handled) {
-      ElMessage.error(e?.message || '注文分割に失敗しました')
+      alert(e?.message || '注文分割に失敗しました')
       splitOrderDialogVisible.value = false
     }
   } finally {
@@ -657,7 +659,7 @@ const handleCustomExportClick = async () => {
     customExportDialogVisible.value = true
   } catch (e: any) {
     console.error('Failed to fetch orders for custom export:', e)
-    ElMessage.error('注文データの取得に失敗しました')
+    alert('注文データの取得に失敗しました')
   }
 }
 
@@ -692,7 +694,7 @@ const handleNByOneStart = () => {
 
   if (invalidOrders.length > 0) {
     const names = invalidOrders.slice(0, 5).map((o: any) => o.orderNumber || String(o._id))
-    ElMessage.error(
+    alert(
       `商品数が1でない注文があります: ${names.join(', ')}${invalidOrders.length > 5 ? ` 他${invalidOrders.length - 5}件` : ''}`,
     )
     return
@@ -730,18 +732,17 @@ const openPrintPreview = async () => {
   }
 
   if (printTemplatesCache.value.length === 0) {
-    ElMessage.error('印刷テンプレートが読み込まれていません')
+    alert('印刷テンプレートが読み込まれていません')
     return
   }
 
   // 从后端获取完整的订单数据（包含 carrierRawRow）
-  // listOrders 使用 LIGHT_PROJECTION 排除了 carrierRawRow，印刷模板需要完整数据
   const orderIds = selectedRows
     .map((row) => String((row as any)?._id))
     .filter((id) => id && id !== 'undefined')
 
   if (orderIds.length === 0) {
-    ElMessage.error('印刷可能な注文がありません')
+    alert('印刷可能な注文がありません')
     return
   }
 
@@ -750,7 +751,7 @@ const openPrintPreview = async () => {
     orders = await fetchShipmentOrdersByIds<OrderDocument>(orderIds, { includeRawData: true })
   } catch (e: any) {
     console.error('Failed to fetch orders for print:', e)
-    ElMessage.error(`注文データの取得に失敗しました: ${e?.message || String(e)}`)
+    alert(`注文データの取得に失敗しました: ${e?.message || String(e)}`)
     return
   }
 
@@ -760,7 +761,7 @@ const openPrintPreview = async () => {
   })
 
   if (orders.length === 0) {
-    ElMessage.error('印刷可能な注文がありません')
+    alert('印刷可能な注文がありません')
     return
   }
 
@@ -788,7 +789,7 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
 }
 
 const handleSave = (_payload: Record<string, { operator: Operator; value: any }>) => {
-  ElMessage.success('検索条件を保存しました（ダミー）')
+  alert('検索条件を保存しました（ダミー）')
 }
 
 const handleSchemaFilter = (fieldPath: string, value: any) => {
@@ -799,14 +800,14 @@ const handleSchemaFilter = (fieldPath: string, value: any) => {
   schemaAnalysisDrawerVisible.value = false
 
   if (success) {
-    ElMessage.success('フィルタを追加しました')
+    alert('フィルタを追加しました')
   } else {
     // フィールドが SearchForm にない場合は、直接 payload に追加してフォールバック
     const payload = currentSearchPayload.value || {}
     payload[fieldPath] = { operator: 'is', value }
     currentSearchPayload.value = { ...payload }
     void loadOrders()
-    ElMessage.success('フィルタを追加しました（検索フォーム外）')
+    alert('フィルタを追加しました（検索フォーム外）')
   }
 }
 
@@ -820,52 +821,46 @@ const tableColumns = computed(() => {
     align: 'center' as const,
     cellRenderer: ({ rowData }: { rowData: any }) =>
       h(
-        ElSpace,
-        { size: 4, wrap: true },
-        () => [
+        'div',
+        { style: 'display:inline-flex;gap:4px;flex-wrap:wrap;' },
+        [
           h(
-            ElButton,
+            'button',
             {
-              type: 'primary',
-              size: 'small',
-              plain: true,
+              class: 'o-btn o-btn-primary o-btn-sm',
               onClick: () => handleView(rowData),
             },
-            () => '詳細',
+            '詳細',
           ),
           h(
-            ElButton,
+            'button',
             {
-              type: 'warning',
-              size: 'small',
-              plain: true,
-              loading: isUnconfirming.value,
+              class: 'o-btn o-btn-sm',
+              style: 'border-color:#e6a23c;color:#e6a23c;background:transparent;',
+              disabled: isUnconfirming.value,
               onClick: () => openUnconfirmDialog(rowData),
             },
-            () => '確認取消',
+            '確認取消',
           ),
           h(
-            ElButton,
+            'button',
             {
-              type: 'info',
-              size: 'small',
-              plain: true,
-              loading: isChangingInvoiceType.value,
+              class: 'o-btn o-btn-sm',
+              style: 'border-color:#909399;color:#909399;background:transparent;',
+              disabled: isChangingInvoiceType.value,
               onClick: () => openChangeInvoiceTypeDialog(rowData),
             },
-            () => '送り状種類変更',
+            '送り状種類変更',
           ),
           h(
-            ElButton,
+            'button',
             {
-              type: 'success',
-              size: 'small',
-              plain: true,
-              disabled: !canSplitOrder(rowData),
-              loading: isSplittingOrder.value,
+              class: 'o-btn o-btn-sm',
+              style: 'border-color:#67c23a;color:#67c23a;background:transparent;',
+              disabled: !canSplitOrder(rowData) || isSplittingOrder.value,
               onClick: () => openSplitOrderDialog(rowData),
             },
-            () => '分割',
+            '分割',
           ),
         ],
       ),
@@ -882,7 +877,7 @@ const headerGroupingConfig = computed<HeaderGroupingConfig>(() => {
   return buildOrderHeaderGroupingConfig(baseColumns.value as any)
 })
 
-const headerClass: HeaderClassNameGetter<any> = () => ''
+const headerClass = (): string => ''
 
 const tableProps = computed(() => ({}))
 
@@ -929,7 +924,7 @@ const loadOrders = async () => {
     // Refresh group counts after loading orders
     orderGroupSelectorRef.value?.reloadCounts()
   } catch (e: any) {
-    ElMessage.error(e?.message || '出荷予定の取得に失敗しました')
+    alert(e?.message || '出荷予定の取得に失敗しました')
   } finally {
     isLoadingOrders.value = false
   }
@@ -1065,4 +1060,62 @@ onMounted(async () => {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }
+
+/* Drawer styles (replaces el-drawer) */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 2000;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.drawer-panel {
+  width: 50%;
+  min-width: 400px;
+  max-width: 100%;
+  height: 100%;
+  background: #fff;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.drawer-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.drawer-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: #909399;
+  padding: 4px 8px;
+}
+
+.drawer-body {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+}
+
+.o-toggle { position:relative; display:inline-flex; align-items:center; cursor:pointer; }
+.o-toggle input { position:absolute; opacity:0; width:0; height:0; }
+.o-toggle-slider { width:40px; height:20px; background:var(--o-toggle-off, #ccc); border-radius:10px; transition:0.2s; position:relative; }
+.o-toggle-slider::after { content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; top:2px; left:2px; transition:0.2s; }
+.o-toggle input:checked + .o-toggle-slider { background:var(--o-brand-primary, #714B67); }
+.o-toggle input:checked + .o-toggle-slider::after { left:22px; }
 </style>

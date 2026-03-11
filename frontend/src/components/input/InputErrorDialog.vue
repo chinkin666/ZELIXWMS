@@ -1,33 +1,41 @@
 <template>
-  <el-dialog v-model="visibleProxy" width="860px" title="入力エラー" destroy-on-close>
+  <ODialog :open="visibleProxy" title="入力エラー" @close="visibleProxy = false" width="860px">
     <div class="summary">
-      <el-alert
-        type="error"
-        :closable="false"
-        title="取込を実行できません。以下のエラーを修正してください。"
-        show-icon
-      />
+      <div class="alert-error">
+        取込を実行できません。以下のエラーを修正してください。
+      </div>
     </div>
 
-    <el-table :data="errors" height="420" border size="small">
-      <el-table-column label="行" width="90">
-        <template #default="{ row }">
-          {{ (row.rowIndex ?? 0) + 1 }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="sku" label="SKU" width="180" />
-      <el-table-column prop="field" label="フィールド" width="160" />
-      <el-table-column prop="message" label="メッセージ" min-width="360" />
-    </el-table>
+    <div style="max-height:420px; overflow:auto">
+      <table class="o-list-table">
+        <thead>
+          <tr>
+            <th style="width:90px">行</th>
+            <th style="width:180px">SKU</th>
+            <th style="width:160px">フィールド</th>
+            <th>メッセージ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(row, idx) in errors" :key="idx">
+            <td>{{ (row.rowIndex ?? 0) + 1 }}</td>
+            <td>{{ row.sku }}</td>
+            <td>{{ row.field }}</td>
+            <td>{{ row.message }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <template #footer>
-      <el-button type="primary" @click="visibleProxy = false">閉じる</el-button>
+      <button class="o-btn o-btn-primary" @click="visibleProxy = false">閉じる</button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 
 export type InputRowError = {
   rowIndex: number
@@ -52,9 +60,6 @@ const visibleProxy = computed({
 </script>
 
 <style scoped>
-.summary {
-  margin-bottom: 12px;
-}
+.summary { margin-bottom: 12px; }
+.alert-error { padding: 12px 16px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; color: #991b1b; font-weight: 500; }
 </style>
-
-

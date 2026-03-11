@@ -7,204 +7,168 @@
       </div>
     </div>
 
-    <el-tabs v-model="activeTab" type="card" class="automation-tabs">
-      <el-tab-pane label="ヤマトB2 Cloud" name="yamato-b2">
-        <div class="tab-content" v-loading="loading">
-          <el-form
-            ref="formRef"
-            :model="yamatoB2Form"
-            label-width="180px"
-            label-position="left"
-            class="config-form"
-          >
-            <el-form-item label="有効">
-              <el-switch v-model="yamatoB2Form.enabled" />
-              <span class="form-hint">ONにすると、配送会社データ出力・取込で自動化機能が使えます</span>
-            </el-form-item>
+    <div class="o-card automation-tabs-card">
+      <div class="o-tabs">
+        <button
+          class="o-tab"
+          :class="{ active: activeTab === 'yamato-b2' }"
+          @click="activeTab = 'yamato-b2'"
+        >ヤマトB2 Cloud</button>
+        <button class="o-tab" disabled title="Coming Soon">佐川急便</button>
+        <button class="o-tab" disabled title="Coming Soon">西濃運輸</button>
+      </div>
 
-            <el-divider content-position="left">API接続設定</el-divider>
+      <div class="tab-content" v-if="activeTab === 'yamato-b2'">
+        <div v-if="loading" class="loading-state">読み込み中...</div>
+        <template v-else>
+          <div class="config-form">
+            <div class="o-form-group">
+              <label class="o-form-label">有効</label>
+              <div style="display:flex;align-items:center;gap:12px">
+                <label class="o-toggle">
+                  <input type="checkbox" v-model="yamatoB2Form.enabled" />
+                  <span class="o-toggle-slider"></span>
+                </label>
+                <span class="form-hint">ONにすると、配送会社データ出力・取込で自動化機能が使えます</span>
+              </div>
+            </div>
 
-            <el-form-item label="APIエンドポイント" required>
-              <el-input
-                v-model="yamatoB2Form.apiEndpoint"
-                placeholder="https://yamato-b2-webapi.nexand.org"
-              />
-            </el-form-item>
+            <hr class="o-divider" />
+            <h4 class="section-label">API接続設定</h4>
 
-            <el-form-item label="API Key" required>
-              <el-input
-                v-model="yamatoB2Form.apiKey"
-                type="password"
-                placeholder="公開API用のアクセスキー"
-                show-password
-              />
+            <div class="o-form-group">
+              <label class="o-form-label">APIエンドポイント <span class="required">*</span></label>
+              <input class="o-input" v-model="yamatoB2Form.apiEndpoint" placeholder="https://yamato-b2-webapi.nexand.org" style="max-width:400px" />
+            </div>
+
+            <div class="o-form-group">
+              <label class="o-form-label">API Key <span class="required">*</span></label>
+              <input class="o-input" v-model="yamatoB2Form.apiKey" type="password" placeholder="公開API用のアクセスキー" style="max-width:400px" />
               <div class="field-hint">API提供者から発行されたアクセスキーを入力してください</div>
-            </el-form-item>
+            </div>
 
-            <el-form-item label="お客様コード" required>
-              <el-input
-                v-model="yamatoB2Form.customerCode"
-                placeholder="ヤマトビジネスメンバーズID"
-              />
-            </el-form-item>
+            <div class="o-form-group">
+              <label class="o-form-label">お客様コード <span class="required">*</span></label>
+              <input class="o-input" v-model="yamatoB2Form.customerCode" placeholder="ヤマトビジネスメンバーズID" style="max-width:400px" />
+            </div>
 
-            <el-form-item label="パスワード" required>
-              <el-input
-                v-model="yamatoB2Form.customerPassword"
-                type="password"
-                placeholder="パスワード"
-                show-password
-              />
-            </el-form-item>
+            <div class="o-form-group">
+              <label class="o-form-label">パスワード <span class="required">*</span></label>
+              <input class="o-input" v-model="yamatoB2Form.customerPassword" type="password" placeholder="パスワード" style="max-width:400px" />
+            </div>
 
-            <el-form-item label="分類コード">
-              <el-input
-                v-model="yamatoB2Form.customerClsCode"
-                placeholder="任意（お届け先分類コード）"
-              />
-            </el-form-item>
+            <div class="o-form-group">
+              <label class="o-form-label">分類コード</label>
+              <input class="o-input" v-model="yamatoB2Form.customerClsCode" placeholder="任意（お届け先分類コード）" style="max-width:400px" />
+            </div>
 
-            <el-form-item label="ログインユーザーID">
-              <el-input
-                v-model="yamatoB2Form.loginUserId"
-                placeholder="任意"
-              />
-            </el-form-item>
+            <div class="o-form-group">
+              <label class="o-form-label">ログインユーザーID</label>
+              <input class="o-input" v-model="yamatoB2Form.loginUserId" placeholder="任意" style="max-width:400px" />
+            </div>
 
-            <el-divider content-position="left">サービス種類マッピング</el-divider>
-            <div class="field-hint" style="margin-bottom: 16px">各送り状種類のB2サービス種類と印刷テンプレートを設定します</div>
+            <hr class="o-divider" />
+            <h4 class="section-label">サービス種類マッピング</h4>
+            <div class="field-hint" style="margin-bottom:16px">各送り状種類のB2サービス種類と印刷テンプレートを設定します</div>
 
-            <el-table :data="serviceTypeMappingList" border size="small" class="service-mapping-table">
-              <el-table-column prop="invoiceType" label="送り状種類" width="180">
-                <template #default="{ row }">
-                  {{ row.label }}
-                </template>
-              </el-table-column>
-              <el-table-column prop="b2ServiceType" label="B2サービス種類" width="180">
-                <template #default="{ row }">
-                  <el-select
-                    :model-value="row.b2ServiceType"
-                    @update:model-value="(val: string | undefined) => updateMappingRow(row.invoiceType, 'b2ServiceType', val)"
-                    style="width: 100%"
-                  >
-                    <el-option
-                      v-for="opt in b2ServiceTypeOptions"
-                      :key="opt.value"
-                      :label="opt.label"
-                      :value="opt.value"
-                    />
-                  </el-select>
-                </template>
-              </el-table-column>
-              <el-table-column prop="pdfSource" label="PDF取得元" width="160">
-                <template #default="{ row }">
-                  <el-select
-                    :model-value="row.pdfSource"
-                    @update:model-value="(val: string | undefined) => updateMappingRow(row.invoiceType, 'pdfSource', val)"
-                    style="width: 100%"
-                  >
-                    <el-option
-                      v-for="opt in pdfSourceOptions"
-                      :key="opt.value"
-                      :label="opt.label"
-                      :value="opt.value"
-                    />
-                  </el-select>
-                </template>
-              </el-table-column>
-              <el-table-column prop="printTemplateId" label="印刷テンプレート" min-width="180">
-                <template #default="{ row }">
-                  <el-select
-                    :model-value="row.printTemplateId"
-                    @update:model-value="(val: string | undefined) => updateMappingRow(row.invoiceType, 'printTemplateId', val)"
-                    clearable
-                    placeholder="テンプレートを選択"
-                    style="width: 100%"
-                    :disabled="row.pdfSource === 'b2-webapi'"
-                  >
-                    <el-option
-                      v-for="t in printTemplates"
-                      :key="t.id"
-                      :label="t.name"
-                      :value="t.id"
-                    />
-                  </el-select>
-                </template>
-              </el-table-column>
-            </el-table>
+            <div class="service-mapping-wrapper">
+              <table class="o-list-table service-mapping-table">
+                <thead>
+                  <tr>
+                    <th style="width:180px">送り状種類</th>
+                    <th style="width:180px">B2サービス種類</th>
+                    <th style="width:160px">PDF取得元</th>
+                    <th style="min-width:180px">印刷テンプレート</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in serviceTypeMappingList" :key="row.invoiceType">
+                    <td>{{ row.label }}</td>
+                    <td>
+                      <select
+                        class="o-input"
+                        :value="row.b2ServiceType"
+                        @change="updateMappingRow(row.invoiceType, 'b2ServiceType', ($event.target as HTMLSelectElement).value)"
+                      >
+                        <option
+                          v-for="opt in b2ServiceTypeOptions"
+                          :key="opt.value"
+                          :value="opt.value"
+                        >{{ opt.label }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select
+                        class="o-input"
+                        :value="row.pdfSource"
+                        @change="updateMappingRow(row.invoiceType, 'pdfSource', ($event.target as HTMLSelectElement).value)"
+                      >
+                        <option
+                          v-for="opt in pdfSourceOptions"
+                          :key="opt.value"
+                          :value="opt.value"
+                        >{{ opt.label }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select
+                        class="o-input"
+                        :value="row.printTemplateId || ''"
+                        @change="updateMappingRow(row.invoiceType, 'printTemplateId', ($event.target as HTMLSelectElement).value || undefined)"
+                        :disabled="row.pdfSource === 'b2-webapi'"
+                      >
+                        <option value="">テンプレートを選択</option>
+                        <option
+                          v-for="t in printTemplates"
+                          :key="t.id"
+                          :value="t.id"
+                        >{{ t.name }}</option>
+                      </select>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-            <el-divider content-position="left">請求先</el-divider>
+            <hr class="o-divider" />
+            <h4 class="section-label">請求先</h4>
 
-            <el-form-item
-              label="請求先顧客コード"
-              prop="invoiceCode"
-              :rules="invoiceCodeRules"
-            >
-              <el-input
-                v-model="yamatoB2Form.invoiceCode"
-                placeholder="10〜12桁"
-                maxlength="12"
-                style="width: 200px"
-              />
+            <div class="o-form-group">
+              <label class="o-form-label">請求先顧客コード</label>
+              <input class="o-input" v-model="yamatoB2Form.invoiceCode" placeholder="10〜12桁" maxlength="12" style="width:200px" />
               <div class="field-hint">B2 Cloudで設定された請求先の顧客コード（10〜12桁）</div>
-            </el-form-item>
+            </div>
 
-            <el-form-item
-              label="運賃管理番号"
-              prop="invoiceFreightNo"
-              :rules="invoiceFreightNoRules"
-            >
-              <el-input
-                v-model="yamatoB2Form.invoiceFreightNo"
-                placeholder="2桁"
-                maxlength="2"
-                style="width: 100px"
-              />
+            <div class="o-form-group">
+              <label class="o-form-label">運賃管理番号</label>
+              <input class="o-input" v-model="yamatoB2Form.invoiceFreightNo" placeholder="2桁" maxlength="2" style="width:100px" />
               <div class="field-hint">運賃の管理番号（2桁）</div>
-            </el-form-item>
-          </el-form>
-
-          <div class="form-actions">
-            <el-button @click="testConnection" :loading="testing" :disabled="!canTest">
-              接続テスト
-            </el-button>
-            <el-button type="primary" @click="saveConfig" :loading="saving">
-              保存
-            </el-button>
+            </div>
           </div>
 
-          <el-alert
-            v-if="testResult"
-            :title="testResult.success ? '接続成功' : '接続失敗'"
-            :type="testResult.success ? 'success' : 'error'"
-            :description="testResult.message"
-            show-icon
-            closable
-            @close="testResult = null"
-            class="test-result"
-          />
-        </div>
-      </el-tab-pane>
+          <div class="form-actions">
+            <button class="o-btn o-btn-secondary" @click="testConnection" :disabled="testing || !canTest">
+              {{ testing ? 'テスト中...' : '接続テスト' }}
+            </button>
+            <button class="o-btn o-btn-primary" @click="saveConfig" :disabled="saving">
+              {{ saving ? '保存中...' : '保存' }}
+            </button>
+          </div>
 
-      <el-tab-pane label="佐川急便" name="sagawa-api" disabled>
-        <div class="tab-content coming-soon">
-          <el-empty description="Coming Soon" />
-        </div>
-      </el-tab-pane>
-
-      <el-tab-pane label="西濃運輸" name="seino-api" disabled>
-        <div class="tab-content coming-soon">
-          <el-empty description="Coming Soon" />
-        </div>
-      </el-tab-pane>
-    </el-tabs>
+          <div v-if="testResult" class="test-result" :class="testResult.success ? 'test-success' : 'test-error'">
+            <strong>{{ testResult.success ? '接続成功' : '接続失敗' }}</strong>
+            <p>{{ testResult.message }}</p>
+            <button class="dismiss-btn" @click="testResult = null">&times;</button>
+          </div>
+        </template>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import type { FormItemRule } from 'element-plus'
+import { useToast } from '@/composables/useToast'
 import type { YamatoB2Config, ConnectionTestResult, ServiceTypeConfig, PdfSource } from '@/types/carrierAutomation'
 import {
   fetchCarrierAutomationConfig,
@@ -212,6 +176,8 @@ import {
   testCarrierAutomationConnection,
 } from '@/api/carrierAutomation'
 import { fetchPrintTemplates, type PrintTemplateApiModel } from '@/api/printTemplates'
+
+const { show: showToast } = useToast()
 
 const activeTab = ref('yamato-b2')
 const loading = ref(false)
@@ -333,34 +299,6 @@ function updateMappingRow(invoiceType: string, field: 'b2ServiceType' | 'printTe
   }
 }
 
-// 請求先顧客コード (invoice_code): 10〜12桁
-const invoiceCodeRules: FormItemRule[] = [
-  {
-    validator: (_rule, value, callback) => {
-      if (value && (value.length < 10 || value.length > 12)) {
-        callback(new Error('10〜12桁で入力してください'))
-      } else {
-        callback()
-      }
-    },
-    trigger: 'blur',
-  },
-]
-
-// 運賃管理番号 (invoice_freight_no): 2桁
-const invoiceFreightNoRules: FormItemRule[] = [
-  {
-    validator: (_rule, value, callback) => {
-      if (value && value.length !== 2) {
-        callback(new Error('2桁で入力してください'))
-      } else {
-        callback()
-      }
-    },
-    trigger: 'blur',
-  },
-]
-
 const enabled = ref(false)
 
 // For template binding
@@ -414,7 +352,7 @@ const loadConfig = async () => {
       })
     }
   } catch (error: any) {
-    ElMessage.error(error?.message || '設定の取得に失敗しました')
+    showToast(error?.message || '設定の取得に失敗しました', 'danger')
   } finally {
     loading.value = false
   }
@@ -422,7 +360,7 @@ const loadConfig = async () => {
 
 const saveConfig = async () => {
   if (!yamatoB2Form.value.apiKey || !yamatoB2Form.value.customerCode || !yamatoB2Form.value.customerPassword) {
-    ElMessage.warning('API Key、お客様コード、パスワードは必須です')
+    showToast('API Key、お客様コード、パスワードは必須です', 'warning')
     return
   }
 
@@ -432,18 +370,17 @@ const saveConfig = async () => {
       enabled: enabled.value,
       yamatoB2: yamatoB2Form.value,
     })
-    ElMessage.success('設定を保存しました')
+    showToast('設定を保存しました', 'success')
   } catch (error: any) {
-    ElMessage.error(error?.message || '保存に失敗しました')
+    showToast(error?.message || '保存に失敗しました', 'danger')
   } finally {
     saving.value = false
   }
 }
 
 const testConnection = async () => {
-  // First save the config, then test
   if (!yamatoB2Form.value.apiKey || !yamatoB2Form.value.customerCode || !yamatoB2Form.value.customerPassword) {
-    ElMessage.warning('API Key、お客様コード、パスワードは必須です')
+    showToast('API Key、お客様コード、パスワードは必須です', 'warning')
     return
   }
 
@@ -459,16 +396,16 @@ const testConnection = async () => {
     // Then test
     testResult.value = await testCarrierAutomationConnection('yamato-b2')
     if (testResult.value.success) {
-      ElMessage.success('接続テスト成功')
+      showToast('接続テスト成功', 'success')
     } else {
-      ElMessage.error(`接続テスト失敗: ${testResult.value.message}`)
+      showToast(`接続テスト失敗: ${testResult.value.message}`, 'danger')
     }
   } catch (error: any) {
     testResult.value = {
       success: false,
       message: error?.message || '接続テストに失敗しました',
     }
-    ElMessage.error(testResult.value.message)
+    showToast(testResult.value.message, 'danger')
   } finally {
     testing.value = false
   }
@@ -505,9 +442,41 @@ onMounted(() => {
   font-size: 13px;
 }
 
-.automation-tabs {
-  background: #fff;
-  border-radius: 4px;
+.o-card {
+  background: var(--o-view-background, #fff);
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: var(--o-border-radius, 8px);
+}
+
+.automation-tabs-card {
+  padding: 0;
+}
+
+.o-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--o-border-color, #e4e7ed);
+}
+
+.o-tab {
+  padding: 0.75rem 1.25rem;
+  border: none;
+  background: none;
+  font-size: var(--o-font-size-base, 14px);
+  color: var(--o-gray-600, #606266);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.o-tab:disabled {
+  color: #c0c4cc;
+  cursor: not-allowed;
+}
+
+.o-tab.active {
+  color: var(--o-brand-primary, #714b67);
+  border-bottom-color: var(--o-brand-primary, #714b67);
+  font-weight: 500;
 }
 
 .tab-content {
@@ -519,20 +488,89 @@ onMounted(() => {
   max-width: 800px;
 }
 
-.config-form :deep(.el-form-item__content > .el-input) {
-  max-width: 400px;
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  cursor: pointer;
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-700, #303133);
+  transition: 0.2s;
+  white-space: nowrap;
+}
+.o-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.o-btn-primary { background: var(--o-brand-primary, #714b67); color: #fff; border-color: var(--o-brand-primary, #714b67); }
+.o-btn-secondary { background: var(--o-view-background, #fff); color: var(--o-gray-700, #303133); }
+
+.o-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  color: var(--o-gray-700, #303133);
+  background: var(--o-view-background, #fff);
+  box-sizing: border-box;
+}
+.o-input:disabled { opacity: 0.6; background: #f5f7fa; }
+
+.o-form-group { margin-bottom: 1rem; }
+.o-form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
+.required { color: #f56c6c; }
+
+.o-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+.o-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.o-toggle-slider { width: 40px; height: 20px; background: var(--o-toggle-off, #c0c4cc); border-radius: 10px; transition: 0.2s; position: relative; }
+.o-toggle-slider::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: 0.2s; }
+.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #714b67); }
+.o-toggle input:checked + .o-toggle-slider::after { left: 22px; }
+
+.o-divider {
+  border: none;
+  border-top: 1px solid var(--o-border-color, #ebeef5);
+  margin: 20px 0 12px;
+}
+
+.section-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--o-gray-700, #303133);
+  margin: 0 0 12px;
 }
 
 .form-hint {
-  margin-left: 12px;
   font-size: 12px;
-  color: #909399;
+  color: var(--o-gray-500, #909399);
 }
 
 .field-hint {
   margin-top: 4px;
   font-size: 12px;
-  color: #909399;
+  color: var(--o-gray-500, #909399);
+}
+
+.o-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.o-list-table th, .o-list-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--o-border-color, #ebeef5);
+  text-align: left;
+}
+.o-list-table th {
+  background: var(--o-list-header-bg, #f5f7fa);
+  font-weight: 500;
+}
+
+.service-mapping-wrapper {
+  overflow-x: auto;
+  margin-bottom: 24px;
 }
 
 .form-actions {
@@ -540,31 +578,49 @@ onMounted(() => {
   gap: 12px;
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid var(--o-border-color, #ebeef5);
 }
 
 .test-result {
   margin-top: 16px;
   max-width: 600px;
+  padding: 12px 16px;
+  border-radius: var(--o-border-radius, 4px);
+  position: relative;
 }
 
-.coming-soon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.test-success {
+  background: #f0f9eb;
+  border: 1px solid #67c23a;
+  color: #67c23a;
 }
 
-:deep(.el-divider__text) {
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
+.test-error {
+  background: #fef0f0;
+  border: 1px solid #f56c6c;
+  color: #f56c6c;
 }
 
-.service-mapping-table {
-  margin-bottom: 24px;
+.test-result p {
+  margin: 4px 0 0;
+  font-size: 13px;
 }
 
-.service-mapping-table :deep(.el-table__cell) {
-  padding: 8px 0;
+.dismiss-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: none;
+  background: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: inherit;
+  line-height: 1;
+}
+
+.loading-state {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--o-gray-500, #909399);
 }
 </style>

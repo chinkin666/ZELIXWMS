@@ -22,7 +22,10 @@
     <div class="between-controls">
       <div class="between-controls__item">
         <span class="between-controls__label">取込済み表示：</span>
-        <el-switch v-model="showCarrierReceiptReceivedRows" />
+        <label class="o-toggle">
+          <input type="checkbox" v-model="showCarrierReceiptReceivedRows">
+          <span class="o-toggle-slider"></span>
+        </label>
       </div>
     </div>
 
@@ -62,47 +65,47 @@
     >
       <template #left>
         <!-- Batch unconfirm button -->
-        <el-button
-          type="warning"
-          plain
-          size="small"
-          :disabled="tableSelectedKeys.length === 0"
-          :loading="batchUnconfirming"
+        <button
+          class="o-btn o-btn-sm"
+          style="border-color:#e6a23c;color:#e6a23c;background:transparent;"
+          :disabled="tableSelectedKeys.length === 0 || batchUnconfirming"
           @click="handleBatchUnconfirm"
         >
-          一括確認取消
-        </el-button>
+          {{ batchUnconfirming ? '処理中...' : '一括確認取消' }}
+        </button>
       </template>
       <template #right>
-        <el-button
+        <button
+          class="o-btn o-btn-secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleCustomExportClick"
         >
           出荷明細リスト出力(csv)
-        </el-button>
-        <el-button
+        </button>
+        <button
+          class="o-btn o-btn-secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleFormExportClick"
         >
           出荷明細リスト出力(pdf)
-        </el-button>
+        </button>
         <!-- Automation export button (Yamato B2) -->
-        <el-button
-          type="success"
-          :disabled="!canSendToB2Cloud"
-          :loading="automationExporting"
+        <button
+          class="o-btn o-btn-secondary"
+          style="border-color:#67c23a;color:#67c23a;"
+          :disabled="!canSendToB2Cloud || automationExporting"
           @click="handleAutomationExport"
         >
-          B2 Cloud に送信
-        </el-button>
+          {{ automationExporting ? '送信中...' : 'B2 Cloud に送信' }}
+        </button>
         <!-- Normal export button -->
-        <el-button
-          type="primary"
+        <button
+          class="o-btn o-btn-primary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleExportClick"
         >
           配送会社データ出力
-        </el-button>
+        </button>
       </template>
     </OrderBottomBar>
 
@@ -155,8 +158,6 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref, watch } from 'vue'
-import { ElButton, ElMessage, ElSpace } from 'element-plus'
-import type { HeaderClassNameGetter } from 'element-plus'
 import Table from '@/components/table/OrderTable.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
@@ -337,14 +338,14 @@ const handleAutomationExport = async () => {
     const carrierIdSet = new Set(selectedRows.map((r: any) => String(r?.carrierId || '')))
     carrierIdSet.delete('')
     if (carrierIdSet.size !== 1) {
-      ElMessage.warning('選択した行の配送会社が一致しません。配送会社ごとに出力してください。')
+      alert('選択した行の配送会社が一致しません。配送会社ごとに出力してください。')
       return
     }
 
     const carrierId = Array.from(carrierIdSet)[0]!
     const carrier = carriers.value.find((c) => c._id === carrierId) || null
     if (!carrier || carrier.automationType !== 'yamato-b2') {
-      ElMessage.error('選択した配送会社はB2 Cloud自動連携に対応していません')
+      alert('選択した配送会社はB2 Cloud自動連携に対応していません')
       return
     }
 
@@ -357,10 +358,10 @@ const handleAutomationExport = async () => {
     automationResultDialogVisible.value = true
 
     if (result.success_count > 0) {
-      ElMessage.success(`${result.success_count}件の送信に成功しました`)
+      alert(`${result.success_count}件の送信に成功しました`)
     }
     if (result.error_count > 0) {
-      ElMessage.warning(`${result.error_count}件の送信に失敗しました`)
+      alert(`${result.error_count}件の送信に失敗しました`)
     }
   } catch (e: any) {
     const errorMsg = e?.message || 'B2 Cloudへの送信に失敗しました'
@@ -384,7 +385,7 @@ const handleView = async (row: any) => {
     selectedOrder.value = await fetchShipmentOrder(String(id))
     viewDialogVisible.value = true
   } catch (e: any) {
-    ElMessage.error(e?.message || '詳細の取得に失敗しました')
+    alert(e?.message || '詳細の取得に失敗しました')
   }
 }
 
@@ -395,11 +396,11 @@ const handleUnconfirm = async (row: any) => {
 
     await updateShipmentOrderStatus(String(id), 'unconfirm', 'confirm')
 
-    ElMessage.success('確認を取消しました')
+    alert('確認を取消しました')
     // 重新加载订单列表
     await loadOrders()
   } catch (e: any) {
-    ElMessage.error(e?.message || '確認の取消に失敗しました')
+    alert(e?.message || '確認の取消に失敗しました')
   }
 }
 
@@ -420,13 +421,13 @@ const handleBatchUnconfirm = async () => {
     const successCount = result?.modifiedCount ?? selectedIds.length
 
     if (successCount > 0) {
-      ElMessage.success(`${successCount}件の確認を取消しました`)
+      alert(`${successCount}件の確認を取消しました`)
     }
 
     tableSelectedKeys.value = []
     await loadOrders()
   } catch (e: any) {
-    ElMessage.error(e?.message || '一括確認取消に失敗しました')
+    alert(e?.message || '一括確認取消に失敗しました')
   } finally {
     batchUnconfirming.value = false
   }
@@ -455,14 +456,10 @@ const handleFormExportClick = () => {
 }
 
 const normalizeOrderValueForExport = (sourcePath: string, raw: any): any => {
-  // When source is exactly 'products' (not 'products.0.name' etc.), convert to human-readable string.
-  // This matches existing UI behavior: "{name} x {quantity} / ...".
-  // For nested paths like 'products.0.name', keep the raw value (string/number) as-is.
   if (sourcePath === 'products') {
     if (Array.isArray(raw)) return formatOrderProductsText(raw)
     if (raw && typeof raw === 'object') return formatOrderProductsText([raw])
   }
-  // For other paths, return raw value without conversion
   return raw
 }
 
@@ -533,14 +530,14 @@ const handleExportClick = async () => {
     const carrierIdSet = new Set(selectedRows.map((r: any) => String(r?.carrierId || '')))
     carrierIdSet.delete('')
     if (carrierIdSet.size !== 1) {
-      ElMessage.warning('選択した行の配送会社が一致しません。配送会社ごとに出力してください。')
+      alert('選択した行の配送会社が一致しません。配送会社ごとに出力してください。')
       return
     }
 
     const carrierId = Array.from(carrierIdSet)[0]!
     const carrier = carriers.value.find((c) => c._id === carrierId) || null
     if (!carrier) {
-      ElMessage.error('配送会社情報が見つかりません')
+      alert('配送会社情報が見つかりません')
       return
     }
 
@@ -551,7 +548,7 @@ const handleExportClick = async () => {
 
     await loadExportMappingConfigsForCarrier(String(carrier.code || ''))
     if (!exportMappingOptions.value.length) {
-      ElMessage.warning('この配送会社に出力レイアウト（order-to-carrier）が未設定です（レイアウト設定で作成してください）。')
+      alert('この配送会社に出力レイアウト（order-to-carrier）が未設定です（レイアウト設定で作成してください）。')
       return
     }
 
@@ -564,7 +561,7 @@ const handleExportClick = async () => {
     await rebuildExportRows()
     exportDialogVisible.value = true
   } catch (e: any) {
-    ElMessage.error(e?.message || '配送会社データ出力に失敗しました')
+    alert(e?.message || '配送会社データ出力に失敗しました')
   }
 }
 
@@ -578,7 +575,7 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
 }
 
 const handleSave = (_payload: Record<string, { operator: Operator; value: any }>) => {
-  ElMessage.success('検索条件を保存しました（ダミー）')
+  alert('検索条件を保存しました（ダミー）')
 }
 
 const tableColumns = computed(() => {
@@ -591,28 +588,25 @@ const tableColumns = computed(() => {
     align: 'center' as const,
     cellRenderer: ({ rowData }: { rowData: any }) =>
       h(
-        ElSpace,
-        { size: 8 },
-        () => [
+        'div',
+        { style: 'display:inline-flex;gap:8px;' },
+        [
           h(
-            ElButton,
+            'button',
             {
-              type: 'primary',
-              size: 'small',
-              plain: true,
+              class: 'o-btn o-btn-primary o-btn-sm',
               onClick: () => handleView(rowData),
             },
-            () => '詳細',
+            '詳細',
           ),
           h(
-            ElButton,
+            'button',
             {
-              type: 'warning',
-              size: 'small',
-              plain: true,
+              class: 'o-btn o-btn-sm',
+              style: 'border-color:#e6a23c;color:#e6a23c;background:transparent;',
               onClick: () => handleUnconfirm(rowData),
             },
-            () => '確認取消',
+            '確認取消',
           ),
         ],
       ),
@@ -629,7 +623,7 @@ const headerGroupingConfig = computed<HeaderGroupingConfig>(() => {
   return buildOrderHeaderGroupingConfig(baseColumns.value as any)
 })
 
-const headerClass: HeaderClassNameGetter<any> = () => ''
+const headerClass = (): string => ''
 
 const tableProps = computed(() => ({}))
 
@@ -674,7 +668,7 @@ const loadOrders = async () => {
 
     rows.value = all
   } catch (e: any) {
-    ElMessage.error(e?.message || '出荷予定の取得に失敗しました')
+    alert(e?.message || '出荷予定の取得に失敗しました')
   } finally {
     isLoadingOrders.value = false
   }
@@ -708,7 +702,7 @@ watch(
     try {
       await rebuildExportRows()
     } catch (e: any) {
-      ElMessage.error(e?.message || '出力レイアウトの適用に失敗しました')
+      alert(e?.message || '出力レイアウトの適用に失敗しました')
     }
   },
 )
@@ -806,6 +800,11 @@ onMounted(async () => {
 ::v-deep(.error-cell) {
   background-color: #ffebee !important;
 }
+
+.o-toggle { position:relative; display:inline-flex; align-items:center; cursor:pointer; }
+.o-toggle input { position:absolute; opacity:0; width:0; height:0; }
+.o-toggle-slider { width:40px; height:20px; background:var(--o-toggle-off, #ccc); border-radius:10px; transition:0.2s; position:relative; }
+.o-toggle-slider::after { content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; top:2px; left:2px; transition:0.2s; }
+.o-toggle input:checked + .o-toggle-slider { background:var(--o-brand-primary, #714B67); }
+.o-toggle input:checked + .o-toggle-slider::after { left:22px; }
 </style>
-
-

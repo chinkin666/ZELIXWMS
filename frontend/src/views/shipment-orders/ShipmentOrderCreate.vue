@@ -3,44 +3,42 @@
     <!-- Top bar: search, filter, action buttons -->
     <div class="table-top-bar">
       <div class="table-top-bar__left">
-        <el-input
+        <input
+          class="o-input global-search-input"
           v-model="globalSearchText"
           placeholder="検索..."
-          clearable
-          :prefix-icon="Search"
-          class="global-search-input"
         />
-        <el-button
+        <button
           v-if="!bundleModeEnabled"
-          class="bundle-list-btn"
+          class="o-btn o-btn-secondary bundle-list-btn"
           @click="handleOpenBundleList"
         >
           同捆候補一覧
-        </el-button>
-        <el-button
+        </button>
+        <button
           v-else
-          class="bundle-list-btn"
+          class="o-btn o-btn-secondary bundle-list-btn"
           @click="handleExitBundleMode"
         >
           同梱モード終了
-        </el-button>
+        </button>
       </div>
       <div class="table-top-bar__center">
         <span class="filter-label">表示データ</span>
-        <el-radio-group v-model="displayFilter" size="small">
-          <el-radio-button value="all">全件</el-radio-button>
-          <el-radio-button value="normal">正常のみ</el-radio-button>
-          <el-radio-button value="error">エラーのみ</el-radio-button>
-        </el-radio-group>
+        <div class="o-segmented">
+          <button class="o-segmented-btn" :class="{active: displayFilter==='all'}" @click="displayFilter='all'">全件</button>
+          <button class="o-segmented-btn" :class="{active: displayFilter==='normal'}" @click="displayFilter='normal'">正常のみ</button>
+          <button class="o-segmented-btn" :class="{active: displayFilter==='error'}" @click="displayFilter='error'">エラーのみ</button>
+        </div>
         <div class="table-top-bar__spacer"></div>
       </div>
       <div class="table-top-bar__right">
-        <el-button type="success" @click="handleImportClick">
+        <button class="o-btn o-btn-secondary" style="border-color:#67c23a;color:#67c23a;" @click="handleImportClick">
           一括登録
-        </el-button>
-        <el-button type="primary" @click="handleAdd">
+        </button>
+        <button class="o-btn o-btn-primary" @click="handleAdd">
           個別登録
-        </el-button>
+        </button>
       </div>
     </div>
 
@@ -51,23 +49,21 @@
         <span class="bundle-mode-bar__labels">{{ bundleFilterLabels || '未設定' }}</span>
       </div>
       <div class="bundle-mode-actions">
-        <el-button
-          type="primary"
-          size="small"
+        <button
+          class="o-btn o-btn-primary o-btn-sm"
           :disabled="tableSelectedKeys.length === 0 || selectedBundleGroupKeys.length === 0"
           @click="handleBundleMergeAllSelected"
         >
           同梱する
-        </el-button>
-        <el-button
-          type="warning"
-          size="small"
-          plain
+        </button>
+        <button
+          class="o-btn o-btn-sm"
+          style="border-color:#e6a23c;color:#e6a23c;background:transparent;"
           :disabled="!hasUnbundleableRows"
           @click="handleUnbundleSelected"
         >
           同梱を解除する
-        </el-button>
+        </button>
       </div>
     </div>
 
@@ -131,82 +127,72 @@
       <template #left>
         <!-- Bundle mode: show bundle/unbundle buttons -->
         <template v-if="bundleModeEnabled">
-          <el-button
-            type="primary"
-            size="small"
+          <button
+            class="o-btn o-btn-primary o-btn-sm"
             :disabled="tableSelectedKeys.length === 0 || selectedBundleGroupKeys.length === 0"
             @click="handleBundleMergeAllSelected"
           >
             同梱する
-          </el-button>
-          <el-button
-            type="warning"
-            size="small"
-            plain
+          </button>
+          <button
+            class="o-btn o-btn-sm"
+            style="border-color:#e6a23c;color:#e6a23c;background:transparent;"
             :disabled="!hasUnbundleableRows"
             @click="handleUnbundleSelected"
           >
             同梱を解除する
-          </el-button>
+          </button>
         </template>
         <!-- Normal mode: show standard buttons -->
         <template v-else>
-          <el-button
-            type="primary"
-            plain
-            size="small"
+          <button
+            class="o-btn o-btn-primary o-btn-sm"
+            style="opacity:0.8;"
             :disabled="tableSelectedKeys.length === 0"
             @click="shipPlanDateDialogVisible = true"
           >
             出荷予定日一括設定
-          </el-button>
-          <el-button
-            type="primary"
-            plain
-            size="small"
+          </button>
+          <button
+            class="o-btn o-btn-primary o-btn-sm"
+            style="opacity:0.8;"
             :disabled="tableSelectedKeys.length === 0"
             @click="senderBulkDialogVisible = true"
           >
             ご依頼主一括設定
-          </el-button>
-          <el-button
-            type="primary"
-            plain
-            size="small"
+          </button>
+          <button
+            class="o-btn o-btn-primary o-btn-sm"
+            style="opacity:0.8;"
             :disabled="tableSelectedKeys.length === 0 || carriers.length === 0"
             @click="carrierBulkDialogVisible = true"
           >
             配送会社一括設定
-          </el-button>
-          <el-button
+          </button>
+          <button
             v-if="tableRef?.showBulkEditButton"
-            type="primary"
-            plain
-            size="small"
+            class="o-btn o-btn-primary o-btn-sm"
+            style="opacity:0.8;"
             :disabled="tableSelectedKeys.length === 0"
             @click="tableRef?.openBulkEdit()"
           >
             一括修正
-          </el-button>
-          <el-button
-            type="danger"
-            plain
-            size="small"
+          </button>
+          <button
+            class="o-btn o-btn-danger o-btn-sm"
             :disabled="allRows.length === 0"
             @click="handleClearAll"
           >
             データクリア
-          </el-button>
-          <el-button
+          </button>
+          <button
             v-if="batchDeleteEnabled"
-            type="danger"
-            plain
-            size="small"
+            class="o-btn o-btn-danger o-btn-sm"
             :disabled="tableSelectedKeys.length === 0"
             @click="tableRef?.triggerBatchDelete()"
           >
             一括削除 ({{ tableSelectedKeys.length }})
-          </el-button>
+          </button>
         </template>
       </template>
       <template #center>
@@ -221,41 +207,38 @@
         </div>
       </template>
       <template #alert>
-        <el-alert
+        <div
           v-if="backendErrorCount > 0"
           class="bottom-bar__alert"
-          type="error"
-          :closable="true"
-          title="サーバー側でエラーが発生しました。エラー行のみ表示に切り替えています。"
-          @close="clearBackendErrors"
-        />
+          style="background:#fef0f0;border:1px solid #fde2e2;border-radius:6px;padding:8px 12px;color:#f56c6c;font-size:13px;display:flex;align-items:center;justify-content:space-between;"
+        >
+          <span>サーバー側でエラーが発生しました。エラー行のみ表示に切り替えています。</span>
+          <button style="background:none;border:none;font-size:16px;cursor:pointer;color:#f56c6c;" @click="clearBackendErrors">&times;</button>
+        </div>
       </template>
       <template #right>
-        <el-button
-          type="primary"
-          :loading="isSubmitting"
-          :disabled="allRows.length === 0"
+        <button
+          class="o-btn o-btn-primary"
+          :disabled="allRows.length === 0 || isSubmitting"
           @click="handleSubmitClick"
         >
-          出荷指示登録
-        </el-button>
-        <el-button
+          {{ isSubmitting ? '登録中...' : '出荷指示登録' }}
+        </button>
+        <button
           v-if="backendErrorCount > 0"
-          type="danger"
-          plain
+          class="o-btn o-btn-danger"
           @click="submitErrorDialogVisible = true"
         >
           エラー詳細
-        </el-button>
+        </button>
       </template>
     </OrderBottomBar>
 
     <!-- Backend error dialog -->
-    <el-dialog
-      v-model="submitErrorDialogVisible"
+    <ODialog
+      :open="submitErrorDialogVisible"
       title="エラー詳細"
-      width="760px"
-      :close-on-click-modal="false"
+      @close="submitErrorDialogVisible = false"
     >
       <div v-if="backendErrorCount === 0" style="color: #909399;">
         エラーはありません。
@@ -277,10 +260,10 @@
       </div>
       <template #footer>
         <div style="display:flex; justify-content:flex-end; gap:10px;">
-          <el-button @click="submitErrorDialogVisible = false">閉じる</el-button>
+          <button class="o-btn o-btn-secondary" @click="submitErrorDialogVisible = false">閉じる</button>
         </div>
       </template>
-    </el-dialog>
+    </ODialog>
 
     <BundleFilterDialog
       v-model="showBundleFilterDialog"
@@ -291,137 +274,124 @@
     />
 
     <!-- ご依頼主一括設定 -->
-    <el-dialog
-      v-model="senderBulkDialogVisible"
+    <ODialog
+      :open="senderBulkDialogVisible"
       title="ご依頼主一括設定"
-      width="520px"
-      :close-on-click-modal="false"
+      @close="senderBulkDialogVisible = false"
     >
       <div class="sender-bulk__meta">
         選択中件数：<strong>{{ tableSelectedKeys.length }}</strong>
       </div>
 
-      <el-form label-width="120px">
-        <el-form-item label="ご依頼主">
-          <el-select
-            v-model="senderBulkCompanyId"
-            filterable
-            clearable
-            style="width: 100%"
-            placeholder="ご依頼主を選択"
-          >
-            <el-option
-              v-for="company in orderSourceCompanies"
-              :key="company._id"
-              :label="company.senderName"
-              :value="company._id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="発店コードの上書き">
-          <div class="row">
-            <el-checkbox v-model="senderBulkOverwriteBaseNo">
-              既存の値を上書きする
-            </el-checkbox>
-            <div class="hint">
-              発店コード1・2が既に設定されている場合、ご依頼主の情報で上書きします<br />
-              チェックを外すと、既存の値がある場合は保持し、ない場合のみご依頼主の情報を設定します
-            </div>
+      <div class="o-form-group">
+        <label class="o-form-label">ご依頼主</label>
+        <select
+          class="o-input"
+          v-model="senderBulkCompanyId"
+          style="width: 100%"
+        >
+          <option value="">ご依頼主を選択</option>
+          <option
+            v-for="company in orderSourceCompanies"
+            :key="company._id"
+            :value="company._id"
+          >{{ company.senderName }}</option>
+        </select>
+      </div>
+      <div class="o-form-group">
+        <label class="o-form-label">発店コードの上書き</label>
+        <div class="row">
+          <label class="o-checkbox">
+            <input type="checkbox" v-model="senderBulkOverwriteBaseNo">
+            <span>既存の値を上書きする</span>
+          </label>
+          <div class="hint">
+            発店コード1・2が既に設定されている場合、ご依頼主の情報で上書きします<br />
+            チェックを外すと、既存の値がある場合は保持し、ない場合のみご依頼主の情報を設定します
           </div>
-        </el-form-item>
-      </el-form>
+        </div>
+      </div>
 
       <template #footer>
         <div class="sender-bulk__footer">
-          <el-button @click="senderBulkDialogVisible = false">キャンセル</el-button>
-          <el-button type="primary" @click="applySenderBulkCompany">確定</el-button>
+          <button class="o-btn o-btn-secondary" @click="senderBulkDialogVisible = false">キャンセル</button>
+          <button class="o-btn o-btn-primary" @click="applySenderBulkCompany">確定</button>
         </div>
       </template>
-    </el-dialog>
+    </ODialog>
 
     <!-- 配送会社一括設定 -->
-    <el-dialog
-      v-model="carrierBulkDialogVisible"
+    <ODialog
+      :open="carrierBulkDialogVisible"
       title="配送会社一括設定"
-      width="520px"
-      :close-on-click-modal="false"
+      @close="carrierBulkDialogVisible = false"
     >
       <div class="sender-bulk__meta">
         選択中件数：<strong>{{ tableSelectedKeys.length }}</strong>
       </div>
 
-      <el-form label-width="120px">
-        <el-form-item label="配送会社">
-          <el-select
-            v-model="carrierBulkId"
-            filterable
-            clearable
-            style="width: 100%"
-            placeholder="配送会社を選択"
-          >
-            <el-option
-              v-for="opt in carrierOptions"
-              :key="String(opt.value)"
-              :label="opt.label"
-              :value="opt.value"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
+      <div class="o-form-group">
+        <label class="o-form-label">配送会社</label>
+        <select
+          class="o-input"
+          v-model="carrierBulkId"
+          style="width: 100%"
+        >
+          <option value="">配送会社を選択</option>
+          <option
+            v-for="opt in carrierOptions"
+            :key="String(opt.value)"
+            :value="opt.value"
+          >{{ opt.label }}</option>
+        </select>
+      </div>
 
       <template #footer>
         <div class="sender-bulk__footer">
-          <el-button @click="carrierBulkDialogVisible = false">キャンセル</el-button>
-          <el-button type="primary" @click="applyCarrierBulk">確定</el-button>
+          <button class="o-btn o-btn-secondary" @click="carrierBulkDialogVisible = false">キャンセル</button>
+          <button class="o-btn o-btn-primary" @click="applyCarrierBulk">確定</button>
         </div>
       </template>
-    </el-dialog>
+    </ODialog>
 
     <!-- 出荷予定日一括設定 -->
-    <el-dialog
-      v-model="shipPlanDateDialogVisible"
+    <ODialog
+      :open="shipPlanDateDialogVisible"
       title="出荷予定日一括設定"
-      width="520px"
-      :close-on-click-modal="false"
-      @opened="shipPlanDateSelected = formatDateYYYYMMDD(new Date())"
+      @close="shipPlanDateDialogVisible = false"
     >
       <div class="sender-bulk__meta">
         選択中件数：<strong>{{ tableSelectedKeys.length }}</strong>
       </div>
 
-      <el-form label-width="120px">
-        <el-form-item label="出荷予定日">
-          <el-date-picker
-            v-model="shipPlanDateSelected"
-            type="date"
-            format="YYYY/MM/DD"
-            value-format="YYYY/MM/DD"
-            style="width: 100%"
-            placeholder="出荷予定日を選択"
-          />
-        </el-form-item>
-      </el-form>
+      <div class="o-form-group">
+        <label class="o-form-label">出荷予定日</label>
+        <input
+          type="date"
+          class="o-input"
+          v-model="shipPlanDateSelected"
+          style="width: 100%"
+        />
+      </div>
 
       <template #footer>
         <div class="sender-bulk__footer">
-          <el-button @click="shipPlanDateDialogVisible = false">キャンセル</el-button>
-          <el-button type="primary" @click="applyShipPlanDateToSelected">確定</el-button>
+          <button class="o-btn o-btn-secondary" @click="shipPlanDateDialogVisible = false">キャンセル</button>
+          <button class="o-btn o-btn-primary" @click="applyShipPlanDateToSelected">確定</button>
         </div>
       </template>
-    </el-dialog>
+    </ODialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref, watch } from 'vue'
-import { ElAlert, ElButton, ElDialog, ElInput, ElMessage, ElMessageBox, ElRadioButton, ElRadioGroup } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
-import type { HeaderClassNameGetter } from 'element-plus'
 import Table from '@/components/table/OrderTable.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
 import FormDialog from '@/components/form/FormDialog.vue'
 import ShipmentOrderImportDialog from '@/components/import/ShipmentOrderImportDialog.vue'
 import BundleFilterDialog from '@/components/bundle/BundleFilterDialog.vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import { getOrderFieldDefinitions } from '@/types/order'
 import { fetchProducts } from '@/api/product'
 import type { Product } from '@/types/product'
@@ -475,14 +445,11 @@ const getCookie = (name: string): string | null => {
 }
 
 // localStorage 缓存表格数据
-// 剥离可通过 productMap 恢复的快照字段，加载时通过 applyProductDefaults 恢复
-// 注意：sourceRawRows 需要保留，因为上传到后端时需要
 const saveTableDataToStorage = () => {
   try {
     const stripped = allRows.value.map((row: any) => {
       const base: any = {
         ...row,
-        // sourceRawRows を保持（バックエンドへのアップロード時に必要）
         sourceRawRows: row.sourceRawRows,
       }
       if (!Array.isArray(base.products)) return base
@@ -495,7 +462,6 @@ const saveTableDataToStorage = () => {
           productSku: p.productSku,
           productName: p.productName,
           matchedSubSku: p.matchedSubSku,
-          // アップロードされたバーコードを保持（商品マスタ復元時に優先使用）
           ...(p.barcode?.length ? { barcode: p.barcode } : {}),
         })),
       }
@@ -579,11 +545,11 @@ const formatDateYYYYMMDD = (d: Date): string => {
 
 const applyShipPlanDateToSelected = () => {
   if (!tableSelectedKeys.value.length) {
-    ElMessage.warning('左側のチェックで編集対象の行を選択してください')
+    alert('左側のチェックで編集対象の行を選択してください')
     return
   }
   if (!shipPlanDateSelected.value) {
-    ElMessage.warning('出荷予定日を選択してください')
+    alert('出荷予定日を選択してください')
     return
   }
 
@@ -599,24 +565,24 @@ const applyShipPlanDateToSelected = () => {
   }
 
   saveTableDataToStorage()
-  ElMessage.success(`出荷予定日を${shipPlanDateSelected.value}に設定しました（${changed}件）`)
+  alert(`出荷予定日を${shipPlanDateSelected.value}に設定しました（${changed}件）`)
   shipPlanDateDialogVisible.value = false
 }
 
 const applySenderBulkCompany = () => {
   if (!senderBulkCompanyId.value) {
-    ElMessage.warning('ご依頼主を選択してください')
+    alert('ご依頼主を選択してください')
     return
   }
   if (!tableSelectedKeys.value.length) {
-    ElMessage.warning('左側のチェックで編集対象の行を選択してください')
+    alert('左側のチェックで編集対象の行を選択してください')
     return
   }
 
   const company =
     orderSourceCompanies.value.find((c) => c._id === senderBulkCompanyId.value) || null
   if (!company) {
-    ElMessage.warning('ご依頼主が見つかりません')
+    alert('ご依頼主が見つかりません')
     return
   }
 
@@ -625,7 +591,6 @@ const applySenderBulkCompany = () => {
   for (const row of allRows.value) {
     if (!keySet.has(row.id)) continue
     ;(row as any).orderSourceCompanyId = company._id
-    // 使用嵌套结构设置 sender 地址
     row.sender = {
       postalCode: company.senderPostalCode || '',
       prefecture: company.senderAddressPrefecture || '',
@@ -635,7 +600,6 @@ const applySenderBulkCompany = () => {
       phone: company.senderPhone || '',
     }
 
-    // 発店コード1・2の上書き処理（carrierData.yamato へ格納）
     if (!row.carrierData) {
       row.carrierData = {}
     }
@@ -644,11 +608,9 @@ const applySenderBulkCompany = () => {
     }
 
     if (senderBulkOverwriteBaseNo.value) {
-      // 上書きが有効な場合、依頼主の情報で上書き
       row.carrierData.yamato.hatsuBaseNo1 = company.hatsuBaseNo1 || ''
       row.carrierData.yamato.hatsuBaseNo2 = company.hatsuBaseNo2 || ''
     } else {
-      // 上書きが無効な場合、既に値がある場合は保持、ない場合は依頼主の情報を設定
       if (!row.carrierData.yamato.hatsuBaseNo1 && company.hatsuBaseNo1) {
         row.carrierData.yamato.hatsuBaseNo1 = company.hatsuBaseNo1
       }
@@ -662,18 +624,18 @@ const applySenderBulkCompany = () => {
   }
 
   saveTableDataToStorage()
-  ElMessage.success(`ご依頼主一括設定しました（${changed}件）`)
+  alert(`ご依頼主一括設定しました（${changed}件）`)
   senderBulkDialogVisible.value = false
-  senderBulkOverwriteBaseNo.value = false // リセット
+  senderBulkOverwriteBaseNo.value = false
 }
 
 const applyCarrierBulk = () => {
   if (!carrierBulkId.value) {
-    ElMessage.warning('配送会社を選択してください')
+    alert('配送会社を選択してください')
     return
   }
   if (!tableSelectedKeys.value.length) {
-    ElMessage.warning('左側のチェックで編集対象の行を選択してください')
+    alert('左側のチェックで編集対象の行を選択してください')
     return
   }
 
@@ -687,7 +649,7 @@ const applyCarrierBulk = () => {
   }
 
   saveTableDataToStorage()
-  ElMessage.success(`配送会社一括設定しました（${changed}件）`)
+  alert(`配送会社一括設定しました（${changed}件）`)
   carrierBulkDialogVisible.value = false
 }
 
@@ -702,20 +664,19 @@ const handleAdd = () => {
 }
 
 const handleDelete = (row: UserOrderRow) => {
-  // 从数据中删除
   const index = allRows.value.findIndex((r: UserOrderRow) => r.id === row.id)
   if (index !== -1) {
     allRows.value.splice(index, 1)
     saveTableDataToStorage()
-    ElMessage.success(`削除しました: ${row.orderNumber || row.id}`)
+    alert(`削除しました: ${row.orderNumber || row.id}`)
   }
 }
 
 const handleBatchDelete = async (payload: { selectedKeys: Array<string | number>; selectedRows: any[] }) => {
   const { selectedKeys, selectedRows } = payload
-  
+
   if (selectedKeys.length === 0) {
-    ElMessage.warning('削除する行を選択してください')
+    alert('削除する行を選択してください')
     return
   }
 
@@ -727,16 +688,7 @@ const handleBatchDelete = async (payload: { selectedKeys: Array<string | number>
     const orderNumbersText = orderNumbers.length > 0 ? orderNumbers.join(', ') : ''
     const moreText = selectedRows.length > 5 ? `他${selectedRows.length - 5}件` : ''
 
-    await ElMessageBox.confirm(
-      `選択した${selectedKeys.length}件の出荷指示を削除しますか？\n${orderNumbersText}${moreText ? `\n${moreText}` : ''}`,
-      '一括削除確認',
-      {
-        confirmButtonText: '削除',
-        cancelButtonText: 'キャンセル',
-        type: 'warning',
-        dangerouslyUseHTMLString: false,
-      },
-    )
+    if (!confirm(`選択した${selectedKeys.length}件の出荷指示を削除しますか？\n${orderNumbersText}${moreText ? `\n${moreText}` : ''}`)) return
 
     const keySet = new Set(selectedKeys)
     const beforeCount = allRows.value.length
@@ -745,10 +697,10 @@ const handleBatchDelete = async (payload: { selectedKeys: Array<string | number>
 
     tableSelectedKeys.value = []
     saveTableDataToStorage()
-    ElMessage.success(`${deletedCount}件の出荷指示を削除しました`)
+    alert(`${deletedCount}件の出荷指示を削除しました`)
   } catch (e: any) {
     if (e === 'cancel') return
-    ElMessage.error(e?.message || '一括削除に失敗しました')
+    alert(e?.message || '一括削除に失敗しました')
   }
 }
 
@@ -761,25 +713,19 @@ const carrierOptions = computed(() => {
     }))
 })
 
-// 使用统一的字段配置定义
 const allFieldDefinitions = computed(() => getOrderFieldDefinitions({
   carrierOptions: carrierOptions.value,
 }))
 
-// 检查行是否包含未登录的商品SKU
 const hasUnregisteredSku = (row: UserOrderRow): boolean => {
   if (!Array.isArray(row.products) || row.products.length === 0) return false
-  // 检查是否有任何商品的productId为空（说明SKU未在数据库中找到）
   return row.products.some((p: OrderProduct) => !p.productId)
 }
 
-// 统计未登录SKU的行数
 const unregisteredSkuRowCount = computed(() => {
   return allRows.value.filter((r) => hasUnregisteredSku(r)).length
 })
 
-// 检查行是否有错误 (validateCell is now imported from @/utils/orderValidation)
-// 未登录SKU不再视为错误（仅作为参考信息显示）
 const hasRowErrors = (row: UserOrderRow): boolean => {
   const hasFrontend = baseColumns.value.some((col) => !validateCell(row, col))
   const backend = backendErrorsByRowId.value?.[row.id]
@@ -792,41 +738,29 @@ const hasFrontendRowErrors = (row: UserOrderRow): boolean => {
 }
 
 
-// 根据使用场景过滤字段
-// 表格列：仅保留「用户需要上传」的字段（order 定义里用户输入/上传的部分）
 const baseColumns = computed(() => {
   const excludedDataKeys = new Set([
-    // system-generated / non-uploadable
     'orderNumber',
     'createdAt',
     'updatedAt',
     'sourceRawRows',
     'carrierRawRow',
-    // status fields are not user input on this page
     'status.carrierReceipt.isReceived',
     'status.confirm.isConfirmed',
     'status.printed.isPrinted',
   ])
 
   return (allFieldDefinitions.value || []).filter((col) => {
-    // hide non-visible columns (e.g. internal tracking)
     if (col.tableVisible === false) return false
-
-    // mapping examples are not upload targets
     const dataKey = col.dataKey ?? undefined
     if (!dataKey) return false
     if (String(dataKey).startsWith('__mappingExample_')) return false
-
-    // only keep user-editable fields (upload targets)
     if (col.formEditable === false) return false
-
     if (excludedDataKeys.has(String(dataKey))) return false
-
     return true
   })
 })
 
-// 表单列：显示 formEditable 为 true 的字段
 const formColumns = computed(() => {
   return allFieldDefinitions.value.filter(
     (col) => col.formEditable !== false && col.dataKey !== undefined
@@ -834,7 +768,6 @@ const formColumns = computed(() => {
 })
 
 const tableColumns = computed(() => {
-  // Override customerManagementNumber to be a clickable link that opens the edit dialog
   const columnsWithHeader = baseColumns.value.map((col: TableColumn) => {
     if (col.dataKey === 'customerManagementNumber' || col.key === 'customerManagementNumber') {
       return {
@@ -869,33 +802,28 @@ const tableColumns = computed(() => {
           rowSpan: ({ rowData }: { rowData: any }) =>
             rowData._bundleGroupFirst ? rowData._bundleGroupSize : 0,
           cellRenderer: ({ rowData }: { rowData: any }) => {
-            // Already bundled row: show unbundle button
             if (rowData._isBundled) {
               return h(
-                ElButton,
+                'button',
                 {
-                  type: 'warning',
-                  size: 'small',
-                  plain: true,
+                  class: 'o-btn o-btn-sm',
+                  style: 'border-color:#e6a23c;color:#e6a23c;background:transparent;',
                   onClick: () => handleUnbundleSingleRow(rowData.id),
                 },
-                () => '同梱解除',
+                '同梱解除',
               )
             }
-            // Groupable row: show bundle merge button
             return h(
-              ElButton,
+              'button',
               {
-                type: 'primary',
-                size: 'small',
-                plain: true,
+                class: 'o-btn o-btn-primary o-btn-sm',
                 disabled:
                   !bundleModeEnabled.value ||
                   !rowData._bundleGroupFirst ||
                   (rowData._bundleGroupSize ?? 0) < 2,
                 onClick: () => handleBundleMerge(rowData._bundleGroupKey),
               },
-              () => '同梱合并',
+              '同梱合并',
             )
           },
         }
@@ -906,14 +834,11 @@ const tableColumns = computed(() => {
   return cols
 })
 
-// 表头分组配置（使用统一的工具函数）
 const headerGroupingConfig = computed<HeaderGroupingConfig>(() => {
-  // 只对业务列分组：baseColumns（上传字段）
   const cols = baseColumns.value || []
   return buildOrderHeaderGroupingConfig(cols as any)
 })
 
-// 同梱設定用の候補（商品以外でユーザーが入力する列）
 const bundleFilterFields = computed(() => {
   return baseColumns.value
     .filter((col: TableColumn) => col.formEditable !== false && (col.dataKey ?? col.key) !== 'products')
@@ -924,7 +849,6 @@ const bundleFilterFields = computed(() => {
     }))
 })
 
-// 選択中の名寄せ条件のラベル（表示用）
 const bundleFilterLabels = computed(() => {
   if (bundleFilterKeys.value.length === 0) return ''
   const labels = bundleFilterKeys.value
@@ -936,7 +860,6 @@ const bundleFilterLabels = computed(() => {
   return labels.join(', ')
 })
 
-// 同梱済み行があるかどうか（解除ボタンの有効/無効判定用）
 const hasUnbundleableRows = computed(() => {
   const selectedSet = new Set(tableSelectedKeys.value)
   if (selectedSet.size === 0) return false
@@ -946,13 +869,10 @@ const hasUnbundleableRows = computed(() => {
   })
 })
 
-// 计算前端数据的 _productsMeta（用于搜索）
 const calculateProductsMetaForRow = (row: UserOrderRow) => {
   const products = Array.isArray(row.products) ? row.products : []
-  // 使用新结构：inputSku 作为 SKU，productName 作为商品名
   const skus = [...new Set(products.map((p: OrderProduct) => p.inputSku || p.productSku).filter((s): s is string => Boolean(s)))]
   const names = [...new Set(products.map((p: OrderProduct) => p.productName).filter((name): name is string => Boolean(name && typeof name === 'string' && name.trim())))]
-  // バーコードを収集（各商品の barcode 配列をフラット化して重複排除）
   const barcodes = [...new Set(products.flatMap((p: OrderProduct) => p.barcode || []).filter((b): b is string => Boolean(b)))]
   const totalQuantity = products.reduce((sum, p: OrderProduct) => sum + (p.quantity || 0), 0)
   const totalPrice = products.reduce((sum, p: OrderProduct) => sum + (p.subtotal || 0), 0)
@@ -967,10 +887,6 @@ const calculateProductsMetaForRow = (row: UserOrderRow) => {
   }
 }
 
-// 为行数据添加/补全 _productsMeta（用于前端搜索）
-// NOTE:
-// - localStorage 里可能已经存在旧版 _productsMeta（没有 names 或 barcodes）
-// - 因此这里需要在缺字段时也进行补全
 const enrichRowWithProductsMeta = (row: UserOrderRow): UserOrderRow => {
   const meta: any = (row as any)._productsMeta
   const needsRecalc =
@@ -990,28 +906,20 @@ const enrichRowWithProductsMeta = (row: UserOrderRow): UserOrderRow => {
   }
 }
 
-// グローバル検索テキスト
 const globalSearchText = ref<string>('')
 
-// 搜索后的行数据（グローバル検索はTableコンポーネント側で処理）
 const searchedRows = computed(() => {
-  // 为所有行添加 _productsMeta（如果还没有的话），以便商品搜索字段能够正常工作
   return allRows.value.map(enrichRowWithProductsMeta)
 })
 
-// 最终显示的行数据（搜索 + 表示フィルター）
 const filteredRows = computed(() => {
   let result = searchedRows.value
 
-  // 表示データフィルター
   if (displayFilter.value === 'normal') {
-    // 正常のみ：エラーがない行のみ表示
     result = result.filter((row: UserOrderRow) => !hasRowErrors(row))
   } else if (displayFilter.value === 'error') {
-    // エラーのみ：エラーがある行のみ表示
     result = result.filter((row: UserOrderRow) => hasRowErrors(row))
   }
-  // 'all' の場合はフィルターなし
 
   return result
 })
@@ -1065,34 +973,28 @@ const clearBackendErrors = () => {
   backendErrorsByRowId.value = {}
 }
 
-// 直接使用 computed 来设置 rows，确保響应式更新
 const displayRows = computed(() => {
-  // 同梱モード：显示可同梱的分组和已同梱的行
   if (bundleModeEnabled.value && bundleFilterKeys.value.length > 0) {
     const groups = new Map<string, UserOrderRow[]>()
     const bundledRows: UserOrderRow[] = []
 
     for (const row of filteredRows.value) {
-      // 已同梱の行（_bundleOriginalRows がある）は別扱い
       if (Array.isArray((row as any)._bundleOriginalRows) && (row as any)._bundleOriginalRows.length > 0) {
         bundledRows.push(row)
         continue
       }
 
-      // Use getNestedValue to support nested paths like 'carrierData.yamato.hatsuBaseNo1'
       const keyParts = bundleFilterKeys.value.map((k) => getNestedValue(row, k) ?? '')
       const groupKey = JSON.stringify(keyParts)
       if (!groups.has(groupKey)) groups.set(groupKey, [])
       groups.get(groupKey)!.push(row)
     }
 
-    // 只保留有至少2条记录的分组，并按 key 排序以便相邻显示
     const groupedEntries = Array.from(groups.entries()).filter(([, rows]) => rows.length >= 2)
     groupedEntries.sort(([a], [b]) => a.localeCompare(b))
 
     const result: any[] = []
 
-    // 先添加已同梱的行（标记为同梱済み）
     for (const row of bundledRows) {
       result.push({
         ...row,
@@ -1103,10 +1005,7 @@ const displayRows = computed(() => {
       })
     }
 
-    // 然后添加可同梱的分组
     for (const [key, rows] of groupedEntries) {
-      // Make group-internal order stable so the "first" row is predictably the top row.
-      // (When bundle mode is ON, table sorting is disabled above to preserve this order.)
       const sortedRows = [...rows].sort((a, b) => {
         const aKey = String((a as any)?.orderNumber || (a as any)?.id || '')
         const bKey = String((b as any)?.orderNumber || (b as any)?.id || '')
@@ -1129,12 +1028,10 @@ const displayRows = computed(() => {
   return [...filteredRows.value]
 })
 
-// 同步 displayRows 到 rows，确保 Table 组件能正确更新
 watch(displayRows, (newRows) => {
   rows.value = newRows
 }, { immediate: true })
 
-// 监听 allRows 和 displayFilter 的变化，确保数据更新时表格刷新
 watch([allRows, displayFilter], () => {
   rows.value = [...filteredRows.value]
 }, { deep: true })
@@ -1144,16 +1041,14 @@ const handleFormSubmit = (data: Record<string, any>) => {
   const now = new Date().toISOString()
 
   if (editingRow.value) {
-    // 编辑模式：更新现有行
     const index = allRows.value.findIndex((r: UserOrderRow) => r.id === editingRow.value!.id)
     if (index !== -1) {
       let updatedRow: UserOrderRow = {
         ...editingRow.value,
-        orderNumber: editingRow.value.orderNumber || '', // システム自動生成、編集不可
+        orderNumber: editingRow.value.orderNumber || '',
         sourceOrderAt: data.sourceOrderAt !== undefined ? data.sourceOrderAt : editingRow.value.sourceOrderAt,
         carrierId: typeof data.carrierId === 'string' ? data.carrierId : (editingRow.value as any).carrierId || '',
         customerManagementNumber: data.customerManagementNumber || editingRow.value.customerManagementNumber || '',
-        // 嵌套地址结构
         orderer: {
           postalCode: data.orderer?.postalCode || '',
           prefecture: data.orderer?.prefecture || '',
@@ -1198,18 +1093,16 @@ const handleFormSubmit = (data: Record<string, any>) => {
 
       allRows.value[index] = updatedRow
       saveTableDataToStorage()
-      ElMessage.success('出荷指示を更新しました')
+      alert('出荷指示を更新しました')
     }
   } else {
-    // 新增模式：添加新行
     const tempId = generateTempId()
     let newRow: UserOrderRow = {
       id: tempId,
-      orderNumber: '', // システム自動生成（保存時にバックエンドで生成）
+      orderNumber: '',
       sourceOrderAt: data.sourceOrderAt,
       carrierId: typeof data.carrierId === 'string' ? data.carrierId : '',
       customerManagementNumber: data.customerManagementNumber || '',
-      // 嵌套地址结构
       orderer: {
         postalCode: data.orderer?.postalCode || '',
         prefecture: data.orderer?.prefecture || '',
@@ -1256,7 +1149,7 @@ const handleFormSubmit = (data: Record<string, any>) => {
 
     allRows.value.push(newRow)
     saveTableDataToStorage()
-    ElMessage.success('個別登録しました')
+    alert('個別登録しました')
   }
 
   editingRow.value = null
@@ -1267,20 +1160,15 @@ const handleImportClick = () => {
 }
 
 const handleImport = (importedRows: UserOrderRow[]) => {
-  // 追加导入的数据到现有数据中（不替换）
   const rowsWithDefaults = importedRows.map((row: UserOrderRow) => {
     let updatedRow = { ...row }
-    // 规范化 products 数组为新的 OrderProduct 结构
     if (Array.isArray(updatedRow.products)) {
       updatedRow.products = updatedRow.products.map((p: any): OrderProduct => {
         const quantityNum = p?.quantity !== undefined ? Number(p.quantity) : 1
         return {
-          // 兼容旧结构：使用 inputSku 或 sku
           inputSku: p?.inputSku || p?.sku || '',
           quantity: Number.isNaN(quantityNum) ? 1 : quantityNum,
-          // 如果已有解析结果，保留
           productName: p?.productName || p?.name || undefined,
-          // 保留上传的 barcode（优先于商品マスタ）
           ...(p?.barcode?.length ? { barcode: p.barcode } : {}),
         }
       })
@@ -1290,31 +1178,28 @@ const handleImport = (importedRows: UserOrderRow[]) => {
   })
   allRows.value.push(...rowsWithDefaults)
   saveTableDataToStorage()
-  ElMessage.success(`${importedRows.length}件のデータを取り込みしました`)
+  alert(`${importedRows.length}件のデータを取り込みしました`)
 }
 
-// 加载依頼主列表
 const loadOrderSourceCompanies = async () => {
   try {
     const companies = await fetchOrderSourceCompanies()
     orderSourceCompanies.value = companies
   } catch (error) {
     console.error('Failed to load order source companies:', error)
-    ElMessage.error('ご依頼主リストの読み込みに失敗しました')
+    alert('ご依頼主リストの読み込みに失敗しました')
   }
 }
 
-// 加载商品缓存
 const loadProductsCache = async () => {
   try {
     products.value = await fetchProducts()
-    // 商品マスタ読み込み後、既存行の商品スナップショットを再解決（localStorage復元時は最小データのみ保存のため）
     if (allRows.value.length > 0) {
       allRows.value = allRows.value.map((row) => applyProductDefaults(row))
     }
   } catch (error) {
     console.error('Failed to load products:', error)
-    ElMessage.warning('商品マスタの取得に失敗しました')
+    alert('商品マスタの取得に失敗しました')
   }
 }
 
@@ -1323,54 +1208,39 @@ const loadCarriers = async () => {
     carriers.value = await fetchCarriers({ enabled: true })
   } catch (error) {
     console.error('Failed to load carriers:', error)
-    ElMessage.warning('配送会社マスタの取得に失敗しました')
+    alert('配送会社マスタの取得に失敗しました')
   }
 }
 
-// 根据 SKU 自动填充 送り状種類 / クール区分（必要時）并补充商品
-// 送り状種類の自動計算ロジック：
-// - mailCalcEnabled: true の商品のみ計算対象
-// - 計算対象の商品で (quantity / mailCalcMaxQuantity) を合計
-//   - 合計 < 1 → メール便 ('A')
-//   - 合計 >= 1 → 宅急便 ('0')
-// - mailCalcEnabled: false の商品は計算対象外（元の invoiceType を維持）
 const applyProductDefaults = (row: UserOrderRow): UserOrderRow => {
   const next: UserOrderRow = { ...row }
   const pMap = productMap.value
 
   if (Array.isArray(next.products)) {
-    // 转换为新的 OrderProduct 结构
     next.products = next.products.map((p: any): OrderProduct => {
-      // 兼容旧结构：如果有inputSku就用inputSku，否则用sku
       const inputSku = (p.inputSku || p.sku || '').trim()
       const quantity = p.quantity ?? 1
 
-      // 如果已经是新结构且有productId，保持原样（但仍需传递已有数据以保留上传值）
       if (p.productId && p.inputSku) {
         return p as OrderProduct
       }
 
-      // 构建已有的上传数据（优先使用上传值）
       const existingData: Partial<OrderProduct> = {}
       if (p.barcode?.length) existingData.barcode = p.barcode
       if (p.name || p.productName) existingData.productName = p.productName || p.name
 
-      // 使用共享工具解析商品（传递已有数据以优先使用上传值）
       const resolved = resolveAndFillProduct(inputSku, quantity, pMap, existingData)
 
       return resolved
     })
 
-    // 自動計算 クール区分 と 送り状種類
     const matchedProducts = next.products.filter(p => p.productId)
     if (matchedProducts.length > 0) {
-      // クール区分を計算
       const nextCoolType = determineCoolType(next.products)
       if (nextCoolType !== undefined) {
         next.coolType = nextCoolType
       }
 
-      // 送り状種類を計算（新ロジック：メール便計算設定に基づく）
       const calculatedInvoiceType = determineInvoiceType(next.products, next.invoiceType as '0' | '8' | 'A' | undefined)
       if (calculatedInvoiceType !== null) {
         next.invoiceType = calculatedInvoiceType
@@ -1380,13 +1250,11 @@ const applyProductDefaults = (row: UserOrderRow): UserOrderRow => {
   return next
 }
 
-// 组件挂载时加载依頼主列表
 onMounted(() => {
   loadOrderSourceCompanies()
   loadProductsCache()
   loadCarriers()
 
-  // 初期化：从 cookie 读取同梱設定
   const saved = getCookie(BUNDLE_FILTER_COOKIE_KEY)
   if (saved) {
     try {
@@ -1404,20 +1272,17 @@ onMounted(() => {
     bundleModeEnabled.value = true
   }
 
-  // 从 localStorage 恢复表格数据
   const savedTableData = loadTableDataFromStorage()
   if (savedTableData.length > 0) {
     allRows.value = savedTableData
-    ElMessage.info(`${savedTableData.length}件のデータを復元しました`)
+    alert(`${savedTableData.length}件のデータを復元しました`)
   }
 })
 
-// 同梱設定保存
 const handleBundleFilterSave = (keys: string[]) => {
   bundleFilterKeys.value = keys
-  // 保存到 cookie，保持会话后持久
   setCookie(BUNDLE_FILTER_COOKIE_KEY, JSON.stringify(keys ?? []), 30)
-  ElMessage.success('同梱設定を保存しました')
+  alert('同梱設定を保存しました')
 }
 
 const handleBundleFilterUpdate = (keys: string[]) => {
@@ -1425,37 +1290,29 @@ const handleBundleFilterUpdate = (keys: string[]) => {
   setCookie(BUNDLE_FILTER_COOKIE_KEY, JSON.stringify(keys ?? []), 30)
 }
 
-// 同捆候補一覧ボタン: 同梱モードを有効化し、フィルターダイアログを開く
 const handleOpenBundleList = () => {
   if (bundleFilterKeys.value.length === 0) {
-    // フィルターが設定されていない場合、設定ダイアログを開く
     showBundleFilterDialog.value = true
   } else {
-    // フィルターが設定されている場合、同梱モードを有効化
     bundleModeEnabled.value = true
     setCookie(BUNDLE_MODE_COOKIE_KEY, '1', 30)
   }
 }
 
-// 同梱モード終了
 const handleExitBundleMode = () => {
   bundleModeEnabled.value = false
   setCookie(BUNDLE_MODE_COOKIE_KEY, '0', 30)
 }
 
-// 表头类名处理函数
-// 列标题行（headerIndex === 0）使用默认背景色，不添加特殊类名
-const headerClass: HeaderClassNameGetter<any> = () => {
+const headerClass = (): string => {
   return ''
 }
 
-// 表格属性：用于设置单元格样式（错误标记）
 const tableProps = computed(() => {
   return {
     cellProps: ({ rowData, column }: { rowData: UserOrderRow; column: any }) => {
       const props: any = {}
-      
-      // 检查单元格是否有错误
+
       const columnConfig = baseColumns.value.find((col) => col.key === column.key || col.dataKey === column.key)
       if (columnConfig) {
         const dataKey = (columnConfig.dataKey || columnConfig.key) as string
@@ -1470,7 +1327,7 @@ const tableProps = computed(() => {
           }
         }
       }
-      
+
       return props
     },
   }
@@ -1479,13 +1336,10 @@ const tableProps = computed(() => {
 const buildBulkUploadPayload = () => {
   return {
     items: allRows.value.map((row) => {
-      // Backend schema expects createOrderSchema fields with nested address structure
       const order = {
-        // orderNumber はシステム自動生成のため、送信時には含めない（バックエンドで生成される）
         ...(row.sourceOrderAt && { sourceOrderAt: row.sourceOrderAt }),
         carrierId: (row as any).carrierId,
         customerManagementNumber: row.customerManagementNumber,
-        // Nested orderer address (optional)
         orderer: {
           postalCode: row.orderer?.postalCode || '',
           prefecture: row.orderer?.prefecture || '',
@@ -1494,7 +1348,6 @@ const buildBulkUploadPayload = () => {
           name: row.orderer?.name || '',
           phone: row.orderer?.phone || '',
         },
-        // Nested recipient address (required)
         recipient: {
           postalCode: row.recipient?.postalCode || '',
           prefecture: row.recipient?.prefecture || '',
@@ -1504,30 +1357,23 @@ const buildBulkUploadPayload = () => {
           phone: row.recipient?.phone || '',
         },
         honorific: row.honorific ?? '様',
-        // 新しい OrderProduct 结构を送信
         products: Array.isArray(row.products)
           ? row.products.map((p: OrderProduct) => ({
-              // === ユーザー入力 ===
               inputSku: p.inputSku || '',
               quantity: typeof p.quantity === 'number' ? p.quantity : Number(p.quantity ?? 1),
-              // === auto-fill解析結果 ===
               productId: p.productId || undefined,
               productSku: p.productSku || undefined,
               productName: p.productName || undefined,
-              // === 子SKU情報 ===
               matchedSubSku: p.matchedSubSku ? {
                 code: p.matchedSubSku.code,
                 price: p.matchedSubSku.price,
                 description: p.matchedSubSku.description,
               } : undefined,
-              // === 親商品からスナップショット ===
               imageUrl: p.imageUrl || undefined,
               barcode: p.barcode,
               coolType: p.coolType,
-              // メール便計算設定
               mailCalcEnabled: p.mailCalcEnabled,
               mailCalcMaxQuantity: p.mailCalcMaxQuantity,
-              // === 価格情報 ===
               unitPrice: p.unitPrice,
               subtotal: p.subtotal,
             }))
@@ -1538,7 +1384,6 @@ const buildBulkUploadPayload = () => {
         deliveryTimeSlot: row.deliveryTimeSlot || undefined,
         deliveryDatePreference: row.deliveryDatePreference ? normalizeDateOnly(row.deliveryDatePreference) : undefined,
         orderSourceCompanyId: (row as any).orderSourceCompanyId || undefined,
-        // Carrier-specific data (yamato sort code, hatsuBaseNo, etc.)
         carrierData: row.carrierData ? {
           yamato: row.carrierData.yamato ? {
             sortingCode: row.carrierData.yamato.sortingCode || undefined,
@@ -1546,7 +1391,6 @@ const buildBulkUploadPayload = () => {
             hatsuBaseNo2: row.carrierData.yamato.hatsuBaseNo2 || undefined,
           } : undefined,
         } : undefined,
-        // Nested sender address (required)
         sender: {
           postalCode: row.sender?.postalCode || '',
           prefecture: row.sender?.prefecture || '',
@@ -1583,42 +1427,28 @@ const handleSubmitClick = async () => {
   clearBackendErrors()
 
   if (!allRows.value.length) {
-    ElMessage.warning('登録するデータがありません')
+    alert('登録するデータがありません')
     return
   }
 
   const invalidRows = allRows.value.filter((r) => hasFrontendRowErrors(r))
   if (invalidRows.length > 0) {
     displayFilter.value = 'error'
-    ElMessage.error(`入力に誤りがある行が${invalidRows.length}件あります。エラー行のみ表示に切り替えました。`)
+    alert(`入力に誤りがある行が${invalidRows.length}件あります。エラー行のみ表示に切り替えました。`)
     return
   }
 
-  try {
-    await ElMessageBox.confirm(
-      `登録対象：${allRows.value.length}件\n出荷指示登録しますか？`,
-      '確認',
-      {
-        confirmButtonText: '登録',
-        cancelButtonText: 'キャンセル',
-        type: 'warning',
-        dangerouslyUseHTMLString: false,
-      },
-    )
-  } catch {
-    return
-  }
+  if (!confirm(`登録対象：${allRows.value.length}件\n出荷指示登録しますか？`)) return
 
   try {
     isSubmitting.value = true
     const payload = buildBulkUploadPayload()
     const res = await createShipmentOrdersBulk(payload)
-    ElMessage.success(res?.message || '登録しました')
+    alert(res?.message || '登録しました')
 
     const successes = Array.isArray((res as any)?.data?.successes) ? ((res as any).data.successes as any[]) : []
     const failures = Array.isArray((res as any)?.data?.failures) ? ((res as any).data.failures as any[]) : []
 
-    // Remove successfully uploaded rows, keep failures (if any)
     if (successes.length > 0) {
       const successIds = new Set(successes.map((s) => s?.clientId).filter(Boolean))
       allRows.value = allRows.value.filter((r) => !successIds.has(r.id))
@@ -1631,7 +1461,6 @@ const handleSubmitClick = async () => {
       displayFilter.value = 'error'
       submitErrorDialogVisible.value = true
     } else {
-      // All success: clear UI
       allRows.value = []
       rows.value = []
       displayFilter.value = 'all'
@@ -1644,24 +1473,22 @@ const handleSubmitClick = async () => {
         applyBackendErrors(err.errors)
         showOnlyErrors.value = true
         submitErrorDialogVisible.value = true
-        ElMessage.error('サーバー側のバリデーションエラーがあります。')
+        alert('サーバー側のバリデーションエラーがあります。')
         return
       }
-      ElMessage.error(err.message || 'アップロードに失敗しました')
+      alert(err.message || 'アップロードに失敗しました')
       return
     }
-    ElMessage.error(err?.message || 'アップロードに失敗しました')
+    alert(err?.message || 'アップロードに失敗しました')
   } finally {
     isSubmitting.value = false
   }
 }
 
-// 同梱合并：将同组的订单合并到首行，商品数组合并，其余字段保留首行
 const handleBundleMerge = (groupKey: string) => {
   if (!groupKey) return
   const groups = new Map<string, UserOrderRow[]>()
   for (const row of filteredRows.value) {
-    // Use getNestedValue to support nested paths like 'carrierData.yamato.hatsuBaseNo1'
     const keyParts = bundleFilterKeys.value.map((k) => getNestedValue(row, k) ?? '')
     const k = JSON.stringify(keyParts)
     if (!groups.has(k)) groups.set(k, [])
@@ -1670,7 +1497,7 @@ const handleBundleMerge = (groupKey: string) => {
 
   const targetGroup = groups.get(groupKey)
   if (!targetGroup || targetGroup.length < 2) {
-    ElMessage.warning('同梱対象が2件以上必要です')
+    alert('同梱対象が2件以上必要です')
     return
   }
 
@@ -1685,14 +1512,10 @@ const handleBundleMerge = (groupKey: string) => {
     ...rest.flatMap((r) => (((r as any).sourceRawRows ?? []) as any[])),
   ]
 
-  // 同梱後、送り状種類とクール区分を再計算
   const mergedCoolType = determineCoolType(mergedProducts)
-  // 同梱時は first の invoiceType をデフォルトとして使用
   const mergedInvoiceType = determineInvoiceType(mergedProducts, first.invoiceType as '0' | '8' | 'A' | undefined)
 
-  // 保存原始行以便解除同梱時還原
   const originalRows = targetGroup.map((r) => {
-    // 清除之前的同梱信息，保留原始数据
     const { _bundleOriginalRows, ...cleanRow } = r as any
     return cleanRow
   })
@@ -1700,7 +1523,6 @@ const handleBundleMerge = (groupKey: string) => {
   const mergedRow: UserOrderRow = {
     ...first,
     orderNumber: first.orderNumber || '',
-    // 嵌套地址结构
     recipient: {
       postalCode: first.recipient?.postalCode || '',
       prefecture: first.recipient?.prefecture || '',
@@ -1720,16 +1542,13 @@ const handleBundleMerge = (groupKey: string) => {
     handlingTags: first.handlingTags || [],
     products: mergedProducts,
     sourceRawRows: mergedSourceRawRows,
-    // 同梱後の自動計算結果を反映
     coolType: mergedCoolType ?? first.coolType,
     invoiceType: mergedInvoiceType ?? first.invoiceType,
     updatedAt: new Date().toISOString(),
     id: first.id,
-    // 保存原始行以便解除同梱
     _bundleOriginalRows: originalRows,
   } as any
 
-  // 从 allRows 中替换分组行：保留首行位置，移除其余
   const groupIds = new Set(targetGroup.map((r) => r.id))
   const nextAll = [] as UserOrderRow[]
   for (const row of allRows.value) {
@@ -1741,55 +1560,38 @@ const handleBundleMerge = (groupKey: string) => {
   }
   allRows.value = nextAll
   saveTableDataToStorage()
-  ElMessage.success(`同梱完了：${targetGroup.length}件を統合しました`)
+  alert(`同梱完了：${targetGroup.length}件を統合しました`)
 }
 
-// 同梱解除：選択された同梱済み行を元の複数行に戻す
 const handleUnbundleSelected = async () => {
   const selectedSet = new Set(tableSelectedKeys.value)
   if (selectedSet.size === 0) {
-    ElMessage.warning('解除する行を選択してください')
+    alert('解除する行を選択してください')
     return
   }
 
-  // 選択された行の中から同梱済み行を取得
   const bundledRows = allRows.value.filter((row) => {
     if (!selectedSet.has(row.id)) return false
     return Array.isArray((row as any)._bundleOriginalRows) && (row as any)._bundleOriginalRows.length > 0
   })
 
   if (bundledRows.length === 0) {
-    ElMessage.warning('選択された行に同梱済みの行がありません')
+    alert('選択された行に同梱済みの行がありません')
     return
   }
 
-  try {
-    const totalOriginalRows = bundledRows.reduce((sum, row) => sum + ((row as any)._bundleOriginalRows?.length || 0), 0)
-    await ElMessageBox.confirm(
-      `選択した${bundledRows.length}件の同梱を解除し、${totalOriginalRows}件の元の行に戻しますか？`,
-      '同梱解除',
-      {
-        confirmButtonText: '解除',
-        cancelButtonText: 'キャンセル',
-        type: 'warning',
-      },
-    )
-  } catch {
-    return
-  }
+  const totalOriginalRows = bundledRows.reduce((sum, row) => sum + ((row as any)._bundleOriginalRows?.length || 0), 0)
+  if (!confirm(`選択した${bundledRows.length}件の同梱を解除し、${totalOriginalRows}件の元の行に戻しますか？`)) return
 
-  // 同梱を解除して元の行を復元
   const bundledIds = new Set(bundledRows.map((r) => r.id))
   const nextAll: UserOrderRow[] = []
   let restoredCount = 0
 
   for (const row of allRows.value) {
     if (bundledIds.has(row.id)) {
-      // 同梱済み行を元の複数行に展開
       const originalRows = (row as any)._bundleOriginalRows as UserOrderRow[]
       if (Array.isArray(originalRows) && originalRows.length > 0) {
         for (const originalRow of originalRows) {
-          // 元の行を新しいIDで追加（重複を避けるため）
           const restoredRow = {
             ...originalRow,
             updatedAt: new Date().toISOString(),
@@ -1798,7 +1600,6 @@ const handleUnbundleSelected = async () => {
           restoredCount++
         }
       } else {
-        // 元の行がない場合はそのまま保持
         nextAll.push(row)
       }
     } else {
@@ -1809,27 +1610,24 @@ const handleUnbundleSelected = async () => {
   allRows.value = nextAll
   tableSelectedKeys.value = []
   saveTableDataToStorage()
-  ElMessage.success(`同梱解除完了：${restoredCount}件の行を復元しました`)
+  alert(`同梱解除完了：${restoredCount}件の行を復元しました`)
 }
 
-// 単一行の同梱解除（行内ボタンから呼び出し）
 const handleUnbundleSingleRow = (rowId: string) => {
   const row = allRows.value.find((r) => r.id === rowId)
   if (!row) return
 
   const originalRows = (row as any)._bundleOriginalRows as UserOrderRow[]
   if (!Array.isArray(originalRows) || originalRows.length === 0) {
-    ElMessage.warning('この行は同梱されていません')
+    alert('この行は同梱されていません')
     return
   }
 
-  // 同梱を解除して元の行を復元
   const nextAll: UserOrderRow[] = []
   let restoredCount = 0
 
   for (const r of allRows.value) {
     if (r.id === rowId) {
-      // 同梱済み行を元の複数行に展開
       for (const originalRow of originalRows) {
         const restoredRow = {
           ...originalRow,
@@ -1845,7 +1643,7 @@ const handleUnbundleSingleRow = (rowId: string) => {
 
   allRows.value = nextAll
   saveTableDataToStorage()
-  ElMessage.success(`同梱解除完了：${restoredCount}件の行を復元しました`)
+  alert(`同梱解除完了：${restoredCount}件の行を復元しました`)
 }
 
 const selectedBundleGroupKeys = computed(() => {
@@ -1866,21 +1664,18 @@ const selectedBundleGroupKeys = computed(() => {
   return Array.from(keys)
 })
 
-// 全て同梱：選択された行が含まれる同梱グループを一括で同梱する
 const handleBundleMergeAllSelected = async () => {
   if (!bundleModeEnabled.value || bundleFilterKeys.value.length === 0) {
-    ElMessage.warning('同梱モードとフィルターを有効にしてください')
+    alert('同梱モードとフィルターを有効にしてください')
     return
   }
   if (!tableSelectedKeys.value.length) {
-    ElMessage.warning('左側のチェックで同梱したい行を選択してください')
+    alert('左側のチェックで同梱したい行を選択してください')
     return
   }
 
-  // Build groups from current filtered rows (stable order), only keep groups with >= 2 rows
   const groups = new Map<string, UserOrderRow[]>()
   for (const row of filteredRows.value) {
-    // Use getNestedValue to support nested paths like 'carrierData.yamato.hatsuBaseNo1'
     const keyParts = bundleFilterKeys.value.map((k) => getNestedValue(row, k) ?? '')
     const gk = JSON.stringify(keyParts)
     if (!groups.has(gk)) groups.set(gk, [])
@@ -1899,26 +1694,12 @@ const handleBundleMergeAllSelected = async () => {
   }
 
   if (groupKeysToMerge.length === 0) {
-    ElMessage.warning('選択した行に同梱可能なグループがありません')
+    alert('選択した行に同梱可能なグループがありません')
     return
   }
 
-  try {
-    await ElMessageBox.confirm(
-      `選択行を含む${groupKeysToMerge.length}グループ（合計${totalRowsToMerge}件）を同梱しますか？`,
-      '全て同梱',
-      {
-        confirmButtonText: '同梱',
-        cancelButtonText: 'キャンセル',
-        type: 'warning',
-        dangerouslyUseHTMLString: false,
-      },
-    )
-  } catch {
-    return
-  }
+  if (!confirm(`選択行を含む${groupKeysToMerge.length}グループ（合計${totalRowsToMerge}件）を同梱しますか？`)) return
 
-  // Merge all selected groups in one pass, saving once.
   const mergedByFirstId = new Map<string, UserOrderRow>()
   const idsToRemove = new Set<string>()
   let mergedGroupCount = 0
@@ -1939,12 +1720,9 @@ const handleBundleMergeAllSelected = async () => {
       ...rest.flatMap((r) => (((r as any).sourceRawRows ?? []) as any[])),
     ]
 
-    // 同梱後、送り状種類とクール区分を再計算
     const mergedCoolType = determineCoolType(mergedProducts)
-    // 同梱時は first の invoiceType をデフォルトとして使用
     const mergedInvoiceType = determineInvoiceType(mergedProducts, first.invoiceType as '0' | '8' | 'A' | undefined)
 
-    // 保存原始行以便解除同梱時還原
     const originalRows = targetGroup.map((r) => {
       const { _bundleOriginalRows, ...cleanRow } = r as any
       return cleanRow
@@ -1953,7 +1731,6 @@ const handleBundleMergeAllSelected = async () => {
     const mergedRow: UserOrderRow = {
       ...first,
       orderNumber: first.orderNumber || '',
-      // 嵌套地址结构
       recipient: {
         postalCode: first.recipient?.postalCode || '',
         prefecture: first.recipient?.prefecture || '',
@@ -1973,12 +1750,10 @@ const handleBundleMergeAllSelected = async () => {
       handlingTags: first.handlingTags || [],
       products: mergedProducts,
       sourceRawRows: mergedSourceRawRows,
-      // 同梱後の自動計算結果を反映
       coolType: mergedCoolType ?? first.coolType,
       invoiceType: mergedInvoiceType ?? first.invoiceType,
       updatedAt: new Date().toISOString(),
       id: first.id,
-      // 保存原始行以便解除同梱
       _bundleOriginalRows: originalRows,
     } as any
 
@@ -1999,39 +1774,24 @@ const handleBundleMergeAllSelected = async () => {
 
   tableSelectedKeys.value = []
   saveTableDataToStorage()
-  ElMessage.success(`全て同梱完了：${mergedGroupCount}グループを同梱しました`)
+  alert(`全て同梱完了：${mergedGroupCount}グループを同梱しました`)
 }
 
-// 清除所有数据
 const handleClearAll = async () => {
   if (allRows.value.length === 0) {
-    ElMessage.info('クリアするデータがありません')
+    alert('クリアするデータがありません')
     return
   }
 
-  try {
-    await ElMessageBox.confirm(
-      `すべてのデータ（${allRows.value.length}件）をクリアしますか？\nこの操作は元に戻せません。`,
-      'すべてのデータをクリア',
-      {
-        confirmButtonText: 'クリア',
-        cancelButtonText: 'キャンセル',
-        type: 'warning',
-        dangerouslyUseHTMLString: false,
-      },
-    )
+  if (!confirm(`すべてのデータ（${allRows.value.length}件）をクリアしますか？\nこの操作は元に戻せません。`)) return
 
-    allRows.value = []
-    rows.value = []
-    tableSelectedKeys.value = []
-    displayFilter.value = 'all'
-    clearBackendErrors()
-    clearTableDataStorage()
-    ElMessage.success('すべてのデータをクリアしました')
-  } catch (e: any) {
-    if (e === 'cancel') return
-    ElMessage.error('データのクリアに失敗しました')
-  }
+  allRows.value = []
+  rows.value = []
+  tableSelectedKeys.value = []
+  displayFilter.value = 'all'
+  clearBackendErrors()
+  clearTableDataStorage()
+  alert('すべてのデータをクリアしました')
 }
 </script>
 
@@ -2207,14 +1967,13 @@ const handleClearAll = async () => {
   gap: 10px;
 }
 
-/* 依頼主一括設定弹窗中的行布局和提示 */
-.sender-bulk__meta + .el-form .row {
+.row {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.sender-bulk__meta + .el-form .hint {
+.hint {
   color: #909399;
   font-size: 12px;
   line-height: 1.5;
@@ -2300,6 +2059,14 @@ const handleClearAll = async () => {
   color: #f56c6c;
   white-space: pre-wrap;
 }
+
+.o-segmented { display:inline-flex; border:1px solid var(--o-border-color, #d6d6d6); border-radius:var(--o-border-radius, 4px); overflow:hidden; }
+.o-segmented-btn { padding:0.25rem 0.75rem; border:none; background:var(--o-view-background, #fff); font-size:var(--o-font-size-small, 13px); cursor:pointer; border-right:1px solid var(--o-border-color, #d6d6d6); }
+.o-segmented-btn:last-child { border-right:none; }
+.o-segmented-btn.active { background:var(--o-brand-primary, #714B67); color:#fff; }
+
+.o-form-group { margin-bottom:1rem; }
+.o-form-label { display:block; font-size:var(--o-font-size-small, 13px); font-weight:500; color:var(--o-gray-700, #606266); margin-bottom:0.25rem; }
+
+.o-checkbox { display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:13px; }
 </style>
-
-

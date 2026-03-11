@@ -1,65 +1,87 @@
 <template>
-  <el-dialog v-model="visibleProxy" width="860px" :title="dialogTitle" destroy-on-close>
+  <ODialog
+    :open="visibleProxy"
+    :title="dialogTitle"
+    size="lg"
+    @close="visibleProxy = false"
+  >
     <!-- 結果摘要 -->
     <div class="summary">
-      <el-alert
-        :type="hasErrors ? 'error' : 'success'"
-        :closable="false"
-        :title="summaryTitle"
-        show-icon
-      />
+      <div
+        class="alert-banner"
+        :class="hasErrors ? 'alert-error' : 'alert-success'"
+      >
+        <svg v-if="hasErrors" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <span>{{ summaryTitle }}</span>
+      </div>
 
       <!-- 統計数字（エラーがない場合） -->
       <div v-if="!hasErrors" class="stats">
-        <el-tag v-if="result.insertedCount > 0" type="success" size="large">
+        <span v-if="result.insertedCount > 0" class="o-badge o-badge-success" style="font-size: 14px; padding: 6px 12px">
           登録: {{ result.insertedCount }}件
-        </el-tag>
-        <el-tag v-if="result.updatedCount > 0" type="warning" size="large">
+        </span>
+        <span v-if="result.updatedCount > 0" class="o-badge o-badge-warning" style="font-size: 14px; padding: 6px 12px">
           更新: {{ result.updatedCount }}件
-        </el-tag>
-        <el-tag v-if="result.skippedCount > 0" type="info" size="large">
+        </span>
+        <span v-if="result.skippedCount > 0" class="o-badge o-badge-info" style="font-size: 14px; padding: 6px 12px">
           スキップ: {{ result.skippedCount }}件
-        </el-tag>
+        </span>
       </div>
     </div>
 
     <!-- エラーテーブル（エラーがある場合） -->
-    <el-table v-if="hasErrors" :data="result.errors" height="360" border size="small">
-      <el-table-column label="行" width="90">
-        <template #default="{ row }">{{ (row.rowIndex ?? 0) + 1 }}</template>
-      </el-table-column>
-      <el-table-column prop="sku" label="SKU" width="180" />
-      <el-table-column prop="field" label="フィールド" width="160" />
-      <el-table-column prop="message" label="メッセージ" min-width="360" />
-    </el-table>
+    <div v-if="hasErrors" style="max-height: 360px; overflow: auto; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px">
+      <table class="o-list-table" style="font-size: 13px">
+        <thead>
+          <tr>
+            <th style="width: 90px">行</th>
+            <th style="width: 180px">SKU</th>
+            <th style="width: 160px">フィールド</th>
+            <th style="min-width: 360px">メッセージ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(err, idx) in result.errors" :key="idx">
+            <td>{{ (err.rowIndex ?? 0) + 1 }}</td>
+            <td>{{ err.sku }}</td>
+            <td>{{ err.field }}</td>
+            <td>{{ err.message }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <!-- スキップされたSKU一覧（skipモードの場合） -->
     <div v-else-if="result.skippedSkus && result.skippedSkus.length > 0" class="skipped-section">
       <h4>スキップされたSKU:</h4>
       <div class="skipped-tags">
-        <el-tag
+        <span
           v-for="sku in result.skippedSkus.slice(0, 20)"
           :key="sku"
-          size="small"
-          type="info"
+          class="o-badge o-badge-info"
         >
           {{ sku }}
-        </el-tag>
-        <el-text v-if="result.skippedSkus.length > 20" type="info" size="small">
+        </span>
+        <span v-if="result.skippedSkus.length > 20" style="color: var(--o-gray-500, #6c757d); font-size: 13px">
           ...他 {{ result.skippedSkus.length - 20 }}件
-        </el-text>
+        </span>
       </div>
     </div>
 
     <template #footer>
-      <el-button type="primary" @click="visibleProxy = false">閉じる</el-button>
+      <button class="o-btn o-btn-primary" @click="visibleProxy = false">閉じる</button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ElDialog, ElAlert, ElTag, ElText, ElTable, ElTableColumn, ElButton } from 'element-plus'
+import ODialog from '@/components/odoo/ODialog.vue'
 
 export type ImportRowError = {
   rowIndex: number
@@ -124,6 +146,28 @@ const summaryTitle = computed(() => {
 <style scoped>
 .summary {
   margin-bottom: 16px;
+}
+
+.alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.alert-error {
+  background: #fef0f0;
+  color: #f56c6c;
+  border: 1px solid #fde2e2;
+}
+
+.alert-success {
+  background: #f0f9eb;
+  color: #67c23a;
+  border: 1px solid #e1f3d8;
 }
 
 .stats {

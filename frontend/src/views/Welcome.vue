@@ -9,70 +9,49 @@
     <!-- 快速导航卡片 -->
     <div class="quick-nav-section">
       <h2 class="section-title">クイックアクセス</h2>
-      <el-row :gutter="20">
-        <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="card in quickNavCards" :key="card.path">
-          <el-card 
-            class="nav-card" 
-            shadow="hover"
-            @click="navigateTo(card.path)"
-          >
-            <div class="card-content">
-              <el-icon class="card-icon" :size="40">
-                <component :is="card.icon" />
-              </el-icon>
-              <h3 class="card-title">{{ card.title }}</h3>
-              <p class="card-description">{{ card.description }}</p>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+      <div class="card-grid">
+        <div
+          v-for="card in quickNavCards"
+          :key="card.path"
+          class="o-card nav-card"
+          @click="navigateTo(card.path)"
+        >
+          <div class="card-content">
+            <span class="card-icon">{{ card.emoji }}</span>
+            <h3 class="card-title">{{ card.title }}</h3>
+            <p class="card-description">{{ card.description }}</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 功能模块 -->
     <div class="modules-section">
       <h2 class="section-title">主要機能</h2>
-      <el-row :gutter="20">
-        <el-col :xs="24" :sm="12" :md="8" v-for="module in modules" :key="module.name">
-          <el-card class="module-card" shadow="hover">
-            <template #header>
-              <div class="module-header">
-                <el-icon class="module-icon">
-                  <component :is="module.icon" />
-                </el-icon>
-                <span class="module-name">{{ module.name }}</span>
-              </div>
-            </template>
-            <ul class="module-features">
-              <li v-for="feature in module.features" :key="feature">
-                {{ feature }}
-              </li>
-            </ul>
-            <div class="module-actions">
-              <el-button 
-                type="primary" 
-                plain 
-                @click="navigateTo(module.path)"
-              >
-                アクセス
-              </el-button>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+      <div class="module-grid">
+        <div v-for="module in modules" :key="module.name" class="o-card module-card">
+          <div class="module-header">
+            <span class="module-icon">{{ module.emoji }}</span>
+            <span class="module-name">{{ module.name }}</span>
+          </div>
+          <ul class="module-features">
+            <li v-for="feature in module.features" :key="feature">
+              {{ feature }}
+            </li>
+          </ul>
+          <div class="module-actions">
+            <button class="o-btn o-btn-primary" @click="navigateTo(module.path)">
+              アクセス
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import {
-  Document,
-  Location,
-  Menu,
-  Setting,
-  Plus,
-  List
-} from '@element-plus/icons-vue'
 
 const router = useRouter()
 
@@ -81,19 +60,19 @@ const quickNavCards = [
   {
     title: '出荷指示作成',
     description: '新しい出荷指示を作成',
-    icon: Plus,
+    emoji: '+',
     path: '/shipment-orders/create'
   },
   {
     title: '出荷指示確定',
     description: '出荷指示を確定・管理',
-    icon: List,
+    emoji: '☰',
     path: '/shipment-orders/confirm'
   },
   {
     title: '出荷作業一覧',
     description: '出荷作業を管理',
-    icon: Menu,
+    emoji: '☰',
     path: '/shipment-operations/tasks'
   }
 ]
@@ -102,7 +81,7 @@ const quickNavCards = [
 const modules = [
   {
     name: '出荷指示管理',
-    icon: Document,
+    emoji: '📄',
     path: '/shipment-orders/create',
     features: [
       '出荷指示の作成',
@@ -112,7 +91,7 @@ const modules = [
   },
   {
     name: '送り状管理',
-    icon: Location,
+    emoji: '📍',
     path: '/waybill-management/export',
     features: [
       '配送会社データ出力',
@@ -121,7 +100,7 @@ const modules = [
   },
   {
     name: '出荷作業',
-    icon: Menu,
+    emoji: '📋',
     path: '/shipment-operations/tasks',
     features: [
       '出荷グループ作成',
@@ -131,7 +110,7 @@ const modules = [
   },
   {
     name: '設定',
-    icon: Setting,
+    emoji: '⚙',
     path: '/settings/basic',
     features: [
       '基本設定',
@@ -183,21 +162,26 @@ const navigateTo = (path: string) => {
 .section-title {
   font-size: 24px;
   font-weight: 600;
-  color: #303133;
+  color: var(--o-gray-700, #303133);
   margin-bottom: 20px;
   padding-bottom: 12px;
-  border-bottom: 2px solid #e4e7ed;
+  border-bottom: 2px solid var(--o-border-color, #e4e7ed);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
 }
 
 .nav-card {
   cursor: pointer;
   transition: all 0.3s;
-  margin-bottom: 20px;
-  height: 100%;
 }
 
 .nav-card:hover {
   transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
 .card-content {
@@ -206,61 +190,72 @@ const navigateTo = (path: string) => {
 }
 
 .card-icon {
-  color: #409eff;
+  font-size: 40px;
+  color: var(--o-brand-primary, #409eff);
+  display: block;
   margin-bottom: 16px;
 }
 
 .card-title {
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: var(--o-gray-700, #303133);
   margin: 0 0 8px 0;
 }
 
 .card-description {
   font-size: 14px;
-  color: #909399;
+  color: var(--o-gray-500, #909399);
   margin: 0;
 }
 
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
 .module-card {
-  margin-bottom: 20px;
-  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .module-header {
   display: flex;
   align-items: center;
   gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--o-border-color, #e4e7ed);
+  margin-bottom: 12px;
 }
 
 .module-icon {
   font-size: 24px;
-  color: #409eff;
 }
 
 .module-name {
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: var(--o-gray-700, #303133);
 }
 
 .module-features {
   list-style: none;
   padding: 0;
   margin: 0 0 20px 0;
+  flex: 1;
 }
 
 .module-features li {
   padding: 8px 0;
   padding-left: 24px;
   position: relative;
-  color: #606266;
+  color: var(--o-gray-600, #606266);
   font-size: 14px;
 }
 
 .module-features li::before {
-  content: '✓';
+  content: '\2713';
   position: absolute;
   left: 0;
   color: #67c23a;
@@ -269,6 +264,37 @@ const navigateTo = (path: string) => {
 
 .module-actions {
   text-align: right;
+}
+
+.o-card {
+  background: var(--o-view-background, #fff);
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: var(--o-border-radius, 8px);
+  padding: 1.25rem;
+}
+
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  cursor: pointer;
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-700, #303133);
+  transition: 0.2s;
+}
+
+.o-btn-primary {
+  background: var(--o-brand-primary, #714b67);
+  color: #fff;
+  border-color: var(--o-brand-primary, #714b67);
+}
+
+.o-btn-primary:hover {
+  opacity: 0.85;
 }
 
 @media (max-width: 768px) {
@@ -283,7 +309,13 @@ const navigateTo = (path: string) => {
   .section-title {
     font-size: 20px;
   }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .module-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
-
-

@@ -1,7 +1,8 @@
 import { h } from 'vue'
-import { ElCheckbox, TableV2Placeholder } from 'element-plus'
 import type { FunctionalComponent } from 'vue'
-import type { TableV2CustomizedHeaderSlotParam } from 'element-plus'
+
+// Placeholder symbol (was element-plus TableV2Placeholder)
+const TableV2Placeholder = Symbol('placeholder')
 
 export interface HeaderGroupCellStyle {
   // 背景色
@@ -27,9 +28,15 @@ export interface HeaderGroupingConfig {
   rows: HeaderGroupConfig[]
 }
 
+interface HeaderSlotParam {
+  cells: any[]
+  columns: any[]
+  headerIndex: number
+}
+
 export const createCustomizedHeader = (
   groupingConfig?: HeaderGroupingConfig,
-): FunctionalComponent<TableV2CustomizedHeaderSlotParam> => {
+): FunctionalComponent<HeaderSlotParam> => {
   return ({ cells, columns, headerIndex }) => {
     // 如果没有分组配置，或者是最底层（最后一行），直接返回原始 cells
     if (!groupingConfig || headerIndex === groupingConfig.rows.length) {
@@ -163,4 +170,3 @@ export const createCustomizedHeader = (
     return groupCells
   }
 }
-

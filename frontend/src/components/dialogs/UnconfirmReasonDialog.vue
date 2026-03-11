@@ -1,12 +1,11 @@
 <template>
-  <el-dialog
-    v-model="visible"
+  <ODialog
+    :open="visible"
     title="確認取消"
+    @close="handleCancel"
     width="500px"
-    :close-on-click-modal="false"
   >
     <div class="dialog-content">
-      <!-- 订单信息 -->
       <div class="order-info">
         <p>注文番号: <strong>{{ orderNumber }}</strong></p>
         <p>確認を取り消し、未確認状態に戻します。</p>
@@ -18,66 +17,61 @@
         </p>
       </div>
 
-      <!-- 模板选择区域 -->
       <div class="template-section">
         <div class="template-header">
           <span class="template-label">テンプレート:</span>
         </div>
         <div class="template-tags">
-          <el-tag
+          <span
             v-for="(template, index) in templates"
             :key="index"
             class="template-tag"
-            :closable="true"
             @click="applyTemplate(template)"
-            @close="removeTemplate(index)"
           >
             {{ template }}
-          </el-tag>
-          <el-input
+            <span class="template-tag-close" @click.stop="removeTemplate(index)">✕</span>
+          </span>
+          <input
             v-if="showAddInput"
             ref="addInputRef"
+            class="o-input add-input"
             v-model="newTemplate"
-            class="add-input"
-            size="small"
             placeholder="テンプレート名"
             @keyup.enter="confirmAddTemplate"
             @blur="confirmAddTemplate"
           />
-          <el-button
+          <button
             v-else
-            class="add-btn"
-            size="small"
-            :icon="Plus"
-            circle
+            class="o-btn o-btn-secondary o-btn-sm add-btn"
             @click="showAddInput = true"
-          />
+          >
+            +
+          </button>
         </div>
       </div>
 
-      <!-- 理由输入 -->
       <div class="reason-section">
-        <el-input
+        <textarea
+          class="o-input"
           v-model="reason"
-          type="textarea"
-          :rows="3"
+          rows="3"
           placeholder="取消理由を入力してください（空欄可、入力すると内部データとして記録されます）"
-        />
+        ></textarea>
       </div>
     </div>
 
     <template #footer>
-      <el-button @click="handleCancel">キャンセル</el-button>
-      <el-button type="warning" :loading="loading" @click="handleConfirm">
-        確認取消
-      </el-button>
+      <button class="o-btn o-btn-secondary" @click="handleCancel">キャンセル</button>
+      <button class="o-btn o-btn-primary" :disabled="loading" @click="handleConfirm">
+        {{ loading ? '処理中...' : '確認取消' }}
+      </button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 
 const STORAGE_KEY = 'unconfirmReasonTemplates'
 const DEFAULT_TEMPLATES = ['送り状種類修正必要']
@@ -101,16 +95,14 @@ const reason = ref('')
 const templates = ref<string[]>([])
 const showAddInput = ref(false)
 const newTemplate = ref('')
-const addInputRef = ref<any>(null)
+const addInputRef = ref<HTMLInputElement | null>(null)
 
-// 从 localStorage 加载模板
 const loadTemplates = () => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
       templates.value = JSON.parse(stored)
     } else {
-      // 首次使用，设置默认模板
       templates.value = [...DEFAULT_TEMPLATES]
       saveTemplates()
     }
@@ -119,7 +111,6 @@ const loadTemplates = () => {
   }
 }
 
-// 保存模板到 localStorage
 const saveTemplates = () => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(templates.value))
@@ -128,18 +119,15 @@ const saveTemplates = () => {
   }
 }
 
-// 应用模板
 const applyTemplate = (template: string) => {
   reason.value = template
 }
 
-// 删除模板
 const removeTemplate = (index: number) => {
   templates.value.splice(index, 1)
   saveTemplates()
 }
 
-// 确认添加模板
 const confirmAddTemplate = () => {
   const trimmed = newTemplate.value.trim()
   if (trimmed && !templates.value.includes(trimmed)) {
@@ -150,7 +138,6 @@ const confirmAddTemplate = () => {
   showAddInput.value = false
 }
 
-// 监听 showAddInput，自动聚焦
 watch(showAddInput, async (val) => {
   if (val) {
     await nextTick()
@@ -158,7 +145,6 @@ watch(showAddInput, async (val) => {
   }
 })
 
-// 同步 visible
 watch(
   () => props.modelValue,
   (val) => {
@@ -242,14 +228,28 @@ onMounted(() => {
 }
 
 .template-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid #d9ecff;
+  border-radius: 4px;
+  background: #ecf5ff;
+  color: #409eff;
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .template-tag:hover {
-  background-color: #ecf5ff;
+  background-color: #d9ecff;
   border-color: #409eff;
-  color: #409eff;
+}
+
+.template-tag-close {
+  font-size: 11px;
+  cursor: pointer;
+  margin-left: 2px;
 }
 
 .add-input {
@@ -257,7 +257,7 @@ onMounted(() => {
 }
 
 .add-btn {
-  padding: 4px;
+  padding: 4px 8px;
 }
 
 .reason-section {

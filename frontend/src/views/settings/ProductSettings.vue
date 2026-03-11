@@ -6,8 +6,12 @@
         <p class="page-subtitle">SKU管理番号 と印刷用商品名、商品名、検品コード (バーコード)、クール区分、メール便計算を管理します</p>
       </div>
       <div class="page-actions">
-        <el-button type="primary" :icon="Plus" @click="openCreate">商品を追加</el-button>
-        <el-button type="success" :icon="Upload" @click="showImportDialog = true">取り込みファイルを選択</el-button>
+        <button class="o-btn o-btn-primary" @click="openCreate">
+          <span class="o-icon">+</span> 商品を追加
+        </button>
+        <button class="o-btn o-btn-success" @click="showImportDialog = true">
+          <span class="o-icon">&#8593;</span> 取り込みファイルを選択
+        </button>
       </div>
     </div>
 
@@ -50,7 +54,9 @@
       <template #extra>
         <!-- Image Upload Section -->
         <div class="image-upload-section">
-          <el-divider content-position="left">商品画像</el-divider>
+          <div class="o-divider">
+            <span class="o-divider-text">商品画像</span>
+          </div>
           <div class="image-upload-content">
             <div class="image-preview">
               <img :src="resolveImageUrl(editImageUrl)" class="preview-img" @error="(e: Event) => { (e.target as HTMLImageElement).src = noImageSrc }" />
@@ -58,27 +64,23 @@
             <div class="image-inputs">
               <!-- No image or has image: show action buttons -->
               <div v-if="!showUrlInput" class="image-input-row">
-                <el-upload
-                  :show-file-list="false"
-                  :auto-upload="false"
-                  accept="image/*"
-                  @change="handleImageFileChange"
-                >
-                  <el-button size="small" :icon="Picture" :loading="uploadingImage">ファイルをアップロード</el-button>
-                </el-upload>
-                <el-button size="small" @click="showUrlInput = true">外部URLを指定</el-button>
-                <el-button v-if="editImageUrl" size="small" type="danger" link @click="editImageUrl = ''">削除</el-button>
+                <label class="o-btn o-btn-secondary o-btn-sm">
+                  <span v-if="uploadingImage">...</span>
+                  <span v-else>&#128247; ファイルをアップロード</span>
+                  <input type="file" accept="image/*" class="hidden-input" @change="handleImageFileChangeNative" />
+                </label>
+                <button class="o-btn o-btn-secondary o-btn-sm" @click="showUrlInput = true">外部URLを指定</button>
+                <button v-if="editImageUrl" class="o-btn o-btn-link o-btn-danger-text o-btn-sm" @click="editImageUrl = ''">削除</button>
               </div>
               <!-- URL input mode -->
               <div v-else class="image-input-row">
-                <el-input
+                <input
                   v-model="editImageUrl"
-                  size="small"
+                  type="text"
+                  class="o-input o-input-sm"
                   placeholder="画像URLを入力 (https://...)"
-                  clearable
-                  @clear="showUrlInput = false"
                 />
-                <el-button size="small" @click="showUrlInput = false">戻る</el-button>
+                <button class="o-btn o-btn-secondary o-btn-sm" @click="showUrlInput = false">戻る</button>
               </div>
             </div>
           </div>
@@ -86,128 +88,139 @@
 
         <!-- Sub-SKU Management Section in Edit Dialog -->
         <div class="sub-sku-inline-section">
-          <el-divider content-position="left">子SKU管理</el-divider>
-          <el-table :data="editDialogSubSkus" :style="{ width: '100%' }" size="small" max-height="200">
-            <el-table-column prop="subSku" label="子SKUコード" width="200">
-              <template #default="{ row, $index }">
-                <div>
-                  <el-input
-                    v-model="row.subSku"
-                    size="small"
-                    placeholder="子SKUコード"
-                    :class="{ 'is-error': editDialogSubSkuValidationErrors[$index] }"
-                    @blur="validateEditDialogSubSkuInput($index)"
-                  />
-                  <div v-if="editDialogSubSkuValidationErrors[$index]" class="sku-error-message">
-                    {{ editDialogSubSkuValidationErrors[$index] }}
+          <div class="o-divider">
+            <span class="o-divider-text">子SKU管理</span>
+          </div>
+          <table class="o-list-table" style="width: 100%">
+            <thead>
+              <tr>
+                <th style="width: 200px">子SKUコード</th>
+                <th style="width: 100px">価格</th>
+                <th>説明</th>
+                <th style="width: 60px; text-align: center">有効</th>
+                <th style="width: 60px; text-align: center"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row, $index) in editDialogSubSkus" :key="$index">
+                <td>
+                  <div>
+                    <input
+                      v-model="row.subSku"
+                      type="text"
+                      class="o-input o-input-sm"
+                      :class="{ 'is-error': editDialogSubSkuValidationErrors[$index] }"
+                      placeholder="子SKUコード"
+                      @blur="validateEditDialogSubSkuInput($index)"
+                    />
+                    <div v-if="editDialogSubSkuValidationErrors[$index]" class="sku-error-message">
+                      {{ editDialogSubSkuValidationErrors[$index] }}
+                    </div>
                   </div>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="price" label="価格" width="100">
-              <template #default="{ row }">
-                <el-input-number
-                  v-model="row.price"
-                  size="small"
-                  :min="0"
-                  :precision="0"
-                  :controls="false"
-                  placeholder="親価格"
-                  style="width: 100%"
-                />
-              </template>
-            </el-table-column>
-            <el-table-column prop="description" label="説明">
-              <template #default="{ row }">
-                <el-input v-model="row.description" size="small" placeholder="説明（例: セール価格）" />
-              </template>
-            </el-table-column>
-            <el-table-column prop="isActive" label="有効" width="60" align="center">
-              <template #default="{ row }">
-                <el-checkbox v-model="row.isActive" />
-              </template>
-            </el-table-column>
-            <el-table-column label="" width="60" align="center">
-              <template #default="{ $index }">
-                <el-button type="danger" link size="small" @click="removeEditDialogSubSku($index)">削除</el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+                </td>
+                <td>
+                  <input
+                    v-model.number="row.price"
+                    type="number"
+                    class="o-input o-input-sm"
+                    :min="0"
+                    placeholder="親価格"
+                    style="width: 100%"
+                  />
+                </td>
+                <td>
+                  <input v-model="row.description" type="text" class="o-input o-input-sm" placeholder="説明（例: セール価格）" />
+                </td>
+                <td style="text-align: center">
+                  <input type="checkbox" v-model="row.isActive" />
+                </td>
+                <td style="text-align: center">
+                  <button class="o-btn o-btn-link o-btn-danger-text o-btn-sm" @click="removeEditDialogSubSku($index)">削除</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
           <div class="sub-sku-actions">
-            <el-button type="primary" size="small" @click="addEditDialogSubSku">+ 子SKUを追加</el-button>
+            <button class="o-btn o-btn-primary o-btn-sm" @click="addEditDialogSubSku">+ 子SKUを追加</button>
           </div>
         </div>
       </template>
     </FormDialog>
 
     <!-- Sub-SKU Management Dialog -->
-    <el-dialog
-      v-model="subSkuDialogVisible"
+    <ODialog
+      :open="subSkuDialogVisible"
       title="子SKU管理"
-      width="700px"
-      :close-on-click-modal="false"
+      size="lg"
+      @close="subSkuDialogVisible = false"
     >
       <div v-if="subSkuEditingProduct" class="sub-sku-header">
         <p><strong>親商品:</strong> {{ subSkuEditingProduct.sku }} - {{ subSkuEditingProduct.name }}</p>
-        <p v-if="subSkuEditingProduct.price"><strong>親商品価格:</strong> ¥{{ subSkuEditingProduct.price.toLocaleString() }}</p>
+        <p v-if="subSkuEditingProduct.price"><strong>親商品価格:</strong> &yen;{{ subSkuEditingProduct.price.toLocaleString() }}</p>
       </div>
 
-      <el-table :data="tempSubSkus" :style="{ width: '100%' }" size="small" max-height="300">
-        <el-table-column prop="subSku" label="子SKUコード" width="220">
-          <template #default="{ row, $index }">
-            <div>
-              <el-input
-                v-model="row.subSku"
-                size="small"
-                placeholder="子SKUコード"
-                :class="{ 'is-error': subSkuValidationErrors[$index] }"
-                @blur="validateSubSkuInput($index)"
-              />
-              <div v-if="subSkuValidationErrors[$index]" class="sku-error-message">
-                {{ subSkuValidationErrors[$index] }}
+      <table class="o-list-table" style="width: 100%">
+        <thead>
+          <tr>
+            <th style="width: 220px">子SKUコード</th>
+            <th style="width: 120px">価格</th>
+            <th>説明</th>
+            <th style="width: 70px; text-align: center">有効</th>
+            <th style="width: 80px; text-align: center">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(row, $index) in tempSubSkus" :key="$index">
+            <td>
+              <div>
+                <input
+                  v-model="row.subSku"
+                  type="text"
+                  class="o-input o-input-sm"
+                  :class="{ 'is-error': subSkuValidationErrors[$index] }"
+                  placeholder="子SKUコード"
+                  @blur="validateSubSkuInput($index)"
+                />
+                <div v-if="subSkuValidationErrors[$index]" class="sku-error-message">
+                  {{ subSkuValidationErrors[$index] }}
+                </div>
               </div>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column prop="price" label="価格" width="120">
-          <template #default="{ row }">
-            <el-input-number
-              v-model="row.price"
-              size="small"
-              :min="0"
-              :precision="0"
-              :controls="false"
-              placeholder="親価格"
-              style="width: 100%"
-            />
-          </template>
-        </el-table-column>
-        <el-table-column prop="description" label="説明">
-          <template #default="{ row }">
-            <el-input v-model="row.description" size="small" placeholder="説明（例: セール価格）" />
-          </template>
-        </el-table-column>
-        <el-table-column prop="isActive" label="有効" width="70" align="center">
-          <template #default="{ row }">
-            <el-checkbox v-model="row.isActive" />
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="80" align="center">
-          <template #default="{ $index }">
-            <el-button type="danger" link size="small" @click="removeSubSku($index)">削除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+            </td>
+            <td>
+              <input
+                v-model.number="row.price"
+                type="number"
+                class="o-input o-input-sm"
+                :min="0"
+                placeholder="親価格"
+                style="width: 100%"
+              />
+            </td>
+            <td>
+              <input v-model="row.description" type="text" class="o-input o-input-sm" placeholder="説明（例: セール価格）" />
+            </td>
+            <td style="text-align: center">
+              <input type="checkbox" v-model="row.isActive" />
+            </td>
+            <td style="text-align: center">
+              <button class="o-btn o-btn-link o-btn-danger-text o-btn-sm" @click="removeSubSku($index)">削除</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       <div class="sub-sku-actions">
-        <el-button type="primary" size="small" @click="addSubSku">+ 子SKUを追加</el-button>
+        <button class="o-btn o-btn-primary o-btn-sm" @click="addSubSku">+ 子SKUを追加</button>
       </div>
 
       <template #footer>
-        <el-button @click="subSkuDialogVisible = false">キャンセル</el-button>
-        <el-button type="primary" :loading="savingSubSkus" @click="saveSubSkus">保存</el-button>
+        <button class="o-btn o-btn-secondary" @click="subSkuDialogVisible = false">キャンセル</button>
+        <button class="o-btn o-btn-primary" :disabled="savingSubSkus" @click="saveSubSkus">
+          <span v-if="savingSubSkus">...</span>
+          <span v-else>保存</span>
+        </button>
       </template>
-    </el-dialog>
+    </ODialog>
 
     <ImportDialog
       v-model="showImportDialog"
@@ -223,8 +236,6 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
-import { ElButton, ElMessage, ElMessageBox, ElDialog, ElDivider, ElInputNumber, ElCheckbox, ElTable, ElTableColumn, ElInput, ElUpload } from 'element-plus'
-import { Edit, Plus, Delete, Upload, Picture } from '@element-plus/icons-vue'
 import { uploadProductImage } from '@/api/product'
 import { getApiBaseUrl } from '@/api/base'
 import noImageSrc from '@/assets/images/no_image.png'
@@ -232,6 +243,7 @@ import SearchForm from '@/components/search/SearchForm.vue'
 import Table from '@/components/table/Table.vue'
 import FormDialog from '@/components/form/FormDialog.vue'
 import ImportDialog from '@/components/import/ImportDialog.vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import type { TableColumn, Operator } from '@/types/table'
 import { bulkUpdateProducts, checkSkuAvailability, createProduct, deleteProduct, fetchProducts, importProductsWithStrategy, updateProduct, type ImportStrategy, type ImportResult } from '@/api/product'
 import type { Product, ProductFilters, UpsertProductDto, SubSku } from '@/types/product'
@@ -499,14 +511,12 @@ const tableColumns: TableColumn[] = [
             ? subSkus.map((s) => s.subSku).join(', ')
             : '-'
           return h(
-            ElButton,
+            'button',
             {
-              type: 'primary',
-              link: true,
-              size: 'small',
+              class: 'o-btn o-btn-link o-btn-sm',
               onClick: () => openSubSkuDialog(rowData),
             },
-            { default: () => displayText },
+            displayText,
           )
         },
       }
@@ -523,34 +533,28 @@ const tableColumns: TableColumn[] = [
     cellRenderer: ({ rowData }: { rowData: Product }) =>
       h('div', { class: 'action-cell' }, [
         h(
-          ElButton,
+          'button',
           {
-            type: 'primary',
-            plain: true,
-            size: 'small',
+            class: 'o-btn o-btn-primary o-btn-outline o-btn-sm',
             onClick: () => openEdit(rowData),
           },
-          { default: () => '編集' },
+          '編集',
         ),
         h(
-          ElButton,
+          'button',
           {
-            type: 'info',
-            plain: true,
-            size: 'small',
+            class: 'o-btn o-btn-secondary o-btn-outline o-btn-sm',
             onClick: () => duplicateProduct(rowData),
           },
-          { default: () => '複製' },
+          '複製',
         ),
         h(
-          ElButton,
+          'button',
           {
-            type: 'danger',
-            plain: true,
-            size: 'small',
+            class: 'o-btn o-btn-danger o-btn-outline o-btn-sm',
             onClick: () => confirmDelete(rowData),
           },
-          { default: () => '削除' },
+          '削除',
         ),
       ]),
   },
@@ -603,18 +607,21 @@ const duplicateProduct = (row: Product) => {
   dialogVisible.value = true
 }
 
-const handleImageFileChange = async (uploadFile: any) => {
-  const file = uploadFile.raw || uploadFile
+const handleImageFileChangeNative = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
   if (!file) return
   uploadingImage.value = true
   try {
     const result = await uploadProductImage(file)
     editImageUrl.value = result.imageUrl
-    ElMessage.success('画像をアップロードしました')
+    alert('画像をアップロードしました')
   } catch (error: any) {
-    ElMessage.error(error?.message || '画像のアップロードに失敗しました')
+    alert(error?.message || '画像のアップロードに失敗しました')
   } finally {
     uploadingImage.value = false
+    // Reset file input so same file can be selected again
+    input.value = ''
   }
 }
 
@@ -766,7 +773,7 @@ const saveSubSkus = async () => {
 
   // Check if there are any validation errors
   if (Object.keys(subSkuValidationErrors.value).length > 0) {
-    ElMessage.error('入力エラーがあります。修正してください。')
+    alert('入力エラーがあります。修正してください。')
     return
   }
 
@@ -777,13 +784,13 @@ const saveSubSkus = async () => {
   const codes = validSubSkus.map((s) => s.subSku.trim())
   const uniqueCodes = new Set(codes)
   if (uniqueCodes.size !== codes.length) {
-    ElMessage.error('子SKUコードが重複しています')
+    alert('子SKUコードが重複しています')
     return
   }
 
   // Check if any sub-SKU matches the parent SKU
   if (codes.includes(subSkuEditingProduct.value.sku)) {
-    ElMessage.error('子SKUコードは親SKUと同じにできません')
+    alert('子SKUコードは親SKUと同じにできません')
     return
   }
 
@@ -803,7 +810,7 @@ const saveSubSkus = async () => {
       }
     }
     if (conflictErrors.length > 0) {
-      ElMessage.error(conflictErrors[0])
+      alert(conflictErrors[0])
       return
     }
   }
@@ -818,11 +825,11 @@ const saveSubSkus = async () => {
         isActive: s.isActive !== false,
       })),
     })
-    ElMessage.success('子SKUを保存しました')
+    alert('子SKUを保存しました')
     subSkuDialogVisible.value = false
     await loadList()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.message || error?.message || '保存に失敗しました')
+    alert(error?.response?.data?.message || error?.message || '保存に失敗しました')
   } finally {
     savingSubSkus.value = false
   }
@@ -869,7 +876,7 @@ const loadList = async () => {
   try {
     list.value = await fetchProducts(currentFilters.value)
   } catch (error: any) {
-    ElMessage.error(error?.message || '取得に失敗しました')
+    alert(error?.message || '取得に失敗しました')
   } finally {
     loading.value = false
   }
@@ -914,7 +921,7 @@ const normalizeArrayInput = (val: any): string[] => {
 const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
   // Check if there are any validation errors
   if (Object.keys(editDialogSubSkuValidationErrors.value).length > 0) {
-    ElMessage.error('子SKUに入力エラーがあります。修正してください。')
+    alert('子SKUに入力エラーがあります。修正してください。')
     return
   }
 
@@ -944,13 +951,13 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
     const subSkuCodes = validSubSkus.map((s) => s.subSku.trim())
     const uniqueSubSkuCodes = new Set(subSkuCodes)
     if (uniqueSubSkuCodes.size !== subSkuCodes.length) {
-      ElMessage.error('子SKUコードが重複しています')
+      alert('子SKUコードが重複しています')
       saving.value = false
       return
     }
     const parentSku = (payload.sku || '').trim()
     if (subSkuCodes.includes(parentSku)) {
-      ElMessage.error('子SKUコードは親SKUと同じにできません')
+      alert('子SKUコードは親SKUと同じにできません')
       saving.value = false
       return
     }
@@ -958,7 +965,7 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
     // Validate main SKU uniqueness against database
     const mainSkuError = await validateMainSkuInput(parentSku)
     if (mainSkuError) {
-      ElMessage.error(mainSkuError)
+      alert(mainSkuError)
       saving.value = false
       return
     }
@@ -979,7 +986,7 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
         }
       }
       if (conflictErrors.length > 0) {
-        ElMessage.error(conflictErrors[0]) // Show first error
+        alert(conflictErrors[0]) // Show first error
         saving.value = false
         return
       }
@@ -1014,16 +1021,16 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
 
     if (editingRow.value?._id) {
       await updateProduct(editingRow.value._id, cleanPayload)
-      ElMessage.success('更新しました')
+      alert('更新しました')
     } else {
       await createProduct(cleanPayload as UpsertProductDto)
-      ElMessage.success('作成しました')
+      alert('作成しました')
     }
     dialogVisible.value = false
     resetForm()
     await loadList()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.message || error?.message || '保存に失敗しました')
+    alert(error?.response?.data?.message || error?.message || '保存に失敗しました')
   } finally {
     saving.value = false
   }
@@ -1032,17 +1039,17 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
 const handleBulkEdit = async (payload: { columnKey: string; dataKey: string; fieldType?: string; value: any; overwrite: boolean; selectedKeys: (string | number)[]; selectedRows: Record<string, any>[] }) => {
   const { dataKey, value, selectedKeys: keys } = payload
   if (!keys || keys.length === 0) {
-    ElMessage.warning('商品が選択されていません')
+    alert('商品が選択されていません')
     return
   }
   try {
     const updates = { [dataKey]: value }
     const result = await bulkUpdateProducts(keys.map(String), updates)
-    ElMessage.success(`${result.modifiedCount}件更新しました`)
+    alert(`${result.modifiedCount}件更新しました`)
     await loadList()
     selectedKeys.value = []
   } catch (error: any) {
-    ElMessage.error(error?.message || '一括更新に失敗しました')
+    alert(error?.message || '一括更新に失敗しました')
   }
 }
 
@@ -1077,7 +1084,7 @@ const handleImportProducts = async (rows: any[], strategy: ImportStrategy = 'err
     if (result.skippedCount > 0) messages.push(`${result.skippedCount}件スキップ`)
 
     if (messages.length > 0) {
-      ElMessage.success(messages.join('、') + 'しました')
+      alert(messages.join('、') + 'しました')
     }
 
     // スキップまたは更新がある場合は結果ダイアログを表示
@@ -1099,7 +1106,7 @@ const handleImportProducts = async (rows: any[], strategy: ImportStrategy = 'err
       }
       importResultDialogVisible.value = true
     } else {
-      ElMessage.error(err?.message || '取り込みに失敗しました')
+      alert(err?.message || '取り込みに失敗しました')
     }
   } finally {
     importing.value = false
@@ -1107,17 +1114,14 @@ const handleImportProducts = async (rows: any[], strategy: ImportStrategy = 'err
 }
 
 const confirmDelete = (row: Product) => {
-  ElMessageBox.confirm(`「${row.name}」を削除しますか？`, '確認', {
-    confirmButtonText: 'はい',
-    cancelButtonText: 'いいえ',
-    type: 'warning',
-  })
-    .then(async () => {
-      await deleteProduct(row._id)
-      ElMessage.success('削除しました')
-      await loadList()
-    })
-    .catch(() => {})
+  if (confirm(`「${row.name}」を削除しますか？`)) {
+    deleteProduct(row._id)
+      .then(async () => {
+        alert('削除しました')
+        await loadList()
+      })
+      .catch(() => {})
+  }
 }
 
 const formatDate = (iso: string) => {
@@ -1180,25 +1184,13 @@ onMounted(() => {
   padding: 4px;
 }
 
-:deep(.action-cell .el-button) {
+:deep(.action-cell .o-btn) {
   margin: 0;
   min-width: 54px;
   padding: 6px 12px;
   border-radius: 4px;
   font-size: 13px;
   border-width: 1px;
-}
-
-:deep(.action-cell .el-button--primary.is-plain) {
-  border-color: var(--el-color-primary);
-}
-
-:deep(.action-cell .el-button--info.is-plain) {
-  border-color: var(--el-color-info);
-}
-
-:deep(.action-cell .el-button--danger.is-plain) {
-  border-color: var(--el-color-danger);
 }
 
 .sub-sku-header {
@@ -1227,12 +1219,6 @@ onMounted(() => {
   padding: 0 20px 20px;
 }
 
-.sub-sku-inline-section :deep(.el-divider__text) {
-  font-weight: 600;
-  color: #409eff;
-  font-size: 14px;
-}
-
 /* SKU validation error styles */
 .sku-error-message {
   color: #f56c6c;
@@ -1242,18 +1228,13 @@ onMounted(() => {
   word-break: break-word;
 }
 
-:deep(.el-input.is-error .el-input__wrapper) {
+.o-input.is-error {
+  border-color: #f56c6c;
   box-shadow: 0 0 0 1px #f56c6c inset;
 }
 
 .image-upload-section {
   padding: 0 20px;
-}
-
-.image-upload-section :deep(.el-divider__text) {
-  font-weight: 600;
-  color: #409eff;
-  font-size: 14px;
 }
 
 .image-upload-content {
@@ -1290,5 +1271,116 @@ onMounted(() => {
   font-size: 12px;
   color: #909399;
 }
-</style>
 
+.hidden-input {
+  display: none;
+}
+
+/* o-divider */
+.o-divider {
+  display: flex;
+  align-items: center;
+  margin: 16px 0 12px;
+  border: 0;
+  white-space: nowrap;
+}
+.o-divider::before,
+.o-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #dcdfe6;
+}
+.o-divider-text {
+  padding: 0 12px;
+  font-weight: 600;
+  color: #409eff;
+  font-size: 14px;
+}
+
+/* o-icon placeholder */
+.o-icon {
+  display: inline-block;
+  margin-right: 4px;
+}
+
+/* o-btn styles */
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  background: #fff;
+  color: #606266;
+  line-height: 1.5;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.o-btn:hover { border-color: #409eff; color: #409eff; }
+.o-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.o-btn-sm { padding: 4px 10px; font-size: 12px; }
+
+.o-btn-primary { background: #409eff; color: #fff; border-color: #409eff; }
+.o-btn-primary:hover { background: #66b1ff; border-color: #66b1ff; }
+
+.o-btn-success { background: #67c23a; color: #fff; border-color: #67c23a; }
+.o-btn-success:hover { background: #85ce61; border-color: #85ce61; }
+
+.o-btn-danger { background: #f56c6c; color: #fff; border-color: #f56c6c; }
+.o-btn-danger:hover { background: #f78989; border-color: #f78989; }
+
+.o-btn-secondary { background: #fff; color: #606266; border-color: #dcdfe6; }
+.o-btn-secondary:hover { border-color: #409eff; color: #409eff; }
+
+.o-btn-outline { background: transparent; }
+.o-btn-primary.o-btn-outline { color: #409eff; border-color: #409eff; background: transparent; }
+.o-btn-primary.o-btn-outline:hover { background: #ecf5ff; }
+.o-btn-danger.o-btn-outline { color: #f56c6c; border-color: #f56c6c; background: transparent; }
+.o-btn-danger.o-btn-outline:hover { background: #fef0f0; }
+.o-btn-secondary.o-btn-outline { color: #909399; border-color: #909399; background: transparent; }
+.o-btn-secondary.o-btn-outline:hover { background: #f4f4f5; }
+
+.o-btn-link { background: transparent; border: none; padding: 0; color: #409eff; }
+.o-btn-link:hover { color: #66b1ff; }
+.o-btn-danger-text { color: #f56c6c; }
+.o-btn-danger-text:hover { color: #f78989; }
+
+/* o-input */
+.o-input {
+  padding: 8px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.o-input:focus { outline: none; border-color: #409eff; }
+.o-input-sm { padding: 4px 8px; font-size: 12px; }
+
+/* o-list-table */
+.o-list-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+.o-list-table th,
+.o-list-table td {
+  border: 1px solid #ebeef5;
+  padding: 8px 12px;
+  text-align: left;
+}
+.o-list-table th {
+  background: #f5f7fa;
+  font-weight: 600;
+  color: #606266;
+}
+.o-list-table td {
+  color: #303133;
+}
+</style>

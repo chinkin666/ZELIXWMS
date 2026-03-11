@@ -2,29 +2,47 @@
   <div class="basic-settings">
     <h2 class="page-title">基本設定</h2>
 
-    <el-card class="settings-card">
-      <template #header>
+    <div class="o-card settings-card">
+      <div class="card-header">
         <span class="card-title">表示設定</span>
-      </template>
+      </div>
 
-      <el-form label-width="180px" label-position="left">
-        <el-form-item label="受注一覧の検索パネル">
-          <el-radio-group v-model="orderSearchStyle" @change="handleSearchStyleChange">
-            <el-radio value="classic">伝統スタイル（フィールド固定）</el-radio>
-            <el-radio value="modern">新式スタイル（フィルター選択式）</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-    </el-card>
+      <div class="o-form-group">
+        <label class="o-form-label">受注一覧の検索パネル</label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input
+              type="radio"
+              name="orderSearchStyle"
+              value="classic"
+              :checked="orderSearchStyle === 'classic'"
+              @change="handleSearchStyleChange('classic')"
+            />
+            <span>伝統スタイル（フィールド固定）</span>
+          </label>
+          <label class="radio-option">
+            <input
+              type="radio"
+              name="orderSearchStyle"
+              value="modern"
+              :checked="orderSearchStyle === 'modern'"
+              @change="handleSearchStyleChange('modern')"
+            />
+            <span>新式スタイル（フィルター選択式）</span>
+          </label>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useSettingsStore, type OrderSearchStyle } from '@/stores/settings'
-import { ElMessage } from 'element-plus'
+import { useToast } from '@/composables/useToast'
 
 const settingsStore = useSettingsStore()
+const { show: showToast } = useToast()
 
 const orderSearchStyle = ref<OrderSearchStyle>('classic')
 
@@ -33,8 +51,9 @@ onMounted(() => {
 })
 
 const handleSearchStyleChange = (value: OrderSearchStyle) => {
+  orderSearchStyle.value = value
   settingsStore.setOrderSearchStyle(value)
-  ElMessage.success('設定を保存しました')
+  showToast('設定を保存しました', 'success')
 }
 </script>
 
@@ -47,11 +66,24 @@ const handleSearchStyleChange = (value: OrderSearchStyle) => {
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 20px;
-  color: #303133;
+  color: var(--o-gray-700, #303133);
 }
 
 .settings-card {
   max-width: 800px;
+}
+
+.o-card {
+  background: var(--o-view-background, #fff);
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: var(--o-border-radius, 8px);
+  padding: 1.25rem;
+}
+
+.card-header {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--o-border-color, #e4e7ed);
+  margin-bottom: 16px;
 }
 
 .card-title {
@@ -59,21 +91,34 @@ const handleSearchStyleChange = (value: OrderSearchStyle) => {
   font-weight: 500;
 }
 
-:deep(.el-form-item) {
-  margin-bottom: 24px;
+.o-form-group {
+  margin-bottom: 1rem;
 }
 
-:deep(.el-radio-group) {
+.o-form-label {
+  display: block;
+  font-size: var(--o-font-size-small, 13px);
+  font-weight: 500;
+  color: var(--o-gray-700, #303133);
+  margin-bottom: 0.5rem;
+}
+
+.radio-group {
   display: flex;
   flex-direction: row;
   gap: 24px;
 }
 
-:deep(.el-radio) {
-  height: auto;
+.radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--o-gray-700, #303133);
 }
 
-:deep(.el-radio__label) {
-  font-size: 14px;
+.radio-option input[type="radio"] {
+  accent-color: var(--o-brand-primary, #714b67);
 }
 </style>

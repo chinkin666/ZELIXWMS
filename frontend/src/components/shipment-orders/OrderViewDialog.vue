@@ -1,5 +1,5 @@
 <template>
-  <!-- 编辑模式：使用 FormDialog -->
+  <!-- 編集モード：FormDialog を使用 -->
   <FormDialog
     v-if="mode === 'edit'"
     v-model="visible"
@@ -10,27 +10,24 @@
     @submit="handleFormSubmit"
   />
 
-  <!-- 查看模式：使用原有的 Dialog -->
-  <el-dialog
+  <!-- 表示モード -->
+  <ODialog
     v-else
-    v-model="visible"
+    :open="visible"
     :title="title"
+    @close="visible = false"
     width="860px"
-    :close-on-click-modal="false"
   >
-    <el-scrollbar height="560px">
+    <div style="max-height: 560px; overflow: auto">
       <div class="content">
-        <el-descriptions :column="2" border size="small">
-          <el-descriptions-item
-            v-for="item in summaryItems"
-            :key="item.key"
-            :label="item.label"
-          >
-            <span class="value">{{ item.value }}</span>
-          </el-descriptions-item>
-        </el-descriptions>
+        <div class="descriptions-grid">
+          <template v-for="item in summaryItems" :key="item.key">
+            <div class="desc-label">{{ item.label }}</div>
+            <div class="desc-value"><span class="value">{{ item.value }}</span></div>
+          </template>
+        </div>
 
-        <el-divider content-position="left">ステータス</el-divider>
+        <div class="section-divider"><span>ステータス</span></div>
         <div class="status-area">
           <template v-for="s in statusBadges" :key="s.key">
             <span class="status-detail-item">{{ s.label }}: {{ s.detail }}</span>
@@ -38,82 +35,111 @@
         </div>
 
         <template v-if="internalRecords.length > 0">
-          <el-divider content-position="left">内部データ</el-divider>
+          <div class="section-divider"><span>内部データ</span></div>
           <div class="internal-record-area">
-            <el-table :data="internalRecords" border size="small" max-height="180">
-              <el-table-column prop="timestamp" label="日時" width="180">
-                <template #default="{ row }">
-                  {{ fmtDateTime(row.timestamp) }}
-                </template>
-              </el-table-column>
-              <el-table-column prop="user" label="発起者" width="120" />
-              <el-table-column prop="content" label="内容" min-width="300">
-                <template #default="{ row }">
-                  <span class="internal-record-content">{{ row.content }}</span>
-                </template>
-              </el-table-column>
-            </el-table>
+            <div style="max-height: 180px; overflow: auto">
+              <table class="o-list-table">
+                <thead>
+                  <tr>
+                    <th style="width: 180px">日時</th>
+                    <th style="width: 120px">発起者</th>
+                    <th style="min-width: 300px">内容</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, i) in internalRecords" :key="i">
+                    <td>{{ fmtDateTime(row.timestamp) }}</td>
+                    <td>{{ row.user }}</td>
+                    <td><span class="internal-record-content">{{ row.content }}</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </template>
 
-        <el-divider content-position="left">商品</el-divider>
-        <el-table :data="productsTable" border size="small" max-height="280">
-          <el-table-column label="画像" width="70" align="center">
-            <template #default="{ row }">
-              <img
-                :src="resolveImageUrl(row.imageUrl)"
-                style="width: 40px; height: 40px; object-fit: contain"
-                @error="(e: Event) => { (e.target as HTMLImageElement).src = noImageSrc }"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column prop="sku" label="SKU" min-width="160" />
-          <el-table-column prop="name" label="商品名" min-width="260" />
-          <el-table-column prop="quantity" label="数量" width="80" />
-          <el-table-column label="バーコード" min-width="160">
-            <template #default="{ row }">
-              <span v-if="row.barcode && row.barcode.length > 0">{{ row.barcode.join(', ') }}</span>
-              <span v-else>-</span>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="section-divider"><span>商品</span></div>
+        <div style="max-height: 280px; overflow: auto">
+          <table class="o-list-table">
+            <thead>
+              <tr>
+                <th style="width: 70px; text-align: center">画像</th>
+                <th style="min-width: 160px">SKU</th>
+                <th style="min-width: 260px">商品名</th>
+                <th style="width: 80px">数量</th>
+                <th style="min-width: 160px">バーコード</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row, i) in productsTable" :key="i">
+                <td style="text-align: center">
+                  <img
+                    :src="resolveImageUrl(row.imageUrl)"
+                    style="width: 40px; height: 40px; object-fit: contain"
+                    @error="(e: Event) => { (e.target as HTMLImageElement).src = noImageSrc }"
+                  />
+                </td>
+                <td>{{ row.sku }}</td>
+                <td>{{ row.name }}</td>
+                <td>{{ row.quantity }}</td>
+                <td>
+                  <span v-if="row.barcode && row.barcode.length > 0">{{ row.barcode.join(', ') }}</span>
+                  <span v-else>-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-        <el-divider content-position="left">元データ（取込時の行）</el-divider>
+        <div class="section-divider"><span>元データ（取込時の行）</span></div>
         <div v-if="rawRows.length === 0" class="empty">
           元データはありません。
         </div>
         <div v-else>
-          <el-tabs type="border-card">
-            <el-tab-pane
-              v-for="(row, idx) in rawRows"
-              :key="idx"
-              :label="`Row ${Number(idx) + 1}`"
-            >
-              <el-table :data="toKeyValueRows(row)" border size="small" max-height="300">
-                <el-table-column prop="key" label="キー" min-width="220" />
-                <el-table-column prop="value" label="値" min-width="420">
-                  <template #default="{ row: r }">
-                    <span class="mono">{{ r.value }}</span>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </el-tab-pane>
-          </el-tabs>
+          <div class="o-tabs">
+            <div class="o-tab-nav">
+              <button
+                v-for="(row, idx) in rawRows"
+                :key="idx"
+                class="o-tab"
+                :class="{ active: activeRawRowTab === idx }"
+                @click="activeRawRowTab = Number(idx)"
+              >Row {{ Number(idx) + 1 }}</button>
+            </div>
+            <div class="o-tab-content">
+              <div style="max-height: 300px; overflow: auto">
+                <table class="o-list-table">
+                  <thead>
+                    <tr>
+                      <th style="min-width: 220px">キー</th>
+                      <th style="min-width: 420px">値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="r in toKeyValueRows(rawRows[activeRawRowTab] || {})" :key="r.key">
+                      <td>{{ r.key }}</td>
+                      <td><span class="mono">{{ r.value }}</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </el-scrollbar>
+    </div>
 
     <template #footer>
       <div class="footer">
-        <el-button @click="visible = false">閉じる</el-button>
+        <button class="o-btn o-btn-secondary" @click="visible = false">閉じる</button>
       </div>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ElButton, ElDialog, ElDivider, ElScrollbar, ElDescriptions, ElDescriptionsItem, ElTable, ElTableColumn, ElTabs, ElTabPane, ElMessage } from 'element-plus'
+import ODialog from '@/components/odoo/ODialog.vue'
 import FormDialog from '@/components/form/FormDialog.vue'
 import { getOrderFieldDefinitions } from '@/types/order'
 import type { OrderDocument } from '@/types/order'
@@ -156,6 +182,8 @@ const visible = computed({
 const title = computed(() => props.title || '出荷予定明細')
 const editTitle = computed(() => props.title || '出荷予定を編集')
 const mode = computed(() => props.mode || 'view')
+
+const activeRawRowTab = ref(0)
 
 const carrierOptions = computed(() => {
   return (props.carriers || [])
@@ -242,7 +270,7 @@ const orderData = computed(() => {
 // 处理表单提交
 const handleFormSubmit = async (data: Record<string, any>) => {
   if (!props.order?._id) {
-    ElMessage.error('注文が見つかりません')
+    alert('注文が見つかりません')
     return
   }
 
@@ -323,14 +351,14 @@ const handleFormSubmit = async (data: Record<string, any>) => {
     }
 
     const result = await updateShipmentOrder(props.order._id, updateData)
-    ElMessage.success('出荷予定を更新しました')
+    alert('出荷予定を更新しました')
     emit('updated', result.data?.order || props.order)
     visible.value = false
   } catch (error: any) {
     // 显示更详细的错误信息
     const errorMessage = error?.message || '出荷予定の更新に失敗しました'
     const errorDetails = error?.errors ? `\n詳細: ${JSON.stringify(error.errors, null, 2)}` : ''
-    ElMessage.error(errorMessage + errorDetails)
+    alert(errorMessage + errorDetails)
     console.error('Update error:', error)
   }
 }
@@ -469,6 +497,48 @@ const formatValue = (v: any): string => {
   padding: 6px 2px 18px;
 }
 
+.descriptions-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr 140px 1fr;
+  border: 1px solid #ebeef5;
+  font-size: 13px;
+}
+.desc-label {
+  background: #f5f7fa;
+  padding: 8px 12px;
+  border: 1px solid #ebeef5;
+  font-weight: 500;
+  color: #606266;
+}
+.desc-value {
+  padding: 8px 12px;
+  border: 1px solid #ebeef5;
+  color: #303133;
+}
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  margin: 16px 0 10px;
+  color: #303133;
+  font-size: 14px;
+  font-weight: 500;
+}
+.section-divider::before {
+  content: '';
+  flex: 0 0 20px;
+  height: 1px;
+  background: #dcdfe6;
+  margin-right: 10px;
+}
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #dcdfe6;
+  margin-left: 10px;
+}
+
 .status-area {
   display: flex;
   gap: 16px;
@@ -520,8 +590,32 @@ const formatValue = (v: any): string => {
   word-break: break-word;
 }
 
+.o-tabs {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+}
+.o-tab-nav {
+  display: flex;
+  background: #f5f7fa;
+  border-bottom: 1px solid #dcdfe6;
+  flex-wrap: wrap;
+}
+.o-tab {
+  padding: 6px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: #606266;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.o-tab.active {
+  color: #714b67;
+  border-bottom-color: #714b67;
+  background: #fff;
+}
+.o-tab-content {
+  padding: 10px;
+}
 </style>
-
-
-
-

@@ -1,70 +1,80 @@
 <template>
-  <el-dialog
-    :model-value="modelValue"
+  <ODialog
+    :open="modelValue"
     title="B2 Cloud 送信結果"
+    @close="$emit('update:modelValue', false)"
     width="600px"
-    @update:model-value="$emit('update:modelValue', $event)"
   >
     <div v-if="result">
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="送信件数">{{ result.total }}</el-descriptions-item>
-        <el-descriptions-item label="成功">
-          <el-tag type="success">{{ result.success_count }} 件</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="失敗">
-          <el-tag v-if="result.error_count > 0" type="danger">{{ result.error_count }} 件</el-tag>
-          <el-tag v-else type="info">0 件</el-tag>
-        </el-descriptions-item>
-      </el-descriptions>
+      <div class="descriptions-grid">
+        <div class="desc-item"><span class="desc-label">送信件数</span><span>{{ result.total }}</span></div>
+        <div class="desc-item"><span class="desc-label">成功</span><span class="o-badge o-badge-success">{{ result.success_count }} 件</span></div>
+        <div class="desc-item"><span class="desc-label">失敗</span>
+          <span v-if="result.error_count > 0" class="o-badge o-badge-danger">{{ result.error_count }} 件</span>
+          <span v-else class="o-badge o-badge-info">0 件</span>
+        </div>
+      </div>
 
       <div v-if="result.results && result.results.length > 0" class="result-details">
         <h4>詳細</h4>
-        <el-table :data="result.results" size="small" max-height="300">
-          <el-table-column prop="order_index" label="#" width="60" />
-          <el-table-column prop="success" label="結果" width="100">
-            <template #default="{ row }">
-              <el-tag :type="row.success ? 'success' : 'danger'" size="small">
-                {{ row.success ? '成功' : '失敗' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="error" label="エラー" />
-        </el-table>
+        <table class="o-list-table">
+          <thead>
+            <tr>
+              <th style="width:60px">#</th>
+              <th style="width:100px">結果</th>
+              <th>エラー</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, idx) in result.results" :key="idx">
+              <td>{{ row.order_index }}</td>
+              <td>
+                <span :class="['o-badge', row.success ? 'o-badge-success' : 'o-badge-danger']">
+                  {{ row.success ? '成功' : '失敗' }}
+                </span>
+              </td>
+              <td>{{ row.error }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- Print results summary -->
       <div v-if="result.printResults && result.printResults.length > 0" class="result-details">
         <h4>発行結果</h4>
-        <el-table :data="result.printResults" size="small" max-height="200">
-          <el-table-column prop="print_type" label="伝票タイプ" width="120">
-            <template #default="{ row }">
-              {{ getPrintTypeName(row.print_type) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="success" label="発行" width="80">
-            <template #default="{ row }">
-              <el-tag :type="row.success ? 'success' : 'danger'" size="small">
-                {{ row.success ? '成功' : '失敗' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="件数" width="80">
-            <template #default="{ row }">
-              {{ row.tracking_numbers?.length || 0 }} 件
-            </template>
-          </el-table-column>
-          <el-table-column prop="error" label="エラー" />
-        </el-table>
+        <table class="o-list-table">
+          <thead>
+            <tr>
+              <th style="width:120px">伝票タイプ</th>
+              <th style="width:80px">発行</th>
+              <th style="width:80px">件数</th>
+              <th>エラー</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, idx) in result.printResults" :key="idx">
+              <td>{{ getPrintTypeName(row.print_type) }}</td>
+              <td>
+                <span :class="['o-badge', row.success ? 'o-badge-success' : 'o-badge-danger']">
+                  {{ row.success ? '成功' : '失敗' }}
+                </span>
+              </td>
+              <td>{{ row.tracking_numbers?.length || 0 }} 件</td>
+              <td>{{ row.error }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
     <template #footer>
-      <el-button @click="$emit('update:modelValue', false)">閉じる</el-button>
-      <el-button type="primary" @click="$emit('confirm')">OK（一覧を更新）</el-button>
+      <button class="o-btn o-btn-secondary" @click="$emit('update:modelValue', false)">閉じる</button>
+      <button class="o-btn o-btn-primary" @click="$emit('confirm')">OK（一覧を更新）</button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
+import ODialog from '@/components/odoo/ODialog.vue'
 import type { YamatoB2ExportResult } from '@/types/carrierAutomation'
 
 defineProps<{
@@ -77,9 +87,6 @@ defineEmits<{
   (e: 'confirm'): void
 }>()
 
-/**
- * Get print type display name
- */
 const getPrintTypeName = (printType: string): string => {
   const names: Record<string, string> = {
     '0': '発払い',
@@ -103,6 +110,26 @@ export default {
 </script>
 
 <style scoped>
+.descriptions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+}
+
+.desc-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.desc-label {
+  font-size: 12px;
+  color: #909399;
+}
+
 .result-details {
   margin-top: 20px;
 }

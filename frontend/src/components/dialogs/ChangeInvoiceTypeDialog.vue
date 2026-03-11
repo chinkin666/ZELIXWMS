@@ -1,12 +1,11 @@
 <template>
-  <el-dialog
-    v-model="visible"
+  <ODialog
+    :open="visible"
     title="送り状種類変更"
+    @close="handleCancel"
     width="500px"
-    :close-on-click-modal="false"
   >
     <div class="dialog-content">
-      <!-- 订单信息 -->
       <div class="order-info">
         <p>選択中の注文: <strong>{{ orderCount }}</strong>件</p>
         <p v-if="hasExistingTrackingIds && hasBuiltInCarrier" class="warning-text">
@@ -17,23 +16,25 @@
         </p>
       </div>
 
-      <!-- 送り状種類选择 -->
       <div class="invoice-type-section">
-        <el-form-item label="新しい送り状種類" required>
-          <el-select
+        <div class="o-form-group">
+          <label class="o-form-label">新しい送り状種類 *</label>
+          <select
+            class="o-input"
             v-model="selectedInvoiceType"
-            placeholder="選択してください"
             style="width: 100%"
           >
-            <el-option
+            <option value="" disabled>選択してください</option>
+            <option
               v-for="option in invoiceTypeOptions"
               :key="option.value"
-              :label="`${option.value}: ${option.label}`"
               :value="option.value"
               :disabled="!isOptionAvailable(option.value)"
-            />
-          </el-select>
-        </el-form-item>
+            >
+              {{ option.value }}: {{ option.label }}
+            </option>
+          </select>
+        </div>
         <p v-if="coolTypeWarning" class="error-text">
           {{ coolTypeWarning }}
         </p>
@@ -41,21 +42,21 @@
     </div>
 
     <template #footer>
-      <el-button @click="handleCancel">キャンセル</el-button>
-      <el-button
-        type="primary"
-        :loading="loading"
-        :disabled="!selectedInvoiceType"
+      <button class="o-btn o-btn-secondary" @click="handleCancel">キャンセル</button>
+      <button
+        class="o-btn o-btn-primary"
+        :disabled="!selectedInvoiceType || loading"
         @click="handleConfirm"
       >
-        変更して再提交
-      </el-button>
+        {{ loading ? '処理中...' : '変更して再提交' }}
+      </button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import type { OrderDocument } from '@/types/order'
 import { isBuiltInCarrierId } from '@/utils/carrier'
 
@@ -180,4 +181,7 @@ const handleCancel = () => {
 .invoice-type-section {
   margin-top: 8px;
 }
+
+.o-form-group { margin-bottom:1rem; }
+.o-form-label { display:block; font-size:var(--o-font-size-small, 13px); font-weight:500; color:var(--o-gray-700, #374151); margin-bottom:0.25rem; }
 </style>

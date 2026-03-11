@@ -5,7 +5,7 @@
         <h1 class="page-title">印刷テンプレート</h1>
         <p class="page-subtitle">送り状印刷で利用するテンプレート（Canvas）を管理します</p>
       </div>
-      <el-button type="primary" :icon="Plus" @click="openCreate">新規追加</el-button>
+      <button class="o-btn o-btn-primary" @click="openCreate">新規追加</button>
     </div>
 
     <div class="table-section">
@@ -22,51 +22,54 @@
       />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="isEditing ? 'テンプレート編集' : 'テンプレート追加'" width="900px">
-      <el-form :model="editForm" label-width="140px" label-position="left">
-        <div class="form-row">
-          <el-form-item label="テンプレート名" required>
-            <el-input v-model="editForm.name" placeholder="例: ヤマトB2（メール便）" />
-          </el-form-item>
-          <el-form-item label="ピクセル解像度(mm)">
-            <el-input v-model.number="editForm.canvas.pxPerMm" type="number" min="1" step="0.5" />
-          </el-form-item>
+    <ODialog :open="dialogVisible" :title="isEditing ? 'テンプレート編集' : 'テンプレート追加'" @close="dialogVisible = false">
+      <div class="form-row">
+        <div class="o-form-group">
+          <label class="o-form-label">テンプレート名 <span class="required">*</span></label>
+          <input class="o-input" v-model="editForm.name" placeholder="例: ヤマトB2（メール便）" />
         </div>
-
-        <div class="form-row">
-          <el-form-item label="幅(mm)" required>
-            <el-input v-model.number="editForm.canvas.widthMm" type="number" min="1" step="1" />
-          </el-form-item>
-          <el-form-item label="高さ(mm)" required>
-            <el-input v-model.number="editForm.canvas.heightMm" type="number" min="1" step="1" />
-          </el-form-item>
+        <div class="o-form-group">
+          <label class="o-form-label">ピクセル解像度(mm)</label>
+          <input class="o-input" v-model.number="editForm.canvas.pxPerMm" type="number" min="1" step="0.5" />
         </div>
+      </div>
 
-        <el-form-item label="プログラムコード" required>
-          <el-input
-            v-model="elementsJson"
-            type="textarea"
-            :rows="10"
-            placeholder='例: [{"id":"t1","type":"text",...}]'
-          />
-          <div class="hint">
-            プログラムコードでも直接編集ができます。可視編集は一覧の「レイアウト編集」から開けます。
-          </div>
-        </el-form-item>
-      </el-form>
+      <div class="form-row">
+        <div class="o-form-group">
+          <label class="o-form-label">幅(mm) <span class="required">*</span></label>
+          <input class="o-input" v-model.number="editForm.canvas.widthMm" type="number" min="1" step="1" />
+        </div>
+        <div class="o-form-group">
+          <label class="o-form-label">高さ(mm) <span class="required">*</span></label>
+          <input class="o-input" v-model.number="editForm.canvas.heightMm" type="number" min="1" step="1" />
+        </div>
+      </div>
+
+      <div class="o-form-group">
+        <label class="o-form-label">プログラムコード <span class="required">*</span></label>
+        <textarea
+          class="o-input"
+          v-model="elementsJson"
+          rows="10"
+          placeholder='例: [{"id":"t1","type":"text",...}]'
+        ></textarea>
+        <div class="hint">
+          プログラムコードでも直接編集ができます。可視編集は一覧の「レイアウト編集」から開けます。
+        </div>
+      </div>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">キャンセル</el-button>
-        <el-button type="primary" :loading="saving" @click="handleSave">{{ isEditing ? '更新' : '作成' }}</el-button>
+        <button class="o-btn o-btn-secondary" @click="dialogVisible = false">キャンセル</button>
+        <button class="o-btn o-btn-primary" :disabled="saving" @click="handleSave">{{ isEditing ? '更新' : '作成' }}</button>
       </template>
-    </el-dialog>
+    </ODialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
-import { ElButton, ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { useToast } from '@/composables/useToast'
+import ODialog from '@/components/odoo/ODialog.vue'
 import Table from '@/components/table/Table.vue'
 import type { TableColumn } from '@/types/table'
 import type { PrintTemplate } from '@/types/printTemplate'
@@ -75,6 +78,7 @@ import { fetchPrintTemplates, fetchPrintTemplate, createPrintTemplate, updatePri
 import { createEmptyPrintTemplate } from '@/utils/print/templateStorage'
 
 const router = useRouter()
+const { show: showToast } = useToast()
 const templates = ref<PrintTemplate[]>([])
 const dialogVisible = ref(false)
 const saving = ref(false)
@@ -118,24 +122,19 @@ async function duplicatePrintTemplate(row: PrintTemplate) {
     const detail = await fetchPrintTemplate(row.id)
     const { id, meta, ...rest } = detail
     await createPrintTemplate({ ...rest, name: `${row.name}_copy` } as any)
-    ElMessage.success('複製しました')
+    showToast('複製しました', 'success')
     reload()
   } catch (e: any) {
-    ElMessage.error(e?.message || '複製に失敗しました')
+    showToast(e?.message || '複製に失敗しました', 'danger')
   }
 }
 
 async function removeTemplate(row: PrintTemplate) {
-  const ok = await ElMessageBox.confirm(`削除しますか？: ${row.name}`, '確認', {
-    type: 'warning',
-    confirmButtonText: '削除',
-    cancelButtonText: 'キャンセル',
-  }).catch(() => false)
-  if (!ok) return
+  if (!confirm(`削除しますか？: ${row.name}`)) return
 
   await deletePrintTemplate(row.id)
   templates.value = templates.value.filter((t) => t.id !== row.id)
-  ElMessage.success('削除しました')
+  showToast('削除しました', 'success')
 }
 
 async function handleSave() {
@@ -168,9 +167,9 @@ async function handleSave() {
 
     templates.value = list
     dialogVisible.value = false
-    ElMessage.success(isEditing.value ? '更新しました' : '作成しました')
+    showToast(isEditing.value ? '更新しました' : '作成しました', 'success')
   } catch (e: any) {
-    ElMessage.error(e?.message || '保存に失敗しました')
+    showToast(e?.message || '保存に失敗しました', 'danger')
   } finally {
     saving.value = false
   }
@@ -186,7 +185,7 @@ const tableColumns = computed((): TableColumn[] => {
       width: 160,
       fieldType: 'string',
       cellRenderer: ({ rowData }: { rowData: PrintTemplate }) =>
-        `${rowData.canvas?.widthMm ?? '-'}×${rowData.canvas?.heightMm ?? '-'}`,
+        `${rowData.canvas?.widthMm ?? '-'}x${rowData.canvas?.heightMm ?? '-'}`,
     },
     {
       key: 'actions',
@@ -197,26 +196,10 @@ const tableColumns = computed((): TableColumn[] => {
       align: 'center',
       cellRenderer: ({ rowData }: { rowData: PrintTemplate }) =>
         h('div', { class: 'action-cell' }, [
-          h(
-            ElButton,
-            { type: 'success', plain: true, size: 'small', onClick: () => openVisualEditor(rowData) },
-            { default: () => 'レイアウト編集' },
-          ),
-          h(
-            ElButton,
-            { type: 'primary', plain: true, size: 'small', onClick: () => openEdit(rowData) },
-            { default: () => 'コード編集' },
-          ),
-          h(
-            ElButton,
-            { type: 'info', plain: true, size: 'small', onClick: () => duplicatePrintTemplate(rowData) },
-            { default: () => '複製' },
-          ),
-          h(
-            ElButton,
-            { type: 'danger', plain: true, size: 'small', onClick: () => removeTemplate(rowData) },
-            { default: () => '削除' },
-          ),
+          h('button', { class: 'o-btn o-btn-sm o-btn-outline-success', onClick: () => openVisualEditor(rowData) }, 'レイアウト編集'),
+          h('button', { class: 'o-btn o-btn-sm o-btn-outline-primary', onClick: () => openEdit(rowData) }, 'コード編集'),
+          h('button', { class: 'o-btn o-btn-sm o-btn-outline-secondary', onClick: () => duplicatePrintTemplate(rowData) }, '複製'),
+          h('button', { class: 'o-btn o-btn-sm o-btn-outline-danger', onClick: () => removeTemplate(rowData) }, '削除'),
         ]),
     },
   ]
@@ -226,6 +209,11 @@ onMounted(() => reload())
 </script>
 
 <style scoped>
+.print-template-settings {
+  display: flex;
+  flex-direction: column;
+}
+
 .page-header {
   display: flex;
   align-items: flex-end;
@@ -241,6 +229,46 @@ onMounted(() => reload())
   color: #6b7280;
   font-size: 12px;
 }
+
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  cursor: pointer;
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-700, #303133);
+  transition: 0.2s;
+  white-space: nowrap;
+}
+.o-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.o-btn-primary { background: var(--o-brand-primary, #714b67); color: #fff; border-color: var(--o-brand-primary, #714b67); }
+.o-btn-secondary { background: var(--o-view-background, #fff); color: var(--o-gray-700, #303133); }
+.o-btn-sm { padding: 4px 10px; font-size: 13px; }
+.o-btn-outline-primary { background: transparent; color: var(--o-brand-primary, #714b67); border-color: var(--o-brand-primary, #714b67); }
+.o-btn-outline-secondary { background: transparent; color: var(--o-gray-600, #909399); border-color: var(--o-gray-600, #909399); }
+.o-btn-outline-success { background: transparent; color: #67c23a; border-color: #67c23a; }
+.o-btn-outline-danger { background: transparent; color: #f56c6c; border-color: #f56c6c; }
+
+.o-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  color: var(--o-gray-700, #303133);
+  background: var(--o-view-background, #fff);
+  box-sizing: border-box;
+}
+textarea.o-input { resize: vertical; font-family: monospace; }
+
+.o-form-group { margin-bottom: 1rem; }
+.o-form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
+.required { color: #f56c6c; }
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -262,30 +290,8 @@ onMounted(() => reload())
   padding: 4px;
 }
 
-:deep(.action-cell .el-button) {
+:deep(.action-cell .o-btn) {
   margin: 0;
   min-width: 54px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  border-width: 1px;
-}
-
-:deep(.action-cell .el-button--primary.is-plain) {
-  border-color: var(--el-color-primary);
-}
-
-:deep(.action-cell .el-button--info.is-plain) {
-  border-color: var(--el-color-info);
-}
-
-:deep(.action-cell .el-button--success.is-plain) {
-  border-color: var(--el-color-success);
-}
-
-:deep(.action-cell .el-button--danger.is-plain) {
-  border-color: var(--el-color-danger);
 }
 </style>
-
-

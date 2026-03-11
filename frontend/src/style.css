@@ -1,0 +1,299 @@
+/* ===== Odoo 17 Backend — Exact CSS ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Brand Colors */
+  --o-brand-odoo: #243B66;
+  --o-brand-primary: #243B66;
+  --o-brand-secondary: #8f8f8f;
+  --o-brand-lightsecondary: #f8f9fa;
+  --o-action: #00A09D;
+
+  /* Semantic */
+  --o-success: #28a745;
+  --o-info: #17a2b8;
+  --o-warning: #ffac00;
+  --o-danger: #dc3545;
+
+  /* Grayscale (Bootstrap) */
+  --o-gray-100: #f8f9fa;
+  --o-gray-200: #e9ecef;
+  --o-gray-300: #dee2e6;
+  --o-gray-400: #ced4da;
+  --o-gray-500: #adb5bd;
+  --o-gray-600: #6c757d;
+  --o-gray-700: #495057;
+  --o-gray-800: #343a40;
+  --o-gray-900: #212529;
+
+  /* Layout */
+  --o-navbar-height: 46px;
+  --o-font-size-base: 0.875rem;
+  --o-font-size-small: 0.8125rem;
+  --o-font-size-smaller: 0.75rem;
+  --o-spacer: 1rem;
+  --o-border-color: #dee2e6;
+  --o-border-radius: 0.25rem;
+  --o-border-radius-sm: 0.1875rem;
+  --o-border-radius-lg: 0.375rem;
+
+  --o-webclient-background: #f8f9fa;
+  --o-view-background: #ffffff;
+
+  /* Hover & Selection */
+  --o-list-hover: #edf2ff;
+  --o-list-selected: #e8f0fe;
+  --o-brand-light: #f0e6ed;
+  --o-brand-lighter: #ede8eb;
+  --o-brand-lightest: #e8dfe6;
+  --o-brand-hover-dark: #1a2d50;
+
+  /* Danger light */
+  --o-danger-light: #fdf0f1;
+  --o-danger-bg: #f8d7da;
+  --o-danger-text: #721c24;
+  --o-danger-border: #f5c6cb;
+
+  /* Success light */
+  --o-success-bg: #d4edda;
+  --o-success-text: #155724;
+  --o-success-border: #c3e6cb;
+
+  /* Warning light */
+  --o-warning-bg: #fff3cd;
+  --o-warning-text: #856404;
+  --o-warning-note-bg: #fffdf5;
+
+  /* Info light */
+  --o-info-bg: #d1ecf1;
+  --o-info-text: #0c5460;
+
+  /* Toggle */
+  --o-toggle-off: #ccc;
+
+  --o-form-sheet-max-width: 1140px;
+  --o-form-sheet-padding: 1.5rem;
+
+  --NavBar-entry-color: rgba(255, 255, 255, 0.9);
+  --NavBar-entry-bg-hover: rgba(0, 0, 0, 0.08);
+
+  --o-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, "Noto Sans", Arial, sans-serif;
+  --o-font-family-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Shadow */
+  --o-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.075);
+  --o-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --o-shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+  --o-shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.125);
+
+  /* Control Panel */
+  --o-cp-height: 54px;
+
+  /* Legacy aliases (pages still reference these) */
+  --bg-primary: var(--o-view-background);
+  --bg-secondary: var(--o-gray-100);
+  --border-color: var(--o-border-color);
+  --border-radius: var(--o-border-radius);
+  --text-primary: var(--o-gray-900);
+  --text-secondary: var(--o-gray-600);
+  --text-muted: var(--o-gray-500);
+  --odoo-brand: var(--o-brand-primary);
+  --odoo-purple: var(--o-brand-primary);
+  --odoo-purple-dark: #5B3D54;
+  --success: var(--o-success);
+  --danger: var(--o-danger);
+  --warning: var(--o-warning);
+  --info: var(--o-info);
+  --shadow-sm: var(--o-shadow-sm);
+  --shadow-md: var(--o-shadow-md);
+  --shadow-lg: var(--o-shadow-lg);
+  --topbar-height: var(--o-navbar-height);
+  --bg-sidebar: #2c2c3e;
+  --bg-sidebar-hover: rgba(255, 255, 255, 0.05);
+  --bg-sidebar-active: rgba(113, 75, 103, 0.3);
+  --text-sidebar: rgba(255, 255, 255, 0.7);
+  --text-sidebar-active: #fff;
+}
+
+/* ===== Dark Mode ===== */
+[data-theme="dark"] {
+  --o-gray-100: #1e1e2e;
+  --o-gray-200: #2a2a3e;
+  --o-gray-300: #3a3a4e;
+  --o-gray-400: #4a4a5e;
+  --o-gray-500: #6c6c7e;
+  --o-gray-600: #a0a0b0;
+  --o-gray-700: #c0c0d0;
+  --o-gray-800: #d8d8e8;
+  --o-gray-900: #e8e8f0;
+
+  --o-border-color: #3a3a4e;
+  --o-webclient-background: #14141e;
+  --o-view-background: #1e1e2e;
+
+  /* Hover & Selection */
+  --o-list-hover: rgba(113, 75, 103, 0.12);
+  --o-list-selected: rgba(113, 75, 103, 0.18);
+  --o-brand-light: rgba(113, 75, 103, 0.15);
+  --o-brand-lighter: rgba(113, 75, 103, 0.12);
+  --o-brand-lightest: rgba(113, 75, 103, 0.2);
+  --o-brand-hover-dark: #8a5e7e;
+
+  /* Danger light */
+  --o-danger-light: rgba(220, 53, 69, 0.1);
+  --o-danger-bg: rgba(220, 53, 69, 0.15);
+  --o-danger-text: #f5a0a8;
+  --o-danger-border: rgba(220, 53, 69, 0.3);
+
+  /* Success light */
+  --o-success-bg: rgba(40, 167, 69, 0.15);
+  --o-success-text: #7ddf9b;
+  --o-success-border: rgba(40, 167, 69, 0.3);
+
+  /* Warning light */
+  --o-warning-bg: rgba(255, 172, 0, 0.15);
+  --o-warning-text: #ffd56a;
+  --o-warning-note-bg: rgba(255, 193, 7, 0.08);
+
+  /* Info light */
+  --o-info-bg: rgba(23, 162, 184, 0.15);
+  --o-info-text: #6fd4e4;
+
+  /* Toggle */
+  --o-toggle-off: var(--o-gray-400);
+
+  --bg-primary: var(--o-view-background);
+  --bg-secondary: var(--o-gray-100);
+  --text-primary: var(--o-gray-900);
+  --text-secondary: var(--o-gray-600);
+  --text-muted: var(--o-gray-500);
+  --bg-sidebar: #12121e;
+}
+
+[data-theme="dark"] body {
+  color: var(--o-gray-900);
+  background: var(--o-webclient-background);
+}
+
+[data-theme="dark"] .o-btn-secondary {
+  background: var(--o-gray-200);
+  color: var(--o-gray-800);
+  border-color: var(--o-gray-300);
+}
+[data-theme="dark"] .o-btn-secondary:hover {
+  background: var(--o-gray-300);
+  border-color: var(--o-gray-400);
+}
+
+[data-theme="dark"] .o-input {
+  background: var(--o-gray-200);
+  color: var(--o-gray-900);
+  border-color: var(--o-gray-300);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: var(--o-gray-400); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: var(--o-gray-500); }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--o-font-family);
+  font-size: var(--o-font-size-base);
+  line-height: 1.5;
+  color: var(--o-gray-900);
+  background: var(--o-webclient-background);
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 { font-weight: 500; line-height: 1.3; margin: 0; }
+p { margin: 0; }
+a { color: var(--o-brand-primary); text-decoration: none; }
+a:hover { color: var(--o-brand-hover-dark); }
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; font-size: inherit; }
+
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--o-gray-400); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--o-gray-500); }
+
+#app { height: 100vh; overflow: hidden; }
+
+/* ===== Odoo Button Styles ===== */
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: var(--o-font-size-base);
+  font-weight: 500;
+  line-height: 1.5;
+  border-radius: var(--o-border-radius);
+  border: 1px solid transparent;
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
+}
+.o-btn-primary {
+  background: var(--o-brand-primary);
+  color: #fff;
+  border-color: var(--o-brand-primary);
+}
+.o-btn-primary:hover { background: var(--o-brand-hover-dark); border-color: var(--o-brand-hover-dark); }
+.o-btn-secondary {
+  background: var(--o-view-background);
+  color: var(--o-gray-700);
+  border-color: var(--o-gray-300);
+}
+.o-btn-secondary:hover { background: var(--o-gray-100); border-color: var(--o-gray-400); }
+.o-btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: var(--o-font-size-small);
+}
+
+/* ===== Odoo Form Input Styles ===== */
+.o-input {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: var(--o-font-size-base);
+  line-height: 1.5;
+  color: var(--o-gray-700);
+  background: var(--o-view-background);
+  border: 1px solid var(--o-gray-300);
+  border-radius: var(--o-border-radius);
+  transition: border-color 0.15s ease-in-out;
+}
+.o-input:focus {
+  border-color: var(--o-brand-primary);
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(113, 75, 103, 0.25);
+}
+
+/* ===== Odoo Badge ===== */
+.o-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 10rem;
+  line-height: 1.5;
+}
+.o-badge-success { background: var(--o-success-bg); color: var(--o-success-text); }
+.o-badge-warning { background: var(--o-warning-bg); color: var(--o-warning-text); }
+.o-badge-danger { background: var(--o-danger-bg); color: var(--o-danger-text); }
+.o-badge-info { background: var(--o-info-bg); color: var(--o-info-text); }
+.o-badge-secondary { background: var(--o-gray-200); color: var(--o-gray-700); }
+.o-badge-primary { background: var(--o-brand-lightest); color: var(--o-brand-primary); }

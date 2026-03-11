@@ -1,161 +1,146 @@
 <template>
-  <el-dialog
-    v-model="visible"
+  <ODialog
+    :open="visible"
     title="ファイル登録"
-    width="800px"
-    :close-on-click-modal="false"
+    size="lg"
     @close="handleClose"
   >
     <div class="import-dialog-content">
       <!-- 上半部分：文件上传 -->
       <div class="upload-section">
         <h3>ファイルをアップロード</h3>
-        <el-upload
-          drag
-          action="#"
-          :auto-upload="false"
-          :multiple="false"
-          accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-          :on-change="handleFileChange"
-          :show-file-list="true"
-          :file-list="fileList"
+        <div
+          class="upload-drop-zone"
+          @dragover.prevent="dragOver = true"
+          @dragleave="dragOver = false"
+          @drop.prevent="handleDrop"
+          :class="{ 'drag-over': dragOver }"
+          @click="triggerFileInput"
         >
-          <el-icon class="upload-icon"><UploadFilled /></el-icon>
-          <div class="el-upload__text">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--o-brand-primary, #714b67)" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <div class="upload-text">
             ファイルをここにドロップするか <em>クリックして選択</em>
           </div>
-          <template #tip>
-            <div class="el-upload__tip">
-              対応形式: CSV, XLSX, XLS
-            </div>
-          </template>
-        </el-upload>
+          <div class="upload-tip">対応形式: CSV, XLSX, XLS</div>
+        </div>
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+          style="display: none"
+          @change="handleNativeFileChange"
+        />
         <div v-if="fileName" class="file-info">
-          <el-text type="success">選択中: {{ fileName }}</el-text>
+          <span style="color: var(--o-success, #28a745)">選択中: {{ fileName }}</span>
         </div>
         <!-- 编码选择（仅 CSV 文件时显示） -->
         <div v-if="isCsvFile" class="encoding-section">
-          <el-form-item label="文字コード" style="margin-top: 12px; margin-bottom: 0">
-            <el-select
+          <div class="o-form-group" style="margin-top: 12px; margin-bottom: 0">
+            <label class="o-form-label">文字コード</label>
+            <select
+              class="o-input"
               v-model="fileEncoding"
               style="width: 200px"
               @change="handleEncodingChange"
             >
-              <el-option
+              <option
                 v-for="enc in encodingOptions"
                 :key="enc.value"
-                :label="enc.label"
                 :value="enc.value"
-              />
-            </el-select>
-          </el-form-item>
+              >{{ enc.label }}</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <!-- 下半部分：Mapping Config 选择 -->
       <div class="mapping-section">
         <h3>レイアウトを選択</h3>
-        <el-select
+        <select
+          class="o-input"
           v-model="selectedConfigId"
-          placeholder="レイアウトを選択してください"
           style="width: 100%"
-          :loading="loadingConfigs"
-          filterable
         >
-          <el-option
+          <option value="" disabled>レイアウトを選択してください</option>
+          <option
             v-for="config in mappingConfigs"
             :key="config._id"
-            :label="config.name"
             :value="config._id"
-          >
-            <div style="display: flex; justify-content: space-between; align-items: center">
-              <span>{{ config.name }}</span>
-              <el-tag v-if="config.isDefault" size="small" type="success">デフォルト</el-tag>
-            </div>
-          </el-option>
-        </el-select>
+          >{{ config.name }}{{ config.isDefault ? ' (デフォルト)' : '' }}</option>
+        </select>
         <div v-if="selectedConfig" class="config-info">
-          <el-text type="info" size="small">
+          <span style="color: var(--o-gray-500, #6c757d); font-size: var(--o-font-size-small, 13px)">
             {{ selectedConfig.description || '説明なし' }}
-          </el-text>
+          </span>
         </div>
       </div>
 
       <!-- 重複処理オプション -->
       <div v-if="props.showDuplicateStrategy" class="duplicate-strategy-section">
         <h3>重複処理</h3>
-        <el-radio-group v-model="duplicateStrategy" class="strategy-radio-group">
-          <div class="strategy-option">
-            <el-radio value="error">
-              <span class="strategy-label">エラーとして報告</span>
-            </el-radio>
-            <el-text type="info" size="small" class="strategy-desc">重複があれば取込を中止します</el-text>
-          </div>
-          <div class="strategy-option">
-            <el-radio value="skip">
-              <span class="strategy-label">スキップ</span>
-            </el-radio>
-            <el-text type="info" size="small" class="strategy-desc">既存SKUを無視し、新規のみ取込みます</el-text>
-          </div>
-          <div class="strategy-option">
-            <el-radio value="overwrite">
-              <span class="strategy-label">上書き更新</span>
-            </el-radio>
-            <el-text type="info" size="small" class="strategy-desc">既存SKUを更新し、新規は追加します</el-text>
-          </div>
-        </el-radio-group>
+        <div class="strategy-radio-group">
+          <label class="strategy-option" :class="{ selected: duplicateStrategy === 'error' }">
+            <input type="radio" v-model="duplicateStrategy" value="error" />
+            <span class="strategy-label">エラーとして報告</span>
+            <span class="strategy-desc">重複があれば取込を中止します</span>
+          </label>
+          <label class="strategy-option" :class="{ selected: duplicateStrategy === 'skip' }">
+            <input type="radio" v-model="duplicateStrategy" value="skip" />
+            <span class="strategy-label">スキップ</span>
+            <span class="strategy-desc">既存SKUを無視し、新規のみ取込みます</span>
+          </label>
+          <label class="strategy-option" :class="{ selected: duplicateStrategy === 'overwrite' }">
+            <input type="radio" v-model="duplicateStrategy" value="overwrite" />
+            <span class="strategy-label">上書き更新</span>
+            <span class="strategy-desc">既存SKUを更新し、新規は追加します</span>
+          </label>
+        </div>
       </div>
 
       <!-- 预览区域 -->
       <div v-if="previewRows.length > 0" class="preview-section">
         <h3>プレビュー（最初の5行）</h3>
-        <el-table :data="previewRows" max-height="200" border size="small">
-          <el-table-column
-            v-for="(value, key) in previewRows[0]"
-            :key="key"
-            :prop="key"
-            :label="key"
-            min-width="120"
-          />
-        </el-table>
+        <div style="max-height: 200px; overflow: auto; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px">
+          <table class="o-list-table" style="font-size: 12px">
+            <thead>
+              <tr>
+                <th v-for="key in Object.keys(previewRows[0] || {})" :key="key" style="min-width: 120px">{{ key }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row, idx) in previewRows" :key="idx">
+                <td v-for="key in Object.keys(previewRows[0] || {})" :key="key">{{ row[key] }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">キャンセル</el-button>
-        <el-button
-          type="primary"
-          :disabled="!canImport"
-          :loading="importing"
+        <button type="button" class="o-btn o-btn-secondary" @click="handleClose">キャンセル</button>
+        <button
+          type="button"
+          class="o-btn o-btn-primary"
+          :disabled="!canImport || importing"
           @click="handleImport"
         >
+          <span v-if="importing" class="spinner"></span>
           取り込み
-        </el-button>
+        </button>
       </div>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import {
-  ElDialog,
-  ElUpload,
-  ElSelect,
-  ElOption,
-  ElButton,
-  ElText,
-  ElTag,
-  ElTable,
-  ElTableColumn,
-  ElMessage,
-  ElIcon,
-  ElFormItem,
-  ElRadioGroup,
-  ElRadio,
-} from 'element-plus'
-import { UploadFilled } from '@element-plus/icons-vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import * as XLSX from 'xlsx'
 import { getAllMappingConfigs, type MappingConfig, type TransformMapping } from '@/api/mappingConfig'
 import { generateTempId } from '@/types/orderRow'
@@ -222,6 +207,8 @@ const visible = computed({
   set: (val) => emit('update:modelValue', val),
 })
 
+const fileInputRef = ref<HTMLInputElement>()
+const dragOver = ref(false)
 const fileList = ref<any[]>([])
 const fileName = ref<string | null>(null)
 const selectedFile = ref<File | null>(null)
@@ -255,6 +242,34 @@ const canImport = computed(() => {
   return selectedFile.value !== null && selectedConfigId.value !== ''
 })
 
+const triggerFileInput = () => {
+  fileInputRef.value?.click()
+}
+
+const handleNativeFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  processFile(file)
+}
+
+const handleDrop = (e: DragEvent) => {
+  dragOver.value = false
+  const file = e.dataTransfer?.files?.[0]
+  if (!file) return
+  processFile(file)
+}
+
+const processFile = (file: File) => {
+  selectedFile.value = file
+  fileName.value = file.name
+
+  // 如果已选择 mapping config，立即解析预览
+  if (selectedConfigId.value) {
+    parseAndPreview()
+  }
+}
+
 // 加载 mapping configs
 const loadMappingConfigs = async () => {
   loadingConfigs.value = true
@@ -268,30 +283,9 @@ const loadMappingConfigs = async () => {
     }
   } catch (error) {
     console.error('Failed to load mapping configs:', error)
-    ElMessage.error('レイアウトの読み込みに失敗しました')
+    alert('レイアウトの読み込みに失敗しました')
   } finally {
     loadingConfigs.value = false
-  }
-}
-
-// 文件变化处理
-const handleFileChange = (file: any) => {
-  const rawFile = file.raw as File
-  if (!rawFile) {
-    selectedFile.value = null
-    fileName.value = null
-    fileList.value = []
-    previewRows.value = []
-    return
-  }
-
-  selectedFile.value = rawFile
-  fileName.value = rawFile.name
-  fileList.value = [file]
-
-  // 如果已选择 mapping config，立即解析预览
-  if (selectedConfigId.value) {
-    parseAndPreview()
   }
 }
 
@@ -311,7 +305,7 @@ const parseAndPreview = async () => {
   try {
     const rows = await parseFile(selectedFile.value)
     const config = selectedConfig.value
-    
+
     // Use transform mappings
       const transformMappings = config.mappings as TransformMapping[]
       const mappedRows = []
@@ -323,7 +317,7 @@ const parseAndPreview = async () => {
       previewRows.value = mappedRows.map(row => flattenForPreview(row))
   } catch (error) {
     console.error('Failed to parse file:', error)
-    ElMessage.error('ファイルの解析に失敗しました')
+    alert('ファイルの解析に失敗しました')
     previewRows.value = []
   }
 }
@@ -354,7 +348,7 @@ const detectCsvEncoding = (buf: ArrayBuffer): 'utf-8' | 'utf-8-sig' | 'shift_jis
     return 'utf-8-sig'
   }
   // 尝试解码并评分
-  const decodeWithEncoding = (buf: ArrayBuffer, enc: string): string => {
+  const decodeWithEnc = (buf: ArrayBuffer, enc: string): string => {
     try {
       const decoder = new TextDecoder(enc as any, { fatal: false })
       return decoder.decode(buf)
@@ -362,9 +356,9 @@ const detectCsvEncoding = (buf: ArrayBuffer): 'utf-8' | 'utf-8-sig' | 'shift_jis
       return new TextDecoder('utf-8').decode(buf)
     }
   }
-  const utf8Text = decodeWithEncoding(buf, 'utf-8')
-  const sjisText = decodeWithEncoding(buf, 'shift_jis')
-  const gbkText = decodeWithEncoding(buf, 'gb18030')
+  const utf8Text = decodeWithEnc(buf, 'utf-8')
+  const sjisText = decodeWithEnc(buf, 'shift_jis')
+  const gbkText = decodeWithEnc(buf, 'gb18030')
   const score = (text: string) => {
     const invalid = (text.match(/\uFFFD/g) || []).length
     const cjk = (text.match(/[\u3040-\u30ff\u4e00-\u9fa5]/g) || []).length
@@ -406,7 +400,7 @@ const parseCsvFile = async (file: File): Promise<Record<string, any>[]> => {
     return parseSheetToRows(wb)
   } catch (error) {
     console.error('CSV parsing failed:', error)
-    ElMessage.error('CSVファイルの解析に失敗しました。エンコーディング（UTF-8 または Shift-JIS）を確定してください。')
+    alert('CSVファイルの解析に失敗しました。エンコーディング（UTF-8 または Shift-JIS）を確定してください。')
     throw error
   }
 }
@@ -426,15 +420,15 @@ const parseSheetToRows = (wb: any): Record<string, any>[] => {
   if (!wb.SheetNames || wb.SheetNames.length === 0) {
     return []
   }
-  
+
   const sheet = wb.Sheets[wb.SheetNames[0]]
-  
+
   // 手动读取单元格，使用原始显示值（cell.w），避免 XLSX 自动格式化日期
   // 这样保持 Excel/CSV 中实际显示的值，不进行任何转换，纯粹根据 transform 配置来转换
   const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1')
   const headers: string[] = []
   const rows: Record<string, any>[] = []
-  
+
   // 读取表头（第一行）
   for (let col = range.s.c; col <= range.e.c; col++) {
     const cellAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col })
@@ -443,11 +437,11 @@ const parseSheetToRows = (wb: any): Record<string, any>[] => {
     const value = cell?.w != null ? String(cell.w) : (cell?.v != null ? String(cell.v) : '')
     headers.push(value.trim())
   }
-  
+
   // 过滤空表头
   const validHeaders = headers.filter((h) => h)
   if (validHeaders.length === 0) return []
-  
+
   // 读取数据行（从第二行开始）
   for (let row = range.s.r + 1; row <= range.e.r; row++) {
     const obj: Record<string, any> = {}
@@ -483,7 +477,7 @@ const handleImport = async () => {
   try {
     const rows = await parseFile(selectedFile.value)
     const config = selectedConfig.value!
-    
+
     // Use transform mappings
       const transformMappings = config.mappings as TransformMapping[]
     const mappedRows = []
@@ -500,7 +494,7 @@ const handleImport = async () => {
     if (props.passthrough) {
       // Pass strategy if duplicate strategy option is enabled
       emit('import', mappedRows, props.showDuplicateStrategy ? duplicateStrategy.value : undefined)
-      ElMessage.success(`${mappedRows.length}件のデータを取り込みしました`)
+      alert(`${mappedRows.length}件のデータを取り込みしました`)
       handleClose()
       return
     }
@@ -648,11 +642,11 @@ const handleImport = async () => {
     })
 
     emit('import', importedRows)
-    ElMessage.success(`${importedRows.length}件のデータを取り込みしました`)
+    alert(`${importedRows.length}件のデータを取り込みしました`)
     handleClose()
   } catch (error) {
     console.error('Failed to import:', error)
-    ElMessage.error('取り込みに失敗しました')
+    alert('取り込みに失敗しました')
   } finally {
     importing.value = false
   }
@@ -668,6 +662,10 @@ const handleClose = () => {
   previewRows.value = []
   fileEncoding.value = props.defaultFileEncoding || 'auto' // 重置编码选择
   duplicateStrategy.value = 'error' // 重置重複処理オプション
+  // Reset file input
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ''
+  }
 }
 
 // 打开时加载配置
@@ -706,9 +704,39 @@ watch(visible, (newVal) => {
   color: #303133;
 }
 
-.upload-icon {
-  font-size: 48px;
-  color: var(--el-color-primary);
+.upload-drop-zone {
+  border: 2px dashed var(--o-border-color, #dee2e6);
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.upload-drop-zone:hover,
+.upload-drop-zone.drag-over {
+  border-color: var(--o-brand-primary, #714b67);
+  background: var(--o-brand-primary-light, rgba(113, 75, 103, 0.05));
+}
+
+.upload-text {
+  font-size: 14px;
+  color: #606266;
+}
+
+.upload-text em {
+  color: var(--o-brand-primary, #714b67);
+  font-style: normal;
+  cursor: pointer;
+}
+
+.upload-tip {
+  font-size: 12px;
+  color: #909399;
 }
 
 .file-info {
@@ -729,8 +757,18 @@ watch(visible, (newVal) => {
   gap: 12px;
 }
 
-:deep(.el-upload-dragger) {
-  width: 100%;
+.o-form-group {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.o-form-label {
+  font-size: var(--o-font-size-small, 13px);
+  font-weight: 500;
+  color: var(--o-gray-700, #495057);
+  flex-shrink: 0;
 }
 
 .strategy-radio-group {
@@ -746,11 +784,16 @@ watch(visible, (newVal) => {
   border: 1px solid #e4e7ed;
   border-radius: 4px;
   transition: border-color 0.2s;
+  cursor: pointer;
 }
 
-.strategy-option:has(:checked) {
-  border-color: var(--el-color-primary);
-  background-color: var(--el-color-primary-light-9);
+.strategy-option.selected {
+  border-color: var(--o-brand-primary, #714b67);
+  background-color: rgba(113, 75, 103, 0.05);
+}
+
+.strategy-option input[type="radio"] {
+  accent-color: var(--o-brand-primary, #714b67);
 }
 
 .strategy-label {
@@ -760,6 +803,23 @@ watch(visible, (newVal) => {
 .strategy-desc {
   margin-left: 24px;
   margin-top: 2px;
+  font-size: var(--o-font-size-small, 13px);
+  color: var(--o-gray-500, #6c757d);
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>
-

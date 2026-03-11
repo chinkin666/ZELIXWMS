@@ -6,8 +6,10 @@
         <p class="page-subtitle">郵便番号（7桁数字）・住所・名・電話を管理します</p>
       </div>
       <div class="page-actions">
-        <el-button type="success" :icon="Upload" @click="showImportDialog = true">取り込みファイルを選択</el-button>
-        <el-button type="primary" :icon="Plus" @click="openCreate">新規追加</el-button>
+        <button class="o-btn o-btn-success" @click="showImportDialog = true">
+          取り込みファイルを選択
+        </button>
+        <button class="o-btn o-btn-primary" @click="openCreate">新規追加</button>
       </div>
     </div>
 
@@ -50,8 +52,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
-import { ElButton, ElMessage, ElMessageBox } from 'element-plus'
-import { Edit, Plus, Delete, Upload } from '@element-plus/icons-vue'
+import { useToast } from '@/composables/useToast'
 import SearchForm from '@/components/search/SearchForm.vue'
 import Table from '@/components/table/Table.vue'
 import FormDialog from '@/components/form/FormDialog.vue'
@@ -67,6 +68,8 @@ import {
   validateOrderSourceCompanyImport,
 } from '@/api/orderSourceCompany'
 import type { OrderSourceCompany, OrderSourceCompanyFilters } from '@/types/orderSourceCompany'
+
+const { show: showToast } = useToast()
 
 const list = ref<OrderSourceCompany[]>([])
 const loading = ref(false)
@@ -184,34 +187,28 @@ const tableColumns: TableColumn[] = [
     cellRenderer: ({ rowData }: { rowData: OrderSourceCompany }) =>
       h('div', { class: 'action-cell' }, [
         h(
-          ElButton,
+          'button',
           {
-            type: 'primary',
-            plain: true,
-            size: 'small',
+            class: 'o-btn o-btn-sm o-btn-outline-primary',
             onClick: () => openEdit(rowData),
           },
-          { default: () => '編集' },
+          '編集',
         ),
         h(
-          ElButton,
+          'button',
           {
-            type: 'info',
-            plain: true,
-            size: 'small',
+            class: 'o-btn o-btn-sm o-btn-outline-secondary',
             onClick: () => duplicateOrderSourceCompany(rowData),
           },
-          { default: () => '複製' },
+          '複製',
         ),
         h(
-          ElButton,
+          'button',
           {
-            type: 'danger',
-            plain: true,
-            size: 'small',
+            class: 'o-btn o-btn-sm o-btn-outline-danger',
             onClick: () => confirmDelete(rowData),
           },
-          { default: () => '削除' },
+          '削除',
         ),
       ]),
   },
@@ -238,7 +235,6 @@ const openEdit = (row: OrderSourceCompany) => {
 }
 
 const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
-  // Extract global search text (client-side only, strip from payload)
   if (payload.__global?.value) {
     globalSearchText.value = String(payload.__global.value).trim()
     delete payload.__global
@@ -263,7 +259,7 @@ const loadList = async () => {
   try {
     list.value = await fetchOrderSourceCompanies(currentFilters.value)
   } catch (error: any) {
-    ElMessage.error(error?.message || '取得に失敗しました')
+    showToast(error?.message || '取得に失敗しました', 'danger')
   } finally {
     loading.value = false
   }
@@ -285,16 +281,16 @@ const handleDialogSubmit = async (payload: Record<string, any>) => {
 
     if (editingRow.value?._id) {
       await updateOrderSourceCompany(editingRow.value._id, cleanPayload)
-      ElMessage.success('更新しました')
+      showToast('更新しました', 'success')
     } else {
       await createOrderSourceCompany(cleanPayload)
-      ElMessage.success('作成しました')
+      showToast('作成しました', 'success')
     }
     dialogVisible.value = false
     resetForm()
     await loadList()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.message || error?.message || '保存に失敗しました')
+    showToast(error?.response?.data?.message || error?.message || '保存に失敗しました', 'danger')
   } finally {
     saving.value = false
   }
@@ -304,22 +300,18 @@ const duplicateOrderSourceCompany = async (row: OrderSourceCompany) => {
   try {
     const { _id, createdAt, updatedAt, ...rest } = row
     await createOrderSourceCompany({ ...rest, senderName: `${row.senderName}_copy` } as any)
-    ElMessage.success('複製しました')
+    showToast('複製しました', 'success')
     await loadList()
   } catch (e: any) {
-    ElMessage.error(e?.message || '複製に失敗しました')
+    showToast(e?.message || '複製に失敗しました', 'danger')
   }
 }
 
 const confirmDelete = (row: OrderSourceCompany) => {
-  ElMessageBox.confirm(`「${row.senderName}」を削除しますか？`, '確認', {
-    confirmButtonText: 'はい',
-    cancelButtonText: 'いいえ',
-    type: 'warning',
-  })
+  if (!confirm(`「${row.senderName}」を削除しますか？`)) return
+  deleteOrderSourceCompany(row._id)
     .then(async () => {
-      await deleteOrderSourceCompany(row._id)
-      ElMessage.success('削除しました')
+      showToast('削除しました', 'success')
       await loadList()
     })
     .catch(() => {})
@@ -333,7 +325,7 @@ const handleImportCompanies = async (rows: any[]) => {
   try {
     await validateOrderSourceCompanyImport(rows)
     const result = await importOrderSourceCompaniesBulk(rows)
-    ElMessage.success(`${result.insertedCount}件登録しました`)
+    showToast(`${result.insertedCount}件登録しました`, 'success')
     await loadList()
     showImportDialog.value = false
   } catch (err: any) {
@@ -342,7 +334,7 @@ const handleImportCompanies = async (rows: any[]) => {
       importErrors.value = errors
       importErrorDialogVisible.value = true
     } else {
-      ElMessage.error(err?.message || '取り込みに失敗しました')
+      showToast(err?.message || '取り込みに失敗しました', 'danger')
     }
   } finally {
     importing.value = false
@@ -399,6 +391,56 @@ onMounted(() => {
   width: 100%;
 }
 
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  cursor: pointer;
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-700, #303133);
+  transition: 0.2s;
+  white-space: nowrap;
+}
+
+.o-btn-primary {
+  background: var(--o-brand-primary, #714b67);
+  color: #fff;
+  border-color: var(--o-brand-primary, #714b67);
+}
+
+.o-btn-success {
+  background: #67c23a;
+  color: #fff;
+  border-color: #67c23a;
+}
+
+.o-btn-sm {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.o-btn-outline-primary {
+  background: transparent;
+  color: var(--o-brand-primary, #714b67);
+  border-color: var(--o-brand-primary, #714b67);
+}
+
+.o-btn-outline-secondary {
+  background: transparent;
+  color: var(--o-gray-600, #909399);
+  border-color: var(--o-gray-600, #909399);
+}
+
+.o-btn-outline-danger {
+  background: transparent;
+  color: #f56c6c;
+  border-color: #f56c6c;
+}
+
 /* 操作列样式 - 垂直排列 */
 :deep(.action-cell) {
   display: flex;
@@ -409,25 +451,8 @@ onMounted(() => {
   padding: 4px;
 }
 
-:deep(.action-cell .el-button) {
+:deep(.action-cell .o-btn) {
   margin: 0;
   min-width: 54px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  border-width: 1px;
-}
-
-:deep(.action-cell .el-button--primary.is-plain) {
-  border-color: var(--el-color-primary);
-}
-
-:deep(.action-cell .el-button--info.is-plain) {
-  border-color: var(--el-color-info);
-}
-
-:deep(.action-cell .el-button--danger.is-plain) {
-  border-color: var(--el-color-danger);
 }
 </style>
-

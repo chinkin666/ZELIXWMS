@@ -1,36 +1,29 @@
 <template>
-  <el-dialog v-model="visibleProxy" width="500px" title="配列要素を取得" destroy-on-close>
-    <el-form label-width="140px">
-      <el-form-item label="配列インデックス">
-        <el-input-number
-          v-model="form.index"
-          :min="0"
-          :max="100"
-          placeholder="取得する配列のインデックス（0から開始）"
-          style="width: 100%"
-        />
-        <div class="hint">handlingTags 配列の指定されたインデックスの値を取得します</div>
-      </el-form-item>
+  <ODialog :open="visibleProxy" title="配列要素を取得" @close="visibleProxy = false" width="500px">
+    <div class="o-form-group">
+      <label class="o-form-label">配列インデックス</label>
+      <input type="number" class="o-input" v-model.number="form.index" :min="0" :max="100" placeholder="取得する配列のインデックス（0から開始）" style="width: 100%" />
+      <div class="hint">handlingTags 配列の指定されたインデックスの値を取得します</div>
+    </div>
 
-      <el-form-item label="プレビュー">
-        <div class="preview-box">
-          <div v-if="previewValue !== null" class="preview-content">
-            {{ previewValue }}
-          </div>
-          <div v-else class="preview-placeholder">（インデックスを入力するとプレビューが表示されます）</div>
-        </div>
-      </el-form-item>
-    </el-form>
+    <div class="o-form-group">
+      <label class="o-form-label">プレビュー</label>
+      <div class="preview-box">
+        <div v-if="previewValue !== null" class="preview-content">{{ previewValue }}</div>
+        <div v-else class="preview-placeholder">（インデックスを入力するとプレビューが表示されます）</div>
+      </div>
+    </div>
 
     <template #footer>
-      <el-button @click="visibleProxy = false">キャンセル</el-button>
-      <el-button type="primary" @click="handleSubmit">適用</el-button>
+      <button class="o-btn o-btn-secondary" @click="visibleProxy = false">キャンセル</button>
+      <button class="o-btn o-btn-primary" @click="handleSubmit">適用</button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import type { TransformMapping } from '@/api/mappingConfig'
 import { runTransformMapping } from '@/utils/transformRunner'
 
@@ -52,57 +45,26 @@ const visibleProxy = computed({
   set: (v) => emits('update:modelValue', v),
 })
 
-const form = ref({
-  index: 0,
-})
-
+const form = ref({ index: 0 })
 const previewValue = ref<string | null>(null)
 
-// 构建 mapping 并预览
 const buildMapping = (): TransformMapping | null => {
   if (!props.target) return null
-
   return {
     targetField: props.target.field,
-    inputs: [
-      {
-        id: 'handling-tags-input',
-        type: 'column',
-        column: 'handlingTags',
-        pipeline: undefined,
-      },
-    ],
-    combine: {
-      plugin: 'combine.first',
-      params: {},
-    },
-    outputPipeline: {
-      steps: [
-        {
-          id: 'array-index',
-          plugin: 'array.index',
-          params: {
-            index: form.value.index,
-          },
-          enabled: true,
-        },
-      ],
-    },
+    inputs: [{ id: 'handling-tags-input', type: 'column', column: 'handlingTags', pipeline: undefined }],
+    combine: { plugin: 'combine.first', params: {} },
+    outputPipeline: { steps: [{ id: 'array-index', plugin: 'array.index', params: { index: form.value.index }, enabled: true }] },
     required: props.target.required,
     defaultValue: undefined,
   }
 }
 
-// 预览
 watch(
   () => [form.value.index, props.sampleRow],
   async () => {
     const mapping = buildMapping()
-    if (!mapping || !props.sampleRow) {
-      previewValue.value = null
-      return
-    }
-
+    if (!mapping || !props.sampleRow) { previewValue.value = null; return }
     try {
       const result = await runTransformMapping(mapping, props.sampleRow)
       previewValue.value = result !== undefined && result !== null ? String(result) : '（結果なし）'
@@ -115,36 +77,17 @@ watch(
 
 const handleSubmit = () => {
   const mapping = buildMapping()
-  if (!mapping) {
-    return
-  }
+  if (!mapping) return
   emits('submit', mapping)
   visibleProxy.value = false
 }
 </script>
 
 <style scoped>
-.hint {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
-}
-
-.preview-box {
-  min-height: 40px;
-  padding: 8px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  background-color: #f5f7fa;
-}
-
-.preview-content {
-  color: #606266;
-}
-
-.preview-placeholder {
-  color: #909399;
-  font-style: italic;
-}
+.hint { font-size: 12px; color: #909399; margin-top: 4px; }
+.preview-box { min-height: 40px; padding: 8px; border: 1px solid #dcdfe6; border-radius: 4px; background-color: #f5f7fa; }
+.preview-content { color: #606266; }
+.preview-placeholder { color: #909399; font-style: italic; }
+.o-form-group { margin-bottom:1rem; }
+.o-form-label { display:block; font-size:13px; font-weight:500; color:#374151; margin-bottom:0.25rem; }
 </style>
-

@@ -2,99 +2,108 @@
   <div class="condition-editor">
     <div v-for="(cond, index) in modelValue" :key="index" class="condition-row">
       <div class="condition-type">
-        <el-select
-          :model-value="cond.type"
-          @update:model-value="updateCondition(index, { ...cond, type: $event as ConditionType })"
-          placeholder="条件タイプ"
+        <select
+          class="o-input"
+          :value="cond.type"
+          @change="updateCondition(index, { ...cond, type: ($event.target as HTMLSelectElement).value as ConditionType })"
           style="width: 160px"
         >
-          <el-option label="注文フィールド" value="orderField" />
-          <el-option label="注文ステータス" value="orderStatus" />
-          <el-option label="検品グループ" value="orderGroup" />
-          <el-option label="配送会社データ" value="carrierRawRow" />
-        </el-select>
+          <option value="" disabled>条件タイプ</option>
+          <option value="orderField">注文フィールド</option>
+          <option value="orderStatus">注文ステータス</option>
+          <option value="orderGroup">検品グループ</option>
+          <option value="carrierRawRow">配送会社データ</option>
+        </select>
       </div>
 
       <!-- orderField type -->
       <template v-if="cond.type === 'orderField'">
-        <el-select
-          :model-value="cond.fieldKey"
-          @update:model-value="handleFieldKeyChange(index, cond, $event)"
-          placeholder="フィールド"
-          filterable
+        <select
+          class="o-input"
+          :value="cond.fieldKey"
+          @change="handleFieldKeyChange(index, cond, ($event.target as HTMLSelectElement).value)"
           style="width: 180px"
         >
-          <el-option-group
+          <option value="" disabled>フィールド</option>
+          <optgroup
             v-for="cat in fieldCategories"
             :key="cat.key"
             :label="cat.label"
           >
-            <el-option
+            <option
               v-for="field in cat.fields"
               :key="field.dataKey || field.key"
-              :label="field.title"
               :value="field.dataKey || field.key"
-            />
-          </el-option-group>
-        </el-select>
+            >
+              {{ field.title }}
+            </option>
+          </optgroup>
+        </select>
 
         <!-- normal field: operator + value -->
         <template v-if="cond.fieldKey">
-          <el-select
-            :model-value="cond.operator"
-            @update:model-value="updateCondition(index, { ...cond, operator: $event })"
-            placeholder="条件"
+          <select
+            class="o-input"
+            :value="cond.operator"
+            @change="updateCondition(index, { ...cond, operator: ($event.target as HTMLSelectElement).value as OrderFieldOperator })"
             style="width: 130px"
           >
-            <el-option
+            <option value="" disabled>条件</option>
+            <option
               v-for="op in getOperatorsForField(cond.fieldKey)"
               :key="op.value"
-              :label="op.label"
               :value="op.value"
-            />
-          </el-select>
+            >
+              {{ op.label }}
+            </option>
+          </select>
 
           <template v-if="!isNoValueOperator(cond.operator)">
             <!-- select field -->
-            <el-select
+            <select
               v-if="getFieldSearchType(cond.fieldKey) === 'select'"
-              :model-value="cond.value as string"
-              @update:model-value="updateCondition(index, { ...cond, value: $event })"
-              placeholder="値"
+              class="o-input"
+              :value="cond.value as string"
+              @change="updateCondition(index, { ...cond, value: ($event.target as HTMLSelectElement).value })"
               style="width: 180px"
             >
-              <el-option
+              <option value="" disabled>値</option>
+              <option
                 v-for="opt in getFieldSearchOptions(cond.fieldKey)"
                 :key="String(opt.value)"
-                :label="opt.label"
                 :value="opt.value"
-              />
-            </el-select>
+              >
+                {{ opt.label }}
+              </option>
+            </select>
             <!-- boolean field -->
-            <el-select
+            <select
               v-else-if="getFieldSearchType(cond.fieldKey) === 'boolean'"
-              :model-value="cond.value as string"
-              @update:model-value="updateCondition(index, { ...cond, value: $event })"
-              placeholder="値"
+              class="o-input"
+              :value="cond.value as string"
+              @change="updateCondition(index, { ...cond, value: ($event.target as HTMLSelectElement).value === 'true' })"
               style="width: 120px"
             >
-              <el-option label="はい" :value="true" />
-              <el-option label="いいえ" :value="false" />
-            </el-select>
+              <option value="" disabled>値</option>
+              <option :value="true">はい</option>
+              <option :value="false">いいえ</option>
+            </select>
             <!-- number field -->
-            <el-input-number
+            <input
               v-else-if="getFieldSearchType(cond.fieldKey) === 'number'"
-              :model-value="cond.value as number"
-              @update:model-value="updateCondition(index, { ...cond, value: $event })"
+              type="number"
+              class="o-input"
+              :value="cond.value as number"
+              @input="updateCondition(index, { ...cond, value: Number(($event.target as HTMLInputElement).value) })"
               placeholder="値"
               style="width: 150px"
-              controls-position="right"
             />
             <!-- string / default -->
-            <el-input
+            <input
               v-else
-              :model-value="cond.value as string"
-              @update:model-value="updateCondition(index, { ...cond, value: $event })"
+              class="o-input"
+              :value="cond.value as string"
+              @input="updateCondition(index, { ...cond, value: ($event.target as HTMLInputElement).value })"
               placeholder="値"
               style="width: 200px"
             />
@@ -104,108 +113,116 @@
 
       <!-- orderStatus type -->
       <template v-if="cond.type === 'orderStatus'">
-        <el-select
-          :model-value="cond.fieldKey"
-          @update:model-value="handleFieldKeyChange(index, cond, $event)"
-          placeholder="ステータス"
+        <select
+          class="o-input"
+          :value="cond.fieldKey"
+          @change="handleFieldKeyChange(index, cond, ($event.target as HTMLSelectElement).value)"
           style="width: 160px"
         >
-          <el-option
+          <option value="" disabled>ステータス</option>
+          <option
             v-for="sf in statusBooleanFields"
             :key="sf.key"
-            :label="sf.title"
             :value="sf.key"
-          />
-        </el-select>
+          >
+            {{ sf.title }}
+          </option>
+        </select>
         <template v-if="cond.fieldKey">
-          <el-select
-            :model-value="cond.operator"
-            @update:model-value="updateCondition(index, { ...cond, operator: $event })"
-            placeholder="条件"
+          <select
+            class="o-input"
+            :value="cond.operator"
+            @change="updateCondition(index, { ...cond, operator: ($event.target as HTMLSelectElement).value as OrderFieldOperator })"
             style="width: 130px"
           >
-            <el-option label="一致" value="is" />
-            <el-option label="不一致" value="isNot" />
-          </el-select>
-          <el-select
+            <option value="" disabled>条件</option>
+            <option value="is">一致</option>
+            <option value="isNot">不一致</option>
+          </select>
+          <select
             v-if="!isNoValueOperator(cond.operator)"
-            :model-value="cond.value as string"
-            @update:model-value="updateCondition(index, { ...cond, value: $event })"
-            placeholder="値"
+            class="o-input"
+            :value="cond.value as string"
+            @change="updateCondition(index, { ...cond, value: ($event.target as HTMLSelectElement).value === 'true' })"
             style="width: 120px"
           >
-            <el-option label="はい" :value="true" />
-            <el-option label="いいえ" :value="false" />
-          </el-select>
+            <option value="" disabled>値</option>
+            <option :value="true">はい</option>
+            <option :value="false">いいえ</option>
+          </select>
         </template>
       </template>
 
       <!-- orderGroup type -->
       <template v-if="cond.type === 'orderGroup'">
-        <el-select
-          :model-value="cond.orderGroupIds || []"
-          @update:model-value="updateCondition(index, { ...cond, fieldKey: 'orderGroupId', orderGroupIds: $event })"
+        <select
+          class="o-input"
           multiple
-          placeholder="グループを選択"
+          :value="cond.orderGroupIds || []"
+          @change="updateCondition(index, { ...cond, fieldKey: 'orderGroupId', orderGroupIds: Array.from(($event.target as HTMLSelectElement).selectedOptions, o => o.value) })"
           style="width: 300px"
         >
-          <el-option
+          <option
             v-for="g in orderGroups"
             :key="g.orderGroupId"
-            :label="g.name"
             :value="g.orderGroupId"
-          />
-        </el-select>
+          >
+            {{ g.name }}
+          </option>
+        </select>
       </template>
 
       <!-- carrierRawRow type -->
       <template v-if="cond.type === 'carrierRawRow'">
-        <el-input
-          :model-value="cond.carrierColumnName"
-          @update:model-value="updateCondition(index, { ...cond, carrierColumnName: $event })"
+        <input
+          class="o-input"
+          :value="cond.carrierColumnName"
+          @input="updateCondition(index, { ...cond, carrierColumnName: ($event.target as HTMLInputElement).value })"
           placeholder="列名"
           style="width: 160px"
         />
-        <el-select
-          :model-value="cond.carrierOperator"
-          @update:model-value="updateCondition(index, { ...cond, carrierOperator: $event })"
-          placeholder="条件"
+        <select
+          class="o-input"
+          :value="cond.carrierOperator"
+          @change="updateCondition(index, { ...cond, carrierOperator: ($event.target as HTMLSelectElement).value as RawRowOperator })"
           style="width: 120px"
         >
-          <el-option
+          <option value="" disabled>条件</option>
+          <option
             v-for="(label, key) in RAW_ROW_OPERATOR_LABELS"
             :key="key"
-            :label="label"
             :value="key"
-          />
-        </el-select>
-        <el-input
+          >
+            {{ label }}
+          </option>
+        </select>
+        <input
           v-if="!isNoValueRawRowOperator(cond.carrierOperator)"
-          :model-value="cond.carrierValue as string"
-          @update:model-value="updateCondition(index, { ...cond, carrierValue: $event })"
+          class="o-input"
+          :value="cond.carrierValue as string"
+          @input="updateCondition(index, { ...cond, carrierValue: ($event.target as HTMLInputElement).value })"
           placeholder="値"
           style="width: 180px"
         />
       </template>
 
-      <el-button
-        type="danger"
-        :icon="Delete"
-        circle
-        size="small"
+      <button
+        class="o-btn o-btn-danger o-btn-sm"
         @click="removeCondition(index)"
-      />
+        title="削除"
+      >
+        ✕
+      </button>
     </div>
 
-    <el-button :icon="Plus" @click="addCondition" size="small">
-      条件を追加
-    </el-button>
+    <button class="o-btn o-btn-secondary o-btn-sm" @click="addCondition">
+      + 条件を追加
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { Plus, Delete } from '@element-plus/icons-vue'
 import type { AutoProcessingCondition, ConditionType, RawRowOperator, OrderFieldOperator } from '@/types/autoProcessingRule'
 import { RAW_ROW_OPERATOR_LABELS } from '@/types/autoProcessingRule'
 import { fetchOrderGroups } from '@/api/orderGroup'

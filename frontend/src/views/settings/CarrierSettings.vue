@@ -5,7 +5,7 @@
         <h1 class="page-title">配送会社設定</h1>
         <p class="page-subtitle">配送会社基本情報とフォーマット定義を管理します</p>
       </div>
-      <el-button type="primary" :icon="Plus" @click="openCreate">新規追加</el-button>
+      <button class="o-btn o-btn-primary" @click="openCreate">新規追加</button>
     </div>
 
     <SearchForm
@@ -32,71 +32,69 @@
     </div>
 
     <!-- Template Settings Dialog -->
-    <el-dialog v-model="templateDialogVisible" :title="`印刷テンプレート設定 - ${templateEditingCarrier?.name || ''}`" width="600px">
-      <el-table :data="templateMappingList" border size="small" height="400">
-        <el-table-column prop="invoiceType" label="送り状種類" width="220">
-          <template #default="{ row }">
-            <span>{{ row.invoiceType }}: {{ row.name }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="印刷テンプレート">
-          <template #default="{ row }">
-            <el-select
-              v-model="row.printTemplateId"
-              placeholder="選択してください"
-              clearable
-              style="width: 100%"
-            >
-              <el-option
-                v-for="tpl in printTemplates"
-                :key="tpl.id"
-                :label="tpl.name"
-                :value="tpl.id"
-              />
-            </el-select>
-          </template>
-        </el-table-column>
-      </el-table>
+    <ODialog :open="templateDialogVisible" :title="`印刷テンプレート設定 - ${templateEditingCarrier?.name || ''}`" @close="templateDialogVisible = false">
+      <table class="o-list-table">
+        <thead>
+          <tr>
+            <th style="width:220px">送り状種類</th>
+            <th>印刷テンプレート</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in templateMappingList" :key="row.invoiceType">
+            <td>{{ row.invoiceType }}: {{ row.name }}</td>
+            <td>
+              <select class="o-input" v-model="row.printTemplateId" style="width:100%">
+                <option value="">選択してください</option>
+                <option
+                  v-for="tpl in printTemplates"
+                  :key="tpl.id"
+                  :value="tpl.id"
+                >{{ tpl.name }}</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
       <template #footer>
-        <el-button @click="templateDialogVisible = false">キャンセル</el-button>
-        <el-button type="primary" :loading="templateSaving" @click="saveTemplateSettings">保存</el-button>
+        <button class="o-btn o-btn-secondary" @click="templateDialogVisible = false">キャンセル</button>
+        <button class="o-btn o-btn-primary" :disabled="templateSaving" @click="saveTemplateSettings">保存</button>
       </template>
-    </el-dialog>
+    </ODialog>
 
-    <el-dialog
-      v-model="dialogVisible"
+    <ODialog
+      :open="dialogVisible"
       :title="isEditing ? '配送会社を編集' : '配送会社を追加'"
-      width="900px"
-      class="carrier-dialog"
+      @close="dialogVisible = false"
     >
-      <el-form :model="editForm" label-width="120px" label-position="left" class="carrier-form">
+      <div class="carrier-form">
         <div class="form-row">
-          <el-form-item label="配送会社コード" required>
-            <el-input v-model="editForm.code" placeholder="例: yamato_b2" :disabled="isEditing" />
-          </el-form-item>
-          <el-form-item label="配送会社名" required>
-            <el-input v-model="editForm.name" placeholder="配送会社名" />
-          </el-form-item>
+          <div class="o-form-group">
+            <label class="o-form-label">配送会社コード <span class="required">*</span></label>
+            <input class="o-input" v-model="editForm.code" placeholder="例: yamato_b2" :disabled="isEditing" />
+          </div>
+          <div class="o-form-group">
+            <label class="o-form-label">配送会社名 <span class="required">*</span></label>
+            <input class="o-input" v-model="editForm.name" placeholder="配送会社名" />
+          </div>
         </div>
         <div class="form-row">
-          <el-form-item label="有効">
-            <el-switch v-model="editForm.enabled" />
-          </el-form-item>
-          <el-form-item label="伝票番号列名">
-            <el-input
-              v-model="editForm.trackingIdColumnName"
-              placeholder="回执/実績ファイルの列名（例: 伝票番号）"
-            />
-          </el-form-item>
+          <div class="o-form-group">
+            <label class="o-form-label">有効</label>
+            <label class="o-toggle">
+              <input type="checkbox" v-model="editForm.enabled" />
+              <span class="o-toggle-slider"></span>
+            </label>
+          </div>
+          <div class="o-form-group">
+            <label class="o-form-label">伝票番号列名</label>
+            <input class="o-input" v-model="editForm.trackingIdColumnName" placeholder="回执/実績ファイルの列名（例: 伝票番号）" />
+          </div>
         </div>
-        <el-form-item label="説明">
-          <el-input
-            v-model="editForm.description"
-            type="textarea"
-            :rows="2"
-            placeholder="補足説明"
-          />
-        </el-form-item>
+        <div class="o-form-group">
+          <label class="o-form-label">説明</label>
+          <textarea class="o-input" v-model="editForm.description" rows="2" placeholder="補足説明"></textarea>
+        </div>
 
         <div class="format-header">
           <div>
@@ -104,91 +102,70 @@
             <p class="subtext">列名・型・最大文字数・必須・ユーザー入力可否を編集できます</p>
           </div>
           <div class="format-actions">
-            <el-button size="small" :icon="Plus" @click="addColumn">列を追加</el-button>
-            <el-button size="small" :icon="Refresh" @click="resetColumnsFromEditing">リセット</el-button>
+            <button class="o-btn o-btn-sm o-btn-secondary" @click="addColumn">列を追加</button>
+            <button class="o-btn o-btn-sm o-btn-secondary" @click="resetColumnsFromEditing">リセット</button>
           </div>
         </div>
 
-        <el-table
-          class="format-table"
-          :data="editForm.formatDefinition.columns"
-          height="320"
-          border
-          size="small"
-          row-key="__key"
-        >
-          <el-table-column prop="name" label="列名" min-width="150">
-            <template #default="{ row }">
-              <el-input v-model="row.name" placeholder="列名" />
-            </template>
-          </el-table-column>
-          <el-table-column prop="description" label="列説明" min-width="220">
-            <template #default="{ row }">
-              <el-input v-model="row.description" placeholder="説明・型・長さなど" />
-            </template>
-          </el-table-column>
-          <el-table-column prop="type" label="型" width="120">
-            <template #default="{ row }">
-              <el-select v-model="row.type" placeholder="型を選択">
-                <el-option label="string" value="string" />
-                <el-option label="number" value="number" />
-                <el-option label="date" value="date" />
-                <el-option label="boolean" value="boolean" />
-              </el-select>
-            </template>
-          </el-table-column>
-          <el-table-column prop="maxWidth" label="最大文字数" width="110">
-            <template #default="{ row }">
-              <el-input
-                v-model.number="row.maxWidth"
-                type="number"
-                min="1"
-                placeholder="半角幅"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column prop="required" label="必須" width="90" align="center">
-            <template #default="{ row }">
-              <el-switch v-model="row.required" />
-            </template>
-          </el-table-column>
-          <el-table-column prop="userUploadable" label="ユーザー入力" width="120" align="center">
-            <template #default="{ row }">
-              <el-switch v-model="row.userUploadable" />
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="90" fixed="right">
-            <template #default="{ $index }">
-              <el-button
-                type="danger"
-                link
-                size="small"
-                @click="removeColumn($index)"
-                :disabled="editForm.formatDefinition.columns.length <= 1"
-              >
-                削除
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-form>
+        <div class="format-table-wrapper">
+          <table class="o-list-table format-table">
+            <thead>
+              <tr>
+                <th style="min-width:150px">列名</th>
+                <th style="min-width:220px">列説明</th>
+                <th style="width:120px">型</th>
+                <th style="width:110px">最大文字数</th>
+                <th style="width:90px;text-align:center">必須</th>
+                <th style="width:120px;text-align:center">ユーザー入力</th>
+                <th style="width:90px">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row, $index) in editForm.formatDefinition.columns" :key="row.__key">
+                <td><input class="o-input" v-model="row.name" placeholder="列名" /></td>
+                <td><input class="o-input" v-model="row.description" placeholder="説明・型・長さなど" /></td>
+                <td>
+                  <select class="o-input" v-model="row.type">
+                    <option value="string">string</option>
+                    <option value="number">number</option>
+                    <option value="date">date</option>
+                    <option value="boolean">boolean</option>
+                  </select>
+                </td>
+                <td><input class="o-input" v-model.number="row.maxWidth" type="number" min="1" placeholder="半角幅" /></td>
+                <td style="text-align:center">
+                  <input type="checkbox" v-model="row.required" />
+                </td>
+                <td style="text-align:center">
+                  <input type="checkbox" v-model="row.userUploadable" />
+                </td>
+                <td>
+                  <button
+                    class="o-btn o-btn-sm o-btn-outline-danger"
+                    @click="removeColumn($index)"
+                    :disabled="editForm.formatDefinition.columns.length <= 1"
+                  >削除</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">キャンセル</el-button>
-          <el-button type="primary" :loading="saving" @click="handleSave">
-            {{ isEditing ? '更新' : '作成' }}
-          </el-button>
-        </span>
+        <button class="o-btn o-btn-secondary" @click="dialogVisible = false">キャンセル</button>
+        <button class="o-btn o-btn-primary" :disabled="saving" @click="handleSave">
+          {{ isEditing ? '更新' : '作成' }}
+        </button>
       </template>
-    </el-dialog>
+    </ODialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
-import { ElButton, ElMessage, ElMessageBox, ElSwitch } from 'element-plus'
-import { Edit, Plus, Refresh } from '@element-plus/icons-vue'
+import { useToast } from '@/composables/useToast'
+import ODialog from '@/components/odoo/ODialog.vue'
 import SearchForm from '@/components/search/SearchForm.vue'
 import Table from '@/components/table/Table.vue'
 import type { TableColumn, Operator } from '@/types/table'
@@ -196,6 +173,8 @@ import { createCarrier, deleteCarrier, fetchCarriers, updateCarrier } from '@/ap
 import { fetchPrintTemplates } from '@/api/printTemplates'
 import type { Carrier, CarrierFilters, CarrierColumnConfig, CarrierService } from '@/types/carrier'
 import type { PrintTemplate } from '@/types/printTemplate'
+
+const { show: showToast } = useToast()
 
 /** 固定の送り状種類（11種） */
 const INVOICE_TYPES = [
@@ -295,7 +274,8 @@ const tableColumns: TableColumn[] = [
       return {
         ...col,
         cellRenderer: ({ rowData }: { rowData: Carrier }) =>
-          h(ElSwitch, { modelValue: rowData.enabled, disabled: true, inlinePrompt: true }),
+          h('span', { class: rowData.enabled ? 'o-badge o-badge-success' : 'o-badge o-badge-info' },
+            rowData.enabled ? 'ON' : 'OFF'),
       }
     }
     if (col.key === 'formatColumns') {
@@ -315,51 +295,14 @@ const tableColumns: TableColumn[] = [
     title: '操作',
     width: 220,
     cellRenderer: ({ rowData }: { rowData: Carrier }) => {
-      // 内置配送会社不可编辑/削除
       if (rowData.isBuiltIn) {
         return h('span', { style: { color: '#909399', fontSize: '12px' } }, '(内蔵)')
       }
       return h('div', { class: 'action-cell' }, [
-        h(
-          ElButton,
-          {
-            type: 'primary',
-            plain: true,
-            size: 'small',
-            onClick: () => openEdit(rowData),
-          },
-          { default: () => '編集' },
-        ),
-        h(
-          ElButton,
-          {
-            type: 'info',
-            plain: true,
-            size: 'small',
-            onClick: () => duplicateCarrier(rowData),
-          },
-          { default: () => '複製' },
-        ),
-        h(
-          ElButton,
-          {
-            type: 'success',
-            plain: true,
-            size: 'small',
-            onClick: () => openTemplateSettings(rowData),
-          },
-          { default: () => 'テンプレート設定' },
-        ),
-        h(
-          ElButton,
-          {
-            type: 'danger',
-            plain: true,
-            size: 'small',
-            onClick: () => confirmDelete(rowData),
-          },
-          { default: () => '削除' },
-        ),
+        h('button', { class: 'o-btn o-btn-sm o-btn-outline-primary', onClick: () => openEdit(rowData) }, '編集'),
+        h('button', { class: 'o-btn o-btn-sm o-btn-outline-secondary', onClick: () => duplicateCarrier(rowData) }, '複製'),
+        h('button', { class: 'o-btn o-btn-sm o-btn-outline-success', onClick: () => openTemplateSettings(rowData) }, 'テンプレート設定'),
+        h('button', { class: 'o-btn o-btn-sm o-btn-outline-danger', onClick: () => confirmDelete(rowData) }, '削除'),
       ])
     },
   },
@@ -393,7 +336,6 @@ function createEmptyColumn(): EditableColumn {
 }
 
 const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
-  // Extract global search text (client-side only, strip from payload)
   if (payload.__global?.value) {
     globalSearchText.value = String(payload.__global.value).trim()
     delete payload.__global
@@ -415,10 +357,9 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
 const loadList = async () => {
   loading.value = true
   try {
-    // fetchCarriers 已经自动包含内置配送会社
     list.value = await fetchCarriers(currentFilters.value)
   } catch (error: any) {
-    ElMessage.error(error?.message || '取得に失敗しました')
+    showToast(error?.message || '取得に失敗しました', 'danger')
   } finally {
     loading.value = false
   }
@@ -472,7 +413,7 @@ const resetColumnsFromEditing = () => {
 
 const handleSave = async () => {
   if (!editForm.value.code.trim() || !editForm.value.name.trim()) {
-    ElMessage.warning('配送会社コード・配送会社名は必須です')
+    showToast('配送会社コード・配送会社名は必須です', 'warning')
     return
   }
 
@@ -498,16 +439,16 @@ const handleSave = async () => {
   try {
     if (isEditing.value && editingRow.value?._id) {
       await updateCarrier(editingRow.value._id, payload)
-      ElMessage.success('更新しました')
+      showToast('更新しました', 'success')
     } else {
       await createCarrier(payload)
-      ElMessage.success('作成しました')
+      showToast('作成しました', 'success')
     }
     dialogVisible.value = false
     resetEditForm()
     await loadList()
   } catch (error: any) {
-    ElMessage.error(error?.response?.data?.message || error?.message || '保存に失敗しました')
+    showToast(error?.response?.data?.message || error?.message || '保存に失敗しました', 'danger')
   } finally {
     saving.value = false
   }
@@ -517,22 +458,18 @@ const duplicateCarrier = async (row: Carrier) => {
   try {
     const { _id, createdAt, updatedAt, isBuiltIn, automationType, ...rest } = row
     await createCarrier({ ...rest, code: `${row.code}_copy`, name: `${row.name}_copy` } as any)
-    ElMessage.success('複製しました')
+    showToast('複製しました', 'success')
     await loadList()
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || e?.message || '複製に失敗しました')
+    showToast(e?.response?.data?.message || e?.message || '複製に失敗しました', 'danger')
   }
 }
 
 const confirmDelete = (row: Carrier) => {
-  ElMessageBox.confirm(`「${row.name}」を削除しますか？`, '確認', {
-    confirmButtonText: 'はい',
-    cancelButtonText: 'いいえ',
-    type: 'warning',
-  })
+  if (!confirm(`「${row.name}」を削除しますか？`)) return
+  deleteCarrier(row._id)
     .then(async () => {
-      await deleteCarrier(row._id)
-      ElMessage.success('削除しました')
+      showToast('削除しました', 'success')
       await loadList()
     })
     .catch(() => {})
@@ -553,17 +490,15 @@ const formatDate = (iso?: string) => {
 const openTemplateSettings = async (row: Carrier) => {
   templateEditingCarrier.value = row
 
-  // Load print templates if not already loaded
   if (printTemplates.value.length === 0) {
     try {
       printTemplates.value = await fetchPrintTemplates()
     } catch (e: any) {
-      ElMessage.error('印刷テンプレートの取得に失敗しました')
+      showToast('印刷テンプレートの取得に失敗しました', 'danger')
       return
     }
   }
 
-  // Build mapping list from INVOICE_TYPES and existing services
   const existingServices = row.services || []
   templateMappingList.value = INVOICE_TYPES.map((type) => {
     const existing = existingServices.find((s) => s.invoiceType === type.invoiceType)
@@ -582,7 +517,6 @@ const saveTemplateSettings = async () => {
 
   templateSaving.value = true
   try {
-    // Build services array from mapping list (only include entries with printTemplateId)
     const services: CarrierService[] = templateMappingList.value
       .filter((item) => item.printTemplateId)
       .map((item) => ({
@@ -595,16 +529,15 @@ const saveTemplateSettings = async () => {
       services,
     })
 
-    // Update local list
     const idx = list.value.findIndex((c) => c._id === templateEditingCarrier.value!._id)
     if (idx >= 0 && list.value[idx]) {
       list.value[idx].services = services
     }
 
-    ElMessage.success('保存しました')
+    showToast('保存しました', 'success')
     templateDialogVisible.value = false
   } catch (e: any) {
-    ElMessage.error(e?.response?.data?.message || e?.message || '保存に失敗しました')
+    showToast(e?.response?.data?.message || e?.message || '保存に失敗しました', 'danger')
   } finally {
     templateSaving.value = false
   }
@@ -645,6 +578,79 @@ onMounted(() => {
   width: 100%;
 }
 
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  cursor: pointer;
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-700, #303133);
+  transition: 0.2s;
+  white-space: nowrap;
+}
+
+.o-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.o-btn-primary { background: var(--o-brand-primary, #714b67); color: #fff; border-color: var(--o-brand-primary, #714b67); }
+.o-btn-secondary { background: var(--o-view-background, #fff); color: var(--o-gray-700, #303133); }
+.o-btn-sm { padding: 4px 10px; font-size: 13px; }
+.o-btn-outline-primary { background: transparent; color: var(--o-brand-primary, #714b67); border-color: var(--o-brand-primary, #714b67); }
+.o-btn-outline-secondary { background: transparent; color: var(--o-gray-600, #909399); border-color: var(--o-gray-600, #909399); }
+.o-btn-outline-success { background: transparent; color: #67c23a; border-color: #67c23a; }
+.o-btn-outline-danger { background: transparent; color: #f56c6c; border-color: #f56c6c; }
+
+.o-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.o-badge-success { background: #f0f9eb; color: #67c23a; }
+.o-badge-info { background: #f4f4f5; color: #909399; }
+
+.o-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  color: var(--o-gray-700, #303133);
+  background: var(--o-view-background, #fff);
+  box-sizing: border-box;
+}
+
+textarea.o-input {
+  resize: vertical;
+}
+
+.o-form-group { margin-bottom: 1rem; }
+.o-form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
+.required { color: #f56c6c; }
+
+.o-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+.o-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.o-toggle-slider { width: 40px; height: 20px; background: var(--o-toggle-off, #c0c4cc); border-radius: 10px; transition: 0.2s; position: relative; }
+.o-toggle-slider::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: 0.2s; }
+.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #714b67); }
+.o-toggle input:checked + .o-toggle-slider::after { left: 22px; }
+
+.o-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.o-list-table th, .o-list-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--o-border-color, #ebeef5);
+  text-align: left;
+}
+.o-list-table th {
+  background: var(--o-list-header-bg, #f5f7fa);
+  font-weight: 500;
+}
+
 /* 操作列样式 - 垂直排列 */
 :deep(.action-cell) {
   display: flex;
@@ -655,32 +661,12 @@ onMounted(() => {
   padding: 4px;
 }
 
-:deep(.action-cell .el-button) {
+:deep(.action-cell .o-btn) {
   margin: 0;
   min-width: 54px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  border-width: 1px;
 }
 
-:deep(.action-cell .el-button--primary.is-plain) {
-  border-color: var(--el-color-primary);
-}
-
-:deep(.action-cell .el-button--info.is-plain) {
-  border-color: var(--el-color-info);
-}
-
-:deep(.action-cell .el-button--danger.is-plain) {
-  border-color: var(--el-color-danger);
-}
-
-:deep(.action-cell .el-button--success.is-plain) {
-  border-color: var(--el-color-success);
-}
-
-.carrier-dialog .carrier-form {
+.carrier-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -691,7 +677,7 @@ onMounted(() => {
   gap: 12px;
 }
 
-.form-row .el-form-item {
+.form-row .o-form-group {
   flex: 1;
 }
 
@@ -707,14 +693,10 @@ onMounted(() => {
   gap: 8px;
 }
 
-.format-table {
+.format-table-wrapper {
+  max-height: 320px;
+  overflow: auto;
   margin-top: 8px;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
 }
 
 .subtext {
@@ -723,4 +705,3 @@ onMounted(() => {
   color: #666;
 }
 </style>
-

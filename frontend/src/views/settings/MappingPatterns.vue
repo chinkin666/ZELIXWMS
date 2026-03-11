@@ -4,9 +4,9 @@
     <div class="page-header">
       <h1 class="page-title">レイアウト管理</h1>
       <div class="header-actions">
-        <el-button type="primary" :icon="Plus" @click="handleAdd">
+        <button class="o-btn o-btn-primary" @click="handleAdd">
           新規レイアウト
-        </el-button>
+        </button>
       </div>
     </div>
 
@@ -30,13 +30,13 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElButton, ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Edit } from '@element-plus/icons-vue'
+import { useToast } from '@/composables/useToast'
 import Table from '@/components/table/Table.vue'
 import type { TableColumn } from '@/types/table'
 import { getAllMappingConfigs, createMappingConfig, deleteMappingConfig, type MappingConfig } from '@/api/mappingConfig'
 
 const router = useRouter()
+const { show: showToast } = useToast()
 const mappingConfigs = ref<MappingConfig[]>([])
 const loading = ref(false)
 
@@ -157,35 +157,28 @@ const tableColumns: TableColumn[] = [
     cellRenderer: ({ rowData }: { rowData: MappingConfig }) =>
       h('div', { class: 'action-cell' }, [
         h(
-          ElButton,
+          'button',
           {
-            type: 'primary',
-            plain: true,
-            size: 'small',
-            icon: Edit,
+            class: 'o-btn o-btn-sm o-btn-outline-primary',
             onClick: () => handleEdit(rowData),
           },
-          { default: () => '編集' },
+          '編集',
         ),
         h(
-          ElButton,
+          'button',
           {
-            type: 'info',
-            plain: true,
-            size: 'small',
+            class: 'o-btn o-btn-sm o-btn-outline-secondary',
             onClick: () => duplicateMappingConfig(rowData),
           },
-          { default: () => '複製' },
+          '複製',
         ),
         h(
-          ElButton,
+          'button',
           {
-            type: 'danger',
-            plain: true,
-            size: 'small',
+            class: 'o-btn o-btn-sm o-btn-outline-danger',
             onClick: () => confirmDelete(rowData),
           },
-          { default: () => '削除' },
+          '削除',
         ),
       ]),
   },
@@ -196,14 +189,13 @@ const loadMappingConfigs = async () => {
   loading.value = true
   try {
     const configs = await getAllMappingConfigs()
-    // 添加映射数量字段用于显示
     mappingConfigs.value = configs.map((config) => ({
       ...config,
       mappingsCount: config.mappings?.length || 0,
     }))
   } catch (error) {
     console.error('Failed to load mapping configs:', error)
-    ElMessage.error('レイアウトの読み込みに失敗しました')
+    showToast('レイアウトの読み込みに失敗しました', 'danger')
   } finally {
     loading.value = false
   }
@@ -226,30 +218,24 @@ const duplicateMappingConfig = async (row: MappingConfig) => {
     const { _id, createdAt, updatedAt, ...rest } = row
     const { mappingsCount, ...data } = rest as any
     await createMappingConfig({ ...data, name: `${row.name}_copy`, isDefault: false })
-    ElMessage.success('複製しました')
+    showToast('複製しました', 'success')
     await loadMappingConfigs()
   } catch (e: any) {
-    ElMessage.error(e?.message || '複製に失敗しました')
+    showToast(e?.message || '複製に失敗しました', 'danger')
   }
 }
 
 // 确认删除
 const confirmDelete = (row: MappingConfig) => {
-  ElMessageBox.confirm(`「${row.name}」を削除しますか？`, '確認', {
-    confirmButtonText: 'はい',
-    cancelButtonText: 'いいえ',
-    type: 'warning',
-  })
+  if (!confirm(`「${row.name}」を削除しますか？`)) return
+  deleteMappingConfig(row._id)
     .then(async () => {
-      try {
-        await deleteMappingConfig(row._id)
-        ElMessage.success('削除しました')
-        await loadMappingConfigs()
-      } catch (error: any) {
-        ElMessage.error(error?.message || '削除に失敗しました')
-      }
+      showToast('削除しました', 'success')
+      await loadMappingConfigs()
     })
-    .catch(() => {})
+    .catch((error: any) => {
+      showToast(error?.message || '削除に失敗しました', 'danger')
+    })
 }
 
 // 组件挂载时加载数据
@@ -288,6 +274,27 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  cursor: pointer;
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-700, #303133);
+  transition: 0.2s;
+  white-space: nowrap;
+}
+
+.o-btn-primary { background: var(--o-brand-primary, #714b67); color: #fff; border-color: var(--o-brand-primary, #714b67); }
+.o-btn-sm { padding: 4px 10px; font-size: 13px; }
+.o-btn-outline-primary { background: transparent; color: var(--o-brand-primary, #714b67); border-color: var(--o-brand-primary, #714b67); }
+.o-btn-outline-secondary { background: transparent; color: var(--o-gray-600, #909399); border-color: var(--o-gray-600, #909399); }
+.o-btn-outline-danger { background: transparent; color: #f56c6c; border-color: #f56c6c; }
+
 /* 操作列样式 - 垂直排列 */
 :deep(.action-cell) {
   display: flex;
@@ -298,25 +305,8 @@ onMounted(() => {
   padding: 4px;
 }
 
-:deep(.action-cell .el-button) {
+:deep(.action-cell .o-btn) {
   margin: 0;
   min-width: 54px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  border-width: 1px;
-}
-
-:deep(.action-cell .el-button--primary.is-plain) {
-  border-color: var(--el-color-primary);
-}
-
-:deep(.action-cell .el-button--info.is-plain) {
-  border-color: var(--el-color-info);
-}
-
-:deep(.action-cell .el-button--danger.is-plain) {
-  border-color: var(--el-color-danger);
 }
 </style>
-

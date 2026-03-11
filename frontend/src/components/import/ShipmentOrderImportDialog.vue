@@ -1,196 +1,177 @@
 <template>
-  <el-dialog
-    v-model="visible"
+  <ODialog
+    :open="visible"
     title="一括登録"
-    width="960px"
-    :close-on-click-modal="false"
+    size="lg"
     @close="handleClose"
   >
     <div class="import-dialog-content">
-      <el-form
-        ref="formRef"
-        :model="formData"
-        :rules="formRules"
-        label-position="top"
-        class="import-form"
-      >
+      <form class="import-form">
         <!-- 出荷予定日 -->
-        <el-form-item prop="shipPlanDate">
-          <template #label>
+        <div class="o-form-group">
+          <label class="o-form-label">
             <span class="form-label">出荷予定日</span>
-            <el-tag type="danger" size="small" class="required-tag">必須</el-tag>
-          </template>
-          <el-date-picker
-            v-model="formData.shipPlanDate"
+            <span class="o-badge o-badge-danger required-tag">必須</span>
+          </label>
+          <input
+            class="o-input"
             type="date"
-            placeholder="年/月/日"
-            format="YYYY/MM/DD"
-            value-format="YYYY/MM/DD"
+            v-model="formData.shipPlanDate"
             style="width: 100%"
           />
-        </el-form-item>
+        </div>
 
         <!-- 登録データ形式 -->
-        <el-form-item prop="configId">
-          <template #label>
+        <div class="o-form-group">
+          <label class="o-form-label">
             <span class="form-label">登録データ形式</span>
-            <el-tag type="danger" size="small" class="required-tag">必須</el-tag>
-          </template>
-          <el-select
+            <span class="o-badge o-badge-danger required-tag">必須</span>
+          </label>
+          <select
+            class="o-input"
             v-model="formData.configId"
-            placeholder="レイアウトを選択"
             style="width: 100%"
-            :loading="loadingConfigs"
-            filterable
           >
-            <el-option
+            <option value="" disabled>レイアウトを選択</option>
+            <option
               v-for="config in mappingConfigs"
               :key="config._id"
-              :label="config.name"
               :value="config._id"
-            />
-          </el-select>
-        </el-form-item>
+            >{{ config.name }}</option>
+          </select>
+        </div>
 
         <!-- ご依頼主 -->
-        <el-form-item prop="orderSourceCompanyId">
-          <template #label>
+        <div class="o-form-group">
+          <label class="o-form-label">
             <span class="form-label">ご依頼主</span>
-          </template>
-          <el-select
+          </label>
+          <select
+            class="o-input"
             v-model="formData.orderSourceCompanyId"
-            placeholder="ご依頼主を選択"
             style="width: 100%"
-            filterable
           >
-            <el-option
+            <option value="">ご依頼主を選択</option>
+            <option
               v-for="company in orderSourceCompanies"
               :key="company._id"
-              :label="company.senderName"
               :value="company._id"
-            />
-          </el-select>
-        </el-form-item>
+            >{{ company.senderName }}</option>
+          </select>
+        </div>
 
         <!-- 配送業者 -->
-        <el-form-item prop="carrierId">
-          <template #label>
+        <div class="o-form-group">
+          <label class="o-form-label">
             <span class="form-label">配送業者</span>
-            <el-tag type="danger" size="small" class="required-tag">必須</el-tag>
-          </template>
-          <el-select
+            <span class="o-badge o-badge-danger required-tag">必須</span>
+          </label>
+          <select
+            class="o-input"
             v-model="formData.carrierId"
-            placeholder="配送業者を選択"
             style="width: 100%"
-            filterable
           >
-            <el-option
+            <option value="" disabled>配送業者を選択</option>
+            <option
               v-for="carrier in carriers"
               :key="carrier._id"
-              :label="`${carrier.name} (${carrier.code})`"
               :value="carrier._id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
+            >{{ `${carrier.name} (${carrier.code})` }}</option>
+          </select>
+        </div>
+      </form>
 
       <!-- ファイルアップロード（ドラッグ&ドロップ） -->
       <div class="upload-section">
         <h3>ファイルをアップロード</h3>
-        <el-upload
-          ref="uploadRef"
-          drag
-          action="#"
-          :auto-upload="false"
-          :multiple="false"
-          accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-          :on-change="handleFileChange"
-          :show-file-list="true"
-          :file-list="fileList"
+        <div
+          class="upload-drop-zone"
+          @dragover.prevent="dragOver = true"
+          @dragleave="dragOver = false"
+          @drop.prevent="handleDrop"
+          :class="{ 'drag-over': dragOver }"
+          @click="triggerFileInput"
         >
-          <el-icon class="upload-icon"><UploadFilled /></el-icon>
-          <div class="el-upload__text">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--o-brand-primary, #714b67)" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <div class="upload-text">
             ファイルをここにドロップするか <em>クリックして選択</em>
           </div>
-          <template #tip>
-            <div class="el-upload__tip">
-              対応形式: CSV, XLSX, XLS
-            </div>
-          </template>
-        </el-upload>
+          <div class="upload-tip">対応形式: CSV, XLSX, XLS</div>
+        </div>
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+          style="display: none"
+          @change="handleNativeFileChange"
+        />
         <div v-if="fileName" class="file-info">
-          <el-text type="success">選択中: {{ fileName }}</el-text>
+          <span style="color: var(--o-success, #28a745)">選択中: {{ fileName }}</span>
         </div>
         <!-- 编码选择（仅 CSV 文件时显示） -->
         <div v-if="isCsvFile" class="encoding-section">
-          <el-form-item label="文字コード" style="margin-top: 12px; margin-bottom: 0">
-            <el-select
+          <div class="o-form-group" style="margin-top: 12px; margin-bottom: 0">
+            <label class="o-form-label">文字コード</label>
+            <select
+              class="o-input"
               v-model="fileEncoding"
               style="width: 200px"
               @change="handleEncodingChange"
             >
-              <el-option
+              <option
                 v-for="enc in encodingOptions"
                 :key="enc.value"
-                :label="enc.label"
                 :value="enc.value"
-              />
-            </el-select>
-          </el-form-item>
+              >{{ enc.label }}</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <!-- 预览区域 -->
       <div v-if="previewRows.length > 0" class="preview-section">
         <h3>プレビュー（最初の5行）</h3>
-        <el-table :data="previewRows" max-height="200" border size="small">
-          <el-table-column
-            v-for="(value, key) in previewRows[0]"
-            :key="key"
-            :prop="String(key)"
-            :label="String(key)"
-            min-width="120"
-          />
-        </el-table>
+        <div style="max-height: 200px; overflow: auto; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px">
+          <table class="o-list-table" style="font-size: 12px">
+            <thead>
+              <tr>
+                <th v-for="key in Object.keys(previewRows[0] || {})" :key="key" style="min-width: 120px">{{ key }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row, idx) in previewRows" :key="idx">
+                <td v-for="key in Object.keys(previewRows[0] || {})" :key="key">{{ row[key] }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">キャンセル</el-button>
-        <el-button
-          type="primary"
-          :disabled="!canImport"
-          :loading="importing"
+        <button type="button" class="o-btn o-btn-secondary" @click="handleClose">キャンセル</button>
+        <button
+          type="button"
+          class="o-btn o-btn-primary"
+          :disabled="!canImport || importing"
           @click="handleImport"
         >
+          <span v-if="importing" class="spinner"></span>
           一括登録
-        </el-button>
+        </button>
       </div>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import {
-  ElDialog,
-  ElForm,
-  ElFormItem,
-  ElDatePicker,
-  ElSelect,
-  ElOption,
-  ElUpload,
-  ElButton,
-  ElTag,
-  ElMessage,
-  ElIcon,
-  ElText,
-  ElTable,
-  ElTableColumn,
-} from 'element-plus'
-import { UploadFilled } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules, UploadInstance, UploadFile } from 'element-plus'
+import ODialog from '@/components/odoo/ODialog.vue'
 import * as XLSX from 'xlsx'
 import { getAllMappingConfigs, type MappingConfig, type TransformMapping } from '@/api/mappingConfig'
 import { generateTempId } from '@/types/orderRow'
@@ -225,9 +206,9 @@ const visible = computed({
   set: (val) => emit('update:modelValue', val),
 })
 
-const formRef = ref<FormInstance>()
-const uploadRef = ref<UploadInstance>()
-const fileList = ref<UploadFile[]>([])
+const fileInputRef = ref<HTMLInputElement>()
+const dragOver = ref(false)
+const fileList = ref<any[]>([])
 const fileName = ref<string>('')
 const selectedFile = ref<File | null>(null)
 const mappingConfigs = ref<MappingConfig[]>([])
@@ -276,12 +257,6 @@ const formData = reactive({
   file: null as File | null,
 })
 
-const formRules: FormRules = {
-  shipPlanDate: [{ required: true, message: '出荷予定日を選択してください', trigger: 'change' }],
-  configId: [{ required: true, message: '登録データ形式を選択してください', trigger: 'change' }],
-  carrierId: [{ required: true, message: '配送業者を選択してください', trigger: 'change' }],
-}
-
 const selectedConfig = computed(() => {
   return mappingConfigs.value.find((c) => c._id === formData.configId)
 })
@@ -294,6 +269,35 @@ const canImport = computed(() => {
     selectedFile.value !== null
   )
 })
+
+const triggerFileInput = () => {
+  fileInputRef.value?.click()
+}
+
+const handleNativeFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  processFile(file)
+}
+
+const handleDrop = (e: DragEvent) => {
+  dragOver.value = false
+  const file = e.dataTransfer?.files?.[0]
+  if (!file) return
+  processFile(file)
+}
+
+const processFile = (file: File) => {
+  selectedFile.value = file
+  fileName.value = file.name
+  formData.file = file
+
+  // Trigger preview if config is selected
+  if (formData.configId) {
+    parseAndPreview()
+  }
+}
 
 // Load mapping configs
 const loadMappingConfigs = async () => {
@@ -308,41 +312,10 @@ const loadMappingConfigs = async () => {
     }
   } catch (error) {
     console.error('Failed to load mapping configs:', error)
-    ElMessage.error('レイアウトの読み込みに失敗しました')
+    alert('レイアウトの読み込みに失敗しました')
   } finally {
     loadingConfigs.value = false
   }
-}
-
-// File change handler
-const handleFileChange = (file: UploadFile) => {
-  const rawFile = file.raw as File
-  if (!rawFile) {
-    selectedFile.value = null
-    fileName.value = ''
-    formData.file = null
-    previewRows.value = []
-    return
-  }
-
-  selectedFile.value = rawFile
-  fileName.value = rawFile.name
-  formData.file = rawFile
-  fileList.value = [file]
-
-  // Trigger preview if config is selected
-  if (formData.configId) {
-    parseAndPreview()
-  }
-}
-
-// File remove handler
-const handleFileRemove = () => {
-  selectedFile.value = null
-  fileName.value = ''
-  formData.file = null
-  fileList.value = []
-  previewRows.value = []
 }
 
 // Encoding change handler
@@ -388,7 +361,7 @@ const detectCsvEncoding = (buf: ArrayBuffer): 'utf-8' | 'utf-8-sig' | 'shift_jis
   if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
     return 'utf-8-sig'
   }
-  const decodeWithEncoding = (buf: ArrayBuffer, enc: string): string => {
+  const decodeWithEnc = (buf: ArrayBuffer, enc: string): string => {
     try {
       const decoder = new TextDecoder(enc as any, { fatal: false })
       return decoder.decode(buf)
@@ -396,9 +369,9 @@ const detectCsvEncoding = (buf: ArrayBuffer): 'utf-8' | 'utf-8-sig' | 'shift_jis
       return new TextDecoder('utf-8').decode(buf)
     }
   }
-  const utf8Text = decodeWithEncoding(buf, 'utf-8')
-  const sjisText = decodeWithEncoding(buf, 'shift_jis')
-  const gbkText = decodeWithEncoding(buf, 'gb18030')
+  const utf8Text = decodeWithEnc(buf, 'utf-8')
+  const sjisText = decodeWithEnc(buf, 'shift_jis')
+  const gbkText = decodeWithEnc(buf, 'gb18030')
   const score = (text: string) => {
     const invalid = (text.match(/\uFFFD/g) || []).length
     const cjk = (text.match(/[\u3040-\u30ff\u4e00-\u9fa5]/g) || []).length
@@ -451,7 +424,7 @@ const parseCsvFile = async (file: File): Promise<Record<string, any>[]> => {
     return parseSheetToRows(wb)
   } catch (error) {
     console.error('CSV parsing failed:', error)
-    ElMessage.error('CSVファイルの解析に失敗しました')
+    alert('CSVファイルの解析に失敗しました')
     throw error
   }
 }
@@ -518,8 +491,12 @@ const handleImport = async () => {
   }
 
   // Validate form
-  const valid = await formRef.value?.validate().catch(() => false)
-  if (!valid) {
+  const errors: string[] = []
+  if (!formData.shipPlanDate) errors.push('出荷予定日を選択してください')
+  if (!formData.configId) errors.push('登録データ形式を選択してください')
+  if (!formData.carrierId) errors.push('配送業者を選択してください')
+  if (errors.length > 0) {
+    alert(errors.join('\n'))
     return
   }
 
@@ -543,6 +520,8 @@ const handleImport = async () => {
 
     // Convert to UserOrderRow format
     const now = new Date().toISOString()
+    // Normalize shipPlanDate from date input (YYYY-MM-DD) to YYYY/MM/DD
+    const normalizedShipPlanDate = formData.shipPlanDate.replace(/-/g, '/')
     const importedRows = mappedRows.map((row, idx) => {
       const sourceRow = rows[idx] || {}
 
@@ -582,7 +561,7 @@ const handleImport = async () => {
         // Apply selected settings
         carrierId: formData.carrierId,
         orderSourceCompanyId: formData.orderSourceCompanyId,
-        shipPlanDate: formData.shipPlanDate,
+        shipPlanDate: normalizedShipPlanDate,
         // Sender info from selected company
         sender: selectedCompany ? {
           postalCode: selectedCompany.senderPostalCode || '',
@@ -639,11 +618,11 @@ const handleImport = async () => {
     })
 
     emit('import', importedRows)
-    ElMessage.success(`${importedRows.length}件のデータを取り込みしました`)
+    alert(`${importedRows.length}件のデータを取り込みしました`)
     handleClose()
   } catch (error) {
     console.error('Failed to import:', error)
-    ElMessage.error('取り込みに失敗しました')
+    alert('取り込みに失敗しました')
   } finally {
     importing.value = false
   }
@@ -662,18 +641,22 @@ const handleClose = () => {
   formData.orderSourceCompanyId = ''
   formData.carrierId = ''
   formData.file = null
+  // Reset file input
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ''
+  }
 }
 
 // Load configs when dialog opens
 watch(visible, (newVal) => {
   if (newVal) {
     loadMappingConfigs()
-    // Set default ship plan date to today
+    // Set default ship plan date to today (YYYY-MM-DD for date input)
     const today = new Date()
     const y = today.getFullYear()
     const m = String(today.getMonth() + 1).padStart(2, '0')
     const d = String(today.getDate()).padStart(2, '0')
-    formData.shipPlanDate = `${y}/${m}/${d}`
+    formData.shipPlanDate = `${y}-${m}-${d}`
   }
 })
 </script>
@@ -691,6 +674,19 @@ watch(visible, (newVal) => {
   gap: 4px;
 }
 
+.o-form-group {
+  margin-bottom: 1rem;
+}
+
+.o-form-label {
+  display: flex;
+  align-items: center;
+  font-size: var(--o-font-size-small, 13px);
+  font-weight: 500;
+  color: var(--o-gray-700, #495057);
+  margin-bottom: 0.25rem;
+}
+
 .form-label {
   font-weight: 500;
   color: #303133;
@@ -699,6 +695,8 @@ watch(visible, (newVal) => {
 .required-tag {
   margin-left: 8px;
   vertical-align: middle;
+  font-size: 11px;
+  padding: 1px 6px;
 }
 
 .upload-section,
@@ -716,9 +714,39 @@ watch(visible, (newVal) => {
   color: #303133;
 }
 
-.upload-icon {
-  font-size: 48px;
-  color: var(--el-color-primary);
+.upload-drop-zone {
+  border: 2px dashed var(--o-border-color, #dee2e6);
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.upload-drop-zone:hover,
+.upload-drop-zone.drag-over {
+  border-color: var(--o-brand-primary, #714b67);
+  background: var(--o-brand-primary-light, rgba(113, 75, 103, 0.05));
+}
+
+.upload-text {
+  font-size: 14px;
+  color: #606266;
+}
+
+.upload-text em {
+  color: var(--o-brand-primary, #714b67);
+  font-style: normal;
+  cursor: pointer;
+}
+
+.upload-tip {
+  font-size: 12px;
+  color: #909399;
 }
 
 .file-info {
@@ -735,12 +763,19 @@ watch(visible, (newVal) => {
   gap: 12px;
 }
 
-:deep(.el-form-item__label) {
-  display: flex;
-  align-items: center;
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
 }
 
-:deep(.el-upload-dragger) {
-  width: 100%;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

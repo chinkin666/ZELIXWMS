@@ -6,8 +6,10 @@
         <div class="sub">id: {{ templateId }}</div>
       </div>
       <div class="actions">
-        <el-button @click="goBack">戻る</el-button>
-        <el-button type="primary" :loading="saving" @click="save">保存</el-button>
+        <button class="o-btn o-btn-secondary" @click="goBack">戻る</button>
+        <button class="o-btn o-btn-primary" :disabled="saving" @click="save">
+          {{ saving ? '保存中...' : '保存' }}
+        </button>
       </div>
     </div>
 
@@ -16,7 +18,7 @@
       <div class="panel left">
         <div class="panel-title">carrierRawRow 字段</div>
 
-        <el-input v-model="fieldFilter" placeholder="搜索 key" size="small" />
+        <input v-model="fieldFilter" class="o-input" placeholder="搜索 key" style="width: 100%" />
         <div class="fields">
           <div
             v-for="k in filteredFieldKeys"
@@ -33,28 +35,27 @@
         <div class="panel-title" style="margin-top: 12px">上传表格</div>
         <input ref="tableFileInput" type="file" accept=".csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" class="hidden-input" @change="onTableFileChange" />
         <div class="row">
-          <el-button size="small" @click="triggerTableUpload">选择文件</el-button>
-          <el-button size="small" :disabled="!uploadedTableData" @click="clearTableData">清空</el-button>
+          <button class="o-btn o-btn-secondary" @click="triggerTableUpload">选择文件</button>
+          <button class="o-btn o-btn-secondary" :disabled="!uploadedTableData" @click="clearTableData">清空</button>
         </div>
         <div v-if="uploadedTableData && uploadedTableData.length > 0" class="meta" style="margin-top: 8px">
           <div>已加载 {{ uploadedTableData.length }} 行数据（第1行为表头）</div>
           <div style="margin-top: 8px">
-            <el-select v-model="selectedRowIndex" size="small" style="width: 100%">
-              <el-option
+            <select v-model="selectedRowIndex" class="o-input" style="width: 100%">
+              <option
                 v-for="(row, idx) in uploadedTableData"
                 :key="idx"
-                :label="`第 ${idx + 2} 行`"
                 :value="idx"
-              />
-            </el-select>
+              >第 {{ idx + 2 }} 行</option>
+            </select>
           </div>
         </div>
         <div style="margin-bottom: 8px">
-          <el-switch
-            v-model="template.requiresYamatoSortCode"
-            active-text="yamato仕分けコードが必要"
-            size="small"
-          />
+          <label class="o-toggle">
+            <input type="checkbox" v-model="template.requiresYamatoSortCode" />
+            <span class="o-toggle-slider"></span>
+            <span style="margin-left: 8px; font-size: 12px">yamato仕分けコードが必要</span>
+          </label>
         </div>
       </div>
 
@@ -62,33 +63,37 @@
       <div class="panel center">
         <div class="panel-title">画布（Konva）</div>
         <div class="canvas-toolbar">
-          <el-form inline size="small">
-            <el-form-item label="宽(mm)">
-              <el-input v-model.number="template.canvas.widthMm" type="number" min="1" style="width: 110px" />
-            </el-form-item>
-            <el-form-item label="高(mm)">
-              <el-input v-model.number="template.canvas.heightMm" type="number" min="1" style="width: 110px" />
-            </el-form-item>
-            <el-form-item label="pxPerMm">
-              <el-input v-model.number="template.canvas.pxPerMm" type="number" min="1" step="0.5" style="width: 110px" />
-            </el-form-item>
-          </el-form>
+          <div class="toolbar-form">
+            <div class="form-group-inline">
+              <label>宽(mm)</label>
+              <input v-model.number="template.canvas.widthMm" type="number" min="1" class="o-input" style="width: 110px" />
+            </div>
+            <div class="form-group-inline">
+              <label>高(mm)</label>
+              <input v-model.number="template.canvas.heightMm" type="number" min="1" class="o-input" style="width: 110px" />
+            </div>
+            <div class="form-group-inline">
+              <label>pxPerMm</label>
+              <input v-model.number="template.canvas.pxPerMm" type="number" min="1" step="0.5" class="o-input" style="width: 110px" />
+            </div>
+          </div>
           <div class="row">
-            <el-button size="small" @click="addText">+ Text</el-button>
-            <el-button size="small" @click="addBarcode">+ Barcode</el-button>
-            <el-button size="small" @click="addImage">+ Image</el-button>
+            <button class="o-btn o-btn-secondary" @click="addText">+ Text</button>
+            <button class="o-btn o-btn-secondary" @click="addBarcode">+ Barcode</button>
+            <button class="o-btn o-btn-secondary" @click="addImage">+ Image</button>
           </div>
         </div>
 
         <div class="canvas-toolbar" style="margin-top: 8px">
           <div class="row">
             <input ref="bgFileInput" type="file" accept="image/*" class="hidden-input" @change="onBgFileChange" />
-            <el-button size="small" @click="triggerBgUpload">上传参考图</el-button>
-            <el-button size="small" :disabled="!bgImageUrl" @click="clearBgImage">清除参考图</el-button>
+            <button class="o-btn o-btn-secondary" @click="triggerBgUpload">上传参考图</button>
+            <button class="o-btn o-btn-secondary" :disabled="!bgImageUrl" @click="clearBgImage">清除参考图</button>
           </div>
           <div class="row" style="align-items: center">
             <div class="opacity-label">透明度</div>
-            <el-slider v-model="bgOpacity" :min="0" :max="1" :step="0.05" style="width: 220px" />
+            <input type="range" v-model.number="bgOpacity" min="0" max="1" step="0.05" style="width: 220px" />
+            <span style="font-size: 12px; color: #6b7280; margin-left: 4px">{{ bgOpacity.toFixed(2) }}</span>
           </div>
         </div>
 
@@ -103,121 +108,150 @@
           <div class="panel-title">属性</div>
           <div v-if="!selectedEl" class="placeholder">请选择一个元素</div>
           <div v-else class="props">
-            <el-form label-width="120px" size="small">
-              <el-form-item label="name">
-                <el-input v-model="selectedEl.name" />
-              </el-form-item>
-              <el-form-item label="x(mm)">
-                <el-input v-model.number="selectedEl.xMm" type="number" step="1" />
-              </el-form-item>
-              <el-form-item label="y(mm)">
-                <el-input v-model.number="selectedEl.yMm" type="number" step="1" />
-              </el-form-item>
-              <el-form-item label="visible">
-                <el-switch v-model="selectedEl.visible" />
-              </el-form-item>
-              <el-form-item label="locked">
-                <el-switch v-model="selectedEl.locked" />
-              </el-form-item>
+            <div class="o-form-group">
+              <label>name</label>
+              <input v-model="selectedEl.name" class="o-input" />
+            </div>
+            <div class="o-form-group">
+              <label>x(mm)</label>
+              <input v-model.number="selectedEl.xMm" type="number" step="1" class="o-input" />
+            </div>
+            <div class="o-form-group">
+              <label>y(mm)</label>
+              <input v-model.number="selectedEl.yMm" type="number" step="1" class="o-input" />
+            </div>
+            <div class="o-form-group">
+              <label>visible</label>
+              <label class="o-toggle">
+                <input type="checkbox" v-model="selectedEl.visible" />
+                <span class="o-toggle-slider"></span>
+              </label>
+            </div>
+            <div class="o-form-group">
+              <label>locked</label>
+              <label class="o-toggle">
+                <input type="checkbox" v-model="selectedEl.locked" />
+                <span class="o-toggle-slider"></span>
+              </label>
+            </div>
 
-              <template v-if="selectedEl.type === 'text'">
-                <el-form-item label="fontFamily">
-                  <el-input v-model="(selectedEl as any).fontFamily" placeholder="例: sans-serif / NotoSansJP" />
-                </el-form-item>
-                <el-form-item label="fontSize(pt)">
-                  <el-input v-model.number="(selectedEl as any).fontSizePt" type="number" step="1" />
-                </el-form-item>
-                <el-form-item label="letterSpacing(px)">
-                  <el-input v-model.number="(selectedEl as any).letterSpacingPx" type="number" step="0.5" />
-                </el-form-item>
-                <el-form-item label="align">
-                  <el-select v-model="(selectedEl as any).align" style="width: 100%">
-                    <el-option label="left" value="left" />
-                    <el-option label="right" value="right" />
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="内容转换">
-                  <el-button size="small" type="primary" @click="openTransformMappingDialog('text')">
-                    {{ (selectedEl as PrintTextElement).transformMapping ? '编辑转换' : '配置转换' }}
-                  </el-button>
-                </el-form-item>
-                <el-form-item label="预览">
-                  <el-input :model-value="textPreviewValue" readonly type="textarea" :rows="2" />
-                </el-form-item>
+            <template v-if="selectedEl.type === 'text'">
+              <div class="o-form-group">
+                <label>fontFamily</label>
+                <input v-model="(selectedEl as any).fontFamily" class="o-input" placeholder="例: sans-serif / NotoSansJP" />
+              </div>
+              <div class="o-form-group">
+                <label>fontSize(pt)</label>
+                <input v-model.number="(selectedEl as any).fontSizePt" type="number" step="1" class="o-input" />
+              </div>
+              <div class="o-form-group">
+                <label>letterSpacing(px)</label>
+                <input v-model.number="(selectedEl as any).letterSpacingPx" type="number" step="0.5" class="o-input" />
+              </div>
+              <div class="o-form-group">
+                <label>align</label>
+                <select v-model="(selectedEl as any).align" class="o-input" style="width: 100%">
+                  <option value="left">left</option>
+                  <option value="right">right</option>
+                </select>
+              </div>
+              <div class="o-form-group">
+                <label>内容转换</label>
+                <button class="o-btn o-btn-primary" @click="openTransformMappingDialog('text')">
+                  {{ (selectedEl as PrintTextElement).transformMapping ? '编辑转换' : '配置转换' }}
+                </button>
+              </div>
+              <div class="o-form-group">
+                <label>预览</label>
+                <textarea :value="textPreviewValue" readonly rows="2" class="o-input" style="width: 100%; resize: vertical"></textarea>
+              </div>
+            </template>
+
+            <template v-else-if="selectedEl.type === 'barcode'">
+              <div class="o-form-group">
+                <label>format</label>
+                <select v-model="(selectedEl as any).format" class="o-input" style="width: 100%">
+                  <option value="code128">Code 128</option>
+                  <option value="qrcode">QR Code</option>
+                  <option value="codabar">Codabar (NW-7)</option>
+                  <option value="ean13">EAN-13</option>
+                  <option value="ean8">EAN-8</option>
+                  <option value="code39">Code 39</option>
+                  <option value="code93">Code 93</option>
+                  <option value="interleaved2of5">Interleaved 2 of 5 (ITF)</option>
+                  <option value="datamatrix">Data Matrix</option>
+                  <option value="pdf417">PDF417</option>
+                </select>
+              </div>
+              <div class="o-form-group">
+                <label>width(mm)</label>
+                <input v-model.number="(selectedEl as any).widthMm" type="number" step="1" class="o-input" />
+              </div>
+              <div class="o-form-group">
+                <label>height(mm)</label>
+                <input v-model.number="(selectedEl as any).heightMm" type="number" step="1" class="o-input" />
+              </div>
+              <div class="o-form-group">
+                <label>内容转换</label>
+                <button class="o-btn o-btn-primary" @click="openTransformMappingDialog('barcode')">
+                  {{ (selectedEl as PrintBarcodeElement).transformMapping ? '编辑转换' : '配置转换' }}
+                </button>
+              </div>
+              <div class="o-form-group">
+                <label>预览</label>
+                <textarea :value="barcodePreviewValue" readonly rows="2" class="o-input" style="width: 100%; resize: vertical"></textarea>
+              </div>
+              <template v-if="(selectedEl as PrintBarcodeElement).format === 'codabar'">
+                <div class="o-form-group">
+                  <label>起始字符</label>
+                  <select v-model="codabarStartChar" class="o-input" style="width: 100%">
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                  </select>
+                </div>
+                <div class="o-form-group">
+                  <label>终止字符</label>
+                  <select v-model="codabarStopChar" class="o-input" style="width: 100%">
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                  </select>
+                </div>
               </template>
+              <div class="o-form-group">
+                <label>options(JSON)</label>
+                <textarea v-model="barcodeOptionsJson" rows="4" class="o-input" style="width: 100%; resize: vertical"></textarea>
+              </div>
+            </template>
 
-              <template v-else-if="selectedEl.type === 'barcode'">
-                <el-form-item label="format">
-                  <el-select v-model="(selectedEl as any).format" style="width: 100%">
-                    <el-option label="Code 128" value="code128" />
-                    <el-option label="QR Code" value="qrcode" />
-                    <el-option label="Codabar (NW-7)" value="codabar" />
-                    <el-option label="EAN-13" value="ean13" />
-                    <el-option label="EAN-8" value="ean8" />
-                    <el-option label="Code 39" value="code39" />
-                    <el-option label="Code 93" value="code93" />
-                    <el-option label="Interleaved 2 of 5 (ITF)" value="interleaved2of5" />
-                    <el-option label="Data Matrix" value="datamatrix" />
-                    <el-option label="PDF417" value="pdf417" />
-                  </el-select>
-                </el-form-item>
-                <el-form-item label="width(mm)">
-                  <el-input v-model.number="(selectedEl as any).widthMm" type="number" step="1" />
-                </el-form-item>
-                <el-form-item label="height(mm)">
-                  <el-input v-model.number="(selectedEl as any).heightMm" type="number" step="1" />
-                </el-form-item>
-                <el-form-item label="内容转换">
-                  <el-button size="small" type="primary" @click="openTransformMappingDialog('barcode')">
-                    {{ (selectedEl as PrintBarcodeElement).transformMapping ? '编辑转换' : '配置转换' }}
-                  </el-button>
-                </el-form-item>
-                <el-form-item label="预览">
-                  <el-input :model-value="barcodePreviewValue" readonly type="textarea" :rows="2" />
-                </el-form-item>
-                <template v-if="(selectedEl as PrintBarcodeElement).format === 'codabar'">
-                  <el-form-item label="起始字符">
-                    <el-select v-model="codabarStartChar" style="width: 100%">
-                      <el-option label="A" value="A" />
-                      <el-option label="B" value="B" />
-                      <el-option label="C" value="C" />
-                      <el-option label="D" value="D" />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="终止字符">
-                    <el-select v-model="codabarStopChar" style="width: 100%">
-                      <el-option label="A" value="A" />
-                      <el-option label="B" value="B" />
-                      <el-option label="C" value="C" />
-                      <el-option label="D" value="D" />
-                    </el-select>
-                  </el-form-item>
-                </template>
-                <el-form-item label="options(JSON)">
-                  <el-input v-model="barcodeOptionsJson" type="textarea" :rows="4" />
-                </el-form-item>
-              </template>
-
-              <template v-else-if="selectedEl.type === 'image'">
-                <el-form-item label="图片">
+            <template v-else-if="selectedEl.type === 'image'">
+              <div class="o-form-group">
+                <label>图片</label>
+                <div style="display: flex; gap: 8px">
                   <input ref="imageFileInput" type="file" accept="image/*" class="hidden-input" @change="onImageFileChange" />
-                  <el-button size="small" @click="triggerImageUpload">上传图片</el-button>
-                  <el-button size="small" :disabled="!((selectedEl as any).imageData)" @click="clearImage">清除图片</el-button>
-                </el-form-item>
-                <el-form-item v-if="(selectedEl as any).imageData" label="预览">
-                  <img :src="(selectedEl as any).imageData" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd;" />
-                </el-form-item>
-                <el-form-item label="width(mm)">
-                  <el-input v-model.number="(selectedEl as any).widthMm" type="number" step="1" />
-                </el-form-item>
-                <el-form-item label="height(mm)">
-                  <el-input v-model.number="(selectedEl as any).heightMm" type="number" step="1" />
-                </el-form-item>
-              </template>
-            </el-form>
+                  <button class="o-btn o-btn-secondary" @click="triggerImageUpload">上传图片</button>
+                  <button class="o-btn o-btn-secondary" :disabled="!((selectedEl as any).imageData)" @click="clearImage">清除图片</button>
+                </div>
+              </div>
+              <div class="o-form-group" v-if="(selectedEl as any).imageData">
+                <label>预览</label>
+                <img :src="(selectedEl as any).imageData" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd;" />
+              </div>
+              <div class="o-form-group">
+                <label>width(mm)</label>
+                <input v-model.number="(selectedEl as any).widthMm" type="number" step="1" class="o-input" />
+              </div>
+              <div class="o-form-group">
+                <label>height(mm)</label>
+                <input v-model.number="(selectedEl as any).heightMm" type="number" step="1" class="o-input" />
+              </div>
+            </template>
 
             <div class="row">
-              <el-button size="small" type="danger" plain @click="removeSelected">删除</el-button>
+              <button class="o-btn o-btn-danger" @click="removeSelected">删除</button>
             </div>
           </div>
         </div>
@@ -234,13 +268,13 @@
             >
               <div class="name">{{ idx + 1 }}. {{ e.name }} <span class="type">({{ e.type }})</span></div>
               <div class="ops">
-                <el-button size="small" text @click.stop="toggleVisible(e)">{{ e.visible === false ? '显示' : '隐藏' }}</el-button>
-                <el-button size="small" text @click.stop="toggleLocked(e)">{{ e.locked ? '解锁' : '锁定' }}</el-button>
-                <el-button size="small" text @click.stop="duplicateLayer(idx)">复制</el-button>
-                <el-button size="small" text :disabled="idx === 0" @click.stop="moveLayer(idx, -1)">上移</el-button>
-                <el-button size="small" text :disabled="idx === template.elements.length - 1" @click.stop="moveLayer(idx, 1)">
+                <button class="o-btn-text" @click.stop="toggleVisible(e)">{{ e.visible === false ? '显示' : '隐藏' }}</button>
+                <button class="o-btn-text" @click.stop="toggleLocked(e)">{{ e.locked ? '解锁' : '锁定' }}</button>
+                <button class="o-btn-text" @click.stop="duplicateLayer(idx)">复制</button>
+                <button class="o-btn-text" :disabled="idx === 0" @click.stop="moveLayer(idx, -1)">上移</button>
+                <button class="o-btn-text" :disabled="idx === template.elements.length - 1" @click.stop="moveLayer(idx, 1)">
                   下移
-                </el-button>
+                </button>
               </div>
             </div>
           </div>
@@ -265,7 +299,6 @@
 import Konva from 'konva'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import type { PrintBarcodeElement, PrintElement, PrintImageElement, PrintTemplate, PrintTextElement } from '@/types/printTemplate'
 import { fetchPrintTemplate, updatePrintTemplate } from '@/api/printTemplates'
 import { renderBarcodePngDataUrl } from '@/utils/print/renderBarcodeDataUrl'
@@ -325,7 +358,6 @@ const codabarStartChar = computed({
         ;(el as PrintBarcodeElement).options = {}
       }
       ;(el as PrintBarcodeElement).options!.codabarStart = value
-      // Update JSON display
       barcodeOptionsJson.value = JSON.stringify((el as PrintBarcodeElement).options ?? {}, null, 2)
       scheduleRender()
     }
@@ -347,7 +379,6 @@ const codabarStopChar = computed({
         ;(el as PrintBarcodeElement).options = {}
       }
       ;(el as PrintBarcodeElement).options!.codabarStop = value
-      // Update JSON display
       barcodeOptionsJson.value = JSON.stringify((el as PrintBarcodeElement).options ?? {}, null, 2)
       scheduleRender()
     }
@@ -364,7 +395,6 @@ watch(
   (el) => {
     if (el?.type === 'barcode') {
       const barcodeEl = el as PrintBarcodeElement
-      // Initialize Codabar start/stop characters if format is codabar and they don't exist
       if (barcodeEl.format === 'codabar') {
         if (!barcodeEl.options) {
           barcodeEl.options = {}
@@ -384,7 +414,6 @@ watch(
   { immediate: true },
 )
 
-// Watch for format changes to initialize Codabar options
 watch(
   () => (selectedEl.value as PrintBarcodeElement)?.format,
   (format) => {
@@ -412,7 +441,7 @@ const barcodePreviewValue = ref<string>('')
 
 async function updatePreviewValues() {
   const el = selectedEl.value
-  
+
   if (el?.type === 'text') {
     const textEl = el as PrintTextElement
     if (textEl.transformMapping) {
@@ -438,23 +467,19 @@ async function updatePreviewValues() {
         try {
           const result = await runTransformMapping(barcodeEl.transformMapping, sampleRow, {})
           let previewText = String(result ?? '')
-          
-          // For Codabar, show the full text with start/stop characters
+
           if (barcodeEl.format === 'codabar') {
             const startChar = barcodeEl.options?.codabarStart || 'A'
             const stopChar = barcodeEl.options?.codabarStop || 'A'
-            // Only remove start/stop characters (A-D) if they exist at the beginning or end
-            // We don't remove digits because they might be part of the data
             if (/^[A-D]/.test(previewText)) {
               previewText = previewText.substring(1)
             }
             if (/[A-D]$/.test(previewText)) {
               previewText = previewText.substring(0, previewText.length - 1)
             }
-            // Always add the specified start/stop characters at the beginning and end
             previewText = `${startChar}${previewText}${stopChar}`
           }
-          
+
           barcodePreviewValue.value = previewText
         } catch (e) {
           barcodePreviewValue.value = `Error: ${e instanceof Error ? e.message : String(e)}`
@@ -468,12 +493,10 @@ async function updatePreviewValues() {
   }
 }
 
-// Watch for changes to update preview
 watch([selectedEl, uploadedTableData, selectedRowIndex], () => {
   updatePreviewValues()
 }, { deep: true, immediate: true })
 
-// Also watch for transform mapping changes
 watch(
   () => selectedEl.value?.type === 'text' ? (selectedEl.value as PrintTextElement).transformMapping : null,
   () => updatePreviewValues(),
@@ -490,7 +513,6 @@ function getCurrentSampleRow(): Record<string, any> | null {
     const originalRow = uploadedTableData.value[selectedRowIndex.value]
     if (!originalRow) return null
     const row = { ...originalRow }
-    // Add Yamato-specific fields temporarily if requiresYamatoSortCode is enabled
     if (template.value.requiresYamatoSortCode) {
       row['仕分けコード'] = '999999'
       row['発ベースNo-1'] = '000'
@@ -498,7 +520,6 @@ function getCurrentSampleRow(): Record<string, any> | null {
     }
     return row
   }
-  // If no uploaded data but requiresYamatoSortCode is enabled, return a row with Yamato-specific fields
   if (template.value.requiresYamatoSortCode) {
     return {
       '仕分けコード': '999999',
@@ -513,38 +534,37 @@ function openTransformMappingDialog(type: 'text' | 'barcode') {
   transformMappingDialogType.value = type
   const el = selectedEl.value
   if (!el) return
-  
+
   if (type === 'text' && el.type === 'text') {
     currentTransformMapping.value = (el as PrintTextElement).transformMapping || null
   } else if (type === 'barcode' && el.type === 'barcode') {
     currentTransformMapping.value = (el as PrintBarcodeElement).transformMapping || null
   }
-  
+
   transformMappingDialogVisible.value = true
 }
 
 function handleTransformMappingSubmit(mapping: TransformMapping) {
   const el = selectedEl.value
   if (!el) return
-  
+
   if (transformMappingDialogType.value === 'text' && el.type === 'text') {
     (el as PrintTextElement).transformMapping = mapping
   } else if (transformMappingDialogType.value === 'barcode' && el.type === 'barcode') {
     (el as PrintBarcodeElement).transformMapping = mapping
   }
-  
+
   transformMappingDialogVisible.value = false
   scheduleRender()
 }
 
-// Debounced re-render: any template/property change should update the canvas.
+// Debounced re-render
 let renderTimer: number | null = null
 let renderSeq = 0
 function scheduleRender() {
   if (renderTimer) window.clearTimeout(renderTimer)
   renderTimer = window.setTimeout(() => {
     renderTimer = null
-    // Use a sequence id to ensure only the latest async render applies.
     const seq = ++renderSeq
     void render(seq)
   }, 30)
@@ -560,7 +580,6 @@ function triggerBgUpload() {
 }
 
 function clearBgImage() {
-  // Only revoke object URL if it's not a base64 data URL
   if (bgImageUrl.value && !bgImageUrl.value.startsWith('data:')) {
     URL.revokeObjectURL(bgImageUrl.value)
   }
@@ -579,15 +598,14 @@ function onBgFileChange(e: Event) {
 
 function setBgImageFromFile(file: File) {
   clearBgImage()
-  // Convert file to base64
   const reader = new FileReader()
   reader.onload = (e) => {
     const base64 = e.target?.result as string
     if (!base64) {
-      ElMessage.error('参考图读取失败')
+      alert('参考图读取失败')
       return
     }
-    bgImageUrl.value = base64 // Store base64 string
+    bgImageUrl.value = base64
     const img = new Image()
     img.onload = () => {
       bgImageEl.value = img
@@ -595,12 +613,12 @@ function setBgImageFromFile(file: File) {
     }
     img.onerror = () => {
       clearBgImage()
-      ElMessage.error('参考图加载失败')
+      alert('参考图加载失败')
     }
     img.src = base64
   }
   reader.onerror = () => {
-    ElMessage.error('参考图读取失败')
+    alert('参考图读取失败')
   }
   reader.readAsDataURL(file)
 }
@@ -611,9 +629,7 @@ watch(
     const el = selectedEl.value
     if (!el || el.type !== 'barcode') return
     try {
-      // Only update when the user changes the textarea; render() never mutates template.
       ;(el as PrintBarcodeElement).options = JSON.parse(barcodeOptionsJson.value || '{}')
-      // Deep watch on template.elements will scheduleRender()
     } catch {
       // Keep previous options if JSON is invalid
     }
@@ -624,8 +640,7 @@ watch(
 const fieldFilter = ref('')
 const filteredFieldKeys = computed(() => {
   let keys = [...tableHeaders.value]
-  
-  // Add Yamato-specific fields if requiresYamatoSortCode is enabled
+
   if (template.value.requiresYamatoSortCode) {
     const yamatoFields = ['仕分けコード', '発ベースNo-1', '発ベースNo-2']
     for (const field of yamatoFields) {
@@ -634,20 +649,19 @@ const filteredFieldKeys = computed(() => {
       }
     }
   }
-  
+
   const q = fieldFilter.value.trim().toLowerCase()
   return q ? keys.filter((k) => k.toLowerCase().includes(q)) : keys
 })
 
 function getFieldValue(key: string): any {
-  // Yamato-specific fields return fixed values
   if (key === '仕分けコード') {
     return '999999'
   }
   if (key === '発ベースNo-1' || key === '発ベースNo-2') {
     return '000'
   }
-  
+
   if (!uploadedTableData.value || uploadedTableData.value.length === 0) return ''
   const rowIndex = selectedRowIndex.value
   if (rowIndex < 0 || rowIndex >= uploadedTableData.value.length) return ''
@@ -659,16 +673,13 @@ function goBack() {
 }
 
 function loadTemplate() {
-  // Request with includeSampleData=true for visual editor
   fetchPrintTemplate(templateId, true)
     .then((hit: any) => {
       template.value = JSON.parse(JSON.stringify(hit)) as PrintTemplate
       if (!Array.isArray(template.value.elements)) template.value.elements = []
-      
-      // Load sample data if available
+
       if (hit.sampleData && Array.isArray(hit.sampleData) && hit.sampleData.length > 0) {
         uploadedTableData.value = hit.sampleData
-        // Extract headers from first row if it's an object, otherwise use keys from first data row
         if (uploadedTableData.value.length > 0) {
           const firstRow = uploadedTableData.value[0]
           if (firstRow && typeof firstRow === 'object') {
@@ -677,22 +688,21 @@ function loadTemplate() {
           }
         }
       }
-      
-      // Load reference image if available
+
       if (hit.referenceImageData && typeof hit.referenceImageData === 'string') {
         clearBgImage()
         const img = new Image()
         img.onload = () => {
           bgImageEl.value = img
-          bgImageUrl.value = hit.referenceImageData // Store base64 string
+          bgImageUrl.value = hit.referenceImageData
           scheduleRender()
         }
         img.onerror = () => {
-          ElMessage.error('参考图加载失败')
+          alert('参考图加载失败')
         }
         img.src = hit.referenceImageData
       }
-      
+
       scheduleRender()
     })
     .catch(() => {
@@ -706,7 +716,6 @@ function loadTemplate() {
 async function save() {
   saving.value = true
   try {
-    // persist barcode options json if selected
     if (selectedEl.value?.type === 'barcode') {
       try {
         ;(selectedEl.value as PrintBarcodeElement).options = JSON.parse(barcodeOptionsJson.value || '{}')
@@ -715,27 +724,23 @@ async function save() {
       }
     }
 
-    // Include sampleData and referenceImageData in the payload if available
     const payload: any = { ...template.value }
     if (uploadedTableData.value && uploadedTableData.value.length > 0) {
       payload.sampleData = uploadedTableData.value
     } else {
-      // If no sample data, explicitly set to null to clear it on backend
       payload.sampleData = null
     }
-    
-    // Include reference image if available (base64 string)
+
     if (bgImageUrl.value && bgImageUrl.value.startsWith('data:')) {
       payload.referenceImageData = bgImageUrl.value
     } else {
-      // If no reference image, explicitly set to null to clear it on backend
       payload.referenceImageData = null
     }
 
     await updatePrintTemplate(template.value.id, payload)
-    ElMessage.success('保存しました')
+    alert('保存しました')
   } catch (e: any) {
-    ElMessage.error(e?.message || '保存に失敗しました')
+    alert(e?.message || '保存に失敗しました')
   } finally {
     saving.value = false
   }
@@ -787,11 +792,8 @@ function removeSelected() {
 }
 
 function insertField(key: string) {
-  // Create a new text element with a simple transform mapping for this field
   const id = crypto.randomUUID?.() || Math.random().toString(36).slice(2)
-  
-  // Always use column type, even for 仕分けコード
-  // The value will be provided temporarily in getCurrentSampleRow()
+
   const transformMapping: TransformMapping = {
     targetField: 'text',
     inputs: [
@@ -805,13 +807,13 @@ function insertField(key: string) {
       plugin: 'combine.first',
     },
   }
-  
+
   const newElement: PrintTextElement = {
     id,
     name: `Text: ${key}`,
     type: 'text',
     xMm: 10,
-    yMm: 10 + template.value.elements.length * 15, // Offset each new element
+    yMm: 10 + template.value.elements.length * 15,
     visible: true,
     locked: false,
     transformMapping,
@@ -820,11 +822,11 @@ function insertField(key: string) {
     align: 'left',
     letterSpacingPx: 0,
   }
-  
+
   template.value.elements.push(newElement)
   selectedId.value = id
   scheduleRender()
-  ElMessage.success(`已添加文字图层: ${key}`)
+  alert(`已添加文字图层: ${key}`)
 }
 
 function triggerTableUpload() {
@@ -850,30 +852,30 @@ async function parseTableFile(file: File) {
   try {
     const isExcel = file.type.includes('sheet') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')
     let result: { headers: string[]; rows: Record<string, any>[] }
-    
+
     if (isExcel) {
       result = await parseExcelFile(file)
     } else {
       result = await parseCsvFile(file)
     }
-    
+
     if (result.rows.length === 0) {
-      ElMessage.warning('表格为空或无法解析')
+      alert('表格为空或无法解析')
       return
     }
-    
+
     if (result.headers.length === 0) {
-      ElMessage.warning('表格没有有效的表头')
+      alert('表格没有有效的表头')
       return
     }
-    
+
     tableHeaders.value = result.headers
     uploadedTableData.value = result.rows
-    selectedRowIndex.value = 0 // 默认选择第一行数据（第二行，因为第一行是表头）
-    ElMessage.success(`已加载 ${result.rows.length} 行数据，${result.headers.length} 个字段`)
+    selectedRowIndex.value = 0
+    alert(`已加载 ${result.rows.length} 行数据，${result.headers.length} 个字段`)
     scheduleRender()
   } catch (e: any) {
-    ElMessage.error(e?.message || '文件解析失败')
+    alert(e?.message || '文件解析失败')
     console.error('Table parsing error:', e)
   }
 }
@@ -886,19 +888,16 @@ async function parseExcelFile(file: File): Promise<{ headers: string[]; rows: Re
 
 async function parseCsvFile(file: File): Promise<{ headers: string[]; rows: Record<string, any>[] }> {
   const buf = await file.arrayBuffer()
-  // 简单的编码检测
   const detectEncoding = (buf: ArrayBuffer): string => {
     const bytes = new Uint8Array(buf)
     if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
       return 'utf-8-sig'
     }
-    // 尝试 UTF-8
     try {
       const decoder = new TextDecoder('utf-8', { fatal: true })
       decoder.decode(buf.slice(0, Math.min(1024, buf.byteLength)))
       return 'utf-8'
     } catch {
-      // 尝试 Shift-JIS
       try {
         const decoder = new TextDecoder('shift_jis', { fatal: false })
         decoder.decode(buf.slice(0, Math.min(1024, buf.byteLength)))
@@ -908,16 +907,15 @@ async function parseCsvFile(file: File): Promise<{ headers: string[]; rows: Reco
       }
     }
   }
-  
+
   const encoding = detectEncoding(buf)
   const decoder = new TextDecoder(encoding === 'utf-8-sig' ? 'utf-8' : encoding, { fatal: false })
   let text = decoder.decode(buf)
-  
-  // 移除 BOM
+
   if (encoding === 'utf-8-sig' && text.charCodeAt(0) === 0xfeff) {
     text = text.slice(1)
   }
-  
+
   const wb = XLSX.read(text, { type: 'string' })
   return parseSheetToRows(wb)
 }
@@ -926,15 +924,14 @@ function parseSheetToRows(wb: any): { headers: string[]; rows: Record<string, an
   if (!wb.SheetNames || wb.SheetNames.length === 0) {
     return { headers: [], rows: [] }
   }
-  
+
   const sheet = wb.Sheets[wb.SheetNames[0]]
   const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1')
-  
+
   if (range.s.r >= range.e.r) {
     return { headers: [], rows: [] }
   }
-  
-  // 第一行作为表头
+
   const headers: string[] = []
   for (let col = range.s.c; col <= range.e.c; col++) {
     const cellAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col })
@@ -942,8 +939,7 @@ function parseSheetToRows(wb: any): { headers: string[]; rows: Record<string, an
     const header = cell?.w || cell?.v || ''
     headers.push(String(header).trim() || `Column${col + 1}`)
   }
-  
-  // 读取数据行
+
   const rows: Record<string, any>[] = []
   for (let row = range.s.r + 1; row <= range.e.r; row++) {
     const rowData: Record<string, any> = {}
@@ -961,7 +957,7 @@ function parseSheetToRows(wb: any): { headers: string[]; rows: Record<string, an
     }
     rows.push(rowData)
   }
-  
+
   return { headers, rows }
 }
 
@@ -979,7 +975,7 @@ function pxToMm(px: number): number {
 async function barcodeToImage(b: PrintBarcodeElement, value: string): Promise<HTMLImageElement> {
   const widthPx = mmToPx(b.widthMm)
   const heightPx = mmToPx(b.heightMm)
-  
+
   let dataUrl: string
   try {
     dataUrl = renderBarcodePngDataUrl({
@@ -990,11 +986,10 @@ async function barcodeToImage(b: PrintBarcodeElement, value: string): Promise<HT
       options: b.options,
     })
   } catch (error) {
-    // If barcode generation fails, create an error message image
     console.error('Barcode generation error:', error)
     throw error
   }
-  
+
   return await new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => resolve(img)
@@ -1047,7 +1042,6 @@ function syncTransformer() {
     layer.draw()
     return
   }
-  // Allow resize on barcode and image elements
   const el = selectedEl.value
   if (el?.type === 'barcode' || el?.type === 'image') {
     transformer.nodes([node])
@@ -1060,7 +1054,6 @@ function syncTransformer() {
 async function render(seq?: number) {
   ensureStage()
   if (!stage || !layer) return
-  // If a newer render is scheduled while we're awaiting barcode images, abort applying this one.
   const mySeq = seq ?? ++renderSeq
 
   const widthPx = Math.max(1, Math.round(mmToPx(template.value.canvas.widthMm)))
@@ -1068,16 +1061,12 @@ async function render(seq?: number) {
   stage.width(widthPx)
   stage.height(heightPx)
 
-  // Clear and re-build the scene.
-  // IMPORTANT: Don't destroy the persistent transformer; remove it before destroyChildren().
   const keepTransformer = transformer
   if (keepTransformer) keepTransformer.remove()
   layer.destroyChildren()
 
-  // Background
   layer.add(new Konva.Rect({ x: 0, y: 0, width: widthPx, height: heightPx, fill: 'white', listening: false }))
 
-  // Optional reference background image (editor-only)
   if (bgImageEl.value) {
     layer.add(
       new Konva.Image({
@@ -1092,7 +1081,6 @@ async function render(seq?: number) {
     )
   }
 
-  // Draw elements in order
   for (const el of template.value.elements) {
     if (el.visible === false) continue
 
@@ -1151,7 +1139,6 @@ async function render(seq?: number) {
         img = null
       }
       if (seq !== undefined && mySeq !== renderSeq) {
-        // A newer render started; stop this one early.
         return
       }
 
@@ -1171,7 +1158,6 @@ async function render(seq?: number) {
       })
 
       node.on('transformend', () => {
-        // Normalize scale into width/height
         const newW = node.width() * node.scaleX()
         const newH = node.height() * node.scaleY()
         node.scaleX(1)
@@ -1187,23 +1173,20 @@ async function render(seq?: number) {
     } else if (el.type === 'image') {
       const imgEl = el as PrintImageElement
       if (!imgEl.imageData) {
-        // Skip if no image data
         continue
       }
-      
-      // Load image synchronously if already cached, or asynchronously
+
       const img = new Image()
       let imgLoaded = false
-      
+
       img.onload = () => {
         imgLoaded = true
         if (seq !== undefined && mySeq !== renderSeq) {
-          // A newer render started; stop this one early.
           return
         }
-        
+
         if (!layer) return
-        
+
         const node = new Konva.Image({
           x: mmToPx(imgEl.xMm),
           y: mmToPx(imgEl.yMm),
@@ -1213,25 +1196,24 @@ async function render(seq?: number) {
           draggable: !imgEl.locked,
         })
         node.setAttr('__elementId', imgEl.id)
-        
+
         node.on('dragend', () => {
           imgEl.xMm = pxToMm(node.x())
           imgEl.yMm = pxToMm(node.y())
         })
-        
+
         node.on('transformend', () => {
-          // Normalize scale into width/height
           const newW = node.width() * node.scaleX()
           const newH = node.height() * node.scaleY()
           node.scaleX(1)
           node.scaleY(1)
           node.width(newW)
           node.height(newH)
-          
+
           imgEl.widthMm = pxToMm(newW)
           imgEl.heightMm = pxToMm(newH)
         })
-        
+
         layer.add(node)
         if (seq === undefined || mySeq === renderSeq) {
           syncTransformer()
@@ -1242,15 +1224,13 @@ async function render(seq?: number) {
         // Image load failed, skip
       }
       img.src = imgEl.imageData
-      
-      // If image is already loaded (cached), trigger onload immediately
+
       if (img.complete && img.naturalWidth > 0) {
         img.onload(new Event('load') as any)
       }
     }
   }
 
-  // Re-add transformer and sync selection.
   if (keepTransformer) {
     layer.add(keepTransformer)
     keepTransformer.moveToTop()
@@ -1313,7 +1293,6 @@ function addImage() {
   } as any)
   selectedId.value = id
   scheduleRender()
-  // Trigger image upload dialog
   setTimeout(() => {
     imageFileInput.value?.click()
   }, 100)
@@ -1335,25 +1314,23 @@ function onImageFileChange(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input?.files?.[0]
   if (!file) return
-  
+
   const el = selectedEl.value
   if (!el || el.type !== 'image') {
-    ElMessage.warning('请先选择一个图片元素')
+    alert('请先选择一个图片元素')
     return
   }
-  
+
   const reader = new FileReader()
   reader.onload = (event) => {
     const result = event.target?.result
     if (typeof result === 'string') {
       (el as PrintImageElement).imageData = result
-      // Auto-adjust size based on image dimensions
       const img = new Image()
       img.onload = () => {
         const aspectRatio = img.width / img.height
         const currentWidth = (el as PrintImageElement).widthMm || 50
         const currentHeight = (el as PrintImageElement).heightMm || 50
-        // Keep width, adjust height to maintain aspect ratio
         if (currentWidth > 0) {
           (el as PrintImageElement).heightMm = currentWidth / aspectRatio
         } else if (currentHeight > 0) {
@@ -1362,17 +1339,16 @@ function onImageFileChange(e: Event) {
         scheduleRender()
       }
       img.onerror = () => {
-        ElMessage.error('图片加载失败')
+        alert('图片加载失败')
       }
       img.src = result
     }
   }
   reader.onerror = () => {
-    ElMessage.error('文件读取失败')
+    alert('文件读取失败')
   }
   reader.readAsDataURL(file)
-  
-  // Clear input
+
   if (input) input.value = ''
 }
 
@@ -1404,14 +1380,12 @@ watch(
 
 onMounted(() => {
   loadTemplate()
-  // default select first element if any
   selectedId.value = template.value.elements[0]?.id || ''
   scheduleRender()
 })
 
 onBeforeUnmount(() => {
   if (renderTimer) window.clearTimeout(renderTimer)
-  // Only revoke object URL if it's not a base64 data URL
   if (bgImageUrl.value && !bgImageUrl.value.startsWith('data:')) {
     URL.revokeObjectURL(bgImageUrl.value)
   }
@@ -1440,6 +1414,10 @@ onBeforeUnmount(() => {
 .sub {
   color: #6b7280;
   font-size: 12px;
+}
+.actions {
+  display: flex;
+  gap: 8px;
 }
 .layout {
   display: grid;
@@ -1505,6 +1483,23 @@ onBeforeUnmount(() => {
   gap: 12px;
   flex-wrap: wrap;
 }
+.toolbar-form {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.form-group-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.form-group-inline label {
+  white-space: nowrap;
+  font-size: 12px;
+  color: #374151;
+}
 .canvas-wrap {
   margin-top: 10px;
   border: 1px dashed #d1d5db;
@@ -1530,12 +1525,10 @@ onBeforeUnmount(() => {
   font-size: 12px;
 }
 .right-top {
-  /* keep props stable, allow internal scroll if needed */
   max-height: 520px;
   overflow: auto;
 }
 .right-bottom {
-  /* layers should stay fixed, independent of props height */
   max-height: 360px;
   overflow: auto;
 }
@@ -1567,6 +1560,119 @@ onBeforeUnmount(() => {
   gap: 6px;
   flex-wrap: wrap;
 }
+
+/* o-btn styles */
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  background: #fff;
+  color: #606266;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.o-btn:hover { background: #f5f7fa; border-color: #c0c4cc; }
+.o-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.o-btn-primary {
+  background: var(--o-primary, #714B67);
+  color: #fff;
+  border-color: var(--o-primary, #714B67);
+}
+.o-btn-primary:hover { opacity: 0.85; }
+
+.o-btn-secondary {
+  background: #fff;
+  color: #606266;
+  border-color: #dcdfe6;
+}
+
+.o-btn-danger {
+  background: #fff;
+  color: #f56c6c;
+  border-color: #fbc4c4;
+}
+.o-btn-danger:hover { background: #fef0f0; }
+
+.o-btn-text {
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--o-primary, #714B67);
+}
+.o-btn-text:hover { text-decoration: underline; }
+.o-btn-text:disabled { opacity: 0.4; cursor: not-allowed; text-decoration: none; }
+
+/* o-input */
+.o-input {
+  padding: 6px 10px;
+  border: 1px solid var(--o-border-color, #dee2e6);
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.o-input:focus { border-color: var(--o-primary, #714B67); }
+
+/* o-form-group */
+.o-form-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.o-form-group > label {
+  width: 120px;
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #374151;
+  padding-top: 6px;
+}
+.o-form-group > input,
+.o-form-group > select,
+.o-form-group > textarea {
+  flex: 1;
+  min-width: 0;
+}
+
+/* o-toggle */
+.o-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+.o-toggle input { display: none; }
+.o-toggle-slider {
+  width: 36px;
+  height: 20px;
+  background: #ccc;
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s;
+}
+.o-toggle-slider::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+}
+.o-toggle input:checked + .o-toggle-slider {
+  background: var(--o-primary, #714B67);
+}
+.o-toggle input:checked + .o-toggle-slider::after {
+  transform: translateX(16px);
+}
 </style>
-
-

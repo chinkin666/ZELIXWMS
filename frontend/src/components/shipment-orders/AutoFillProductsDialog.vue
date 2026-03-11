@@ -1,72 +1,82 @@
 <template>
-  <el-dialog
-    v-model="visibleProxy"
+  <ODialog
+    :open="visibleProxy"
     title="商品情報の自動補完 / 送り状種類の自動設定"
+    @close="visibleProxy = false"
     width="760px"
-    :close-on-click-modal="false"
   >
     <div class="meta">
       対象：<strong>{{ selectedCount }}</strong> 件（左側チェックで選択した行のみ）
     </div>
 
-    <el-divider />
+    <hr style="border: none; border-top: 1px solid #dcdfe6; margin: 16px 0" />
 
-    <el-form label-width="220px">
-      <el-form-item label="商品マスタから商品名上書き">
-        <div class="row">
-          <el-switch v-model="overwriteProductName" />
-          <div class="hint">
-            ON: SKU が商品マスタに存在する場合、商品名を常にマスタの印刷用商品名で上書きします<br />
-            OFF: 取込した商品名をそのまま表示する
-          </div>
+    <div class="o-form-group">
+      <label class="o-form-label">商品マスタから商品名上書き</label>
+      <div class="row">
+        <label class="o-toggle">
+          <input type="checkbox" v-model="overwriteProductName" />
+          <span class="o-toggle-slider"></span>
+        </label>
+        <div class="hint">
+          ON: SKU が商品マスタに存在する場合、商品名を常にマスタの印刷用商品名で上書きします<br />
+          OFF: 取込した商品名をそのまま表示する
         </div>
-      </el-form-item>
+      </div>
+    </div>
 
-      <el-form-item label="送り状種類の自動設定方式">
-        <div class="row">
-          <el-radio-group v-model="invoiceMode">
-            <el-radio label="mode1">方式1（商品に「発払い宅急便」が含まれるか）</el-radio>
-            <el-radio label="mode2">方式2（配送サイズ指数の合計で判定）</el-radio>
-          </el-radio-group>
-          <div class="hint">
-            <div class="desc-title">方式の詳細</div>
-            <ul class="desc-list">
-              <li>
-                <strong>方式1</strong>：選択行の products を見て、商品マスタ側の送り状種類が「発払い宅急便（コード: 0）」の商品が1つでもあれば
-                <strong>発払い宅急便</strong>、無ければ <strong>メール便（コード: A）</strong> を設定します。
-              </li>
-              <li>
-                <strong>方式2</strong>：SKU ごとに商品マスタの <strong>delivery_size_index</strong> を取得し、
-                \( \sum (数量 \times delivery\_size\_index) \) を計算します。合計が閾値以上なら <strong>発払い宅急便</strong>、
-                未満なら <strong>メール便</strong> を設定します。
-              </li>
-            </ul>
-          </div>
+    <div class="o-form-group">
+      <label class="o-form-label">送り状種類の自動設定方式</label>
+      <div class="row">
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="radio" v-model="invoiceMode" value="mode1" />
+            方式1（商品に「発払い宅急便」が含まれるか）
+          </label>
+          <label class="radio-item">
+            <input type="radio" v-model="invoiceMode" value="mode2" />
+            方式2（配送サイズ指数の合計で判定）
+          </label>
         </div>
-      </el-form-item>
+        <div class="hint">
+          <div class="desc-title">方式の詳細</div>
+          <ul class="desc-list">
+            <li>
+              <strong>方式1</strong>：選択行の products を見て、商品マスタ側の送り状種類が「発払い宅急便（コード: 0）」の商品が1つでもあれば
+              <strong>発払い宅急便</strong>、無ければ <strong>メール便（コード: A）</strong> を設定します。
+            </li>
+            <li>
+              <strong>方式2</strong>：SKU ごとに商品マスタの <strong>delivery_size_index</strong> を取得し、
+              \( \sum (数量 \times delivery\_size\_index) \) を計算します。合計が閾値以上なら <strong>発払い宅急便</strong>、
+              未満なら <strong>メール便</strong> を設定します。
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
 
-      <el-form-item v-if="invoiceMode === 'mode2'" label="方式2の閾値（>= で発払い宅急便）">
-        <div class="row">
-          <el-input-number v-model="threshold" :min="0" :step="1" />
-          <div class="hint">デフォルト：100</div>
-        </div>
-      </el-form-item>
-    </el-form>
+    <div v-if="invoiceMode === 'mode2'" class="o-form-group">
+      <label class="o-form-label">方式2の閾値（>= で発払い宅急便）</label>
+      <div class="row">
+        <input type="number" class="o-input" v-model.number="threshold" :min="0" :step="1" style="width: 140px" />
+        <div class="hint">デフォルト：100</div>
+      </div>
+    </div>
 
     <template #footer>
       <div class="footer">
-        <el-button @click="visibleProxy = false">キャンセル</el-button>
-        <el-button type="primary" :disabled="selectedCount === 0" @click="handleConfirm">
+        <button class="o-btn o-btn-secondary" @click="visibleProxy = false">キャンセル</button>
+        <button class="o-btn o-btn-primary" :disabled="selectedCount === 0" @click="handleConfirm">
           適用
-        </el-button>
+        </button>
       </div>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ElButton, ElDialog, ElDivider, ElForm, ElFormItem, ElInputNumber, ElRadio, ElRadioGroup, ElSwitch } from 'element-plus'
+import ODialog from '@/components/odoo/ODialog.vue'
 
 type InvoiceMode = 'mode1' | 'mode2'
 
@@ -111,39 +121,21 @@ const handleConfirm = () => {
 </script>
 
 <style scoped>
-.meta {
-  color: #606266;
-  font-size: 13px;
-}
-
-.row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.hint {
-  color: #909399;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.desc-title {
-  margin-bottom: 4px;
-  color: #606266;
-  font-weight: 600;
-}
-
-.desc-list {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
+.meta { color: #606266; font-size: 13px; }
+.row { display: flex; flex-direction: column; gap: 8px; }
+.hint { color: #909399; font-size: 12px; line-height: 1.5; }
+.desc-title { margin-bottom: 4px; color: #606266; font-weight: 600; }
+.desc-list { margin: 0; padding-left: 18px; }
+.footer { display: flex; justify-content: flex-end; gap: 10px; }
+.radio-group { display: flex; flex-direction: column; gap: 8px; }
+.radio-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #374151; cursor: pointer; }
+.radio-item input[type="radio"] { margin: 0; }
+.o-form-group { margin-bottom:1rem; }
+.o-form-label { display:block; font-size:13px; font-weight:500; color:#374151; margin-bottom:0.25rem; }
+.o-toggle { position:relative; display:inline-block; width:40px; height:20px; cursor:pointer; }
+.o-toggle input { opacity:0; width:0; height:0; }
+.o-toggle-slider { position:absolute; inset:0; background:#ccc; border-radius:20px; transition:background .2s; }
+.o-toggle-slider::before { content:''; position:absolute; left:2px; top:2px; width:16px; height:16px; background:#fff; border-radius:50%; transition:transform .2s; }
+.o-toggle input:checked + .o-toggle-slider { background:#714b67; }
+.o-toggle input:checked + .o-toggle-slider::before { transform:translateX(20px); }
 </style>
-
-

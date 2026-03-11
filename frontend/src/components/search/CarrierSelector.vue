@@ -7,11 +7,14 @@
         :key="String(carrier._id)"
         class="carrier-option"
       >
-        <el-checkbox
-          :model-value="selectedCarrierId === String(carrier._id)"
-          @change="() => handleCarrierClick(carrier._id)"
-        />
-        <span class="carrier-option-label">{{ carrier.name }} ({{ carrier.code }})</span>
+        <label class="o-checkbox">
+          <input
+            type="checkbox"
+            :checked="selectedCarrierId === String(carrier._id)"
+            @change="() => handleCarrierClick(carrier._id)"
+          />
+          <span class="carrier-option-label">{{ carrier.name }} ({{ carrier.code }})</span>
+        </label>
       </label>
     </div>
   </div>
@@ -21,7 +24,6 @@
 import { ref, onMounted, watch } from 'vue'
 import { fetchCarriers } from '@/api/carrier'
 import type { Carrier } from '@/types/carrier'
-import { ElMessage } from 'element-plus'
 
 const props = withDefaults(
   defineProps<{
@@ -54,7 +56,7 @@ const loadCarriers = async () => {
     // 不自动选择第一个配送会社，让用户手动选择（不选择时不过滤）
   } catch (e) {
     console.error(e)
-    ElMessage.warning('配送会社マスタの取得に失敗しました')
+    console.warn('配送会社マスタの取得に失敗しました')
   }
 }
 
@@ -124,20 +126,18 @@ defineExpose({
   user-select: none;
 }
 
-.carrier-option :deep(.el-checkbox) {
-  margin-right: 0;
-  height: auto;
+.o-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: pointer;
+  font-size: var(--o-font-size-base, 14px);
 }
 
-.carrier-option :deep(.el-checkbox__input) {
-  height: 14px;
-  width: 14px;
-}
-
-.carrier-option :deep(.el-checkbox__inner) {
+.o-checkbox input {
+  accent-color: var(--o-brand-primary, #714b67);
   width: 14px;
   height: 14px;
-  border-radius: 3px;
 }
 
 .carrier-option-label {
@@ -146,4 +146,3 @@ defineExpose({
   line-height: 24px;
 }
 </style>
-

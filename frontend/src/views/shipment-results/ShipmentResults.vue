@@ -15,7 +15,10 @@
     <div class="between-controls">
       <div class="between-controls__item">
         <span class="between-controls__label">連携済みを表示：</span>
-        <el-switch v-model="showExportedRows" />
+        <label class="o-toggle">
+          <input type="checkbox" v-model="showExportedRows" />
+          <span class="o-toggle-slider"></span>
+        </label>
       </div>
     </div>
 
@@ -58,18 +61,20 @@
       total-label="総件数"
     >
       <template #right>
-        <el-button
+        <button
+          class="o-btn o-btn-secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleCustomExportClick"
         >
           出荷明細リスト出力(csv)
-        </el-button>
-        <el-button
+        </button>
+        <button
+          class="o-btn o-btn-secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleFormExportClick"
         >
           出荷明細リスト出力(pdf)
-        </el-button>
+        </button>
       </template>
     </OrderBottomBar>
 
@@ -100,8 +105,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref, watch } from 'vue'
-import { ElButton, ElMessage } from 'element-plus'
-import type { HeaderClassNameGetter } from 'element-plus'
+import { useToast } from '@/composables/useToast'
 import Table from '@/components/table/OrderTable.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
@@ -119,12 +123,14 @@ import type { Carrier } from '@/types/carrier'
 import { fetchProducts } from '@/api/product'
 import type { Product } from '@/types/product'
 
+const { show: showToast } = useToast()
+
 type SortOrder = 'asc' | 'desc' | null
 type OrderRow = Record<string, any>
 
 const rows = ref<OrderRow[]>([])
 const tableSelectedKeys = ref<Array<string | number>>([])
-const isSelectAll = ref(false) // 是否全选所有符合条件的记录
+const isSelectAll = ref(false)
 const isLoadingOrders = ref(false)
 
 const pageSize = ref(10)
@@ -167,7 +173,6 @@ const allFieldDefinitions = computed(() =>
 
 const baseColumns = computed(() => {
   const systemFieldKeys = ['tenantId']
-  // 状態関連のカラムを強制的に表示
   const statusKeys = ['statusPrinted', 'statusCarrierReceipt', 'statusShipped', 'statusEcExported']
   return allFieldDefinitions.value.filter((col) => {
     if (systemFieldKeys.includes(col.key)) return false
@@ -192,10 +197,8 @@ const effectiveSearchPayload = computed(() => {
   const base = currentSearchPayload.value || searchInitialValues.value
   const q: Record<string, { operator: Operator; value: any }> = { ...(base || {}) }
 
-  // 只显示已出荷的订单
   q['status.shipped.isShipped'] = { operator: 'is', value: true }
 
-  // EC連携状态过滤
   if (!showExportedRows.value) {
     q['status.ecExported.isExported'] = { operator: 'is', value: false }
   }
@@ -215,25 +218,22 @@ const handleView = async (row: any) => {
     selectedOrder.value = await fetchShipmentOrder(String(id))
     viewDialogVisible.value = true
   } catch (e: any) {
-    ElMessage.error(e?.message || '詳細の取得に失敗しました')
+    showToast(e?.message || '詳細の取得に失敗しました', 'danger')
   }
 }
 
 const handleTableSelectionChange = (payload: { selectedKeys: Array<string | number>; selectedRows: any[]; isSelectAllTriggered?: boolean }) => {
   tableSelectedKeys.value = payload.selectedKeys
 
-  // 点击全选且选中了当前页所有数据 → 全选模式
   if (payload.isSelectAllTriggered && payload.selectedKeys.length === rows.value.length && rows.value.length > 0) {
     isSelectAll.value = true
   } else if (payload.selectedKeys.length < rows.value.length || payload.selectedKeys.length === 0) {
-    // 取消任何选择 → 退出全选模式
     isSelectAll.value = false
   }
 }
 
 const handleCustomExportClick = async () => {
   if (tableSelectedKeys.value.length === 0) return
-  // Backend pagination: fetch full order data for selected rows
   const selectedIds = tableSelectedKeys.value.map((k) => String(k))
   try {
     const orders = await fetchShipmentOrdersByIds(selectedIds)
@@ -241,7 +241,7 @@ const handleCustomExportClick = async () => {
     customExportDialogVisible.value = true
   } catch (e: any) {
     console.error('Failed to fetch orders for custom export:', e)
-    ElMessage.error('注文データの取得に失敗しました')
+    showToast('注文データの取得に失敗しました', 'danger')
   }
 }
 
@@ -254,7 +254,7 @@ const handleFormExportClick = async () => {
     formExportDialogVisible.value = true
   } catch (e: any) {
     console.error('Failed to fetch orders for form export:', e)
-    ElMessage.error('注文データの取得に失敗しました')
+    showToast('注文データの取得に失敗しました', 'danger')
   }
 }
 
@@ -264,8 +264,8 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
   globalSearchText.value = keyword ? String(keyword) : ''
   delete (nextPayload as any).__global
   currentSearchPayload.value = nextPayload
-  currentPage.value = 1 // 重置页码
-  isSelectAll.value = false // 重置全选状态
+  currentPage.value = 1
+  isSelectAll.value = false
   void loadOrders()
 }
 
@@ -279,14 +279,12 @@ const tableColumns = computed(() => {
     align: 'center' as const,
     cellRenderer: ({ rowData }: { rowData: any }) =>
       h(
-        ElButton,
+        'button',
         {
-          type: 'primary',
-          size: 'small',
-          plain: true,
+          class: 'o-btn o-btn-sm o-btn-outline-primary',
           onClick: () => handleView(rowData),
         },
-        () => '詳細',
+        '詳細',
       ),
   }
 
@@ -297,7 +295,7 @@ const headerGroupingConfig = computed<HeaderGroupingConfig>(() => {
   return buildOrderHeaderGroupingConfig(baseColumns.value as any)
 })
 
-const headerClass: HeaderClassNameGetter<any> = () => ''
+const headerClass = () => ''
 
 const tableProps = computed(() => ({}))
 
@@ -321,7 +319,7 @@ const loadOrders = async () => {
     rows.value = Array.isArray(res?.items) ? res.items : []
     totalItems.value = typeof res?.total === 'number' ? res.total : 0
   } catch (e: any) {
-    ElMessage.error(e?.message || '出荷データの取得に失敗しました')
+    showToast(e?.message || '出荷データの取得に失敗しました', 'danger')
   } finally {
     isLoadingOrders.value = false
   }
@@ -330,7 +328,7 @@ const loadOrders = async () => {
 const handlePageChange = (payload: { page: number; pageSize: number; mode: string }) => {
   currentPage.value = payload.page
   pageSize.value = payload.pageSize
-  isSelectAll.value = false // 重置全选状态
+  isSelectAll.value = false
   void loadOrders()
 }
 
@@ -338,7 +336,7 @@ const handleSortChange = (payload: { sortBy: string | null; sortOrder: SortOrder
   if (payload.mode !== 'server') return
   sortBy.value = payload.sortBy
   sortOrder.value = payload.sortOrder
-  currentPage.value = 1 // 重置页码
+  currentPage.value = 1
   void loadOrders()
 }
 
@@ -353,8 +351,8 @@ const loadCarriers = async () => {
 watch(
   () => showExportedRows.value,
   () => {
-    currentPage.value = 1 // 重置页码
-    isSelectAll.value = false // 重置全选状态
+    currentPage.value = 1
+    isSelectAll.value = false
     void loadOrders()
   },
 )
@@ -410,8 +408,34 @@ onMounted(async () => {
 .between-controls__label {
   font-size: 13px;
   font-weight: 600;
-  color: #303133;
+  color: var(--o-gray-700, #303133);
 }
+
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  cursor: pointer;
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-700, #303133);
+  transition: 0.2s;
+  white-space: nowrap;
+}
+.o-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.o-btn-secondary { background: var(--o-view-background, #fff); color: var(--o-gray-700, #303133); }
+.o-btn-sm { padding: 4px 10px; font-size: 13px; }
+.o-btn-outline-primary { background: transparent; color: var(--o-brand-primary, #714b67); border-color: var(--o-brand-primary, #714b67); }
+
+.o-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+.o-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.o-toggle-slider { width: 40px; height: 20px; background: var(--o-toggle-off, #c0c4cc); border-radius: 10px; transition: 0.2s; position: relative; }
+.o-toggle-slider::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: 0.2s; }
+.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #714b67); }
+.o-toggle input:checked + .o-toggle-slider::after { left: 22px; }
 
 .bottom-bar {
   position: sticky;
@@ -419,7 +443,7 @@ onMounted(async () => {
   margin-top: 16px;
   padding: 12px 14px;
   background: #ffffff;
-  border: 1px solid #ebeef5;
+  border: 1px solid var(--o-border-color, #ebeef5);
   border-radius: 8px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
   display: flex;
@@ -430,7 +454,7 @@ onMounted(async () => {
 }
 
 .bottom-bar__left {
-  color: #303133;
+  color: var(--o-gray-700, #303133);
   font-size: 13px;
   display: flex;
   align-items: center;

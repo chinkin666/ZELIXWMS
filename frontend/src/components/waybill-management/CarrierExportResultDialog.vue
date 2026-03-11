@@ -1,19 +1,19 @@
 <template>
-  <el-dialog v-model="visible" title="配送会社データ出力" width="980px" :close-on-click-modal="false">
+  <ODialog :open="visible" title="配送会社データ出力" @close="visible = false" width="980px">
     <div class="meta">
       <div class="meta__row">
         <div class="meta__item"><span class="meta__label">配送会社：</span>{{ carrierLabel || '-' }}</div>
         <div class="meta__item meta__item--select">
           <span class="meta__label">出力レイアウト：</span>
-          <el-select
+          <select
+            class="o-input"
             v-model="selectedMappingIdProxy"
-            filterable
             :disabled="(mappingOptions?.length || 0) === 0"
-            placeholder="出力レイアウトを選択"
             style="width: 340px"
           >
-            <el-option v-for="opt in mappingOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
-          </el-select>
+            <option value="" disabled>出力レイアウトを選択</option>
+            <option v-for="opt in mappingOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+          </select>
         </div>
         <div class="meta__item"><span class="meta__label">件数：</span><strong>{{ rows.length }}</strong></div>
       </div>
@@ -21,9 +21,20 @@
 
     <div class="preview">
       <div class="preview__title">プレビュー（先頭 {{ previewRows.length }} 件）</div>
-      <el-table :data="previewRows" height="420" border size="small">
-        <el-table-column v-for="h in headers" :key="h" :prop="h" :label="h" min-width="160" />
-      </el-table>
+      <div style="max-height: 420px; overflow: auto">
+        <table class="o-list-table">
+          <thead>
+            <tr>
+              <th v-for="h in headers" :key="h" style="min-width: 160px">{{ h }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, idx) in previewRows" :key="idx">
+              <td v-for="h in headers" :key="h">{{ row[h] ?? '' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <template #footer>
@@ -32,18 +43,18 @@
           <span class="hint">CSV / Excel をダウンロードできます。</span>
         </div>
         <div class="footer__right">
-          <el-button :disabled="rows.length === 0" @click="downloadCsv">CSV出力</el-button>
-          <el-button type="primary" :disabled="rows.length === 0" @click="downloadExcel">Excel出力</el-button>
-          <el-button @click="visible = false">閉じる</el-button>
+          <button class="o-btn o-btn-secondary" :disabled="rows.length === 0" @click="downloadCsv">CSV出力</button>
+          <button class="o-btn o-btn-primary" :disabled="rows.length === 0" @click="downloadExcel">Excel出力</button>
+          <button class="o-btn o-btn-secondary" @click="visible = false">閉じる</button>
         </div>
       </div>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ElButton, ElDialog, ElTable, ElTableColumn } from 'element-plus'
+import ODialog from '@/components/odoo/ODialog.vue'
 import * as XLSX from 'xlsx'
 
 const props = withDefaults(
@@ -117,52 +128,12 @@ const downloadExcel = () => {
 </script>
 
 <style scoped>
-.meta {
-  margin-bottom: 12px;
-}
-
-.meta__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: center;
-  font-size: 13px;
-  color: #303133;
-}
-
-.meta__item--select {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.meta__label {
-  font-weight: 600;
-  color: #606266;
-}
-
-.preview__title {
-  margin: 8px 0 8px;
-  font-size: 13px;
-  color: #606266;
-}
-
-.footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.footer__right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.hint {
-  color: #909399;
-  font-size: 12px;
-}
+.meta { margin-bottom: 12px; }
+.meta__row { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; font-size: 13px; color: #303133; }
+.meta__item--select { display: inline-flex; align-items: center; gap: 8px; }
+.meta__label { font-weight: 600; color: #606266; }
+.preview__title { margin: 8px 0 8px; font-size: 13px; color: #606266; }
+.footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.footer__right { display: flex; align-items: center; gap: 10px; }
+.hint { color: #909399; font-size: 12px; }
 </style>
-

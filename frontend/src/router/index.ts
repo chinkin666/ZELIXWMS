@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import MainLayout from '@/layouts/MainLayout.vue'
+import WmsLayout from '@/layouts/WmsLayout.vue'
 import Welcome from '@/views/Welcome.vue'
 
 const router = createRouter({
@@ -7,7 +7,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      component: MainLayout,
+      component: WmsLayout,
       redirect: '/home',
       children: [
         {

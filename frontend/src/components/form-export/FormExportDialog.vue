@@ -1,10 +1,5 @@
 <template>
-  <el-dialog
-    v-model="visible"
-    :title="dialogTitle"
-    width="600px"
-    :close-on-click-modal="false"
-  >
+  <ODialog :open="visible" :title="dialogTitle" @close="visible = false" width="600px">
     <div class="form-export-dialog">
       <div class="info-section">
         <div class="info-item">
@@ -17,33 +12,28 @@
         </div>
       </div>
 
-      <el-form label-width="140px" label-position="left">
-        <el-form-item label="テンプレート">
-          <el-select
-            v-model="selectedTemplateId"
-            placeholder="テンプレートを選択"
-            style="width: 100%"
-            :disabled="templatesForType.length === 0"
+      <div class="o-form-group">
+        <label class="o-form-label">テンプレート</label>
+        <select
+          class="o-input"
+          v-model="selectedTemplateId"
+          style="width: 100%"
+          :disabled="templatesForType.length === 0"
+        >
+          <option value="" disabled>テンプレートを選択</option>
+          <option
+            v-for="t in templatesForType"
+            :key="t._id"
+            :value="t._id"
           >
-            <el-option
-              v-for="t in templatesForType"
-              :key="t._id"
-              :label="t.name"
-              :value="t._id"
-            >
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span>{{ t.name }}</span>
-                <el-tag v-if="t.isDefault" type="success" size="small">デフォルト</el-tag>
-              </div>
-            </el-option>
-          </el-select>
-          <div v-if="templatesForType.length === 0" class="no-template-hint">
-            <el-icon><Warning /></el-icon>
-            この種類のテンプレートがありません。
-            <router-link to="/settings/form-templates">設定画面</router-link>で作成してください。
-          </div>
-        </el-form-item>
-      </el-form>
+            {{ t.name }}{{ t.isDefault ? ' (デフォルト)' : '' }}
+          </option>
+        </select>
+        <div v-if="templatesForType.length === 0" class="no-template-hint">
+          この種類のテンプレートがありません。
+          <router-link to="/settings/form-templates">設定画面</router-link>で作成してください。
+        </div>
+      </div>
 
       <div v-if="selectedTemplate" class="template-info">
         <div class="template-info-title">テンプレート設定</div>
@@ -62,31 +52,29 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="visible = false">キャンセル</el-button>
-        <el-button
-          :loading="printing"
-          :disabled="!canGenerate"
+        <button class="o-btn o-btn-secondary" @click="visible = false">キャンセル</button>
+        <button
+          class="o-btn o-btn-secondary"
+          :disabled="!canGenerate || printing"
           @click="handlePrint"
         >
-          印刷
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="generating"
-          :disabled="!canGenerate"
+          {{ printing ? '印刷中...' : '印刷' }}
+        </button>
+        <button
+          class="o-btn o-btn-primary"
+          :disabled="!canGenerate || generating"
           @click="handleGenerate"
         >
-          PDF出力
-        </el-button>
+          {{ generating ? '生成中...' : 'PDF出力' }}
+        </button>
       </div>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Warning } from '@element-plus/icons-vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import type { FormTemplate } from '@/types/formTemplate'
 import type { OrderDocument } from '@/types/order'
 import type { Carrier } from '@/types/carrier'
@@ -125,19 +113,16 @@ const printing = ref(false)
 
 const selectedCount = computed(() => props.selectedOrders.length)
 
-// ダイアログタイトル
 const dialogTitle = computed(() => {
   const typeDef = formTypeRegistry.find((t) => t.type === props.targetType)
   return typeDef ? `${typeDef.label}出力` : '帳票出力'
 })
 
-// 現在のタイプ名
 const currentTypeLabel = computed(() => {
   const typeDef = formTypeRegistry.find((t) => t.type === props.targetType)
   return typeDef?.label || props.targetType
 })
 
-// 指定されたタイプのテンプレートのみ
 const templatesForType = computed(() => {
   return templates.value.filter((t) => t.targetType === props.targetType)
 })
@@ -149,7 +134,6 @@ const selectedTemplate = computed(() => {
 
 const enabledColumnCount = computed(() => {
   if (!selectedTemplate.value) return 0
-  // 新しい設計では enabled フィールドは使用しない（列の数をそのまま返す）
   return selectedTemplate.value.columns.length
 })
 
@@ -165,14 +149,12 @@ async function loadTemplates() {
   }
 }
 
-// ダイアログが開かれたときにデフォルトテンプレートを選択
 watch(visible, (isVisible) => {
   if (isVisible) {
     selectDefaultTemplate()
   }
 })
 
-// targetType が変更されたときもデフォルトテンプレートを選択
 watch(() => props.targetType, () => {
   if (visible.value) {
     selectDefaultTemplate()
@@ -204,31 +186,28 @@ async function handleGenerate() {
     let data: Record<string, any>[]
 
     if (props.targetType === 'shipment-list-picking') {
-      // ピッキングリスト：商品を集計
       data = formatPickingListData(props.selectedOrders, context)
     } else {
-      // 出荷明細リスト：注文詳細
       data = formatShipmentDetailData(props.selectedOrders, context)
     }
 
     if (data.length === 0) {
-      ElMessage.warning('出力するデータがありません')
+      alert('出力するデータがありません')
       return
     }
 
-    // PDF を生成してダウンロード
     const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
     const filename = `${selectedTemplate.value.name}_${timestamp}.pdf`
 
     await generateFormPdf(selectedTemplate.value, data, {
-      preview: true, // 新しいタブで開く
+      preview: true,
       filename,
     })
 
-    ElMessage.success('PDFを生成しました')
+    alert('PDFを生成しました')
   } catch (e: any) {
     console.error('PDF generation failed:', e)
-    ElMessage.error(e?.message || 'PDF生成に失敗しました')
+    alert(e?.message || 'PDF生成に失敗しました')
   } finally {
     generating.value = false
   }
@@ -253,7 +232,7 @@ async function handlePrint() {
     }
 
     if (data.length === 0) {
-      ElMessage.warning('印刷するデータがありません')
+      alert('印刷するデータがありません')
       return
     }
 
@@ -266,11 +245,11 @@ async function handlePrint() {
         templateId: selectedTemplate.value._id,
         templateType: 'form',
       })
-      ElMessage.success('印刷ジョブを送信しました')
+      alert('印刷ジョブを送信しました')
     }
   } catch (e: any) {
     console.error('Print failed:', e)
-    ElMessage.error(e?.message || '印刷に失敗しました')
+    alert(e?.message || '印刷に失敗しました')
   } finally {
     printing.value = false
   }
@@ -282,74 +261,18 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.form-export-dialog {
-  padding: 8px 0;
-}
-
-.info-section {
-  display: flex;
-  gap: 24px;
-  margin-bottom: 20px;
-  padding: 12px 16px;
-  background: #f5f7fa;
-  border-radius: 6px;
-}
-
-.info-item {
-  font-size: 14px;
-  color: #606266;
-}
-
-.info-label {
-  color: #909399;
-}
-
-.no-template-hint {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-  font-size: 12px;
-  color: #e6a23c;
-}
-
-.no-template-hint a {
-  color: #409eff;
-}
-
-.template-info {
-  margin-top: 16px;
-  padding: 12px 16px;
-  background: #fafafa;
-  border: 1px solid #ebeef5;
-  border-radius: 6px;
-}
-
-.template-info-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.template-info-grid {
-  display: flex;
-  gap: 24px;
-}
-
-.template-info-item {
-  font-size: 13px;
-  color: #606266;
-}
-
-.template-info-item .label {
-  color: #909399;
-  margin-right: 4px;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
+.form-export-dialog { padding: 8px 0; }
+.info-section { display: flex; gap: 24px; margin-bottom: 20px; padding: 12px 16px; background: #f5f7fa; border-radius: 6px; }
+.info-item { font-size: 14px; color: #606266; }
+.info-label { color: #909399; }
+.no-template-hint { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: #e6a23c; }
+.no-template-hint a { color: #409eff; }
+.template-info { margin-top: 16px; padding: 12px 16px; background: #fafafa; border: 1px solid #ebeef5; border-radius: 6px; }
+.template-info-title { font-size: 12px; font-weight: 600; color: #909399; margin-bottom: 8px; }
+.template-info-grid { display: flex; gap: 24px; }
+.template-info-item { font-size: 13px; color: #606266; }
+.template-info-item .label { color: #909399; margin-right: 4px; }
+.dialog-footer { display: flex; justify-content: flex-end; gap: 8px; }
+.o-form-group { margin-bottom:1rem; }
+.o-form-label { display:block; font-size:13px; font-weight:500; color:#374151; margin-bottom:0.25rem; }
 </style>

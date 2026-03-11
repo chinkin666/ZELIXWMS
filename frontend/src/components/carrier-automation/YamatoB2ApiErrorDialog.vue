@@ -1,46 +1,49 @@
 <template>
-  <el-dialog
-    :model-value="modelValue"
+  <ODialog
+    :open="modelValue"
     title="B2 Cloud 検証エラー"
+    @close="$emit('update:modelValue', false)"
     width="700px"
-    @update:model-value="$emit('update:modelValue', $event)"
   >
-    <el-alert
-      type="error"
-      title="B2 Cloud APIへの検証リクエストでエラーが発生しました"
-      show-icon
-      :closable="false"
-    />
+    <div class="alert-error">
+      B2 Cloud APIへの検証リクエストでエラーが発生しました
+    </div>
     <div v-if="parsedDetails.length > 0" class="api-error-details">
       <h4>エラー詳細</h4>
-      <el-table :data="parsedDetails" size="small" max-height="400">
-        <el-table-column label="行番号" width="80">
-          <template #default="{ row }">
-            {{ row.rowIndex !== null ? `#${row.rowIndex + 1}` : '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="field" label="フィールド" width="200" />
-        <el-table-column label="エラー内容">
-          <template #default="{ row }">
-            <div class="error-message">{{ row.message }}</div>
-            <div v-if="row.input" class="error-input">入力値: {{ row.input }}</div>
-            <div v-if="row.maxLength" class="error-hint">最大文字数: {{ row.maxLength }}</div>
-          </template>
-        </el-table-column>
-      </el-table>
+      <table class="o-list-table">
+        <thead>
+          <tr>
+            <th style="width:80px">行番号</th>
+            <th style="width:200px">フィールド</th>
+            <th>エラー内容</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(row, idx) in parsedDetails" :key="idx">
+            <td>{{ row.rowIndex !== null ? `#${row.rowIndex + 1}` : '-' }}</td>
+            <td>{{ row.field }}</td>
+            <td>
+              <div class="error-message">{{ row.message }}</div>
+              <div v-if="row.input" class="error-input">入力値: {{ row.input }}</div>
+              <div v-if="row.maxLength" class="error-hint">最大文字数: {{ row.maxLength }}</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
     <div v-else class="api-error-raw">
       <h4>エラーメッセージ</h4>
       <pre>{{ errorMessage }}</pre>
     </div>
     <template #footer>
-      <el-button type="primary" @click="$emit('update:modelValue', false)">閉じる</el-button>
+      <button class="o-btn o-btn-primary" @click="$emit('update:modelValue', false)">閉じる</button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 
 export interface ApiErrorDetail {
   rowIndex: number | null
@@ -59,16 +62,11 @@ defineEmits<{
   (e: 'update:modelValue', value: boolean): void
 }>()
 
-/**
- * Parse B2 Cloud API error response
- * Format: {"detail":[{"type":"string_too_long","loc":["body",0,"フィールド名"],"msg":"...","input":"...","ctx":{"max_length":32}}]}
- */
 const parsedDetails = computed<ApiErrorDetail[]>(() => {
   const errorMessage = props.errorMessage
   if (!errorMessage) return []
 
   try {
-    // Try to extract JSON from the error message
     const jsonMatch = errorMessage.match(/\{.*\}/s)
     if (!jsonMatch) return []
 
@@ -77,7 +75,6 @@ const parsedDetails = computed<ApiErrorDetail[]>(() => {
 
     const details: ApiErrorDetail[] = []
     for (const err of errorData.detail) {
-      // loc format: ["body", rowIndex, "fieldName"] or ["body", "fieldName"]
       const loc = err.loc || []
       let rowIndex: number | null = null
       let field = ''
@@ -89,11 +86,9 @@ const parsedDetails = computed<ApiErrorDetail[]>(() => {
         field = String(loc[loc.length - 1] || '')
       }
 
-      // Handle input value - could be string or other types
       let inputStr: string | undefined
       if (err.input !== undefined && err.input !== null) {
         const rawStr = typeof err.input === 'string' ? err.input : JSON.stringify(err.input)
-        // Truncate very long inputs for display
         inputStr = rawStr.length > 100 ? rawStr.substring(0, 100) + '...' : rawStr
       }
 
@@ -108,7 +103,6 @@ const parsedDetails = computed<ApiErrorDetail[]>(() => {
 
     return details
   } catch {
-    // JSON parse failed, return empty array
     return []
   }
 })
@@ -121,6 +115,15 @@ export default {
 </script>
 
 <style scoped>
+.alert-error {
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  color: #991b1b;
+  font-weight: 500;
+}
+
 .api-error-details {
   margin-top: 16px;
 }

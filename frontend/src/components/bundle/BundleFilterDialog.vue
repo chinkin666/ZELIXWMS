@@ -1,58 +1,64 @@
 <template>
-  <el-dialog
-    v-model="dialogVisible"
+  <ODialog
+    :open="dialogVisible"
     title="同梱設定"
+    @close="dialogVisible = false"
     width="560px"
-    :close-on-click-modal="false"
-    :destroy-on-close="false"
   >
     <div class="bundle-filter">
       <div class="bundle-filter__actions">
-        <el-checkbox
-          :indeterminate="isIndeterminate"
-          :model-value="isAllChecked"
-          @change="handleToggleAll"
-        >
-          すべて選択
-        </el-checkbox>
+        <label class="o-checkbox">
+          <input
+            type="checkbox"
+            :checked="isAllChecked"
+            :indeterminate="isIndeterminate"
+            @change="handleToggleAll(($event.target as HTMLInputElement).checked)"
+          />
+          <span>すべて選択</span>
+        </label>
         <div class="bundle-filter__actions-right">
           <span class="bundle-filter__count">
             選択中 {{ innerSelected.length }} / {{ fields.length }}
           </span>
-          <el-button text size="small" @click="handleClear">クリア</el-button>
+          <button class="o-btn o-btn-secondary o-btn-sm" @click="handleClear">クリア</button>
         </div>
       </div>
 
       <div class="bundle-filter__list">
-        <el-checkbox-group v-model="innerSelected">
-          <div
-            v-for="field in fields"
-            :key="field.key"
-            class="bundle-filter__item"
-          >
-            <el-checkbox :label="field.key">
+        <div
+          v-for="field in fields"
+          :key="field.key"
+          class="bundle-filter__item"
+        >
+          <label class="o-checkbox">
+            <input
+              type="checkbox"
+              :value="field.key"
+              v-model="innerSelected"
+            />
+            <div>
               <div class="bundle-filter__label">
                 {{ field.title }}
               </div>
               <div v-if="field.description" class="bundle-filter__desc">
                 {{ field.description }}
               </div>
-            </el-checkbox>
-          </div>
-        </el-checkbox-group>
+            </div>
+          </label>
+        </div>
       </div>
     </div>
 
     <template #footer>
-      <el-button @click="handleCancel">キャンセル</el-button>
-      <el-button type="primary" @click="handleSave">保存</el-button>
+      <button class="o-btn o-btn-secondary" @click="handleCancel">キャンセル</button>
+      <button class="o-btn o-btn-primary" @click="handleSave">保存</button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { CheckboxValueType } from 'element-plus'
+import ODialog from '@/components/odoo/ODialog.vue'
 
 export interface BundleFieldOption {
   key: string
@@ -104,7 +110,7 @@ const isIndeterminate = computed(() => {
   return len > 0 && len < props.fields.length
 })
 
-const handleToggleAll = (checked: CheckboxValueType) => {
+const handleToggleAll = (checked: boolean) => {
   if (checked) {
     innerSelected.value = props.fields.map((f) => f.key)
   } else {
@@ -182,11 +188,6 @@ const handleSave = () => {
   margin-top: 4px;
   line-height: 1.4;
 }
+
+.o-checkbox { display:inline-flex; align-items:flex-start; gap:6px; cursor:pointer; font-size:14px; }
 </style>
-
-
-
-
-
-
-

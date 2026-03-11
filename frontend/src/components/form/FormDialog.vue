@@ -1,180 +1,168 @@
 <template>
-  <el-dialog
-    v-model="dialogVisible"
+  <ODialog
+    :open="dialogVisible"
     :title="title"
-    :width="width"
-    :close-on-click-modal="false"
+    size="lg"
     @close="handleClose"
   >
-    <el-form
-      ref="formRef"
-      :model="formData"
-      :rules="formRules"
-      label-width="140px"
-      label-position="left"
-    >
-      <el-scrollbar height="500px">
+    <form ref="formRef" @submit.prevent="handleSubmit">
+      <div class="form-scroll" style="max-height: 500px; overflow-y: auto">
         <div class="form-content">
           <!-- 根据 columns 动态生成表单字段 -->
           <template v-for="column in formColumns" :key="column.key">
             <!-- 嵌套对象字段分组 -->
-            <el-divider v-if="isGroupHeader(column)" :content-position="'left'">
-              {{ getGroupTitle(column) }}
-            </el-divider>
+            <hr
+              v-if="isGroupHeader(column)"
+              style="border:none;border-top:1px solid var(--o-border-color);margin:1rem 0"
+            />
 
             <!-- 表单字段 -->
-            <el-form-item
+            <div
               v-if="!isGroupHeader(column)"
-              :label="getFormLabel(column)"
-              :prop="column.dataKey || column.key"
-              :required="isFieldRequired(column)"
+              class="o-form-group"
             >
+              <label class="o-form-label">{{ getFormLabel(column) }}</label>
+
               <!-- 字符串输入 -->
-              <el-input
+              <input
                 v-if="column.fieldType === 'string' && !column.searchOptions"
-                :model-value="getNestedValueInTemplate(formData, getNestedKey(column))"
-                @update:model-value="(val: string | number | boolean | null) => setNestedValueInTemplate(formData, getNestedKey(column), val)"
+                class="o-input"
+                :value="getNestedValueInTemplate(formData, getNestedKey(column))"
+                @input="(e: Event) => setNestedValueInTemplate(formData, getNestedKey(column), (e.target as HTMLInputElement).value)"
                 :placeholder="`${column.title}を入力してください`"
               />
 
               <!-- 数字输入 -->
-              <el-input-number
+              <input
                 v-else-if="column.fieldType === 'number'"
-                :model-value="getNestedValueInTemplate(formData, getNestedKey(column))"
-                @update:model-value="(val: string | number | boolean | null) => setNestedValueInTemplate(formData, getNestedKey(column), val)"
+                class="o-input"
+                type="number"
+                :value="getNestedValueInTemplate(formData, getNestedKey(column))"
+                @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; setNestedValueInTemplate(formData, getNestedKey(column), v === '' ? undefined : Number(v)) }"
                 :min="column.min"
                 :max="column.max"
-                :precision="column.precision || 0"
+                :step="column.precision ? Math.pow(10, -column.precision) : 1"
                 :disabled="isFieldDisabled(column)"
                 style="width: 100%"
                 :placeholder="isFieldDisabled(column) ? '-' : `${column.title}を入力してください`"
               />
 
               <!-- 日期（日時） -->
-              <el-date-picker
+              <input
                 v-else-if="column.fieldType === 'date'"
-                :model-value="getNestedValueInTemplate(formData, getNestedKey(column))"
-                @update:model-value="(val: string | number | boolean | null) => setNestedValueInTemplate(formData, getNestedKey(column), val)"
-                type="datetime"
-                :format="column.dateFormat || 'YYYY-MM-DD HH:mm:ss'"
-                value-format="YYYY-MM-DDTHH:mm:ss.SSS"
+                class="o-input"
+                type="datetime-local"
+                :value="toDatetimeLocalValue(getNestedValueInTemplate(formData, getNestedKey(column)))"
+                @input="(e: Event) => setNestedValueInTemplate(formData, getNestedKey(column), fromDatetimeLocalValue((e.target as HTMLInputElement).value))"
                 style="width: 100%"
-                :placeholder="`${column.title}を選択してください`"
               />
 
               <!-- 日期（年月日） -->
-              <el-date-picker
+              <input
                 v-else-if="column.fieldType === 'dateOnly'"
-                :model-value="getNestedValueInTemplate(formData, getNestedKey(column))"
-                @update:model-value="(val: string | number | boolean | null) => setNestedValueInTemplate(formData, getNestedKey(column), val)"
+                class="o-input"
                 type="date"
-                :format="column.dateFormat || 'YYYY/MM/DD'"
-                value-format="YYYY/MM/DD"
+                :value="toDateInputValue(getNestedValueInTemplate(formData, getNestedKey(column)))"
+                @input="(e: Event) => setNestedValueInTemplate(formData, getNestedKey(column), fromDateInputValue((e.target as HTMLInputElement).value))"
                 style="width: 100%"
-                :placeholder="`${column.title}を選択してください`"
               />
 
               <!-- 多選タグ（荷扱いなど） -->
-              <el-select
+              <select
                 v-else-if="column.fieldType === 'array' && column.multiple && column.searchOptions"
-                :model-value="getNestedValueInTemplate(formData, getNestedKey(column))"
-                @update:model-value="(val: string | number | boolean | null) => setNestedValueInTemplate(formData, getNestedKey(column), val)"
+                class="o-input"
                 multiple
-                collapse-tags
+                :value="getNestedValueInTemplate(formData, getNestedKey(column))"
+                @change="(e: Event) => { const sel = e.target as HTMLSelectElement; const vals = Array.from(sel.selectedOptions).map(o => o.value); setNestedValueInTemplate(formData, getNestedKey(column), vals) }"
                 style="width: 100%"
-                :placeholder="`${column.title}を選択してください`"
               >
-                <el-option
+                <option
                   v-for="option in column.searchOptions"
                   :key="String(option.value)"
-                  :label="option.label"
                   :value="option.value"
-                />
-              </el-select>
+                >{{ option.label }}</option>
+              </select>
 
               <!-- 多选下拉框（ECモール等） -->
-              <el-select
+              <select
                 v-else-if="(column as any).formFieldType === 'multiSelect' && column.searchOptions && column.searchOptions.length > 0"
-                :model-value="getNestedValueInTemplate(formData, getNestedKey(column))"
-                @update:model-value="(val: string | number | boolean | null) => setNestedValueInTemplate(formData, getNestedKey(column), val)"
+                class="o-input"
                 multiple
-                collapse-tags
-                collapse-tags-tooltip
+                :value="getNestedValueInTemplate(formData, getNestedKey(column))"
+                @change="(e: Event) => { const sel = e.target as HTMLSelectElement; const vals = Array.from(sel.selectedOptions).map(o => o.value); setNestedValueInTemplate(formData, getNestedKey(column), vals) }"
                 style="width: 100%"
-                :placeholder="`${column.title}を選択してください`"
               >
-                <el-option
+                <option
                   v-for="option in column.searchOptions"
                   :key="String(option.value)"
-                  :label="option.label"
                   :value="option.value"
-                />
-              </el-select>
+                >{{ option.label }}</option>
+              </select>
 
               <!-- 单选下拉框 -->
-              <el-select
+              <select
                 v-else-if="column.searchOptions && column.searchOptions.length > 0"
-                :model-value="getNestedValueInTemplate(formData, getNestedKey(column))"
-                @update:model-value="(val: string | number | boolean | null) => handleSelectChange(column, val)"
+                class="o-input"
+                :value="getNestedValueInTemplate(formData, getNestedKey(column))"
+                @change="(e: Event) => handleSelectChange(column, (e.target as HTMLSelectElement).value)"
                 style="width: 100%"
-                :placeholder="`${column.title}を選択してください`"
               >
-                <el-option
+                <option value="">{{ `${column.title}を選択してください` }}</option>
+                <option
                   v-for="option in getFilteredOptions(column)"
                   :key="String(option.value)"
-                  :label="option.label"
                   :value="option.value"
-                />
-              </el-select>
+                >{{ option.label }}</option>
+              </select>
 
               <!-- 布尔值 -->
-              <el-select
+              <select
                 v-else-if="column.fieldType === 'boolean'"
-                :model-value="getNestedValueInTemplate(formData, getNestedKey(column))"
-                @update:model-value="(val: string | number | boolean | null) => setNestedValueInTemplate(formData, getNestedKey(column), val)"
+                class="o-input"
+                :value="String(getNestedValueInTemplate(formData, getNestedKey(column)))"
+                @change="(e: Event) => { const v = (e.target as HTMLSelectElement).value; setNestedValueInTemplate(formData, getNestedKey(column), v === 'true') }"
                 style="width: 100%"
-                :placeholder="`${column.title}を選択してください`"
               >
-                <el-option label="はい" :value="true" />
-                <el-option label="いいえ" :value="false" />
-              </el-select>
+                <option value="">{{ `${column.title}を選択してください` }}</option>
+                <option value="true">はい</option>
+                <option value="false">いいえ</option>
+              </select>
 
-              <!-- 数组类型（字符串数组，如荷扱い） -->
+              <!-- 数组类型（字符串数组，如荷扱い handlingTags） -->
               <div v-else-if="column.fieldType === 'array' && (column.dataKey || column.key) === 'handlingTags'" class="array-field">
                 <div
                   v-for="(item, index) in getArrayValue(column)"
                   :key="index"
                   class="array-item"
                 >
-                  <el-form-item
-                    :prop="`${column.dataKey || column.key}.${index}`"
-                    style="width: calc(100% - 50px); margin-right: 10px; margin-bottom: 0"
-                  >
-                    <el-autocomplete
-                      :model-value="item"
-                      @update:model-value="(val: string | { value: string }) => updateStringArrayItem(column, index, typeof val === 'string' ? val : val?.value || '')"
-                      @select="(item: { value: string }) => updateStringArrayItem(column, index, item.value)"
-                      :fetch-suggestions="(queryString: string, cb: (results: any[]) => void) => handleHandlingTagSuggestions(queryString, cb)"
-                      :placeholder="`${column.title}を入力または選択してください`"
-                      style="width: 100%"
-                      clearable
-                    />
-                  </el-form-item>
-                  <el-button
-                    type="danger"
-                    :icon="Delete"
-                    circle
-                    @click="removeArrayItem(column, index)"
+                  <input
+                    class="o-input"
+                    :value="item"
+                    @input="(e: Event) => updateStringArrayItem(column, index, (e.target as HTMLInputElement).value)"
+                    :placeholder="`${column.title}を入力または選択してください`"
+                    :list="`handling-tags-${index}`"
+                    style="flex: 1; margin-right: 10px"
                   />
+                  <datalist :id="`handling-tags-${index}`">
+                    <option v-for="opt in HANDLING_TAG_OPTIONS" :key="opt" :value="opt" />
+                  </datalist>
+                  <button
+                    type="button"
+                    class="o-btn o-btn-danger o-btn-sm"
+                    @click="removeArrayItem(column, index)"
+                    title="削除"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  </button>
                 </div>
-                <el-button
-                  type="primary"
-                  :icon="Plus"
-                  plain
+                <button
+                  type="button"
+                  class="o-btn o-btn-primary o-btn-sm"
                   @click="addArrayItem(column)"
                 >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   行を追加
-                </el-button>
+                </button>
               </div>
 
               <!-- 数组类型（字符串数组，如バーコード、荷扱い） -->
@@ -184,33 +172,30 @@
                   :key="index"
                   class="array-item"
                 >
-                  <el-form-item
-                    :prop="`${column.dataKey || column.key}.${index}`"
-                    style="width: calc(100% - 50px); margin-right: 10px; margin-bottom: 0"
-                  >
-                    <el-input
-                      :model-value="item"
-                      @update:model-value="(val: string) => updateStringArrayItem(column, index, val)"
-                      :placeholder="`${column.title}を入力してください`"
-                      style="width: 100%"
-                      clearable
-                    />
-                  </el-form-item>
-                  <el-button
-                    type="danger"
-                    :icon="Delete"
-                    circle
-                    @click="removeArrayItem(column, index)"
+                  <input
+                    class="o-input"
+                    :value="item"
+                    @input="(e: Event) => updateStringArrayItem(column, index, (e.target as HTMLInputElement).value)"
+                    :placeholder="`${column.title}を入力してください`"
+                    style="flex: 1; margin-right: 10px"
                   />
+                  <button
+                    type="button"
+                    class="o-btn o-btn-danger o-btn-sm"
+                    @click="removeArrayItem(column, index)"
+                    title="削除"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  </button>
                 </div>
-                <el-button
-                  type="primary"
-                  :icon="Plus"
-                  plain
+                <button
+                  type="button"
+                  class="o-btn o-btn-primary o-btn-sm"
                   @click="addArrayItem(column)"
                 >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   行を追加
-                </el-button>
+                </button>
               </div>
 
               <!-- 数组类型（商品列表） -->
@@ -220,95 +205,82 @@
                   :key="index"
                   class="array-item"
                 >
-                  <el-form-item
-                    :prop="`${column.dataKey || column.key}.${index}.inputSku`"
-                    :rules="[
-                      { required: true, message: 'SKU管理番号は必須です', trigger: 'blur' },
-                    ]"
-                    style="width: 30%; margin-right: 10px; margin-bottom: 0"
-                  >
-                    <el-input
-                      v-model="item.inputSku"
-                      placeholder="SKU管理番号 *"
-                      style="width: 100%"
-                    />
-                  </el-form-item>
-                  <el-form-item
-                    :prop="`${column.dataKey || column.key}.${index}.productName`"
-                    :rules="[
-                      { required: false, message: '商品名を入力してください', trigger: 'blur' },
-                    ]"
-                    style="width: 30%; margin-right: 10px; margin-bottom: 0"
-                  >
-                    <el-input
-                      v-model="item.productName"
-                      placeholder="商品名（任意）"
-                      style="width: 100%"
-                    />
-                  </el-form-item>
-                  <el-form-item
-                    :prop="`${column.dataKey || column.key}.${index}.quantity`"
-                    :rules="[
-                      { required: true, message: '数量は必須です', trigger: 'blur' },
-                      { type: 'number', min: 1, message: '数量は1以上である必要があります', trigger: 'blur' },
-                    ]"
-                    style="width: 20%; margin-right: 10px; margin-bottom: 0"
-                  >
-                    <el-input-number
-                      v-model="item.quantity"
-                      :min="1"
-                      placeholder="数量 *"
-                      style="width: 100%"
-                    />
-                  </el-form-item>
-                  <el-button
-                    type="danger"
-                    :icon="Delete"
-                    circle
-                    @click="removeArrayItem(column, index)"
+                  <input
+                    class="o-input"
+                    v-model="item.inputSku"
+                    placeholder="SKU管理番号 *"
+                    style="width: 30%; margin-right: 10px"
                   />
+                  <input
+                    class="o-input"
+                    v-model="item.productName"
+                    placeholder="商品名（任意）"
+                    style="width: 30%; margin-right: 10px"
+                  />
+                  <input
+                    class="o-input"
+                    type="number"
+                    v-model.number="item.quantity"
+                    :min="1"
+                    placeholder="数量 *"
+                    style="width: 20%; margin-right: 10px"
+                  />
+                  <button
+                    type="button"
+                    class="o-btn o-btn-danger o-btn-sm"
+                    @click="removeArrayItem(column, index)"
+                    title="削除"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  </button>
                 </div>
-                <el-button
-                  type="primary"
-                  :icon="Plus"
-                  plain
+                <button
+                  type="button"
+                  class="o-btn o-btn-primary o-btn-sm"
                   @click="addArrayItem(column)"
                 >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   商品を追加
-                </el-button>
+                </button>
               </div>
 
               <!-- 默认文本输入 -->
-              <el-input
+              <input
                 v-else
-                :model-value="getNestedValueInTemplate(formData, getNestedKey(column))"
-                @update:model-value="(val: string | number | boolean | null) => setNestedValueInTemplate(formData, getNestedKey(column), val)"
+                class="o-input"
+                :value="getNestedValueInTemplate(formData, getNestedKey(column))"
+                @input="(e: Event) => setNestedValueInTemplate(formData, getNestedKey(column), (e.target as HTMLInputElement).value)"
                 :placeholder="`${column.title}を入力してください`"
               />
-            </el-form-item>
+            </div>
           </template>
         </div>
 
         <!-- Slot for additional content -->
         <slot name="extra"></slot>
-      </el-scrollbar>
-    </el-form>
+      </div>
+    </form>
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleClose">キャンセル</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">
+        <button type="button" class="o-btn o-btn-secondary" @click="handleClose">キャンセル</button>
+        <button
+          type="button"
+          class="o-btn o-btn-primary"
+          @click="handleSubmit"
+          :disabled="submitting"
+        >
+          <span v-if="submitting" class="spinner"></span>
           確定
-        </el-button>
+        </button>
       </div>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ElMessage, ElForm } from 'element-plus'
-import { Plus, Delete } from '@element-plus/icons-vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import type { TableColumn } from '@/types/table'
 import { setNestedValue, getNestedValue } from '@/utils/nestedObject'
 import { getCoolTypeOptionsForInvoiceType } from '@/utils/orderValidation'
@@ -330,6 +302,38 @@ const setNestedValueInTemplate = (obj: Record<string, any>, path: string, value:
 
 const getNestedValueInTemplate = (obj: Record<string, any>, path: string) => {
   return getNestedValue(obj, path)
+}
+
+// Date helper: convert ISO/custom format to datetime-local input value
+const toDatetimeLocalValue = (val: any): string => {
+  if (!val) return ''
+  if (typeof val === 'string') {
+    // "2024-01-15T10:30:00.000" -> "2024-01-15T10:30"
+    const m = val.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/)
+    if (m?.[1]) return m[1]
+  }
+  return ''
+}
+
+const fromDatetimeLocalValue = (val: string): string => {
+  if (!val) return ''
+  // "2024-01-15T10:30" -> "2024-01-15T10:30:00.000"
+  return `${val}:00.000`
+}
+
+const toDateInputValue = (val: any): string => {
+  if (!val) return ''
+  if (typeof val === 'string') {
+    // "2024/01/15" -> "2024-01-15"
+    return val.replace(/\//g, '-').substring(0, 10)
+  }
+  return ''
+}
+
+const fromDateInputValue = (val: string): string => {
+  if (!val) return ''
+  // "2024-01-15" -> "2024/01/15"
+  return val.replace(/-/g, '/')
 }
 
 interface Props {
@@ -354,7 +358,7 @@ const emit = defineEmits<{
   (e: 'submit', data: Record<string, any>): void
 }>()
 
-const formRef = ref<InstanceType<typeof ElForm>>()
+const formRef = ref<HTMLFormElement>()
 const submitting = ref(false)
 const formData = ref<Record<string, any>>({})
 
@@ -372,9 +376,9 @@ const formColumns = computed(() => {
     const computedFields = ['itemsCount']
     // 排除操作列
     const actionFields = ['actions', 'selection']
-    
-    return !systemFields.includes(col.key) && 
-           !computedFields.includes(col.key) && 
+
+    return !systemFields.includes(col.key) &&
+           !computedFields.includes(col.key) &&
            !actionFields.includes(col.key) &&
            col.dataKey !== undefined // 必须有 dataKey 才能映射到表单字段
   })
@@ -386,14 +390,9 @@ const getNestedKey = (column: TableColumn): string => {
 }
 
 // 判断是否为分组标题
-const isGroupHeader = (column: TableColumn): boolean => {
+const isGroupHeader = (_column: TableColumn): boolean => {
   // 可以根据需要自定义分组逻辑
   return false
-}
-
-// 获取分组标题
-const getGroupTitle = (column: TableColumn): string => {
-  return column.title
 }
 
 // 获取表单标签（带必填标记）
@@ -496,144 +495,63 @@ const updateStringArrayItem = (column: TableColumn, index: number, value: string
   setNestedValue(formData.value, key, array)
 }
 
-// 处理荷扱いタグ的建议
-const handleHandlingTagSuggestions = (queryString: string, callback: (suggestions: Array<{ value: string }>) => void) => {
-  const results = queryString
-    ? HANDLING_TAG_OPTIONS.filter((option) =>
-        option.toLowerCase().includes(queryString.toLowerCase())
-      )
-    : HANDLING_TAG_OPTIONS
-  
-  callback(results.map((option) => ({ value: option })))
-}
+// Simple validation (replaces el-form validation)
+const validateForm = (): { valid: boolean; errors: string[] } => {
+  const errors: string[] = []
 
-// 生成表单验证规则（必填 + 类型 + 邮编/电话数字校验 + 数值上下限）
-const formRules = computed(() => {
-  const rules: Record<string, any[]> = {}
   const digitsOnly = /^\d+$/
   const postalCode7 = /^\d{7}$/
   const baseNo3 = /^\d{3}$/
 
   formColumns.value.forEach((column) => {
     const key = getNestedKey(column)
-    const columnRules: any[] = []
+    const value = getNestedValue(formData.value, key)
 
-    // Dynamic required validation using validator
-    if (column.required || column.requiredWhen) {
-      columnRules.push({
-        validator: (_: any, value: any, callback: any) => {
-          // Check if field is currently required
-          const required = isFieldRequired(column)
-          if (!required) {
-            callback()
-            return
-          }
-          // Check if value is empty
-          const isEmpty = value === undefined || value === null || value === '' ||
-            (Array.isArray(value) && value.length === 0)
-          if (isEmpty) {
-            callback(new Error(`${column.title}は必須です`))
-            return
-          }
-          callback()
-        },
-        trigger: column.fieldType === 'date' || column.fieldType === 'dateOnly' ? 'change' : 'blur',
-      })
-    }
-
-    // 类型与特殊字段规则
-    if (column.fieldType === 'number') {
-      columnRules.push({
-        type: 'number',
-        message: `${column.title}は数値で入力してください`,
-        trigger: 'change',
-      })
-      if (column.min !== undefined || column.max !== undefined) {
-        columnRules.push({
-          validator: (_: any, value: any, callback: any) => {
-            // Skip validation for disabled fields or empty values (optional fields)
-            if (isFieldDisabled(column)) {
-              callback()
-              return
-            }
-            if (value === undefined || value === null || value === '') {
-              callback()
-              return
-            }
-            const num = Number(value)
-            if (Number.isNaN(num)) {
-              callback(new Error(`${column.title}は数値で入力してください`))
-              return
-            }
-            if (column.min !== undefined && num < column.min) {
-              callback(new Error(`${column.title}は${column.min}以上で入力してください`))
-              return
-            }
-            if (column.max !== undefined && num > column.max) {
-              callback(new Error(`${column.title}は${column.max}以下で入力してください`))
-              return
-            }
-            callback()
-          },
-          trigger: 'change',
-        })
+    // Required check
+    if (isFieldRequired(column)) {
+      const isEmpty = value === undefined || value === null || value === '' ||
+        (Array.isArray(value) && value.length === 0)
+      if (isEmpty) {
+        errors.push(`${column.title}は必須です`)
       }
-    } else if (column.fieldType === 'date') {
-      columnRules.push({
-        type: 'string',
-        message: `${column.title}は日付形式で入力してください`,
-        trigger: 'change',
-      })
-    } else if (column.fieldType === 'dateOnly') {
-      columnRules.push({
-        pattern: /^(?:\d{4}\/\d{2}\/\d{2}|\d{4}-\d{2}-\d{2})$/,
-        message: `${column.title}はYYYY/MM/DD形式で入力してください`,
-        trigger: 'change',
-      })
     }
 
-    // 邮编/电话：根据字段名启发式校验
+    // Skip further validation if disabled
+    if (isFieldDisabled(column)) return
+
+    // Number validation
+    if (column.fieldType === 'number' && value !== undefined && value !== null && value !== '') {
+      const num = Number(value)
+      if (Number.isNaN(num)) {
+        errors.push(`${column.title}は数値で入力してください`)
+      } else {
+        if (column.min !== undefined && num < column.min) {
+          errors.push(`${column.title}は${column.min}以上で入力してください`)
+        }
+        if (column.max !== undefined && num > column.max) {
+          errors.push(`${column.title}は${column.max}以下で入力してください`)
+        }
+      }
+    }
+
+    // Postal code validation
     const keyLower = key.toLowerCase()
-    if (keyLower.includes('postalcode')) {
-      columnRules.push({
-        pattern: postalCode7,
-        message: '郵便番号は7桁の数字で入力してください',
-        trigger: 'blur',
-      })
+    if (keyLower.includes('postalcode') && value && !postalCode7.test(String(value))) {
+      errors.push('郵便番号は7桁の数字で入力してください')
     }
-    if (keyLower.includes('phone')) {
-      columnRules.push({
-        pattern: digitsOnly,
-        message: '電話番号は数字のみで入力してください',
-        trigger: 'blur',
-      })
+    if (keyLower.includes('phone') && value && !digitsOnly.test(String(value))) {
+      errors.push('電話番号は数字のみで入力してください')
     }
-    // 発ベースNo：任意入力、入力されている場合は3桁数字
-    if (keyLower.includes('hatsubaseno')) {
-      columnRules.push({
-        validator: (_: any, value: any, callback: any) => {
-          const v = typeof value === 'string' ? value.trim() : value
-          if (v === undefined || v === null || v === '') {
-            callback()
-            return
-          }
-          if (!baseNo3.test(String(v))) {
-            callback(new Error('発ベースNoは3桁の数字で入力してください'))
-            return
-          }
-          callback()
-        },
-        trigger: 'blur',
-      })
-    }
-
-    if (columnRules.length > 0) {
-      rules[key] = columnRules
+    if (keyLower.includes('hatsubaseno') && value) {
+      const v = typeof value === 'string' ? value.trim() : value
+      if (v && !baseNo3.test(String(v))) {
+        errors.push('発ベースNoは3桁の数字で入力してください')
+      }
     }
   })
 
-  return rules
-})
+  return { valid: errors.length === 0, errors }
+}
 
 // 初始化表单数据
 const initFormData = () => {
@@ -641,7 +559,7 @@ const initFormData = () => {
   formColumns.value.forEach((column) => {
     const key = getNestedKey(column)
     const initialValue = props.initialData ? getNestedValue(props.initialData, key) : undefined
-    
+
     // 如果 initialData 中有值（包括 0, false, '' 等），使用它；否则设置默认值
     if (initialValue !== undefined) {
       // 多选字段：将字符串转换为数组
@@ -689,13 +607,6 @@ watch(
       // 延迟确保 DOM 更新完成
       setTimeout(async () => {
         initFormData()
-        // 对已有数据（编辑模式）立即校验并提示类型/格式问题
-        const hasInitial =
-          props.initialData && Object.keys(props.initialData).length > 0
-        if (hasInitial && formRef.value) {
-          await formRef.value.clearValidate()
-          await formRef.value.validate().catch(() => {})
-        }
       }, 0)
     } else {
       formData.value = {}
@@ -707,20 +618,18 @@ watch(
 // 处理关闭
 const handleClose = () => {
   dialogVisible.value = false
-  formRef.value?.resetFields()
 }
 
 // 处理提交
 const handleSubmit = async () => {
-  if (!formRef.value) return
+  const { valid, errors } = validateForm()
+
+  if (!props.allowInvalidSubmit && !valid) {
+    alert(errors.join('\n'))
+    return
+  }
 
   try {
-    if (props.allowInvalidSubmit) {
-      // エラーは表示するが、保存はブロックしない
-      await formRef.value.validate().catch(() => {})
-    } else {
-      await formRef.value.validate()
-    }
     submitting.value = true
 
     // 构建提交数据（保持嵌套结构）
@@ -731,7 +640,7 @@ const handleSubmit = async () => {
       if ((column.fieldType === 'date' || column.fieldType === 'dateOnly') && value) {
         value = normalizeDateValue(value, column.fieldType)
       }
-      
+
       // 对于多选字段（如 ECモール），只保存第一个选中的值
       if ((column as any).formFieldType === 'multiSelect' && Array.isArray(value) && value.length > 0) {
         // 多选时只保存第一个值（因为 ecCompanyId 是字符串，不是数组）
@@ -758,13 +667,13 @@ const handleSubmit = async () => {
 
     emit('submit', submitData)
     if (props.allowInvalidSubmit) {
-      ElMessage.success('保存しました（未入力/形式エラーの項目は赤枠で表示されます）')
+      alert('保存しました（未入力/形式エラーの項目は赤枠で表示されます）')
     } else {
-      ElMessage.success('保存しました')
+      alert('保存しました')
     }
     handleClose()
   } catch (error) {
-    ElMessage.error('入力内容を確定してください')
+    alert('入力内容を確定してください')
   } finally {
     submitting.value = false
   }
@@ -837,8 +746,31 @@ const normalizeDateValue = (val: any, mode: 'date' | 'dateOnly'): string => {
   padding: 20px;
 }
 
+.o-form-group {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.o-form-label {
+  display: block;
+  font-size: var(--o-font-size-small, 13px);
+  font-weight: 500;
+  color: var(--o-gray-700, #495057);
+  min-width: 140px;
+  padding-top: 6px;
+  flex-shrink: 0;
+}
+
+.o-form-group .o-input,
+.o-form-group select.o-input {
+  flex: 1;
+}
+
 .array-field {
   width: 100%;
+  flex: 1;
 }
 
 .array-item {
@@ -853,9 +785,19 @@ const normalizeDateValue = (val: any, mode: 'date' | 'dateOnly'): string => {
   gap: 10px;
 }
 
-:deep(.el-divider__text) {
-  font-weight: 600;
-  color: #409eff;
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>
-

@@ -5,81 +5,81 @@
         <h1 class="page-title">帳票テンプレート</h1>
         <p class="page-subtitle">ピッキングリスト・出荷明細リストなどの帳票テンプレートを管理します</p>
       </div>
-      <el-button type="primary" :icon="Plus" @click="openCreate">新規追加</el-button>
+      <button class="o-btn o-btn-primary" @click="openCreate">新規追加</button>
     </div>
 
     <div class="table-section">
-      <el-table :data="templates" style="width: 100%" :height="520" border>
-        <el-table-column prop="name" label="テンプレート名" min-width="200" />
-        <el-table-column prop="targetType" label="種類" min-width="180">
-          <template #default="{ row }">
-            {{ getTypeLabel(row.targetType) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="pageSize" label="用紙" min-width="120">
-          <template #default="{ row }">
-            {{ row.pageSize }} {{ row.pageOrientation === 'portrait' ? '縦' : '横' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="isDefault" label="デフォルト" min-width="100" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.isDefault" type="success" size="small">はい</el-tag>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right" align="center">
-          <template #default="{ row }">
-            <div class="action-cell">
-              <el-button type="primary" size="small" plain @click="openEdit(row)">編集</el-button>
-              <el-button type="info" size="small" plain @click="duplicateFormTemplate(row)">複製</el-button>
-              <el-button type="danger" size="small" plain @click="handleDelete(row)">削除</el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+      <table class="o-list-table">
+        <thead>
+          <tr>
+            <th style="min-width:200px">テンプレート名</th>
+            <th style="min-width:180px">種類</th>
+            <th style="min-width:120px">用紙</th>
+            <th style="min-width:100px;text-align:center">デフォルト</th>
+            <th style="width:100px;text-align:center">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in templates" :key="row._id">
+            <td>{{ row.name }}</td>
+            <td>{{ getTypeLabel(row.targetType) }}</td>
+            <td>{{ row.pageSize }} {{ row.pageOrientation === 'portrait' ? '縦' : '横' }}</td>
+            <td style="text-align:center">
+              <span v-if="row.isDefault" class="o-badge o-badge-success">はい</span>
+              <span v-else>-</span>
+            </td>
+            <td>
+              <div class="action-cell">
+                <button class="o-btn o-btn-sm o-btn-outline-primary" @click="openEdit(row)">編集</button>
+                <button class="o-btn o-btn-sm o-btn-outline-secondary" @click="duplicateFormTemplate(row)">複製</button>
+                <button class="o-btn o-btn-sm o-btn-outline-danger" @click="handleDelete(row)">削除</button>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="templates.length === 0">
+            <td colspan="5" style="text-align:center;padding:40px;color:#909399">データがありません</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- 作成ダイアログ -->
-    <el-dialog v-model="createDialogVisible" title="帳票テンプレートを追加" width="500px">
-      <el-form :model="createForm" label-width="140px" label-position="left">
-        <el-form-item label="テンプレート名" required>
-          <el-input v-model="createForm.name" placeholder="例：ピッキングリスト" />
-        </el-form-item>
-        <el-form-item label="種類" required>
-          <el-select v-model="createForm.targetType" placeholder="種類を選択" style="width: 100%">
-            <el-option
-              v-for="t in formTypeRegistry"
-              :key="t.type"
-              :label="t.label"
-              :value="t.type"
-            >
-              <div>
-                <div>{{ t.label }}</div>
-                <div style="font-size: 11px; color: #909399;">{{ t.description }}</div>
-              </div>
-            </el-option>
-          </el-select>
-        </el-form-item>
-      </el-form>
+    <ODialog :open="createDialogVisible" title="帳票テンプレートを追加" @close="createDialogVisible = false">
+      <div class="o-form-group">
+        <label class="o-form-label">テンプレート名 <span class="required">*</span></label>
+        <input class="o-input" v-model="createForm.name" placeholder="例：ピッキングリスト" />
+      </div>
+      <div class="o-form-group">
+        <label class="o-form-label">種類 <span class="required">*</span></label>
+        <select class="o-input" v-model="createForm.targetType">
+          <option value="">種類を選択</option>
+          <option
+            v-for="t in formTypeRegistry"
+            :key="t.type"
+            :value="t.type"
+          >{{ t.label }}</option>
+        </select>
+      </div>
       <template #footer>
-        <el-button @click="createDialogVisible = false">キャンセル</el-button>
-        <el-button type="primary" :loading="saving" @click="handleCreate">作成</el-button>
+        <button class="o-btn o-btn-secondary" @click="createDialogVisible = false">キャンセル</button>
+        <button class="o-btn o-btn-primary" :disabled="saving" @click="handleCreate">作成</button>
       </template>
-    </el-dialog>
+    </ODialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { useToast } from '@/composables/useToast'
+import ODialog from '@/components/odoo/ODialog.vue'
 import type { FormTemplate } from '@/types/formTemplate'
 import { fetchFormTemplates, fetchFormTemplate, createFormTemplate, deleteFormTemplate } from '@/api/formTemplate'
 import { formTypeRegistry, createDefaultColumns } from '@/utils/form-export/formFieldRegistry'
 import { createDefaultFormTemplate } from '@/utils/form-export/pdfGenerator'
 
 const router = useRouter()
+const { show: showToast } = useToast()
 const templates = ref<FormTemplate[]>([])
 const createDialogVisible = ref(false)
 const saving = ref(false)
@@ -98,7 +98,7 @@ async function loadTemplates() {
   try {
     templates.value = await fetchFormTemplates()
   } catch (e: any) {
-    ElMessage.error(e?.message || '帳票テンプレートの取得に失敗しました')
+    showToast(e?.message || '帳票テンプレートの取得に失敗しました', 'danger')
   }
 }
 
@@ -113,11 +113,11 @@ function openEdit(row: FormTemplate) {
 
 async function handleCreate() {
   if (!createForm.value.name.trim()) {
-    ElMessage.warning('テンプレート名を入力してください')
+    showToast('テンプレート名を入力してください', 'warning')
     return
   }
   if (!createForm.value.targetType) {
-    ElMessage.warning('種類を選択してください')
+    showToast('種類を選択してください', 'warning')
     return
   }
 
@@ -137,13 +137,13 @@ async function handleCreate() {
       columns,
     } as any)
 
-    ElMessage.success('テンプレートを作成しました')
+    showToast('テンプレートを作成しました', 'success')
     createDialogVisible.value = false
 
     // 編集画面へ遷移
     router.push(`/settings/form-templates/${created._id}`)
   } catch (e: any) {
-    ElMessage.error(e?.message || '作成に失敗しました')
+    showToast(e?.message || '作成に失敗しました', 'danger')
   } finally {
     saving.value = false
   }
@@ -154,32 +154,22 @@ async function duplicateFormTemplate(row: FormTemplate) {
     const detail = await fetchFormTemplate(row._id)
     const { _id, tenantId, createdAt, updatedAt, ...rest } = detail
     await createFormTemplate({ ...rest, name: `${row.name}_copy`, isDefault: false } as any)
-    ElMessage.success('複製しました')
+    showToast('複製しました', 'success')
     await loadTemplates()
   } catch (e: any) {
-    ElMessage.error(e?.message || '複製に失敗しました')
+    showToast(e?.message || '複製に失敗しました', 'danger')
   }
 }
 
 async function handleDelete(row: FormTemplate) {
-  const confirmed = await ElMessageBox.confirm(
-    `「${row.name}」を削除しますか？`,
-    '削除確認',
-    {
-      confirmButtonText: '削除',
-      cancelButtonText: 'キャンセル',
-      type: 'warning',
-    },
-  ).catch(() => false)
-
-  if (!confirmed) return
+  if (!confirm(`「${row.name}」を削除しますか？`)) return
 
   try {
     await deleteFormTemplate(row._id)
-    ElMessage.success('削除しました')
+    showToast('削除しました', 'success')
     await loadTemplates()
   } catch (e: any) {
-    ElMessage.error(e?.message || '削除に失敗しました')
+    showToast(e?.message || '削除に失敗しました', 'danger')
   }
 }
 
@@ -221,8 +211,64 @@ onMounted(() => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.o-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.o-list-table th, .o-list-table td {
+  padding: 10px 12px;
+  border: 1px solid var(--o-border-color, #ebeef5);
+  text-align: left;
+}
+.o-list-table th {
+  background: var(--o-list-header-bg, #f5f7fa);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  cursor: pointer;
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-700, #303133);
+  transition: 0.2s;
+  white-space: nowrap;
+}
+.o-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.o-btn-primary { background: var(--o-brand-primary, #714b67); color: #fff; border-color: var(--o-brand-primary, #714b67); }
+.o-btn-secondary { background: var(--o-view-background, #fff); color: var(--o-gray-700, #303133); }
+.o-btn-sm { padding: 4px 10px; font-size: 13px; }
+.o-btn-outline-primary { background: transparent; color: var(--o-brand-primary, #714b67); border-color: var(--o-brand-primary, #714b67); }
+.o-btn-outline-secondary { background: transparent; color: var(--o-gray-600, #909399); border-color: var(--o-gray-600, #909399); }
+.o-btn-outline-danger { background: transparent; color: #f56c6c; border-color: #f56c6c; }
+
+.o-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.o-badge-success { background: #f0f9eb; color: #67c23a; }
+
+.o-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: var(--o-font-size-base, 14px);
+  color: var(--o-gray-700, #303133);
+  background: var(--o-view-background, #fff);
+  box-sizing: border-box;
+}
+
+.o-form-group { margin-bottom: 1rem; }
+.o-form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
+.required { color: #f56c6c; }
+
 /* 操作列样式 - 垂直排列 */
-:deep(.action-cell) {
+.action-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -231,24 +277,8 @@ onMounted(() => {
   padding: 4px;
 }
 
-:deep(.action-cell .el-button) {
+.action-cell .o-btn {
   margin: 0;
   min-width: 54px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  border-width: 1px;
-}
-
-:deep(.action-cell .el-button--primary.is-plain) {
-  border-color: var(--el-color-primary);
-}
-
-:deep(.action-cell .el-button--info.is-plain) {
-  border-color: var(--el-color-info);
-}
-
-:deep(.action-cell .el-button--danger.is-plain) {
-  border-color: var(--el-color-danger);
 }
 </style>

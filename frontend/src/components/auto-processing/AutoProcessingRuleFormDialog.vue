@@ -1,60 +1,66 @@
 <template>
-  <el-dialog
-    :model-value="modelValue"
-    @update:model-value="emit('update:modelValue', $event)"
+  <ODialog
+    :open="modelValue"
     :title="isEditing ? 'ルールを編集' : 'ルールを追加'"
+    @close="emit('update:modelValue', false)"
     width="900px"
-    :close-on-click-modal="false"
-    destroy-on-close
   >
-    <el-form :model="form" label-position="top" class="rule-form">
+    <form class="rule-form" @submit.prevent="handleSubmit">
       <!-- 基本設定 -->
       <div class="form-section">
         <h3 class="section-title">基本設定</h3>
         <div class="form-grid">
-          <el-form-item label="名前" required>
-            <el-input v-model="form.name" placeholder="ルール名を入力" />
-          </el-form-item>
-          <el-form-item label="有効">
-            <el-switch v-model="form.enabled" />
-          </el-form-item>
+          <div class="o-form-group">
+            <label class="o-form-label">名前 *</label>
+            <input class="o-input" v-model="form.name" placeholder="ルール名を入力" />
+          </div>
+          <div class="o-form-group">
+            <label class="o-form-label">有効</label>
+            <label class="o-toggle">
+              <input type="checkbox" v-model="form.enabled" />
+              <span class="o-toggle-slider"></span>
+            </label>
+          </div>
         </div>
         <div class="form-grid">
-          <el-form-item label="実行モード">
-            <el-radio-group v-model="form.triggerMode">
-              <el-radio value="auto">自動で実行する</el-radio>
-              <el-radio value="manual">手動で実行する</el-radio>
-            </el-radio-group>
-          </el-form-item>
-          <el-form-item label="再実行">
-            <el-radio-group v-model="form.allowRerun">
-              <el-radio :value="false">再実行しない</el-radio>
-              <el-radio :value="true">再実行できる</el-radio>
-            </el-radio-group>
-          </el-form-item>
+          <div class="o-form-group">
+            <label class="o-form-label">実行モード</label>
+            <div class="radio-group">
+              <label><input type="radio" v-model="form.triggerMode" value="auto" /> 自動で実行する</label>
+              <label><input type="radio" v-model="form.triggerMode" value="manual" /> 手動で実行する</label>
+            </div>
+          </div>
+          <div class="o-form-group">
+            <label class="o-form-label">再実行</label>
+            <div class="radio-group">
+              <label><input type="radio" v-model="form.allowRerun" :value="false" /> 再実行しない</label>
+              <label><input type="radio" v-model="form.allowRerun" :value="true" /> 再実行できる</label>
+            </div>
+          </div>
         </div>
-        <el-form-item label="メモ">
-          <el-input
-            v-model="form.memo"
-            type="textarea"
-            :rows="2"
-            placeholder="メモ（任意）"
-          />
-        </el-form-item>
+        <div class="o-form-group">
+          <label class="o-form-label">メモ</label>
+          <textarea class="o-input" v-model="form.memo" rows="2" placeholder="メモ（任意）"></textarea>
+        </div>
       </div>
 
       <!-- 触発タイミング -->
       <div class="form-section">
         <h3 class="section-title">触発タイミング</h3>
-        <el-checkbox-group v-model="form.triggerEvents">
-          <el-checkbox
+        <div class="checkbox-group">
+          <label
             v-for="ev in TRIGGER_EVENTS"
             :key="ev"
-            :value="ev"
+            class="o-checkbox"
           >
-            {{ TRIGGER_EVENT_LABELS[ev] }}
-          </el-checkbox>
-        </el-checkbox-group>
+            <input
+              type="checkbox"
+              :value="ev"
+              v-model="form.triggerEvents"
+            />
+            <span>{{ TRIGGER_EVENT_LABELS[ev] }}</span>
+          </label>
+        </div>
       </div>
 
       <!-- 条件設定 -->
@@ -69,19 +75,20 @@
         <h3 class="section-title">動作設定</h3>
         <ActionEditor v-model="form.actions" />
       </div>
-    </el-form>
+    </form>
 
     <template #footer>
-      <el-button @click="emit('update:modelValue', false)">キャンセル</el-button>
-      <el-button type="primary" @click="handleSubmit" :disabled="!form.name?.trim()">
+      <button class="o-btn o-btn-secondary" @click="emit('update:modelValue', false)">キャンセル</button>
+      <button class="o-btn o-btn-primary" @click="handleSubmit" :disabled="!form.name?.trim()">
         {{ isEditing ? '更新' : '作成' }}
-      </el-button>
+      </button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import type {
   AutoProcessingRule,
   AutoProcessingRuleFormData,
@@ -180,4 +187,36 @@ const handleSubmit = () => {
   grid-template-columns: 1fr 1fr;
   gap: 0 24px;
 }
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.o-toggle { position:relative; display:inline-flex; align-items:center; cursor:pointer; }
+.o-toggle input { position:absolute; opacity:0; width:0; height:0; }
+.o-toggle-slider { width:40px; height:20px; background:var(--o-toggle-off, #ccc); border-radius:10px; transition:0.2s; position:relative; }
+.o-toggle-slider::after { content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; top:2px; left:2px; transition:0.2s; }
+.o-toggle input:checked + .o-toggle-slider { background:var(--o-brand-primary, #714b67); }
+.o-toggle input:checked + .o-toggle-slider::after { left:22px; }
+
+.o-form-group { margin-bottom:1rem; }
+.o-form-label { display:block; font-size:var(--o-font-size-small, 13px); font-weight:500; color:var(--o-gray-700, #374151); margin-bottom:0.25rem; }
+
+.o-checkbox { display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:14px; }
 </style>

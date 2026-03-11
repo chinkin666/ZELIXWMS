@@ -1,91 +1,95 @@
 <template>
   <div class="connection-tab">
     <!-- Service URL -->
-    <el-form label-width="180px" label-position="left">
-      <el-form-item label="サービスURL">
-        <el-input
-          v-model="serviceUrl"
-          placeholder="http://127.0.0.1:8765"
-          style="width: 360px"
-          @change="handleUrlChange"
-        />
-      </el-form-item>
+    <div class="form-group">
+      <label class="form-label">サービスURL</label>
+      <input
+        class="o-input"
+        v-model="serviceUrl"
+        placeholder="http://127.0.0.1:8765"
+        style="width: 360px"
+        @change="handleUrlChange"
+      />
+    </div>
 
-      <!-- Connection Actions -->
-      <el-form-item>
-        <el-button
-          type="primary"
-          :icon="Connection"
-          :loading="connecting"
-          @click="handleConnect"
-        >
-          接続テスト
-        </el-button>
-        <el-button
-          :icon="Refresh"
-          :loading="refreshing"
-          :disabled="!isConnected"
-          @click="handleRefreshPrinters"
-        >
-          プリンター情報を更新
-        </el-button>
-      </el-form-item>
-    </el-form>
+    <!-- Connection Actions -->
+    <div class="form-actions">
+      <button class="o-btn o-btn-primary" :disabled="connecting" @click="handleConnect">
+        {{ connecting ? '接続中...' : '接続テスト' }}
+      </button>
+      <button class="o-btn o-btn-secondary" :disabled="!isConnected || refreshing" @click="handleRefreshPrinters">
+        {{ refreshing ? '更新中...' : 'プリンター情報を更新' }}
+      </button>
+    </div>
 
     <!-- Status Card -->
-    <el-card class="status-card" shadow="never">
-      <template #header>
-        <div class="status-header">
-          <span>接続ステータス</span>
-          <el-tag :type="isConnected ? 'success' : 'info'" size="small">
-            {{ isConnected ? '接続済み' : '未接続' }}
-          </el-tag>
-        </div>
-      </template>
+    <div class="o-card status-card">
+      <div class="o-card__header">
+        <span>接続ステータス</span>
+        <span class="o-badge" :class="isConnected ? 'o-badge-success' : 'o-badge-info'">
+          {{ isConnected ? '接続済み' : '未接続' }}
+        </span>
+      </div>
+      <div class="o-card__body">
+        <template v-if="isConnected && healthInfo">
+          <div class="kv-list">
+            <div class="kv-row">
+              <span class="kv-label">ステータス</span>
+              <span class="kv-value">
+                <span class="o-badge o-badge-success">{{ healthInfo.status }}</span>
+              </span>
+            </div>
+            <div class="kv-row">
+              <span class="kv-label">ホスト</span>
+              <span class="kv-value">{{ healthInfo.host }}</span>
+            </div>
+            <div class="kv-row">
+              <span class="kv-label">ポート</span>
+              <span class="kv-value">{{ healthInfo.port }}</span>
+            </div>
+            <div class="kv-row">
+              <span class="kv-label">設定ファイル</span>
+              <span class="kv-value"><span class="monospace">{{ healthInfo.config_path }}</span></span>
+            </div>
+            <div class="kv-row">
+              <span class="kv-label">キャッシュ済みプリンター</span>
+              <span class="kv-value">{{ cachedPrinterCount }} 台</span>
+            </div>
+            <div class="kv-row">
+              <span class="kv-label">最終更新</span>
+              <span class="kv-value">{{ lastCacheUpdateDisplay }}</span>
+            </div>
+          </div>
+        </template>
 
-      <template v-if="isConnected && healthInfo">
-        <el-descriptions :column="1" border size="small">
-          <el-descriptions-item label="ステータス">
-            <el-tag type="success" size="small">{{ healthInfo.status }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="ホスト">{{ healthInfo.host }}</el-descriptions-item>
-          <el-descriptions-item label="ポート">{{ healthInfo.port }}</el-descriptions-item>
-          <el-descriptions-item label="設定ファイル">
-            <span class="monospace">{{ healthInfo.config_path }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item label="キャッシュ済みプリンター">
-            {{ cachedPrinterCount }} 台
-          </el-descriptions-item>
-          <el-descriptions-item label="最終更新">
-            {{ lastCacheUpdateDisplay }}
-          </el-descriptions-item>
-        </el-descriptions>
-      </template>
+        <template v-else-if="connectionError">
+          <div class="o-alert o-alert-error">
+            <strong>接続に失敗しました</strong>
+            <p>{{ connectionError }}</p>
+          </div>
+        </template>
 
-      <template v-else-if="connectionError">
-        <el-alert type="error" :closable="false" show-icon>
-          <template #title>接続に失敗しました</template>
-          {{ connectionError }}
-        </el-alert>
-      </template>
-
-      <template v-else>
-        <el-empty description="サービスに接続してください" :image-size="60" />
-      </template>
-    </el-card>
+        <template v-else>
+          <div class="o-empty-state">
+            <p>サービスに接続してください</p>
+          </div>
+        </template>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Connection, Refresh } from '@element-plus/icons-vue'
+import { useToast } from '@/composables/useToast'
 import { healthCheck, getPrinters } from '@/utils/print/printBridgeApi'
 import {
   getPrintConfig,
   savePrintConfig,
   updatePrintersCache,
 } from '@/utils/print/printConfig'
+
+const toast = useToast()
 
 const emit = defineEmits<{
   (e: 'printers-updated'): void
@@ -120,7 +124,7 @@ function handleUrlChange() {
 
 async function handleConnect() {
   if (!serviceUrl.value.trim()) {
-    ElMessage.warning('サービスURLを入力してください')
+    toast.show('サービスURLを入力してください', 'warning')
     return
   }
 
@@ -138,10 +142,10 @@ async function handleConnect() {
     handleUrlChange()
     await refreshPrinters()
 
-    ElMessage.success('接続成功')
+    toast.show('接続成功', 'success')
   } catch (error: any) {
     connectionError.value = error.message || 'サービスが起動していない可能性があります'
-    ElMessage.error(`接続に失敗しました: ${connectionError.value}`)
+    toast.show(`接続に失敗しました: ${connectionError.value}`, 'danger')
   } finally {
     connecting.value = false
   }
@@ -154,7 +158,7 @@ async function refreshPrinters() {
     updatePrintersCache(data.printers, data.default_printer_os)
     emit('printers-updated')
   } catch (error: any) {
-    ElMessage.error(`プリンター情報の取得に失敗しました: ${error.message}`)
+    toast.show(`プリンター情報の取得に失敗しました: ${error.message}`, 'danger')
   } finally {
     refreshing.value = false
   }
@@ -162,7 +166,7 @@ async function refreshPrinters() {
 
 async function handleRefreshPrinters() {
   await refreshPrinters()
-  ElMessage.success('プリンター情報を更新しました')
+  toast.show('プリンター情報を更新しました', 'success')
 }
 
 onMounted(() => {
@@ -191,16 +195,124 @@ onMounted(() => {
   gap: 20px;
 }
 
-.status-card {
+/* Form layout */
+.form-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.form-label {
+  min-width: 180px;
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 192px;
+}
+
+/* Card */
+.o-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
   max-width: 600px;
 }
 
-.status-header {
+.o-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
 }
 
+.o-card__body {
+  padding: 16px;
+}
+
+/* Key-value list */
+.kv-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.kv-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 13px;
+}
+
+.kv-row:last-child {
+  border-bottom: none;
+}
+
+.kv-label {
+  background: #f9fafb;
+  padding: 8px 12px;
+  color: #6b7280;
+  font-weight: 500;
+  border-right: 1px solid #e5e7eb;
+}
+
+.kv-value {
+  padding: 8px 12px;
+  color: #111827;
+  display: flex;
+  align-items: center;
+}
+
+/* Alert */
+.o-alert {
+  border-radius: 4px;
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+.o-alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.o-alert-error strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.o-alert-error p {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* Empty state */
+.o-empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px 16px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.o-empty-state p {
+  margin: 0;
+}
+
+/* Monospace */
 .monospace {
   font-family: 'Courier New', monospace;
   font-size: 12px;

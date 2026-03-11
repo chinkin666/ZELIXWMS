@@ -14,23 +14,21 @@
     <div v-if="isAutomationEnabled" class="automation-entry">
       <div class="automation-entry__filter">
         <span class="automation-entry__label">出荷予定日：</span>
-        <el-date-picker
-          v-model="automationShipmentDate"
+        <input
           type="date"
-          placeholder="日付を選択"
-          format="YYYY/MM/DD"
+          class="o-input"
+          v-model="automationShipmentDateStr"
           style="width: 160px"
         />
       </div>
-      <el-button
-        type="success"
-        size="large"
-        class="automation-entry__btn"
-        :loading="automationImporting"
+      <button
+        class="o-btn o-btn-secondary automation-entry__btn"
+        style="border-color:#67c23a;color:#67c23a;"
+        :disabled="automationImporting"
         @click="handleAutomationImport"
       >
-        B2 Cloud から取込
-      </el-button>
+        {{ automationImporting ? '取込中...' : 'B2 Cloud から取込' }}
+      </button>
       <div class="automation-entry__hint">
         B2 Cloud の発行履歴から追跡番号を自動取得し、注文に紐づけます。
       </div>
@@ -38,38 +36,39 @@
 
     <!-- Manual file upload section (non-automation carriers) -->
     <div v-else class="upload-entry">
-      <el-button type="primary" size="large" class="upload-entry__btn" @click="dialogVisible = true">
+      <button class="o-btn o-btn-primary upload-entry__btn" @click="dialogVisible = true">
         ファイル選択
-      </el-button>
+      </button>
       <div class="upload-entry__hint">
         配送会社から返却された配送実績ファイルを取り込み、注文データに実績データを紐づけます。
       </div>
     </div>
 
     <!-- Automation import result -->
-    <el-alert
+    <div
       v-if="automationResult"
       class="result-alert"
-      :type="automationResult.success ? 'success' : 'warning'"
-      :closable="true"
-      title="B2 Cloud 取込結果"
-      @close="automationResult = null"
+      :class="automationResult.success ? 'result-alert--success' : 'result-alert--warning'"
     >
+      <div class="result-alert__header">
+        <strong>B2 Cloud 取込結果</strong>
+        <button class="result-alert__close" @click="automationResult = null">&times;</button>
+      </div>
       <div class="result-meta">
         <div>処理件数：<strong>{{ automationResult.total }}</strong></div>
         <div>一致更新：<strong>{{ automationResult.matched }}</strong></div>
         <div>未一致：<strong>{{ automationResult.unmatched }}</strong></div>
       </div>
-    </el-alert>
+    </div>
 
     <!-- Manual import result -->
-    <el-alert
+    <div
       v-if="lastResult"
-      class="result-alert"
-      type="success"
-      :closable="true"
-      title="ファイル取込結果"
+      class="result-alert result-alert--success"
     >
+      <div class="result-alert__header">
+        <strong>ファイル取込結果</strong>
+      </div>
       <div class="result-meta">
         <div>行数：<strong>{{ lastResult.data?.totalRows ?? 0 }}</strong></div>
         <div>空キー行スキップ：<strong>{{ lastResult.data?.skippedEmpty ?? 0 }}</strong></div>
@@ -82,29 +81,26 @@
       <div v-if="(lastResult.data?.ambiguous?.length || 0) > 0" class="result-sub">
         複数一致：<strong>{{ lastResult.data?.ambiguous.length }}</strong>（先頭5件: {{ lastResult.data?.ambiguous.slice(0, 5).join(', ') }}）
       </div>
-    </el-alert>
+    </div>
 
-    <el-dialog v-model="dialogVisible" title="配送会社データ取込" width="860px" :close-on-click-modal="false">
+    <ODialog :open="dialogVisible" title="配送会社データ取込" @close="dialogVisible = false">
       <div class="dialog-body">
         <div class="card">
           <h3 class="card-title">ファイルをアップロード</h3>
 
-          <el-upload
-            drag
-            action="#"
-            :auto-upload="false"
-            :multiple="false"
-            accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-            :show-file-list="false"
-            :on-change="onFileChange"
-          >
-            <div class="el-upload__text">
+          <div class="file-drop-zone" @click="triggerFileInput" @dragover.prevent @drop.prevent="onFileDrop">
+            <div class="file-drop-zone__text">
               ファイルをここにドロップするか <em>クリックして選択</em>
             </div>
-            <template #tip>
-              <div class="el-upload__tip">対応形式: CSV, XLSX, XLS</div>
-            </template>
-          </el-upload>
+            <div class="file-drop-zone__tip">対応形式: CSV, XLSX, XLS</div>
+            <input
+              ref="fileInputRef"
+              type="file"
+              accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+              style="display:none"
+              @change="onNativeFileChange"
+            />
+          </div>
 
           <div v-if="fileName" class="file-name">
             選択中: <strong>{{ fileName }}</strong>
@@ -112,9 +108,9 @@
 
           <div v-if="isCsvFile" class="encoding-section">
             <div class="encoding-label">文字コード：</div>
-            <el-select v-model="fileEncoding" style="width: 240px">
-              <el-option v-for="enc in encodingOptions" :key="enc.value" :label="enc.label" :value="enc.value" />
-            </el-select>
+            <select class="o-input" v-model="fileEncoding" style="width: 240px">
+              <option v-for="enc in encodingOptions" :key="enc.value" :value="enc.value">{{ enc.label }}</option>
+            </select>
           </div>
         </div>
 
@@ -123,16 +119,17 @@
           <div class="match-row">
             <div class="match-item">
               <div class="match-label">注文の項目</div>
-              <el-select v-model="orderMatchField" placeholder="項目を選択" style="width: 100%">
-                <el-option v-for="opt in orderMatchFieldOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
-              </el-select>
+              <select class="o-input" v-model="orderMatchField" style="width: 100%">
+                <option v-for="opt in orderMatchFieldOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
             </div>
             <div class="match-eq">=</div>
             <div class="match-item">
               <div class="match-label">ファイルの列</div>
-              <el-select v-model="fileMatchColumn" filterable clearable placeholder="列を選択" style="width: 100%">
-                <el-option v-for="h in fileHeaders" :key="h" :label="h" :value="h" />
-              </el-select>
+              <select class="o-input" v-model="fileMatchColumn" style="width: 100%">
+                <option value="">列を選択</option>
+                <option v-for="h in fileHeaders" :key="h" :value="h">{{ h }}</option>
+              </select>
             </div>
           </div>
           <div class="match-hint">
@@ -142,30 +139,41 @@
 
         <div class="card" v-if="parsedRows.length">
           <h3 class="card-title">プレビュー（先頭 {{ previewRows.length }} 件 / 全 {{ parsedRows.length }} 件）</h3>
-          <el-table :data="previewRows" height="320" border size="small">
-            <el-table-column v-for="h in previewHeaders" :key="h" :prop="h" :label="h" min-width="160" />
-          </el-table>
+          <div style="max-height:320px;overflow:auto;">
+            <table class="o-list-table" style="font-size:12px;">
+              <thead>
+                <tr>
+                  <th v-for="h in previewHeaders" :key="h" style="min-width:160px;">{{ h }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, idx) in previewRows" :key="idx">
+                  <td v-for="h in previewHeaders" :key="h">{{ row[h] }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dialogVisible = false">キャンセル</el-button>
-          <el-button type="primary" :loading="importing" :disabled="!canImport" @click="runImport">
-            取込
-          </el-button>
+          <button class="o-btn o-btn-secondary" @click="dialogVisible = false">キャンセル</button>
+          <button class="o-btn o-btn-primary" :disabled="!canImport || importing" @click="runImport">
+            {{ importing ? '取込中...' : '取込' }}
+          </button>
         </div>
       </template>
-    </el-dialog>
+    </ODialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ElAlert, ElButton, ElDatePicker, ElDialog, ElMessage, ElOption, ElSelect, ElTable, ElTableColumn, ElUpload } from 'element-plus'
 import * as XLSX from 'xlsx'
 import { importCarrierReceiptRows, type ImportCarrierReceiptRowsResult } from '@/api/shipmentOrders'
 import CarrierSelector from '@/components/search/CarrierSelector.vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import { yamatoB2Import } from '@/api/carrierAutomation'
 import type { Carrier } from '@/types/carrier'
 import type { YamatoB2ImportResult } from '@/types/carrierAutomation'
@@ -202,9 +210,8 @@ const getToday = (): Date => {
   today.setHours(0, 0, 0, 0)
   return today
 }
-const automationShipmentDate = ref<Date>(getToday())
 
-// Format date to YYYY-MM-DD
+// Use string for native date input
 const formatDateToYMD = (date: Date): string => {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -212,13 +219,15 @@ const formatDateToYMD = (date: Date): string => {
   return `${year}-${month}-${day}`
 }
 
+const automationShipmentDateStr = ref<string>(formatDateToYMD(getToday()))
+
 const handleAutomationImport = async () => {
   try {
     automationImporting.value = true
     automationResult.value = null
 
     // Use selected shipment date as filter (same date for both from and to)
-    const shipmentDate = formatDateToYMD(automationShipmentDate.value)
+    const shipmentDate = automationShipmentDateStr.value
     const result = await yamatoB2Import({
       shipmentDateFrom: shipmentDate,
       shipmentDateTo: shipmentDate,
@@ -226,12 +235,12 @@ const handleAutomationImport = async () => {
     automationResult.value = result
 
     if (result.success) {
-      ElMessage.success(`${result.matched}件の追跡番号を更新しました`)
+      alert(`${result.matched}件の追跡番号を更新しました`)
     } else {
-      ElMessage.warning('取込に問題がありました')
+      alert('取込に問題がありました')
     }
   } catch (e: any) {
-    ElMessage.error(e?.message || 'B2 Cloudからの取込に失敗しました')
+    alert(e?.message || 'B2 Cloudからの取込に失敗しました')
   } finally {
     automationImporting.value = false
   }
@@ -281,7 +290,7 @@ const detectCsvEncoding = (buf: ArrayBuffer): 'utf-8' | 'utf-8-sig' | 'shift_jis
   if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
     return 'utf-8-sig'
   }
-  const decodeWithEncoding = (b: ArrayBuffer, enc: string): string => {
+  const decodeWithEnc = (b: ArrayBuffer, enc: string): string => {
     try {
       const decoder = new TextDecoder(enc as any, { fatal: false })
       return decoder.decode(b)
@@ -289,9 +298,9 @@ const detectCsvEncoding = (buf: ArrayBuffer): 'utf-8' | 'utf-8-sig' | 'shift_jis
       return new TextDecoder('utf-8').decode(b)
     }
   }
-  const utf8Text = decodeWithEncoding(buf, 'utf-8')
-  const sjisText = decodeWithEncoding(buf, 'shift_jis')
-  const gbkText = decodeWithEncoding(buf, 'gb18030')
+  const utf8Text = decodeWithEnc(buf, 'utf-8')
+  const sjisText = decodeWithEnc(buf, 'shift_jis')
+  const gbkText = decodeWithEnc(buf, 'gb18030')
   const score = (text: string) => {
     const invalid = (text.match(/\uFFFD/g) || []).length
     const cjk = (text.match(/[\u3040-\u30ff\u4e00-\u9fa5]/g) || []).length
@@ -320,26 +329,24 @@ const parseSheetToRows = (wb: any): Record<string, any>[] => {
   const sheetName = wb.SheetNames[0]
   const sheet = sheetName ? wb.Sheets?.[sheetName] : undefined
   if (!sheet) return []
-  
+
   // 手动读取单元格，使用原始显示值（cell.w），避免 XLSX 自动格式化日期
-  // 这样保持 Excel/CSV 中实际显示的值，不进行任何转换，纯粹根据 transform 配置来转换
   const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1')
   const headers: string[] = []
   const rows: Record<string, any>[] = []
-  
+
   // 读取表头（第一行）
   for (let col = range.s.c; col <= range.e.c; col++) {
     const cellAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col })
     const cell = sheet[cellAddress]
-    // 使用 cell.w（显示值）如果存在，否则使用原始值转换为字符串
     const value = cell?.w != null ? String(cell.w) : (cell?.v != null ? String(cell.v) : '')
     headers.push(value.trim())
   }
-  
+
   // 过滤空表头
   const validHeaders = headers.filter((h) => h)
   if (validHeaders.length === 0) return []
-  
+
   // 读取数据行（从第二行开始）
   for (let row = range.s.r + 1; row <= range.e.r; row++) {
     const obj: Record<string, any> = {}
@@ -347,14 +354,12 @@ const parseSheetToRows = (wb: any): Record<string, any>[] => {
       const col = range.s.c + colIndex
       const cellAddress = XLSX.utils.encode_cell({ r: row, c: col })
       const cell = sheet[cellAddress]
-      // 使用 cell.w（显示值）如果存在，否则使用原始值转换为字符串
-      // 这样保持 Excel/CSV 中实际显示的值，不进行任何转换
       const value = cell?.w != null ? String(cell.w) : (cell?.v != null ? String(cell.v) : '')
       obj[header] = value
     })
     rows.push(obj)
   }
-  
+
   // remove fully blank rows
   return rows.filter((r) => Object.values(r).some((v) => String(v ?? '').trim() !== ''))
 }
@@ -377,15 +382,19 @@ const parseFile = async (file: File): Promise<Record<string, any>[]> => {
   return parseSheetToRows(wb)
 }
 
-const onFileChange = async (file: any) => {
-  const raw = (file && file.raw) as File | undefined
-  selectedFile.value = raw ?? null
-  fileName.value = raw?.name || null
+// Native file input handling
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+const triggerFileInput = () => {
+  fileInputRef.value?.click()
+}
+
+const processFile = async (raw: File) => {
+  selectedFile.value = raw
+  fileName.value = raw.name
   parsedRows.value = []
   fileHeaders.value = []
   fileMatchColumn.value = ''
-
-  if (!raw) return
 
   try {
     const rows = await parseFile(raw)
@@ -395,8 +404,21 @@ const onFileChange = async (file: any) => {
     if (headers.length) fileMatchColumn.value = headers[0] ?? ''
   } catch (e: any) {
     console.error(e)
-    ElMessage.error(e?.message || 'ファイルの解析に失敗しました')
+    alert(e?.message || 'ファイルの解析に失敗しました')
   }
+}
+
+const onNativeFileChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const raw = input.files?.[0]
+  if (!raw) return
+  await processFile(raw)
+}
+
+const onFileDrop = async (event: DragEvent) => {
+  const raw = event.dataTransfer?.files?.[0]
+  if (!raw) return
+  await processFile(raw)
 }
 
 watch(
@@ -434,11 +456,11 @@ const runImport = async () => {
     })
 
     lastResult.value = res
-    ElMessage.success(res?.message || '取込しました')
+    alert(res?.message || '取込しました')
     dialogVisible.value = false
   } catch (e: any) {
     console.error(e)
-    ElMessage.error(e?.message || '取込に失敗しました')
+    alert(e?.message || '取込に失敗しました')
   } finally {
     importing.value = false
   }
@@ -510,6 +532,37 @@ const runImport = async () => {
 
 .result-alert {
   margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid;
+}
+
+.result-alert--success {
+  background: #f0f9eb;
+  border-color: #b3e19d;
+  color: #67c23a;
+}
+
+.result-alert--warning {
+  background: #fdf6ec;
+  border-color: #f5dab1;
+  color: #e6a23c;
+}
+
+.result-alert__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  color: #303133;
+}
+
+.result-alert__close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #909399;
 }
 
 .result-meta {
@@ -544,6 +597,35 @@ const runImport = async () => {
   font-size: 14px;
   font-weight: 700;
   color: #303133;
+}
+
+.file-drop-zone {
+  border: 2px dashed #d9d9d9;
+  border-radius: 6px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.file-drop-zone:hover {
+  border-color: #409eff;
+}
+
+.file-drop-zone__text {
+  font-size: 14px;
+  color: #606266;
+}
+
+.file-drop-zone__text em {
+  color: #409eff;
+  font-style: normal;
+}
+
+.file-drop-zone__tip {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #909399;
 }
 
 .file-name {
@@ -597,5 +679,3 @@ const runImport = async () => {
   gap: 10px;
 }
 </style>
-
-

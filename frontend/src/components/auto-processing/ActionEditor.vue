@@ -1,73 +1,77 @@
 <template>
   <div class="action-editor">
     <div v-for="(action, index) in modelValue" :key="index" class="action-row">
-      <el-select
-        :model-value="action.type"
-        @update:model-value="handleTypeChange(index, $event as ActionType)"
-        placeholder="動作タイプ"
+      <select
+        class="o-input"
+        :value="action.type"
+        @change="handleTypeChange(index, ($event.target as HTMLSelectElement).value as ActionType)"
         style="width: 180px"
       >
-        <el-option
+        <option value="" disabled>動作タイプ</option>
+        <option
           v-for="(label, key) in ACTION_TYPE_LABELS"
           :key="key"
-          :label="label"
           :value="key"
-        />
-      </el-select>
+        >
+          {{ label }}
+        </option>
+      </select>
 
       <!-- addProduct -->
       <template v-if="action.type === 'addProduct'">
-        <el-input
-          :model-value="action.productSku"
-          @update:model-value="updateAction(index, { ...action, productSku: $event })"
+        <input
+          class="o-input"
+          :value="action.productSku"
+          @input="updateAction(index, { ...action, productSku: ($event.target as HTMLInputElement).value })"
           placeholder="SKU"
           style="width: 200px"
         />
-        <el-input-number
-          :model-value="action.quantity ?? 1"
-          @update:model-value="updateAction(index, { ...action, quantity: $event })"
-          :min="1"
-          controls-position="right"
+        <input
+          type="number"
+          class="o-input"
+          :value="action.quantity ?? 1"
+          min="1"
+          @input="updateAction(index, { ...action, quantity: Number(($event.target as HTMLInputElement).value) })"
           style="width: 120px"
         />
       </template>
 
       <!-- setOrderGroup -->
       <template v-if="action.type === 'setOrderGroup'">
-        <el-select
-          :model-value="action.orderGroupId"
-          @update:model-value="updateAction(index, { ...action, orderGroupId: $event })"
-          placeholder="グループを選択"
-          filterable
+        <select
+          class="o-input"
+          :value="action.orderGroupId"
+          @change="updateAction(index, { ...action, orderGroupId: ($event.target as HTMLSelectElement).value })"
           style="width: 240px"
         >
-          <el-option
+          <option value="" disabled>グループを選択</option>
+          <option
             v-for="g in orderGroups"
             :key="g.orderGroupId"
-            :label="g.name"
             :value="g.orderGroupId"
-          />
-        </el-select>
+          >
+            {{ g.name }}
+          </option>
+        </select>
       </template>
 
-      <el-button
-        type="danger"
-        :icon="Delete"
-        circle
-        size="small"
+      <button
+        class="o-btn o-btn-danger o-btn-sm"
         @click="removeAction(index)"
-      />
+        title="削除"
+      >
+        ✕
+      </button>
     </div>
 
-    <el-button :icon="Plus" @click="addAction" size="small">
-      動作を追加
-    </el-button>
+    <button class="o-btn o-btn-secondary o-btn-sm" @click="addAction">
+      + 動作を追加
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Plus, Delete } from '@element-plus/icons-vue'
 import type { AutoProcessingAction, ActionType } from '@/types/autoProcessingRule'
 import { ACTION_TYPE_LABELS } from '@/types/autoProcessingRule'
 import { fetchOrderGroups } from '@/api/orderGroup'

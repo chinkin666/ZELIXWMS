@@ -1,32 +1,34 @@
 <template>
-  <el-dialog v-model="visible" title="印刷プレビュー" width="980px">
+  <ODialog :open="visible" title="印刷プレビュー" @close="visible = false" width="980px">
     <div class="toolbar">
-      <el-form inline>
-        <el-form-item label="テンプレート">
-          <el-select v-model="selectedTemplateId" placeholder="テンプレートを選択" style="width: 360px">
-            <el-option v-for="t in availableTemplates" :key="t.id" :label="t.name" :value="t.id" />
-          </el-select>
-        </el-form-item>
+      <div class="toolbar-row">
+        <div class="toolbar-item">
+          <label class="toolbar-label">テンプレート</label>
+          <select class="o-input" v-model="selectedTemplateId" style="width: 360px">
+            <option value="" disabled>テンプレートを選択</option>
+            <option v-for="t in availableTemplates" :key="t.id" :value="t.id">{{ t.name }}</option>
+          </select>
+        </div>
 
-        <el-form-item label="DPI">
-          <el-select v-model="exportDpi" style="width: 120px">
-            <el-option label="203" :value="203" />
-            <el-option label="300" :value="300" />
-          </el-select>
-        </el-form-item>
+        <div class="toolbar-item">
+          <label class="toolbar-label">DPI</label>
+          <select class="o-input" v-model.number="exportDpi" style="width: 120px">
+            <option :value="203">203</option>
+            <option :value="300">300</option>
+          </select>
+        </div>
 
-        <el-form-item label="印刷済み登録">
-          <el-switch v-model="recordPrinted" />
-        </el-form-item>
+        <div class="toolbar-item">
+          <label class="toolbar-label">印刷済み登録</label>
+          <label class="o-toggle">
+            <input type="checkbox" v-model="recordPrinted" />
+            <span class="o-toggle-slider"></span>
+          </label>
+        </div>
 
-        <el-form-item>
-          <el-button :disabled="!imageUrl || matching" @click="downloadPng">下载PNG</el-button>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button type="success" :disabled="!imageUrl || !selectedTemplate || matching" @click="handlePrint">打印</el-button>
-        </el-form-item>
-      </el-form>
+        <button class="o-btn o-btn-secondary o-btn-sm" :disabled="!imageUrl || matching" @click="downloadPng">下载PNG</button>
+        <button class="o-btn o-btn-primary o-btn-sm" :disabled="!imageUrl || !selectedTemplate || matching" @click="handlePrint">打印</button>
+      </div>
     </div>
 
     <div class="preview">
@@ -38,14 +40,14 @@
     </div>
 
     <template #footer>
-      <el-button @click="visible = false">关闭</el-button>
+      <button class="o-btn o-btn-secondary" @click="visible = false">关闭</button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import ODialog from '@/components/odoo/ODialog.vue'
 import type { OrderDocument } from '@/types/order'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
 import type { PrintTemplate } from '@/types/printTemplate'
@@ -82,13 +84,6 @@ let lastObjectUrl: string | null = null
 
 const orderSourceCompany = ref<OrderSourceCompany | null>(null)
 
-/**
- * 根据订单的 carrierId 和 invoiceType 匹配可用的模板
- * 匹配规则：
- * 1. 如果都匹配得上，优先选默认的（isDefault）
- * 2. 多个默认选第一个
- * 3. 如果没有默认，选匹配上的第一个
- */
 function findMatchingTemplates(order: OrderDocument, allTemplates: PrintTemplate[]): PrintTemplate[] {
   const carrierId = order?.carrierId
   const invoiceType = order?.invoiceType
@@ -97,10 +92,6 @@ function findMatchingTemplates(order: OrderDocument, allTemplates: PrintTemplate
     return []
   }
 
-  // 找出所有匹配的模板（carrierId 和 invoiceType 都匹配）
-  // 匹配规则：
-  // - 模板的 carrierId 为 'any' 或与订单的 carrierId 完全匹配
-  // - 模板的 invoiceType 为 'any' 或与订单的 invoiceType 完全匹配
   const matched = allTemplates.filter((t) => {
     const carrierMatch = t.carrierId === 'any' || t.carrierId === carrierId
     const invoiceMatch = t.invoiceType === 'any' || t.invoiceType === invoiceType
@@ -110,53 +101,40 @@ function findMatchingTemplates(order: OrderDocument, allTemplates: PrintTemplate
   return matched
 }
 
-/**
- * 从匹配的模板中选择第一个（优先默认模板）
- */
 function selectBestTemplate(matchedTemplates: PrintTemplate[]): PrintTemplate | null {
   if (matchedTemplates.length === 0) {
     return null
   }
 
-  // 优先选择默认模板
   const defaultTemplates = matchedTemplates.filter((t) => t.isDefault === true)
   if (defaultTemplates.length > 0) {
     return defaultTemplates[0] || null
   }
 
-  // 如果没有默认模板，返回第一个匹配的
   return matchedTemplates[0] || null
 }
 
-/**
- * 异步阻塞：找出所有可用模板 → 选择第一个 → 开始渲染
- */
 async function matchAndSelectTemplate() {
   matching.value = true
   error.value = ''
 
   try {
-    // 1. 找出所有可用模板
-    const availableTemplates = findMatchingTemplates(props.order, props.templates)
-    
-    if (availableTemplates.length === 0) {
+    const availTemplates = findMatchingTemplates(props.order, props.templates)
+
+    if (availTemplates.length === 0) {
       error.value = '該当するテンプレートが見つかりません（配送会社と送り状種類に一致するテンプレートが必要です）'
       selectedTemplateId.value = ''
       return
     }
 
-    // 2. 选择第一个（优先默认）
-    const bestTemplate = selectBestTemplate(availableTemplates)
+    const bestTemplate = selectBestTemplate(availTemplates)
     if (!bestTemplate) {
       error.value = 'テンプレートの選択に失敗しました'
       selectedTemplateId.value = ''
       return
     }
 
-    // 3. 设置选中的模板ID
     selectedTemplateId.value = bestTemplate.id
-
-    // 4. 自动触发渲染（通过 watch 监听 selectedTemplateId 变化）
   } catch (e: any) {
     error.value = e?.message || String(e)
     selectedTemplateId.value = ''
@@ -166,7 +144,6 @@ async function matchAndSelectTemplate() {
 }
 
 const availableTemplates = computed(() => {
-  // 显示所有匹配的模板供用户选择
   return findMatchingTemplates(props.order, props.templates)
 })
 
@@ -174,7 +151,6 @@ const selectedTemplate = computed(() => {
   return props.templates.find((t) => t.id === selectedTemplateId.value)
 })
 
-// 当弹窗打开时，异步匹配并选择模板
 watch(
   () => props.modelValue,
   async (v) => {
@@ -187,7 +163,6 @@ watch(
       return
     }
 
-    // 加载 OrderSourceCompany
     if (props.order?.orderSourceCompanyId) {
       try {
         orderSourceCompany.value = await fetchOrderSourceCompanyById(props.order.orderSourceCompanyId)
@@ -199,12 +174,10 @@ watch(
       orderSourceCompany.value = null
     }
 
-    // 异步阻塞：匹配并选择模板
     await matchAndSelectTemplate()
   },
 )
 
-// 当模板或DPI变化时，重新渲染
 watch(
   () => [selectedTemplateId.value, exportDpi.value],
   () => {
@@ -268,7 +241,7 @@ async function downloadPng() {
       if (id) await updateShipmentOrderStatus(String(id), 'mark-printed')
       emit('printed')
     } catch (e: any) {
-      ElMessage.error(e?.message || '印刷済み登録失败')
+      alert(e?.message || '印刷済み登録失败')
     }
   }
 }
@@ -281,10 +254,10 @@ async function handlePrint() {
       heightMm: selectedTemplate.value.canvas.heightMm,
       title: `Print ${props.order?.orderNumber || ''}`.trim(),
     })
-    ElMessage.success('已触发打印（请在打印对话框选择100%缩放/无边距）')
+    alert('已触发打印（请在打印对话框选择100%缩放/无边距）')
   } catch (error: any) {
     console.error('Print error:', error)
-    ElMessage.error(`打印失败: ${error?.message || String(error)}`)
+    alert(`打印失败: ${error?.message || String(error)}`)
   }
 
   if (recordPrinted.value) {
@@ -293,16 +266,17 @@ async function handlePrint() {
       if (id) await updateShipmentOrderStatus(String(id), 'mark-printed')
       emit('printed')
     } catch (e: any) {
-      ElMessage.error(e?.message || '印刷済み登録失败')
+      alert(e?.message || '印刷済み登録失败')
     }
   }
 }
 </script>
 
 <style scoped>
-.toolbar {
-  margin-bottom: 10px;
-}
+.toolbar { margin-bottom: 10px; }
+.toolbar-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.toolbar-item { display: flex; align-items: center; gap: 6px; }
+.toolbar-label { font-size: 13px; color: #606266; white-space: nowrap; }
 .preview {
   border: 1px solid #e5e7eb;
   background: #f9fafb;
@@ -312,24 +286,15 @@ async function handlePrint() {
   align-items: center;
   justify-content: center;
 }
-.placeholder {
-  color: #6b7280;
-}
-.matching {
-  color: #3b82f6;
-  padding: 12px;
-}
-.rendering {
-  color: #3b82f6;
-  padding: 12px;
-}
-.error {
-  color: #b91c1c;
-  padding: 12px;
-}
-.img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
+.placeholder { color: #6b7280; }
+.matching { color: #3b82f6; padding: 12px; }
+.rendering { color: #3b82f6; padding: 12px; }
+.error { color: #b91c1c; padding: 12px; }
+.img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.o-toggle { position:relative; display:inline-block; width:40px; height:20px; cursor:pointer; }
+.o-toggle input { opacity:0; width:0; height:0; }
+.o-toggle-slider { position:absolute; inset:0; background:#ccc; border-radius:20px; transition:background .2s; }
+.o-toggle-slider::before { content:''; position:absolute; left:2px; top:2px; width:16px; height:16px; background:#fff; border-radius:50%; transition:transform .2s; }
+.o-toggle input:checked + .o-toggle-slider { background:#714b67; }
+.o-toggle input:checked + .o-toggle-slider::before { transform:translateX(20px); }
 </style>

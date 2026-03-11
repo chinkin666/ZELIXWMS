@@ -1,19 +1,16 @@
 <template>
-  <el-dialog
-    v-model="visible"
+  <ODialog
+    :open="visible"
     title="注文分割"
+    @close="handleCancel"
     width="900px"
-    :close-on-click-modal="false"
-    @closed="resetState"
   >
     <div class="split-dialog-content" v-if="order">
-      <!-- ヘッダ情報 -->
       <div class="order-info">
         <p>元注文番号: <strong>{{ order.orderNumber }}</strong></p>
         <p>商品総数: <strong>{{ originalTotalQuantity }}</strong>個（{{ order.products?.length || 0 }}種類）</p>
       </div>
 
-      <!-- 未割当プール -->
       <div v-if="unallocatedItems.length > 0" class="unallocated-pool">
         <div class="pool-header">
           <span class="pool-title">未割当商品</span>
@@ -26,19 +23,16 @@
           >
             <span class="product-name">{{ item.productName || item.inputSku }}</span>
             <span class="unallocated-qty">x{{ item.remainingQty }}</span>
-            <el-button
-              size="small"
-              type="primary"
-              plain
+            <button
+              class="o-btn o-btn-primary o-btn-sm"
               @click="addUnallocatedToGroup(item)"
             >
               グループに追加
-            </el-button>
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- 分割グループ表示エリア -->
       <div class="groups-container">
         <div
           v-for="(group, groupIdx) in groups"
@@ -48,15 +42,14 @@
           <div class="group-header">
             <span class="group-title">注文 {{ groupIdx + 1 }}</span>
             <span class="group-count">{{ groupProductCount(group) }}個</span>
-            <el-button
+            <button
               v-if="groups.length > 2"
-              type="danger"
-              :icon="Delete"
-              size="small"
-              circle
-              plain
+              class="o-btn o-btn-danger o-btn-sm"
               @click="removeGroup(groupIdx)"
-            />
+              title="削除"
+            >
+              ✕
+            </button>
           </div>
           <draggable
             v-model="group.products"
@@ -68,29 +61,29 @@
           >
             <template #item="{ element: item }">
               <div class="product-item">
-                <el-icon class="drag-icon" :size="14"><Rank /></el-icon>
+                <span class="drag-icon">&#x2630;</span>
                 <div class="product-info">
                   <span class="product-name" :title="item.productName || item.inputSku">{{ item.productName || item.inputSku }}</span>
                   <span class="product-sku">{{ item.inputSku }}</span>
                 </div>
                 <div class="product-qty-control">
-                  <el-input-number
-                    v-model="item.quantity"
+                  <input
+                    type="number"
+                    class="o-input"
+                    v-model.number="item.quantity"
                     :min="1"
                     :max="item.maxQuantity"
-                    size="small"
-                    controls-position="right"
                     @change="onQuantityChange"
+                    style="width: 70px"
                   />
                 </div>
-                <el-button
-                  type="danger"
-                  :icon="Close"
-                  size="small"
-                  circle
-                  plain
+                <button
+                  class="o-btn o-btn-danger o-btn-sm"
                   @click="removeProductFromGroup(groupIdx, item)"
-                />
+                  title="削除"
+                >
+                  ✕
+                </button>
               </div>
             </template>
           </draggable>
@@ -99,36 +92,33 @@
           </div>
         </div>
 
-        <!-- グループ追加ボタン -->
         <div class="add-group-btn" @click="addGroup">
-          <el-icon :size="24"><Plus /></el-icon>
+          <span style="font-size:24px">+</span>
           <span>グループ追加</span>
         </div>
       </div>
 
-      <!-- バリデーションメッセージ -->
       <div v-if="validationError" class="validation-error">
-        <el-alert :title="validationError" type="error" :closable="false" show-icon />
+        <div class="alert-error">{{ validationError }}</div>
       </div>
     </div>
 
     <template #footer>
-      <el-button @click="handleCancel">キャンセル</el-button>
-      <el-button
-        type="primary"
-        :loading="loading"
-        :disabled="!!validationError"
+      <button class="o-btn o-btn-secondary" @click="handleCancel">キャンセル</button>
+      <button
+        class="o-btn o-btn-primary"
+        :disabled="!!validationError || loading"
         @click="handleConfirm"
       >
-        分割実行
-      </el-button>
+        {{ loading ? '処理中...' : '分割実行' }}
+      </button>
     </template>
-  </el-dialog>
+  </ODialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Plus, Delete, Close, Rank } from '@element-plus/icons-vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import draggable from 'vuedraggable'
 import type { OrderDocument } from '@/types/order'
 import type { SplitOrderRequest } from '@/types/carrierAutomation'
@@ -187,7 +177,6 @@ function initializeGroups() {
   if (!props.order?.products) return
   dragKeyCounter = 0
 
-  // グループ1: 全商品を含む
   const group1Products: SplitProductItem[] = props.order.products.map((p, idx) => ({
     dragKey: createDragKey(),
     originalIndex: idx,
@@ -198,14 +187,12 @@ function initializeGroups() {
     maxQuantity: p.quantity,
   }))
 
-  // グループ2: 空
   groups.value = [
     { id: 'group-1', products: group1Products },
     { id: 'group-2', products: [] },
   ]
 }
 
-// 各商品の全グループ合計数量を追跡
 function getAllocatedQuantity(originalIndex: number): number {
   let total = 0
   for (const group of groups.value) {
@@ -218,7 +205,6 @@ function getAllocatedQuantity(originalIndex: number): number {
   return total
 }
 
-// 未割当商品の計算
 const unallocatedItems = computed(() => {
   if (!props.order?.products) return []
   const result: Array<{ originalIndex: number; inputSku: string; productName?: string; imageUrl?: string; remainingQty: number }> = []
@@ -240,14 +226,12 @@ const unallocatedItems = computed(() => {
 })
 
 function onQuantityChange() {
-  // maxQuantity を再計算（他グループでの使用量を考慮）
   if (!props.order?.products) return
   for (const group of groups.value) {
     for (const item of group.products) {
       const originalQty = props.order.products[item.originalIndex]?.quantity || 0
       const otherAllocated = getAllocatedQuantity(item.originalIndex) - item.quantity
       item.maxQuantity = originalQty - otherAllocated
-      // 現在値がmaxを超えている場合は補正
       if (item.quantity > item.maxQuantity) {
         item.quantity = item.maxQuantity
       }
@@ -265,7 +249,6 @@ function addGroup() {
 }
 
 function removeGroup(idx: number) {
-  // 削除されるグループの商品を未割当に戻す（単にグループを削除する）
   groups.value.splice(idx, 1)
 }
 
@@ -278,14 +261,12 @@ function removeProductFromGroup(groupIdx: number, item: SplitProductItem) {
 }
 
 function addUnallocatedToGroup(item: { originalIndex: number; inputSku: string; productName?: string; imageUrl?: string; remainingQty: number }) {
-  // 最後のグループに追加（空グループがあればそちら）
   let targetGroup = groups.value.find((g) => g.products.length === 0)
   if (!targetGroup) {
     targetGroup = groups.value[groups.value.length - 1]
   }
   if (!targetGroup) return
 
-  // 既に同じ商品がグループにある場合は数量を加算
   const existing = targetGroup.products.find((p) => p.originalIndex === item.originalIndex)
   if (existing) {
     existing.quantity += item.remainingQty
@@ -304,7 +285,6 @@ function addUnallocatedToGroup(item: { originalIndex: number; inputSku: string; 
   onQuantityChange()
 }
 
-// バリデーション
 const validationError = computed(() => {
   if (groups.value.length < 2) return '最低2つのグループが必要です'
 
@@ -313,7 +293,6 @@ const validationError = computed(() => {
 
   if (unallocatedItems.value.length > 0) return '未割当の商品があります。すべての商品をグループに割り当ててください。'
 
-  // 過剰割当チェック
   if (!props.order?.products) return null
   for (let i = 0; i < props.order.products.length; i++) {
     const originalQty = props.order.products[i]!.quantity
@@ -343,10 +322,6 @@ function handleCancel() {
   visible.value = false
   emit('cancel')
 }
-
-function resetState() {
-  groups.value = []
-}
 </script>
 
 <style scoped>
@@ -358,7 +333,7 @@ function resetState() {
 .order-info {
   margin-bottom: 16px;
   padding: 12px;
-  background: var(--el-fill-color-light);
+  background: #f5f7fa;
   border-radius: 4px;
 }
 
@@ -366,168 +341,62 @@ function resetState() {
   margin: 4px 0;
 }
 
+.alert-error {
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  color: #991b1b;
+  font-weight: 500;
+}
+
 .unallocated-pool {
   margin-bottom: 16px;
   padding: 12px;
-  background: var(--el-color-warning-light-9);
-  border: 1px solid var(--el-color-warning-light-5);
+  background: #fffbeb;
+  border: 1px solid #fde68a;
   border-radius: 4px;
 }
 
-.pool-header {
-  margin-bottom: 8px;
-}
+.pool-header { margin-bottom: 8px; }
+.pool-title { font-weight: 600; color: #b45309; }
 
-.pool-title {
-  font-weight: 600;
-  color: var(--el-color-warning);
-}
+.pool-items { display: flex; flex-direction: column; gap: 6px; }
 
-.pool-items {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.unallocated-item { display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: white; border-radius: 4px; }
 
-.unallocated-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  background: white;
-  border-radius: 4px;
-}
+.groups-container { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
 
-.groups-container {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-}
+.group-card { flex: 1; min-width: 300px; max-width: 400px; border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; background: #fff; }
 
-.group-card {
-  flex: 1;
-  min-width: 300px;
-  max-width: 400px;
-  border: 1px solid var(--el-border-color);
-  border-radius: 8px;
-  padding: 12px;
-  background: var(--el-fill-color-blank);
-}
+.group-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #e5e7eb; }
 
-.group-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
+.group-title { font-weight: 600; font-size: 14px; }
+.group-count { color: #6b7280; font-size: 12px; margin-left: auto; }
 
-.group-title {
-  font-weight: 600;
-  font-size: 14px;
-}
+.group-products { min-height: 60px; }
 
-.group-count {
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  margin-left: auto;
-}
+.group-empty { text-align: center; padding: 20px; color: #9ca3af; font-size: 13px; border: 2px dashed #e5e7eb; border-radius: 4px; }
 
-.group-products {
-  min-height: 60px;
-}
+.product-item { display: flex; align-items: center; gap: 6px; padding: 6px 8px; margin-bottom: 4px; background: #f3f4f6; border-radius: 4px; border: 1px solid #e5e7eb; cursor: grab; }
 
-.group-empty {
-  text-align: center;
-  padding: 20px;
-  color: var(--el-text-color-placeholder);
-  font-size: 13px;
-  border: 2px dashed var(--el-border-color-lighter);
-  border-radius: 4px;
-}
+.product-item:active { cursor: grabbing; }
 
-.product-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  margin-bottom: 4px;
-  background: var(--el-fill-color-light);
-  border-radius: 4px;
-  border: 1px solid var(--el-border-color-lighter);
-  cursor: grab;
-}
+.drag-icon { color: #9ca3af; flex-shrink: 0; font-size: 14px; }
 
-.product-item:active {
-  cursor: grabbing;
-}
+.product-info { flex: 1; min-width: 0; overflow: hidden; }
 
-.drag-icon {
-  color: var(--el-text-color-placeholder);
-  flex-shrink: 0;
-}
+.product-name { display: block; font-size: 12px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.product-info {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-}
+.product-sku { display: block; font-size: 11px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.product-name {
-  display: block;
-  font-size: 12px;
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.product-qty-control { flex-shrink: 0; width: 80px; }
 
-.product-sku {
-  display: block;
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.add-group-btn { min-width: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px; border: 2px dashed #d1d5db; border-radius: 8px; cursor: pointer; color: #6b7280; transition: all 0.2s; }
 
-.product-qty-control {
-  flex-shrink: 0;
-  width: 80px;
-}
+.add-group-btn:hover { border-color: var(--o-brand-primary, #714b67); color: var(--o-brand-primary, #714b67); }
 
-.product-qty-control :deep(.el-input-number) {
-  width: 100%;
-}
+.validation-error { margin-top: 12px; }
 
-.add-group-btn {
-  min-width: 120px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 20px;
-  border: 2px dashed var(--el-border-color);
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--el-text-color-secondary);
-  transition: all 0.2s;
-}
-
-.add-group-btn:hover {
-  border-color: var(--el-color-primary);
-  color: var(--el-color-primary);
-}
-
-.validation-error {
-  margin-top: 12px;
-}
-
-.drag-ghost {
-  opacity: 0.5;
-  background: var(--el-color-primary-light-9);
-}
+.drag-ghost { opacity: 0.5; background: #ede9fe; }
 </style>

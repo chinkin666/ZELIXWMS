@@ -51,38 +51,37 @@
       total-label="表示件数"
     >
       <template #left>
-        <el-button
+        <button
           v-if="batchDeleteEnabled"
-          type="danger"
-          plain
-          size="small"
+          class="o-btn o-btn-danger o-btn-sm"
           :disabled="tableSelectedKeys.length === 0"
           @click="tableRef?.triggerBatchDelete()"
         >
           一括削除 ({{ tableSelectedKeys.length }})
-        </el-button>
+        </button>
       </template>
       <template #right>
-        <el-button
+        <button
+          class="o-btn o-btn-secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleCustomExportClick"
         >
           出荷明細リスト出力(csv)
-        </el-button>
-        <el-button
+        </button>
+        <button
+          class="o-btn o-btn-secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleFormExportClick"
         >
           出荷明細リスト出力(pdf)
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="isConfirming || b2Validating"
-          :disabled="tableSelectedKeys.length === 0"
+        </button>
+        <button
+          class="o-btn o-btn-primary"
+          :disabled="tableSelectedKeys.length === 0 || isConfirming || b2Validating"
           @click="handleConfirmPrintReady"
         >
           {{ b2Validating ? 'B2 Cloud 検証中...' : '出荷指示確定' }}
-        </el-button>
+        </button>
       </template>
     </OrderBottomBar>
 
@@ -138,8 +137,6 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref, watch } from 'vue'
-import { ElButton, ElMessage, ElSpace } from 'element-plus'
-import type { HeaderClassNameGetter } from 'element-plus'
 import Table from '@/components/table/OrderTable.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
@@ -156,7 +153,6 @@ import { fetchCarriers } from '@/api/carrier'
 import type { Carrier } from '@/types/carrier'
 import { fetchProducts } from '@/api/product'
 import type { Product } from '@/types/product'
-import { ElMessageBox } from 'element-plus'
 import type { OrderDocument } from '@/types/order'
 import { yamatoB2Validate } from '@/api/carrierAutomation'
 import type { YamatoB2ValidateResult } from '@/types/carrierAutomation'
@@ -267,13 +263,13 @@ const enrichRowWithProductsMeta = (row: any) => {
 const searchedRows = computed(() => {
   // backfill _productsMeta for client-side search (some old docs may not have names)
   let filtered = allRows.value.map(enrichRowWithProductsMeta)
-  
+
   // 默认只显示 confirm.isConfirmed 为 false 或未设置的条目
   filtered = filtered.filter((row: any) => {
     const isConfirmed = row.status?.confirm?.isConfirmed
     return isConfirmed !== true
   })
-  
+
   if (currentSearchPayload.value && Object.keys(currentSearchPayload.value).length > 0) {
     // use searchColumns (includes productSku/productName fields) instead of baseColumns
     filtered = filterDataBySearch(filtered, searchColumns.value, currentSearchPayload.value)
@@ -297,7 +293,7 @@ const handleView = async (row: any) => {
     selectedOrder.value = await fetchShipmentOrder(String(id))
     viewDialogVisible.value = true
   } catch (e: any) {
-    ElMessage.error(e?.message || '詳細の取得に失敗しました')
+    alert(e?.message || '詳細の取得に失敗しました')
   }
 }
 
@@ -308,7 +304,7 @@ const handleEdit = async (row: any) => {
     selectedOrder.value = await fetchShipmentOrder(String(id))
     editDialogVisible.value = true
   } catch (e: any) {
-    ElMessage.error(e?.message || '詳細の取得に失敗しました')
+    alert(e?.message || '詳細の取得に失敗しました')
   }
 }
 
@@ -317,24 +313,15 @@ const handleDelete = async (row: any) => {
     const id = row?._id
     if (!id) return
 
-    await ElMessageBox.confirm(
-      `注文番号: ${row.orderNumber || id}\nこの出荷予定を削除しますか？`,
-      '削除確認',
-      {
-        confirmButtonText: '削除',
-        cancelButtonText: 'キャンセル',
-        type: 'warning',
-        dangerouslyUseHTMLString: false,
-      },
-    )
+    if (!confirm(`注文番号: ${row.orderNumber || id}\nこの出荷予定を削除しますか？`)) return
 
     await deleteShipmentOrder(String(id))
-    ElMessage.success('出荷予定を削除しました')
+    alert('出荷予定を削除しました')
     // 重新加载列表
     await loadOrders()
   } catch (e: any) {
     if (e === 'cancel') return
-    ElMessage.error(e?.message || '削除に失敗しました')
+    alert(e?.message || '削除に失敗しました')
   }
 }
 
@@ -367,9 +354,9 @@ const handleFormExportClick = () => {
 
 const handleBatchDelete = async (payload: { selectedKeys: Array<string | number>; selectedRows: any[] }) => {
   const { selectedKeys, selectedRows } = payload
-  
+
   if (selectedKeys.length === 0) {
-    ElMessage.warning('削除する行を選択してください')
+    alert('削除する行を選択してください')
     return
   }
 
@@ -381,16 +368,7 @@ const handleBatchDelete = async (payload: { selectedKeys: Array<string | number>
     const orderNumbersText = orderNumbers.length > 0 ? orderNumbers.join(', ') : ''
     const moreText = selectedRows.length > 5 ? `他${selectedRows.length - 5}件` : ''
 
-    await ElMessageBox.confirm(
-      `選択した${selectedKeys.length}件の出荷予定を削除しますか？\n${orderNumbersText}${moreText ? `\n${moreText}` : ''}`,
-      '一括削除確認',
-      {
-        confirmButtonText: '削除',
-        cancelButtonText: 'キャンセル',
-        type: 'warning',
-        dangerouslyUseHTMLString: false,
-      },
-    )
+    if (!confirm(`選択した${selectedKeys.length}件の出荷予定を削除しますか？\n${orderNumbersText}${moreText ? `\n${moreText}` : ''}`)) return
 
     const ids = selectedKeys.map((key) => String(key))
 
@@ -399,11 +377,11 @@ const handleBatchDelete = async (payload: { selectedKeys: Array<string | number>
     const successCount = result?.deletedCount ?? 0
 
     if (successCount > 0) {
-      ElMessage.success(`${successCount}件の出荷予定を削除しました`)
+      alert(`${successCount}件の出荷予定を削除しました`)
     }
     if (successCount < ids.length) {
       const failCount = ids.length - successCount
-      ElMessage.warning(`${failCount}件の削除に失敗しました`)
+      alert(`${failCount}件の削除に失敗しました`)
     }
 
     // 清空选择并重新加载列表
@@ -411,7 +389,7 @@ const handleBatchDelete = async (payload: { selectedKeys: Array<string | number>
     await loadOrders()
   } catch (e: any) {
     if (e === 'cancel') return
-    ElMessage.error(e?.message || '一括削除に失敗しました')
+    alert(e?.message || '一括削除に失敗しました')
   }
 }
 
@@ -425,7 +403,7 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
 }
 
 const handleSave = (_payload: Record<string, { operator: Operator; value: any }>) => {
-  ElMessage.success('検索条件を保存しました（ダミー）')
+  alert('検索条件を保存しました（ダミー）')
 }
 
 /**
@@ -467,12 +445,12 @@ const doConfirmOrders = async (ids: string[]) => {
   isConfirming.value = true
   try {
     const result = await updateShipmentOrderStatusBulk(ids, 'mark-print-ready')
-    ElMessage.success(`${ids.length}件の出荷指示確定しました`)
+    alert(`${ids.length}件の出荷指示確定しました`)
 
     tableSelectedKeys.value = []
     await loadOrders()
   } catch (e: any) {
-    ElMessage.error(e?.message || '出荷データの確認に失敗しました')
+    alert(e?.message || '出荷データの確認に失敗しました')
   } finally {
     isConfirming.value = false
   }
@@ -480,7 +458,7 @@ const doConfirmOrders = async (ids: string[]) => {
 
 const handleConfirmPrintReady = async () => {
   if (tableSelectedKeys.value.length === 0) {
-    ElMessage.warning('確認する行を選択してください')
+    alert('確認する行を選択してください')
     return
   }
 
@@ -496,21 +474,12 @@ const handleConfirmPrintReady = async () => {
     const orderNumbersText = orderNumbers.length > 0 ? orderNumbers.join(', ') : ''
     const moreText = selectedRows.length > 5 ? `他${selectedRows.length - 5}件` : ''
 
-    await ElMessageBox.confirm(
-      `選択した${tableSelectedKeys.value.length}件の出荷指示確定しますか？\n${orderNumbersText}${moreText ? `\n${moreText}` : ''}`,
-      '出荷指示確定',
-      {
-        confirmButtonText: '確認',
-        cancelButtonText: 'キャンセル',
-        type: 'info',
-        dangerouslyUseHTMLString: false,
-      },
-    )
+    if (!confirm(`選択した${tableSelectedKeys.value.length}件の出荷指示確定しますか？\n${orderNumbersText}${moreText ? `\n${moreText}` : ''}`)) return
 
     const ids = tableSelectedKeys.value.map((key) => String(key)).filter(Boolean)
 
     if (ids.length === 0) {
-      ElMessage.warning('有効なIDがありません')
+      alert('有効なIDがありません')
       return
     }
 
@@ -541,7 +510,7 @@ const handleConfirmPrintReady = async () => {
     }
   } catch (e: any) {
     if (e === 'cancel') return
-    ElMessage.error(e?.message || '出荷データの確認に失敗しました')
+    alert(e?.message || '出荷データの確認に失敗しました')
   }
 }
 
@@ -555,38 +524,33 @@ const tableColumns = computed(() => {
     align: 'center' as const,
     cellRenderer: ({ rowData }: { rowData: any }) =>
       h(
-        ElSpace,
-        { size: 8 },
-        () => [
+        'div',
+        { style: 'display:inline-flex;gap:8px;' },
+        [
           h(
-            ElButton,
+            'button',
             {
-              type: 'primary',
-              size: 'small',
-              plain: true,
+              class: 'o-btn o-btn-primary o-btn-sm',
               onClick: () => handleView(rowData),
             },
-            () => '詳細',
+            '詳細',
           ),
           h(
-            ElButton,
+            'button',
             {
-              type: 'success',
-              size: 'small',
-              plain: true,
+              class: 'o-btn o-btn-secondary o-btn-sm',
+              style: 'border-color:#67c23a;color:#67c23a;',
               onClick: () => handleEdit(rowData),
             },
-            () => '編集',
+            '編集',
           ),
           h(
-            ElButton,
+            'button',
             {
-              type: 'danger',
-              size: 'small',
-              plain: true,
+              class: 'o-btn o-btn-danger o-btn-sm',
               onClick: () => handleDelete(rowData),
             },
-            () => '削除',
+            '削除',
           ),
         ],
       ),
@@ -603,7 +567,7 @@ const headerGroupingConfig = computed<HeaderGroupingConfig>(() => {
   return buildOrderHeaderGroupingConfig(baseColumns.value as any)
 })
 
-const headerClass: HeaderClassNameGetter<any> = () => ''
+const headerClass = (): string => ''
 
 const tableProps = computed(() => {
   return {
@@ -627,7 +591,7 @@ const loadCarriers = async () => {
     carriers.value = await fetchCarriers({ enabled: true })
   } catch (e) {
     console.error(e)
-    ElMessage.warning('配送会社マスタの取得に失敗しました')
+    alert('配送会社マスタの取得に失敗しました')
   }
 }
 
@@ -637,7 +601,7 @@ const loadOrders = async () => {
     const data = await fetchShipmentOrders()
     allRows.value = Array.isArray(data) ? data : []
   } catch (e: any) {
-    ElMessage.error(e?.message || '出荷予定の取得に失敗しました')
+    alert(e?.message || '出荷予定の取得に失敗しました')
   }
 }
 
@@ -731,5 +695,3 @@ onMounted(async () => {
   background-color: #fff59d !important;
 }
 </style>
-
-

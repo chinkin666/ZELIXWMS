@@ -3,38 +3,34 @@
     <div class="page-header">
       <h1 class="page-title">商品スキャン検品</h1>
       <div class="header-actions">
-        <el-switch
-          v-model="autoPrintEnabled"
-          active-text="自動印刷"
-          inactive-text="手動印刷"
-          @change="saveAutoPrintSetting"
-        />
-        <el-button @click="handleBack">戻る</el-button>
+        <label class="o-toggle">
+          <input type="checkbox" v-model="autoPrintEnabled" @change="saveAutoPrintSetting" />
+          <span class="o-toggle__slider"></span>
+          <span class="toggle-label">{{ autoPrintEnabled ? '自動印刷' : '手動印刷' }}</span>
+        </label>
+        <button class="o-btn o-btn-secondary" @click="handleBack">戻る</button>
       </div>
     </div>
 
     <!-- 订单信息区域 -->
     <div class="order-info-section">
-      <el-descriptions :column="2" border size="small">
-        <el-descriptions-item
-          v-for="item in summaryItems"
-          :key="item.key"
-          :label="item.label"
-        >
-          <span class="value">{{ item.value }}</span>
-        </el-descriptions-item>
-      </el-descriptions>
+      <div class="order-info-grid">
+        <template v-for="item in summaryItems" :key="item.key">
+          <div class="info-label">{{ item.label }}</div>
+          <div class="info-value">{{ item.value }}</div>
+        </template>
+      </div>
     </div>
 
     <!-- 中间输入区域 -->
     <div class="input-section">
-      <el-input
+      <input
+        class="o-input main-input"
         v-model="inputValue"
-        class="main-input"
         placeholder="スキャンまたは入力してください"
-        size="large"
         @keyup.enter="handleInput"
         @input="handleInputChange"
+        ref="mainInputRef"
       />
     </div>
 
@@ -54,8 +50,6 @@
         :page-size="10"
       />
     </div>
-
-
 
     <!-- 下方表格：已扫描商品 -->
     <div class="table-section bottom-table">
@@ -86,20 +80,20 @@
         </div>
       </div>
       <div class="bottom-bar__right">
-        <el-button
-          type="warning"
-          :loading="isUnconfirming"
+        <button
+          class="o-btn o-btn-warning"
+          :disabled="isUnconfirming"
           @click="openUnconfirmDialog"
         >
-          確認取消
-        </el-button>
-        <el-button
-          type="info"
-          :loading="isChangingInvoiceType"
+          {{ isUnconfirming ? '処理中...' : '確認取消' }}
+        </button>
+        <button
+          class="o-btn o-btn-info"
+          :disabled="isChangingInvoiceType"
           @click="openChangeInvoiceTypeDialog"
         >
-          送り状種類変更
-        </el-button>
+          {{ isChangingInvoiceType ? '処理中...' : '送り状種類変更' }}
+        </button>
       </div>
     </div>
 
@@ -121,13 +115,10 @@
     />
 
     <!-- 扫描完成提示弹窗 -->
-    <el-dialog
-      v-model="completionDialogVisible"
+    <ODialog
+      :open="completionDialogVisible"
       title="スキャン完了"
-      width="980px"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
+      size="lg"
     >
       <div class="completion-message">
         <p>すべての商品のスキャンが完了しました。</p>
@@ -144,26 +135,27 @@
       </div>
 
       <template #footer>
-        <el-button @click="handleCompletionConfirm">確認（印刷なし）</el-button>
-        <el-button
-          type="primary"
+        <button class="o-btn o-btn-secondary" @click="handleCompletionConfirm">確認（印刷なし）</button>
+        <button
+          class="o-btn o-btn-primary"
           :disabled="!printImageUrl || printRendering"
           @click="handlePrint"
         >
           印刷
-        </el-button>
+        </button>
       </template>
-    </el-dialog>
+    </ODialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
-import { ElButton, ElInput, ElMessage, ElMessageBox, ElDialog, ElDescriptions, ElDescriptionsItem } from 'element-plus'
 import { useRouter, useRoute } from 'vue-router'
 import Table from '@/components/table/Table.vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vue'
 import ChangeInvoiceTypeDialog from '@/components/dialogs/ChangeInvoiceTypeDialog.vue'
+import { useToast } from '@/composables/useToast'
 import type { OrderDocument } from '@/types/order'
 import type { Carrier } from '@/types/carrier'
 import type { Product } from '@/types/product'
@@ -182,6 +174,15 @@ import { yamatoB2Unconfirm, changeInvoiceType, isCarrierDeleteError } from '@/ap
 
 const router = useRouter()
 const route = useRoute()
+
+// Toast helpers
+const _toast = useToast()
+const toast = {
+  success: (msg: string) => _toast.show(msg, 'success'),
+  error: (msg: string) => _toast.show(msg, 'danger'),
+  warning: (msg: string) => _toast.show(msg, 'warning'),
+  info: (msg: string) => _toast.show(msg, 'info'),
+}
 
 // 订单数据
 const order = ref<OrderDocument | null>(null)
@@ -238,6 +239,9 @@ const scannedItems = ref<ProductItem[]>([])
 // 输入框
 const inputValue = ref('')
 
+// 输入框 ref（用于自动聚焦）
+const mainInputRef = ref<HTMLInputElement | null>(null)
+
 // 完成弹窗
 const completionDialogVisible = ref(false)
 
@@ -274,7 +278,7 @@ const handleUnconfirmConfirm = async (reason: string, skipCarrierDelete = false)
           message += `（B2 Cloud削除失敗: ${result.b2DeleteResult.error}）`
         }
       }
-      ElMessage.success(message)
+      toast.success(message)
 
       // 从上级页面的列表中移除该订单
       try {
@@ -303,25 +307,16 @@ const handleUnconfirmConfirm = async (reason: string, skipCarrierDelete = false)
     // B2削除エラーの場合はスキップ確認ダイアログを表示
     if (isCarrierDeleteError(e)) {
       isUnconfirming.value = false
-      try {
-        await ElMessageBox.confirm(
-          `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）`,
-          'B2 Cloud削除エラー',
-          {
-            confirmButtonText: 'スキップして続行',
-            cancelButtonText: 'キャンセル',
-            type: 'warning',
-          }
-        )
+      const confirmed = confirm(
+        `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）`
+      )
+      if (confirmed) {
         // スキップして再実行
         await handleUnconfirmConfirm(reason, true)
-        return
-      } catch {
-        // キャンセルされた場合
-        return
       }
+      return
     }
-    ElMessage.error(e?.message || '確認取消に失敗しました')
+    toast.error(e?.message || '確認取消に失敗しました')
     unconfirmDialogVisible.value = false
   } finally {
     isUnconfirming.value = false
@@ -354,9 +349,9 @@ const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrie
       }
       if (result.requiresManualUpload) {
         message += '。手動連携の注文は運送会社への再登録が必要です。'
-        ElMessage.warning(message)
+        toast.warning(message)
       } else {
-        ElMessage.success(message)
+        toast.success(message)
       }
 
       // 内蔵Carrier（自動API対応）の場合：注文は自動再提出済み、商品スキャンページに留まる
@@ -403,32 +398,23 @@ const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrie
       router.push('/shipment-operations/one-by-one/scan')
     } else {
       const errorMsg = result.errors?.join(', ') || '送り状種類変更に失敗しました'
-      ElMessage.error(errorMsg)
+      toast.error(errorMsg)
     }
     changeInvoiceTypeDialogVisible.value = false
   } catch (e: any) {
     // B2削除エラーの場合はスキップ確認ダイアログを表示
     if (isCarrierDeleteError(e)) {
       isChangingInvoiceType.value = false
-      try {
-        await ElMessageBox.confirm(
-          `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）`,
-          'B2 Cloud削除エラー',
-          {
-            confirmButtonText: 'スキップして続行',
-            cancelButtonText: 'キャンセル',
-            type: 'warning',
-          }
-        )
+      const confirmed = confirm(
+        `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）`
+      )
+      if (confirmed) {
         // スキップして再実行
         await handleChangeInvoiceTypeConfirm(newInvoiceType, true)
-        return
-      } catch {
-        // キャンセルされた場合
-        return
       }
+      return
     }
-    ElMessage.error(e?.message || '送り状種類変更に失敗しました')
+    toast.error(e?.message || '送り状種類変更に失敗しました')
     changeInvoiceTypeDialogVisible.value = false
   } finally {
     isChangingInvoiceType.value = false
@@ -580,12 +566,12 @@ const getProductMatchingValues = (item: ProductItem): string[] => {
 const handleInput = () => {
   const input = inputValue.value.trim()
   if (!input) {
-    ElMessage.warning('入力してください')
+    toast.warning('入力してください')
     return
   }
 
   if (pendingItems.value.length === 0) {
-    ElMessage.info('スキャン待ちの商品がありません')
+    toast.info('スキャン待ちの商品がありません')
     return
   }
 
@@ -605,7 +591,7 @@ const handleInput = () => {
   }
 
   if (!matchedItem || matchedIndex === -1) {
-    ElMessage.warning(`マッチする商品が見つかりません: ${input}`)
+    toast.warning(`マッチする商品が見つかりません: ${input}`)
     // 清空输入框，避免影响后续的自动输入
     inputValue.value = ''
     return
@@ -620,14 +606,14 @@ const handleInput = () => {
     productData: matchedItem.productData,
   }
   scannedItems.value.push(scannedItem)
-  
+
   // 原商品数量-1
   matchedItem.quantity -= 1
-  
+
   // 如果数量为0，从上方表格移除
   if (matchedItem.quantity === 0) {
     pendingItems.value.splice(matchedIndex, 1)
-    
+
     // 检查是否所有商品都已扫描完成
     if (pendingItems.value.length === 0) {
       completionDialogVisible.value = true
@@ -690,7 +676,7 @@ const processInitialScan = (scanValue: string) => {
     }
   }
 
-  ElMessage.success(`自動検品: ${matchedItem.name} (${scanValue})`)
+  toast.success(`自動検品: ${matchedItem.name} (${scanValue})`)
 }
 
 // 初始化商品列表（每次都是全新状态，不加载缓存）
@@ -870,7 +856,7 @@ const renderPrintPreview = async () => {
 // 打印订单
 const handlePrint = async () => {
   if (!printImageUrl.value || !printTemplate.value || !order.value) {
-    ElMessage.warning('印刷プレビューが準備できていません')
+    toast.warning('印刷プレビューが準備できていません')
     return
   }
 
@@ -880,7 +866,7 @@ const handlePrint = async () => {
       heightMm: printTemplate.value.canvas.heightMm,
       title: `Print ${order.value.orderNumber || ''}`.trim(),
     })
-    
+
     // 向后端提交订单状态（标记已打印 + 已检品）
     const orderId = order.value._id
     if (orderId) {
@@ -892,25 +878,25 @@ const handlePrint = async () => {
       } catch (statusError: any) {
         console.error('Failed to update order status:', statusError)
         // 状态更新失败不阻断打印流程，但显示警告
-        ElMessage.warning(`ステータス更新に失敗しました: ${statusError?.message || String(statusError)}`)
+        toast.warning(`ステータス更新に失敗しました: ${statusError?.message || String(statusError)}`)
       }
     }
-    
+
     // 根据打印方式显示不同的消息（本地打印桥接不会显示打印对话框）
     const config = getPrintConfig()
     if (config.method === 'local-bridge') {
-      ElMessage.success('印刷ジョブを送信しました')
+      toast.success('印刷ジョブを送信しました')
     } else {
-      ElMessage.success('印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）')
+      toast.success('印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）')
     }
-    
+
     // 如果自动打印开关开启，打印后延迟10ms自动返回上一页
     if (autoPrintEnabled.value) {
       // 清除之前的自动返回定时器
       if (autoReturnTimer) {
         clearTimeout(autoReturnTimer)
       }
-      
+
       autoReturnTimer = window.setTimeout(() => {
         autoReturnTimer = null
         handleCompletionConfirm()
@@ -918,7 +904,7 @@ const handlePrint = async () => {
     }
   } catch (e: any) {
     console.error('Print error:', e)
-    ElMessage.error(`印刷に失敗しました: ${e?.message || String(e)}`)
+    toast.error(`印刷に失敗しました: ${e?.message || String(e)}`)
   }
 }
 
@@ -926,10 +912,10 @@ const handlePrint = async () => {
 const handleCompletionConfirm = () => {
   completionDialogVisible.value = false
   cleanupPrintImage()
-  
+
   // 更新上一级页面的订单状态
   updateParentPageOrderState()
-  
+
   // 返回上一级页面
   router.push('/shipment-operations/one-by-one/scan')
 }
@@ -955,7 +941,7 @@ watch(
         clearTimeout(autoPrintTimer)
         autoPrintTimer = null
       }
-      
+
       // 弹窗打开时，自动渲染打印预览
       await renderPrintPreview()
     } else {
@@ -978,7 +964,7 @@ watch(
       if (autoPrintTimer) {
         clearTimeout(autoPrintTimer)
       }
-      
+
       // 如果预览已渲染且自动打印开启，延迟10ms后自动打印
       autoPrintTimer = window.setTimeout(() => {
         autoPrintTimer = null
@@ -1007,7 +993,7 @@ onMounted(async () => {
   // 从路由参数获取订单ID
   const orderId = route.params.orderId as string
   if (!orderId) {
-    ElMessage.error('注文が見つかりません')
+    toast.error('注文が見つかりません')
     router.push('/shipment-operations/one-by-one/scan')
     return
   }
@@ -1015,10 +1001,10 @@ onMounted(async () => {
   try {
     // 加载订单
     order.value = await fetchShipmentOrder(orderId)
-    
+
     // 加载配送会社
     carriers.value = await fetchCarriers()
-    
+
     // 预加载所有商品信息
     const allProducts = await fetchProducts()
     for (const product of allProducts) {
@@ -1026,7 +1012,7 @@ onMounted(async () => {
         productCache.set(product.sku, product)
       }
     }
-    
+
     // 初始化商品列表
     initializeItems()
 
@@ -1041,20 +1027,90 @@ onMounted(async () => {
 
     // 自动聚焦到输入框
     setTimeout(() => {
-      const inputEl = document.querySelector('.main-input input') as HTMLInputElement
-      if (inputEl) {
-        inputEl.focus()
+      if (mainInputRef.value) {
+        mainInputRef.value.focus()
       }
     }, 100)
   } catch (e: any) {
     console.error('Failed to load order:', e)
-    ElMessage.error(e?.message || '注文の読み込みに失敗しました')
+    toast.error(e?.message || '注文の読み込みに失敗しました')
     router.push('/shipment-operations/one-by-one/scan')
   }
 })
 </script>
 
 <style scoped>
+.o-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 8px;
+}
+
+.o-toggle input {
+  display: none;
+}
+
+.o-toggle__slider {
+  width: 40px;
+  height: 20px;
+  background: var(--o-toggle-off, #c0c4cc);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.o-toggle__slider::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+}
+
+.o-toggle input:checked + .o-toggle__slider {
+  background: var(--o-brand-primary, #875a7b);
+}
+
+.o-toggle input:checked + .o-toggle__slider::after {
+  transform: translateX(20px);
+}
+
+.toggle-label {
+  font-size: 13px;
+  color: #606266;
+}
+
+.order-info-grid {
+  display: grid;
+  grid-template-columns: 180px 1fr 180px 1fr;
+  gap: 0;
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: var(--o-border-radius, 4px);
+  overflow: hidden;
+}
+
+.info-label {
+  padding: 8px 12px;
+  background: var(--o-gray-100, #f5f7fa);
+  font-weight: 500;
+  font-size: 13px;
+  border-bottom: 1px solid var(--o-border-color, #e4e7ed);
+  border-right: 1px solid var(--o-border-color, #e4e7ed);
+}
+
+.info-value {
+  padding: 8px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--o-border-color, #e4e7ed);
+  border-right: 1px solid var(--o-border-color, #e4e7ed);
+}
+
 .completion-message {
   margin-bottom: 20px;
   padding: 12px;
@@ -1141,10 +1197,6 @@ onMounted(async () => {
   border-radius: 8px;
 }
 
-.value {
-  white-space: pre-wrap;
-}
-
 .table-section {
   display: flex;
   flex-direction: column;
@@ -1179,11 +1231,9 @@ onMounted(async () => {
 
 .main-input {
   flex: 1;
-}
-
-.main-input :deep(.el-input__wrapper) {
   font-size: 20px;
   padding: 16px;
+  height: auto;
 }
 
 .top-table {
@@ -1233,14 +1283,25 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-.completion-message {
-  text-align: center;
-  padding: 20px;
+.o-btn-warning {
+  background-color: #e6a23c;
+  color: #fff;
+  border: 1px solid #e6a23c;
 }
 
-.completion-message p {
-  margin: 8px 0;
-  font-size: 14px;
+.o-btn-warning:hover:not(:disabled) {
+  background-color: #ebb563;
+  border-color: #ebb563;
+}
+
+.o-btn-info {
+  background-color: #909399;
+  color: #fff;
+  border: 1px solid #909399;
+}
+
+.o-btn-info:hover:not(:disabled) {
+  background-color: #a6a9ad;
+  border-color: #a6a9ad;
 }
 </style>
-

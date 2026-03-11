@@ -7,176 +7,265 @@
                 <div class="filter-categories-list">
                     <template v-for="(fields, categoryKey) in fieldsByCategory" :key="categoryKey">
                         <template v-if="fields.length > 0">
-                            <el-popover 
-                                v-model:visible="categoryPopovers[categoryKey]"
-                                placement="bottom-start"
-                                trigger="click"
-                                :width="540"
-                                :teleported="false"
-                                :close-on-click-outside="true"
-                            >
-                    <template #reference>
-                                    <div class="filter-category-header">
-                                        <span class="filter-category-name">{{ categoryLabels[categoryKey as keyof typeof categoryLabels] }}</span>
-                                        <el-icon class="filter-category-icon">
-                                            <ArrowDown />
-                            </el-icon>
-                        </div>
-                                </template>
-                                <div class="filter-category-menu-content">
-                                    <div class="filter-category-items">
-                                        <div 
-                                            v-for="field in fields" 
-                                            :key="field.key" 
-                                            class="filter-category-item"
-                                    :class="{ active: selectedField?.key === field.key }"
-                                            @click="selectField(field, categoryKey)"
-                                        >
-                                    {{ field.label }}
+                            <div class="filter-category-popover-wrapper">
+                                <div class="filter-category-header" @click="toggleCategoryPopover(categoryKey)">
+                                    <span class="filter-category-name">{{ categoryLabels[categoryKey as keyof typeof categoryLabels] }}</span>
+                                    <span class="filter-category-icon">&#9662;</span>
                                 </div>
-                                </div>
-                                    <div class="filter-editor" v-if="selectedField && getFieldCategory(selectedField.key) === categoryKey">
-                                <div class="filter-editor-label">{{ selectedField?.label }}</div>
-                                <div class="filter-editor-content">
-                                    <!-- 非日期类型的操作符选择器（boolean は値選択のみ表示する） -->
-                                    <div class="filter-operator-selector"
-                                        v-if="selectedField?.type !== 'date' && selectedField?.type !== 'daterange' && selectedField?.type !== 'boolean'">
-                                        <el-select v-model="editingFilter.operator" style="width: 100%"
-                                            :popper-append-to-body="false" :teleported="false"
-                                            @change="handleOperatorChange" @click.stop @mousedown.stop>
-                                            <el-option v-for="op in getOperatorOptions(selectedField?.type || 'string')"
-                                                :key="op.value" :label="op.label" :value="op.value" />
-                                        </el-select>
-                                    </div>
-
-                                    <!-- 字符串 -->
-                                    <template v-if="selectedField?.type === 'string'">
-                                        <el-input v-model="editingFilter.value" @input="updateEditingFilter"
-                                            :disabled="isValueDisabled(editingFilter.operator)" />
-                                    </template>
-
-                                    <!-- 数字 -->
-                                    <template v-else-if="selectedField?.type === 'number'">
-                                        <template v-if="isBetweenOperatorValue(editingFilter.operator)">
-                                            <div class="number-range-input">
-                                                <el-input-number v-model="editingFilter.value[0]"
-                                                    :min="selectedField?.min" :max="selectedField?.max"
-                                                    :precision="selectedField?.precision || 0" style="width: 48%"
-                                                    @input="updateEditingFilter" />
-                                                <span class="range-separator">-</span>
-                                                <el-input-number v-model="editingFilter.value[1]"
-                                                    :min="selectedField?.min" :max="selectedField?.max"
-                                                    :precision="selectedField?.precision || 0" style="width: 48%"
-                                                    @input="updateEditingFilter" />
+                                <div
+                                    v-if="categoryPopovers[categoryKey]"
+                                    class="filter-category-popover"
+                                    @click.stop
+                                >
+                                    <div class="filter-category-menu-content">
+                                        <div class="filter-category-items">
+                                            <div
+                                                v-for="field in fields"
+                                                :key="field.key"
+                                                class="filter-category-item"
+                                                :class="{ active: selectedField?.key === field.key }"
+                                                @click="selectField(field, categoryKey)"
+                                            >
+                                                {{ field.label }}
                                             </div>
-                                        </template>
-                                        <el-input-number v-else v-model="editingFilter.value"
-                                            :min="selectedField?.min" :max="selectedField?.max"
-                                            :precision="selectedField?.precision || 0" style="width: 100%"
-                                            @input="updateEditingFilter"
-                                            :disabled="isValueDisabled(editingFilter.operator)" />
-                                    </template>
-
-                                    <!-- 选择器 -->
-                                    <template v-else-if="selectedField?.type === 'select'">
-                                        <el-select v-model="editingFilter.value" style="width: 100%"
-                                            :popper-append-to-body="false" :teleported="false"
-                                            @change="updateEditingFilter" @click.stop @mousedown.stop
-                                            :disabled="isValueDisabled(editingFilter.operator)">
-                                            <el-option v-for="option in selectedField?.options || []"
-                                                :key="String(option.value)" :label="option.label"
-                                                :value="option.value" />
-                                        </el-select>
-                                    </template>
-
-                                    <!-- 日期（支持相对日期） -->
-                                    <template v-else-if="selectedField?.type === 'date'">
-                                        <div class="filter-operator-selector">
-                                            <el-select v-model="editingFilter.operator" style="width: 100%"
-                                                :popper-append-to-body="false" :teleported="false"
-                                                @change="onDateOperatorChange" @click.stop @mousedown.stop>
-                                                <el-option-group label="相対日付">
-                                                    <el-option v-for="op in relativeDateOperators" :key="op.value"
-                                                        :label="op.label" :value="op.value" />
-                                                </el-option-group>
-                                                <el-option-group label="固定日付/範囲">
-                                                    <el-option v-for="op in absoluteDateOperators" :key="op.value"
-                                                        :label="op.label" :value="op.value" />
-                                                </el-option-group>
-                                            </el-select>
                                         </div>
-                                        <div v-if="isRelativeDateOperator(editingFilter.operator)"
-                                            class="relative-date-display">
-                                            {{ getRelativeDateDisplay(editingFilter.operator) }}
+                                        <div class="filter-editor" v-if="selectedField && getFieldCategory(selectedField.key) === categoryKey">
+                                            <div class="filter-editor-label">{{ selectedField?.label }}</div>
+                                            <div class="filter-editor-content">
+                                                <!-- 非日付型の演算子セレクタ（boolean は値選択のみ表示する） -->
+                                                <div class="filter-operator-selector"
+                                                    v-if="selectedField?.type !== 'date' && selectedField?.type !== 'daterange' && selectedField?.type !== 'boolean'">
+                                                    <select
+                                                        class="o-input"
+                                                        :value="editingFilter.operator"
+                                                        style="width: 100%"
+                                                        @change="handleOperatorChange(($event.target as HTMLSelectElement).value as Operator)"
+                                                        @click.stop
+                                                        @mousedown.stop
+                                                    >
+                                                        <option
+                                                            v-for="op in getOperatorOptions(selectedField?.type || 'string')"
+                                                            :key="op.value"
+                                                            :value="op.value"
+                                                        >{{ op.label }}</option>
+                                                    </select>
+                                                </div>
+
+                                                <!-- 文字列 -->
+                                                <template v-if="selectedField?.type === 'string'">
+                                                    <input
+                                                        class="o-input"
+                                                        :value="editingFilter.value"
+                                                        @input="editingFilter.value = ($event.target as HTMLInputElement).value; updateEditingFilter()"
+                                                        :disabled="isValueDisabled(editingFilter.operator)"
+                                                        style="width: 100%"
+                                                    />
+                                                </template>
+
+                                                <!-- 数値 -->
+                                                <template v-else-if="selectedField?.type === 'number'">
+                                                    <template v-if="isBetweenOperatorValue(editingFilter.operator)">
+                                                        <div class="number-range-input">
+                                                            <input
+                                                                type="number"
+                                                                class="o-input"
+                                                                :value="editingFilter.value[0]"
+                                                                :min="selectedField?.min"
+                                                                :max="selectedField?.max"
+                                                                :step="selectedField?.precision ? Math.pow(10, -selectedField.precision) : 1"
+                                                                style="width: 48%"
+                                                                @input="editingFilter.value[0] = Number(($event.target as HTMLInputElement).value); updateEditingFilter()"
+                                                            />
+                                                            <span class="range-separator">-</span>
+                                                            <input
+                                                                type="number"
+                                                                class="o-input"
+                                                                :value="editingFilter.value[1]"
+                                                                :min="selectedField?.min"
+                                                                :max="selectedField?.max"
+                                                                :step="selectedField?.precision ? Math.pow(10, -selectedField.precision) : 1"
+                                                                style="width: 48%"
+                                                                @input="editingFilter.value[1] = Number(($event.target as HTMLInputElement).value); updateEditingFilter()"
+                                                            />
+                                                        </div>
+                                                    </template>
+                                                    <input
+                                                        v-else
+                                                        type="number"
+                                                        class="o-input"
+                                                        :value="editingFilter.value"
+                                                        :min="selectedField?.min"
+                                                        :max="selectedField?.max"
+                                                        :step="selectedField?.precision ? Math.pow(10, -selectedField.precision) : 1"
+                                                        style="width: 100%"
+                                                        @input="editingFilter.value = Number(($event.target as HTMLInputElement).value); updateEditingFilter()"
+                                                        :disabled="isValueDisabled(editingFilter.operator)"
+                                                    />
+                                                </template>
+
+                                                <!-- セレクタ -->
+                                                <template v-else-if="selectedField?.type === 'select'">
+                                                    <select
+                                                        class="o-input"
+                                                        :value="editingFilter.value"
+                                                        style="width: 100%"
+                                                        @change="editingFilter.value = (selectedField?.options || []).find(o => String(o.value) === ($event.target as HTMLSelectElement).value)?.value ?? ($event.target as HTMLSelectElement).value; updateEditingFilter()"
+                                                        @click.stop
+                                                        @mousedown.stop
+                                                        :disabled="isValueDisabled(editingFilter.operator)"
+                                                    >
+                                                        <option value="" disabled>選択してください</option>
+                                                        <option
+                                                            v-for="option in selectedField?.options || []"
+                                                            :key="String(option.value)"
+                                                            :value="String(option.value)"
+                                                            :selected="String(option.value) === String(editingFilter.value)"
+                                                        >{{ option.label }}</option>
+                                                    </select>
+                                                </template>
+
+                                                <!-- 日付（相対日付をサポート） -->
+                                                <template v-else-if="selectedField?.type === 'date'">
+                                                    <div class="filter-operator-selector">
+                                                        <select
+                                                            class="o-input"
+                                                            :value="editingFilter.operator"
+                                                            style="width: 100%"
+                                                            @change="onDateOperatorChange(($event.target as HTMLSelectElement).value)"
+                                                            @click.stop
+                                                            @mousedown.stop
+                                                        >
+                                                            <optgroup label="相対日付">
+                                                                <option
+                                                                    v-for="op in relativeDateOperators"
+                                                                    :key="op.value"
+                                                                    :value="op.value"
+                                                                >{{ op.label }}</option>
+                                                            </optgroup>
+                                                            <optgroup label="固定日付/範囲">
+                                                                <option
+                                                                    v-for="op in absoluteDateOperators"
+                                                                    :key="op.value"
+                                                                    :value="op.value"
+                                                                >{{ op.label }}</option>
+                                                            </optgroup>
+                                                        </select>
+                                                    </div>
+                                                    <div v-if="isRelativeDateOperator(editingFilter.operator)"
+                                                        class="relative-date-display">
+                                                        {{ getRelativeDateDisplay(editingFilter.operator) }}
+                                                    </div>
+                                                    <template v-else>
+                                                        <template v-if="isBetweenOperatorValue(editingFilter.operator)">
+                                                            <div class="number-range-input">
+                                                                <input
+                                                                    type="date"
+                                                                    class="o-input"
+                                                                    :value="Array.isArray(editingFilter.value) ? editingFilter.value[0] : ''"
+                                                                    style="width: 48%"
+                                                                    @change="if (!Array.isArray(editingFilter.value)) editingFilter.value = ['', '']; editingFilter.value[0] = ($event.target as HTMLInputElement).value; updateEditingFilter()"
+                                                                    @click.stop
+                                                                    @mousedown.stop
+                                                                />
+                                                                <span class="range-separator">-</span>
+                                                                <input
+                                                                    type="date"
+                                                                    class="o-input"
+                                                                    :value="Array.isArray(editingFilter.value) ? editingFilter.value[1] : ''"
+                                                                    style="width: 48%"
+                                                                    @change="if (!Array.isArray(editingFilter.value)) editingFilter.value = ['', '']; editingFilter.value[1] = ($event.target as HTMLInputElement).value; updateEditingFilter()"
+                                                                    @click.stop
+                                                                    @mousedown.stop
+                                                                />
+                                                            </div>
+                                                        </template>
+                                                        <input
+                                                            v-else
+                                                            type="date"
+                                                            class="o-input"
+                                                            :value="editingFilter.value"
+                                                            style="width: 100%"
+                                                            @change="editingFilter.value = ($event.target as HTMLInputElement).value; updateEditingFilter()"
+                                                            @click.stop
+                                                            @mousedown.stop
+                                                        />
+                                                    </template>
+                                                </template>
+
+                                                <!-- 日付範囲 -->
+                                                <template v-else-if="selectedField?.type === 'daterange'">
+                                                    <div class="number-range-input">
+                                                        <input
+                                                            type="date"
+                                                            class="o-input"
+                                                            :value="Array.isArray(editingFilter.value) ? editingFilter.value[0] : ''"
+                                                            style="width: 48%"
+                                                            @change="if (!Array.isArray(editingFilter.value)) editingFilter.value = ['', '']; editingFilter.value[0] = ($event.target as HTMLInputElement).value; updateEditingFilter()"
+                                                            @click.stop
+                                                            @mousedown.stop
+                                                        />
+                                                        <span class="range-separator">-</span>
+                                                        <input
+                                                            type="date"
+                                                            class="o-input"
+                                                            :value="Array.isArray(editingFilter.value) ? editingFilter.value[1] : ''"
+                                                            style="width: 48%"
+                                                            @change="if (!Array.isArray(editingFilter.value)) editingFilter.value = ['', '']; editingFilter.value[1] = ($event.target as HTMLInputElement).value; updateEditingFilter()"
+                                                            @click.stop
+                                                            @mousedown.stop
+                                                        />
+                                                    </div>
+                                                </template>
+
+                                                <!-- ブール -->
+                                                <template v-else-if="selectedField?.type === 'boolean'">
+                                                    <select
+                                                        class="o-input"
+                                                        :value="String(editingFilter.value)"
+                                                        style="width: 100%"
+                                                        @change="onBooleanValueChange(($event.target as HTMLSelectElement).value === 'true')"
+                                                        @click.stop
+                                                        @mousedown.stop
+                                                    >
+                                                        <option value="true">はい</option>
+                                                        <option value="false">いいえ</option>
+                                                    </select>
+                                                </template>
+                                            </div>
+                                            <div class="filter-editor-actions">
+                                                <button class="o-btn o-btn-secondary" @click.stop="cancelAddFilter">キャンセル</button>
+                                                <button class="o-btn o-btn-primary" @click.stop="applyFilter">適用</button>
+                                            </div>
                                         </div>
-                                        <template v-else>
-                                            <el-date-picker v-if="isBetweenOperatorValue(editingFilter.operator)"
-                                                v-model="editingFilter.value" type="daterange"
-                                                :format="selectedField?.dateFormat || 'YYYY/MM/DD'"
-                                                :value-format="selectedField?.dateFormat || 'YYYY/MM/DD'" range-separator="-"
-                                                style="width: 100%" :teleported="false"
-                                                @change="updateEditingFilter" @click.stop @mousedown.stop />
-                                            <el-date-picker v-else v-model="editingFilter.value" type="date"
-                                                :format="selectedField?.dateFormat || 'YYYY/MM/DD'"
-                                                :value-format="selectedField?.dateFormat || 'YYYY/MM/DD'" style="width: 100%" :teleported="false"
-                                                @change="updateEditingFilter" @click.stop @mousedown.stop />
-                                        </template>
-                                    </template>
-
-                                    <!-- 日期范围 -->
-                                    <template v-else-if="selectedField?.type === 'daterange'">
-                                        <el-date-picker v-model="editingFilter.value" type="daterange"
-                                            :format="selectedField?.dateFormat || 'YYYY/MM/DD'"
-                                            :value-format="selectedField?.dateFormat || 'YYYY/MM/DD'" range-separator="-"
-                                            style="width: 100%" :teleported="false"
-                                            @change="updateEditingFilter" @click.stop @mousedown.stop />
-                                    </template>
-
-                                    <!-- 布尔 -->
-                                    <template v-else-if="selectedField?.type === 'boolean'">
-                                        <el-select v-model="editingFilter.value" style="width: 100%"
-                                            :popper-append-to-body="false" :teleported="false"
-                                            @change="onBooleanValueChange" @click.stop @mousedown.stop>
-                                            <el-option label="はい" :value="true" />
-                                            <el-option label="いいえ" :value="false" />
-                                        </el-select>
-                                    </template>
+                                    </div>
                                 </div>
-                                <div class="filter-editor-actions">
-                                    <el-button @click.stop="cancelAddFilter">キャンセル</el-button>
-                                    <el-button type="primary" @click.stop="applyFilter">適用</el-button>
                             </div>
-                        </div>
-                    </div>
-                </el-popover>
                             <div class="filter-category-divider" v-if="hasFieldsAfter(categoryKey)"></div>
                         </template>
                     </template>
+                </div>
             </div>
-            </div>
-            
-            <!-- 下半部分：已选择的过滤器卡片 -->
+
+            <!-- 下半部分：選択したフィルターカード -->
             <div class="selected-filters-row">
                 <span class="selected-filters-label">選択したフィルター</span>
                 <div class="selected-filters-list">
                     <div v-for="filter in activeFilters" :key="filter.id" class="filter-card">
                         <span class="filter-category-tag">{{ getCategoryLabelForFilter(filter.fieldKey) }}</span>
                         <span class="filter-text" v-html="formatFilterDisplay(filter)"></span>
-                        <el-button text type="primary" class="filter-remove" @click="removeFilter(filter.id)">
-                            <el-icon>
-                                <Close />
-                            </el-icon>
-                        </el-button>
+                        <button class="filter-remove" @click="removeFilter(filter.id)">&times;</button>
                     </div>
                     <div class="filter-actions-right">
-                        <el-button text type="primary" class="clear-filters-link" v-if="activeFilters.length > 0" @click="handleClear">
-                            絞り込みを解除する
-                        </el-button>
-                        <el-button v-if="showSave" class="save-filter-button" @click="handleSave">保存</el-button>
+                        <button
+                            v-if="activeFilters.length > 0"
+                            class="clear-filters-link"
+                            @click="handleClear"
+                        >絞り込みを解除する</button>
+                        <button v-if="showSave" class="save-filter-button" @click="handleSave">保存</button>
                     </div>
                 </div>
             </div>
-            
+
             <!-- 検索グループ -->
             <div class="saved-section-row">
                 <span class="saved-section-label">検索グループ</span>
@@ -184,27 +273,21 @@
                     <div v-for="item in savedSearches" :key="item.id" class="saved-card saved-card-item"
                         @click="applySavedSearch(item)">
                         <span class="saved-card-name">{{ item.name }}</span>
-                        <el-button text class="saved-card-remove" @click.stop="confirmDeleteSaved(item.id)">
-                            <el-icon>
-                                <Close />
-                            </el-icon>
-                        </el-button>
+                        <button class="saved-card-remove" @click.stop="confirmDeleteSaved(item.id)">&times;</button>
                     </div>
                 </div>
             </div>
-            
-            <!-- 操作按钮 -->
+
+            <!-- 操作ボタン -->
             <div v-if="showGlobalSearch" class="search-actions">
                 <div class="quick-search">
-                    <el-input
+                    <input
                         v-model="globalSearchText"
-                        class="quick-search-input"
+                        class="o-input quick-search-input"
                         placeholder="全体検索"
-                        clearable
                         @keyup.enter="handleSearch"
-                        @clear="handleSearch"
                     />
-                    <el-button type="primary" class="quick-search-button" @click="handleSearch">検索</el-button>
+                    <button class="o-btn o-btn-primary quick-search-button" @click="handleSearch">検索</button>
                 </div>
             </div>
         </div>
@@ -212,9 +295,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
-import { Plus, Close, ArrowDown } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { LINK_COLOR, PRIMARY_COLOR } from '@/theme/config'
 import type {
     TableColumn,
@@ -360,6 +441,37 @@ const categoryPopovers = ref<Record<string, boolean>>({
 const linkColor = LINK_COLOR
 const primaryColor = PRIMARY_COLOR
 
+// Toggle category popover and close others
+const toggleCategoryPopover = (categoryKey: string) => {
+    const isOpen = categoryPopovers.value[categoryKey]
+    // Close all
+    Object.keys(categoryPopovers.value).forEach(key => {
+        categoryPopovers.value[key] = false
+    })
+    // Toggle the clicked one
+    if (!isOpen) {
+        categoryPopovers.value[categoryKey] = true
+    }
+}
+
+// Close popovers when clicking outside
+const onDocumentClick = (e: MouseEvent) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('.filter-category-popover-wrapper')) {
+        Object.keys(categoryPopovers.value).forEach(key => {
+            categoryPopovers.value[key] = false
+        })
+    }
+}
+
+onMounted(() => {
+    document.addEventListener('click', onDocumentClick)
+})
+
+onUnmounted(() => {
+    document.removeEventListener('click', onDocumentClick)
+})
+
 // 保存的搜索记录
 interface SavedFilter {
     fieldKey: string
@@ -428,7 +540,7 @@ const loadActiveFilters = () => {
             parsed.forEach((savedFilter) => {
                 const field = availableFields.value.find((f) => f.key === savedFilter.fieldKey)
                 if (!field) return // 如果字段不存在，跳过这个过滤器
-                
+
                 filters.push({
                     id: savedFilter.id || `filter_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                     fieldKey: savedFilter.fieldKey,
@@ -456,7 +568,7 @@ const inferSearchType = (col: TableColumn): SearchType | null => {
     if (col.searchType) {
         return col.searchType
     }
-    
+
     // 根据 fieldType 推断
     if (col.fieldType === 'string') {
         return 'string'
@@ -467,12 +579,12 @@ const inferSearchType = (col: TableColumn): SearchType | null => {
     } else if (col.fieldType === 'date' || col.fieldType === 'dateOnly') {
         return 'date'
     }
-    
+
     // 如果有 searchOptions，推断为 select
     if (col.searchOptions && col.searchOptions.length > 0) {
         return 'select'
     }
-    
+
     return null
 }
 
@@ -499,7 +611,7 @@ const getFieldCategory = (fieldKey: string): string => {
     const ordererKeys = [
         'orderer.postalCode', 'orderer.prefecture', 'orderer.city', 'orderer.street', 'orderer.name', 'orderer.phone'
     ]
-    
+
     if (shippingKeys.includes(fieldKey)) return 'shipping'
     if (productKeys.includes(fieldKey)) return 'product'
     if (recipientKeys.includes(fieldKey)) return 'recipient'
@@ -528,7 +640,7 @@ const availableFields = computed<AvailableField[]>(() => {
         .map((col) => {
             // 推断搜索类型
             const inferredType = inferSearchType(col)
-            
+
                 const type = col.searchType || inferredType || 'string'
                 const field: AvailableField = {
                     key: col.key,
@@ -565,14 +677,14 @@ const fieldsByCategory = computed(() => {
         orderer: [],
         other: []
     }
-    
+
     remainingFields.value.forEach(field => {
         const category = getFieldCategory(field.key)
         if (categories[category]) {
         categories[category].push(field)
         }
     })
-    
+
     return categories
 })
 
@@ -586,7 +698,7 @@ const hasFieldsAfter = (categoryKey: string): boolean => {
     const categoryOrder = ['shipping', 'product', 'recipient', 'sender', 'orderer', 'other']
     const currentIndex = categoryOrder.indexOf(categoryKey)
     if (currentIndex === -1 || currentIndex === categoryOrder.length - 1) return false
-    
+
     for (let i = currentIndex + 1; i < categoryOrder.length; i++) {
         const cat = categoryOrder[i]
         if (!cat) continue
@@ -730,7 +842,7 @@ const getDefaultOperatorForType = (type: SearchType): Operator | undefined => {
 const selectField = (field: AvailableField, categoryKey?: string) => {
     selectedField.value = field
     // 保持分类弹窗打开（不关闭）
-    
+
     const defaultOperator =
         field.type === 'date' ? relativeDateOperators[0]?.value : getDefaultOperatorForType(field.type)
 
@@ -868,7 +980,7 @@ const removeFilter = (id: string) => {
         activeFilters.value.splice(index, 1)
         // 保存到 localStorage
         persistActiveFilters()
-        // 移除后也触发搜索刷新
+        // 移除後も検索をリフレッシュ
         emits('search', buildPayload())
     }
 }
@@ -920,7 +1032,7 @@ const formatFilterDisplay = (filter: FilterItem): string => {
     const fieldLabel = filter.fieldLabel
     const operator = filter.operator
     const operatorLabel = getOperatorLabel(operator)
-    
+
     // 获取值的显示文本
     const getValueText = (): string => {
         if (filter.value === null || filter.value === undefined) {
@@ -964,14 +1076,14 @@ const formatFilterDisplay = (filter: FilterItem): string => {
     switch (op) {
         case 'equals':
         case 'is':
-            // 等值：字段名: 值（布尔值已经在上面单独处理）
+            // 等値：字段名: 値（布尔値已经在上面单独处理）
             return `<span class="filter-field-label">${escapedFieldLabel}</span>: ${escapedValueText}`
         case 'notEquals':
         case 'isNot':
-            // 不等值：字段名: 值以外（布尔值已经在上面单独处理）
+            // 不等値：字段名: 値以外（布尔値已经在上面单独处理）
             return `<span class="filter-field-label">${escapedFieldLabel}</span>: ${escapedValueText}以外`
         case 'contains':
-            // 包含：字段名: 值を含む
+            // 包含：字段名: 値を含む
             return `<span class="filter-field-label">${escapedFieldLabel}</span>: ${escapedValueText}を含む`
         case 'notContains':
             // 不包含：字段名: 値を含まない
@@ -980,14 +1092,14 @@ const formatFilterDisplay = (filter: FilterItem): string => {
         case 'lessThanOrEqual':
         case 'greaterThan':
         case 'greaterThanOrEqual':
-            // 数字比较：字段名: 值 + 操作符
+            // 数字比较：字段名: 値 + 操作符
             return `<span class="filter-field-label">${escapedFieldLabel}</span>: ${escapedValueText}${escapedOperatorLabel}`
         case 'between':
             // 范围：字段名: 値1 - 値2
             return `<span class="filter-field-label">${escapedFieldLabel}</span>: ${escapedValueText}`
         case 'before':
         case 'after':
-            // 日期比较：字段名: 值 + 操作符
+            // 日期比较：字段名: 値 + 操作符
             return `<span class="filter-field-label">${escapedFieldLabel}</span>: ${escapedValueText}${escapedOperatorLabel}`
         case 'today':
         case 'yesterday':
@@ -1000,7 +1112,7 @@ const formatFilterDisplay = (filter: FilterItem): string => {
             // 相对日期已经在上面处理了，这里不应该到达
             return `<span class="filter-field-label">${escapedFieldLabel}</span>: ${escapedOperatorLabel}`
         default:
-            // 默认格式：字段名: 操作符 值
+            // 默认格式：字段名: 操作符 値
             return `<span class="filter-field-label">${escapedFieldLabel}</span>: ${escapedOperatorLabel} ${escapedValueText}`
     }
 }
@@ -1042,7 +1154,7 @@ const buildPayload = () => {
         if (isRelativeDateOperator(filter.operator)) {
             value = computeRelativeDateValue(filter.operator)
         }
-        
+
         payload[filter.fieldKey] = {
             operator: filter.operator,
             value,
@@ -1104,51 +1216,37 @@ const applySavedSearch = (item: SavedSearch) => {
 }
 
 // 保存搜索条件
-const handleSave = async () => {
+const handleSave = () => {
     if (activeFilters.value.length === 0) return
 
     const defaultName = `検索条件 ${new Date().toLocaleString('ja-JP')}`
-    try {
-        const { value } = await ElMessageBox.prompt('保存名を入力してください', '検索条件を保存', {
-            confirmButtonText: '保存',
-            cancelButtonText: 'キャンセル',
-            inputValue: defaultName,
-        })
-        const name = value && value.trim() ? value.trim() : defaultName
-        const filtersToSave: SavedFilter[] = activeFilters.value.map((f) => ({
-            fieldKey: f.fieldKey,
-            operator: f.operator,
-            value: f.value,
-        }))
-        const newItem: SavedSearch = {
-            id: `saved_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            name,
-            filters: filtersToSave,
-        }
-        savedSearches.value.push(newItem)
-        persistSavedSearches()
-        emits('save', buildPayload())
-    } catch (e) {
-        // 用户取消
+    const inputValue = prompt('保存名を入力してください', defaultName)
+    if (inputValue === null) return // user cancelled
+
+    const name = inputValue.trim() ? inputValue.trim() : defaultName
+    const filtersToSave: SavedFilter[] = activeFilters.value.map((f) => ({
+        fieldKey: f.fieldKey,
+        operator: f.operator,
+        value: f.value,
+    }))
+    const newItem: SavedSearch = {
+        id: `saved_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name,
+        filters: filtersToSave,
     }
+    savedSearches.value.push(newItem)
+    persistSavedSearches()
+    emits('save', buildPayload())
 }
 
 // 删除保存的搜索条件
-const confirmDeleteSaved = async (id: string) => {
-    try {
-        await ElMessageBox.confirm('この検索条件を削除しますか？', '確認', {
-            confirmButtonText: '削除',
-            cancelButtonText: 'キャンセル',
-            type: 'warning',
-        })
-        const idx = savedSearches.value.findIndex((s) => s.id === id)
-        if (idx !== -1) {
-            savedSearches.value.splice(idx, 1)
-            persistSavedSearches()
-            ElMessage.success('削除しました')
-        }
-    } catch (e) {
-        // 取消
+const confirmDeleteSaved = (id: string) => {
+    if (!confirm('この検索条件を削除しますか？')) return
+    const idx = savedSearches.value.findIndex((s) => s.id === id)
+    if (idx !== -1) {
+        savedSearches.value.splice(idx, 1)
+        persistSavedSearches()
+        alert('削除しました')
     }
 }
 
@@ -1296,7 +1394,7 @@ defineExpose({
     border-radius: 4px;
 }
 
-/* 上半部分：过滤器分类选项 */
+/* 上半部分：フィルター分類選択 */
 .filter-categories-row {
     display: flex;
     align-items: center;
@@ -1320,6 +1418,10 @@ defineExpose({
     gap: 0;
 }
 
+.filter-category-popover-wrapper {
+    position: relative;
+}
+
 .filter-category-header {
     display: flex;
     align-items: center;
@@ -1340,7 +1442,20 @@ defineExpose({
 }
 
 .filter-category-icon {
-    font-size: 12px;
+    font-size: 10px;
+}
+
+.filter-category-popover {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1050;
+    background: #fff;
+    border: 1px solid #e4e7ed;
+    border-radius: 4px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    margin-top: 8px;
+    min-width: 540px;
 }
 
 .filter-category-divider {
@@ -1380,7 +1495,7 @@ defineExpose({
     font-weight: 600;
 }
 
-/* 下半部分：已选择的过滤器卡片 */
+/* 下半部分：選択したフィルターカード */
 .selected-filters-row {
     display: flex;
     align-items: center;
@@ -1455,6 +1570,14 @@ defineExpose({
     padding: 0;
     height: 24px;
     line-height: 24px;
+    background: none;
+    border: none;
+    color: v-bind('linkColor');
+    cursor: pointer;
+}
+
+.clear-filters-link:hover {
+    text-decoration: underline;
 }
 
 .save-filter-button {
@@ -1466,6 +1589,7 @@ defineExpose({
     border-radius: 12px;
     background: transparent;
     color: #303133;
+    cursor: pointer;
 }
 
 .save-filter-button:hover {
@@ -1478,15 +1602,14 @@ defineExpose({
     margin-left: 2px;
     color: #909399;
     opacity: 0.8;
-    font-size: 10px;
+    font-size: 14px;
     height: auto;
     line-height: 1;
-    width: 10px;
-    min-width: 10px;
-}
-
-.filter-remove :deep(.el-icon) {
-    font-size: 10px;
+    width: 16px;
+    min-width: 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
 }
 
 .filter-remove:hover {
@@ -1513,24 +1636,16 @@ defineExpose({
 
 .quick-search-input {
     width: 300px;
-}
-
-.quick-search-input :deep(.el-input__wrapper) {
     height: 20px;
     padding: 0 8px;
+    font-size: 12px;
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
 }
 
-.quick-search-input :deep(.el-input__inner) {
-    height: 20px;
-    line-height: 20px;
-    font-size: 12px;
-}
-
 .quick-search-button {
     width: 40px;
-    height: 20px;
+    height: 22px;
     padding: 0;
     font-size: 12px;
     border-top-left-radius: 0;
@@ -1596,15 +1711,14 @@ defineExpose({
     margin-left: 2px;
     color: #ffffff;
     opacity: 0.8;
-    font-size: 10px;
+    font-size: 14px;
     height: auto;
     line-height: 1;
-    width: 10px;
-    min-width: 10px;
-}
-
-.saved-card-remove :deep(.el-icon) {
-    font-size: 10px;
+    width: 16px;
+    min-width: 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
 }
 
 .saved-card-remove:hover {
