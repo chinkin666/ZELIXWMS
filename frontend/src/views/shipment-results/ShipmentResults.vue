@@ -1,8 +1,6 @@
 <template>
   <div class="shipment-results">
-    <div class="page-header">
-      <h1 class="page-title">出荷実績一覧</h1>
-    </div>
+    <ControlPanel title="出荷実績一覧" :show-search="false" />
 
     <OrderSearchFormWrapper
       class="search-section"
@@ -107,6 +105,7 @@
 import { computed, h, onMounted, ref, watch } from 'vue'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import Table from '@/components/table/OrderTable.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
@@ -375,19 +374,7 @@ onMounted(async () => {
   flex-direction: column;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
 
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #2a3474;
-}
 
 .search-section {
   margin-bottom: 20px;

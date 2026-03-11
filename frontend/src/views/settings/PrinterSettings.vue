@@ -1,14 +1,10 @@
 <template>
   <div class="printer-settings">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">プリンター設定</h1>
-        <p class="page-subtitle">印刷方法とプリンター設定を管理します</p>
-      </div>
-      <div class="header-actions">
+    <ControlPanel title="プリンター設定" :show-search="false">
+      <template #actions>
         <OButton variant="secondary" size="sm" @click="handleReset">リセット</OButton>
-      </div>
-    </div>
+      </template>
+    </ControlPanel>
 
     <!-- Print Method Selection -->
     <div class="o-card method-card">
@@ -93,6 +89,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useToast } from '@/composables/useToast'
 import {
   getPrintConfig,
@@ -143,35 +140,19 @@ onMounted(() => {
 
 <style scoped>
 .printer-settings {
-  padding: 20px;
+  padding: 0 20px 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-}
 
-.page-subtitle {
-  margin: 6px 0 0;
-  color: #666;
-  font-size: 14px;
-}
 
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
+
 
 .o-card {
   background: var(--o-view-background, #fff);

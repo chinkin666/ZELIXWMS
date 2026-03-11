@@ -1,16 +1,11 @@
 <template>
   <div class="mapping-config-list">
-    <!-- 上半部分：标题和按钮 -->
-    <div class="page-header">
-      <h1 class="page-title">レイアウト管理</h1>
-      <div class="header-actions">
-        <OButton variant="primary" @click="handleAdd">
-          新規レイアウト
-        </OButton>
-      </div>
-    </div>
+    <ControlPanel title="レイアウト管理" :show-search="false">
+      <template #actions>
+        <OButton variant="primary" @click="handleAdd">新規レイアウト</OButton>
+      </template>
+    </ControlPanel>
 
-    <!-- 下半部分：表格 -->
     <div class="table-section">
       <Table
         :columns="tableColumns"
@@ -32,6 +27,7 @@ import { ref, onMounted, h } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import Table from '@/components/table/Table.vue'
 import type { TableColumn } from '@/types/table'
 import { getAllMappingConfigs, createMappingConfig, deleteMappingConfig, type MappingConfig } from '@/api/mappingConfig'
@@ -226,28 +222,18 @@ onMounted(() => {
 
 <style scoped>
 .mapping-config-list {
-  padding: 20px;
+  padding: 0 20px 20px;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
-
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 20px;
-}
 
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
+
 
 .table-section {
   flex: 1;

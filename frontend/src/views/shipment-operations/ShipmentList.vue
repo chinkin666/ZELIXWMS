@@ -1,8 +1,6 @@
 <template>
   <div class="shipment-list">
-    <div class="page-header">
-      <h1 class="page-title">出荷作業一覧</h1>
-    </div>
+    <ControlPanel title="出荷作業一覧" :show-search="false" />
 
     <CarrierSelector
       v-model="selectedCarrierId"
@@ -217,6 +215,7 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref, watch } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useRouter } from 'vue-router'
 import Table from '@/components/table/OrderTable.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
@@ -980,18 +979,7 @@ onMounted(async () => {
   flex-direction: column;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #2a3474;
-}
 
 .bottom-bar {
   position: sticky;

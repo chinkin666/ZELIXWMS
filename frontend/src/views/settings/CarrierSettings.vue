@@ -1,12 +1,10 @@
 <template>
   <div class="carrier-settings">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">配送業者設定</h1>
-        <p class="page-subtitle">配送業者基本情報とフォーマット定義を管理します</p>
-      </div>
-      <OButton variant="primary" @click="openCreate">新規追加</OButton>
-    </div>
+    <ControlPanel title="配送業者設定" :show-search="false">
+      <template #actions>
+        <OButton variant="primary" @click="openCreate">新規追加</OButton>
+      </template>
+    </ControlPanel>
 
     <SearchForm
       class="search-section"
@@ -168,6 +166,7 @@
 import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import SearchForm from '@/components/search/SearchForm.vue'
 import Table from '@/components/table/Table.vue'
@@ -556,29 +555,18 @@ onMounted(() => {
 
 <style scoped>
 .carrier-settings {
-  padding: 20px;
+  padding: 0 20px 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 20px;
-}
 
-.page-subtitle {
-  margin: 6px 0 0;
-  color: #666;
-  font-size: 13px;
-}
+
 
 .table-section {
   width: 100%;

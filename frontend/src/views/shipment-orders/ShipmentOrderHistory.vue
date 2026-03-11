@@ -1,8 +1,6 @@
 <template>
   <div class="shipment-order-history">
-    <div class="page-header">
-      <h1 class="page-title">出荷実績一覧</h1>
-    </div>
+    <ControlPanel title="出荷実績一覧" :show-search="false" />
 
     <OrderSearchFormWrapper
       class="search-section"
@@ -57,70 +55,53 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useToast } from '@/composables/useToast'
 import Table from '@/components/table/OrderTable.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
 import OrderViewDialog from '@/components/shipment-orders/OrderViewDialog.vue'
-import type { HeaderGroupingConfig } from '@/components/table/tableHeaderGroup'
 import type { Operator } from '@/types/table'
-import { getOrderFieldDefinitions } from '@/types/order'
-import { buildOrderHeaderGroupingConfig } from '@/utils/orderHeaderGrouping'
 import { fetchShipmentOrder, fetchShipmentOrdersPage } from '@/api/shipmentOrders'
-import { fetchCarriers } from '@/api/carrier'
-import type { Carrier } from '@/types/carrier'
-import { fetchProducts } from '@/api/product'
-import type { Product } from '@/types/product'
-const { showError, showSuccess, showWarning } = useToast()
+import { useShipmentOrderBase } from './composables/useShipmentOrderBase'
+
+const { showError } = useToast()
+
+const {
+  carriers,
+  products,
+  loadCarriers,
+  loadProducts,
+  baseColumns,
+  searchColumns,
+  headerGroupingConfig,
+  headerClass,
+  globalSearchText,
+  currentSearchPayload,
+  updateSearchState,
+  handleSave,
+  tableProps,
+} = useShipmentOrderBase({
+  enableCellValidation: false,
+  fieldOverrides: (columns) =>
+    columns.map((col) =>
+      col.key === 'trackingId' ? { ...col, tableVisible: true } : col,
+    ),
+})
 
 type SortOrder = 'asc' | 'desc' | null
-
 type OrderRow = Record<string, any>
 
-const displayRows = ref<OrderRow[]>([]) // 显示的数据（用于Table组件）
-
+const displayRows = ref<OrderRow[]>([])
 const pageSize = ref(10)
 const currentPage = ref(1)
 const totalItems = ref(0)
-const sortBy = ref<string | null>('orderNumber') // 默认按出荷管理No排序
-const sortOrder = ref<SortOrder>('asc') // 默认升序
+const sortBy = ref<string | null>('orderNumber')
+const sortOrder = ref<SortOrder>('asc')
 
 const searchInitialValues = computed(() => {
-  // 默认过滤：今日的出荷予定日
   const today = new Date().toISOString().slice(0, 10).replace(/-/g, '/')
-  return {
-    shipPlanDate: { operator: 'is', value: today },
-  }
+  return { shipPlanDate: { operator: 'is', value: today } }
 })
-
-const carriers = ref<Carrier[]>([])
-const carrierOptions = computed(() => {
-  return (carriers.value || [])
-    .filter((c) => c && c.enabled !== false)
-    .map((c) => ({ label: c.name, value: c._id }))
-})
-
-// Products for OrderTable
-const products = ref<Product[]>([])
-
-const allFieldDefinitions = computed(() =>
-  getOrderFieldDefinitions({ carrierOptions: carrierOptions.value }).map((col) =>
-    col.key === 'trackingId' ? { ...col, tableVisible: true } : col,
-  ),
-)
-
-const baseColumns = computed(() => {
-  const systemFieldKeys = ['tenantId']
-  const cols = allFieldDefinitions.value.filter((col) => col.tableVisible !== false && !systemFieldKeys.includes(col.key))
-  
-  return cols
-})
-
-const searchColumns = computed(() => {
-  return allFieldDefinitions.value.filter((col) => col.searchType !== undefined)
-})
-
-const currentSearchPayload = ref<Record<string, { operator: Operator; value: any }> | null>(null)
-const globalSearchText = ref<string>('')
 
 const viewDialogVisible = ref(false)
 const selectedOrder = ref<any>(null)
@@ -136,8 +117,6 @@ const handleView = async (row: any) => {
   }
 }
 
-
-
 const handlePageChange = (payload: { page: number; pageSize: number; mode: string }) => {
   currentPage.value = payload.page
   pageSize.value = payload.pageSize
@@ -147,22 +126,14 @@ const handlePageChange = (payload: { page: number; pageSize: number; mode: strin
 const handleSortChange = (payload: { sortBy: string | null; sortOrder: SortOrder; mode: string }) => {
   sortBy.value = payload.sortBy
   sortOrder.value = payload.sortOrder
-  currentPage.value = 1 // 排序时重置到第一页
+  currentPage.value = 1
   loadOrders()
 }
 
 const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
-  const nextPayload: Record<string, { operator: Operator; value: any }> = { ...(payload || {}) }
-  const keyword = (nextPayload as any)?.__global?.value
-  globalSearchText.value = keyword ? String(keyword) : ''
-  delete (nextPayload as any).__global
-  currentSearchPayload.value = nextPayload
-  currentPage.value = 1 // 搜索时重置到第一页
+  updateSearchState(payload)
+  currentPage.value = 1
   loadOrders()
-}
-
-const handleSave = (_payload: Record<string, { operator: Operator; value: any }>) => {
-  showSuccess('検索条件を保存しました（ダミー）')
 }
 
 const tableColumns = computed(() => {
@@ -176,42 +147,16 @@ const tableColumns = computed(() => {
     cellRenderer: ({ rowData }: { rowData: any }) =>
       h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleView(rowData) }, () => '詳細'),
   }
-
-  const cols = [
-    ...baseColumns.value,
-    actionColumn,
-  ]
-  return cols
+  return [...baseColumns.value, actionColumn]
 })
-
-const headerGroupingConfig = computed<HeaderGroupingConfig>(() => {
-  return buildOrderHeaderGroupingConfig(baseColumns.value as any)
-})
-
-const headerClass = () => ''
-
-const tableProps = computed(() => ({}))
-
-const loadCarriers = async () => {
-  try {
-    carriers.value = await fetchCarriers({ enabled: true })
-  } catch (e) {
-    console.error(e)
-    showWarning('配送業者マスタの取得に失敗しました')
-  }
-}
 
 const loadOrders = async () => {
   try {
-    // 构建查询条件：添加隐藏过滤，只显示已打印且出荷完了的订单
     const q: Record<string, { operator: Operator; value: any }> = {
       ...(currentSearchPayload.value || {}),
-      // 隐藏过滤：只显示已打印的订单
       'status.printed.isPrinted': { operator: 'is', value: true },
-      // 隐藏过滤：只显示出荷完了的订单
       'status.shipped.isShipped': { operator: 'is', value: true },
     }
-    
     const result = await fetchShipmentOrdersPage({
       page: currentPage.value,
       limit: pageSize.value,
@@ -229,11 +174,7 @@ const loadOrders = async () => {
 onMounted(async () => {
   await loadCarriers()
   await loadOrders()
-  try {
-    products.value = await fetchProducts()
-  } catch (e) {
-    console.error('Failed to load products:', e)
-  }
+  await loadProducts()
 })
 </script>
 
@@ -241,20 +182,6 @@ onMounted(async () => {
 .shipment-order-history {
   display: flex;
   flex-direction: column;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #2a3474;
 }
 
 .search-section {
@@ -265,4 +192,3 @@ onMounted(async () => {
   background-color: #ffebee !important;
 }
 </style>
-

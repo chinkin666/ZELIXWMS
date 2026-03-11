@@ -1,12 +1,10 @@
 <template>
   <div class="print-template-settings">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">印刷テンプレート</h1>
-        <p class="page-subtitle">送り状印刷で利用するテンプレート（Canvas）を管理します</p>
-      </div>
-      <OButton variant="primary" @click="openCreate">新規追加</OButton>
-    </div>
+    <ControlPanel title="印刷テンプレート" :show-search="false">
+      <template #actions>
+        <OButton variant="primary" @click="openCreate">新規追加</OButton>
+      </template>
+    </ControlPanel>
 
     <div class="table-section">
       <Table
@@ -70,6 +68,7 @@
 import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import Table from '@/components/table/Table.vue'
 import type { TableColumn } from '@/types/table'
@@ -215,21 +214,6 @@ onMounted(() => reload())
   flex-direction: column;
 }
 
-.page-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.page-title {
-  margin: 0;
-  font-size: 20px;
-}
-.page-subtitle {
-  margin: 6px 0 0;
-  color: #6b7280;
-  font-size: 12px;
-}
 
 .o-btn {
   display: inline-flex;

@@ -157,6 +157,16 @@ const formParentMap: Record<string, { parentLabel: string; parentRoute: string }
   'survey-form': { parentLabel: 'sidebar.surveys', parentRoute: '/surveys' },
 }
 
+// WMS top-level navigation — maps prefix to parent breadcrumb label + default route
+const wmsParentMap: Record<string, { label: string; route: string }> = {
+  '/products': { label: '商品管理', route: '/products/list' },
+  '/shipment-orders': { label: '出荷指示', route: '/shipment-orders/create' },
+  '/waybill-management': { label: '送り状管理', route: '/waybill-management/export' },
+  '/shipment-operations': { label: '出荷作業', route: '/shipment-operations/tasks' },
+  '/shipment-results': { label: '出荷実績', route: '/shipment-results' },
+  '/settings': { label: '設定', route: '/settings/basic' },
+}
+
 // Auto-generate breadcrumbs from current route
 const autoBreadcrumbs = computed<{ label: string; route?: string }[]>(() => {
   if (props.breadcrumbs && props.breadcrumbs.length > 0) {
@@ -178,6 +188,20 @@ const autoBreadcrumbs = computed<{ label: string; route?: string }[]>(() => {
       crumbs.push({ label: t(parentGroup.group), route: undefined })
     }
     crumbs.push({ label: t(parent.parentLabel), route: parent.parentRoute })
+    crumbs.push({ label: props.title ?? '' })
+    return crumbs
+  }
+
+  // WMS prefix match: /settings/carrier → parent "設定", etc.
+  const wmsKey = Object.keys(wmsParentMap)
+    .filter(k => path.startsWith(k + '/') || path === k)
+    .sort((a, b) => b.length - a.length)[0]
+  if (wmsKey) {
+    const parent = wmsParentMap[wmsKey]
+    // Push parent crumb only when: section has a default route, and we're on a different sub-route
+    if (parent.route && path !== parent.route && path !== wmsKey) {
+      crumbs.push({ label: parent.label, route: parent.route })
+    }
     crumbs.push({ label: props.title ?? '' })
     return crumbs
   }
@@ -322,7 +346,7 @@ function navigateBreadcrumb(route?: string) {
   align-items: center;
   justify-content: space-between;
   min-height: 34px;
-  padding: 0.5rem 0;
+  padding: 0.25rem 0;
 }
 
 .o-cp-breadcrumbs {
@@ -360,8 +384,8 @@ function navigateBreadcrumb(route?: string) {
 }
 .o-breadcrumb-item .active {
   color: var(--o-gray-900);
-  font-weight: 500;
-  font-size: 1.25rem;
+  font-weight: 600;
+  font-size: var(--o-font-size-base);
 }
 
 .o-cp-actions {

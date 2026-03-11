@@ -1,14 +1,10 @@
 <template>
   <div class="auto-processing-settings">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">自動処理設定</h1>
-        <p class="page-subtitle">注文の状態変更時に自動的に実行されるルールを管理します。ドラッグで並び替えでき、上にあるルールが優先的に実行されます。</p>
-      </div>
-      <div class="page-actions">
+    <ControlPanel title="自動処理設定" :show-search="false">
+      <template #actions>
         <OButton variant="primary" @click="openCreate">ルールを追加</OButton>
-      </div>
-    </div>
+      </template>
+    </ControlPanel>
 
     <div class="rules-list">
       <div v-if="isLoading" class="loading-state">読み込み中...</div>
@@ -107,6 +103,7 @@
 import { ref, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import draggable from 'vuedraggable'
 import {
   fetchAutoProcessingRules,
@@ -238,33 +235,16 @@ onMounted(() => {
 
 <style scoped>
 .auto-processing-settings {
-  padding: 20px;
+  padding: 0 20px 20px;
+}
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-}
 
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--o-gray-700, #303133);
-  margin: 0 0 8px 0;
-}
 
-.page-subtitle {
-  font-size: 14px;
-  color: var(--o-gray-500, #909399);
-  margin: 0;
-}
 
-.page-actions {
-  display: flex;
-  gap: 12px;
-}
 
 .o-btn {
   display: inline-flex;

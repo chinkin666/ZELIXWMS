@@ -1,6 +1,6 @@
 <template>
   <div class="basic-settings">
-    <h2 class="page-title">基本設定</h2>
+    <ControlPanel title="基本設定" :show-search="false" />
 
     <div class="o-card settings-card">
       <div class="card-header">
@@ -38,6 +38,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useSettingsStore, type OrderSearchStyle } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 
@@ -62,12 +63,6 @@ const handleSearchStyleChange = (value: OrderSearchStyle) => {
   padding: 0;
 }
 
-.page-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: var(--o-gray-700, #303133);
-}
 
 .settings-card {
   max-width: 800px;

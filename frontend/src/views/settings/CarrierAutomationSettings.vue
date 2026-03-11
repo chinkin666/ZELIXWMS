@@ -1,11 +1,6 @@
 <template>
   <div class="carrier-automation-settings">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">配送業者自動化設定</h1>
-        <p class="page-subtitle">配送業者APIとの自動連携設定を管理します</p>
-      </div>
-    </div>
+    <ControlPanel title="配送業者自動化設定" :show-search="false" />
 
     <div class="o-card automation-tabs-card">
       <div class="o-tabs">
@@ -170,6 +165,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import type { YamatoB2Config, ConnectionTestResult, ServiceTypeConfig, PdfSource } from '@/types/carrierAutomation'
 import {
   fetchCarrierAutomationConfig,
@@ -419,29 +415,18 @@ onMounted(() => {
 
 <style scoped>
 .carrier-automation-settings {
-  padding: 20px;
+  padding: 0 20px 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 20px;
-}
 
-.page-subtitle {
-  margin: 6px 0 0;
-  color: #666;
-  font-size: 13px;
-}
+
 
 .o-card {
   background: var(--o-view-background, #fff);

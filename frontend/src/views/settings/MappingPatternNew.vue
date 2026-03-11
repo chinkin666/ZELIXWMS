@@ -1,5 +1,6 @@
 <template>
   <div class="mapping-pattern-new">
+    <ControlPanel :title="route.params.id ? 'レイアウト編集' : 'レイアウト新規作成'" :show-search="false" />
     <div class="top-bar">
       <div class="top-left">
         <div class="field">
@@ -410,6 +411,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useRoute } from 'vue-router'
 import { fetchShipmentOrders } from '@/api/shipmentOrders'
 import { getOrderFieldDefinitions } from '@/types/order'
@@ -1543,7 +1545,7 @@ const handleLoad = async () => {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 16px;
+  padding: 0 16px 16px;
 }
 
 .top-bar {

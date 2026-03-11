@@ -1,17 +1,13 @@
 <template>
   <div class="editor-root">
-    <div class="header">
-      <div class="title">
-        <h1 class="page-title">印刷テンプレート編集</h1>
-        <div class="sub">id: {{ templateId }}</div>
-      </div>
-      <div class="actions">
+    <ControlPanel title="印刷テンプレート編集" :show-search="false">
+      <template #actions>
         <OButton variant="secondary" @click="goBack">戻る</OButton>
         <OButton variant="primary" :disabled="saving" @click="save">
           {{ saving ? '保存中...' : '保存' }}
         </OButton>
-      </div>
-    </div>
+      </template>
+    </ControlPanel>
 
     <div class="layout">
       <!-- Left: carrierRawRow fields -->
@@ -299,6 +295,7 @@
 import Konva from 'konva'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { PrintBarcodeElement, PrintElement, PrintImageElement, PrintTemplate, PrintTextElement } from '@/types/printTemplate'
 import { fetchPrintTemplate, updatePrintTemplate } from '@/api/printTemplates'
@@ -1401,23 +1398,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 12px;
 }
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-.page-title {
-  margin: 0;
-  font-size: 20px;
-}
-.sub {
-  color: #6b7280;
-  font-size: 12px;
-}
-.actions {
-  display: flex;
-  gap: 8px;
-}
+
 .layout {
   display: grid;
   grid-template-columns: 300px 1fr 360px;

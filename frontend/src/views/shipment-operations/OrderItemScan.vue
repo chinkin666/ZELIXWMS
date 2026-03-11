@@ -1,16 +1,15 @@
 <template>
   <div class="order-item-scan">
-    <div class="page-header">
-      <h1 class="page-title">商品スキャン検品</h1>
-      <div class="header-actions">
+    <ControlPanel title="商品スキャン検品" :show-search="false">
+      <template #actions>
         <label class="o-toggle">
           <input type="checkbox" v-model="autoPrintEnabled" @change="saveAutoPrintSetting" />
           <span class="o-toggle__slider"></span>
           <span class="toggle-label">{{ autoPrintEnabled ? '自動印刷' : '手動印刷' }}</span>
         </label>
         <OButton variant="secondary" @click="handleBack">戻る</OButton>
-      </div>
-    </div>
+      </template>
+    </ControlPanel>
 
     <!-- 订单信息区域 -->
     <div class="order-info-section">
@@ -151,6 +150,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useRouter, useRoute } from 'vue-router'
 import Table from '@/components/table/Table.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
@@ -1164,25 +1164,8 @@ onMounted(async () => {
   padding: 20px;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
 
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #2a3474;
-}
 
 .order-info-section {
   margin-bottom: 20px;

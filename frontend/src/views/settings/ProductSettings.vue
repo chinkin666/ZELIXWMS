@@ -1,19 +1,11 @@
 <template>
   <div class="product-settings">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">商品設定</h1>
-        <p class="page-subtitle">SKU管理番号 と印刷用商品名、商品名、検品コード (バーコード)、クール区分、メール便計算を管理します</p>
-      </div>
-      <div class="page-actions">
-        <OButton variant="primary" @click="openCreate">
-          <span class="o-icon">+</span> 商品を追加
-        </OButton>
-        <OButton variant="success" @click="showImportDialog = true">
-          <span class="o-icon">&#8593;</span> 取り込みファイルを選択
-        </OButton>
-      </div>
-    </div>
+    <ControlPanel title="商品設定" :show-search="false">
+      <template #actions>
+        <OButton variant="primary" @click="openCreate"><span class="o-icon">+</span> 商品を追加</OButton>
+        <OButton variant="success" @click="showImportDialog = true"><span class="o-icon">&#8593;</span> 取り込みファイルを選択</OButton>
+      </template>
+    </ControlPanel>
 
     <SearchForm
       class="search-section"
@@ -23,25 +15,23 @@
       @search="handleSearch"
     />
 
-    <div class="table-section">
-      <Table
-        :columns="tableColumns"
-        :data="list"
-        :height="520"
-        row-key="_id"
-        highlight-columns-on-hover
-        pagination-enabled
-        pagination-mode="client"
-        :page-size="10"
-        :page-sizes="[10, 20, 50]"
-        :global-search-text="globalSearchText"
-        row-selection-enabled
-        :selected-keys="selectedKeys"
-        bulk-edit-enabled
-        @update:selected-keys="selectedKeys = $event"
-        @bulk-edit="handleBulkEdit"
-      />
-    </div>
+    <Table
+      :columns="tableColumns"
+      :data="list"
+      :height="560"
+      row-key="_id"
+      highlight-columns-on-hover
+      pagination-enabled
+      pagination-mode="client"
+      :page-size="25"
+      :page-sizes="[10, 25, 50, 100]"
+      :global-search-text="globalSearchText"
+      row-selection-enabled
+      :selected-keys="selectedKeys"
+      bulk-edit-enabled
+      @update:selected-keys="selectedKeys = $event"
+      @bulk-edit="handleBulkEdit"
+    />
 
     <FormDialog
       v-model="dialogVisible"
@@ -237,6 +227,8 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { useToast } from '@/composables/useToast'
 import { uploadProductImage } from '@/api/product'
 import { getApiBaseUrl } from '@/api/base'
 import noImageSrc from '@/assets/images/no_image.png'
@@ -249,6 +241,8 @@ import type { TableColumn, Operator } from '@/types/table'
 import { bulkUpdateProducts, checkSkuAvailability, createProduct, deleteProduct, fetchProducts, importProductsWithStrategy, updateProduct, type ImportStrategy } from '@/api/product'
 import type { Product, ProductFilters, UpsertProductDto, SubSku } from '@/types/product'
 import ImportResultDialog, { type ImportResultData } from '@/components/import/ImportResultDialog.vue'
+
+const toast = useToast()
 
 const COOL_TYPE_OPTIONS = [
   { label: '通常', value: '0' },
@@ -590,9 +584,9 @@ const handleImageFileChangeNative = async (event: Event) => {
   try {
     const result = await uploadProductImage(file)
     editImageUrl.value = result.imageUrl
-    alert('画像をアップロードしました')
+    toast.showSuccess('画像をアップロードしました')
   } catch (error: any) {
-    alert(error?.message || '画像のアップロードに失敗しました')
+    toast.showError(error?.message || '画像のアップロードに失敗しました')
   } finally {
     uploadingImage.value = false
     // Reset file input so same file can be selected again
@@ -748,7 +742,7 @@ const saveSubSkus = async () => {
 
   // Check if there are any validation errors
   if (Object.keys(subSkuValidationErrors.value).length > 0) {
-    alert('入力エラーがあります。修正してください。')
+    toast.showWarning('入力エラーがあります。修正してください。')
     return
   }
 
@@ -759,13 +753,13 @@ const saveSubSkus = async () => {
   const codes = validSubSkus.map((s) => s.subSku.trim())
   const uniqueCodes = new Set(codes)
   if (uniqueCodes.size !== codes.length) {
-    alert('子SKUコードが重複しています')
+    toast.showWarning('子SKUコードが重複しています')
     return
   }
 
   // Check if any sub-SKU matches the parent SKU
   if (codes.includes(subSkuEditingProduct.value.sku)) {
-    alert('子SKUコードは親SKUと同じにできません')
+    toast.showWarning('子SKUコードは親SKUと同じにできません')
     return
   }
 
@@ -785,7 +779,7 @@ const saveSubSkus = async () => {
       }
     }
     if (conflictErrors.length > 0) {
-      alert(conflictErrors[0])
+      toast.showWarning(conflictErrors[0])
       return
     }
   }
@@ -800,11 +794,11 @@ const saveSubSkus = async () => {
         isActive: s.isActive !== false,
       })),
     })
-    alert('子SKUを保存しました')
+    toast.showSuccess('子SKUを保存しました')
     subSkuDialogVisible.value = false
     await loadList()
   } catch (error: any) {
-    alert(error?.response?.data?.message || error?.message || '保存に失敗しました')
+    toast.showError(error?.response?.data?.message || error?.message || '保存に失敗しました')
   } finally {
     savingSubSkus.value = false
   }
@@ -844,7 +838,7 @@ const loadList = async () => {
   try {
     list.value = await fetchProducts(currentFilters.value)
   } catch (error: any) {
-    alert(error?.message || '取得に失敗しました')
+    toast.showError(error?.message || '取得に失敗しました')
   } finally {
     loading.value = false
   }
@@ -889,7 +883,7 @@ const normalizeArrayInput = (val: any): string[] => {
 const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
   // Check if there are any validation errors
   if (Object.keys(editDialogSubSkuValidationErrors.value).length > 0) {
-    alert('子SKUに入力エラーがあります。修正してください。')
+    toast.showWarning('子SKUに入力エラーがあります。修正してください。')
     return
   }
 
@@ -919,13 +913,13 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
     const subSkuCodes = validSubSkus.map((s) => s.subSku.trim())
     const uniqueSubSkuCodes = new Set(subSkuCodes)
     if (uniqueSubSkuCodes.size !== subSkuCodes.length) {
-      alert('子SKUコードが重複しています')
+      toast.showWarning('子SKUコードが重複しています')
       saving.value = false
       return
     }
     const parentSku = (payload.sku || '').trim()
     if (subSkuCodes.includes(parentSku)) {
-      alert('子SKUコードは親SKUと同じにできません')
+      toast.showWarning('子SKUコードは親SKUと同じにできません')
       saving.value = false
       return
     }
@@ -933,7 +927,7 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
     // Validate main SKU uniqueness against database
     const mainSkuError = await validateMainSkuInput(parentSku)
     if (mainSkuError) {
-      alert(mainSkuError)
+      toast.showWarning(mainSkuError)
       saving.value = false
       return
     }
@@ -954,7 +948,7 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
         }
       }
       if (conflictErrors.length > 0) {
-        alert(conflictErrors[0]) // Show first error
+        toast.showWarning(conflictErrors[0]) // Show first error
         saving.value = false
         return
       }
@@ -989,16 +983,16 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
 
     if (editingRow.value?._id) {
       await updateProduct(editingRow.value._id, cleanPayload)
-      alert('更新しました')
+      toast.showSuccess('更新しました')
     } else {
       await createProduct(cleanPayload as UpsertProductDto)
-      alert('作成しました')
+      toast.showSuccess('作成しました')
     }
     dialogVisible.value = false
     resetForm()
     await loadList()
   } catch (error: any) {
-    alert(error?.response?.data?.message || error?.message || '保存に失敗しました')
+    toast.showError(error?.response?.data?.message || error?.message || '保存に失敗しました')
   } finally {
     saving.value = false
   }
@@ -1007,17 +1001,17 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
 const handleBulkEdit = async (payload: { columnKey: string; dataKey: string; fieldType?: string; value: any; overwrite: boolean; selectedKeys: (string | number)[]; selectedRows: Record<string, any>[] }) => {
   const { dataKey, value, selectedKeys: keys } = payload
   if (!keys || keys.length === 0) {
-    alert('商品が選択されていません')
+    toast.showWarning('商品が選択されていません')
     return
   }
   try {
     const updates = { [dataKey]: value }
     const result = await bulkUpdateProducts(keys.map(String), updates)
-    alert(`${result.modifiedCount}件更新しました`)
+    toast.showSuccess(`${result.modifiedCount}件更新しました`)
     await loadList()
     selectedKeys.value = []
   } catch (error: any) {
-    alert(error?.message || '一括更新に失敗しました')
+    toast.showError(error?.message || '一括更新に失敗しました')
   }
 }
 
@@ -1052,7 +1046,7 @@ const handleImportProducts = async (rows: any[], strategy: ImportStrategy = 'err
     if (result.skippedCount > 0) messages.push(`${result.skippedCount}件スキップ`)
 
     if (messages.length > 0) {
-      alert(messages.join('、') + 'しました')
+      toast.showSuccess(messages.join('、') + 'しました')
     }
 
     // スキップまたは更新がある場合は結果ダイアログを表示
@@ -1074,7 +1068,7 @@ const handleImportProducts = async (rows: any[], strategy: ImportStrategy = 'err
       }
       importResultDialogVisible.value = true
     } else {
-      alert(err?.message || '取り込みに失敗しました')
+      toast.showError(err?.message || '取り込みに失敗しました')
     }
   } finally {
     importing.value = false
@@ -1085,7 +1079,7 @@ const confirmDelete = (row: Product) => {
   if (confirm(`「${row.name}」を削除しますか？`)) {
     deleteProduct(row._id)
       .then(async () => {
-        alert('削除しました')
+        toast.showSuccess('削除しました')
         await loadList()
       })
       .catch(() => {})
@@ -1110,55 +1104,18 @@ onMounted(() => {
 
 <style scoped>
 .product-settings {
-  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.page-actions {
-  display: flex;
-  gap: 8px;
+.search-section {
+  margin-bottom: 20px;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 20px;
-}
-
-.page-subtitle {
-  margin: 6px 0 0;
-  color: #666;
-  font-size: 13px;
-}
-
-.table-section {
-  width: 100%;
-}
-
-/* 操作列样式 - 垂直排列 */
 :deep(.action-cell) {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 4px;
-}
-
-:deep(.action-cell .o-btn) {
-  margin: 0;
-  min-width: 54px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 13px;
-  border-width: 1px;
+  gap: 6px;
 }
 
 .sub-sku-header {
@@ -1265,90 +1222,4 @@ onMounted(() => {
   font-size: 14px;
 }
 
-/* o-icon placeholder */
-.o-icon {
-  display: inline-block;
-  margin-right: 4px;
-}
-
-/* o-btn styles */
-.o-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 16px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  background: #fff;
-  color: #606266;
-  line-height: 1.5;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.o-btn:hover { border-color: #409eff; color: #409eff; }
-.o-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.o-btn-sm { padding: 4px 10px; font-size: 12px; }
-
-.o-btn-primary { background: #409eff; color: #fff; border-color: #409eff; }
-.o-btn-primary:hover { background: #66b1ff; border-color: #66b1ff; }
-
-.o-btn-success { background: #67c23a; color: #fff; border-color: #67c23a; }
-.o-btn-success:hover { background: #85ce61; border-color: #85ce61; }
-
-.o-btn-danger { background: #f56c6c; color: #fff; border-color: #f56c6c; }
-.o-btn-danger:hover { background: #f78989; border-color: #f78989; }
-
-.o-btn-secondary { background: #fff; color: #606266; border-color: #dcdfe6; }
-.o-btn-secondary:hover { border-color: #409eff; color: #409eff; }
-
-.o-btn-outline { background: transparent; }
-.o-btn-primary.o-btn-outline { color: #409eff; border-color: #409eff; background: transparent; }
-.o-btn-primary.o-btn-outline:hover { background: #ecf5ff; }
-.o-btn-danger.o-btn-outline { color: #f56c6c; border-color: #f56c6c; background: transparent; }
-.o-btn-danger.o-btn-outline:hover { background: #fef0f0; }
-.o-btn-secondary.o-btn-outline { color: #909399; border-color: #909399; background: transparent; }
-.o-btn-secondary.o-btn-outline:hover { background: #f4f4f5; }
-
-.o-btn-link { background: transparent; border: none; padding: 0; color: #409eff; }
-.o-btn-link:hover { color: #66b1ff; }
-.o-btn-danger-text { color: #f56c6c; }
-.o-btn-danger-text:hover { color: #f78989; }
-
-/* o-input */
-.o-input {
-  padding: 8px 12px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  font-size: 14px;
-  line-height: 1.5;
-  width: 100%;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
-}
-.o-input:focus { outline: none; border-color: #409eff; }
-.o-input-sm { padding: 4px 8px; font-size: 12px; }
-
-/* o-list-table */
-.o-list-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 13px;
-}
-.o-list-table th,
-.o-list-table td {
-  border: 1px solid #ebeef5;
-  padding: 8px 12px;
-  text-align: left;
-}
-.o-list-table th {
-  background: #f5f7fa;
-  font-weight: 600;
-  color: #606266;
-}
-.o-list-table td {
-  color: #303133;
-}
 </style>

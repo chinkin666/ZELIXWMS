@@ -1,8 +1,6 @@
 <template>
   <div class="waybill-export">
-    <div class="page-header">
-      <h1 class="page-title">配送業者データ出力</h1>
-    </div>
+    <ControlPanel title="配送業者データ出力" :show-search="false" />
 
     <CarrierSelector
       v-model="selectedCarrierId"
@@ -183,6 +181,7 @@ import type { YamatoB2ExportResult } from '@/types/carrierAutomation'
 import YamatoB2ExportResultDialog from '@/components/carrier-automation/YamatoB2ExportResultDialog.vue'
 import YamatoB2ApiErrorDialog from '@/components/carrier-automation/YamatoB2ApiErrorDialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 
 type SortOrder = 'asc' | 'desc' | null
 type OrderRow = Record<string, any>
@@ -723,19 +722,7 @@ onMounted(async () => {
   flex-direction: column;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
 
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #2a3474;
-}
 
 .search-section {
   margin-bottom: 20px;

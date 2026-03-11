@@ -1,8 +1,6 @@
 <template>
   <div class="shipment-order-list">
-    <div class="page-header">
-      <h1 class="page-title">出荷指示確定</h1>
-    </div>
+    <ControlPanel title="出荷指示確定" :show-search="false" />
 
     <OrderSearchFormWrapper
       class="search-section"
@@ -144,45 +142,61 @@ import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.v
 import OrderViewDialog from '@/components/shipment-orders/OrderViewDialog.vue'
 import CustomExportDialog from '@/components/export/CustomExportDialog.vue'
 import FormExportDialog from '@/components/form-export/FormExportDialog.vue'
-import type { HeaderGroupingConfig } from '@/components/table/tableHeaderGroup'
 import type { Operator } from '@/types/table'
-import { getOrderFieldDefinitions } from '@/types/order'
-import { buildOrderHeaderGroupingConfig } from '@/utils/orderHeaderGrouping'
-import { deleteShipmentOrder, deleteShipmentOrdersBulk, fetchShipmentOrder, fetchShipmentOrders, updateShipmentOrderStatusBulk } from '@/api/shipmentOrders'
-import { filterDataBySearch } from '@/utils/search'
-import { fetchCarriers } from '@/api/carrier'
-import type { Carrier } from '@/types/carrier'
-import { fetchProducts } from '@/api/product'
-import type { Product } from '@/types/product'
 import type { OrderDocument } from '@/types/order'
+import {
+  deleteShipmentOrder,
+  deleteShipmentOrdersBulk,
+  fetchShipmentOrder,
+  fetchShipmentOrders,
+  updateShipmentOrderStatusBulk,
+} from '@/api/shipmentOrders'
+import { filterDataBySearch } from '@/utils/search'
 import { yamatoB2Validate } from '@/api/carrierAutomation'
 import type { YamatoB2ValidateResult } from '@/types/carrierAutomation'
 import YamatoB2ValidateResultDialog from '@/components/carrier-automation/YamatoB2ValidateResultDialog.vue'
 import YamatoB2ApiErrorDialog from '@/components/carrier-automation/YamatoB2ApiErrorDialog.vue'
-import { validateCell } from '@/utils/orderValidation'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { useToast } from '@/composables/useToast'
+import { useShipmentOrderBase } from './composables/useShipmentOrderBase'
+
+const { showSuccess, showError, showWarning } = useToast()
+
+const {
+  carriers,
+  products,
+  loadCarriers,
+  loadProducts,
+  baseColumns,
+  searchColumns,
+  headerGroupingConfig,
+  headerClass,
+  globalSearchText,
+  currentSearchPayload,
+  updateSearchState,
+  handleSave,
+  tableProps,
+} = useShipmentOrderBase({ enableCellValidation: true })
+
 type OrderRow = Record<string, any>
 
 const tableRef = ref<InstanceType<typeof Table> | null>(null)
-const allRows = ref<OrderRow[]>([]) // 所有数据
-const rows = ref<OrderRow[]>([]) // 显示的数据（用于Table组件）
+const allRows = ref<OrderRow[]>([])
+const rows = ref<OrderRow[]>([])
 const tableSelectedKeys = ref<Array<string | number>>([])
 
-// 批量删除功能开关（可通过配置或环境变量控制）
 const batchDeleteEnabled = ref(true)
 
-// Custom export dialog state
 const customExportDialogVisible = ref(false)
 const selectedOrdersForCustomExport = ref<any[]>([])
 
-// Form export dialog state (PDF)
 const formExportDialogVisible = ref(false)
 const selectedOrdersForFormExport = ref<OrderDocument[]>([])
 
 const pageSize = ref(10)
 const isConfirming = ref(false)
 
-// B2 Cloud validation state
 const b2Validating = ref(false)
 const b2ValidateDialogVisible = ref(false)
 const b2ValidateResult = ref<YamatoB2ValidateResult | null>(null)
@@ -192,60 +206,20 @@ const b2ApiErrorMessage = ref('')
 
 const searchInitialValues = computed(() => ({}))
 
-const carriers = ref<Carrier[]>([])
-const carrierOptions = computed(() => {
-  return (carriers.value || [])
-    .filter((c) => c && c.enabled !== false)
-    .map((c) => ({ label: c.name, value: c._id }))
-})
-// Products for OrderTable
-const products = ref<Product[]>([])
-
-const allFieldDefinitions = computed(() =>
-  getOrderFieldDefinitions({ carrierOptions: carrierOptions.value }),
-)
-
-const baseColumns = computed(() => {
-  const systemFieldKeys = ['tenantId']
-  return allFieldDefinitions.value.filter((col) => col.tableVisible !== false && !systemFieldKeys.includes(col.key))
-})
-
-const searchColumns = computed(() => {
-  return allFieldDefinitions.value.filter((col) => col.searchType !== undefined)
-})
-
-// validateCell is now imported from @/utils/orderValidation
-
-// 行是否有内部记录（用于黄色背景高亮）
 const hasInternalRecord = (row: any): boolean => {
   const records = row?.internalRecord
   return Array.isArray(records) && records.length > 0
 }
 
-// 获取行类名（用于行级别样式）
-const getRowClassName = (row: any): string => {
-  if (hasInternalRecord(row)) {
-    return 'has-internal-record-row'
-  }
-  return ''
-}
+const getRowClassName = (row: any): string =>
+  hasInternalRecord(row) ? 'has-internal-record-row' : ''
 
-const currentSearchPayload = ref<Record<string, { operator: Operator; value: any }> | null>(null)
-const globalSearchText = ref<string>('')
-
-// 计算前端数据的 _productsMeta（用于搜索）
 const calculateProductsMetaForRow = (row: any) => {
-  const products = Array.isArray(row?.products) ? row.products : []
-  const skus = [...new Set(products.map((p: any) => p?.sku).filter(Boolean))]
-  const names = [...new Set(products.map((p: any) => p?.name).filter((name: any): name is string => Boolean(name && typeof name === 'string' && name.trim())))]
-  const totalQuantity = products.reduce((sum: number, p: any) => sum + (p?.quantity || 0), 0)
-
-  return {
-    skus,
-    names,
-    skuCount: skus.length,
-    totalQuantity,
-  }
+  const prods = Array.isArray(row?.products) ? row.products : []
+  const skus = [...new Set(prods.map((p: any) => p?.sku).filter(Boolean))]
+  const names = [...new Set(prods.map((p: any) => p?.name).filter((n: any): n is string => Boolean(n && typeof n === 'string' && n.trim())))]
+  const totalQuantity = prods.reduce((sum: number, p: any) => sum + (p?.quantity || 0), 0)
+  return { skus, names, skuCount: skus.length, totalQuantity }
 }
 
 const enrichRowWithProductsMeta = (row: any) => {
@@ -255,28 +229,16 @@ const enrichRowWithProductsMeta = (row: any) => {
   return { ...row, _productsMeta: calculateProductsMetaForRow(row) }
 }
 
-// 搜索后的行数据
 const searchedRows = computed(() => {
-  // backfill _productsMeta for client-side search (some old docs may not have names)
   let filtered = allRows.value.map(enrichRowWithProductsMeta)
-
-  // 默认只显示 confirm.isConfirmed 为 false 或未设置的条目
-  filtered = filtered.filter((row: any) => {
-    const isConfirmed = row.status?.confirm?.isConfirmed
-    return isConfirmed !== true
-  })
-
+  filtered = filtered.filter((row: any) => row.status?.confirm?.isConfirmed !== true)
   if (currentSearchPayload.value && Object.keys(currentSearchPayload.value).length > 0) {
-    // use searchColumns (includes productSku/productName fields) instead of baseColumns
     filtered = filterDataBySearch(filtered, searchColumns.value, currentSearchPayload.value)
   }
   return filtered
 })
 
-// 最终显示的行数据（搜索过滤后的数据）
-const displayRows = computed(() => {
-  return [...searchedRows.value]
-})
+const displayRows = computed(() => [...searchedRows.value])
 
 const viewDialogVisible = ref(false)
 const editDialogVisible = ref(false)
@@ -289,7 +251,7 @@ const handleView = async (row: any) => {
     selectedOrder.value = await fetchShipmentOrder(String(id))
     viewDialogVisible.value = true
   } catch (e: any) {
-    alert(e?.message || '詳細の取得に失敗しました')
+    showError(e?.message || '詳細の取得に失敗しました')
   }
 }
 
@@ -300,7 +262,7 @@ const handleEdit = async (row: any) => {
     selectedOrder.value = await fetchShipmentOrder(String(id))
     editDialogVisible.value = true
   } catch (e: any) {
-    alert(e?.message || '詳細の取得に失敗しました')
+    showError(e?.message || '詳細の取得に失敗しました')
   }
 }
 
@@ -308,21 +270,17 @@ const handleDelete = async (row: any) => {
   try {
     const id = row?._id
     if (!id) return
-
     if (!confirm(`注文番号: ${row.orderNumber || id}\nこの出荷予定を削除しますか？`)) return
-
     await deleteShipmentOrder(String(id))
-    alert('出荷予定を削除しました')
-    // 重新加载列表
+    showSuccess('出荷予定を削除しました')
     await loadOrders()
   } catch (e: any) {
     if (e === 'cancel') return
-    alert(e?.message || '削除に失敗しました')
+    showError(e?.message || '削除に失敗しました')
   }
 }
 
 const handleOrderUpdated = async () => {
-  // 重新加载列表
   await loadOrders()
 }
 
@@ -333,86 +291,56 @@ const handleTableSelectionChange = (payload: { selectedKeys: Array<string | numb
 const handleCustomExportClick = () => {
   if (tableSelectedKeys.value.length === 0) return
   const keySet = new Set(tableSelectedKeys.value.map((k) => String(k)))
-  selectedOrdersForCustomExport.value = displayRows.value.filter((r: any) =>
-    keySet.has(String(r?._id)),
-  )
+  selectedOrdersForCustomExport.value = displayRows.value.filter((r: any) => keySet.has(String(r?._id)))
   customExportDialogVisible.value = true
 }
 
 const handleFormExportClick = () => {
   if (tableSelectedKeys.value.length === 0) return
   const keySet = new Set(tableSelectedKeys.value.map((k) => String(k)))
-  selectedOrdersForFormExport.value = displayRows.value.filter((r: any) =>
-    keySet.has(String(r?._id)),
-  ) as OrderDocument[]
+  selectedOrdersForFormExport.value = displayRows.value.filter((r: any) => keySet.has(String(r?._id))) as OrderDocument[]
   formExportDialogVisible.value = true
 }
 
 const handleBatchDelete = async (payload: { selectedKeys: Array<string | number>; selectedRows: any[] }) => {
   const { selectedKeys, selectedRows } = payload
-
   if (selectedKeys.length === 0) {
-    alert('削除する行を選択してください')
+    showWarning('削除する行を選択してください')
     return
   }
 
+  const orderNumbers = selectedRows
+    .map((row: any) => row.orderNumber || row._id)
+    .filter(Boolean)
+    .slice(0, 5)
+  const orderNumbersText = orderNumbers.join(', ')
+  const moreText = selectedRows.length > 5 ? `他${selectedRows.length - 5}件` : ''
+
+  if (!confirm(`選択した${selectedKeys.length}件の出荷予定を削除しますか？\n${orderNumbersText}${moreText ? `\n${moreText}` : ''}`)) return
+
   try {
-    const orderNumbers = selectedRows
-      .map((row: any) => row.orderNumber || row._id)
-      .filter(Boolean)
-      .slice(0, 5)
-    const orderNumbersText = orderNumbers.length > 0 ? orderNumbers.join(', ') : ''
-    const moreText = selectedRows.length > 5 ? `他${selectedRows.length - 5}件` : ''
-
-    if (!confirm(`選択した${selectedKeys.length}件の出荷予定を削除しますか？\n${orderNumbersText}${moreText ? `\n${moreText}` : ''}`)) return
-
     const ids = selectedKeys.map((key) => String(key))
-
-    // 使用批量 API（1个请求代替N个请求）
     const result = await deleteShipmentOrdersBulk(ids)
     const successCount = result?.deletedCount ?? 0
-
-    if (successCount > 0) {
-      alert(`${successCount}件の出荷予定を削除しました`)
-    }
-    if (successCount < ids.length) {
-      const failCount = ids.length - successCount
-      alert(`${failCount}件の削除に失敗しました`)
-    }
-
-    // 清空选择并重新加载列表
+    if (successCount > 0) showSuccess(`${successCount}件の出荷予定を削除しました`)
+    if (successCount < ids.length) showWarning(`${ids.length - successCount}件の削除に失敗しました`)
     tableSelectedKeys.value = []
     await loadOrders()
   } catch (e: any) {
     if (e === 'cancel') return
-    alert(e?.message || '一括削除に失敗しました')
+    showError(e?.message || '一括削除に失敗しました')
   }
 }
 
 const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
-  const nextPayload: Record<string, { operator: Operator; value: any }> = { ...(payload || {}) }
-  const keyword = (nextPayload as any)?.__global?.value
-  globalSearchText.value = keyword ? String(keyword) : ''
-  delete (nextPayload as any).__global
-  currentSearchPayload.value = nextPayload
-  // 搜索过滤由 displayRows computed 自动处理，无需重新加载
+  updateSearchState(payload)
 }
 
-const handleSave = (_payload: Record<string, { operator: Operator; value: any }>) => {
-  alert('検索条件を保存しました（ダミー）')
-}
-
-/**
- * Check if a carrier is Yamato B2
- */
 const isYamatoB2Carrier = (carrierId: string): boolean => {
   const carrier = carriers.value.find((c) => c._id === carrierId)
   return carrier?.automationType === 'yamato-b2'
 }
 
-/**
- * Show B2 Cloud API error dialog
- */
 const showB2ApiError = (errorMessage: string) => {
   b2ApiErrorMessage.value = errorMessage
   b2ApiErrorDialogVisible.value = true
@@ -426,27 +354,20 @@ const handleB2ValidateDialogCancel = () => {
 
 const handleB2ValidateDialogConfirm = async () => {
   b2ValidateDialogVisible.value = false
-
-  // Proceed with confirmation
   await doConfirmOrders(b2PendingConfirmIds.value)
   b2PendingConfirmIds.value = []
 }
 
-/**
- * Actually confirm the orders (called after validation passes or for non-B2 orders)
- */
 const doConfirmOrders = async (ids: string[]) => {
   if (ids.length === 0) return
-
   isConfirming.value = true
   try {
     await updateShipmentOrderStatusBulk(ids, 'mark-print-ready')
-    alert(`${ids.length}件の出荷指示確定しました`)
-
+    showSuccess(`${ids.length}件の出荷指示確定しました`)
     tableSelectedKeys.value = []
     await loadOrders()
   } catch (e: any) {
-    alert(e?.message || '出荷データの確認に失敗しました')
+    showError(e?.message || '出荷データの確認に失敗しました')
   } finally {
     isConfirming.value = false
   }
@@ -454,59 +375,50 @@ const doConfirmOrders = async (ids: string[]) => {
 
 const handleConfirmPrintReady = async () => {
   if (tableSelectedKeys.value.length === 0) {
-    alert('確認する行を選択してください')
+    showWarning('確認する行を選択してください')
     return
   }
-
   try {
     const selectedRows = displayRows.value.filter((row: any) =>
-      tableSelectedKeys.value.includes(row._id)
+      tableSelectedKeys.value.includes(row._id),
     )
-
     const orderNumbers = selectedRows
       .map((row: any) => row.orderNumber || row._id)
       .filter(Boolean)
       .slice(0, 5)
-    const orderNumbersText = orderNumbers.length > 0 ? orderNumbers.join(', ') : ''
+    const orderNumbersText = orderNumbers.join(', ')
     const moreText = selectedRows.length > 5 ? `他${selectedRows.length - 5}件` : ''
 
     if (!confirm(`選択した${tableSelectedKeys.value.length}件の出荷指示確定しますか？\n${orderNumbersText}${moreText ? `\n${moreText}` : ''}`)) return
 
     const ids = tableSelectedKeys.value.map((key) => String(key)).filter(Boolean)
-
     if (ids.length === 0) {
-      alert('有効なIDがありません')
+      showWarning('有効なIDがありません')
       return
     }
 
-    // Check if any selected orders are Yamato B2
     const b2OrderIds = selectedRows
       .filter((row: any) => isYamatoB2Carrier(row.carrierId))
       .map((row: any) => String(row._id))
 
     if (b2OrderIds.length > 0) {
-      // Validate B2 orders first
       b2Validating.value = true
       try {
         const validateResult = await yamatoB2Validate(b2OrderIds)
         b2ValidateResult.value = validateResult
         b2PendingConfirmIds.value = ids
         b2Validating.value = false
-
-        // Show validation dialog
         b2ValidateDialogVisible.value = true
       } catch (e: any) {
         b2Validating.value = false
-        const errorMsg = e?.message || 'B2 Cloudへの検証に失敗しました'
-        showB2ApiError(errorMsg)
+        showB2ApiError(e?.message || 'B2 Cloudへの検証に失敗しました')
       }
     } else {
-      // No B2 orders, proceed directly
       await doConfirmOrders(ids)
     }
   } catch (e: any) {
     if (e === 'cancel') return
-    alert(e?.message || '出荷データの確認に失敗しました')
+    showError(e?.message || '出荷データの確認に失敗しました')
   }
 }
 
@@ -523,85 +435,24 @@ const tableColumns = computed(() => {
         'div',
         { style: 'display:inline-flex;gap:8px;' },
         [
-          h(
-            'button',
-            {
-              class: 'o-btn o-btn-primary o-btn-sm',
-              onClick: () => handleView(rowData),
-            },
-            '詳細',
-          ),
-          h(
-            'button',
-            {
-              class: 'o-btn o-btn-secondary o-btn-sm',
-              style: 'border-color:#67c23a;color:#67c23a;',
-              onClick: () => handleEdit(rowData),
-            },
-            '編集',
-          ),
-          h(
-            'button',
-            {
-              class: 'o-btn o-btn-danger o-btn-sm',
-              onClick: () => handleDelete(rowData),
-            },
-            '削除',
-          ),
+          h('button', { class: 'o-btn o-btn-primary o-btn-sm', onClick: () => handleView(rowData) }, '詳細'),
+          h('button', { class: 'o-btn o-btn-secondary o-btn-sm', style: 'border-color:#67c23a;color:#67c23a;', onClick: () => handleEdit(rowData) }, '編集'),
+          h('button', { class: 'o-btn o-btn-danger o-btn-sm', onClick: () => handleDelete(rowData) }, '削除'),
         ],
       ),
   }
-
-  const cols = [
-    ...baseColumns.value,
-    actionColumn,
-  ]
-  return cols
+  return [...baseColumns.value, actionColumn]
 })
-
-const headerGroupingConfig = computed<HeaderGroupingConfig>(() => {
-  return buildOrderHeaderGroupingConfig(baseColumns.value as any)
-})
-
-const headerClass = (): string => ''
-
-const tableProps = computed(() => {
-  return {
-    cellProps: ({ rowData, column }: { rowData: any; column: any }) => {
-      const props: any = {}
-      const columnConfig = baseColumns.value.find((col) => col.key === column.key || col.dataKey === column.key)
-      if (columnConfig) {
-        const hasError = !validateCell(rowData, columnConfig)
-        if (hasError) {
-          props.class = 'error-cell'
-          props.style = { backgroundColor: '#ffebee' }
-        }
-      }
-      return props
-    },
-  }
-})
-
-const loadCarriers = async () => {
-  try {
-    carriers.value = await fetchCarriers({ enabled: true })
-  } catch (e) {
-    console.error(e)
-    alert('配送業者マスタの取得に失敗しました')
-  }
-}
 
 const loadOrders = async () => {
   try {
-    // 获取所有数据，不传递 page 参数，后端会返回所有数据
     const data = await fetchShipmentOrders()
     allRows.value = Array.isArray(data) ? data : []
   } catch (e: any) {
-    alert(e?.message || '出荷予定の取得に失敗しました')
+    showError(e?.message || '出荷予定の取得に失敗しました')
   }
 }
 
-// 监听 displayRows 变化，同步到 rows（Table 组件使用）
 watch(displayRows, (newRows) => {
   rows.value = newRows
 }, { immediate: true })
@@ -609,11 +460,7 @@ watch(displayRows, (newRows) => {
 onMounted(async () => {
   await loadCarriers()
   await loadOrders()
-  try {
-    products.value = await fetchProducts()
-  } catch (e) {
-    console.error('Failed to load products:', e)
-  }
+  await loadProducts()
 })
 </script>
 
@@ -623,64 +470,14 @@ onMounted(async () => {
   flex-direction: column;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #2a3474;
-}
-
 .search-section {
   margin-bottom: 20px;
-}
-
-.bottom-bar {
-  position: sticky;
-  bottom: 0;
-  margin-top: 16px;
-  padding: 12px 14px;
-  background: #ffffff;
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  z-index: 10;
-}
-
-.bottom-bar__left {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.bottom-bar__meta {
-  color: #303133;
-  font-size: 13px;
-}
-
-.bottom-bar__right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
 }
 
 ::v-deep(.error-cell) {
   background-color: #ffebee !important;
 }
 
-/* 有内部记录的行，黄色背景 */
 :deep(.has-internal-record-row) {
   background-color: #fff9c4 !important;
 }

@@ -1,8 +1,6 @@
 <template>
   <div class="waybill-import">
-    <div class="page-header">
-      <h1 class="page-title">配送業者データ取込</h1>
-    </div>
+    <ControlPanel title="配送業者データ取込" :show-search="false" />
 
     <CarrierSelector
       v-model="selectedCarrierId"
@@ -175,6 +173,7 @@ import { importCarrierReceiptRows, type ImportCarrierReceiptRowsResult } from '@
 import CarrierSelector from '@/components/search/CarrierSelector.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { yamatoB2Import } from '@/api/carrierAutomation'
 import type { Carrier } from '@/types/carrier'
 import type { YamatoB2ImportResult } from '@/types/carrierAutomation'
@@ -474,19 +473,7 @@ const runImport = async () => {
   flex-direction: column;
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
 
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #2a3474;
-}
 
 .upload-entry,
 .automation-entry {

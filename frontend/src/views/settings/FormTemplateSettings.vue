@@ -1,12 +1,10 @@
 <template>
   <div class="form-template-settings">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">帳票テンプレート</h1>
-        <p class="page-subtitle">ピッキングリスト・出荷明細リストなどの帳票テンプレートを管理します</p>
-      </div>
-      <OButton variant="primary" @click="openCreate">新規追加</OButton>
-    </div>
+    <ControlPanel title="帳票テンプレート" :show-search="false">
+      <template #actions>
+        <OButton variant="primary" @click="openCreate">新規追加</OButton>
+      </template>
+    </ControlPanel>
 
     <div class="table-section">
       <table class="o-list-table">
@@ -73,6 +71,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import type { FormTemplate } from '@/types/formTemplate'
 import { fetchFormTemplates, fetchFormTemplate, createFormTemplate, deleteFormTemplate } from '@/api/formTemplate'
@@ -185,25 +184,8 @@ onMounted(() => {
   flex-direction: column;
 }
 
-.page-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
 
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #2a3474;
-}
 
-.page-subtitle {
-  margin: 6px 0 0;
-  color: #6b7280;
-  font-size: 12px;
-}
 
 .table-section {
   background: #fff;

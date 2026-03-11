@@ -54,6 +54,7 @@ const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '1-1検品', to: '/shipment-operations/one-by-one/inspection' },
     { label: 'N-1検品', to: '/shipment-operations/n-by-one/inspection' },
   ],
+  '/shipment-results': [],
   '/settings': [
     { label: '基本設定', to: '/settings/basic' },
     { label: 'ご依頼主設定', to: '/settings/orderSourceCompany' },
@@ -245,7 +246,7 @@ watch(() => route.path, () => {
     </nav>
 
     <!-- ===== Sub-header ===== -->
-    <nav v-if="subMenuItems.length > 0" class="o-sub-navbar">
+    <nav v-if="activeSection !== ''" class="o-sub-navbar">
       <div class="o-sub-navbar-inner">
         <button
           v-for="item in subMenuItems"

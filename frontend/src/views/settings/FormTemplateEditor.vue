@@ -1,20 +1,12 @@
 <template>
   <div class="form-template-editor">
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">帳票テンプレート編集</h1>
-        <p class="page-subtitle">{{ template?.name || '読み込み中...' }}</p>
-      </div>
-      <div class="header-actions">
-        <OButton variant="secondary" @click="handlePreview" :disabled="previewing">
-          {{ previewing ? 'プレビュー中...' : 'プレビュー' }}
-        </OButton>
-        <OButton variant="primary" @click="handleSave" :disabled="saving">
-          {{ saving ? '保存中...' : '保存' }}
-        </OButton>
+    <ControlPanel title="帳票テンプレート編集" :show-search="false">
+      <template #actions>
+        <OButton variant="secondary" @click="handlePreview" :disabled="previewing">{{ previewing ? 'プレビュー中...' : 'プレビュー' }}</OButton>
+        <OButton variant="primary" @click="handleSave" :disabled="saving">{{ saving ? '保存中...' : '保存' }}</OButton>
         <OButton variant="secondary" @click="handleBack">戻る</OButton>
-      </div>
-    </div>
+      </template>
+    </ControlPanel>
 
     <div v-if="template" class="editor-content">
       <div class="editor-layout">
@@ -711,6 +703,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch, nextTick } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { FormTemplate, FormTemplateColumn, FormTemplateColumnChild, BarcodeConfig, HeaderFooterItem } from '@/types/formTemplate'
 import { fetchFormTemplate, updateFormTemplate } from '@/api/formTemplate'
@@ -1304,10 +1297,6 @@ onMounted(() => {
 
 <style scoped>
 .form-template-editor { display: flex; flex-direction: column; height: 100%; }
-.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
-.page-title { margin: 0; font-size: 20px; font-weight: 700; color: #2a3474; }
-.page-subtitle { margin: 4px 0 0; color: #6b7280; font-size: 14px; }
-.header-actions { display: flex; gap: 8px; }
 .editor-content { flex: 1; min-height: 0; }
 .editor-layout { display: flex; gap: 16px; height: 100%; min-height: 600px; }
 .editor-left { flex: 0 0 50%; min-width: 0; overflow-y: auto; }
