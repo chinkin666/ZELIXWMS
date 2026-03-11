@@ -433,7 +433,7 @@ const fmtDateTime = (v: any) => {
   return isNaN(d.getTime()) ? String(v) : d.toLocaleString('ja-JP')
 }
 
-// 配送会社名称
+// 配送業者名称
 const carrierName = computed(() => {
   const id = order.value?.carrierId
   if (!id) return '-'
@@ -448,7 +448,7 @@ const summaryItems = computed(() => {
   return [
     { key: 'orderNumber', label: '出荷管理No', value: o.orderNumber || '-' },
     { key: 'trackingId', label: '伝票番号', value: o.trackingId || '-' },
-    { key: 'carrierId', label: '配送会社', value: carrierName.value },
+    { key: 'carrierId', label: '配送業者', value: carrierName.value },
     { key: 'shipPlanDate', label: '出荷予定日', value: o.shipPlanDate || '-' },
     { key: 'invoiceType', label: '送り状種類', value: o.invoiceType || '-' },
     { key: 'recipientName', label: '送付先名', value: o.recipient?.name || '-' },
@@ -504,9 +504,9 @@ const tableColumns = computed<TableColumn[]>(() => {
       fieldType: 'string',
       cellRenderer: ({ rowData }: { rowData: ProductItem }) => {
         const coolType = rowData.productData?.coolType
-        if (coolType === '0') return '常温'
-        if (coolType === '1') return 'クール冷蔵'
-        if (coolType === '2') return 'クール冷凍'
+        if (coolType === '0') return '通常'
+        if (coolType === '1') return 'クール冷凍'
+        if (coolType === '2') return 'クール冷蔵'
         return '-'
       },
     },
@@ -813,7 +813,7 @@ const renderPrintPreview = async () => {
     const template = findDefaultTemplate(order.value, allTemplates)
 
     if (!template) {
-      printError.value = '該当する印刷テンプレートが見つかりません（配送会社と送り状種類に一致するテンプレートが必要です）'
+      printError.value = '該当する印刷テンプレートが見つかりません（配送業者と送り状種類に一致するテンプレートが必要です）'
       return
     }
 
@@ -1002,7 +1002,7 @@ onMounted(async () => {
     // 加载订单
     order.value = await fetchShipmentOrder(orderId)
 
-    // 加载配送会社
+    // 加载配送業者
     carriers.value = await fetchCarriers()
 
     // 预加载所有商品信息

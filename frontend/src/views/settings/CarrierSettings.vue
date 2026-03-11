@@ -2,8 +2,8 @@
   <div class="carrier-settings">
     <div class="page-header">
       <div>
-        <h1 class="page-title">配送会社設定</h1>
-        <p class="page-subtitle">配送会社基本情報とフォーマット定義を管理します</p>
+        <h1 class="page-title">配送業者設定</h1>
+        <p class="page-subtitle">配送業者基本情報とフォーマット定義を管理します</p>
       </div>
       <button class="o-btn o-btn-primary" @click="openCreate">新規追加</button>
     </div>
@@ -64,18 +64,19 @@
 
     <ODialog
       :open="dialogVisible"
-      :title="isEditing ? '配送会社を編集' : '配送会社を追加'"
+      :title="isEditing ? '配送業者を編集' : '配送業者を追加'"
+      size="xl"
       @close="dialogVisible = false"
     >
       <div class="carrier-form">
         <div class="form-row">
           <div class="o-form-group">
-            <label class="o-form-label">配送会社コード <span class="required">*</span></label>
+            <label class="o-form-label">配送業者コード <span class="required">*</span></label>
             <input class="o-input" v-model="editForm.code" placeholder="例: yamato_b2" :disabled="isEditing" />
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">配送会社名 <span class="required">*</span></label>
-            <input class="o-input" v-model="editForm.name" placeholder="配送会社名" />
+            <label class="o-form-label">配送業者名 <span class="required">*</span></label>
+            <input class="o-input" v-model="editForm.name" placeholder="配送業者名" />
           </div>
         </div>
         <div class="form-row">
@@ -126,10 +127,10 @@
                 <td><input class="o-input" v-model="row.description" placeholder="説明・型・長さなど" /></td>
                 <td>
                   <select class="o-input" v-model="row.type">
-                    <option value="string">string</option>
-                    <option value="number">number</option>
-                    <option value="date">date</option>
-                    <option value="boolean">boolean</option>
+                    <option value="string">文字列</option>
+                    <option value="number">数値</option>
+                    <option value="date">日付</option>
+                    <option value="boolean">真偽値</option>
                   </select>
                 </td>
                 <td><input class="o-input" v-model.number="row.maxWidth" type="number" min="1" placeholder="半角幅" /></td>
@@ -214,7 +215,7 @@ const baseColumns: TableColumn[] = [
   {
     key: 'code',
     dataKey: 'code',
-    title: '配送会社コード',
+    title: '配送業者コード',
     width: 140,
     fieldType: 'string',
     searchable: true,
@@ -223,7 +224,7 @@ const baseColumns: TableColumn[] = [
   {
     key: 'name',
     dataKey: 'name',
-    title: '配送会社名',
+    title: '配送業者名',
     width: 180,
     fieldType: 'string',
     searchable: true,
@@ -296,7 +297,10 @@ const tableColumns: TableColumn[] = [
     width: 220,
     cellRenderer: ({ rowData }: { rowData: Carrier }) => {
       if (rowData.isBuiltIn) {
-        return h('span', { style: { color: '#909399', fontSize: '12px' } }, '(内蔵)')
+        return h('div', { class: 'action-cell' }, [
+          h('span', { style: { color: '#909399', fontSize: '12px' } }, '(内蔵)'),
+          h('button', { class: 'o-btn o-btn-sm o-btn-outline-primary', onClick: () => openEdit(rowData) }, '編集'),
+        ])
       }
       return h('div', { class: 'action-cell' }, [
         h('button', { class: 'o-btn o-btn-sm o-btn-outline-primary', onClick: () => openEdit(rowData) }, '編集'),
@@ -413,7 +417,7 @@ const resetColumnsFromEditing = () => {
 
 const handleSave = async () => {
   if (!editForm.value.code.trim() || !editForm.value.name.trim()) {
-    showToast('配送会社コード・配送会社名は必須です', 'warning')
+    showToast('配送業者コード・配送業者名は必須です', 'warning')
     return
   }
 

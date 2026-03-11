@@ -2,8 +2,8 @@
   <div class="carrier-automation-settings">
     <div class="page-header">
       <div>
-        <h1 class="page-title">配送会社自動化設定</h1>
-        <p class="page-subtitle">配送会社APIとの自動連携設定を管理します</p>
+        <h1 class="page-title">配送業者自動化設定</h1>
+        <p class="page-subtitle">配送業者APIとの自動連携設定を管理します</p>
       </div>
     </div>
 
@@ -29,7 +29,7 @@
                   <input type="checkbox" v-model="yamatoB2Form.enabled" />
                   <span class="o-toggle-slider"></span>
                 </label>
-                <span class="form-hint">ONにすると、配送会社データ出力・取込で自動化機能が使えます</span>
+                <span class="form-hint">ONにすると、配送業者データ出力・取込で自動化機能が使えます</span>
               </div>
             </div>
 

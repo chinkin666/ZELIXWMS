@@ -81,7 +81,7 @@ export interface IShipmentOrderProduct {
 }
 
 // ============================================
-// キャリアデータインターフェース（配送会社固有データ）
+// キャリアデータインターフェース（配送業者固有データ）
 // ============================================
 export interface IYamatoCarrierData {
   sortingCode?: string;    // 6位仕分けコード
@@ -102,7 +102,7 @@ export interface IShipmentOrder {
 
   status?: {
     /**
-     * 配送会社へデータ送信し、回执（受付/レスポンス）を取得済みかどうか
+     * 配送業者へデータ送信し、回执（受付/レスポンス）を取得済みかどうか
      */
     carrierReceipt?: {
       isReceived: boolean;
@@ -137,10 +137,10 @@ export interface IShipmentOrder {
   // 注文情報
   orderNumber: string;
   sourceOrderAt?: Date;
-  /** 配送会社ID（ObjectIdまたは内蔵配送会社の文字列ID） */
+  /** 配送業者ID（ObjectIdまたは内蔵配送業者の文字列ID） */
   carrierId: mongoose.Types.ObjectId | string;
   customerManagementNumber: string;
-  /** 配送会社から取得した伝票番号（trackingId） */
+  /** 配送業者から取得した伝票番号（trackingId） */
   trackingId?: string;
 
   // 注文者（全フィールド optional）
@@ -174,7 +174,7 @@ export interface IShipmentOrder {
   orderSourceCompanyId?: string;
 
   /**
-   * 配送会社固有データ（キャリアごとにネストされた構造）
+   * 配送業者固有データ（キャリアごとにネストされた構造）
    */
   carrierData?: ICarrierData;
 
@@ -188,7 +188,7 @@ export interface IShipmentOrder {
   sourceRawRows?: Array<Record<string, unknown>>;
 
   /**
-   * 配送会社側ファイル（回执/実績）から取り込んだ「元の1行」を保持（ヘッダー -> 値）。
+   * 配送業者側ファイル（回执/実績）から取り込んだ「元の1行」を保持（ヘッダー -> 値）。
    */
   carrierRawRow?: Record<string, unknown>;
 
@@ -291,7 +291,7 @@ const yamatoCarrierDataSchema = new mongoose.Schema<IYamatoCarrierData>(
   { _id: false },
 );
 
-// 配送会社固有データ用スキーマ
+// 配送業者固有データ用スキーマ
 const carrierDataSchema = new mongoose.Schema<ICarrierData>(
   {
     yamato: { type: yamatoCarrierDataSchema, required: false },
@@ -376,6 +376,10 @@ const shipmentOrderSchema = new mongoose.Schema<IShipmentOrder>(
       ecExported: {
         isExported: { type: Boolean, default: false },
         exportedAt: { type: Date },
+      },
+      held: {
+        isHeld: { type: Boolean, default: false },
+        heldAt: { type: Date },
       },
     },
   },

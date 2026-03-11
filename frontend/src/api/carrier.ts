@@ -15,13 +15,13 @@ const buildQueryUrl = (filters?: CarrierFilters): string => {
 }
 
 /**
- * 获取配送会社列表
- * 后端API已包含内置配送会社（放在列表最前面）
+ * 获取配送業者列表
+ * 后端API已包含内置配送業者（放在列表最前面）
  */
 export async function fetchCarriers(filters?: CarrierFilters): Promise<Carrier[]> {
   const response = await fetch(buildQueryUrl(filters))
   if (!response.ok) {
-    throw new Error(`配送会社の取得に失敗しました: ${response.statusText}`)
+    throw new Error(`配送業者の取得に失敗しました: ${response.statusText}`)
   }
   return response.json()
 }
@@ -34,7 +34,7 @@ export async function createCarrier(payload: UpsertCarrierDto): Promise<Carrier>
   })
   if (!response.ok) {
     const message = (await response.json().catch(() => ({}))).message || response.statusText
-    throw new Error(`配送会社の作成に失敗しました: ${message}`)
+    throw new Error(`配送業者の作成に失敗しました: ${message}`)
   }
   return response.json()
 }
@@ -47,7 +47,7 @@ export async function updateCarrier(id: string, payload: UpsertCarrierDto): Prom
   })
   if (!response.ok) {
     const message = (await response.json().catch(() => ({}))).message || response.statusText
-    throw new Error(`配送会社の更新に失敗しました: ${message}`)
+    throw new Error(`配送業者の更新に失敗しました: ${message}`)
   }
   return response.json()
 }
@@ -58,7 +58,7 @@ export async function deleteCarrier(id: string): Promise<void> {
   })
   if (!response.ok) {
     const message = (await response.json().catch(() => ({}))).message || response.statusText
-    throw new Error(`配送会社の削除に失敗しました: ${message}`)
+    throw new Error(`配送業者の削除に失敗しました: ${message}`)
   }
 }
 

@@ -61,13 +61,13 @@ const router = createRouter({
               path: 'export',
               name: 'WaybillExport',
               component: () => import('@/views/waybill-management/CarrierExport.vue'),
-              meta: { title: '配送会社データ出力' },
+              meta: { title: '配送業者データ出力' },
             },
             {
               path: 'import',
               name: 'WaybillImport',
               component: () => import('@/views/waybill-management/CarrierImport.vue'),
-              meta: { title: '配送会社データ取込' },
+              meta: { title: '配送業者データ取込' },
             },
           ],
         },
@@ -135,7 +135,7 @@ const router = createRouter({
               path: 'carrier',
               name: 'CarrierSettings',
               component: () => import('@/views/settings/CarrierSettings.vue'),
-              meta: { title: '配送会社設定' },
+              meta: { title: '配送業者設定' },
             },
             {
               path: 'mapping-patterns',
@@ -189,7 +189,7 @@ const router = createRouter({
               path: 'carrier-automation',
               name: 'CarrierAutomationSettings',
               component: () => import('@/views/settings/CarrierAutomationSettings.vue'),
-              meta: { title: '配送会社自動化設定' },
+              meta: { title: '配送業者自動化設定' },
             },
             {
               path: 'order-groups',

@@ -162,7 +162,7 @@ const searchInitialValues = computed((): Record<string, { operator: Operator; va
 })
 
 const carrierOptions = computed(() => {
-  return (carriers.value || []).map((c) => ({ label: `${c.name} (${c.code})`, value: c._id }))
+  return (carriers.value || []).map((c) => ({ label: c.name, value: c._id }))
 })
 
 const allFieldDefinitions = computed(() =>

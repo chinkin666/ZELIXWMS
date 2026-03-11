@@ -60,7 +60,7 @@ export interface ICarrier {
   trackingIdColumnName?: string;
   /** 格式定义 */
   formatDefinition: IFormatDefinition;
-  /** 是否为内置配送会社（不可编辑/删除） */
+  /** 是否为内置配送業者（不可编辑/删除） */
   isBuiltIn: boolean;
   /** 自动化类型 */
   automationType?: string;

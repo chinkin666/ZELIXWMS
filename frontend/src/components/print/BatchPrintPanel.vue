@@ -207,7 +207,7 @@ async function initialize() {
       }) ?? null
       if (!templateId) {
         const carrier = carriersCache.value.find((c) => c._id === order.carrierId)
-        error = `テンプレートが見つかりません（配送会社: ${carrier?.name || order.carrierId}）`
+        error = `テンプレートが見つかりません（配送業者: ${carrier?.name || order.carrierId}）`
       }
     } else if (pdfSource === 'b2-webapi' && !order.trackingId) {
       error = '追跡番号がありません'

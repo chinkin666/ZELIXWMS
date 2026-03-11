@@ -122,7 +122,7 @@ async function matchAndSelectTemplate() {
     const availTemplates = findMatchingTemplates(props.order, props.templates)
 
     if (availTemplates.length === 0) {
-      error.value = '該当するテンプレートが見つかりません（配送会社と送り状種類に一致するテンプレートが必要です）'
+      error.value = '該当するテンプレートが見つかりません（配送業者と送り状種類に一致するテンプレートが必要です）'
       selectedTemplateId.value = ''
       return
     }

@@ -13,7 +13,7 @@
           </select>
         </div>
         <div class="field" v-if="configType === 'order-to-carrier'">
-          <div class="label">配送会社</div>
+          <div class="label">配送業者</div>
           <select
             v-model="carrierId"
             class="o-input"
@@ -21,7 +21,7 @@
             @change="onCarrierChange"
             :disabled="isLocked"
           >
-            <option value="" disabled>配送会社を選択</option>
+            <option value="" disabled>配送業者を選択</option>
             <option v-for="c in carrierOptions" :key="c._id" :value="c._id">{{ c.name }}</option>
           </select>
         </div>
@@ -1015,7 +1015,7 @@ const loadCarriers = async () => {
     carrierOptions.value = await fetchCarriers()
   } catch (e: any) {
     console.error(e)
-    alert(e?.message || '配送会社一覧の取得に失敗しました')
+    alert(e?.message || '配送業者一覧の取得に失敗しました')
   }
 }
 

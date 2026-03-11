@@ -175,7 +175,7 @@ async function initializePreviewItems() {
   loadingText.value = 'プレビューを準備しています...'
   loadingError.value = false
 
-  loadingText.value = '配送会社情報を読み込んでいます...'
+  loadingText.value = '配送業者情報を読み込んでいます...'
   try {
     const [carriers, automationConfig] = await Promise.all([
       fetchCarriers(),
@@ -214,7 +214,7 @@ async function initializePreviewItems() {
 
     let error: string | null = null
     if (pdfSource === 'local' && !template) {
-      error = `テンプレートが見つかりません（配送会社: ${carrierName}, 送り状種類: ${order.invoiceType}）`
+      error = `テンプレートが見つかりません（配送業者: ${carrierName}, 送り状種類: ${order.invoiceType}）`
     } else if (pdfSource === 'b2-webapi' && !order.trackingId) {
       error = `追跡番号がありません（B2 CloudからPDFを取得できません）`
     }

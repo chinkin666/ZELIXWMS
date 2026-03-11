@@ -312,7 +312,7 @@ const handleCarrierChange = (carrierId: string) => {
 
 const handleCarriersLoaded = (loadedCarriers: Carrier[]) => {
   carriers.value = loadedCarriers
-  // CarrierSelector 不再自动选择，直接加载订单（无配送会社过滤时显示全部）
+  // CarrierSelector 不再自动选择，直接加载订单（无配送業者过滤时显示全部）
   void loadOrders()
 }
 
@@ -329,7 +329,7 @@ const searchInitialValues = computed(() => {
 })
 
 const carrierOptions = computed(() => {
-  return (carriers.value || []).map((c) => ({ label: `${c.name} (${c.code})`, value: c._id }))
+  return (carriers.value || []).map((c) => ({ label: c.name, value: c._id }))
 })
 
 const allFieldDefinitions = computed(() =>

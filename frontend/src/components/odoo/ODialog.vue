@@ -6,7 +6,7 @@ const { t } = useI18n()
 interface Props {
   open: boolean
   title?: string
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
   danger?: boolean
 }
 
@@ -29,10 +29,12 @@ function onBackdrop() {
 <template>
   <Teleport to="body">
     <Transition name="o-dialog">
-      <div v-if="open" class="o-dialog-backdrop" @click.self="onBackdrop">
+      <div v-if="open" class="o-dialog-backdrop">
         <div class="o-dialog" :class="[`o-dialog--${size}`]">
           <div class="o-dialog-header">
-            <h4 class="o-dialog-title">{{ title }}</h4>
+            <h4 class="o-dialog-title">
+              <slot name="title">{{ title }}</slot>
+            </h4>
             <button class="o-dialog-close" @click="emit('close')">&times;</button>
           </div>
           <div class="o-dialog-body">
@@ -77,6 +79,7 @@ function onBackdrop() {
 .o-dialog--sm { width: 400px; }
 .o-dialog--md { width: 560px; }
 .o-dialog--lg { width: 800px; }
+.o-dialog--xl { width: 1100px; }
 
 .o-dialog-header {
   display: flex;
@@ -89,6 +92,8 @@ function onBackdrop() {
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0;
+  display: flex;
+  align-items: center;
 }
 .o-dialog-close {
   background: none;

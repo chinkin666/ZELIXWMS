@@ -171,8 +171,8 @@ export async function importCarrierReceiptRows(
  */
 export async function updateShipmentOrderStatus(
   id: string,
-  action: 'mark-print-ready' | 'mark-printed' | 'mark-shipped' | 'mark-ec-exported' | 'mark-inspected' | 'unconfirm',
-  statusType?: 'confirm' | 'carrierReceipt' | 'printed' | 'shipped' | 'ecExported' | 'inspected',
+  action: 'mark-print-ready' | 'mark-printed' | 'mark-shipped' | 'mark-ec-exported' | 'mark-inspected' | 'mark-held' | 'unhold' | 'unconfirm',
+  statusType?: 'confirm' | 'carrierReceipt' | 'printed' | 'shipped' | 'ecExported' | 'inspected' | 'held',
 ): Promise<any> {
   const body: any = { action }
   if (action === 'unconfirm' && statusType) {
@@ -229,8 +229,8 @@ export async function bulkUpdateShipmentOrders(ids: string[], updates: Record<st
  */
 export async function updateShipmentOrderStatusBulk(
   ids: string[],
-  action: 'mark-print-ready' | 'mark-printed' | 'mark-shipped' | 'mark-ec-exported' | 'mark-inspected' | 'unconfirm',
-  statusType?: 'confirm' | 'carrierReceipt' | 'printed' | 'shipped' | 'ecExported' | 'inspected',
+  action: 'mark-print-ready' | 'mark-printed' | 'mark-shipped' | 'mark-ec-exported' | 'mark-inspected' | 'mark-held' | 'unhold' | 'unconfirm',
+  statusType?: 'confirm' | 'carrierReceipt' | 'printed' | 'shipped' | 'ecExported' | 'inspected' | 'held',
 ): Promise<any> {
   const body: any = { ids, action }
   if (action === 'unconfirm' && statusType) {

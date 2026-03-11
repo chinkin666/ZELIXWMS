@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomUUID, randomBytes } from 'crypto';
 import { ShipmentOrder } from '@/models/shipmentOrder';
 import { OrderGroup } from '@/models/orderGroup';
 
@@ -24,35 +24,18 @@ const formatYYYYMMDDLocal = (d: Date): string => {
   return `${y}${m}${day}`;
 };
 
-const getMaxSequenceForDate = async (dateStr: string): Promise<number> => {
-  const datePrefix = `${dateStr}-`;
-  const regex = new RegExp(`^${datePrefix}(\\d+)$`);
-
-  const todayOrders = await ShipmentOrder.find({
-    orderNumber: { $regex: regex },
-  })
-    .select('orderNumber')
-    .lean()
-    .exec();
-
-  let maxSequence = 0;
-  for (const order of todayOrders) {
-    const match = order.orderNumber.match(regex);
-    if (match && match[1]) {
-      const seq = parseInt(match[1], 10);
-      if (seq > maxSequence) maxSequence = seq;
-    }
-  }
-  return maxSequence;
+const generateRandomDigits = (length: number): string => {
+  const bytes = randomBytes(length);
+  return Array.from(bytes, (b) => String(b % 10)).join('');
 };
 
 /**
  * 生成唯一的出荷管理No
- * 格式: YYYYMMDD-N (例如: 20241215-1)
- * 
- * 基于当前日期和当天的序号生成，确保唯一性。
- * 如果发生冲突，会自动递增序号并重试（最多重试10次）。
- * 
+ * 格式: SH{YYYYMMDD}-{8位随机数字} (例: SH20260311-42857631)
+ *
+ * 8位数字有1亿种组合，碰撞概率极低。
+ * DB unique index 兜底，碰撞时自动重试。
+ *
  * @param date 用于生成订单号的日期（可选，默认为当前日期）
  * @returns 唯一的订单号
  */
@@ -63,10 +46,6 @@ export const generateOrderNumber = async (date?: Date): Promise<string> => {
 
 /**
  * 批量生成订单号（同一批次内保证不重复）
- *
- * 注意：
- * - 这是为了解决“先生成后批量 insert”时，DB 中还不存在该批次的订单号，导致全部生成成 YYYYMMDD-1 的问题。
- * - 并发情况下仍可能与其他请求发生冲突，但 DB 的 unique index 会兜底；调用方可在 11000 时重试整批。
  */
 export const generateOrderNumbers = async (count: number, date?: Date): Promise<string[]> => {
   const n = Math.max(0, Math.floor(count));
@@ -74,17 +53,20 @@ export const generateOrderNumbers = async (count: number, date?: Date): Promise<
 
   const targetDate = date || new Date();
   const dateStr = formatYYYYMMDDLocal(targetDate);
-  const datePrefix = `${dateStr}-`;
-
-  // 先从 DB 取当天最大序号，然后在内存里递增分配，确保同一批次内不重复
-  let base = await getMaxSequenceForDate(dateStr);
+  const prefix = `SH${dateStr}-`;
 
   const maxRetries = 10;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
-    const startSeq = base + 1 + attempt * n;
-    const candidates = Array.from({ length: n }, (_, i) => `${datePrefix}${String(startSeq + i)}`);
+    const seen = new Set<string>();
+    const candidates: string[] = [];
+    while (candidates.length < n) {
+      const code = `${prefix}${generateRandomDigits(8)}`;
+      if (!seen.has(code)) {
+        seen.add(code);
+        candidates.push(code);
+      }
+    }
 
-    // 快速检查：若这批候选里有任何一个已存在，则整体往后挪一段再试
     const exists = await ShipmentOrder.findOne({ orderNumber: { $in: candidates } }).select('_id').lean().exec();
     if (!exists) return candidates;
   }

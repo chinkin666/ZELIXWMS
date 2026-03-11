@@ -2,6 +2,13 @@ import type { TableColumn } from './table'
 import { formatOrderProductsText } from '@/utils/formatOrderProductsText'
 import { naturalSort } from '@/utils/naturalSort'
 
+function formatPostalCode(val?: string): string {
+  if (!val) return '-'
+  const digits = val.replace(/[^0-9]/g, '')
+  if (digits.length === 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`
+  return val
+}
+
 export type CoolType = '0' | '1' | '2'
 export type InvoiceType = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | 'A'
 
@@ -59,7 +66,7 @@ export interface YamatoCarrierData {
 }
 
 /**
- * 配送会社固有データ
+ * 配送業者固有データ
  */
 export interface CarrierData {
   yamato?: YamatoCarrierData
@@ -74,7 +81,7 @@ export interface CarrierData {
 export interface Address {
   postalCode: string
   prefecture: string  // 都道府県
-  city: string        // 郡市区
+  city: string        // 市区郡町村
   street: string      // それ以降の住所
   name: string
   phone: string
@@ -84,7 +91,7 @@ export interface OrderDocument {
   _id?: string
   tenantId?: string
   status?: {
-    /** 配送会社へデータ送信し、回执（受付/レスポンス）を取得済みかどうか */
+    /** 配送業者へデータ送信し、回执（受付/レスポンス）を取得済みかどうか */
     carrierReceipt?: { isReceived: boolean; receivedAt?: string }
     /** 印刷準備が完了し、確認済みかどうか */
     confirm?: { isConfirmed: boolean; confirmedAt?: string }
@@ -95,13 +102,15 @@ export interface OrderDocument {
     shipped?: { isShipped: boolean; shippedAt?: string }
     /** EC連携済みかどうか */
     ecExported?: { isExported: boolean; exportedAt?: string }
+    /** 保留中かどうか */
+    held?: { isHeld: boolean; heldAt?: string }
   }
   orderNumber: string // システム自動生成
   sourceOrderAt?: string
-  /** 配送会社（単一選択・必須） */
+  /** 配送業者（単一選択・必須） */
   carrierId: string
   customerManagementNumber: string // お客様管理番号（必須・ユーザー入力）
-  /** 配送会社から取得した伝票番号（trackingId） */
+  /** 配送業者から取得した伝票番号（trackingId） */
   trackingId?: string
   // 注文者（全フィールド optional）
   orderer?: Partial<Address>
@@ -140,7 +149,7 @@ export interface OrderDocument {
    */
   orderSourceCompanyId?: string
   /**
-   * 配送会社固有データ（キャリアごとにネストされた構造）
+   * 配送業者固有データ（キャリアごとにネストされた構造）
    */
   carrierData?: CarrierData
   // 依頼主住所
@@ -153,7 +162,7 @@ export interface OrderDocument {
    * - UI では表示しない
    */
   sourceRawRows?: Array<Record<string, any>>
-  /** 配送会社側ファイル（回执/実績）から取り込んだ元行データ（ヘッダー -> 値） */
+  /** 配送業者側ファイル（回执/実績）から取り込んだ元行データ（ヘッダー -> 値） */
   carrierRawRow?: Record<string, any>
   /**
    * 内部データ：操作記録（確認取消等のイベントログ）
@@ -172,6 +181,17 @@ export interface OrderDocument {
 }
 
 type SelectOption = { label: string; value: any }
+
+const PREFECTURE_OPTIONS: SelectOption[] = [
+  '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
+  '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
+  '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県',
+  '岐阜県', '静岡県', '愛知県', '三重県',
+  '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県',
+  '鳥取県', '島根県', '岡山県', '広島県', '山口県',
+  '徳島県', '香川県', '愛媛県', '高知県',
+  '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県',
+].map(p => ({ label: p, value: p }))
 
 export function getOrderFieldDefinitions(opts?: {
   carrierOptions?: SelectOption[]
@@ -213,7 +233,7 @@ export function getOrderFieldDefinitions(opts?: {
       .map((o) => [String(o.value), String(o.label)]),
   )
 
-  // (出荷情報) 出荷管理No, お客様管理番号, 配送会社, 送り状種類, クール区分, 出荷予定日, お届け日指定, お届け時間帯, 商品, 荷扱い
+  // (出荷情報) 出荷管理No, お客様管理番号, 配送業者, 送り状種類, クール区分, 出荷予定日, お届け日指定, お届け時間帯, 商品, 荷扱い
   // (送付先情報) 送付先郵便番号, 送付先住所, 送付先名, 送付先電話番号, 敬称
   // (ご依頼主情報) 依頼主郵便番号, 依頼主住所, 依頼主名, 依頼主電話番号, 仕分けコード
   // (注文者情報) 注文者郵便番号, 注文者住所, 注文者名, 注文者電話番号
@@ -237,10 +257,12 @@ export function getOrderFieldDefinitions(opts?: {
       key: 'customerManagementNumber',
       dataKey: 'customerManagementNumber',
       title: 'お客様管理番号',
-      description: 'お客様を管理するための番号。必須項目です。',
-      width: 180,
+      description: '半角英数字50文字以内（ハイフン・アンダースコア可）',
+      width: 215,
       fieldType: 'string',
       required: true,
+      maxLength: 50,
+      pattern: '^[a-zA-Z0-9\\-_]*$',
       searchType: 'string',
       formEditable: true,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => rowData.customerManagementNumber || '-',
@@ -248,8 +270,8 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'carrierId',
       dataKey: 'carrierId',
-      title: '配送会社',
-      description: '出荷に利用する配送会社（単一選択）。必須項目です。',
+      title: '配送業者',
+      description: '出荷に利用する配送業者（単一選択）。必須項目です。',
       width: 220,
       fieldType: 'string',
       required: true,
@@ -338,11 +360,28 @@ export function getOrderFieldDefinitions(opts?: {
       key: 'deliveryTimeSlot',
       dataKey: 'deliveryTimeSlot',
       title: 'お届け時間帯',
-      description: 'お届け時間帯（時間帯レンジ）を4桁数字で保持します（例: 1012 = 10時〜12時）。',
+      description: 'お届け時間帯（時間帯レンジ）を4桁数字で保持します（例: 0812 = 午前中）。',
       width: 150,
       fieldType: 'string',
-      searchType: 'string',
-      cellRenderer: ({ rowData }: { rowData: OrderDocument }) => rowData.deliveryTimeSlot || '-',
+      searchType: 'select',
+      searchOptions: [
+        { label: '指定なし', value: '' },
+        { label: '午前中（8-12時）', value: '0812' },
+        { label: '14時〜16時', value: '1416' },
+        { label: '16時〜18時', value: '1618' },
+        { label: '18時〜20時', value: '1820' },
+        { label: '19時〜21時', value: '1921' },
+      ],
+      cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
+        const map: Record<string, string> = {
+          '0812': '午前中（8-12時）',
+          '1416': '14時〜16時',
+          '1618': '16時〜18時',
+          '1820': '18時〜20時',
+          '1921': '19時〜21時',
+        }
+        return map[rowData.deliveryTimeSlot || ''] || rowData.deliveryTimeSlot || '-'
+      },
     },
     {
       key: 'handlingTags',
@@ -362,7 +401,7 @@ export function getOrderFieldDefinitions(opts?: {
       key: 'trackingId',
       dataKey: 'trackingId',
       title: '伝票番号',
-      description: '配送会社から取得した伝票番号（取り込み後に自動設定）。',
+      description: '配送業者から取得した伝票番号（取り込み後に自動設定）。',
       width: 180,
       fieldType: 'string',
       required: false,
@@ -378,7 +417,7 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'products',
       dataKey: 'products',
-      title: '商品',
+      title: '商品情報',
       description: 'この注文に含まれる商品明細の配列です。各要素にSKU（必須）、数量（必須）、商品名（任意）が含まれます。',
       width: 300,
       fieldType: 'array',
@@ -473,30 +512,31 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'recipient.postalCode',
       dataKey: 'recipient.postalCode',
-      title: '送付先郵便番号',
+      title: '郵便番号',
       description: '荷物のお届け先となる住所の郵便番号（数字のみ、ハイフン不可）を保持します。',
       width: 150,
       fieldType: 'string',
       required: true,
       searchType: 'string',
-      cellRenderer: ({ rowData }: { rowData: OrderDocument }) => rowData.recipient?.postalCode || '-',
+      cellRenderer: ({ rowData }: { rowData: OrderDocument }) => formatPostalCode(rowData.recipient?.postalCode),
     },
     {
       key: 'recipient.prefecture',
       dataKey: 'recipient.prefecture',
-      title: '送付先都道府県',
+      title: '都道府県',
       description: '送付先の都道府県を保持します。',
       width: 140,
       fieldType: 'string',
       required: true,
-      searchType: 'string',
+      searchType: 'select',
+      searchOptions: PREFECTURE_OPTIONS,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => rowData.recipient?.prefecture || '-',
     },
     {
       key: 'recipient.city',
       dataKey: 'recipient.city',
-      title: '送付先郡市区',
-      description: '送付先の郡市区を保持します。',
+      title: '市区郡町村',
+      description: '送付先の市区郡町村を保持します。',
       width: 180,
       fieldType: 'string',
       required: true,
@@ -506,7 +546,7 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'recipient.street',
       dataKey: 'recipient.street',
-      title: '送付先それ以降の住所',
+      title: 'それ以降の住所',
       description: '送付先のそれ以降の住所（町・番地、建物名など）を保持します。',
       width: 220,
       fieldType: 'string',
@@ -517,8 +557,8 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'recipientAddress',
       dataKey: 'recipientAddress',
-      title: '送付先住所（全体）',
-      description: '送付先の住所全体（都道府県＋郡市区＋番地以降）を組み合わせて表示します。',
+      title: '住所（全体）',
+      description: '送付先の住所全体（都道府県＋市区郡町村＋番地以降）を組み合わせて表示します。',
       width: 300,
       fieldType: 'string',
       required: false,
@@ -538,7 +578,7 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'recipient.name',
       dataKey: 'recipient.name',
-      title: '送付先名',
+      title: '氏名',
       description: '荷物のお届け先の氏名または法人名を保持します。',
       width: 180,
       fieldType: 'string',
@@ -553,7 +593,7 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'recipient.phone',
       dataKey: 'recipient.phone',
-      title: '送付先電話番号',
+      title: '電話番号',
       description: '配送時に連絡するためのお届け先の電話番号（数字のみ、ハイフン不可）を保持します。',
       width: 160,
       fieldType: 'string',
@@ -578,30 +618,31 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'sender.postalCode',
       dataKey: 'sender.postalCode',
-      title: 'ご依頼主郵便番号',
+      title: '郵便番号',
       description: '出荷元（ご依頼主）の郵便番号（数字のみ、ハイフン不可）を保持します。',
       width: 150,
       fieldType: 'string',
       required: true,
       searchType: 'string',
-      cellRenderer: ({ rowData }: { rowData: OrderDocument }) => rowData.sender?.postalCode || '-',
+      cellRenderer: ({ rowData }: { rowData: OrderDocument }) => formatPostalCode(rowData.sender?.postalCode),
     },
     {
       key: 'sender.prefecture',
       dataKey: 'sender.prefecture',
-      title: 'ご依頼主都道府県',
+      title: '都道府県',
       description: 'ご依頼主の都道府県を保持します。',
       width: 140,
       fieldType: 'string',
       required: true,
-      searchType: 'string',
+      searchType: 'select',
+      searchOptions: PREFECTURE_OPTIONS,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => rowData.sender?.prefecture || '-',
     },
     {
       key: 'sender.city',
       dataKey: 'sender.city',
-      title: 'ご依頼主郡市区',
-      description: 'ご依頼主の郡市区を保持します。',
+      title: '市区郡町村',
+      description: 'ご依頼主の市区郡町村を保持します。',
       width: 180,
       fieldType: 'string',
       required: true,
@@ -611,7 +652,7 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'sender.street',
       dataKey: 'sender.street',
-      title: 'ご依頼主それ以降の住所',
+      title: 'それ以降の住所',
       description: 'ご依頼主のそれ以降の住所（町・番地、建物名など）を保持します。',
       width: 220,
       fieldType: 'string',
@@ -622,8 +663,8 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'senderAddress',
       dataKey: 'senderAddress',
-      title: 'ご依頼主住所（全体）',
-      description: 'ご依頼主の住所全体（都道府県＋郡市区＋番地以降）を組み合わせて表示します。',
+      title: '住所（全体）',
+      description: 'ご依頼主の住所全体（都道府県＋市区郡町村＋番地以降）を組み合わせて表示します。',
       width: 300,
       fieldType: 'string',
       required: false,
@@ -643,7 +684,7 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'sender.name',
       dataKey: 'sender.name',
-      title: 'ご依頼主名',
+      title: '氏名',
       description: '出荷元（ご依頼主）の名称（氏名または法人名）を保持します。',
       width: 150,
       fieldType: 'string',
@@ -654,7 +695,7 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'sender.phone',
       dataKey: 'sender.phone',
-      title: 'ご依頼主電話番号',
+      title: '電話番号',
       description: '出荷元（ご依頼主）と連絡を取るための電話番号（数字のみ、ハイフン不可）を保持します。',
       width: 160,
       fieldType: 'string',
@@ -690,29 +731,30 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'orderer.postalCode',
       dataKey: 'orderer.postalCode',
-      title: '注文者郵便番号',
+      title: '郵便番号',
       description: '注文者の郵便番号（数字のみ、ハイフン不可）を保持します。',
       width: 150,
       fieldType: 'string',
       searchType: 'string',
-      cellRenderer: ({ rowData }: { rowData: OrderDocument }) => rowData.orderer?.postalCode || '-',
+      cellRenderer: ({ rowData }: { rowData: OrderDocument }) => formatPostalCode(rowData.orderer?.postalCode),
     },
     {
       key: 'orderer.prefecture',
       dataKey: 'orderer.prefecture',
-      title: '注文者都道府県',
+      title: '都道府県',
       description: '注文者の都道府県を保持します。',
       width: 140,
       fieldType: 'string',
       required: false,
-      searchType: 'string',
+      searchType: 'select',
+      searchOptions: PREFECTURE_OPTIONS,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => rowData.orderer?.prefecture || '-',
     },
     {
       key: 'orderer.city',
       dataKey: 'orderer.city',
-      title: '注文者郡市区',
-      description: '注文者の郡市区を保持します。',
+      title: '市区郡町村',
+      description: '注文者の市区郡町村を保持します。',
       width: 180,
       fieldType: 'string',
       required: false,
@@ -722,7 +764,7 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'orderer.street',
       dataKey: 'orderer.street',
-      title: '注文者それ以降の住所',
+      title: 'それ以降の住所',
       description: '注文者のそれ以降の住所（町・番地、建物名など）を保持します。',
       width: 220,
       fieldType: 'string',
@@ -733,8 +775,8 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'ordererAddress',
       dataKey: 'ordererAddress',
-      title: '注文者住所（全体）',
-      description: '注文者の住所全体（都道府県＋郡市区＋番地以降）を組み合わせて表示します。',
+      title: '住所（全体）',
+      description: '注文者の住所全体（都道府県＋市区郡町村＋番地以降）を組み合わせて表示します。',
       width: 300,
       fieldType: 'string',
       required: false,
@@ -754,7 +796,7 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'orderer.name',
       dataKey: 'orderer.name',
-      title: '注文者名',
+      title: '氏名',
       description: '注文者の氏名または法人名を保持します。',
       width: 150,
       fieldType: 'string',
@@ -764,7 +806,7 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'orderer.phone',
       dataKey: 'orderer.phone',
-      title: '注文者電話番号',
+      title: '電話番号',
       description: '注文者と連絡を取るための電話番号（数字のみ、ハイフン不可）を保持します。',
       width: 160,
       fieldType: 'string',
@@ -830,7 +872,7 @@ export function getOrderFieldDefinitions(opts?: {
       key: 'statusCarrierReceipt',
       dataKey: 'status.carrierReceipt.receivedAt',
       title: '取り込み日時',
-      description: '配送会社から回执（受付/レスポンス）を取得した日時。',
+      description: '配送業者から回执（受付/レスポンス）を取得した日時。',
       width: 170,
       fieldType: 'date',
       required: false,

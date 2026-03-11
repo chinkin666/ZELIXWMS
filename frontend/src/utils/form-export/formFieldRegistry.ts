@@ -41,7 +41,7 @@ const pickingListFields: FormFieldDefinition[] = [
   {
     key: 'coolType',
     label: 'クール区分',
-    description: '0:常温 / 1:冷蔵 / 2:冷凍',
+    description: '0:通常 / 1:冷凍 / 2:冷蔵',
     fieldType: 'string',
     defaultEnabled: false,
     supportBarcode: false,
@@ -103,8 +103,8 @@ const shipmentDetailFields: FormFieldDefinition[] = [
   },
   {
     key: 'carrierName',
-    label: '配送会社',
-    description: '配送会社名',
+    label: '配送業者',
+    description: '配送業者名',
     fieldType: 'string',
     defaultEnabled: true,
     supportBarcode: false,
@@ -296,7 +296,7 @@ const shipmentDetailFields: FormFieldDefinition[] = [
   {
     key: 'statusCarrierReceiptAt',
     label: '取り込み日時',
-    description: '配送会社データ取り込み日時',
+    description: '配送業者データ取り込み日時',
     fieldType: 'date',
     defaultEnabled: false,
     supportBarcode: false,

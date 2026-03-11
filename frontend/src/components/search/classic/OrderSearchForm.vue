@@ -8,10 +8,10 @@
 
     <!-- 搜索内容区域 -->
     <div class="search-content" v-show="!isCollapsed">
-      <!-- 第一行：配送方法、送り状種類等 -->
+      <!-- 第一行：送り状種類、送り状種類等 -->
       <div class="search-row">
         <div class="search-field">
-          <label class="field-label">配送方法</label>
+          <label class="field-label">送り状種類</label>
           <select class="o-input o-input-sm" v-model="filters.carrierId" style="width: 120px">
             <option value="">全て</option>
             <option

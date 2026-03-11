@@ -1339,7 +1339,7 @@ const shouldShowStatusTags = (row: RowData): boolean => {
 const getStatusTag = (row: RowData, type: 'carrierReceipt' | 'confirm' | 'inspected' | 'printed' | 'shipped' | 'ecExported'): string | null => {
   const status = (row as any)?.status || {}
   if (type === 'carrierReceipt' && status.carrierReceipt?.isReceived) {
-    return '配送会社受付'
+    return '配送業者受付'
   }
   if (type === 'confirm' && status.confirm?.isConfirmed) {
     return '確認済み'

@@ -106,7 +106,7 @@ export const updateCarrier = async (req: Request, res: Response): Promise<void> 
 
     // Prevent updating built-in carriers
     if (isBuiltInCarrierId(carrierId)) {
-      res.status(403).json({ message: '内蔵配送会社は編集できません' });
+      res.status(403).json({ message: '内蔵配送業者は編集できません' });
       return;
     }
 
@@ -147,7 +147,7 @@ export const deleteCarrier = async (req: Request, res: Response): Promise<void> 
 
     // Prevent deleting built-in carriers
     if (isBuiltInCarrierId(carrierId)) {
-      res.status(403).json({ message: '内蔵配送会社は削除できません' });
+      res.status(403).json({ message: '内蔵配送業者は削除できません' });
       return;
     }
 

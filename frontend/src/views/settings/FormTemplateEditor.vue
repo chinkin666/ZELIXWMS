@@ -1176,7 +1176,7 @@ async function handlePreview() {
 function generateSampleData(type: string): Record<string, any>[] {
   if (type === 'shipment-list-picking') {
     return [
-      { sku: 'SKU-001', name: 'サンプル商品A', nameFull: 'サンプル商品A フルネーム', barcode: '4901234567890', coolType: '常温', invoiceType: '発払い宅急便', delivery_size_index: 10, totalQuantity: 5 },
+      { sku: 'SKU-001', name: 'サンプル商品A', nameFull: 'サンプル商品A フルネーム', barcode: '4901234567890', coolType: '通常', invoiceType: '発払い宅急便', delivery_size_index: 10, totalQuantity: 5 },
       { sku: 'SKU-002', name: 'サンプル商品B', nameFull: 'サンプル商品B フルネーム', barcode: '4901234567891', coolType: 'クール冷蔵', invoiceType: '宅急便コンパクト', delivery_size_index: 5, totalQuantity: 10 },
     ]
   }

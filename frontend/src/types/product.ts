@@ -52,9 +52,9 @@ export interface UpsertProductDto {
 
 export function getProductFieldDefinitions(): TableColumn[] {
   const coolTypeOptions = [
-    { label: '常温', value: '0' as const },
-    { label: 'クール冷蔵', value: '1' as const },
-    { label: 'クール冷凍', value: '2' as const },
+    { label: '通常', value: '0' as const },
+    { label: 'クール冷凍', value: '1' as const },
+    { label: 'クール冷蔵', value: '2' as const },
   ]
 
   return [
@@ -104,7 +104,7 @@ export function getProductFieldDefinitions(): TableColumn[] {
       key: 'coolType',
       dataKey: 'coolType',
       title: 'クール区分',
-      description: '0:常温 / 1:冷蔵 / 2:冷凍',
+      description: '0:通常 / 1:冷凍 / 2:冷蔵',
       width: 140,
       // coolType は文字列（'0'|'1'|'2'）なので FieldType は string 扱い
       fieldType: 'string',

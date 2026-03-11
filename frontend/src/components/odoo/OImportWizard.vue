@@ -11,6 +11,8 @@ interface Props {
   open: boolean
   modelName: string
   availableFields: FieldDef[]
+  /** CSV file encoding (default: auto-detect, falls back to shift_jis then utf-8) */
+  defaultFileEncoding?: string
 }
 
 const props = defineProps<Props>()
@@ -131,16 +133,45 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
   return { headers, rows }
 }
 
-function handleFile(file: File) {
+function readFileWithEncoding(file: File, encoding: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => resolve(e.target?.result as string)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsText(file, encoding)
+  })
+}
+
+function looksLikeGarbled(text: string): boolean {
+  // Check first 500 chars for common mojibake patterns (replacement char, high ratio of CJK-like garble)
+  const sample = text.slice(0, 500)
+  const replacementCount = (sample.match(/\uFFFD/g) || []).length
+  if (replacementCount > 2) return true
+  // High ratio of characters in problematic ranges often indicates wrong encoding
+  const suspiciousCount = (sample.match(/[\u0080-\u00FF]/g) || []).length
+  return suspiciousCount > sample.length * 0.15
+}
+
+async function handleFile(file: File) {
   uploadedFile.value = file
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const text = e.target?.result as string
-    const { headers, rows } = parseCSV(text)
-    parsedHeaders.value = headers
-    parsedRows.value = rows
+
+  let text: string
+  const encoding = props.defaultFileEncoding
+
+  if (encoding) {
+    // Explicit encoding specified — use it directly
+    text = await readFileWithEncoding(file, encoding)
+  } else {
+    // Auto-detect: try UTF-8 first, fall back to Shift_JIS if garbled
+    text = await readFileWithEncoding(file, 'utf-8')
+    if (looksLikeGarbled(text)) {
+      text = await readFileWithEncoding(file, 'shift_jis')
+    }
   }
-  reader.readAsText(file)
+
+  const { headers, rows } = parseCSV(text)
+  parsedHeaders.value = headers
+  parsedRows.value = rows
 }
 
 function onFileSelect(event: Event) {

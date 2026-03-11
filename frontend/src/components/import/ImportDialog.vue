@@ -625,7 +625,7 @@ const handleImport = async () => {
           name: getRowValue(row, 'sender.name'),
           phone: getRowValue(row, 'sender.phone'),
         },
-        // 配送会社固有データ（嵌套结构）
+        // 配送業者固有データ（嵌套结构）
         carrierData: {
           yamato: {
             sortingCode: getRowValue(row, 'carrierData.yamato.sortingCode', undefined),

@@ -46,7 +46,7 @@ export interface IYamatoB2Config {
 }
 
 /**
- * 配送会社自動化設定
+ * 配送業者自動化設定
  */
 export interface ICarrierAutomationConfig {
   _id: mongoose.Types.ObjectId;

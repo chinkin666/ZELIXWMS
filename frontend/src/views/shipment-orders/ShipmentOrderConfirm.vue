@@ -196,7 +196,7 @@ const carriers = ref<Carrier[]>([])
 const carrierOptions = computed(() => {
   return (carriers.value || [])
     .filter((c) => c && c.enabled !== false)
-    .map((c) => ({ label: `${c.name} (${c.code})`, value: c._id }))
+    .map((c) => ({ label: c.name, value: c._id }))
 })
 // Products for OrderTable
 const products = ref<Product[]>([])
@@ -591,7 +591,7 @@ const loadCarriers = async () => {
     carriers.value = await fetchCarriers({ enabled: true })
   } catch (e) {
     console.error(e)
-    alert('配送会社マスタの取得に失敗しました')
+    alert('配送業者マスタの取得に失敗しました')
   }
 }
 

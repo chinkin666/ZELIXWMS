@@ -75,7 +75,7 @@ export interface OrderDocument {
   tenantId: string;
 
   status?: {
-    /** 配送会社へデータ送信し、回执（受付/レスポンス）を取得済みかどうか */
+    /** 配送業者へデータ送信し、回执（受付/レスポンス）を取得済みかどうか */
     carrierReceipt?: {
       isReceived: boolean;
       receivedAt?: string;
@@ -101,9 +101,9 @@ export interface OrderDocument {
   sourceOrderAt?: string; // 注文元からの注文日時（ISO 8601文字列、任意）
   /** ECモールID（必須・非ユーザー入力・mapping-configから設定） */
   ecCompanyId: string;
-  carrierId: string; // 配送会社（単一選択、必須）
+  carrierId: string; // 配送業者（単一選択、必須）
   customerManagementNumber: string; // お客様管理番号（必須・ユーザー入力）
-  /** 配送会社から取得した伝票番号（trackingId） */
+  /** 配送業者から取得した伝票番号（trackingId） */
   trackingId?: string;
 
   // 注文者（全フィールド optional）
@@ -139,7 +139,7 @@ export interface OrderDocument {
 
   // 追跡用：CSV/Excel 取込時の元行データ（ヘッダー->値）を保持
   sourceRawRows?: Array<Record<string, unknown>>;
-  // 配送会社側ファイル（回执/実績）から取り込んだ元行データ
+  // 配送業者側ファイル（回执/実績）から取り込んだ元行データ
   carrierRawRow?: Record<string, unknown>;
 
   // メタ

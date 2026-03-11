@@ -66,9 +66,9 @@ export function formatShipmentDetailData(
 }
 
 const coolTypeDisplayMap: Record<string, string> = {
-  '0': '常温',
-  '1': 'クール冷蔵',
-  '2': 'クール冷凍',
+  '0': '通常',
+  '1': 'クール冷凍',
+  '2': 'クール冷蔵',
 }
 
 const invoiceTypeDisplayMap: Record<string, string> = {

@@ -21,7 +21,10 @@
               v-if="!isGroupHeader(column)"
               class="o-form-group"
             >
-              <label class="o-form-label">{{ getFormLabel(column) }}</label>
+              <label class="o-form-label">
+                {{ column.title }}
+                <span v-if="isFieldRequired(column)" class="required-badge">必須</span>
+              </label>
 
               <!-- 字符串输入 -->
               <input
@@ -395,12 +398,6 @@ const isGroupHeader = (_column: TableColumn): boolean => {
   return false
 }
 
-// 获取表单标签（带必填标记）
-const getFormLabel = (column: TableColumn): string => {
-  const isRequired = isFieldRequired(column)
-  return isRequired ? `${column.title} *` : column.title
-}
-
 // Check if field is disabled based on disabledWhen callback
 const isFieldDisabled = (column: TableColumn): boolean => {
   if (typeof column.disabledWhen === 'function') {
@@ -754,13 +751,27 @@ const normalizeDateValue = (val: any, mode: 'date' | 'dateOnly'): string => {
 }
 
 .o-form-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: var(--o-font-size-small, 13px);
   font-weight: 500;
   color: var(--o-gray-700, #495057);
   min-width: 140px;
   padding-top: 6px;
   flex-shrink: 0;
+}
+
+.required-badge {
+  display: inline-block;
+  background: #dc3545;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
 }
 
 .o-form-group .o-input,

@@ -1,7 +1,7 @@
 <template>
   <div class="waybill-import">
     <div class="page-header">
-      <h1 class="page-title">配送会社データ取込</h1>
+      <h1 class="page-title">配送業者データ取込</h1>
     </div>
 
     <CarrierSelector
@@ -40,7 +40,7 @@
         ファイル選択
       </button>
       <div class="upload-entry__hint">
-        配送会社から返却された配送実績ファイルを取り込み、注文データに実績データを紐づけます。
+        配送業者から返却された配送実績ファイルを取り込み、注文データに実績データを紐づけます。
       </div>
     </div>
 
@@ -83,7 +83,7 @@
       </div>
     </div>
 
-    <ODialog :open="dialogVisible" title="配送会社データ取込" @close="dialogVisible = false">
+    <ODialog :open="dialogVisible" title="配送業者データ取込" @close="dialogVisible = false">
       <div class="dialog-body">
         <div class="card">
           <h3 class="card-title">ファイルをアップロード</h3>

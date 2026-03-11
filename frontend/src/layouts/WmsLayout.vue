@@ -57,12 +57,12 @@ const subMenuMap: Record<string, SubMenuItem[]> = {
   '/settings': [
     { label: '基本設定', to: '/settings/basic' },
     { label: 'ご依頼主設定', to: '/settings/orderSourceCompany' },
-    { label: '配送会社設定', to: '/settings/carrier' },
+    { label: '配送業者設定', to: '/settings/carrier' },
     { label: 'ファイルレイアウト', to: '/settings/mapping-patterns' },
     { label: '印刷テンプレート', to: '/settings/print-templates' },
     { label: 'プリンター設定', to: '/settings/printer' },
     { label: '帳票テンプレート', to: '/settings/form-templates' },
-    { label: '配送会社自動化', to: '/settings/carrier-automation' },
+    { label: '配送業者自動化', to: '/settings/carrier-automation' },
     { label: '検品グループ', to: '/settings/order-groups' },
     { label: '自動処理', to: '/settings/auto-processing' },
   ],
@@ -91,7 +91,7 @@ const allApps = computed(() => [
   { label: 'データ取込', to: '/waybill-management/import', icon: '📥' },
   { label: '1-1検品', to: '/shipment-operations/one-by-one/inspection', icon: '🔍' },
   { label: 'N-1検品', to: '/shipment-operations/n-by-one/inspection', icon: '🔎' },
-  { label: '配送会社設定', to: '/settings/carrier', icon: '🚛' },
+  { label: '配送業者設定', to: '/settings/carrier', icon: '🚛' },
   { label: '印刷テンプレート', to: '/settings/print-templates', icon: '🖨️' },
   { label: 'ファイルレイアウト', to: '/settings/mapping-patterns', icon: '📋' },
 ])

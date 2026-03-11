@@ -71,3 +71,6 @@ tmpclaude*
 nul
 *.csv
 /backend/tmp
+
+# Local database
+local-db/mongo/

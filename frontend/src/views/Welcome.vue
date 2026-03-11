@@ -94,8 +94,8 @@ const modules = [
     emoji: '📍',
     path: '/waybill-management/export',
     features: [
-      '配送会社データ出力',
-      '配送会社データ取込'
+      '配送業者データ出力',
+      '配送業者データ取込'
     ]
   },
   {
@@ -115,7 +115,7 @@ const modules = [
     features: [
       '基本設定',
       'ご依頼主・商品設定',
-      '配送会社・テンプレート設定'
+      '配送業者・テンプレート設定'
     ]
   }
 ]

@@ -507,7 +507,7 @@ const orderInfoItems = computed(() => {
   const o: any = currentOrder.value || {}
   const hasOrder = !!currentOrder.value
   const carrierHit = hasOrder ? carriers.value.find((c) => c._id === o.carrierId) : null
-  const carrierDisplay = carrierHit ? `${carrierHit.name} (${carrierHit.code})` : (hasOrder ? (o.carrierId || '-') : '')
+  const carrierDisplay = carrierHit ? carrierHit.name : (hasOrder ? (o.carrierId || '-') : '')
   return [
     { key: 'orderNumber', label: '出荷管理No', value: hasOrder ? (o.orderNumber || '-') : '' },
     { key: 'customerManagementNumber', label: 'お客様管理番号', value: hasOrder ? (o.customerManagementNumber || '-') : '' },
@@ -541,8 +541,8 @@ function saveAutoPrintSetting() {
 
 function formatCoolType(v: string | undefined): string {
   if (v === '0') return '通常'
-  if (v === '1') return 'クール冷蔵'
-  if (v === '2') return 'クール冷凍'
+  if (v === '1') return 'クール冷凍'
+  if (v === '2') return 'クール冷蔵'
   return '-'
 }
 

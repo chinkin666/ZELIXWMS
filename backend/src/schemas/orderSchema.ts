@@ -98,6 +98,9 @@ const digitsOnly = /^\d+$/;
 const postalCode7 = /^\d{7}$/;
 const deliveryTimeSlot4 = /^\d{4}$/;
 
+// ハイフン・スペースを除去して数字のみにする transform
+const stripNonDigits = (v: string) => v.replace(/[-\s\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uFF0D\u30FC\uFF70]/g, '');
+
 // ============================================
 // 住所スキーマ（共通）
 // ============================================
@@ -105,7 +108,8 @@ const addressSchema = z.object({
   postalCode: z
     .string()
     .min(1, '郵便番号は必須です')
-    .regex(postalCode7, '郵便番号は7桁の数字で入力してください'),
+    .transform(stripNonDigits)
+    .pipe(z.string().regex(postalCode7, '郵便番号は7桁の数字で入力してください')),
   prefecture: z.string().min(1, '都道府県は必須です'),
   city: z.string().min(1, '郡市区は必須です'),
   street: z.string().min(1, '住所は必須です'),
@@ -113,17 +117,19 @@ const addressSchema = z.object({
   phone: z
     .string()
     .min(1, '電話番号は必須です')
-    .regex(digitsOnly, '電話番号は数字のみで入力してください'),
+    .transform(stripNonDigits)
+    .pipe(z.string().regex(digitsOnly, '電話番号は数字のみで入力してください')),
 });
 
-// 注文者用（全フィールド optional）
+// 注文者用（全フィールド optional、空文字列は undefined 扱い）
+const emptyToUndefined = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? undefined : v);
 const optionalAddressSchema = z.object({
-  postalCode: z.string().regex(postalCode7, '郵便番号は7桁の数字で入力してください').optional(),
-  prefecture: z.string().optional(),
-  city: z.string().optional(),
-  street: z.string().optional(),
-  name: z.string().optional(),
-  phone: z.string().regex(digitsOnly, '電話番号は数字のみで入力してください').optional(),
+  postalCode: z.preprocess(emptyToUndefined, z.string().transform(stripNonDigits).pipe(z.string().regex(postalCode7, '郵便番号は7桁の数字で入力してください')).optional()),
+  prefecture: z.preprocess(emptyToUndefined, z.string().optional()),
+  city: z.preprocess(emptyToUndefined, z.string().optional()),
+  street: z.preprocess(emptyToUndefined, z.string().optional()),
+  name: z.preprocess(emptyToUndefined, z.string().optional()),
+  phone: z.preprocess(emptyToUndefined, z.string().transform(stripNonDigits).pipe(z.string().regex(digitsOnly, '電話番号は数字のみで入力してください')).optional()),
 });
 
 /**
@@ -154,8 +160,12 @@ export const orderDocumentSchema = z.object({
   // 注文情報
   orderNumber: z.string().optional(), // システム自動生成のため、作成時は不要
   sourceOrderAt: iso8601String.optional(),
-  carrierId: z.string().min(1, '配送会社は必須です'),
-  customerManagementNumber: z.string().min(1, 'お客様管理番号は必須です'),
+  carrierId: z.string().min(1, '配送業者は必須です'),
+  customerManagementNumber: z
+    .string()
+    .min(1, 'お客様管理番号は必須です')
+    .max(50, 'お客様管理番号は50文字以内で入力してください')
+    .regex(/^[a-zA-Z0-9-_]*$/, 'お客様管理番号は半角英数字（ハイフン・アンダースコア可）で入力してください'),
 
   // 注文者（全フィールド optional）
   orderer: optionalAddressSchema.optional(),
@@ -229,7 +239,7 @@ export const orderDocumentSchema = z.object({
     .preprocess((val) => (typeof val === 'string' && val.trim() === '' ? undefined : val), z.string().min(1))
     .optional(),
 
-  // 配送会社固有データ
+  // 配送業者固有データ
   carrierData: z.object({
     yamato: z.object({
       sortingCode: z
@@ -250,7 +260,7 @@ export const orderDocumentSchema = z.object({
   // 荷扱い
   handlingTags: z.array(z.string()).optional().default([]), // 任意の文字列配列
   /**
-   * 配送会社から取得した伝票番号（trackingId）
+   * 配送業者から取得した伝票番号（trackingId）
    * - インポート時に carrierRawRow から設定
    * - ユーザー入力不可
    */

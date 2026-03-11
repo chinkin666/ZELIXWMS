@@ -12,7 +12,7 @@
           <option value="orderField">注文フィールド</option>
           <option value="orderStatus">注文ステータス</option>
           <option value="orderGroup">検品グループ</option>
-          <option value="carrierRawRow">配送会社データ</option>
+          <option value="carrierRawRow">配送業者データ</option>
         </select>
       </div>
 

@@ -1,6 +1,6 @@
 <template>
   <div class="carrier-selector-wrapper">
-    <div class="carrier-selector-label">配送会社：</div>
+    <div class="carrier-selector-label">配送業者：</div>
     <div class="carrier-selector-group">
       <label
         v-for="carrier in carriers"
@@ -49,14 +49,14 @@ const loadCarriers = async () => {
   try {
     // Only pass enabled parameter when it's explicitly true (to filter enabled carriers)
     // When undefined, don't pass the parameter to get all carriers
-    // fetchCarriers 已经自动包含内置配送会社
+    // fetchCarriers 已经自动包含内置配送業者
     const params = props.enabled === true ? { enabled: true } : undefined
     carriers.value = await fetchCarriers(params)
     emits('carriers-loaded', carriers.value)
-    // 不自动选择第一个配送会社，让用户手动选择（不选择时不过滤）
+    // 不自动选择第一个配送業者，让用户手动选择（不选择时不过滤）
   } catch (e) {
     console.error(e)
-    console.warn('配送会社マスタの取得に失敗しました')
+    console.warn('配送業者マスタの取得に失敗しました')
   }
 }
 

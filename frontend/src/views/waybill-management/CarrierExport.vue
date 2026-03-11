@@ -1,7 +1,7 @@
 <template>
   <div class="waybill-export">
     <div class="page-header">
-      <h1 class="page-title">配送会社データ出力</h1>
+      <h1 class="page-title">配送業者データ出力</h1>
     </div>
 
     <CarrierSelector
@@ -104,7 +104,7 @@
           :disabled="tableSelectedKeys.length === 0"
           @click="handleExportClick"
         >
-          配送会社データ出力
+          配送業者データ出力
         </button>
       </template>
     </OrderBottomBar>
@@ -207,7 +207,7 @@ const handleCarrierChange = (carrierId: string) => {
 
 const handleCarriersLoaded = (loadedCarriers: Carrier[]) => {
   carriers.value = loadedCarriers
-  // CarrierSelector 不再自动选择，直接加载订单（无配送会社过滤时显示全部）
+  // CarrierSelector 不再自动选择，直接加载订单（无配送業者过滤时显示全部）
   void loadOrders()
 }
 
@@ -216,7 +216,7 @@ const searchInitialValues = computed(() => {
 })
 
 const carrierOptions = computed(() => {
-  return (carriers.value || []).map((c) => ({ label: `${c.name} (${c.code})`, value: c._id }))
+  return (carriers.value || []).map((c) => ({ label: c.name, value: c._id }))
 })
 
 const allFieldDefinitions = computed(() =>
@@ -338,14 +338,14 @@ const handleAutomationExport = async () => {
     const carrierIdSet = new Set(selectedRows.map((r: any) => String(r?.carrierId || '')))
     carrierIdSet.delete('')
     if (carrierIdSet.size !== 1) {
-      alert('選択した行の配送会社が一致しません。配送会社ごとに出力してください。')
+      alert('選択した行の配送業者が一致しません。配送業者ごとに出力してください。')
       return
     }
 
     const carrierId = Array.from(carrierIdSet)[0]!
     const carrier = carriers.value.find((c) => c._id === carrierId) || null
     if (!carrier || carrier.automationType !== 'yamato-b2') {
-      alert('選択した配送会社はB2 Cloud自動連携に対応していません')
+      alert('選択した配送業者はB2 Cloud自動連携に対応していません')
       return
     }
 
@@ -530,14 +530,14 @@ const handleExportClick = async () => {
     const carrierIdSet = new Set(selectedRows.map((r: any) => String(r?.carrierId || '')))
     carrierIdSet.delete('')
     if (carrierIdSet.size !== 1) {
-      alert('選択した行の配送会社が一致しません。配送会社ごとに出力してください。')
+      alert('選択した行の配送業者が一致しません。配送業者ごとに出力してください。')
       return
     }
 
     const carrierId = Array.from(carrierIdSet)[0]!
     const carrier = carriers.value.find((c) => c._id === carrierId) || null
     if (!carrier) {
-      alert('配送会社情報が見つかりません')
+      alert('配送業者情報が見つかりません')
       return
     }
 
@@ -548,7 +548,7 @@ const handleExportClick = async () => {
 
     await loadExportMappingConfigsForCarrier(String(carrier.code || ''))
     if (!exportMappingOptions.value.length) {
-      alert('この配送会社に出力レイアウト（order-to-carrier）が未設定です（レイアウト設定で作成してください）。')
+      alert('この配送業者に出力レイアウト（order-to-carrier）が未設定です（レイアウト設定で作成してください）。')
       return
     }
 
@@ -561,7 +561,7 @@ const handleExportClick = async () => {
     await rebuildExportRows()
     exportDialogVisible.value = true
   } catch (e: any) {
-    alert(e?.message || '配送会社データ出力に失敗しました')
+    alert(e?.message || '配送業者データ出力に失敗しました')
   }
 }
 

@@ -188,7 +188,7 @@ const activeRawRowTab = ref(0)
 const carrierOptions = computed(() => {
   return (props.carriers || [])
     .filter((c) => c && c.enabled !== false)
-    .map((c) => ({ label: `${c.name} (${c.code})`, value: c._id }))
+    .map((c) => ({ label: c.name, value: c._id }))
 })
 
 // 商品マスタ（fallback用）
@@ -382,7 +382,7 @@ const summaryItems = computed(() => {
   return [
     { key: 'orderNumber', label: '出荷管理No', value: o.orderNumber || '-' },
     { key: 'sourceOrderAt', label: '注文日時', value: fmt(o.sourceOrderAt) },
-    { key: 'carrierId', label: '配送会社', value: carrierName.value },
+    { key: 'carrierId', label: '配送業者', value: carrierName.value },
     { key: 'shipPlanDate', label: '出荷予定日', value: o.shipPlanDate || '-' },
     { key: 'invoiceType', label: '送り状種類', value: o.invoiceType || '-' },
     { key: 'coolType', label: 'クール区分', value: o.coolType ?? '-' },

@@ -928,7 +928,7 @@ export const createManualOrdersBulk = async (req: Request, res: Response): Promi
         failures.push({
           clientId: meta.clientId,
           field: 'orderNumber',
-          message: '出荷管理Noが重複しています（既に登録済みの可能性があります）',
+          message: `出荷管理Noが重複しています（${msgRaw}）`,
         });
       } else {
         failures.push({
@@ -1140,6 +1140,10 @@ const STATUS_FIELD_MAP: Record<string, { isField: string; atField: string }> = {
     isField: 'status.inspected.isInspected',
     atField: 'status.inspected.inspectedAt',
   },
+  held: {
+    isField: 'status.held.isHeld',
+    atField: 'status.held.heldAt',
+  },
 };
 
 /**
@@ -1208,6 +1212,22 @@ export const handleStatus = async (req: Request, res: Response): Promise<void> =
           updatedAt: now,
         },
       };
+    } else if (action === 'mark-held') {
+      updatePayload = {
+        $set: {
+          'status.held.isHeld': true,
+          'status.held.heldAt': now,
+          updatedAt: now,
+        },
+      };
+    } else if (action === 'unhold') {
+      updatePayload = {
+        $set: {
+          'status.held.isHeld': false,
+          'status.held.heldAt': null,
+          updatedAt: now,
+        },
+      };
     } else if (action === 'unconfirm') {
       if (!statusType || typeof statusType !== 'string') {
         res.status(400).json({ message: 'Invalid request: statusType is required for unconfirm action' });
@@ -1231,7 +1251,7 @@ export const handleStatus = async (req: Request, res: Response): Promise<void> =
     };
     } else {
       res.status(400).json({
-        message: `Invalid action: ${action}. Supported actions: mark-print-ready, mark-printed, mark-shipped, mark-ec-exported, mark-inspected, unconfirm`
+        message: `Invalid action: ${action}. Supported actions: mark-print-ready, mark-printed, mark-shipped, mark-ec-exported, mark-inspected, mark-held, unhold, unconfirm`
       });
       return;
     }
@@ -1417,6 +1437,22 @@ export const handleStatusBulk = async (req: Request, res: Response): Promise<voi
           updatedAt: now,
         },
       };
+    } else if (action === 'mark-held') {
+      updatePayload = {
+        $set: {
+          'status.held.isHeld': true,
+          'status.held.heldAt': now,
+          updatedAt: now,
+        },
+      };
+    } else if (action === 'unhold') {
+      updatePayload = {
+        $set: {
+          'status.held.isHeld': false,
+          'status.held.heldAt': null,
+          updatedAt: now,
+        },
+      };
     } else if (action === 'unconfirm') {
       if (!statusType || typeof statusType !== 'string') {
         res.status(400).json({ message: 'Invalid request: statusType is required for unconfirm action' });
@@ -1440,7 +1476,7 @@ export const handleStatusBulk = async (req: Request, res: Response): Promise<voi
       };
     } else {
       res.status(400).json({
-        message: `Invalid action: ${action}. Supported actions: mark-print-ready, mark-printed, mark-shipped, mark-ec-exported, mark-inspected, unconfirm`
+        message: `Invalid action: ${action}. Supported actions: mark-print-ready, mark-printed, mark-shipped, mark-ec-exported, mark-inspected, mark-held, unhold, unconfirm`
       });
       return;
     }

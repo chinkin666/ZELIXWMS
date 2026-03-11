@@ -156,7 +156,7 @@ const selectedOrdersForFormExport = ref<OrderDocument[]>([])
 // Carrier options
 const carriers = ref<Carrier[]>([])
 const carrierOptions = computed(() => {
-  return (carriers.value || []).map((c) => ({ label: `${c.name} (${c.code})`, value: c._id }))
+  return (carriers.value || []).map((c) => ({ label: c.name, value: c._id }))
 })
 // Products for OrderTable
 const products = ref<Product[]>([])
@@ -437,7 +437,7 @@ const loadCarriers = async () => {
     carriers.value = await fetchCarriers()
   } catch (e) {
     console.error(e)
-    alert('配送会社マスタの取得に失敗しました')
+    alert('配送業者マスタの取得に失敗しました')
   }
 }
 

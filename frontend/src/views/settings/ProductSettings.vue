@@ -250,9 +250,9 @@ import type { Product, ProductFilters, UpsertProductDto, SubSku } from '@/types/
 import ImportResultDialog, { type ImportResultData } from '@/components/import/ImportResultDialog.vue'
 
 const COOL_TYPE_OPTIONS = [
-  { label: '常温', value: '0' },
-  { label: 'クール冷蔵', value: '1' },
-  { label: 'クール冷凍', value: '2' },
+  { label: '通常', value: '0' },
+  { label: 'クール冷凍', value: '1' },
+  { label: 'クール冷蔵', value: '2' },
 ]
 
 // メール便計算オプション

@@ -573,7 +573,7 @@ export const lookupContainsPlugin: TransformPlugin = {
   summary: 'Map value if contains search string',
   outputType: 'any',
   descriptionJa:
-    '入力値が指定された文字列を含む場合、対応する値に変換します。複数のルールを上から順に評価し、最初に一致したルールの値を返します。見つからない場合はデフォルト値を返します。\n\n【使用例】\n・配送方法の判定: rules=[{search:"急ぎ", value:"express"}, {search:"翌日", value:"next_day"}] → "至急お届け" → "express"\n・カテゴリ分類: rules=[{search:"シャツ", value:"tops"}, {search:"パンツ", value:"bottoms"}] → "Tシャツ（白）" → "tops"',
+    '入力値が指定された文字列を含む場合、対応する値に変換します。複数のルールを上から順に評価し、最初に一致したルールの値を返します。見つからない場合はデフォルト値を返します。\n\n【使用例】\n・送り状種類の判定: rules=[{search:"急ぎ", value:"express"}, {search:"翌日", value:"next_day"}] → "至急お届け" → "express"\n・カテゴリ分類: rules=[{search:"シャツ", value:"tops"}, {search:"パンツ", value:"bottoms"}] → "Tシャツ（白）" → "tops"',
   run: ({ value, params }) => {
     const str = value == null ? '' : String(value)
     const caseSensitive = params?.caseSensitive !== false

@@ -155,7 +155,7 @@ export function calculateTotalPrice(products: OrderProduct[]): number {
 
 /**
  * OrderProduct配列からクール区分を決定
- * 優先順位: 冷凍(2) > 冷蔵(1) > 常温(0)
+ * 優先順位: 冷蔵('2') > 冷凍('1') > 常温('0')
  */
 export function determineCoolType(products: OrderProduct[]): '0' | '1' | '2' | undefined {
   // 優先度マップ：大きいほど優先

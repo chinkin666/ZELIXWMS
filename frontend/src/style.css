@@ -275,6 +275,25 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   border-radius: var(--o-border-radius);
   transition: border-color 0.15s ease-in-out;
 }
+input[type="date"].o-input {
+  cursor: pointer;
+  direction: rtl;
+}
+input[type="date"].o-input::-webkit-datetime-edit {
+  direction: ltr;
+}
+input[type="date"].o-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+select.o-input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 1.75rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%236c757d' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 10px 6px;
+}
 .o-input:focus {
   border-color: var(--o-brand-primary);
   outline: 0;

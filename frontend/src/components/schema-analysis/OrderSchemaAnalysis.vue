@@ -89,7 +89,7 @@ const fieldsToAnalyze: FieldDef[] = [
   // Basic order info
   { path: 'orderNumber', displayName: '出荷管理No' },
   { path: 'customerManagementNumber', displayName: 'お客様管理番号' },
-  { path: 'carrierId', displayName: '配送会社', valueTransform: 'carrier' },
+  { path: 'carrierId', displayName: '配送業者', valueTransform: 'carrier' },
   { path: 'trackingId', displayName: '伝票番号' },
   { path: 'invoiceType', displayName: '送り状種類', valueTransform: 'invoiceType' },
   { path: 'coolType', displayName: 'クール区分', valueTransform: 'coolType' },

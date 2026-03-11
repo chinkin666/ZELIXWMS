@@ -1,8 +1,8 @@
 <template>
-  <ODialog :open="visible" title="配送会社データ出力" @close="visible = false" width="980px">
+  <ODialog :open="visible" title="配送業者データ出力" @close="visible = false" width="980px">
     <div class="meta">
       <div class="meta__row">
-        <div class="meta__item"><span class="meta__label">配送会社：</span>{{ carrierLabel || '-' }}</div>
+        <div class="meta__item"><span class="meta__label">配送業者：</span>{{ carrierLabel || '-' }}</div>
         <div class="meta__item meta__item--select">
           <span class="meta__label">出力レイアウト：</span>
           <select

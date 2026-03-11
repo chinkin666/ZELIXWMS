@@ -31,7 +31,7 @@ export interface Carrier {
   enabled: boolean
   trackingIdColumnName?: string
   formatDefinition: CarrierFormatDefinition
-  /** 是否为内置配送会社（不可编辑/删除） */
+  /** 是否为内置配送業者（不可编辑/删除） */
   isBuiltIn?: boolean
   /** 自动化类型: 'yamato-b2' | 'sagawa-api' | 'seino-api' */
   automationType?: string

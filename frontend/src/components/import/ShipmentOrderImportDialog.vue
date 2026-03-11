@@ -1,7 +1,7 @@
 <template>
   <ODialog
     :open="visible"
-    title="一括登録"
+    title="出荷指示一括登録"
     size="lg"
     @close="handleClose"
   >
@@ -11,28 +11,26 @@
         <div class="o-form-group">
           <label class="o-form-label">
             <span class="form-label">出荷予定日</span>
-            <span class="o-badge o-badge-danger required-tag">必須</span>
+            <span class="required-badge">必須</span>
           </label>
-          <input
-            class="o-input"
-            type="date"
+          <ODatePicker
             v-model="formData.shipPlanDate"
-            style="width: 100%"
+            :min="todayStr"
           />
         </div>
 
         <!-- 登録データ形式 -->
         <div class="o-form-group">
           <label class="o-form-label">
-            <span class="form-label">登録データ形式</span>
-            <span class="o-badge o-badge-danger required-tag">必須</span>
+            <span class="form-label">取込レイアウト</span>
+            <span class="required-badge">必須</span>
           </label>
           <select
             class="o-input"
             v-model="formData.configId"
             style="width: 100%"
           >
-            <option value="" disabled>レイアウトを選択</option>
+            <option value="" disabled>レイアウトを選択してください</option>
             <option
               v-for="config in mappingConfigs"
               :key="config._id"
@@ -64,7 +62,7 @@
         <div class="o-form-group">
           <label class="o-form-label">
             <span class="form-label">配送業者</span>
-            <span class="o-badge o-badge-danger required-tag">必須</span>
+            <span class="required-badge">必須</span>
           </label>
           <select
             class="o-input"
@@ -98,9 +96,9 @@
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
           <div class="upload-text">
-            ファイルをここにドロップするか <em>クリックして選択</em>
+            ここにファイルをドラッグ＆ドロップするか、<em>クリックして選択してください</em>
           </div>
-          <div class="upload-tip">対応形式: CSV, XLSX, XLS</div>
+          <div class="upload-tip">取込可能形式：CSV、XLSX、XLS</div>
         </div>
         <input
           ref="fileInputRef"
@@ -172,6 +170,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import ODatePicker from '@/components/odoo/ODatePicker.vue'
 import * as XLSX from 'xlsx'
 import { getAllMappingConfigs, type MappingConfig, type TransformMapping } from '@/api/mappingConfig'
 import { generateTempId } from '@/types/orderRow'
@@ -248,6 +247,11 @@ function flattenForPreview(obj: Record<string, any>, prefix = ''): Record<string
   }
   return result
 }
+
+const todayStr = computed(() => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+})
 
 const formData = reactive({
   shipPlanDate: '',
@@ -617,6 +621,8 @@ const handleImport = async () => {
       return result
     })
 
+    console.log('[DEBUG ImportDialog] first row orderer:', JSON.stringify(importedRows[0]?.orderer))
+    console.log('[DEBUG ImportDialog] first mapped row:', JSON.stringify(mappedRows[0]))
     emit('import', importedRows)
     alert(`${importedRows.length}件のデータを取り込みしました`)
     handleClose()
@@ -669,9 +675,9 @@ watch(visible, (newVal) => {
 }
 
 .import-form {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
 }
 
 .o-form-group {
@@ -692,11 +698,17 @@ watch(visible, (newVal) => {
   color: #303133;
 }
 
-.required-tag {
-  margin-left: 8px;
-  vertical-align: middle;
-  font-size: 11px;
-  padding: 1px 6px;
+.required-badge {
+  display: inline-block;
+  background: #dc3545;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 3px;
+  margin-left: 6px;
+  white-space: nowrap;
 }
 
 .upload-section,
@@ -759,8 +771,8 @@ watch(visible, (newVal) => {
 
 .dialog-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .spinner {
