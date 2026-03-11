@@ -97,9 +97,9 @@
                       />
                     </td>
                     <td style="text-align:center;">
-                      <button class="o-btn-icon o-btn-icon--danger" @click="removeProduct(index)" title="削除">
+                      <OButton variant="icon-danger" @click="removeProduct(index)" title="削除">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                      </button>
+                      </OButton>
                     </td>
                   </tr>
                 </tbody>
@@ -155,10 +155,10 @@
             <!-- ご依頼主 tab -->
             <template v-if="activeTab === 'sender'">
               <div class="o-sender-toolbar">
-                <button class="o-btn o-btn-sm o-btn-secondary" @click="openSenderSearch">
+                <OButton variant="secondary" size="sm" @click="openSenderSearch">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                   登録済みご依頼主から選択
-                </button>
+                </OButton>
               </div>
 
               <!-- Search panel -->
@@ -253,16 +253,16 @@
 
     <template #footer>
       <div class="o-form-footer">
-        <button type="button" class="o-btn o-btn-secondary" @click="handleClose">キャンセル</button>
-        <button
+        <OButton type="button" variant="secondary" @click="handleClose">キャンセル</OButton>
+        <OButton
           type="button"
-          class="o-btn o-btn-primary"
+          variant="primary"
           @click="handleSubmit"
           :disabled="submitting"
         >
           <span v-if="submitting" class="spinner"></span>
           登録
-        </button>
+        </OButton>
       </div>
     </template>
   </ODialog>
@@ -271,6 +271,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import FormField from './FormField.vue'
 import type { TableColumn } from '@/types/table'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
@@ -282,8 +283,6 @@ import { fetchOrderSourceCompanies } from '@/api/orderSourceCompany'
 // Top-level field keys (shown above tabs, like Odoo header fields)
 const TOP_LEFT_KEYS = ['customerManagementNumber', 'carrierId', 'invoiceType', 'coolType']
 const TOP_RIGHT_KEYS = ['shipPlanDate', 'deliveryDatePreference', 'deliveryTimeSlot']
-const TOP_KEYS = new Set([...TOP_LEFT_KEYS, ...TOP_RIGHT_KEYS])
-
 // Other shipping keys (shown in "その他" tab)
 const OTHER_KEYS = new Set(['ecCompanyId', 'trackingId'])
 
@@ -393,13 +392,6 @@ const onSkuInput = (index: number, raw: string) => {
 
 // 商品名: max 25 full-width chars (50 half-width chars)
 // Count: full-width = 2, half-width = 1, limit = 50
-const countCharWidth = (s: string): number => {
-  let w = 0
-  for (const ch of s) {
-    w += ch.charCodeAt(0) > 0xff ? 2 : 1
-  }
-  return w
-}
 const truncateByWidth = (s: string, maxWidth: number): string => {
   let w = 0
   let i = 0

@@ -40,9 +40,9 @@
             </li>
           </ul>
           <div class="module-actions">
-            <button class="o-btn o-btn-primary" @click="navigateTo(module.path)">
+            <OButton variant="primary" @click="navigateTo(module.path)">
               アクセス
-            </button>
+            </OButton>
           </div>
         </div>
       </div>
@@ -52,6 +52,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import OButton from '@/components/odoo/OButton.vue'
 
 const router = useRouter()
 

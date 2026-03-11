@@ -65,7 +65,7 @@ const iso8601String = z
  */
 const dateOnlyString = z
   .union([
-    z.string().regex(/^\d{4}[-\/]\d{2}[-\/]\d{2}$/), // YYYY-MM-DD or YYYY/MM/DD
+    z.string().regex(/^\d{4}[-/]\d{2}[-/]\d{2}$/), // YYYY-MM-DD or YYYY/MM/DD
     z.string().datetime(), // ISO datetime -> truncate
     z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/), // tolerant
     z.coerce.date(),
@@ -76,7 +76,7 @@ const dateOnlyString = z
       if (/^\d{4}\/\d{2}\/\d{2}$/.test(val)) return val;
       if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val.replace(/-/g, '/');
       // 直接从字符串中提取日期部分，不进行时区转换
-      const m = val.match(/^(\d{4})[-\/](\d{2})[-\/](\d{2})/);
+      const m = val.match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
       if (m?.[1] && m?.[2] && m?.[3]) {
         return `${m[1]}/${m[2]}/${m[3]}`;
       }

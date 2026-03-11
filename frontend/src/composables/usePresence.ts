@@ -24,15 +24,6 @@ const AVATAR_COLORS = [
 const PAGES = ['/contacts', '/crm', '/projects', '/orders', '/invoices', '/inventory', '/settings'] as const
 const STATUSES: readonly PresenceStatus[] = ['online', 'idle', 'away']
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map(w => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-}
-
 function createInitialUsers(): readonly PresenceUser[] {
   return [
     { id: 1, name: 'Admin User', initials: 'AU', color: AVATAR_COLORS[0], currentPage: '', status: 'online', since: Date.now() - 1200_000 },

@@ -18,9 +18,9 @@
           </label>
         </div>
 
-        <button class="o-btn o-btn-secondary o-btn-sm" :disabled="loading || previewItems.length === 0" @click="handlePrintAll">
+        <OButton variant="secondary" size="sm" :disabled="loading || previewItems.length === 0" @click="handlePrintAll">
           すべて印刷
-        </button>
+        </OButton>
       </div>
     </div>
 
@@ -72,7 +72,7 @@
     </div>
 
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="visible = false">キャンセル</button>
+      <OButton variant="secondary" @click="visible = false">キャンセル</OButton>
     </template>
   </ODialog>
 </template>
@@ -80,6 +80,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { OrderDocument } from '@/types/order'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
 import type { PrintTemplate } from '@/types/printTemplate'

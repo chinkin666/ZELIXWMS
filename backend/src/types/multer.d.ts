@@ -1,5 +1,5 @@
 declare module 'multer' {
-  import { Request } from 'express';
+  import type { Request } from 'express';
 
   interface StorageEngine {
     _handleFile(

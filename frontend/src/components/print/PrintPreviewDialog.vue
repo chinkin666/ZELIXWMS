@@ -26,8 +26,8 @@
           </label>
         </div>
 
-        <button class="o-btn o-btn-secondary o-btn-sm" :disabled="!imageUrl || matching" @click="downloadPng">下载PNG</button>
-        <button class="o-btn o-btn-primary o-btn-sm" :disabled="!imageUrl || !selectedTemplate || matching" @click="handlePrint">打印</button>
+        <OButton variant="secondary" size="sm" :disabled="!imageUrl || matching" @click="downloadPng">下载PNG</OButton>
+        <OButton variant="primary" size="sm" :disabled="!imageUrl || !selectedTemplate || matching" @click="handlePrint">打印</OButton>
       </div>
     </div>
 
@@ -40,7 +40,7 @@
     </div>
 
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="visible = false">关闭</button>
+      <OButton variant="secondary" @click="visible = false">关闭</OButton>
     </template>
   </ODialog>
 </template>
@@ -48,6 +48,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { OrderDocument } from '@/types/order'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
 import type { PrintTemplate } from '@/types/printTemplate'

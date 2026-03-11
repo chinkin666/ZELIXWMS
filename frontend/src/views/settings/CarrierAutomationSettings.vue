@@ -147,12 +147,12 @@
           </div>
 
           <div class="form-actions">
-            <button class="o-btn o-btn-secondary" @click="testConnection" :disabled="testing || !canTest">
+            <OButton variant="secondary" @click="testConnection" :disabled="testing || !canTest">
               {{ testing ? 'テスト中...' : '接続テスト' }}
-            </button>
-            <button class="o-btn o-btn-primary" @click="saveConfig" :disabled="saving">
+            </OButton>
+            <OButton variant="primary" @click="saveConfig" :disabled="saving">
               {{ saving ? '保存中...' : '保存' }}
-            </button>
+            </OButton>
           </div>
 
           <div v-if="testResult" class="test-result" :class="testResult.success ? 'test-success' : 'test-error'">
@@ -169,6 +169,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import OButton from '@/components/odoo/OButton.vue'
 import type { YamatoB2Config, ConnectionTestResult, ServiceTypeConfig, PdfSource } from '@/types/carrierAutomation'
 import {
   fetchCarrierAutomationConfig,

@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import type mongoose from 'mongoose';
 import type { AnyBulkWriteOperation } from 'mongoose';
 import { PrintTemplate, type IPrintTemplate } from '@/models/printTemplate';
 import { logger } from '@/lib/logger';

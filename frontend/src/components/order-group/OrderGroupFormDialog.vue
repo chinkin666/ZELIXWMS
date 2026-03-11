@@ -36,15 +36,16 @@
     </div>
 
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="$emit('update:modelValue', false)">キャンセル</button>
-      <button class="o-btn o-btn-primary" @click="handleSubmit">保存</button>
+      <OButton variant="secondary" @click="$emit('update:modelValue', false)">キャンセル</OButton>
+      <OButton variant="primary" @click="handleSubmit">保存</OButton>
     </template>
   </ODialog>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { OrderGroup } from '@/types/orderGroup'
 
 const props = defineProps<{

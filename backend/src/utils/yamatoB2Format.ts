@@ -3,7 +3,7 @@
  * 从格式文件中提取的列定义，写死在代码中
  */
 
-import { IColumnConfig, ColumnDataType } from '@/models/carrier';
+import type { IColumnConfig, ColumnDataType } from '@/models/carrier';
 import { deriveYamatoSortCode } from '@/services/yamatoCalcService';
 
 /**

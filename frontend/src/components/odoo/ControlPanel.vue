@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import OPresenceIndicator from './OPresenceIndicator.vue'
 import OFileUploader from './OFileUploader.vue'
 import ODialog from './ODialog.vue'
+import OButton from './OButton.vue'
 import { useI18n } from '../../composables/useI18n'
 
 const router = useRouter()
@@ -240,19 +241,19 @@ function navigateBreadcrumb(route?: string) {
       <div class="o-cp-actions">
         <OPresenceIndicator />
         <slot name="actions">
-          <button v-if="showUpload" class="o-btn o-btn-secondary" @click="showUploadDialog = true">
+          <OButton v-if="showUpload" variant="secondary" @click="showUploadDialog = true">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
               <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
             </svg>
             {{ t('common.upload') }}
-          </button>
-          <button v-if="showCreate" class="o-btn o-btn-primary" @click="$emit('create')">
+          </OButton>
+          <OButton v-if="showCreate" variant="primary" @click="$emit('create')">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/>
             </svg>
             {{ createLabel || t('controlPanel.new') }}
-          </button>
+          </OButton>
         </slot>
       </div>
     </div>

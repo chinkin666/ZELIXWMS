@@ -107,8 +107,8 @@
                 :row-data="row"
               />
               <div v-else class="action-buttons">
-                <button class="o-btn o-btn-primary o-btn-sm">編集</button>
-                <button class="o-btn o-btn-danger o-btn-sm">削除</button>
+                <OButton variant="primary" size="sm">編集</OButton>
+                <OButton variant="danger" size="sm">削除</OButton>
               </div>
             </td>
           </tr>
@@ -130,21 +130,19 @@
       :class="{ 'nex-table__pagination--with-left': showBulkEditButton || batchDeleteEnabled }"
     >
       <div v-if="showBulkEditButton || batchDeleteEnabled" class="nex-table__pagination-left">
-        <button
+        <OButton
           v-if="showBulkEditButton"
-          class="o-btn o-btn-primary o-btn-sm"
+          variant="primary"
+          size="sm"
           @click="bulkEditVisible = true"
-        >
-          一括修正
-        </button>
-        <button
+        >一括修正</OButton>
+        <OButton
           v-if="batchDeleteEnabled"
-          class="o-btn o-btn-danger o-btn-sm"
+          variant="danger"
+          size="sm"
           :disabled="!innerSelectedKeys.length"
           @click="handleBatchDeleteClick"
-        >
-          一括削除 ({{ innerSelectedKeys.length }})
-        </button>
+        >一括削除 ({{ innerSelectedKeys.length }})</OButton>
       </div>
       <div class="nex-table__pagination-right">
         <span class="pagination-total">合計 {{ totalItems }} 件</span>
@@ -177,6 +175,7 @@ import { getNestedValue, setNestedValue } from '@/utils/nestedObject'
 import { naturalSort } from '@/utils/naturalSort'
 import BulkEditDialog from './BulkEditDialog.vue'
 import OPager from '@/components/odoo/OPager.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { LINK_COLOR } from '@/theme/config'
 
 // 普通单元格渲染组件
@@ -450,7 +449,7 @@ const getCellClassName = ({ row, column }: { row: RowData; column: any }) => {
   return ''
 }
 
-const getRowClassName = ({ row }: { row: RowData }) => {
+const getRowClassName = ({ row: _row }: { row: RowData }) => {
   return ''
 }
 
@@ -742,7 +741,7 @@ const rowMatchesGlobalSearch = (row: RowData, queryLower: string): boolean => {
       const text = formatColumnValue(row, col)
       if (text && text !== '-' && String(text).toLowerCase().includes(queryLower)) return true
     }
-  } catch (e) {
+  } catch (_e) {
     return true
   }
   return false

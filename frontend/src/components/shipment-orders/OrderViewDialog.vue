@@ -131,7 +131,7 @@
 
     <template #footer>
       <div class="footer">
-        <button class="o-btn o-btn-secondary" @click="visible = false">閉じる</button>
+        <OButton variant="secondary" @click="visible = false">閉じる</OButton>
       </div>
     </template>
   </ODialog>
@@ -140,6 +140,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import FormDialog from '@/components/form/FormDialog.vue'
 import { getOrderFieldDefinitions } from '@/types/order'
 import type { OrderDocument } from '@/types/order'

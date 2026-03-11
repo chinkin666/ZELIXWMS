@@ -56,12 +56,13 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { useToast } from '@/composables/useToast'
 import Table from '@/components/table/OrderTable.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
 import OrderViewDialog from '@/components/shipment-orders/OrderViewDialog.vue'
 import type { HeaderGroupingConfig } from '@/components/table/tableHeaderGroup'
-import type { TableColumn, Operator } from '@/types/table'
+import type { Operator } from '@/types/table'
 import { getOrderFieldDefinitions } from '@/types/order'
 import { buildOrderHeaderGroupingConfig } from '@/utils/orderHeaderGrouping'
 import { fetchShipmentOrder, fetchShipmentOrdersPage } from '@/api/shipmentOrders'
@@ -173,7 +174,7 @@ const tableColumns = computed(() => {
     fixed: 'right' as const,
     align: 'center' as const,
     cellRenderer: ({ rowData }: { rowData: any }) =>
-      h('button', { class: 'o-btn o-btn-primary o-btn-sm', onClick: () => handleView(rowData) }, '詳細'),
+      h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleView(rowData) }, () => '詳細'),
   }
 
   const cols = [

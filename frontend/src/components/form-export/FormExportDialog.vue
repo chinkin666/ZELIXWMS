@@ -52,21 +52,21 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <button class="o-btn o-btn-secondary" @click="visible = false">キャンセル</button>
-        <button
-          class="o-btn o-btn-secondary"
+        <OButton variant="secondary" @click="visible = false">キャンセル</OButton>
+        <OButton
+          variant="secondary"
           :disabled="!canGenerate || printing"
           @click="handlePrint"
         >
           {{ printing ? '印刷中...' : '印刷' }}
-        </button>
-        <button
-          class="o-btn o-btn-primary"
+        </OButton>
+        <OButton
+          variant="primary"
           :disabled="!canGenerate || generating"
           @click="handleGenerate"
         >
           {{ generating ? '生成中...' : 'PDF出力' }}
-        </button>
+        </OButton>
       </div>
     </template>
   </ODialog>
@@ -75,6 +75,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { FormTemplate } from '@/types/formTemplate'
 import type { OrderDocument } from '@/types/order'
 import type { Carrier } from '@/types/carrier'

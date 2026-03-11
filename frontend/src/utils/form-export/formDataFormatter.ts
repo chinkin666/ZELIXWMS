@@ -71,12 +71,6 @@ const coolTypeDisplayMap: Record<string, string> = {
   '2': 'クール冷蔵',
 }
 
-const invoiceTypeDisplayMap: Record<string, string> = {
-  '0': '発払い宅急便',
-  '8': '宅急便コンパクト',
-  'A': 'メール便',
-}
-
 /**
  * ピッキングリスト用のデータをフォーマット
  * 複数注文の商品を集計して、商品マスタから完全な情報を取得して出力

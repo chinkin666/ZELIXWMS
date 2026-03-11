@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from '../../composables/useI18n'
+import OButton from './OButton.vue'
 
 const { t } = useI18n()
 
@@ -21,9 +22,7 @@ const emit = defineEmits<{
   confirm: []
 }>()
 
-function onBackdrop() {
-  emit('close')
-}
+
 </script>
 
 <template>
@@ -42,14 +41,13 @@ function onBackdrop() {
           </div>
           <div class="o-dialog-footer">
             <slot name="footer">
-              <button class="o-btn o-btn-secondary" @click="emit('close')">{{ t('dialog.cancel') }}</button>
-              <button
-                class="o-btn"
-                :class="danger ? 'o-btn-danger' : 'o-btn-primary'"
+              <OButton variant="secondary" @click="emit('close')">{{ t('dialog.cancel') }}</OButton>
+              <OButton
+                :variant="danger ? 'danger' : 'primary'"
                 @click="emit('confirm')"
               >
                 <slot name="confirm-text">{{ t('dialog.confirm') }}</slot>
-              </button>
+              </OButton>
             </slot>
           </div>
         </div>

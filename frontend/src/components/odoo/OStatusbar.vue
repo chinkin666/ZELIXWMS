@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from '../../composables/useI18n'
+import OButton from './OButton.vue'
 
 const { t } = useI18n()
 
@@ -188,12 +189,12 @@ function selectFromDropdown(stage: Stage) {
               {{ t('statusbar.confirmBackward') || 'Move back to a previous stage?' }}
             </p>
             <div class="o-confirm-actions">
-              <button class="o-btn o-btn-secondary" @click="cancelBackward">
+              <OButton variant="secondary" @click="cancelBackward">
                 {{ t('dialog.cancel') || 'Cancel' }}
-              </button>
-              <button class="o-btn o-btn-primary" @click="confirmBackward">
+              </OButton>
+              <OButton variant="primary" @click="confirmBackward">
                 {{ t('dialog.confirm') || 'Confirm' }}
-              </button>
+              </OButton>
             </div>
           </div>
         </div>

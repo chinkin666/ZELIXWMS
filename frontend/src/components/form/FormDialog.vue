@@ -149,23 +149,25 @@
                   <datalist :id="`handling-tags-${index}`">
                     <option v-for="opt in HANDLING_TAG_OPTIONS" :key="opt" :value="opt" />
                   </datalist>
-                  <button
+                  <OButton
                     type="button"
-                    class="o-btn o-btn-danger o-btn-sm"
+                    variant="danger"
+                    size="sm"
                     @click="removeArrayItem(column, index)"
                     title="削除"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                  </button>
+                  </OButton>
                 </div>
-                <button
+                <OButton
                   type="button"
-                  class="o-btn o-btn-primary o-btn-sm"
+                  variant="primary"
+                  size="sm"
                   @click="addArrayItem(column)"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   行を追加
-                </button>
+                </OButton>
               </div>
 
               <!-- 数组类型（字符串数组，如バーコード、荷扱い） -->
@@ -182,23 +184,25 @@
                     :placeholder="`${column.title}を入力してください`"
                     style="flex: 1; margin-right: 10px"
                   />
-                  <button
+                  <OButton
                     type="button"
-                    class="o-btn o-btn-danger o-btn-sm"
+                    variant="danger"
+                    size="sm"
                     @click="removeArrayItem(column, index)"
                     title="削除"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                  </button>
+                  </OButton>
                 </div>
-                <button
+                <OButton
                   type="button"
-                  class="o-btn o-btn-primary o-btn-sm"
+                  variant="primary"
+                  size="sm"
                   @click="addArrayItem(column)"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   行を追加
-                </button>
+                </OButton>
               </div>
 
               <!-- 数组类型（商品列表） -->
@@ -228,23 +232,25 @@
                     placeholder="数量 *"
                     style="width: 20%; margin-right: 10px"
                   />
-                  <button
+                  <OButton
                     type="button"
-                    class="o-btn o-btn-danger o-btn-sm"
+                    variant="danger"
+                    size="sm"
                     @click="removeArrayItem(column, index)"
                     title="削除"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                  </button>
+                  </OButton>
                 </div>
-                <button
+                <OButton
                   type="button"
-                  class="o-btn o-btn-primary o-btn-sm"
+                  variant="primary"
+                  size="sm"
                   @click="addArrayItem(column)"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   商品を追加
-                </button>
+                </OButton>
               </div>
 
               <!-- 默认文本输入 -->
@@ -266,16 +272,16 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <button type="button" class="o-btn o-btn-secondary" @click="handleClose">キャンセル</button>
-        <button
+        <OButton type="button" variant="secondary" @click="handleClose">キャンセル</OButton>
+        <OButton
           type="button"
-          class="o-btn o-btn-primary"
+          variant="primary"
           @click="handleSubmit"
           :disabled="submitting"
         >
           <span v-if="submitting" class="spinner"></span>
           確定
-        </button>
+        </OButton>
       </div>
     </template>
   </ODialog>
@@ -284,6 +290,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { TableColumn } from '@/types/table'
 import { setNestedValue, getNestedValue } from '@/utils/nestedObject'
 import { getCoolTypeOptionsForInvoiceType } from '@/utils/orderValidation'
@@ -669,7 +676,7 @@ const handleSubmit = async () => {
       alert('保存しました')
     }
     handleClose()
-  } catch (error) {
+  } catch (_error) {
     alert('入力内容を確定してください')
   } finally {
     submitting.value = false

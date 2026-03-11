@@ -152,16 +152,16 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <button type="button" class="o-btn o-btn-secondary" @click="handleClose">キャンセル</button>
-        <button
+        <OButton type="button" variant="secondary" @click="handleClose">キャンセル</OButton>
+        <OButton
           type="button"
-          class="o-btn o-btn-primary"
+          variant="primary"
           :disabled="!canImport || importing"
           @click="handleImport"
         >
           <span v-if="importing" class="spinner"></span>
           一括登録
-        </button>
+        </OButton>
       </div>
     </template>
   </ODialog>
@@ -170,6 +170,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import ODatePicker from '@/components/odoo/ODatePicker.vue'
 import * as XLSX from 'xlsx'
 import { getAllMappingConfigs, type MappingConfig, type TransformMapping } from '@/api/mappingConfig'

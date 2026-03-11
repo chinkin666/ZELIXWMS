@@ -67,14 +67,15 @@
       </div>
     </div>
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="$emit('update:modelValue', false)">閉じる</button>
-      <button class="o-btn o-btn-primary" @click="$emit('confirm')">OK（一覧を更新）</button>
+      <OButton variant="secondary" @click="$emit('update:modelValue', false)">閉じる</OButton>
+      <OButton variant="primary" @click="$emit('confirm')">OK（一覧を更新）</OButton>
     </template>
   </ODialog>
 </template>
 
 <script setup lang="ts">
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { YamatoB2ExportResult } from '@/types/carrierAutomation'
 
 defineProps<{

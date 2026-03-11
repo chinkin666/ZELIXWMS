@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import type { Types } from 'mongoose';
 import { CarrierAutomationConfig } from '@/models/carrierAutomationConfig';
 import { ShipmentOrder } from '@/models/shipmentOrder';
 import { createYamatoB2Service } from '@/services/yamatoB2Service';
@@ -735,7 +736,7 @@ interface B2ResubmitOrderResult {
  */
 async function resubmitOrdersToB2Cloud(
   service: ReturnType<typeof createYamatoB2Service>,
-  orderIds: Array<import('mongoose').Types.ObjectId>,
+  orderIds: Array<Types.ObjectId>,
   now: Date,
   logContext: string
 ): Promise<B2ResubmitOrderResult[]> {

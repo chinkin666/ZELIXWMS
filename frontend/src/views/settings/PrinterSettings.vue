@@ -6,7 +6,7 @@
         <p class="page-subtitle">印刷方法とプリンター設定を管理します</p>
       </div>
       <div class="header-actions">
-        <button class="o-btn o-btn-secondary o-btn-sm" @click="handleReset">リセット</button>
+        <OButton variant="secondary" size="sm" @click="handleReset">リセット</OButton>
       </div>
     </div>
 
@@ -92,6 +92,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { useToast } from '@/composables/useToast'
 import {
   getPrintConfig,

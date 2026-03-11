@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { randomUUID } from 'crypto';
 import sharp from 'sharp';
-import { Product, computeAllSku, type ISubSku } from '@/models/product';
+import { Product, computeAllSku } from '@/models/product';
 import { createProductSchema, updateProductSchema, type CreateProductInput } from '@/schemas/productSchema';
 import { loadEnv } from '@/config/env';
 

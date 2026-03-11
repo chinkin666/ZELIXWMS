@@ -21,14 +21,14 @@
           style="width: 160px"
         />
       </div>
-      <button
-        class="o-btn o-btn-secondary automation-entry__btn"
-        style="border-color:#67c23a;color:#67c23a;"
+      <OButton
+        variant="success"
+        class="automation-entry__btn"
         :disabled="automationImporting"
         @click="handleAutomationImport"
       >
         {{ automationImporting ? '取込中...' : 'B2 Cloud から取込' }}
-      </button>
+      </OButton>
       <div class="automation-entry__hint">
         B2 Cloud の発行履歴から追跡番号を自動取得し、注文に紐づけます。
       </div>
@@ -36,9 +36,9 @@
 
     <!-- Manual file upload section (non-automation carriers) -->
     <div v-else class="upload-entry">
-      <button class="o-btn o-btn-primary upload-entry__btn" @click="dialogVisible = true">
+      <OButton variant="primary" class="upload-entry__btn" @click="dialogVisible = true">
         ファイル選択
-      </button>
+      </OButton>
       <div class="upload-entry__hint">
         配送業者から返却された配送実績ファイルを取り込み、注文データに実績データを紐づけます。
       </div>
@@ -158,10 +158,10 @@
 
       <template #footer>
         <div class="dialog-footer">
-          <button class="o-btn o-btn-secondary" @click="dialogVisible = false">キャンセル</button>
-          <button class="o-btn o-btn-primary" :disabled="!canImport || importing" @click="runImport">
+          <OButton variant="secondary" @click="dialogVisible = false">キャンセル</OButton>
+          <OButton variant="primary" :disabled="!canImport || importing" @click="runImport">
             {{ importing ? '取込中...' : '取込' }}
-          </button>
+          </OButton>
         </div>
       </template>
     </ODialog>
@@ -174,6 +174,7 @@ import * as XLSX from 'xlsx'
 import { importCarrierReceiptRows, type ImportCarrierReceiptRowsResult } from '@/api/shipmentOrders'
 import CarrierSelector from '@/components/search/CarrierSelector.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { yamatoB2Import } from '@/api/carrierAutomation'
 import type { Carrier } from '@/types/carrier'
 import type { YamatoB2ImportResult } from '@/types/carrierAutomation'
@@ -433,7 +434,7 @@ watch(
       if (headers.length && !headers.includes(fileMatchColumn.value)) {
         fileMatchColumn.value = headers[0] ?? ''
       }
-    } catch (e) {
+    } catch (_e) {
       // ignore
     }
   },

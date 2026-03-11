@@ -5,7 +5,7 @@
         <h1 class="page-title">印刷テンプレート</h1>
         <p class="page-subtitle">送り状印刷で利用するテンプレート（Canvas）を管理します</p>
       </div>
-      <button class="o-btn o-btn-primary" @click="openCreate">新規追加</button>
+      <OButton variant="primary" @click="openCreate">新規追加</OButton>
     </div>
 
     <div class="table-section">
@@ -59,8 +59,8 @@
       </div>
 
       <template #footer>
-        <button class="o-btn o-btn-secondary" @click="dialogVisible = false">キャンセル</button>
-        <button class="o-btn o-btn-primary" :disabled="saving" @click="handleSave">{{ isEditing ? '更新' : '作成' }}</button>
+        <OButton variant="secondary" @click="dialogVisible = false">キャンセル</OButton>
+        <OButton variant="primary" :disabled="saving" @click="handleSave">{{ isEditing ? '更新' : '作成' }}</OButton>
       </template>
     </ODialog>
   </div>
@@ -69,6 +69,7 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import OButton from '@/components/odoo/OButton.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import Table from '@/components/table/Table.vue'
 import type { TableColumn } from '@/types/table'
@@ -120,7 +121,7 @@ function openVisualEditor(row: PrintTemplate) {
 async function duplicatePrintTemplate(row: PrintTemplate) {
   try {
     const detail = await fetchPrintTemplate(row.id)
-    const { id, meta, ...rest } = detail
+    const { id: _id, meta: _meta, ...rest } = detail
     await createPrintTemplate({ ...rest, name: `${row.name}_copy` } as any)
     showToast('複製しました', 'success')
     reload()
@@ -196,10 +197,10 @@ const tableColumns = computed((): TableColumn[] => {
       align: 'center',
       cellRenderer: ({ rowData }: { rowData: PrintTemplate }) =>
         h('div', { class: 'action-cell' }, [
-          h('button', { class: 'o-btn o-btn-sm o-btn-outline-success', onClick: () => openVisualEditor(rowData) }, 'レイアウト編集'),
-          h('button', { class: 'o-btn o-btn-sm o-btn-outline-primary', onClick: () => openEdit(rowData) }, 'コード編集'),
-          h('button', { class: 'o-btn o-btn-sm o-btn-outline-secondary', onClick: () => duplicatePrintTemplate(rowData) }, '複製'),
-          h('button', { class: 'o-btn o-btn-sm o-btn-outline-danger', onClick: () => removeTemplate(rowData) }, '削除'),
+          h(OButton, { variant: 'success', size: 'sm', onClick: () => openVisualEditor(rowData) }, () => 'レイアウト編集'),
+          h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => 'コード編集'),
+          h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicatePrintTemplate(rowData) }, () => '複製'),
+          h(OButton, { variant: 'danger', size: 'sm', onClick: () => removeTemplate(rowData) }, () => '削除'),
         ]),
     },
   ]

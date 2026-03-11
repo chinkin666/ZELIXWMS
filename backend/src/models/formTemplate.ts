@@ -177,7 +177,7 @@ export interface CreateFormTemplateDto {
   isDefault?: boolean;
 }
 
-export interface UpdateFormTemplateDto extends Partial<CreateFormTemplateDto> {}
+export type UpdateFormTemplateDto = Partial<CreateFormTemplateDto>;
 
 export interface IFormTemplate {
   _id: mongoose.Types.ObjectId;

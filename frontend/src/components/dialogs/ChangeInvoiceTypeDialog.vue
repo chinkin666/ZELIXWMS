@@ -42,14 +42,14 @@
     </div>
 
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="handleCancel">キャンセル</button>
-      <button
-        class="o-btn o-btn-primary"
+      <OButton variant="secondary" @click="handleCancel">キャンセル</OButton>
+      <OButton
+        variant="primary"
         :disabled="!selectedInvoiceType || loading"
         @click="handleConfirm"
       >
         {{ loading ? '処理中...' : '変更して再提交' }}
-      </button>
+      </OButton>
     </template>
   </ODialog>
 </template>
@@ -57,6 +57,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { OrderDocument } from '@/types/order'
 import { isBuiltInCarrierId } from '@/utils/carrier'
 

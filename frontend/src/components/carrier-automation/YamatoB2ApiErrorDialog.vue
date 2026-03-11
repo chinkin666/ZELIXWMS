@@ -36,7 +36,7 @@
       <pre>{{ errorMessage }}</pre>
     </div>
     <template #footer>
-      <button class="o-btn o-btn-primary" @click="$emit('update:modelValue', false)">閉じる</button>
+      <OButton variant="primary" @click="$emit('update:modelValue', false)">閉じる</OButton>
     </template>
   </ODialog>
 </template>
@@ -44,6 +44,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 
 export interface ApiErrorDetail {
   rowIndex: number | null

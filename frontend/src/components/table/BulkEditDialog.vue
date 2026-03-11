@@ -91,10 +91,8 @@
 
     <template #footer>
       <div class="bulk-edit__footer">
-        <button class="o-btn o-btn-secondary" @click="visible = false">キャンセル</button>
-        <button class="o-btn o-btn-primary" :disabled="!selectedColumn" @click="confirm">
-          確定
-        </button>
+        <OButton variant="secondary" @click="visible = false">キャンセル</OButton>
+        <OButton variant="primary" :disabled="!selectedColumn" @click="confirm">確定</OButton>
       </div>
     </template>
   </ODialog>
@@ -103,6 +101,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 
 type AnyColumn = Record<string, any>
 

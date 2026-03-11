@@ -6,12 +6,12 @@
         <p class="page-subtitle">SKU管理番号 と印刷用商品名、商品名、検品コード (バーコード)、クール区分、メール便計算を管理します</p>
       </div>
       <div class="page-actions">
-        <button class="o-btn o-btn-primary" @click="openCreate">
+        <OButton variant="primary" @click="openCreate">
           <span class="o-icon">+</span> 商品を追加
-        </button>
-        <button class="o-btn o-btn-success" @click="showImportDialog = true">
+        </OButton>
+        <OButton variant="success" @click="showImportDialog = true">
           <span class="o-icon">&#8593;</span> 取り込みファイルを選択
-        </button>
+        </OButton>
       </div>
     </div>
 
@@ -69,8 +69,8 @@
                   <span v-else>&#128247; ファイルをアップロード</span>
                   <input type="file" accept="image/*" class="hidden-input" @change="handleImageFileChangeNative" />
                 </label>
-                <button class="o-btn o-btn-secondary o-btn-sm" @click="showUrlInput = true">外部URLを指定</button>
-                <button v-if="editImageUrl" class="o-btn o-btn-link o-btn-danger-text o-btn-sm" @click="editImageUrl = ''">削除</button>
+                <OButton variant="secondary" size="sm" @click="showUrlInput = true">外部URLを指定</OButton>
+                <OButton v-if="editImageUrl" variant="danger" size="sm" @click="editImageUrl = ''">削除</OButton>
               </div>
               <!-- URL input mode -->
               <div v-else class="image-input-row">
@@ -80,7 +80,7 @@
                   class="o-input o-input-sm"
                   placeholder="画像URLを入力 (https://...)"
                 />
-                <button class="o-btn o-btn-secondary o-btn-sm" @click="showUrlInput = false">戻る</button>
+                <OButton variant="secondary" size="sm" @click="showUrlInput = false">戻る</OButton>
               </div>
             </div>
           </div>
@@ -135,13 +135,13 @@
                   <input type="checkbox" v-model="row.isActive" />
                 </td>
                 <td style="text-align: center">
-                  <button class="o-btn o-btn-link o-btn-danger-text o-btn-sm" @click="removeEditDialogSubSku($index)">削除</button>
+                  <OButton variant="danger" size="sm" @click="removeEditDialogSubSku($index)">削除</OButton>
                 </td>
               </tr>
             </tbody>
           </table>
           <div class="sub-sku-actions">
-            <button class="o-btn o-btn-primary o-btn-sm" @click="addEditDialogSubSku">+ 子SKUを追加</button>
+            <OButton variant="primary" size="sm" @click="addEditDialogSubSku">+ 子SKUを追加</OButton>
           </div>
         </div>
       </template>
@@ -203,22 +203,22 @@
               <input type="checkbox" v-model="row.isActive" />
             </td>
             <td style="text-align: center">
-              <button class="o-btn o-btn-link o-btn-danger-text o-btn-sm" @click="removeSubSku($index)">削除</button>
+              <OButton variant="danger" size="sm" @click="removeSubSku($index)">削除</OButton>
             </td>
           </tr>
         </tbody>
       </table>
 
       <div class="sub-sku-actions">
-        <button class="o-btn o-btn-primary o-btn-sm" @click="addSubSku">+ 子SKUを追加</button>
+        <OButton variant="primary" size="sm" @click="addSubSku">+ 子SKUを追加</OButton>
       </div>
 
       <template #footer>
-        <button class="o-btn o-btn-secondary" @click="subSkuDialogVisible = false">キャンセル</button>
-        <button class="o-btn o-btn-primary" :disabled="savingSubSkus" @click="saveSubSkus">
+        <OButton variant="secondary" @click="subSkuDialogVisible = false">キャンセル</OButton>
+        <OButton variant="primary" :disabled="savingSubSkus" @click="saveSubSkus">
           <span v-if="savingSubSkus">...</span>
           <span v-else>保存</span>
-        </button>
+        </OButton>
       </template>
     </ODialog>
 
@@ -236,6 +236,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { uploadProductImage } from '@/api/product'
 import { getApiBaseUrl } from '@/api/base'
 import noImageSrc from '@/assets/images/no_image.png'
@@ -245,7 +246,7 @@ import FormDialog from '@/components/form/FormDialog.vue'
 import ImportDialog from '@/components/import/ImportDialog.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import type { TableColumn, Operator } from '@/types/table'
-import { bulkUpdateProducts, checkSkuAvailability, createProduct, deleteProduct, fetchProducts, importProductsWithStrategy, updateProduct, type ImportStrategy, type ImportResult } from '@/api/product'
+import { bulkUpdateProducts, checkSkuAvailability, createProduct, deleteProduct, fetchProducts, importProductsWithStrategy, updateProduct, type ImportStrategy } from '@/api/product'
 import type { Product, ProductFilters, UpsertProductDto, SubSku } from '@/types/product'
 import ImportResultDialog, { type ImportResultData } from '@/components/import/ImportResultDialog.vue'
 
@@ -253,12 +254,6 @@ const COOL_TYPE_OPTIONS = [
   { label: '通常', value: '0' },
   { label: 'クール冷凍', value: '1' },
   { label: 'クール冷蔵', value: '2' },
-]
-
-// メール便計算オプション
-const MAIL_CALC_OPTIONS = [
-  { label: 'しない', value: false },
-  { label: 'する', value: true },
 ]
 
 const list = ref<Product[]>([])
@@ -511,12 +506,13 @@ const tableColumns: TableColumn[] = [
             ? subSkus.map((s) => s.subSku).join(', ')
             : '-'
           return h(
-            'button',
+            OButton,
             {
-              class: 'o-btn o-btn-link o-btn-sm',
+              variant: 'secondary',
+              size: 'sm',
               onClick: () => openSubSkuDialog(rowData),
             },
-            displayText,
+            () => displayText,
           )
         },
       }
@@ -532,30 +528,9 @@ const tableColumns: TableColumn[] = [
     width: 200,
     cellRenderer: ({ rowData }: { rowData: Product }) =>
       h('div', { class: 'action-cell' }, [
-        h(
-          'button',
-          {
-            class: 'o-btn o-btn-primary o-btn-outline o-btn-sm',
-            onClick: () => openEdit(rowData),
-          },
-          '編集',
-        ),
-        h(
-          'button',
-          {
-            class: 'o-btn o-btn-secondary o-btn-outline o-btn-sm',
-            onClick: () => duplicateProduct(rowData),
-          },
-          '複製',
-        ),
-        h(
-          'button',
-          {
-            class: 'o-btn o-btn-danger o-btn-outline o-btn-sm',
-            onClick: () => confirmDelete(rowData),
-          },
-          '削除',
-        ),
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateProduct(rowData) }, () => '複製'),
+        h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ]),
   },
 ]
@@ -846,13 +821,6 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
 
   const nextFilters: ProductFilters = {}
   const pickString = (val: any) => (typeof val === 'string' && val.trim() ? val.trim() : undefined)
-  const pickPositiveInt = (val: any) => {
-    if (val === undefined || val === null || val === '') return undefined
-    const n = typeof val === 'number' ? val : Number(String(val).trim())
-    if (!Number.isFinite(n)) return undefined
-    const i = Math.trunc(n)
-    return i > 0 ? i : undefined
-  }
   const pickBoolean = (val: any): boolean | undefined => {
     if (val === true || val === 'true') return true
     if (val === false || val === 'false') return false

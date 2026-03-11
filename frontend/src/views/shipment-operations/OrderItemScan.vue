@@ -8,7 +8,7 @@
           <span class="o-toggle__slider"></span>
           <span class="toggle-label">{{ autoPrintEnabled ? '自動印刷' : '手動印刷' }}</span>
         </label>
-        <button class="o-btn o-btn-secondary" @click="handleBack">戻る</button>
+        <OButton variant="secondary" @click="handleBack">戻る</OButton>
       </div>
     </div>
 
@@ -80,20 +80,20 @@
         </div>
       </div>
       <div class="bottom-bar__right">
-        <button
-          class="o-btn o-btn-warning"
+        <OButton
+          variant="warning"
           :disabled="isUnconfirming"
           @click="openUnconfirmDialog"
         >
           {{ isUnconfirming ? '処理中...' : '確認取消' }}
-        </button>
-        <button
-          class="o-btn o-btn-info"
+        </OButton>
+        <OButton
+          variant="info"
           :disabled="isChangingInvoiceType"
           @click="openChangeInvoiceTypeDialog"
         >
           {{ isChangingInvoiceType ? '処理中...' : '送り状種類変更' }}
-        </button>
+        </OButton>
       </div>
     </div>
 
@@ -135,14 +135,14 @@
       </div>
 
       <template #footer>
-        <button class="o-btn o-btn-secondary" @click="handleCompletionConfirm">確認（印刷なし）</button>
-        <button
-          class="o-btn o-btn-primary"
+        <OButton variant="secondary" @click="handleCompletionConfirm">確認（印刷なし）</OButton>
+        <OButton
+          variant="primary"
           :disabled="!printImageUrl || printRendering"
           @click="handlePrint"
         >
           印刷
-        </button>
+        </OButton>
       </template>
     </ODialog>
   </div>
@@ -150,6 +150,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { useRouter, useRoute } from 'vue-router'
 import Table from '@/components/table/Table.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
@@ -204,7 +205,7 @@ const loadAutoPrintSetting = (): boolean => {
       return true
     }
     return stored === 'true'
-  } catch (e) {
+  } catch (_e) {
     return true // 默认开启
   }
 }
@@ -427,12 +428,6 @@ const loadProductBySku = (sku: string): Product | null => {
 }
 
 // 格式化日期时间
-const fmtDateTime = (v: any) => {
-  if (!v) return ''
-  const d = new Date(v)
-  return isNaN(d.getTime()) ? String(v) : d.toLocaleString('ja-JP')
-}
-
 // 配送業者名称
 const carrierName = computed(() => {
   const id = order.value?.carrierId
@@ -444,7 +439,6 @@ const carrierName = computed(() => {
 // 订单摘要信息
 const summaryItems = computed(() => {
   const o: any = order.value || {}
-  const fmt = (v: any) => (v ? fmtDateTime(v) : '-')
   return [
     { key: 'orderNumber', label: '出荷管理No', value: o.orderNumber || '-' },
     { key: 'trackingId', label: '伝票番号', value: o.trackingId || '-' },

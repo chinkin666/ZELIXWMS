@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import OButton from './OButton.vue'
 
 interface FilterOption {
   key: string
@@ -18,7 +19,7 @@ interface Props {
   showFavorites?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   showFavorites: true,
 })
 
@@ -145,7 +146,7 @@ const activeFilterCount = computed(() => Object.keys(activeFilters.value).length
           class="o-sp-fav-input"
           @keydown.enter="saveFavorite"
         />
-        <button class="o-btn o-btn-primary o-btn-sm" @click="saveFavorite">Save</button>
+        <OButton variant="primary" size="sm" @click="saveFavorite">Save</OButton>
       </div>
     </div>
 

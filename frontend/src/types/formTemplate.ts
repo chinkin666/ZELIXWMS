@@ -215,7 +215,7 @@ export interface CreateFormTemplateDto {
   isDefault?: boolean
 }
 
-export interface UpdateFormTemplateDto extends Partial<CreateFormTemplateDto> {}
+export type UpdateFormTemplateDto = Partial<CreateFormTemplateDto>
 
 /**
  * フォームフィールド定義（フィールド登録表用）

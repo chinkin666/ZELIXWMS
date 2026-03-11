@@ -6,10 +6,10 @@
         <div class="sub">id: {{ templateId }}</div>
       </div>
       <div class="actions">
-        <button class="o-btn o-btn-secondary" @click="goBack">戻る</button>
-        <button class="o-btn o-btn-primary" :disabled="saving" @click="save">
+        <OButton variant="secondary" @click="goBack">戻る</OButton>
+        <OButton variant="primary" :disabled="saving" @click="save">
           {{ saving ? '保存中...' : '保存' }}
-        </button>
+        </OButton>
       </div>
     </div>
 
@@ -35,8 +35,8 @@
         <div class="panel-title" style="margin-top: 12px">上传表格</div>
         <input ref="tableFileInput" type="file" accept=".csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" class="hidden-input" @change="onTableFileChange" />
         <div class="row">
-          <button class="o-btn o-btn-secondary" @click="triggerTableUpload">选择文件</button>
-          <button class="o-btn o-btn-secondary" :disabled="!uploadedTableData" @click="clearTableData">清空</button>
+          <OButton variant="secondary" @click="triggerTableUpload">选择文件</OButton>
+          <OButton variant="secondary" :disabled="!uploadedTableData" @click="clearTableData">清空</OButton>
         </div>
         <div v-if="uploadedTableData && uploadedTableData.length > 0" class="meta" style="margin-top: 8px">
           <div>已加载 {{ uploadedTableData.length }} 行数据（第1行为表头）</div>
@@ -78,17 +78,17 @@
             </div>
           </div>
           <div class="row">
-            <button class="o-btn o-btn-secondary" @click="addText">+ Text</button>
-            <button class="o-btn o-btn-secondary" @click="addBarcode">+ Barcode</button>
-            <button class="o-btn o-btn-secondary" @click="addImage">+ Image</button>
+            <OButton variant="secondary" @click="addText">+ Text</OButton>
+            <OButton variant="secondary" @click="addBarcode">+ Barcode</OButton>
+            <OButton variant="secondary" @click="addImage">+ Image</OButton>
           </div>
         </div>
 
         <div class="canvas-toolbar" style="margin-top: 8px">
           <div class="row">
             <input ref="bgFileInput" type="file" accept="image/*" class="hidden-input" @change="onBgFileChange" />
-            <button class="o-btn o-btn-secondary" @click="triggerBgUpload">上传参考图</button>
-            <button class="o-btn o-btn-secondary" :disabled="!bgImageUrl" @click="clearBgImage">清除参考图</button>
+            <OButton variant="secondary" @click="triggerBgUpload">上传参考图</OButton>
+            <OButton variant="secondary" :disabled="!bgImageUrl" @click="clearBgImage">清除参考图</OButton>
           </div>
           <div class="row" style="align-items: center">
             <div class="opacity-label">透明度</div>
@@ -157,9 +157,9 @@
               </div>
               <div class="o-form-group">
                 <label>内容转换</label>
-                <button class="o-btn o-btn-primary" @click="openTransformMappingDialog('text')">
+                <OButton variant="primary" @click="openTransformMappingDialog('text')">
                   {{ (selectedEl as PrintTextElement).transformMapping ? '编辑转换' : '配置转换' }}
-                </button>
+                </OButton>
               </div>
               <div class="o-form-group">
                 <label>预览</label>
@@ -193,9 +193,9 @@
               </div>
               <div class="o-form-group">
                 <label>内容转换</label>
-                <button class="o-btn o-btn-primary" @click="openTransformMappingDialog('barcode')">
-                  {{ (selectedEl as PrintBarcodeElement).transformMapping ? '编辑转换' : '配置转换' }}
-                </button>
+                <OButton variant="primary" @click="openTransformMappingDialog('barcode')">
+                  {{ (selectedEl as PrintBarcodeElement).transformMapping ? '编辑转换' : '配置转換' }}
+                </OButton>
               </div>
               <div class="o-form-group">
                 <label>预览</label>
@@ -232,8 +232,8 @@
                 <label>图片</label>
                 <div style="display: flex; gap: 8px">
                   <input ref="imageFileInput" type="file" accept="image/*" class="hidden-input" @change="onImageFileChange" />
-                  <button class="o-btn o-btn-secondary" @click="triggerImageUpload">上传图片</button>
-                  <button class="o-btn o-btn-secondary" :disabled="!((selectedEl as any).imageData)" @click="clearImage">清除图片</button>
+                  <OButton variant="secondary" @click="triggerImageUpload">上传图片</OButton>
+                  <OButton variant="secondary" :disabled="!((selectedEl as any).imageData)" @click="clearImage">清除图片</OButton>
                 </div>
               </div>
               <div class="o-form-group" v-if="(selectedEl as any).imageData">
@@ -251,7 +251,7 @@
             </template>
 
             <div class="row">
-              <button class="o-btn o-btn-danger" @click="removeSelected">删除</button>
+              <OButton variant="danger" @click="removeSelected">删除</OButton>
             </div>
           </div>
         </div>
@@ -298,6 +298,7 @@
 <script setup lang="ts">
 import Konva from 'konva'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { PrintBarcodeElement, PrintElement, PrintImageElement, PrintTemplate, PrintTextElement } from '@/types/printTemplate'
 import { fetchPrintTemplate, updatePrintTemplate } from '@/api/printTemplates'
@@ -1177,10 +1178,8 @@ async function render(seq?: number) {
       }
 
       const img = new Image()
-      let imgLoaded = false
 
       img.onload = () => {
-        imgLoaded = true
         if (seq !== undefined && mySeq !== renderSeq) {
           return
         }

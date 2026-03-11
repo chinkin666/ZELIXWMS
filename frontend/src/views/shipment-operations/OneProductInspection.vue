@@ -3,9 +3,9 @@
     <!-- 左侧面板 -->
     <div class="left-panel">
       <div class="left-panel__header">
-        <button class="o-btn o-btn-secondary o-btn-sm" @click="handleGoBack">&larr; 戻る</button>
+        <OButton variant="secondary" size="sm" @click="handleGoBack">&larr; 戻る</OButton>
         <h2 class="page-title">出荷検品</h2>
-        <button class="o-btn o-btn-danger o-btn-sm" @click="handleClear">クリア</button>
+        <OButton variant="danger" size="sm" @click="handleClear">クリア</OButton>
       </div>
 
       <!-- ピッキング指示No -->
@@ -188,14 +188,14 @@
       </div>
 
       <template #footer>
-        <button class="o-btn o-btn-secondary" @click="handleCompletionConfirmNoPrint">確認（印刷なし）</button>
-        <button
-          class="o-btn o-btn-primary"
+        <OButton variant="secondary" @click="handleCompletionConfirmNoPrint">確認（印刷なし）</OButton>
+        <OButton
+          variant="primary"
           :disabled="(currentPdfSource === 'local' && (!printImageUrl || printRendering)) || (currentPdfSource === 'b2-webapi' && !currentMatchedOrder?.trackingId)"
           @click="handlePrint"
         >
           印刷
-        </button>
+        </OButton>
       </template>
     </ODialog>
 
@@ -214,12 +214,13 @@
         <div class="wrong-scan-hint">
           未検品の注文の中に、このバーコード/SKUに一致する商品が見つかりませんでした。
         </div>
-        <button
-          class="o-btn o-btn-danger wrong-scan-close-btn"
+        <OButton
+          variant="danger"
+          class="wrong-scan-close-btn"
           @click="closeWrongScanDialog"
         >
           確認して閉じる（F1）
-        </button>
+        </OButton>
       </div>
       <template #footer><span></span></template>
     </ODialog>
@@ -228,6 +229,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { useRouter, useRoute } from 'vue-router'
 import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vue'
 import ODialog from '@/components/odoo/ODialog.vue'

@@ -78,10 +78,10 @@
     </form>
 
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="emit('update:modelValue', false)">キャンセル</button>
-      <button class="o-btn o-btn-primary" @click="handleSubmit" :disabled="!form.name?.trim()">
+      <OButton variant="secondary" @click="emit('update:modelValue', false)">キャンセル</OButton>
+      <OButton variant="primary" @click="handleSubmit" :disabled="!form.name?.trim()">
         {{ isEditing ? '更新' : '作成' }}
-      </button>
+      </OButton>
     </template>
   </ODialog>
 </template>
@@ -89,12 +89,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type {
   AutoProcessingRule,
   AutoProcessingRuleFormData,
-  AutoProcessingCondition,
-  AutoProcessingAction,
-  TriggerEvent,
 } from '@/types/autoProcessingRule'
 import { TRIGGER_EVENTS, TRIGGER_EVENT_LABELS } from '@/types/autoProcessingRule'
 import ConditionEditor from './ConditionEditor.vue'

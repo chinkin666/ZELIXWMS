@@ -201,11 +201,6 @@ export function getOrderFieldDefinitions(opts?: {
    */
   includeMappingExamples?: boolean
 }): TableColumn[] {
-  const boolRenderer = (val?: boolean) => {
-    if (val === undefined || val === null) return '-'
-    return val ? 'はい' : 'いいえ'
-  }
-
   const coolTypeOptions = [
     { label: '通常', value: '0' as CoolType },
     { label: 'クール冷凍', value: '1' as CoolType },

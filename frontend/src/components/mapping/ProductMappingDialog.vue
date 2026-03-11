@@ -35,8 +35,8 @@
     </div>
 
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="visibleProxy = false">キャンセル</button>
-      <button class="o-btn o-btn-primary" @click="handleSubmit">適用</button>
+      <OButton variant="secondary" @click="visibleProxy = false">キャンセル</OButton>
+      <OButton variant="primary" @click="handleSubmit">適用</OButton>
     </template>
   </ODialog>
 </template>
@@ -44,6 +44,7 @@
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { TransformMapping } from '@/api/mappingConfig'
 import { runTransformMapping } from '@/utils/transformRunner'
 

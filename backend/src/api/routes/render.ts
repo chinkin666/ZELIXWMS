@@ -3,8 +3,10 @@
  * Provides batch rendering endpoint for print templates
  */
 
-import { Router, Request, Response } from 'express'
-import { renderBatch, KonvaRenderItem, BatchRenderOptions } from '@/services/render/renderService'
+import type { Request, Response } from 'express';
+import { Router } from 'express'
+import type { KonvaRenderItem, BatchRenderOptions } from '@/services/render/renderService';
+import { renderBatch } from '@/services/render/renderService'
 import { getCacheStats, cleanupExpiredCache } from '@/services/render/renderCache'
 
 const router = Router()
@@ -105,7 +107,7 @@ router.get('/cache/stats', async (_req: Request, res: Response) => {
       oldestFile: stats.oldestFile ? new Date(stats.oldestFile).toISOString() : null,
       newestFile: stats.newestFile ? new Date(stats.newestFile).toISOString() : null,
     })
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to get cache stats' })
   }
 })
@@ -121,7 +123,7 @@ router.post('/cache/cleanup', async (_req: Request, res: Response) => {
       deleted: result.deleted,
       errors: result.errors,
     })
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to cleanup cache' })
   }
 })

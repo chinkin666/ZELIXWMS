@@ -141,4 +141,4 @@ async function migrateAddressFields() {
   }
 }
 
-migrateAddressFields();
+void migrateAddressFields();

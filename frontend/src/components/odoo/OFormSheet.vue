@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useI18n } from '../../composables/useI18n'
-
-const { t } = useI18n()
-
 // ---------- Types ----------
 
 interface Props {

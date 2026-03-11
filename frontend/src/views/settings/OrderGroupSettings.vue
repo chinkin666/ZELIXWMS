@@ -6,7 +6,7 @@
         <p class="page-subtitle">検品グループを管理します。ドラッグで並び替えできます。</p>
       </div>
       <div class="page-actions">
-        <button class="o-btn o-btn-primary" @click="openCreate">グループを追加</button>
+        <OButton variant="primary" @click="openCreate">グループを追加</OButton>
       </div>
     </div>
 
@@ -54,8 +54,8 @@
                 />
                 <span class="o-toggle-slider"></span>
               </label>
-              <button class="o-btn o-btn-sm o-btn-outline-primary" @click="openEdit(group)">編集</button>
-              <button class="o-btn o-btn-sm o-btn-outline-danger" @click="confirmDelete(group)">削除</button>
+              <OButton variant="primary" size="sm" @click="openEdit(group)">編集</OButton>
+              <OButton variant="danger" size="sm" @click="confirmDelete(group)">削除</OButton>
             </div>
           </div>
         </template>
@@ -75,6 +75,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
+import OButton from '@/components/odoo/OButton.vue'
 import draggable from 'vuedraggable'
 import {
   fetchOrderGroups,

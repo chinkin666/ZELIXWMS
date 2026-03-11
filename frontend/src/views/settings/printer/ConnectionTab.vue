@@ -14,12 +14,12 @@
 
     <!-- Connection Actions -->
     <div class="form-actions">
-      <button class="o-btn o-btn-primary" :disabled="connecting" @click="handleConnect">
+      <OButton variant="primary" :disabled="connecting" @click="handleConnect">
         {{ connecting ? '接続中...' : '接続テスト' }}
-      </button>
-      <button class="o-btn o-btn-secondary" :disabled="!isConnected || refreshing" @click="handleRefreshPrinters">
+      </OButton>
+      <OButton variant="secondary" :disabled="!isConnected || refreshing" @click="handleRefreshPrinters">
         {{ refreshing ? '更新中...' : 'プリンター情報を更新' }}
-      </button>
+      </OButton>
     </div>
 
     <!-- Status Card -->
@@ -81,6 +81,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { useToast } from '@/composables/useToast'
 import { healthCheck, getPrinters } from '@/utils/print/printBridgeApi'
 import {

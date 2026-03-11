@@ -89,5 +89,5 @@ async function fixIndexes() {
   }
 }
 
-fixIndexes();
+void fixIndexes();
 

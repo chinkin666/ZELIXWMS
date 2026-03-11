@@ -94,4 +94,4 @@ async function migrateProductAllSku() {
   }
 }
 
-migrateProductAllSku();
+void migrateProductAllSku();

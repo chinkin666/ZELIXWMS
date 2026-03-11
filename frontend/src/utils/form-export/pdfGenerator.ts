@@ -1,4 +1,4 @@
-import type { FormTemplate, FormTemplateColumn, FormTemplateColumnChild, BarcodeConfig, HeaderFooterItem, HeaderFooterTableStyle } from '@/types/formTemplate'
+import type { FormTemplate, FormTemplateColumn, BarcodeConfig, HeaderFooterItem } from '@/types/formTemplate'
 import { renderBarcodePngDataUrl } from '@/utils/print/renderBarcodeDataUrl'
 import type { TDocumentDefinitions } from 'pdfmake/interfaces'
 import { loadJapaneseFont } from './jpFontLoader'
@@ -104,14 +104,6 @@ export interface GeneratePdfOptions {
 /**
  * 変数を置換（ページ番号なし）
  */
-function replaceVariables(text: string): string {
-  const now = new Date()
-  return text
-    .replace(/\{\{date\}\}/g, now.toLocaleDateString('ja-JP'))
-    .replace(/\{\{time\}\}/g, now.toLocaleTimeString('ja-JP'))
-    .replace(/\{\{datetime\}\}/g, now.toLocaleString('ja-JP'))
-}
-
 /**
  * 変数を置換（ページ番号あり）
  */

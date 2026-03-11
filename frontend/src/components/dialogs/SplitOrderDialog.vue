@@ -23,12 +23,13 @@
           >
             <span class="product-name">{{ item.productName || item.inputSku }}</span>
             <span class="unallocated-qty">x{{ item.remainingQty }}</span>
-            <button
-              class="o-btn o-btn-primary o-btn-sm"
+            <OButton
+              variant="primary"
+              size="sm"
               @click="addUnallocatedToGroup(item)"
             >
               グループに追加
-            </button>
+            </OButton>
           </div>
         </div>
       </div>
@@ -42,14 +43,15 @@
           <div class="group-header">
             <span class="group-title">注文 {{ groupIdx + 1 }}</span>
             <span class="group-count">{{ groupProductCount(group) }}個</span>
-            <button
+            <OButton
               v-if="groups.length > 2"
-              class="o-btn o-btn-danger o-btn-sm"
+              variant="danger"
+              size="sm"
               @click="removeGroup(groupIdx)"
               title="削除"
             >
               ✕
-            </button>
+            </OButton>
           </div>
           <draggable
             v-model="group.products"
@@ -77,13 +79,14 @@
                     style="width: 70px"
                   />
                 </div>
-                <button
-                  class="o-btn o-btn-danger o-btn-sm"
+                <OButton
+                  variant="danger"
+                  size="sm"
                   @click="removeProductFromGroup(groupIdx, item)"
                   title="削除"
                 >
                   ✕
-                </button>
+                </OButton>
               </div>
             </template>
           </draggable>
@@ -104,14 +107,14 @@
     </div>
 
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="handleCancel">キャンセル</button>
-      <button
-        class="o-btn o-btn-primary"
+      <OButton variant="secondary" @click="handleCancel">キャンセル</OButton>
+      <OButton
+        variant="primary"
         :disabled="!!validationError || loading"
         @click="handleConfirm"
       >
         {{ loading ? '処理中...' : '分割実行' }}
-      </button>
+      </OButton>
     </template>
   </ODialog>
 </template>
@@ -119,6 +122,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import draggable from 'vuedraggable'
 import type { OrderDocument } from '@/types/order'
 import type { SplitOrderRequest } from '@/types/carrierAutomation'

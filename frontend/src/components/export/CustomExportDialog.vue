@@ -44,9 +44,9 @@
           <span class="hint">CSV / Excel をダウンロードできます。</span>
         </div>
         <div class="footer__right">
-          <button class="o-btn o-btn-secondary" :disabled="outputRows.length === 0" @click="downloadCsv">CSV出力</button>
-          <button class="o-btn o-btn-primary" :disabled="outputRows.length === 0" @click="downloadExcel">Excel出力</button>
-          <button class="o-btn o-btn-secondary" @click="visible = false">閉じる</button>
+          <OButton variant="secondary" :disabled="outputRows.length === 0" @click="downloadCsv">CSV出力</OButton>
+          <OButton variant="primary" :disabled="outputRows.length === 0" @click="downloadExcel">Excel出力</OButton>
+          <OButton variant="secondary" @click="visible = false">閉じる</OButton>
         </div>
       </div>
     </template>
@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import * as XLSX from 'xlsx'
 import { getAllMappingConfigs, type MappingConfig } from '@/api/mappingConfig'
 import { applyTransformMappings } from '@/utils/transformRunner'

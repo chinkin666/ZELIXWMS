@@ -75,37 +75,36 @@
         </button>
       </template>
       <template #right>
-        <button
-          class="o-btn o-btn-secondary"
+        <OButton
+          variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleCustomExportClick"
         >
           出荷明細リスト出力(csv)
-        </button>
-        <button
-          class="o-btn o-btn-secondary"
+        </OButton>
+        <OButton
+          variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleFormExportClick"
         >
           出荷明細リスト出力(pdf)
-        </button>
+        </OButton>
         <!-- Automation export button (Yamato B2) -->
-        <button
-          class="o-btn o-btn-secondary"
-          style="border-color:#67c23a;color:#67c23a;"
+        <OButton
+          variant="success"
           :disabled="!canSendToB2Cloud || automationExporting"
           @click="handleAutomationExport"
         >
           {{ automationExporting ? '送信中...' : 'B2 Cloud に送信' }}
-        </button>
+        </OButton>
         <!-- Normal export button -->
-        <button
-          class="o-btn o-btn-primary"
+        <OButton
+          variant="primary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleExportClick"
         >
           配送業者データ出力
-        </button>
+        </OButton>
       </template>
     </OrderBottomBar>
 
@@ -168,7 +167,7 @@ import CustomExportDialog from '@/components/export/CustomExportDialog.vue'
 import FormExportDialog from '@/components/form-export/FormExportDialog.vue'
 import type { OrderDocument } from '@/types/order'
 import type { HeaderGroupingConfig } from '@/components/table/tableHeaderGroup'
-import type { Operator, TableColumn } from '@/types/table'
+import type { Operator } from '@/types/table'
 import { getOrderFieldDefinitions } from '@/types/order'
 import { buildOrderHeaderGroupingConfig } from '@/utils/orderHeaderGrouping'
 import { fetchShipmentOrder, fetchShipmentOrdersPage, updateShipmentOrderStatus, updateShipmentOrderStatusBulk } from '@/api/shipmentOrders'
@@ -183,6 +182,7 @@ import { yamatoB2Export } from '@/api/carrierAutomation'
 import type { YamatoB2ExportResult } from '@/types/carrierAutomation'
 import YamatoB2ExportResultDialog from '@/components/carrier-automation/YamatoB2ExportResultDialog.vue'
 import YamatoB2ApiErrorDialog from '@/components/carrier-automation/YamatoB2ApiErrorDialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 
 type SortOrder = 'asc' | 'desc' | null
 type OrderRow = Record<string, any>

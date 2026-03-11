@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import type mongoose from 'mongoose';
 import type { AnyBulkWriteOperation } from 'mongoose';
 import { FormTemplate, type IFormTemplate } from '@/models/formTemplate';
 import { logger } from '@/lib/logger';

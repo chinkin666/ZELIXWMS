@@ -65,10 +65,8 @@
 
     <template #footer>
       <div class="footer">
-        <button class="o-btn o-btn-secondary" @click="visibleProxy = false">キャンセル</button>
-        <button class="o-btn o-btn-primary" :disabled="selectedCount === 0" @click="handleConfirm">
-          適用
-        </button>
+        <OButton variant="secondary" @click="visibleProxy = false">キャンセル</OButton>
+        <OButton variant="primary" :disabled="selectedCount === 0" @click="handleConfirm">適用</OButton>
       </div>
     </template>
   </ODialog>
@@ -77,6 +75,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 
 type InvoiceMode = 'mode1' | 'mode2'
 

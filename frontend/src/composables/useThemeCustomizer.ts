@@ -1,4 +1,4 @@
-import { ref, reactive, watch, readonly } from 'vue'
+import { ref, reactive, readonly } from 'vue'
 
 export interface ThemePreset {
   readonly name: string

@@ -81,13 +81,13 @@
         </div>
 
         <div class="panel-footer">
-          <button class="o-btn o-btn-secondary" @click="handleClose" :disabled="printing || saving">キャンセル</button>
-          <button class="o-btn o-btn-secondary" @click="handleSavePdf" :disabled="totalCount === 0 || printing || saving">
+          <OButton variant="secondary" @click="handleClose" :disabled="printing || saving">キャンセル</OButton>
+          <OButton variant="secondary" @click="handleSavePdf" :disabled="totalCount === 0 || printing || saving">
             {{ saving ? '保存中...' : 'PDFを保存' }}
-          </button>
-          <button class="o-btn o-btn-primary" @click="handlePrint" :disabled="totalCount === 0 || saving || printing">
+          </OButton>
+          <OButton variant="primary" @click="handlePrint" :disabled="totalCount === 0 || saving || printing">
             {{ printing ? '印刷中...' : '印刷開始' }}
-          </button>
+          </OButton>
         </div>
       </div>
     </Transition>
@@ -96,6 +96,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { OrderDocument } from '@/types/order'
 import type { PrintTemplate } from '@/types/printTemplate'
 import type { Carrier } from '@/types/carrier'

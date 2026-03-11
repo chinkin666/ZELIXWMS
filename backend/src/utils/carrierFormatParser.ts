@@ -3,7 +3,7 @@
  * 用于解析carrier格式定义文件
  */
 
-import { IColumnConfig, ColumnDataType } from '@/models/carrier';
+import type { IColumnConfig, ColumnDataType } from '@/models/carrier';
 
 /**
  * 解析列类型

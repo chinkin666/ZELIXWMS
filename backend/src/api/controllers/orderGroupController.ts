@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { OrderGroup, type IOrderGroup } from '@/models/orderGroup';
+import { OrderGroup } from '@/models/orderGroup';
 import { ShipmentOrder } from '@/models/shipmentOrder';
 import { generateOrderGroupId } from '@/utils/idGenerator';
 

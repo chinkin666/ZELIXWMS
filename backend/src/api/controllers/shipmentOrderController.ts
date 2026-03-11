@@ -1,8 +1,7 @@
 import type { Request, Response } from 'express';
-import { createOrderSchema, orderDocumentSchema, updateOrderSchema } from '@/schemas/orderSchema';
-import type { CreateOrderInput, UpdateOrderInput } from '@/schemas/orderSchema';
+import { createOrderSchema, orderDocumentSchema } from '@/schemas/orderSchema';
 import { z } from 'zod';
-import { persistShipmentOrders, assignOrderNumbers } from '@/services/shipmentOrderService';
+import { assignOrderNumbers } from '@/services/shipmentOrderService';
 import { ShipmentOrder, calculateProductsMeta } from '@/models/shipmentOrder';
 import { Carrier } from '@/models/carrier';
 import { OrderSourceCompany } from '@/models/orderSourceCompany';
@@ -64,7 +63,7 @@ const isBlank = (v: any): boolean => v === null || v === undefined || (typeof v 
 const parseYmd = (raw: any): { y: number; m: number; d: number } | null => {
   if (typeof raw !== 'string') return null;
   const s = raw.trim();
-  const m = /^(\d{4})[\/-](\d{2})[\/-](\d{2})$/.exec(s);
+  const m = /^(\d{4})[-/](\d{2})[-/](\d{2})$/.exec(s);
   if (!m) return null;
   const y = Number(m[1]);
   const mm = Number(m[2]);
@@ -284,7 +283,7 @@ const buildMongoQueryFromFilters = (filters: FilterPayload): Record<string, any>
 
     // Date-only fields stored as string (e.g., 'YYYY/MM/DD')
     if (dateOnlyStringFields.has(field)) {
-      const normalize = (s: string) => s.trim().replace(/-/g, '/');
+      const _normalize = (s: string) => s.trim().replace(/-/g, '/');
       const asYmd = (s: any): string | null => {
         if (typeof s !== 'string') return null;
         const p = parseYmd(s);
@@ -1033,7 +1032,7 @@ export const listOrders = async (req: Request, res: Response): Promise<void> => 
 
     // 如果没有 page 参数，返回所有数据
     if (!hasPageParam) {
-      let items = await ShipmentOrder.find(mongoQuery).select(LIGHT_PROJECTION).lean();
+      const items = await ShipmentOrder.find(mongoQuery).select(LIGHT_PROJECTION).lean();
       
       // 如果是 orderNumber 排序，使用自然排序
       if (isOrderNumberSort) {
@@ -1061,7 +1060,7 @@ export const listOrders = async (req: Request, res: Response): Promise<void> => 
     // 有 page 参数时，进行分页
     // 对于 orderNumber 排序，需要先获取所有数据，然后排序，再分页
     if (isOrderNumberSort) {
-      let allItems = await ShipmentOrder.find(mongoQuery).select(LIGHT_PROJECTION).lean();
+      const allItems = await ShipmentOrder.find(mongoQuery).select(LIGHT_PROJECTION).lean();
       
       // 自然排序
       allItems.sort((a, b) => {

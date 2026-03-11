@@ -4,7 +4,8 @@
  * Uses simple orderNumber-based PDF caching
  */
 
-import { renderTemplateToPng, PrintTemplate, RenderOptions } from './skiaRenderer'
+import type { PrintTemplate, RenderOptions } from './skiaRenderer';
+import { renderTemplateToPng } from './skiaRenderer'
 import { checkPdfCache, savePdfToCache } from '../pdfCache'
 
 export interface WorkerTask {
@@ -138,7 +139,7 @@ async function runTransformMapping(mapping: any, row: Record<string, any>): Prom
  */
 export default async function renderWorker(task: WorkerTask): Promise<WorkerResult> {
   try {
-    const { item, order, template, company, options, index } = task
+    const { order, template, company, options, index } = task
 
     const orderNumber = order?.orderNumber as string
     if (!orderNumber) {

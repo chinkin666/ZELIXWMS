@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import OButton from './OButton.vue'
 
 interface FieldDef {
   key: string
@@ -243,14 +244,6 @@ function initMapping() {
 
 const previewRows = computed(() => parsedRows.value.slice(0, 3))
 
-const mappedFieldForColumn = computed(() => {
-  return (colIdx: number): FieldDef | undefined => {
-    const key = columnMapping.value[colIdx]
-    if (!key || key === '__skip__') return undefined
-    return props.availableFields.find((f) => f.key === key)
-  }
-})
-
 function updateMapping(colIdx: number, fieldKey: string) {
   columnMapping.value = { ...columnMapping.value, [colIdx]: fieldKey }
 }
@@ -455,7 +448,7 @@ function closeWizard() {
                     Choose File
                     <input type="file" accept=".csv,.xlsx" hidden @change="onFileSelect" />
                   </label>
-                  <button class="o-btn o-btn-secondary" @click="useDemoData">Use Demo Data</button>
+                  <OButton variant="secondary" @click="useDemoData">Use Demo Data</OButton>
                 </div>
               </div>
 
@@ -670,26 +663,26 @@ function closeWizard() {
 
           <!-- Footer -->
           <div class="o-wizard-footer">
-            <button v-if="importComplete" class="o-btn o-btn-primary" @click="closeWizard">Done</button>
+            <OButton v-if="importComplete" variant="primary" @click="closeWizard">Done</OButton>
             <template v-else>
-              <button class="o-btn o-btn-secondary" @click="closeWizard">Cancel</button>
+              <OButton variant="secondary" @click="closeWizard">Cancel</OButton>
               <div class="o-wizard-footer-right">
-                <button v-if="currentStep > 1 && !isImporting" class="o-btn o-btn-secondary" @click="goPrev">Previous</button>
-                <button
+                <OButton v-if="currentStep > 1 && !isImporting" variant="secondary" @click="goPrev">Previous</OButton>
+                <OButton
                   v-if="currentStep < 4"
-                  class="o-btn o-btn-primary"
+                  variant="primary"
                   :disabled="!canProceed(currentStep)"
                   @click="goNext"
                 >
                   Next
-                </button>
-                <button
+                </OButton>
+                <OButton
                   v-if="currentStep === 4 && !isImporting && !importComplete"
-                  class="o-btn o-btn-primary"
+                  variant="primary"
                   @click="performImport"
                 >
                   Import
-                </button>
+                </OButton>
               </div>
             </template>
           </div>

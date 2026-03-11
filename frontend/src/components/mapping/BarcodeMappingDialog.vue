@@ -8,9 +8,9 @@
             <option value="" disabled>列を選択</option>
             <option v-for="c in availableColumns" :key="c" :value="c">{{ c }}</option>
           </select>
-          <button v-if="form.columns.length > 1" class="o-btn o-btn-danger o-btn-sm" @click="removeColumn(idx)" style="margin-left: 8px">削除</button>
+          <OButton v-if="form.columns.length > 1" variant="danger" size="sm" @click="removeColumn(idx)" style="margin-left: 8px">削除</OButton>
         </div>
-        <button class="o-btn o-btn-primary o-btn-sm" @click="addColumn" style="margin-top: 8px">+ 列を追加</button>
+        <OButton variant="primary" size="sm" @click="addColumn" style="margin-top: 8px">+ 列を追加</OButton>
       </div>
       <div class="hint">選択した列の値を配列（string[]）として保存します（空は除外）</div>
     </div>
@@ -24,8 +24,8 @@
     </div>
 
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="visibleProxy = false">キャンセル</button>
-      <button class="o-btn o-btn-primary" @click="handleSubmit">適用</button>
+      <OButton variant="secondary" @click="visibleProxy = false">キャンセル</OButton>
+      <OButton variant="primary" @click="handleSubmit">適用</OButton>
     </template>
   </ODialog>
 </template>
@@ -33,6 +33,7 @@
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { TransformMapping } from '@/api/mappingConfig'
 import { runTransformMapping } from '@/utils/transformRunner'
 

@@ -31,7 +31,7 @@ interface Props {
   carrierOptions?: Array<{ label: string; value: string }>
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   showSave: true,
   initialValues: () => ({}),
   storageKey: 'order_search_form',

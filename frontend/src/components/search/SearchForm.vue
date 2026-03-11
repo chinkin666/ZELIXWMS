@@ -233,8 +233,8 @@
                                                 </template>
                                             </div>
                                             <div class="filter-editor-actions">
-                                                <button class="o-btn o-btn-secondary" @click.stop="cancelAddFilter">キャンセル</button>
-                                                <button class="o-btn o-btn-primary" @click.stop="applyFilter">適用</button>
+                                                <OButton variant="secondary" @click.stop="cancelAddFilter">キャンセル</OButton>
+                                                <OButton variant="primary" @click.stop="applyFilter">適用</OButton>
                                             </div>
                                         </div>
                                     </div>
@@ -287,7 +287,7 @@
                         placeholder="全体検索"
                         @keyup.enter="handleSearch"
                     />
-                    <button class="o-btn o-btn-primary quick-search-button" @click="handleSearch">検索</button>
+                    <OButton variant="primary" class="quick-search-button" @click="handleSearch">検索</OButton>
                 </div>
             </div>
         </div>
@@ -296,6 +296,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { LINK_COLOR, PRIMARY_COLOR } from '@/theme/config'
 import type {
     TableColumn,
@@ -839,7 +840,7 @@ const getDefaultOperatorForType = (type: SearchType): Operator | undefined => {
     }
 }
 
-const selectField = (field: AvailableField, categoryKey?: string) => {
+const selectField = (field: AvailableField, _categoryKey?: string) => {
     selectedField.value = field
     // 保持分类弹窗打开（不关闭）
 
@@ -983,36 +984,6 @@ const removeFilter = (id: string) => {
         // 移除後も検索をリフレッシュ
         emits('search', buildPayload())
     }
-}
-
-const formatFilterValue = (filter: FilterItem): string => {
-    if (noValueOperators.includes(filter.operator)) {
-        return ''
-    }
-
-    if (isRelativeDateOperator(filter.operator)) {
-        return getRelativeDateDisplay(filter.operator)
-    }
-
-    if (filter.value === null || filter.value === undefined) return ''
-
-    if (Array.isArray(filter.value)) {
-        if (filter.value.length === 2) {
-            return `${filter.value[0]} - ${filter.value[1]}`
-        }
-        return filter.value.join(', ')
-    }
-
-    if (filter.type === 'boolean') {
-        return filter.value ? 'はい' : 'いいえ'
-    }
-
-    if (filter.type === 'select' && filter.column?.searchOptions) {
-        const option = filter.column.searchOptions.find((opt) => opt.value === filter.value)
-        return option ? option.label : String(filter.value)
-    }
-
-    return String(filter.value)
 }
 
 // 格式化过滤器显示文本（符合日语语序）

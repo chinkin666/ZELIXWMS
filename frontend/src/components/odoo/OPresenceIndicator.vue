@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { usePresence, type PresenceUser, type PresenceStatus } from '../../composables/usePresence'
+import { usePresence, type PresenceStatus } from '../../composables/usePresence'
 
 const {
   users,

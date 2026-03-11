@@ -90,9 +90,9 @@
         </div>
 
         <div class="search-field date-shortcuts">
-          <button class="o-btn o-btn-sm o-btn-secondary" @click="setDateToday">今日</button>
-          <button class="o-btn o-btn-sm o-btn-secondary" @click="setDateTomorrow">明日</button>
-          <button class="o-btn o-btn-sm o-btn-secondary" @click="setDateDayAfter">明後日</button>
+          <OButton variant="secondary" size="sm" @click="setDateToday">今日</OButton>
+          <OButton variant="secondary" size="sm" @click="setDateTomorrow">明日</OButton>
+          <OButton variant="secondary" size="sm" @click="setDateDayAfter">明後日</OButton>
         </div>
 
         <div class="search-field">
@@ -162,14 +162,15 @@
 
     <!-- 底部操作按钮 -->
     <div class="search-actions" v-show="!isCollapsed">
-      <button class="o-btn o-btn-primary o-btn-sm" @click="handleSearch">検索</button>
-      <button class="o-btn o-btn-secondary o-btn-sm" @click="handleClear">入力項目をクリア</button>
+      <OButton variant="primary" size="sm" @click="handleSearch">検索</OButton>
+      <OButton variant="secondary" size="sm" @click="handleClear">入力項目をクリア</OButton>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { TableColumn } from '@/types/table'
 
 interface Props {

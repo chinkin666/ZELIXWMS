@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import type { ThemeConfig, ColorPalette } from '../types/theme'
 
 const currentTheme = ref<ThemeConfig | null>(null)

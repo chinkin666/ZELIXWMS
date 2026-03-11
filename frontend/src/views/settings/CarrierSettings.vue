@@ -5,7 +5,7 @@
         <h1 class="page-title">配送業者設定</h1>
         <p class="page-subtitle">配送業者基本情報とフォーマット定義を管理します</p>
       </div>
-      <button class="o-btn o-btn-primary" @click="openCreate">新規追加</button>
+      <OButton variant="primary" @click="openCreate">新規追加</OButton>
     </div>
 
     <SearchForm
@@ -57,8 +57,8 @@
         </tbody>
       </table>
       <template #footer>
-        <button class="o-btn o-btn-secondary" @click="templateDialogVisible = false">キャンセル</button>
-        <button class="o-btn o-btn-primary" :disabled="templateSaving" @click="saveTemplateSettings">保存</button>
+        <OButton variant="secondary" @click="templateDialogVisible = false">キャンセル</OButton>
+        <OButton variant="primary" :disabled="templateSaving" @click="saveTemplateSettings">保存</OButton>
       </template>
     </ODialog>
 
@@ -103,8 +103,8 @@
             <p class="subtext">列名・型・最大文字数・必須・ユーザー入力可否を編集できます</p>
           </div>
           <div class="format-actions">
-            <button class="o-btn o-btn-sm o-btn-secondary" @click="addColumn">列を追加</button>
-            <button class="o-btn o-btn-sm o-btn-secondary" @click="resetColumnsFromEditing">リセット</button>
+            <OButton variant="secondary" size="sm" @click="addColumn">列を追加</OButton>
+            <OButton variant="secondary" size="sm" @click="resetColumnsFromEditing">リセット</OButton>
           </div>
         </div>
 
@@ -141,11 +141,12 @@
                   <input type="checkbox" v-model="row.userUploadable" />
                 </td>
                 <td>
-                  <button
-                    class="o-btn o-btn-sm o-btn-outline-danger"
+                  <OButton
+                    variant="danger"
+                    size="sm"
                     @click="removeColumn($index)"
                     :disabled="editForm.formatDefinition.columns.length <= 1"
-                  >削除</button>
+                  >削除</OButton>
                 </td>
               </tr>
             </tbody>
@@ -154,10 +155,10 @@
       </div>
 
       <template #footer>
-        <button class="o-btn o-btn-secondary" @click="dialogVisible = false">キャンセル</button>
-        <button class="o-btn o-btn-primary" :disabled="saving" @click="handleSave">
+        <OButton variant="secondary" @click="dialogVisible = false">キャンセル</OButton>
+        <OButton variant="primary" :disabled="saving" @click="handleSave">
           {{ isEditing ? '更新' : '作成' }}
-        </button>
+        </OButton>
       </template>
     </ODialog>
   </div>
@@ -166,6 +167,7 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import OButton from '@/components/odoo/OButton.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import SearchForm from '@/components/search/SearchForm.vue'
 import Table from '@/components/table/Table.vue'
@@ -299,14 +301,14 @@ const tableColumns: TableColumn[] = [
       if (rowData.isBuiltIn) {
         return h('div', { class: 'action-cell' }, [
           h('span', { style: { color: '#909399', fontSize: '12px' } }, '(内蔵)'),
-          h('button', { class: 'o-btn o-btn-sm o-btn-outline-primary', onClick: () => openEdit(rowData) }, '編集'),
+          h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
         ])
       }
       return h('div', { class: 'action-cell' }, [
-        h('button', { class: 'o-btn o-btn-sm o-btn-outline-primary', onClick: () => openEdit(rowData) }, '編集'),
-        h('button', { class: 'o-btn o-btn-sm o-btn-outline-secondary', onClick: () => duplicateCarrier(rowData) }, '複製'),
-        h('button', { class: 'o-btn o-btn-sm o-btn-outline-success', onClick: () => openTemplateSettings(rowData) }, 'テンプレート設定'),
-        h('button', { class: 'o-btn o-btn-sm o-btn-outline-danger', onClick: () => confirmDelete(rowData) }, '削除'),
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateCarrier(rowData) }, () => '複製'),
+        h(OButton, { variant: 'success', size: 'sm', onClick: () => openTemplateSettings(rowData) }, () => 'テンプレート設定'),
+        h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ])
     },
   },
@@ -460,7 +462,7 @@ const handleSave = async () => {
 
 const duplicateCarrier = async (row: Carrier) => {
   try {
-    const { _id, createdAt, updatedAt, isBuiltIn, automationType, ...rest } = row
+    const { _id, createdAt: _createdAt, updatedAt: _updatedAt, isBuiltIn: _isBuiltIn, automationType: _automationType, ...rest } = row
     await createCarrier({ ...rest, code: `${row.code}_copy`, name: `${row.name}_copy` } as any)
     showToast('複製しました', 'success')
     await loadList()
@@ -497,7 +499,7 @@ const openTemplateSettings = async (row: Carrier) => {
   if (printTemplates.value.length === 0) {
     try {
       printTemplates.value = await fetchPrintTemplates()
-    } catch (e: any) {
+    } catch (_e: any) {
       showToast('印刷テンプレートの取得に失敗しました', 'danger')
       return
     }

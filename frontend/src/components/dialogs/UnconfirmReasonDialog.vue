@@ -40,13 +40,15 @@
             @keyup.enter="confirmAddTemplate"
             @blur="confirmAddTemplate"
           />
-          <button
+          <OButton
             v-else
-            class="o-btn o-btn-secondary o-btn-sm add-btn"
+            variant="secondary"
+            size="sm"
+            class="add-btn"
             @click="showAddInput = true"
           >
             +
-          </button>
+          </OButton>
         </div>
       </div>
 
@@ -61,10 +63,10 @@
     </div>
 
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="handleCancel">キャンセル</button>
-      <button class="o-btn o-btn-primary" :disabled="loading" @click="handleConfirm">
+      <OButton variant="secondary" @click="handleCancel">キャンセル</OButton>
+      <OButton variant="primary" :disabled="loading" @click="handleConfirm">
         {{ loading ? '処理中...' : '確認取消' }}
-      </button>
+      </OButton>
     </template>
   </ODialog>
 </template>
@@ -72,6 +74,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 
 const STORAGE_KEY = 'unconfirmReasonTemplates'
 const DEFAULT_TEMPLATES = ['送り状種類修正必要']
@@ -106,7 +109,7 @@ const loadTemplates = () => {
       templates.value = [...DEFAULT_TEMPLATES]
       saveTemplates()
     }
-  } catch (e) {
+  } catch (_e) {
     templates.value = [...DEFAULT_TEMPLATES]
   }
 }

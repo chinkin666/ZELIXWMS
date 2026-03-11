@@ -7,7 +7,8 @@
 
 import Piscina from 'piscina'
 import path from 'path'
-import { assemblePdf, PdfPage } from './konva/pdfAssembler'
+import type { PdfPage } from './konva/pdfAssembler';
+import { assemblePdf } from './konva/pdfAssembler'
 import { PrintTemplate as PrintTemplateModel } from '@/models/printTemplate'
 import { ShipmentOrder as ShipmentOrderModel } from '@/models/shipmentOrder'
 import { OrderSourceCompany as OrderSourceCompanyModel } from '@/models/orderSourceCompany'

@@ -7,7 +7,7 @@ import OToastManager from '../components/odoo/OToastManager.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { t, locale, setLocale, availableLocales } = useI18n()
+const { locale, setLocale, availableLocales } = useI18n()
 
 // ---------------------------------------------------------------------------
 // Menu state

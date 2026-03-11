@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import OButton from './OButton.vue'
+
 interface Props {
   title: string
   description?: string
@@ -20,9 +22,9 @@ defineEmits<{
     <div class="o-empty-icon">{{ icon }}</div>
     <h3 class="o-empty-title">{{ title }}</h3>
     <p v-if="description" class="o-empty-description">{{ description }}</p>
-    <button v-if="actionLabel" class="o-btn o-btn-primary" @click="$emit('action')">
+    <OButton v-if="actionLabel" variant="primary" @click="$emit('action')">
       {{ actionLabel }}
-    </button>
+    </OButton>
   </div>
 </template>
 

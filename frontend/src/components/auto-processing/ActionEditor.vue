@@ -55,23 +55,16 @@
         </select>
       </template>
 
-      <button
-        class="o-btn o-btn-danger o-btn-sm"
-        @click="removeAction(index)"
-        title="削除"
-      >
-        ✕
-      </button>
+      <OButton variant="danger" size="sm" @click="removeAction(index)" title="削除">✕</OButton>
     </div>
 
-    <button class="o-btn o-btn-secondary o-btn-sm" @click="addAction">
-      + 動作を追加
-    </button>
+    <OButton variant="secondary" size="sm" @click="addAction">+ 動作を追加</OButton>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { AutoProcessingAction, ActionType } from '@/types/autoProcessingRule'
 import { ACTION_TYPE_LABELS } from '@/types/autoProcessingRule'
 import { fetchOrderGroups } from '@/api/orderGroup'

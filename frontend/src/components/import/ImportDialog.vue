@@ -123,16 +123,16 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <button type="button" class="o-btn o-btn-secondary" @click="handleClose">キャンセル</button>
-        <button
+        <OButton type="button" variant="secondary" @click="handleClose">キャンセル</OButton>
+        <OButton
           type="button"
-          class="o-btn o-btn-primary"
+          variant="primary"
           :disabled="!canImport || importing"
           @click="handleImport"
         >
           <span v-if="importing" class="spinner"></span>
           取り込み
-        </button>
+        </OButton>
       </div>
     </template>
   </ODialog>
@@ -141,6 +141,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import * as XLSX from 'xlsx'
 import { getAllMappingConfigs, type MappingConfig, type TransformMapping } from '@/api/mappingConfig'
 import { generateTempId } from '@/types/orderRow'
@@ -512,31 +513,6 @@ const handleImport = async () => {
           .filter((tag) => tag)
       }
       return []
-    }
-
-    // 辅助函数：导入时规范化 boolean（"0"/"1" 等字符串要正确处理）
-    const coerceImportBoolean = (val: any, defaultValue = false): boolean => {
-      if (val === undefined || val === null) return defaultValue
-      if (typeof val === 'boolean') return val
-      if (typeof val === 'number') return val !== 0
-      if (typeof val === 'string') {
-        const toHalfWidthDigits = (input: string) =>
-          input.replace(/[０-９]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xfee0))
-
-        const s = toHalfWidthDigits(val).trim().toLowerCase()
-        if (!s || s === '-') return defaultValue
-        if (s === 'true' || s === 'yes' || s === 'y' || s === 'はい') return true
-        if (s === 'false' || s === 'no' || s === 'n' || s === 'いいえ') return false
-
-        // numeric string: treat 0 as false, non-zero as true
-        if (/^[+-]?\d+(?:\.\d+)?$/.test(s)) {
-          const n = Number(s)
-          if (Number.isFinite(n)) return n !== 0
-        }
-
-        return Boolean(s)
-      }
-      return Boolean(val)
     }
 
     // 转换为 UserOrderRow 格式（默认行为）

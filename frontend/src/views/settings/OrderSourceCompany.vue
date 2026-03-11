@@ -6,10 +6,10 @@
         <p class="page-subtitle">郵便番号（7桁数字）・住所・名・電話を管理します</p>
       </div>
       <div class="page-actions">
-        <button class="o-btn o-btn-success" @click="showImportDialog = true">
+        <OButton variant="success" @click="showImportDialog = true">
           取り込みファイルを選択
-        </button>
-        <button class="o-btn o-btn-primary" @click="openCreate">新規追加</button>
+        </OButton>
+        <OButton variant="primary" @click="openCreate">新規追加</OButton>
       </div>
     </div>
 
@@ -53,6 +53,7 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import OButton from '@/components/odoo/OButton.vue'
 import SearchForm from '@/components/search/SearchForm.vue'
 import Table from '@/components/table/Table.vue'
 import FormDialog from '@/components/form/FormDialog.vue'
@@ -298,7 +299,7 @@ const handleDialogSubmit = async (payload: Record<string, any>) => {
 
 const duplicateOrderSourceCompany = async (row: OrderSourceCompany) => {
   try {
-    const { _id, createdAt, updatedAt, ...rest } = row
+    const { _id, createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = row
     await createOrderSourceCompany({ ...rest, senderName: `${row.senderName}_copy` } as any)
     showToast('複製しました', 'success')
     await loadList()

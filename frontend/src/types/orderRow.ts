@@ -1,25 +1,18 @@
 import type { OrderDocument } from '@/types/order'
 
 /**
- * 用户订单行类型（临时 ID，用于前端显示）
- * 上传到后端后，后端会分配真正的 _id
+ * ユーザー注文行タイプ（一時ID付き、フロントエンド表示用）
+ * バックエンドへのアップロード後、バックエンドが本来の _id を割り当てる
  */
-export type UserOrderRow = OrderDocument & { 
-  /** 临时 ID，仅用于前端表格显示和操作，上传到后端后会替换为真正的 _id */
-  id: string 
+export type UserOrderRow = OrderDocument & {
+  /** 一時ID。フロントエンドのテーブル表示・操作専用。バックエンドアップロード後は本来の _id に置き換えられる */
+  id: string
 }
 
 /**
- * 生成临时 ID（仅用于前端）
+ * 一時ID生成（フロントエンド専用）
  */
 let tempIdCounter = 0
 export const generateTempId = (): string => {
   return `temp-${Date.now()}-${++tempIdCounter}`
 }
-
-
-
-
-
-
-

@@ -74,7 +74,7 @@
     </div>
 
     <template #footer>
-      <button class="o-btn o-btn-primary" @click="visibleProxy = false">閉じる</button>
+      <OButton variant="primary" @click="visibleProxy = false">閉じる</OButton>
     </template>
   </ODialog>
 </template>
@@ -82,6 +82,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 
 export type ImportRowError = {
   rowIndex: number

@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import type mongoose from 'mongoose';
 import type { AnyBulkWriteOperation } from 'mongoose';
 import { Carrier, type ICarrier } from '@/models/carrier';
 import { logger } from '@/lib/logger';

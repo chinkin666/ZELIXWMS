@@ -4,8 +4,8 @@
  */
 
 import { Canvas, loadImage } from 'skia-canvas'
-import { PDFDocument } from 'pdf-lib'
-import { generateBarcode, ImageBuffer as BarcodeImageBuffer } from './skiaBarcode'
+import type { ImageBuffer as BarcodeImageBuffer } from './skiaBarcode';
+import { generateBarcode } from './skiaBarcode'
 import { loadFonts } from './fontManager'
 
 // Constants for unit conversion

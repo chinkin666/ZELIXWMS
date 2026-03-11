@@ -1,5 +1,5 @@
-import { IYamatoB2Config } from '../models/carrierAutomationConfig';
-import { IShipmentOrder } from '../models/shipmentOrder';
+import type { IYamatoB2Config } from '../models/carrierAutomationConfig';
+import type { IShipmentOrder } from '../models/shipmentOrder';
 import { CarrierSessionCache } from '../models/carrierSessionCache';
 import { logger } from '../lib/logger';
 import { sliceByWidth } from '../utils/japaneseCharWidth';
@@ -105,15 +105,6 @@ type YamatoValidateApiResponse = Array<{
   valid?: boolean;
   errors?: string[];
 }>;
-
-interface YamatoPrintApiResponse {
-  pdf_base64?: string;
-  tracking_numbers?: string[];
-}
-
-interface YamatoHistoryApiResponse {
-  history?: any[];
-}
 
 // ============================================================================
 // Utility Functions

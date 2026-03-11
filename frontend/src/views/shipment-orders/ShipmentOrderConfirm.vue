@@ -51,37 +51,38 @@
       total-label="表示件数"
     >
       <template #left>
-        <button
+        <OButton
           v-if="batchDeleteEnabled"
-          class="o-btn o-btn-danger o-btn-sm"
+          variant="danger"
+          size="sm"
           :disabled="tableSelectedKeys.length === 0"
           @click="tableRef?.triggerBatchDelete()"
         >
           一括削除 ({{ tableSelectedKeys.length }})
-        </button>
+        </OButton>
       </template>
       <template #right>
-        <button
-          class="o-btn o-btn-secondary"
+        <OButton
+          variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleCustomExportClick"
         >
           出荷明細リスト出力(csv)
-        </button>
-        <button
-          class="o-btn o-btn-secondary"
+        </OButton>
+        <OButton
+          variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleFormExportClick"
         >
           出荷明細リスト出力(pdf)
-        </button>
-        <button
-          class="o-btn o-btn-primary"
+        </OButton>
+        <OButton
+          variant="primary"
           :disabled="tableSelectedKeys.length === 0 || isConfirming || b2Validating"
           @click="handleConfirmPrintReady"
         >
           {{ b2Validating ? 'B2 Cloud 検証中...' : '出荷指示確定' }}
-        </button>
+        </OButton>
       </template>
     </OrderBottomBar>
 
@@ -144,7 +145,7 @@ import OrderViewDialog from '@/components/shipment-orders/OrderViewDialog.vue'
 import CustomExportDialog from '@/components/export/CustomExportDialog.vue'
 import FormExportDialog from '@/components/form-export/FormExportDialog.vue'
 import type { HeaderGroupingConfig } from '@/components/table/tableHeaderGroup'
-import type { TableColumn, Operator } from '@/types/table'
+import type { Operator } from '@/types/table'
 import { getOrderFieldDefinitions } from '@/types/order'
 import { buildOrderHeaderGroupingConfig } from '@/utils/orderHeaderGrouping'
 import { deleteShipmentOrder, deleteShipmentOrdersBulk, fetchShipmentOrder, fetchShipmentOrders, updateShipmentOrderStatusBulk } from '@/api/shipmentOrders'
@@ -159,8 +160,7 @@ import type { YamatoB2ValidateResult } from '@/types/carrierAutomation'
 import YamatoB2ValidateResultDialog from '@/components/carrier-automation/YamatoB2ValidateResultDialog.vue'
 import YamatoB2ApiErrorDialog from '@/components/carrier-automation/YamatoB2ApiErrorDialog.vue'
 import { validateCell } from '@/utils/orderValidation'
-type SortOrder = 'asc' | 'desc' | null
-
+import OButton from '@/components/odoo/OButton.vue'
 type OrderRow = Record<string, any>
 
 const tableRef = ref<InstanceType<typeof Table> | null>(null)
@@ -215,10 +215,6 @@ const searchColumns = computed(() => {
 })
 
 // validateCell is now imported from @/utils/orderValidation
-
-const hasRowErrors = (row: any): boolean => {
-  return baseColumns.value.some((col) => !validateCell(row, col))
-}
 
 // 行是否有内部记录（用于黄色背景高亮）
 const hasInternalRecord = (row: any): boolean => {
@@ -444,7 +440,7 @@ const doConfirmOrders = async (ids: string[]) => {
 
   isConfirming.value = true
   try {
-    const result = await updateShipmentOrderStatusBulk(ids, 'mark-print-ready')
+    await updateShipmentOrderStatusBulk(ids, 'mark-print-ready')
     alert(`${ids.length}件の出荷指示確定しました`)
 
     tableSelectedKeys.value = []

@@ -31,29 +31,10 @@
           </div>
           <div class="preview-actions">
             <div v-if="orders.length > 1" class="btn-group">
-              <button
-                class="o-btn o-btn-sm o-btn-secondary"
-                :disabled="currentIndex === 0"
-                @click="goToPrevious"
-              >
-                前へ
-              </button>
-              <button
-                class="o-btn o-btn-sm o-btn-secondary"
-                :disabled="currentIndex >= orders.length - 1"
-                @click="goToNext"
-              >
-                次へ
-              </button>
+              <OButton variant="secondary" size="sm" :disabled="currentIndex === 0" @click="goToPrevious">前へ</OButton>
+              <OButton variant="secondary" size="sm" :disabled="currentIndex >= orders.length - 1" @click="goToNext">次へ</OButton>
             </div>
-            <button
-              v-if="imageUrl"
-              class="o-btn o-btn-sm o-btn-secondary"
-              style="margin-left: 8px"
-              @click="downloadPreviewPng"
-            >
-              プレビューをダウンロード
-            </button>
+            <OButton v-if="imageUrl" variant="secondary" size="sm" style="margin-left: 8px" @click="downloadPreviewPng">プレビューをダウンロード</OButton>
           </div>
         </div>
         <div class="preview">
@@ -74,10 +55,8 @@
     </div>
 
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="visible = false">キャンセル</button>
-      <button class="o-btn o-btn-primary" :disabled="!selectedTemplateId" @click="handleConfirm">
-        確定
-      </button>
+      <OButton variant="secondary" @click="visible = false">キャンセル</OButton>
+      <OButton variant="primary" :disabled="!selectedTemplateId" @click="handleConfirm">確定</OButton>
     </template>
   </ODialog>
 </template>
@@ -85,6 +64,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { fetchPrintTemplates, fetchPrintTemplate } from '@/api/printTemplates'
 import type { PrintTemplate } from '@/types/printTemplate'
 import type { OrderDocument } from '@/types/order'

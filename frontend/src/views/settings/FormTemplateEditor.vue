@@ -6,13 +6,13 @@
         <p class="page-subtitle">{{ template?.name || '読み込み中...' }}</p>
       </div>
       <div class="header-actions">
-        <button class="o-btn o-btn-secondary" @click="handlePreview" :disabled="previewing">
+        <OButton variant="secondary" @click="handlePreview" :disabled="previewing">
           {{ previewing ? 'プレビュー中...' : 'プレビュー' }}
-        </button>
-        <button class="o-btn o-btn-primary" @click="handleSave" :disabled="saving">
+        </OButton>
+        <OButton variant="primary" @click="handleSave" :disabled="saving">
           {{ saving ? '保存中...' : '保存' }}
-        </button>
-        <button class="o-btn o-btn-secondary" @click="handleBack">戻る</button>
+        </OButton>
+        <OButton variant="secondary" @click="handleBack">戻る</OButton>
       </div>
     </div>
 
@@ -111,7 +111,7 @@
         <div v-show="activeTab === 'header-footer'" class="settings-section">
             <div class="section-header">
               <h3 class="section-title">ヘッダー・フッター項目</h3>
-              <button class="o-btn o-btn-primary" @click="addHeaderFooterItem">+ 追加</button>
+              <OButton variant="primary" @click="addHeaderFooterItem">+ 追加</OButton>
             </div>
             <p class="section-hint">
               ヘッダー、フッター、またはドキュメントタイトルを自由に追加できます。
@@ -122,7 +122,7 @@
             <div v-if="!template.headerFooterItems?.length" class="empty-columns">
               <p style="color: #909399; text-align: center; padding: 20px">項目が設定されていません</p>
               <div style="text-align: center">
-                <button class="o-btn o-btn-primary" @click="addHeaderFooterItem">+ 項目を追加</button>
+                <OButton variant="primary" @click="addHeaderFooterItem">+ 項目を追加</OButton>
               </div>
             </div>
 
@@ -203,7 +203,7 @@
                           </select>
                           <button class="o-btn-text o-btn-text-danger" @click="removeHFColumn(item, colIdx)">&#x2715;</button>
                         </div>
-                        <button class="o-btn o-btn-secondary" @click="addHFColumn(item)">+ カラム追加</button>
+                        <OButton variant="secondary" @click="addHFColumn(item)">+ カラム追加</OButton>
                       </div>
                     </div>
                   </template>
@@ -214,8 +214,8 @@
                       <label>テーブル</label>
                       <div class="table-editor">
                         <div class="table-controls">
-                          <button class="o-btn o-btn-secondary" @click="addHFTableRow(item)">行追加</button>
-                          <button class="o-btn o-btn-secondary" @click="addHFTableCol(item)">列追加</button>
+                          <OButton variant="secondary" @click="addHFTableRow(item)">行追加</OButton>
+                          <OButton variant="secondary" @click="addHFTableCol(item)">列追加</OButton>
                         </div>
                         <table v-if="item.table?.body?.length" class="hf-table">
                           <tbody>
@@ -344,9 +344,9 @@
             <div class="section-header">
               <h3 class="section-title">出力する列</h3>
               <div class="dropdown-wrap" style="position: relative">
-                <button class="o-btn o-btn-primary" @click="columnDropdownOpen = !columnDropdownOpen">
+                <OButton variant="primary" @click="columnDropdownOpen = !columnDropdownOpen">
                   + 列を追加 &#x25BC;
-                </button>
+                </OButton>
                 <div v-if="columnDropdownOpen" class="o-dropdown-menu">
                   <div class="o-dropdown-item" @click="handleAddColumn('single'); columnDropdownOpen = false">単一内容の列</div>
                   <div class="o-dropdown-item" @click="handleAddColumn('multi'); columnDropdownOpen = false">複数内容の列（縦並び）</div>
@@ -367,7 +367,7 @@
               <p style="color: #909399; text-align: center; padding: 20px">列が設定されていません</p>
               <div style="text-align: center">
                 <div class="dropdown-wrap" style="position: relative; display: inline-block">
-                  <button class="o-btn o-btn-primary" @click="emptyColumnDropdownOpen = !emptyColumnDropdownOpen">+ 列を追加 &#x25BC;</button>
+                  <OButton variant="primary" @click="emptyColumnDropdownOpen = !emptyColumnDropdownOpen">+ 列を追加 &#x25BC;</OButton>
                   <div v-if="emptyColumnDropdownOpen" class="o-dropdown-menu">
                     <div class="o-dropdown-item" @click="handleAddColumn('single'); emptyColumnDropdownOpen = false">単一内容の列</div>
                     <div class="o-dropdown-item" @click="handleAddColumn('multi'); emptyColumnDropdownOpen = false">複数内容の列</div>
@@ -511,12 +511,12 @@
                   <div class="content-section">
                     <div class="content-header">
                       <h4 class="content-title">内容設定（{{ col.children?.length || 0 }}件）</h4>
-                      <button class="o-btn o-btn-secondary" @click="addChildContent(col)">+ 内容を追加</button>
+                      <OButton variant="secondary" @click="addChildContent(col)">+ 内容を追加</OButton>
                     </div>
 
                     <div v-if="!col.children?.length" class="empty-children">
                       <p>内容が設定されていません</p>
-                      <button class="o-btn o-btn-primary" @click="addChildContent(col)">内容を追加</button>
+                      <OButton variant="primary" @click="addChildContent(col)">内容を追加</OButton>
                     </div>
 
                     <div v-else class="children-list">
@@ -710,8 +710,9 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch, nextTick } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { FormTemplate, FormTemplateColumn, FormTemplateColumnChild, BarcodeConfig, HeaderFooterItem, HeaderFooterItemColumn } from '@/types/formTemplate'
+import type { FormTemplate, FormTemplateColumn, FormTemplateColumnChild, BarcodeConfig, HeaderFooterItem } from '@/types/formTemplate'
 import { fetchFormTemplate, updateFormTemplate } from '@/api/formTemplate'
 import { formTypeRegistry, getFormTypeFields } from '@/utils/form-export/formFieldRegistry'
 import { generateFormPdf } from '@/utils/form-export/pdfGenerator'
@@ -1211,7 +1212,7 @@ function getPreviewData(): Record<string, any>[] {
             } else {
               rowData[col.field] = parsed
             }
-          } catch (e) {
+          } catch (_e) {
             rowData[col.field] = col.previewData
           }
         } else {
@@ -1227,7 +1228,7 @@ function getPreviewData(): Record<string, any>[] {
               } else {
                 rowData[child.field] = parsed
               }
-            } catch (e) {
+            } catch (_e) {
               rowData[child.field] = child.previewData
             }
           } else {

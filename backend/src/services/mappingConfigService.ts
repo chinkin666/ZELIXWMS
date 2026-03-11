@@ -64,8 +64,6 @@ const populateRelatedFields = async (
     carrierName?: string;
   } = {};
 
-  const tenantId = getTenantId();
-
   // 处理订单来源公司
   if (dto.orderSourceCompanyId) {
     // 如果提供了 ID，根据 ID 查找名称

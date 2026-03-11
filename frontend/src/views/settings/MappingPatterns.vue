@@ -4,9 +4,9 @@
     <div class="page-header">
       <h1 class="page-title">レイアウト管理</h1>
       <div class="header-actions">
-        <button class="o-btn o-btn-primary" @click="handleAdd">
+        <OButton variant="primary" @click="handleAdd">
           新規レイアウト
-        </button>
+        </OButton>
       </div>
     </div>
 
@@ -31,6 +31,7 @@
 import { ref, onMounted, h } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import OButton from '@/components/odoo/OButton.vue'
 import Table from '@/components/table/Table.vue'
 import type { TableColumn } from '@/types/table'
 import { getAllMappingConfigs, createMappingConfig, deleteMappingConfig, type MappingConfig } from '@/api/mappingConfig'
@@ -156,30 +157,9 @@ const tableColumns: TableColumn[] = [
     width: 160,
     cellRenderer: ({ rowData }: { rowData: MappingConfig }) =>
       h('div', { class: 'action-cell' }, [
-        h(
-          'button',
-          {
-            class: 'o-btn o-btn-sm o-btn-outline-primary',
-            onClick: () => handleEdit(rowData),
-          },
-          '編集',
-        ),
-        h(
-          'button',
-          {
-            class: 'o-btn o-btn-sm o-btn-outline-secondary',
-            onClick: () => duplicateMappingConfig(rowData),
-          },
-          '複製',
-        ),
-        h(
-          'button',
-          {
-            class: 'o-btn o-btn-sm o-btn-outline-danger',
-            onClick: () => confirmDelete(rowData),
-          },
-          '削除',
-        ),
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleEdit(rowData) }, () => '編集'),
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateMappingConfig(rowData) }, () => '複製'),
+        h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ]),
   },
 ]
@@ -215,8 +195,8 @@ const handleEdit = (row: MappingConfig) => {
 
 const duplicateMappingConfig = async (row: MappingConfig) => {
   try {
-    const { _id, createdAt, updatedAt, ...rest } = row
-    const { mappingsCount, ...data } = rest as any
+    const { _id, createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = row
+    const { mappingsCount: _mappingsCount, ...data } = rest as any
     await createMappingConfig({ ...data, name: `${row.name}_copy`, isDefault: false })
     showToast('複製しました', 'success')
     await loadMappingConfigs()

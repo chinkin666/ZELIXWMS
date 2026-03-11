@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 
 export type ValueKind = 'string' | 'number' | 'boolean' | 'date' | 'datetime' | 'json' | 'any';
 
@@ -81,7 +81,7 @@ export interface TransformPluginRunArgs<P = any> {
  * TransformPlugin 元数据定义（仅用于类型验证和 API 返回）
  * 实际的转换逻辑在前端实现
  */
-export interface TransformPlugin<P = any> {
+export interface TransformPlugin {
   name: string;
   nameJa?: string; // 日文名称（用于前端显示）
   summary?: string;
@@ -100,7 +100,7 @@ export interface TransformPlugin<P = any> {
  * CombinePlugin 元数据定义（仅用于类型验证和 API 返回）
  * 实际的组合逻辑在前端实现
  */
-export interface CombinePlugin<P = any> {
+export interface CombinePlugin {
   name: string;
   nameJa?: string; // 日文名称（用于前端显示）
   summary?: string;

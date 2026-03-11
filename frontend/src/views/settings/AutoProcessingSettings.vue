@@ -6,7 +6,7 @@
         <p class="page-subtitle">注文の状態変更時に自動的に実行されるルールを管理します。ドラッグで並び替えでき、上にあるルールが優先的に実行されます。</p>
       </div>
       <div class="page-actions">
-        <button class="o-btn o-btn-primary" @click="openCreate">ルールを追加</button>
+        <OButton variant="primary" @click="openCreate">ルールを追加</OButton>
       </div>
     </div>
 
@@ -77,16 +77,17 @@
                 />
                 <span class="o-toggle-slider"></span>
               </label>
-              <button class="o-btn o-btn-sm o-btn-outline-primary" @click="openEdit(rule)">編集</button>
-              <button
-                class="o-btn o-btn-sm o-btn-outline-success"
+              <OButton variant="primary" size="sm" @click="openEdit(rule)">編集</OButton>
+              <OButton
+                variant="success"
+                size="sm"
                 @click="handleManualRun(rule)"
                 :disabled="runningRuleId === rule._id"
               >
                 {{ runningRuleId === rule._id ? '実行中...' : '手動で実行する' }}
-              </button>
-              <button class="o-btn o-btn-sm o-btn-outline-secondary" @click="duplicateRule(rule)">複製</button>
-              <button class="o-btn o-btn-sm o-btn-outline-danger" @click="confirmDelete(rule)">削除</button>
+              </OButton>
+              <OButton variant="secondary" size="sm" @click="duplicateRule(rule)">複製</OButton>
+              <OButton variant="danger" size="sm" @click="confirmDelete(rule)">削除</OButton>
             </div>
           </div>
         </template>
@@ -105,6 +106,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
+import OButton from '@/components/odoo/OButton.vue'
 import draggable from 'vuedraggable'
 import {
   fetchAutoProcessingRules,
@@ -206,7 +208,7 @@ const handleManualRun = async (rule: AutoProcessingRule) => {
 
 const duplicateRule = async (rule: AutoProcessingRule) => {
   try {
-    const { _id, createdAt, updatedAt, priority, ...rest } = rule
+    const { _id, createdAt: _createdAt, updatedAt: _updatedAt, priority: _priority, ...rest } = rule
     await createAutoProcessingRule({
       ...rest,
       name: `${rule.name}_copy`,

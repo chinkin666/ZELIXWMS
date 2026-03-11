@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
+import OButton from './OButton.vue'
 
 const { t } = useI18n()
 
@@ -143,12 +144,12 @@ function getIconSvg(icon: string | undefined): string {
             </p>
           </div>
           <div class="o-batch-confirm-footer">
-            <button class="o-btn o-btn-secondary" @click="onCancelConfirm">
+            <OButton variant="secondary" @click="onCancelConfirm">
               {{ t('dialog.cancel') }}
-            </button>
-            <button class="o-btn o-btn-danger" @click="onConfirm">
+            </OButton>
+            <OButton variant="danger" @click="onConfirm">
               {{ confirmingAction.label }}
-            </button>
+            </OButton>
           </div>
         </div>
       </div>

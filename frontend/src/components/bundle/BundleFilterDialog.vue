@@ -20,7 +20,7 @@
           <span class="bundle-filter__count">
             選択中 {{ innerSelected.length }} / {{ fields.length }}
           </span>
-          <button class="o-btn o-btn-secondary o-btn-sm" @click="handleClear">クリア</button>
+          <OButton variant="secondary" size="sm" @click="handleClear">クリア</OButton>
         </div>
       </div>
 
@@ -50,8 +50,8 @@
     </div>
 
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="handleCancel">キャンセル</button>
-      <button class="o-btn o-btn-primary" @click="handleSave">保存</button>
+      <OButton variant="secondary" @click="handleCancel">キャンセル</OButton>
+      <OButton variant="primary" @click="handleSave">保存</OButton>
     </template>
   </ODialog>
 </template>
@@ -59,6 +59,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 
 export interface BundleFieldOption {
   key: string

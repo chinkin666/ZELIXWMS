@@ -81,66 +81,65 @@
       total-label="表示件数"
     >
       <template #left>
-        <button
-          class="o-btn o-btn-sm"
-          style="border-color:#e6a23c;color:#e6a23c;background:transparent;"
+        <OButton
+          variant="warning"
+          size="sm"
           :disabled="tableSelectedKeys.length === 0 || isUnconfirming"
           @click="openBatchUnconfirmDialog"
         >
           {{ isUnconfirming ? '処理中...' : '一括確認取消' }}
-        </button>
+        </OButton>
       </template>
       <template #right>
-        <button
-          class="o-btn o-btn-secondary"
+        <OButton
+          variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handlePickingListClick"
         >
           ピッキングリスト出力
-        </button>
-        <button
-          class="o-btn o-btn-secondary"
+        </OButton>
+        <OButton
+          variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleCustomExportClick"
         >
           出荷明細リスト出力(csv)
-        </button>
-        <button
-          class="o-btn o-btn-secondary"
+        </OButton>
+        <OButton
+          variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleShipmentDetailListClick"
         >
           出荷明細リスト出力(pdf)
-        </button>
-        <button
-          class="o-btn o-btn-primary"
+        </OButton>
+        <OButton
+          variant="primary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handlePrintClick"
         >
           送り状印刷
-        </button>
-        <button
-          class="o-btn o-btn-secondary"
-          style="border-color:#67c23a;color:#67c23a;"
+        </OButton>
+        <OButton
+          variant="success"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleOneByOneStart"
         >
           1-1検品開始
-        </button>
-        <button
-          class="o-btn o-btn-sm"
-          style="border-color:#e6a23c;color:#e6a23c;background:transparent;"
+        </OButton>
+        <OButton
+          variant="warning"
+          size="sm"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleNByOneStart"
         >
           N-1検品開始
-        </button>
-        <button
-          class="o-btn o-btn-secondary"
+        </OButton>
+        <OButton
+          variant="secondary"
           @click="schemaAnalysisDrawerVisible = true"
         >
           データ分析
-        </button>
+        </OButton>
       </template>
     </OrderBottomBar>
 
@@ -217,6 +216,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref, watch } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { useRouter } from 'vue-router'
 import Table from '@/components/table/OrderTable.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
@@ -234,7 +234,7 @@ import SplitOrderDialog from '@/components/dialogs/SplitOrderDialog.vue'
 import OrderSchemaAnalysis from '@/components/schema-analysis/OrderSchemaAnalysis.vue'
 import CustomExportDialog from '@/components/export/CustomExportDialog.vue'
 import type { HeaderGroupingConfig } from '@/components/table/tableHeaderGroup'
-import type { Operator, TableColumn } from '@/types/table'
+import type { Operator } from '@/types/table'
 import { getOrderFieldDefinitions } from '@/types/order'
 import { buildOrderHeaderGroupingConfig } from '@/utils/orderHeaderGrouping'
 import { isBuiltInCarrierId } from '@/utils/carrier'
@@ -825,42 +825,43 @@ const tableColumns = computed(() => {
         { style: 'display:inline-flex;gap:4px;flex-wrap:wrap;' },
         [
           h(
-            'button',
+            OButton,
             {
-              class: 'o-btn o-btn-primary o-btn-sm',
+              variant: 'primary',
+              size: 'sm',
               onClick: () => handleView(rowData),
             },
-            '詳細',
+            () => '詳細',
           ),
           h(
-            'button',
+            OButton,
             {
-              class: 'o-btn o-btn-sm',
-              style: 'border-color:#e6a23c;color:#e6a23c;background:transparent;',
+              variant: 'warning',
+              size: 'sm',
               disabled: isUnconfirming.value,
               onClick: () => openUnconfirmDialog(rowData),
             },
-            '確認取消',
+            () => '確認取消',
           ),
           h(
-            'button',
+            OButton,
             {
-              class: 'o-btn o-btn-sm',
-              style: 'border-color:#909399;color:#909399;background:transparent;',
+              variant: 'secondary',
+              size: 'sm',
               disabled: isChangingInvoiceType.value,
               onClick: () => openChangeInvoiceTypeDialog(rowData),
             },
-            '送り状種類変更',
+            () => '送り状種類変更',
           ),
           h(
-            'button',
+            OButton,
             {
-              class: 'o-btn o-btn-sm',
-              style: 'border-color:#67c23a;color:#67c23a;background:transparent;',
+              variant: 'success',
+              size: 'sm',
               disabled: !canSplitOrder(rowData) || isSplittingOrder.value,
               onClick: () => openSplitOrderDialog(rowData),
             },
-            '分割',
+            () => '分割',
           ),
         ],
       ),

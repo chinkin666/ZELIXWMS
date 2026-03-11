@@ -3,9 +3,9 @@
     <!-- 左侧面板 -->
     <div class="left-panel">
       <div class="left-panel__header">
-        <button class="o-btn o-btn-secondary o-btn-sm" @click="handleGoBack">&larr; 戻る</button>
+        <OButton variant="secondary" size="sm" @click="handleGoBack">&larr; 戻る</OButton>
         <h2 class="page-title">1-1検品</h2>
-        <button class="o-btn o-btn-danger o-btn-sm" @click="handleClear">クリア</button>
+        <OButton variant="danger" size="sm" @click="handleClear">クリア</OButton>
       </div>
 
       <!-- ピッキング指示No -->
@@ -205,14 +205,14 @@
       </div>
 
       <template #footer>
-        <button class="o-btn o-btn-secondary" @click="handleCompletionConfirmNoPrint">確認（印刷なし）</button>
-        <button
-          class="o-btn o-btn-primary"
+        <OButton variant="secondary" @click="handleCompletionConfirmNoPrint">確認（印刷なし）</OButton>
+        <OButton
+          variant="primary"
           :disabled="(currentPdfSource === 'local' && (!printImageUrl || printRendering)) || (currentPdfSource === 'b2-webapi' && !currentOrder?.trackingId)"
           @click="handlePrint"
         >
           印刷
-        </button>
+        </OButton>
       </template>
     </ODialog>
 
@@ -275,7 +275,7 @@
         </div>
       </div>
       <template #footer>
-        <button class="o-btn o-btn-secondary" @click="orderListDialogVisible = false">閉じる</button>
+        <OButton variant="secondary" @click="orderListDialogVisible = false">閉じる</OButton>
       </template>
     </ODialog>
 
@@ -294,12 +294,13 @@
         <div class="wrong-scan-hint">
           現在の注文（{{ currentOrder?.orderNumber }}）に含まれない商品がスキャンされました。
         </div>
-        <button
-          class="o-btn o-btn-danger wrong-scan-close-btn"
+        <OButton
+          variant="danger"
+          class="wrong-scan-close-btn"
           @click="wrongScanDialogVisible = false"
         >
           確認して閉じる
-        </button>
+        </OButton>
       </div>
       <template #footer><span></span></template>
     </ODialog>
@@ -328,8 +329,8 @@
         <div class="adjust-dialog-footer">
           <span class="adjust-shortcuts">ESC キャンセル / F1 確定</span>
           <div>
-            <button class="o-btn o-btn-secondary" @click="adjustDialogVisible = false">キャンセル</button>
-            <button class="o-btn o-btn-primary" @click="handleAdjustConfirm">確定</button>
+            <OButton variant="secondary" @click="adjustDialogVisible = false">キャンセル</OButton>
+            <OButton variant="primary" @click="handleAdjustConfirm">確定</OButton>
           </div>
         </div>
       </template>
@@ -339,6 +340,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { useRouter, useRoute } from 'vue-router'
 import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vue'
 import ChangeInvoiceTypeDialog from '@/components/dialogs/ChangeInvoiceTypeDialog.vue'

@@ -47,20 +47,15 @@
       </div>
     </div>
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="$emit('cancel')">キャンセル</button>
-      <button
-        class="o-btn o-btn-primary"
-        :disabled="!result?.all_valid"
-        @click="$emit('confirm')"
-      >
-        {{ confirmButtonText }}
-      </button>
+      <OButton variant="secondary" @click="$emit('cancel')">キャンセル</OButton>
+      <OButton variant="primary" :disabled="!result?.all_valid" @click="$emit('confirm')">{{ confirmButtonText }}</OButton>
     </template>
   </ODialog>
 </template>
 
 <script setup lang="ts">
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { YamatoB2ValidateResult } from '@/types/carrierAutomation'
 
 defineProps<{

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-// No Element Plus — pure CSS variable theming via style.css
+import OToastManager from '@/components/odoo/OToastManager.vue'
 </script>
 
 <template>
+  <OToastManager />
   <router-view />
 </template>

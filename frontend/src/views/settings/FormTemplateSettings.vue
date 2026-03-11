@@ -5,7 +5,7 @@
         <h1 class="page-title">帳票テンプレート</h1>
         <p class="page-subtitle">ピッキングリスト・出荷明細リストなどの帳票テンプレートを管理します</p>
       </div>
-      <button class="o-btn o-btn-primary" @click="openCreate">新規追加</button>
+      <OButton variant="primary" @click="openCreate">新規追加</OButton>
     </div>
 
     <div class="table-section">
@@ -30,9 +30,9 @@
             </td>
             <td>
               <div class="action-cell">
-                <button class="o-btn o-btn-sm o-btn-outline-primary" @click="openEdit(row)">編集</button>
-                <button class="o-btn o-btn-sm o-btn-outline-secondary" @click="duplicateFormTemplate(row)">複製</button>
-                <button class="o-btn o-btn-sm o-btn-outline-danger" @click="handleDelete(row)">削除</button>
+                <OButton variant="primary" size="sm" @click="openEdit(row)">編集</OButton>
+                <OButton variant="secondary" size="sm" @click="duplicateFormTemplate(row)">複製</OButton>
+                <OButton variant="danger" size="sm" @click="handleDelete(row)">削除</OButton>
               </div>
             </td>
           </tr>
@@ -61,8 +61,8 @@
         </select>
       </div>
       <template #footer>
-        <button class="o-btn o-btn-secondary" @click="createDialogVisible = false">キャンセル</button>
-        <button class="o-btn o-btn-primary" :disabled="saving" @click="handleCreate">作成</button>
+        <OButton variant="secondary" @click="createDialogVisible = false">キャンセル</OButton>
+        <OButton variant="primary" :disabled="saving" @click="handleCreate">作成</OButton>
       </template>
     </ODialog>
   </div>
@@ -72,6 +72,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import OButton from '@/components/odoo/OButton.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import type { FormTemplate } from '@/types/formTemplate'
 import { fetchFormTemplates, fetchFormTemplate, createFormTemplate, deleteFormTemplate } from '@/api/formTemplate'
@@ -152,7 +153,7 @@ async function handleCreate() {
 async function duplicateFormTemplate(row: FormTemplate) {
   try {
     const detail = await fetchFormTemplate(row._id)
-    const { _id, tenantId, createdAt, updatedAt, ...rest } = detail
+    const { _id, tenantId: _tenantId, createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = detail
     await createFormTemplate({ ...rest, name: `${row.name}_copy`, isDefault: false } as any)
     showToast('複製しました', 'success')
     await loadTemplates()

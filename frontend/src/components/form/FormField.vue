@@ -87,9 +87,9 @@
         :placeholder="`${column.title}を入力`"
         style="flex:1;margin-right:6px;"
       />
-      <button class="o-btn-icon o-btn-icon--danger" @click="removeArrayItem(index)" title="削除">
+      <OButton variant="icon-danger" @click="removeArrayItem(index)" title="削除">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      </OButton>
     </div>
     <button class="o-add-tag-btn" @click="addArrayItem">+ 追加</button>
   </div>
@@ -107,6 +107,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import type { TableColumn } from '@/types/table'
 import { getNestedValue } from '@/utils/nestedObject'
 import { getMinDeliveryDate } from '@/utils/yamatoDeliveryDays'

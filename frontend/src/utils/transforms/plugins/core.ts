@@ -170,7 +170,7 @@ function formatDate(date: Date, format: string): string {
   }
 
   // 标准格式处理（需要先处理长的标记，避免被短的替换）
-  let result = format
+  const result = format
     .replace(/YYYY/g, String(year))
     .replace(/MM/g, monthPadded)
     .replace(/DD/g, dayPadded)
@@ -906,7 +906,7 @@ export const httpFetchJsonPlugin: TransformPlugin = {
   outputType: 'json',
   descriptionJa:
     'HTTPエンドポイントからJSONデータを取得します。非同期処理でネットワークリクエストを実行します。POST/PUT/PATCHメソッドの場合、bodyパラメータを固定値または列から取得できます。入力: 任意の値（URLパラメータやbodyパラメータとして使用可能）、出力: JSONオブジェクト（pickパラメータで特定の値を抽出可能）',
-  run: async ({ value, params, context }) => {
+  run: async ({ value: _value, params, context }) => {
     const url = new URL(params?.url || '')
     if (params?.query) {
       Object.entries(params.query).forEach(([k, v]) => {

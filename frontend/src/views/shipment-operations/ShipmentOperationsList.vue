@@ -59,27 +59,27 @@
       total-label="表示件数"
     >
       <template #right>
-        <button
-          class="o-btn o-btn-secondary"
+        <OButton
+          variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleCustomExportClick"
         >
           出荷明細リスト出力(csv)
-        </button>
-        <button
-          class="o-btn o-btn-secondary"
+        </OButton>
+        <OButton
+          variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleFormExportClick"
         >
           出荷明細リスト出力(pdf)
-        </button>
-        <button
-          class="o-btn o-btn-primary"
+        </OButton>
+        <OButton
+          variant="primary"
           :disabled="tableSelectedKeys.length === 0 || isMarkingShipped"
           @click="handleMarkShipped"
         >
           {{ isMarkingShipped ? '処理中...' : '出荷完了' }}
-        </button>
+        </OButton>
       </template>
     </OrderBottomBar>
 
@@ -110,6 +110,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref, watch } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import Table from '@/components/table/OrderTable.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
@@ -117,7 +118,7 @@ import OrderViewDialog from '@/components/shipment-orders/OrderViewDialog.vue'
 import CustomExportDialog from '@/components/export/CustomExportDialog.vue'
 import FormExportDialog from '@/components/form-export/FormExportDialog.vue'
 import type { HeaderGroupingConfig } from '@/components/table/tableHeaderGroup'
-import type { Operator, TableColumn } from '@/types/table'
+import type { Operator } from '@/types/table'
 import { getOrderFieldDefinitions } from '@/types/order'
 import { buildOrderHeaderGroupingConfig } from '@/utils/orderHeaderGrouping'
 import { fetchShipmentOrder, fetchShipmentOrdersPage, updateShipmentOrderStatusBulk } from '@/api/shipmentOrders'

@@ -388,18 +388,8 @@
                 :row-data="row"
               />
               <div v-else class="action-buttons">
-                <button
-                  class="o-btn o-btn-primary o-btn-sm"
-                  @click="handleEdit(row)"
-                >
-                  編集
-                </button>
-                <button
-                  class="o-btn o-btn-danger o-btn-sm"
-                  @click="handleDelete(row)"
-                >
-                  削除
-                </button>
+                <OButton variant="primary" size="sm" @click="handleEdit(row)">編集</OButton>
+                <OButton variant="danger" size="sm" @click="handleDelete(row)">削除</OButton>
               </div>
             </td>
           </tr>
@@ -438,13 +428,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, ref, toRefs, watch, onMounted, onUnmounted, defineComponent, nextTick } from 'vue'
+import { computed, h, ref, toRefs, watch, onMounted, defineComponent, nextTick } from 'vue'
 import type { HeaderGroupingConfig } from './tableHeaderGroup'
 import { getNestedValue, setNestedValue } from '@/utils/nestedObject'
 import { naturalSort } from '@/utils/naturalSort'
 import { mergeBarcodesWithSku } from '@/utils/barcode'
 import BulkEditDialog from './BulkEditDialog.vue'
 import OPager from '@/components/odoo/OPager.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { LINK_COLOR } from '@/theme/config'
 import type { Product } from '@/types/product'
 import InfoTag from './InfoTag.vue'
@@ -618,14 +609,11 @@ const emits = defineEmits<{
 
 const {
   rowKey,
-  height,
   columns,
   data,
   paginationEnabled,
   paginationMode,
-  pageSizes,
   rowSelectionEnabled,
-  headerGroupingConfig,
   sortEnabled,
   sortMode,
   sortBy,
@@ -1195,13 +1183,6 @@ const handleTableClick = (event: MouseEvent) => {
 }
 
 // 获取排序图标 - no longer returns component, handled in template with unicode
-const getSortIcon = (groupTitle: string): string => {
-  const order = sortOrderForGroup.value[groupTitle]
-  if (order === 'asc') return 'up'
-  if (order === 'desc') return 'down'
-  return 'up'
-}
-
 // 设置排序顺序
 const setSortOrderForGroup = (groupTitle: string, order: 'asc' | 'desc') => {
   sortOrderForGroup.value[groupTitle] = order
@@ -1521,26 +1502,13 @@ const hasFieldError = (row: RowData, field: CategoryGroup['fields'][0]): boolean
     try {
       const props = cellProps({ rowData: row, column: field.column })
       return props?.class === 'error-cell' || !!props?.style?.backgroundColor
-    } catch (e) {
+    } catch (_e) {
       // ignore
     }
   }
   return false
 }
 
-// 获取单元格類名
-const getCellClassName = ({ row, column }: { row: RowData; column: any }) => {
-  const cellProps = (rawTableProps.value as any)?.cellProps
-  if (typeof cellProps === 'function') {
-    try {
-      const props = cellProps({ rowData: row, column })
-      return props?.class || ''
-    } catch (e) {
-      // ignore
-    }
-  }
-  return ''
-}
 
 // 获取行類名
 const getRowClassName = ({ row }: { row: RowData }) => {
@@ -1551,12 +1519,12 @@ const getRowClassName = ({ row }: { row: RowData }) => {
 }
 
 // 处理編集
-const handleEdit = (row: RowData) => {
+const handleEdit = (_row: RowData) => {
   // placeholder - handled by cellRenderer
 }
 
 // 处理削除
-const handleDelete = (row: RowData) => {
+const handleDelete = (_row: RowData) => {
   // placeholder - handled by cellRenderer
 }
 
@@ -1781,7 +1749,7 @@ const rowMatchesGlobalSearch = (row: RowData, queryLower: string): boolean => {
       if (productMeta.skus?.some((s) => s.toLowerCase().includes(queryLower))) return true
       if (productMeta.barcodes?.some((b) => b.toLowerCase().includes(queryLower))) return true
     }
-  } catch (e) {
+  } catch (_e) {
     return true
   }
   return false
@@ -1817,7 +1785,7 @@ const tableContainerRef = ref<HTMLElement | null>(null)
 // 監聴 data 変化，当数据完全重新加載時，需要恢复選中状態
 watch(
   () => data.value,
-  (newData, oldData) => {
+  (newData, _oldData) => {
     if (!rowSelectionEnabled.value) return
 
     const keyField = rowKey.value as string
@@ -1840,14 +1808,6 @@ const handlePageChange = (page: number) => {
   innerCurrentPage.value = page
   emits('update:currentPage', page)
   emits('page-change', { page, pageSize: innerPageSize.value, mode: paginationMode.value })
-}
-
-const handlePageSizeChange = (size: number) => {
-  innerPageSize.value = size
-  innerCurrentPage.value = 1
-  emits('update:pageSize', size)
-  emits('update:currentPage', 1)
-  emits('page-change', { page: 1, pageSize: size, mode: paginationMode.value })
 }
 
 watch(

@@ -34,20 +34,22 @@
               <div v-for="(input, idx) in form.inputs" :key="input.id" class="input-item">
                 <div class="input-header">
                   <div class="input-drag-handle">
-                    <button
-                      class="o-btn o-btn-sm o-btn-secondary"
+                    <OButton
+                      variant="secondary"
+                      size="sm"
                       :disabled="idx === 0"
                       @click="moveInputUp(idx)"
                       title="上へ移動"
                       style="padding: 0 4px; line-height: 1"
-                    >&#9650;</button>
-                    <button
-                      class="o-btn o-btn-sm o-btn-secondary"
+                    >&#9650;</OButton>
+                    <OButton
+                      variant="secondary"
+                      size="sm"
                       :disabled="idx === form.inputs.length - 1"
                       @click="moveInputDown(idx)"
                       title="下へ移動"
                       style="padding: 0 4px; line-height: 1"
-                    >&#9660;</button>
+                    >&#9660;</OButton>
                   </div>
                   <span class="input-number">{{ idx + 1 }}</span>
                   <select
@@ -82,11 +84,12 @@
                     style="width: 200px; margin-left: 8px"
                   />
 
-                  <button
-                    class="o-btn o-btn-sm o-btn-danger"
+                  <OButton
+                    variant="danger"
+                    size="sm"
                     @click="removeInput(idx)"
                     style="margin-left: 8px"
-                  >削除</button>
+                  >削除</OButton>
                 </div>
 
                 <div v-if="input.type === 'column'" class="input-pipeline">
@@ -116,11 +119,12 @@
                         class="plugin-help-icon"
                         :title="getPluginDescription(step.plugin)?.replace(/<br>/g, '\n') || ''"
                       >&#63;</span>
-                      <button
-                        class="o-btn o-btn-sm o-btn-danger"
+                      <OButton
+                        variant="danger"
+                        size="sm"
                         @click="removeInputStep(idx, stepIdx)"
                         style="margin-left: 8px"
-                      >削除</button>
+                      >削除</OButton>
                     </div>
                     <div
                       v-if="step.plugin && inputStepFields[idx]?.[stepIdx]"
@@ -152,16 +156,18 @@
                                 style="flex: 1"
                                 @input="(e: Event) => updateLookupMapEntryValue(step.params, entry.key, (e.target as HTMLInputElement).value)"
                               />
-                              <button
-                                class="o-btn o-btn-sm o-btn-danger"
+                              <OButton
+                                variant="danger"
+                                size="sm"
                                 @click="removeLookupMapEntry(step.params, entry.key)"
-                              >削除</button>
+                              >削除</OButton>
                             </div>
-                            <button
-                              class="o-btn o-btn-sm o-btn-primary"
+                            <OButton
+                              variant="primary"
+                              size="sm"
                               @click="addLookupMapEntry(step.params)"
                               style="margin-top: 4px"
-                            >+ レイアウト追加</button>
+                            >+ レイアウト追加</OButton>
                           </div>
                         </div>
                         <div
@@ -208,16 +214,18 @@
                                 placeholder="出力値"
                                 style="flex: 1"
                               />
-                              <button
-                                class="o-btn o-btn-sm o-btn-danger"
+                              <OButton
+                                variant="danger"
+                                size="sm"
                                 @click="removeLookupContainsRule(step.params, Number(ruleIdx))"
-                              >削除</button>
+                              >削除</OButton>
                             </div>
-                            <button
-                              class="o-btn o-btn-sm o-btn-primary"
+                            <OButton
+                              variant="primary"
+                              size="sm"
                               @click="addLookupContainsRule(step.params)"
                               style="margin-top: 4px"
-                            >+ ルール追加</button>
+                            >+ ルール追加</OButton>
                           </div>
                         </div>
                         <div
@@ -273,16 +281,18 @@
                                 style="width: 80px"
                               />
                               <span style="color: #909399; font-size: 11px">回(0=全部)</span>
-                              <button
-                                class="o-btn o-btn-sm o-btn-danger"
+                              <OButton
+                                variant="danger"
+                                size="sm"
                                 @click="removeStringReplaceRule(step.params, Number(ruleIdx))"
-                              >削除</button>
+                              >削除</OButton>
                             </div>
-                            <button
-                              class="o-btn o-btn-sm o-btn-primary"
+                            <OButton
+                              variant="primary"
+                              size="sm"
                               @click="addStringReplaceRule(step.params)"
                               style="margin-top: 4px"
-                            >+ ルール追加</button>
+                            >+ ルール追加</OButton>
                           </div>
                         </div>
                       </template>
@@ -317,16 +327,18 @@
                                     :value="opt.value"
                                   >{{ opt.label }}</option>
                                 </select>
-                                <button
-                                  class="o-btn o-btn-sm o-btn-danger"
+                                <OButton
+                                  variant="danger"
+                                  size="sm"
                                   @click="step.params.formats.splice(fmtIdx, 1)"
-                                >削除</button>
+                                >削除</OButton>
                               </div>
-                              <button
-                                class="o-btn o-btn-sm o-btn-primary"
+                              <OButton
+                                variant="primary"
+                                size="sm"
                                 @click="addDateFormat(step.params)"
                                 style="margin-top: 4px"
-                              >+ 形式を追加</button>
+                              >+ 形式を追加</OButton>
                             </div>
                           </template>
                           <!-- precision 選択 -->
@@ -474,16 +486,18 @@
                                   :value="col"
                                 >{{ col }}</option>
                               </select>
-                              <button
-                                class="o-btn o-btn-sm o-btn-danger"
+                              <OButton
+                                variant="danger"
+                                size="sm"
                                 @click="removeBodyParam(step.params, Number(paramIdx))"
-                              >削除</button>
+                              >削除</OButton>
                             </div>
-                            <button
-                              class="o-btn o-btn-sm o-btn-primary"
+                            <OButton
+                              variant="primary"
+                              size="sm"
                               @click="addBodyParam(step.params)"
                               style="margin-top: 4px"
-                            >+ パラメータ追加</button>
+                            >+ パラメータ追加</OButton>
                           </div>
                         </div>
                       </template>
@@ -506,17 +520,19 @@
                                 placeholder="位置（0から始まる）"
                                 style="flex: 1"
                               />
-                              <button
-                                class="o-btn o-btn-sm o-btn-danger"
+                              <OButton
+                                variant="danger"
+                                size="sm"
                                 :disabled="(step.params.positions || []).length <= 1"
                                 @click="removeInsertSymbolPosition(step.params, Number(posIdx))"
-                              >削除</button>
+                              >削除</OButton>
                             </div>
-                            <button
-                              class="o-btn o-btn-sm o-btn-primary"
+                            <OButton
+                              variant="primary"
+                              size="sm"
                               @click="addInsertSymbolPosition(step.params)"
                               style="margin-top: 4px"
-                            >+ 位置追加</button>
+                            >+ 位置追加</OButton>
                           </div>
                         </div>
                         <div
@@ -580,16 +596,17 @@
                       </template>
                     </div>
                   </div>
-                  <button
-                    class="o-btn o-btn-sm o-btn-primary"
+                  <OButton
+                    variant="primary"
+                    size="sm"
                     @click="addInputStep(idx)"
                     style="margin-top: 4px"
-                  >+ 入力変換を追加</button>
+                  >+ 入力変換を追加</OButton>
                 </div>
               </div>
-              <button class="o-btn o-btn-sm o-btn-primary" @click="addInput" style="margin-top: 8px">
+              <OButton variant="primary" size="sm" @click="addInput" style="margin-top: 8px">
                 + 入力変換を追加
-              </button>
+              </OButton>
             </div>
           </div>
 
@@ -622,11 +639,12 @@
                     class="plugin-help-icon"
                     :title="getPluginDescription(step.plugin)?.replace(/<br>/g, '\n') || ''"
                   >&#63;</span>
-                  <button
-                    class="o-btn o-btn-sm o-btn-danger"
+                  <OButton
+                    variant="danger"
+                    size="sm"
                     @click="removeOutputStep(stepIdx)"
                     style="margin-left: 8px"
-                  >削除</button>
+                  >削除</OButton>
                 </div>
                 <div v-if="step.plugin && outputStepFields[stepIdx]" class="step-params">
                   <!-- lookup.map 特殊処理：キー値対編集器 -->
@@ -655,16 +673,18 @@
                             style="flex: 1"
                             @input="(e: Event) => updateLookupMapEntryValue(step.params, entry.key, (e.target as HTMLInputElement).value)"
                           />
-                          <button
-                            class="o-btn o-btn-sm o-btn-danger"
+                          <OButton
+                            variant="danger"
+                            size="sm"
                             @click="removeLookupMapEntry(step.params, entry.key)"
-                          >削除</button>
+                          >削除</OButton>
                         </div>
-                        <button
-                          class="o-btn o-btn-sm o-btn-primary"
+                        <OButton
+                          variant="primary"
+                          size="sm"
                           @click="addLookupMapEntry(step.params)"
                           style="margin-top: 4px"
-                        >+ レイアウト追加</button>
+                        >+ レイアウト追加</OButton>
                       </div>
                     </div>
                     <div
@@ -711,16 +731,18 @@
                             placeholder="出力値"
                             style="flex: 1"
                           />
-                          <button
-                            class="o-btn o-btn-sm o-btn-danger"
+                          <OButton
+                            variant="danger"
+                            size="sm"
                             @click="removeLookupContainsRule(step.params, Number(ruleIdx))"
-                          >削除</button>
+                          >削除</OButton>
                         </div>
-                        <button
-                          class="o-btn o-btn-sm o-btn-primary"
+                        <OButton
+                          variant="primary"
+                          size="sm"
                           @click="addLookupContainsRule(step.params)"
                           style="margin-top: 4px"
-                        >+ ルール追加</button>
+                        >+ ルール追加</OButton>
                       </div>
                     </div>
                     <div
@@ -776,16 +798,18 @@
                             style="width: 80px"
                           />
                           <span style="color: #909399; font-size: 11px">回(0=全部)</span>
-                          <button
-                            class="o-btn o-btn-sm o-btn-danger"
+                          <OButton
+                            variant="danger"
+                            size="sm"
                             @click="removeStringReplaceRule(step.params, Number(ruleIdx))"
-                          >削除</button>
+                          >削除</OButton>
                         </div>
-                        <button
-                          class="o-btn o-btn-sm o-btn-primary"
+                        <OButton
+                          variant="primary"
+                          size="sm"
                           @click="addStringReplaceRule(step.params)"
                           style="margin-top: 4px"
-                        >+ ルール追加</button>
+                        >+ ルール追加</OButton>
                       </div>
                     </div>
                   </template>
@@ -875,16 +899,18 @@
                               :value="col"
                             >{{ col }}</option>
                           </select>
-                          <button
-                            class="o-btn o-btn-sm o-btn-danger"
+                          <OButton
+                            variant="danger"
+                            size="sm"
                             @click="removeBodyParam(step.params, Number(paramIdx))"
-                          >削除</button>
+                          >削除</OButton>
                         </div>
-                        <button
-                          class="o-btn o-btn-sm o-btn-primary"
+                        <OButton
+                          variant="primary"
+                          size="sm"
                           @click="addBodyParam(step.params)"
                           style="margin-top: 4px"
-                        >+ パラメータ追加</button>
+                        >+ パラメータ追加</OButton>
                       </div>
                     </div>
                   </template>
@@ -919,16 +945,18 @@
                                 :value="opt.value"
                               >{{ opt.label }}</option>
                             </select>
-                            <button
-                              class="o-btn o-btn-sm o-btn-danger"
+                            <OButton
+                              variant="danger"
+                              size="sm"
                               @click="step.params.formats.splice(fmtIdx, 1)"
-                            >削除</button>
+                            >削除</OButton>
                           </div>
-                          <button
-                            class="o-btn o-btn-sm o-btn-primary"
+                          <OButton
+                            variant="primary"
+                            size="sm"
                             @click="addDateFormat(step.params)"
                             style="margin-top: 4px"
-                          >+ 形式を追加</button>
+                          >+ 形式を追加</OButton>
                         </div>
                       </template>
                       <!-- precision 選択 -->
@@ -1009,17 +1037,19 @@
                             placeholder="位置（0から始まる）"
                             style="flex: 1"
                           />
-                          <button
-                            class="o-btn o-btn-sm o-btn-danger"
+                          <OButton
+                            variant="danger"
+                            size="sm"
                             :disabled="(step.params.positions || []).length <= 1"
                             @click="removeInsertSymbolPosition(step.params, Number(posIdx))"
-                          >削除</button>
+                          >削除</OButton>
                         </div>
-                        <button
-                          class="o-btn o-btn-sm o-btn-primary"
+                        <OButton
+                          variant="primary"
+                          size="sm"
                           @click="addInsertSymbolPosition(step.params)"
                           style="margin-top: 4px"
-                        >+ 位置追加</button>
+                        >+ 位置追加</OButton>
                       </div>
                     </div>
                     <div
@@ -1083,11 +1113,12 @@
                   </template>
                 </div>
               </div>
-              <button
-                class="o-btn o-btn-sm o-btn-primary"
+              <OButton
+                variant="primary"
+                size="sm"
                 @click="addOutputStep"
                 style="margin-top: 4px"
-              >+ 出力変換を追加</button>
+              >+ 出力変換を追加</OButton>
             </div>
           </div>
         </div>
@@ -1108,8 +1139,8 @@
       </div>
     </div>
     <template #footer>
-      <button class="o-btn o-btn-secondary" @click="visibleProxy = false">キャンセル</button>
-      <button class="o-btn o-btn-primary" @click="handleSubmit">保存</button>
+      <OButton variant="secondary" @click="visibleProxy = false">キャンセル</OButton>
+      <OButton variant="primary" @click="handleSubmit">保存</OButton>
     </template>
   </ODialog>
 </template>
@@ -1117,6 +1148,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch, ref, onMounted } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { getTransformPlugins, type TransformPluginInfo, type TransformPipeline, type TransformStep, type TransformMapping, type InputSource } from '@/api/mappingConfig'
 import { jsonSchemaToFormFields, buildParamsFromForm, type FormField } from '@/utils/transformForm'
 import { runTransformMapping } from '@/utils/transformRunner'

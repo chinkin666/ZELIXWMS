@@ -42,7 +42,7 @@
               class="hidden-input"
               @change="onNativeFileSelect"
             />
-            <button class="o-btn o-btn-primary" @click="fileInputRef?.click()">ファイルを選択</button>
+            <OButton variant="primary" @click="fileInputRef?.click()">ファイルを選択</OButton>
             <select v-model="encoding" class="o-input" style="width: 160px">
               <option value="shift_jis">Shift_JIS (既定)</option>
               <option value="utf-8">UTF-8</option>
@@ -56,7 +56,7 @@
       <div class="top-right">
         <div class="field">
           <div class="label">サンプルデータ</div>
-          <button class="o-btn o-btn-secondary" @click="loadSampleOrders">注文サンプルを読み込む</button>
+          <OButton variant="secondary" @click="loadSampleOrders">注文サンプルを読み込む</OButton>
         </div>
         <div class="field">
           <div class="label">レイアウト名</div>
@@ -67,10 +67,10 @@
           <input v-model="configDescription" class="o-input" style="width: 200px" placeholder="説明（任意）" />
         </div>
         <div class="field">
-          <button class="o-btn o-btn-primary" @click="handleSave" :disabled="!canSave">
+          <OButton variant="primary" @click="handleSave" :disabled="!canSave">
             保存
-          </button>
-          <button class="o-btn o-btn-secondary" @click="handleLoad" style="margin-left: 8px">読み込み</button>
+          </OButton>
+          <OButton variant="secondary" @click="handleLoad" style="margin-left: 8px">読み込み</OButton>
         </div>
       </div>
     </div>
@@ -89,16 +89,16 @@
                 style="width: 160px; margin-left: 16px"
                 @keyup.enter="addCustomTargetField"
               />
-              <button class="o-btn o-btn-primary" @click="addCustomTargetField" :disabled="!newCustomTargetField.trim()">
+              <OButton variant="primary" @click="addCustomTargetField" :disabled="!newCustomTargetField.trim()">
                 追加
-              </button>
-              <button
-                class="o-btn o-btn-danger"
+              </OButton>
+              <OButton
+                variant="danger"
                 @click="removeSelectedCustomTargetField"
                 :disabled="!selectedTarget || !isCustomTargetField(selectedTarget.field)"
               >
                 選択項目を削除
-              </button>
+              </OButton>
             </div>
           </template>
         </div>
@@ -196,10 +196,10 @@
           <div class="o-alert o-alert-info" style="margin-bottom: 10px">
             「商品」は展開のみ可能です。子項目（SKU、数量、商品名）を選択して設定してください。
           </div>
-          <button class="o-btn o-btn-danger" :disabled="!selectedTarget" @click="clearSelected">
+          <OButton variant="danger" :disabled="!selectedTarget" @click="clearSelected">
             クリア
-          </button>
-          <button class="o-btn o-btn-danger" @click="clearAll">全てクリア</button>
+          </OButton>
+          <OButton variant="danger" @click="clearAll">全てクリア</OButton>
         </template>
 
         <!-- 特殊字段：handlingTags / barcode(string[]) 的专用按钮 -->
@@ -209,101 +209,101 @@
             (configType === 'product' && selectedTarget?.field === 'barcode')
           "
         >
-          <button
+          <OButton
             v-if="configType === 'product' && selectedTarget?.field === 'barcode'"
-            class="o-btn o-btn-primary"
+            variant="primary"
             :disabled="!selectedTarget"
             @click="openBarcodeMappingDialog"
           >
             バーコードレイアウト設定
-          </button>
-          <button
+          </OButton>
+          <OButton
             v-if="selectedTarget?.field === 'handlingTags'"
-            class="o-btn o-btn-primary"
+            variant="primary"
             :disabled="!selectedTarget"
             @click="openHandlingTagsMappingDialog"
           >
             荷扱いタグレイアウト設定
-          </button>
-          <button class="o-btn o-btn-danger" :disabled="!selectedTarget" @click="clearSelected">
+          </OButton>
+          <OButton variant="danger" :disabled="!selectedTarget" @click="clearSelected">
             クリア
-          </button>
-          <button class="o-btn o-btn-danger" @click="clearAll">全てクリア</button>
+          </OButton>
+          <OButton variant="danger" @click="clearAll">全てクリア</OButton>
         </template>
 
         <!-- Source 选择 product 时的特殊按钮 -->
         <template v-else-if="selectedSources.length === 1 && selectedSources[0]?.name === 'products'">
-          <button
-            class="o-btn o-btn-primary"
+          <OButton
+            variant="primary"
             :disabled="!selectedTarget"
             @click="openProductToStringTransform"
           >
             商品を文字列に変換
-          </button>
-          <button class="o-btn o-btn-danger" :disabled="!selectedTarget" @click="clearSelected">
+          </OButton>
+          <OButton variant="danger" :disabled="!selectedTarget" @click="clearSelected">
             クリア
-          </button>
-          <button class="o-btn o-btn-danger" @click="clearAll">全てクリア</button>
+          </OButton>
+          <OButton variant="danger" @click="clearAll">全てクリア</OButton>
         </template>
 
         <!-- Source 选择 handlingTags 时的特殊按钮 -->
         <template v-else-if="selectedSources.length === 1 && selectedSources[0]?.name === 'handlingTags'">
-          <button
-            class="o-btn o-btn-primary"
+          <OButton
+            variant="primary"
             :disabled="!selectedTarget"
             @click="openHandlingTagsIndexDialog"
           >
             配列要素を取得
-          </button>
-          <button class="o-btn o-btn-danger" :disabled="!selectedTarget" @click="clearSelected">
+          </OButton>
+          <OButton variant="danger" :disabled="!selectedTarget" @click="clearSelected">
             クリア
-          </button>
-          <button class="o-btn o-btn-danger" @click="clearAll">全てクリア</button>
+          </OButton>
+          <OButton variant="danger" @click="clearAll">全てクリア</OButton>
         </template>
 
         <!-- 默认按钮 -->
         <template v-else>
           <!-- order-to-sheet 快捷添加按钮 -->
-          <button
+          <OButton
             v-if="configType === 'order-to-sheet'"
-            class="o-btn o-btn-success"
+            variant="success"
             :disabled="selectedSources.length !== 1"
             @click="handleQuickAddFromSource"
           >
             &lt;&lt; 項目を追加
-          </button>
-          <button
-            class="o-btn o-btn-primary"
+          </OButton>
+          <OButton
+            variant="primary"
             :disabled="!selectedTarget || selectedSources.length === 0"
             @click="handleDirectLink"
           >
             &lt;&lt; 紐付け
-          </button>
-          <button
-            class="o-btn o-btn-warning"
+          </OButton>
+          <OButton
+            variant="warning"
             :disabled="!selectedTarget"
             @click="handleAddLiteral"
           >
             固定値を追加
-          </button>
-          <button
-            class="o-btn o-btn-primary"
+          </OButton>
+          <OButton
+            variant="primary"
             :disabled="!selectedTarget"
             @click="openTransformDialog"
           >
             &lt;&lt; 変換付き紐付け
-          </button>
-          <button
-            class="o-btn o-btn-secondary"
+          </OButton>
+          <OButton
+            variant="secondary"
             :disabled="!selectedTarget"
             @click="openDetailDialog"
           >
             紐付け項目の詳細設定
-          </button>
-          <button class="o-btn o-btn-danger" :disabled="!selectedTarget" @click="clearSelected">
+          </OButton>
+          <OButton variant="danger" :disabled="!selectedTarget" @click="clearSelected">
             クリア
-          </button>
-          <button class="o-btn o-btn-danger" @click="clearAll">全てクリア</button>
+          </OButton>
+          <OButton variant="danger" @click="clearAll">全てクリア</OButton>
         </template>
       </div>
 
@@ -409,6 +409,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import OButton from '@/components/odoo/OButton.vue'
 import { useRoute } from 'vue-router'
 import { fetchShipmentOrders } from '@/api/shipmentOrders'
 import { getOrderFieldDefinitions } from '@/types/order'
@@ -427,8 +428,6 @@ import MappingDetailDialog from '@/components/mapping/MappingDetailDialog.vue'
 import HandlingTagsMappingDialog from '@/components/mapping/HandlingTagsMappingDialog.vue'
 import HandlingTagsIndexDialog from '@/components/mapping/HandlingTagsIndexDialog.vue'
 import BarcodeMappingDialog from '@/components/mapping/BarcodeMappingDialog.vue'
-
-type ValueKind = 'string' | 'number' | 'boolean' | 'date' | 'datetime' | 'json' | 'any'
 
 interface TransformStep {
   id: string
@@ -590,23 +589,6 @@ const getUploadableProductFields = (): TargetRow[] => {
 }
 
 const targetProductFields: TargetRow[] = getUploadableProductFields()
-
-const carrierFieldTemplates: Record<string, TargetRow[]> = {
-  default: [
-    { field: 'shipper.postalCode', required: true },
-    { field: 'shipper.address', required: true },
-    { field: 'shipper.name', required: true },
-    { field: 'shipper.phone', required: true },
-    { field: 'recipient.postalCode', required: true },
-    { field: 'recipient.address', required: true },
-    { field: 'recipient.name', required: true },
-    { field: 'recipient.phone', required: true },
-    { field: 'delivery.shipDate', required: true },
-    { field: 'delivery.deliveryDate', required: false },
-    { field: 'delivery.timeSlot', required: false },
-    { field: 'packageSummary.pieces', required: true },
-  ],
-}
 
 const sourceUploadRows = ref<SourceRow[]>([])
 const sourceOrderRows = ref<SourceRow[]>([])

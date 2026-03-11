@@ -1,0 +1,101 @@
+import { computed, ref } from 'vue'
+import type { Ref } from 'vue'
+import type { UserOrderRow } from '@/types/orderRow'
+import { updateShipmentOrderStatusBulk } from '@/api/shipmentOrders'
+import type { useToast } from '@/composables/useToast'
+
+export function useOrderHold(
+  allRows: Ref<UserOrderRow[]>,
+  pendingWaybillRows: Ref<UserOrderRow[]>,
+  tableSelectedKeys: Ref<Array<string | number>>,
+  saveStorage: (rows: UserOrderRow[], heldIds: (string | number)[]) => void,
+  loadPendingWaybillOrders: () => Promise<void>,
+  toast: ReturnType<typeof useToast>,
+) {
+  const heldRowIds = ref<(string | number)[]>([])
+
+  // 行が保留中か確認（ローカル保留リストまたはバックエンドのステータスを確認）
+  const isHeld = (id: string | number) => {
+    if (heldRowIds.value.includes(id)) return true
+    const pwRow = pendingWaybillRows.value.find(r => r.id === id)
+    if (pwRow && (pwRow as any).status?.held?.isHeld) return true
+    return false
+  }
+
+  // 非保留行（ローカル行のみ）
+  const nonHeldRows = computed(() =>
+    allRows.value.filter((r) => !isHeld(r.id))
+  )
+
+  // 保留件数合計（ローカル + バックエンド）
+  const totalHeldCount = computed(() => {
+    const localCount = heldRowIds.value.length
+    const backendCount = pendingWaybillRows.value.filter((r: any) => r.status?.held?.isHeld).length
+    return localCount + backendCount
+  })
+
+  // 送り状未発行の非保留件数
+  const pendingWaybillNonHeldCount = computed(() =>
+    pendingWaybillRows.value.filter((r: any) => !r.status?.held?.isHeld).length
+  )
+
+  // 選択中の行の保留状態をトグル
+  const toggleHoldSelected = async () => {
+    if (tableSelectedKeys.value.length === 0) {
+      toast.showWarning('保留する行を選択してください')
+      return
+    }
+
+    // バックエンド注文（_idあり）とローカル行を分類
+    const backendIds: string[] = []
+    const localIds: (string | number)[] = []
+    for (const id of tableSelectedKeys.value) {
+      const isPendingWaybill = pendingWaybillRows.value.some(r => r.id === id)
+      if (isPendingWaybill) {
+        backendIds.push(String(id))
+      } else {
+        localIds.push(id)
+      }
+    }
+
+    // ローカル行の保留処理
+    if (localIds.length > 0) {
+      const currentSet = new Set(heldRowIds.value)
+      const allHeld = localIds.every(id => currentSet.has(id))
+      if (allHeld) {
+        for (const id of localIds) currentSet.delete(id)
+      } else {
+        for (const id of localIds) currentSet.add(id)
+      }
+      heldRowIds.value = [...currentSet]
+      saveStorage(allRows.value, heldRowIds.value)
+    }
+
+    // バックエンド注文の保留処理
+    if (backendIds.length > 0) {
+      const allBackendHeld = backendIds.every(id => {
+        const row = pendingWaybillRows.value.find(r => r.id === id)
+        return row && (row as any).status?.held?.isHeld
+      })
+      const action = allBackendHeld ? 'unhold' : 'mark-held'
+      try {
+        await updateShipmentOrderStatusBulk(backendIds, action)
+        await loadPendingWaybillOrders()
+      } catch (err) {
+        console.error('保留状態の更新に失敗しました:', err)
+        toast.showError('保留状態の更新に失敗しました')
+      }
+    }
+
+    tableSelectedKeys.value = []
+  }
+
+  return {
+    heldRowIds,
+    isHeld,
+    nonHeldRows,
+    totalHeldCount,
+    pendingWaybillNonHeldCount,
+    toggleHoldSelected,
+  }
+}
