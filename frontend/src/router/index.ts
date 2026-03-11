@@ -55,6 +55,7 @@ const router = createRouter({
         {
           path: 'waybill-management',
           meta: { title: '送り状管理' },
+          redirect: '/waybill-management/export',
           children: [
             {
               path: 'export',
@@ -116,6 +117,7 @@ const router = createRouter({
         {
           path: 'settings',
           meta: { title: '設定' },
+          redirect: '/settings/basic',
           children: [
             {
               path: 'basic',
