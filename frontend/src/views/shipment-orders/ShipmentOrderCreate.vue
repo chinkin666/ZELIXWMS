@@ -1085,6 +1085,14 @@ const applyProductDefaults = (row: UserOrderRow): UserOrderRow => {
     }
   }
 
+  // クール便（冷凍・冷蔵）はメール便不可 → 発払いに強制変更
+  if (next.coolType === '1' || next.coolType === '2') {
+    const mailTypes = new Set(['3', '7', 'A'])
+    if (mailTypes.has(next.invoiceType)) {
+      next.invoiceType = '0'
+    }
+  }
+
   // ネコポス・ゆうメール・ゆうパケット等メール便はお届け日・時間帯指定不可
   const noDateTimeTypes = new Set(['3', '7', 'A'])
   if (noDateTimeTypes.has(next.invoiceType)) {
