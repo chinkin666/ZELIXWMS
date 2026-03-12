@@ -1613,7 +1613,11 @@ const handleB2ValidateDialogConfirm = async () => {
 }
 
 // --- 自動 B2 Cloud 検証（処理中の注文をバックグラウンドで検証） ---
-const autoValidateProcessingOrders = async (scopeIds?: Set<string>) => {
+// 初回検証失敗時は「検証中」を維持し、短い待機後に再検証。2回目も失敗した場合のみエラー表示。
+const RETRY_DELAY_MS = 8_000 // 初回失敗→リトライまでの待機時間
+const LONG_RETRY_DELAY_MS = 5 * 60 * 1000 // 2回目失敗→長期リトライ
+
+const autoValidateProcessingOrders = async (scopeIds?: Set<string>, isRetry = false) => {
   // リトライタイマーをクリア
   if (autoValidateRetryTimer) {
     clearTimeout(autoValidateRetryTimer)
@@ -1643,7 +1647,10 @@ const autoValidateProcessingOrders = async (scopeIds?: Set<string>) => {
   const nonB2Ids = nonB2Orders.map((r) => String(r._id || r.id)).filter(Boolean)
 
   isAutoValidating.value = true
-  b2ValidationErrors.value = new Map()
+  // リトライ時はエラー表示をクリアしない（検証中のまま維持）
+  if (!isRetry) {
+    b2ValidationErrors.value = new Map()
+  }
 
   try {
     const validateResult = await yamatoB2Validate(b2OrderIds)
@@ -1661,34 +1668,56 @@ const autoValidateProcessingOrders = async (scopeIds?: Set<string>) => {
       }
     }
 
-    b2ValidationErrors.value = newErrors
-
     // 検証通過した注文 + 非B2注文を確定（送り状未発行へ移動）
     const confirmIds = [...validIds, ...nonB2Ids]
     if (confirmIds.length > 0) {
       await doConfirmOrders(confirmIds)
     }
 
-    // 結果メッセージ
     if (newErrors.size > 0) {
-      toast.showWarning(`${newErrors.size}件のデータにエラーがあります。処理中タブをご確認ください。`)
-      // エラーがある場合、5分後に自動リトライ
+      if (!isRetry) {
+        // 初回失敗: エラーを表示せず「検証中」を維持、短い待機後にリトライ
+        autoValidateRetryTimer = setTimeout(() => {
+          autoValidateRetryTimer = null
+          // 失敗した注文IDのみを対象にリトライ
+          const failedIds = new Set(newErrors.keys())
+          autoValidateProcessingOrders(failedIds, true)
+        }, RETRY_DELAY_MS)
+      } else {
+        // 2回目失敗: エラーを表示
+        b2ValidationErrors.value = newErrors
+        isAutoValidating.value = false
+        toast.showWarning(`${newErrors.size}件のデータにエラーがあります。処理中タブをご確認ください。`)
+        // 長期リトライ
+        autoValidateRetryTimer = setTimeout(() => {
+          autoValidateRetryTimer = null
+          autoValidateProcessingOrders()
+        }, LONG_RETRY_DELAY_MS)
+      }
+    } else {
+      b2ValidationErrors.value = new Map()
+      isAutoValidating.value = false
+      if (validIds.length > 0) {
+        toast.showSuccess(`${validIds.length}件の検証が正常に完了しました`)
+      }
+    }
+    return // finally で isAutoValidating をリセットしないよう早期 return
+  } catch (e: any) {
+    if (!isRetry) {
+      // 初回 API エラー: 検証中を維持、短い待機後にリトライ
+      autoValidateRetryTimer = setTimeout(() => {
+        autoValidateRetryTimer = null
+        autoValidateProcessingOrders(scopeIds, true)
+      }, RETRY_DELAY_MS)
+    } else {
+      // 2回目 API エラー: エラーを表示
+      isAutoValidating.value = false
+      toast.showError(e?.message || 'B2 Cloud の検証中にエラーが発生しました')
       autoValidateRetryTimer = setTimeout(() => {
         autoValidateRetryTimer = null
         autoValidateProcessingOrders()
-      }, 5 * 60 * 1000)
-    } else if (validIds.length > 0) {
-      toast.showSuccess(`${validIds.length}件の検証が正常に完了しました`)
+      }, LONG_RETRY_DELAY_MS)
     }
-  } catch (e: any) {
-    toast.showError(e?.message || 'B2 Cloud の検証中にエラーが発生しました')
-    // API エラーの場合も5分後にリトライ
-    autoValidateRetryTimer = setTimeout(() => {
-      autoValidateRetryTimer = null
-      autoValidateProcessingOrders()
-    }, 5 * 60 * 1000)
-  } finally {
-    isAutoValidating.value = false
   }
 }
 
