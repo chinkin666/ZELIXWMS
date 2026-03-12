@@ -62,7 +62,7 @@
                   <tr>
                     <th style="width:36px;"></th>
                     <th>SKU管理番号 <span class="required-badge">必須</span></th>
-                    <th>商品名</th>
+                    <th>商品名（印刷用）</th>
                     <th style="text-align:right;width:100px;">数量</th>
                     <th style="width:50px;"></th>
                   </tr>
@@ -89,7 +89,7 @@
                         class="o-inline-input"
                         :value="item.productName"
                         @input="(e: Event) => onProductNameInput(index, (e.target as HTMLInputElement).value)"
-                        placeholder="全角25文字/半角50文字以内"
+                        placeholder="全角25文字/半角50文字以内（印刷用）"
                       />
                     </td>
                     <td>
