@@ -57,15 +57,10 @@
           <div class="o-notebook-page">
             <!-- 商品明細 tab -->
             <template v-if="activeTab === 'products'">
-              <div class="o-product-toolbar">
-                <OButton variant="secondary" size="sm" @click="openProductSearch">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                  商品検索
-                </OButton>
-              </div>
               <table class="o-lines-table">
                 <thead>
                   <tr>
+                    <th style="width:36px;"></th>
                     <th>SKU管理番号 <span class="required-badge">必須</span></th>
                     <th>商品名</th>
                     <th style="text-align:right;width:100px;">数量</th>
@@ -74,6 +69,11 @@
                 </thead>
                 <tbody>
                   <tr v-for="(item, index) in productItems" :key="index">
+                    <td style="text-align:center;">
+                      <button class="o-product-search-btn" @click="openProductSearchForRow(index)" title="商品検索">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                      </button>
+                    </td>
                     <td>
                       <input
                         class="o-inline-input"
@@ -111,7 +111,7 @@
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colspan="4">
+                    <td colspan="5">
                       <button class="o-add-line-btn" @click="addProduct">
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
                         商品を追加
@@ -478,8 +478,10 @@ const productSearchOpen = ref(false)
 const productSearchQuery = ref('')
 const productSearchResults = ref<Product[]>([])
 const productSearchLoading = ref(false)
+const productSearchTargetIndex = ref(0) // どの行に対して検索しているか
 
-const openProductSearch = async () => {
+const openProductSearchForRow = async (index: number) => {
+  productSearchTargetIndex.value = index
   productSearchOpen.value = true
   productSearchQuery.value = ''
   productSearchLoading.value = true
@@ -505,13 +507,10 @@ const filteredProductResults = computed(() => {
 
 const selectProduct = (prod: Product) => {
   const arr = [...productItems.value]
-  // 最初の行が空ならそこに入れる、そうでなければ新行追加
-  const emptyIndex = arr.findIndex(item => !item.inputSku && !item.productName)
-  if (emptyIndex >= 0) {
-    arr[emptyIndex] = { inputSku: prod.sku, productName: prod.name, quantity: 1 }
-  } else {
-    arr.push({ inputSku: prod.sku, productName: prod.name, quantity: 1 })
-  }
+  const idx = productSearchTargetIndex.value
+  // 対象行に商品をセット（数量は既存値を維持、なければ1）
+  const currentQty = arr[idx]?.quantity ?? 1
+  arr[idx] = { inputSku: prod.sku, productName: prod.name, quantity: currentQty }
   setNestedValue(formData.value, 'products', arr)
   productSearchOpen.value = false
 }
@@ -1265,8 +1264,19 @@ const handleSubmit = async () => {
 }
 
 /* ── Product search ── */
-.o-product-toolbar {
-  margin-bottom: 0.5rem;
+.o-product-search-btn {
+  background: none;
+  border: 1px solid var(--o-border-color, #d6d6d6);
+  border-radius: 4px;
+  padding: 3px 5px;
+  cursor: pointer;
+  color: var(--o-gray-500, #6c757d);
+  line-height: 0;
+  transition: all 0.15s;
+}
+.o-product-search-btn:hover {
+  border-color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #714B67);
 }
 
 .o-product-dialog {
