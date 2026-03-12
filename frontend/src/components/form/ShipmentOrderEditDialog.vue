@@ -494,9 +494,7 @@ const DELIVERY_DATE_INVOICE_TYPES = new Set(['0', '1', '2', '4', '5', '6', '8', 
 
 const isFieldVisible = (col: TableColumn): boolean => {
   const key = getKey(col)
-  // 新規作成時は出荷管理No・送り状番号を非表示
-  if (key === 'orderNumber' && !props.initialData?.orderNumber) return false
-  if (key === 'trackingId' && !props.initialData?.trackingId) return false
+  // 出荷管理No・送り状番号は常に表示（読み取り専用）
   const invoiceType = String(getNestedValue(formData.value, 'invoiceType') || '')
   if (key === 'coolType') return COOL_TYPE_INVOICE_TYPES.has(invoiceType)
   if (key === 'deliveryTimeSlot') return TIME_SLOT_INVOICE_TYPES.has(invoiceType)
