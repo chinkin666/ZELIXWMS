@@ -161,9 +161,10 @@ const formParentMap: Record<string, { parentLabel: string; parentRoute: string }
 const wmsParentMap: Record<string, { label: string; route: string }> = {
   '/products': { label: '商品管理', route: '/products/list' },
   '/shipment-orders': { label: '出荷指示', route: '/shipment-orders/create' },
-  '/waybill-management': { label: '送り状管理', route: '/waybill-management/export' },
   '/shipment-operations': { label: '出荷作業', route: '/shipment-operations/tasks' },
   '/shipment-results': { label: '出荷実績', route: '/shipment-results' },
+  '/inbound': { label: '入庫管理', route: '/inbound/orders' },
+  '/inventory': { label: '在庫管理', route: '/inventory/stock' },
   '/settings': { label: '設定', route: '/settings/basic' },
 }
 
@@ -199,7 +200,7 @@ const autoBreadcrumbs = computed<{ label: string; route?: string }[]>(() => {
   if (wmsKey) {
     const parent = wmsParentMap[wmsKey]
     // Push parent crumb only when: section has a default route, and we're on a different sub-route
-    if (parent.route && path !== parent.route && path !== wmsKey) {
+    if (parent && parent.route && path !== parent.route && path !== wmsKey) {
       crumbs.push({ label: parent.label, route: parent.route })
     }
     crumbs.push({ label: props.title ?? '' })
@@ -350,13 +351,16 @@ function navigateBreadcrumb(route?: string) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 34px;
+  min-height: 42px;
   padding: 0.25rem 0;
+  position: relative;
 }
 
 .o-cp-breadcrumbs {
   flex: 0 0 auto;
   min-width: 0;
+  position: relative;
+  z-index: 2;
 }
 .o-breadcrumb {
   display: flex;
@@ -394,10 +398,14 @@ function navigateBreadcrumb(route?: string) {
 }
 
 .o-cp-center {
-  flex: 1;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   justify-content: center;
-  min-width: 0;
+  pointer-events: auto;
+  z-index: 1;
 }
 
 .o-cp-actions {
@@ -405,6 +413,8 @@ function navigateBreadcrumb(route?: string) {
   align-items: center;
   gap: 0.375rem;
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 /* Search view */

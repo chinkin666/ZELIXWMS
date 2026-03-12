@@ -78,19 +78,19 @@ export interface FormTemplateColumn {
  */
 export interface FormTemplateStyles {
   /** デフォルトフォントサイズ (pt) */
-  fontSize?: number
+  fontSize: number
   /** ヘッダー背景色 (#RRGGBB) */
-  headerBgColor?: string
+  headerBgColor: string
   /** ヘッダー文字色 */
-  headerTextColor?: string
+  headerTextColor: string
   /** 罫線色 */
-  borderColor?: string
+  borderColor: string
   /** セル内余白 */
-  cellPadding?: number
+  cellPadding: number
   /** 交互行背景色 */
   alternateRowColor?: string
   /** 水平方向の配置 */
-  horizontalAlign?: 'left' | 'center' | 'right'
+  horizontalAlign: string
 }
 
 /**

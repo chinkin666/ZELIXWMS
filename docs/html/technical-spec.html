@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZELIXWMS 技术式样书</title>
+  <style>
+    :root { --bg:#f5f4ef; --panel:#fffefa; --ink:#1f2b33; --muted:#5a6770; --line:#d8d0c2; --brand:#214f5b; --soft:#eaf2f1; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7}
+    .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 56px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:24px;margin-top:18px;box-shadow:0 10px 24px rgba(0,0,0,.05)}
+    h1{font-size:36px;margin:10px 0 0} h2{font-size:24px;margin:0 0 10px} h3{font-size:18px;margin:18px 0 8px}
+    p,li,td{color:var(--muted)} table{width:100%;border-collapse:collapse;margin-top:10px} th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top} th{background:var(--soft);color:var(--ink)}
+    code,pre{font-family:Consolas,monospace} code{background:var(--soft);color:var(--brand);padding:2px 6px;border-radius:6px}
+    pre{background:#20313a;color:#eff7f7;padding:14px;border-radius:14px;overflow:auto}
+    a{color:var(--brand);text-decoration:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="./index.html">返回文档中心</a>
+    <h1>技术式样书</h1>
+
+    <section class="panel">
+      <h2>1. 系统架构</h2>
+      <pre>Frontend (Vue 3 / Vite)
+  -> /api/*
+Backend (Express / Node.js)
+  -> Mongoose
+MongoDB
+
+外部连携:
+  -> Yamato B2 API / Proxy
+  -> 本地文件上传目录 / 渲染输出</pre>
+      <table>
+        <tr><th>层级</th><th>技术</th><th>职责</th></tr>
+        <tr><td>前端</td><td>Vue 3、TypeScript、Pinia、Vue Router、Konva</td><td>页面交互、数据编辑、模板设计、打印预览、业务作业。</td></tr>
+        <tr><td>后端</td><td>Node.js 20、Express 4、TypeScript、Mongoose、Pino</td><td>REST API、订单处理、模板服务、渲染、外部接口联动。</td></tr>
+        <tr><td>数据库</td><td>MongoDB 7</td><td>订单、商品、设置、模板、自动规则与日志持久化。</td></tr>
+        <tr><td>共享层</td><td><code>shared</code> workspace</td><td>类型定义、转换类型、打印单位等共用能力。</td></tr>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>2. 目录结构</h2>
+      <table>
+        <tr><th>目录</th><th>说明</th></tr>
+        <tr><td><code>frontend/src/views</code></td><td>业务页面，包括出荷指示、作业、结果、设置。</td></tr>
+        <tr><td><code>frontend/src/components</code></td><td>表格、导入、打印、自动处理、运单相关组件。</td></tr>
+        <tr><td><code>backend/src/api</code></td><td>路由与控制器。</td></tr>
+        <tr><td><code>backend/src/models</code></td><td>MongoDB 模型定义。</td></tr>
+        <tr><td><code>backend/src/services</code></td><td>业务服务，包括渲染、Yamato B2、自动处理等。</td></tr>
+        <tr><td><code>backend/src/scripts</code></td><td>seed、dump、restore、migration 脚本。</td></tr>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>3. 接口式样</h2>
+      <table>
+        <tr><th>模块</th><th>基础路径</th><th>主要能力</th></tr>
+        <tr><td>Shipment Orders</td><td><code>/api/shipment-orders</code></td><td>列表、详情、手工批量创建、状态变更、回执导入、批量更新/删除。</td></tr>
+        <tr><td>Products</td><td><code>/api/products</code></td><td>商品维护、SKU 解析、导入校验、批量导入。</td></tr>
+        <tr><td>Mapping Configs</td><td><code>/api/mapping-configs</code></td><td>导入/转换映射定义管理。</td></tr>
+        <tr><td>Carriers</td><td><code>/api/carriers</code></td><td>配送业者及格式定义维护。</td></tr>
+        <tr><td>Print Templates</td><td><code>/api/print-templates</code></td><td>标签模板维护与渲染依赖。</td></tr>
+        <tr><td>Form Templates</td><td><code>/api/form-templates</code></td><td>帐票模板维护。</td></tr>
+        <tr><td>Carrier Automation</td><td><code>/api/carrier-automation</code></td><td>Yamato B2 配置、验证、导出、打印、取回 PDF、取消确认。</td></tr>
+        <tr><td>Order Groups</td><td><code>/api/order-groups</code></td><td>检品分组管理。</td></tr>
+        <tr><td>Auto Processing Rules</td><td><code>/api/auto-processing-rules</code></td><td>自动处理规则管理、排序、手工运行。</td></tr>
+        <tr><td>Render</td><td><code>/api/render</code></td><td>打印模板渲染服务。</td></tr>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>4. 核心数据模型</h2>
+      <h3>4.1 订单状态</h3>
+      <pre>{
+  status: {
+    carrierReceipt: { isReceived, receivedAt },
+    confirm: { isConfirmed, confirmedAt },
+    printed: { isPrinted, printedAt },
+    shipped: { isShipped, shippedAt }
+  }
+}</pre>
+      <h3>4.2 主要集合</h3>
+      <ul>
+        <li><code>orders</code>: 出荷订单主表，含收件人、发件人、商品、状态、原始行、配送附加数据。</li>
+        <li><code>products</code>: 商品主数据，支持主 SKU/子 SKU、条码、温层、价格、图片。</li>
+        <li><code>mapping_configs</code>: Excel/CSV 到内部结构的映射和转换流水线。</li>
+        <li><code>print_templates</code> / <code>form_templates</code>: 标签与帐票模板。</li>
+        <li><code>carrier_automation_configs</code>: 配送自动化参数，主要用于 Yamato B2。</li>
+        <li><code>auto_processing_rules</code> / <code>auto_processing_logs</code>: 自动规则与执行日志。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>5. 非功能要求</h2>
+      <table>
+        <tr><th>类别</th><th>当前实现</th></tr>
+        <tr><td>安全</td><td><code>helmet</code>、CORS、环境变量化外部凭据，前端/后端分离部署。</td></tr>
+        <tr><td>日志</td><td>Pino + Morgan，异常统一中间件输出。</td></tr>
+        <tr><td>可维护性</td><td>TypeScript、工作区拆分、模型/服务/控制器分层。</td></tr>
+        <tr><td>扩展性</td><td>映射配置、模板配置、自动规则和 carrier automation 设计支持增量扩展。</td></tr>
+        <tr><td>性能</td><td>订单聚合字段 <code>_productsMeta</code>、渲染缓存、PDF 缓存、批量接口。</td></tr>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

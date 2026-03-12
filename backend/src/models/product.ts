@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 
 export type CoolType = '0' | '1' | '2';
+export type ProductCategory = '0' | '1' | '2' | '3' | '4';  // 0:商品 1:消耗品 2:作業 3:おまけ 4:部材
+export type AllocationRule = 'FIFO' | 'FEFO' | 'LIFO';  // FIFO:先入先出 FEFO:先期限先出 LIFO:後入先出
 
 export interface ISubSku {
   subSku: string;        // 子SKU編碼 (必填，全局唯一)
@@ -24,8 +26,33 @@ export interface IProduct {
   handlingTypes?: string[];
   imageUrl?: string;
   subSkus?: ISubSku[];
+  category?: ProductCategory;
+  customField1?: string;
+  customField2?: string;
+  customField3?: string;
+  customField4?: string;
+  width?: number;
+  depth?: number;
+  height?: number;
+  weight?: number;
+  // P3: 国際・追加情報
+  nameEn?: string;              // 英語商品名
+  countryOfOrigin?: string;     // 原産国
+  // P3: 引当規則
+  allocationRule?: AllocationRule;  // 引当規則 (FIFO/FEFO/LIFO)
+  // P3: シリアルNo管理
+  serialTrackingEnabled: boolean;   // シリアルNo管理有効
+  // P3: 入庫期限日数
+  inboundExpiryDays?: number;       // 入庫期限日数 (入庫時に残り日数がこの値未満なら警告)
   /** 内部フィールド: sku + 全子SKUコードの配列。unique index で重複を防止。 */
   _allSku?: string[];
+  // 在庫管理設定
+  inventoryEnabled: boolean;
+  lotTrackingEnabled: boolean;
+  expiryTrackingEnabled: boolean;
+  alertDaysBeforeExpiry: number;
+  defaultLocationId?: mongoose.Types.ObjectId;
+  safetyStock: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -126,9 +153,69 @@ const productSchema = new mongoose.Schema<IProduct>(
       type: [subSkuSchema],
       default: [],
     },
+    category: {
+      type: String,
+      enum: ['0', '1', '2', '3', '4'],
+      default: '0',
+    },
+    customField1: { type: String, trim: true },
+    customField2: { type: String, trim: true },
+    customField3: { type: String, trim: true },
+    customField4: { type: String, trim: true },
+    width: { type: Number },
+    depth: { type: Number },
+    height: { type: Number },
+    weight: { type: Number },
+    nameEn: { type: String, trim: true },
+    countryOfOrigin: { type: String, trim: true },
+    allocationRule: {
+      type: String,
+      enum: ['FIFO', 'FEFO', 'LIFO'],
+      default: 'FIFO',
+    },
+    serialTrackingEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    inboundExpiryDays: {
+      type: Number,
+      validate: {
+        validator: (v: unknown) => {
+          if (v === undefined || v === null) return true;
+          if (typeof v !== 'number') return false;
+          return Number.isInteger(v) && v > 0;
+        },
+        message: 'inboundExpiryDays must be a positive integer',
+      },
+    },
     _allSku: {
       type: [String],
       default: [],
+    },
+    // 在庫管理設定
+    inventoryEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    lotTrackingEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    expiryTrackingEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    alertDaysBeforeExpiry: {
+      type: Number,
+      default: 30,
+    },
+    defaultLocationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Location',
+    },
+    safetyStock: {
+      type: Number,
+      default: 0,
     },
   },
   {

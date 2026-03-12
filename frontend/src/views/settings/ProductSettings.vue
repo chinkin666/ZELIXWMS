@@ -1,11 +1,50 @@
 <template>
   <div class="product-settings">
     <ControlPanel title="商品設定" :show-search="false">
+      <template #center>
+        <input
+          class="o-input o-cp-search-input"
+          v-model="globalSearchText"
+          placeholder="検索..."
+        />
+      </template>
       <template #actions>
         <OButton variant="primary" @click="openCreate"><span class="o-icon">+</span> 商品を追加</OButton>
         <OButton variant="success" @click="showImportDialog = true"><span class="o-icon">&#8593;</span> 取り込みファイルを選択</OButton>
+        <OButton variant="secondary" @click="showExportPanel = !showExportPanel">CSV設定</OButton>
+        <OButton variant="secondary" @click="exportCsv">CSV出力</OButton>
       </template>
     </ControlPanel>
+
+    <!-- CSV導出設定パネル -->
+    <div v-if="showExportPanel" class="o-card export-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 class="panel-title">商品データCSV出力設定</h3>
+        <div style="display:flex;gap:6px;">
+          <select v-model="selectedExportPreset" class="o-input o-input-sm" style="width:160px;" @change="loadExportPreset">
+            <option value="">デフォルト（全項目）</option>
+            <option v-for="p in exportPresets" :key="p.name" :value="p.name">{{ p.name }}</option>
+          </select>
+          <OButton variant="secondary" size="sm" @click="saveExportPreset">保存</OButton>
+          <OButton v-if="selectedExportPreset" variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;" @click="deleteExportPreset">削除</OButton>
+        </div>
+      </div>
+      <div class="export-col-grid">
+        <label
+          v-for="col in allExportColumns"
+          :key="col.key"
+          class="export-col-item"
+          :class="{ 'export-col-item--active': exportColumnKeys.includes(col.key) }"
+        >
+          <input type="checkbox" :value="col.key" v-model="exportColumnKeys" style="margin-right:4px;" />
+          {{ col.label }}
+        </label>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:6px;">
+        <OButton variant="secondary" size="sm" @click="exportColumnKeys = allExportColumns.map(c => c.key)">全選択</OButton>
+        <OButton variant="secondary" size="sm" @click="exportColumnKeys = []">全解除</OButton>
+      </div>
+    </div>
 
     <SearchForm
       class="search-section"
@@ -15,48 +54,170 @@
       @search="handleSearch"
     />
 
-    <Table
-      :columns="tableColumns"
-      :data="list"
-      :height="560"
-      row-key="_id"
-      highlight-columns-on-hover
-      pagination-enabled
-      pagination-mode="client"
-      :page-size="25"
-      :page-sizes="[10, 25, 50, 100]"
-      :global-search-text="globalSearchText"
-      row-selection-enabled
-      :selected-keys="selectedKeys"
-      bulk-edit-enabled
-      @update:selected-keys="selectedKeys = $event"
-      @bulk-edit="handleBulkEdit"
-    />
+    <!-- Plain table -->
+    <div class="o-table-wrapper">
+      <div v-if="selectedKeys.length > 0" class="o-list-toolbar o-toolbar-active">
+        <span class="o-selected-count">{{ selectedKeys.length }}件選択中</span>
+        <OButton variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;" :disabled="isBulkDeleting" @click="handleBulkDelete">
+          {{ isBulkDeleting ? '削除中...' : '一括削除' }}
+        </OButton>
+        <OButton variant="secondary" size="sm" :disabled="isBulkBarcode" @click="handleBulkBarcodeGenerate">
+          {{ isBulkBarcode ? '生成中...' : 'バーコード一括生成' }}
+        </OButton>
+        <OButton variant="secondary" size="sm" @click="selectedKeys = []">選択解除</OButton>
+      </div>
+      <table class="o-table">
+        <thead>
+          <tr>
+            <th class="o-table-th o-table-th--checkbox" style="width:40px;">
+              <input
+                type="checkbox"
+                :checked="isAllCurrentPageSelected"
+                :indeterminate="isSomeCurrentPageSelected && !isAllCurrentPageSelected"
+                @change="toggleSelectAll"
+              />
+            </th>
+            <th class="o-table-th" style="width:90px;">画像</th>
+            <th class="o-table-th o-table-th--sortable" style="width:160px;" @click="handleSortClick('sku')">
+              SKU管理番号
+              <span v-if="sortKey === 'sku'" class="o-sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="o-table-th o-table-th--sortable" style="width:200px;" @click="handleSortClick('name')">
+              印刷用商品名
+              <span v-if="sortKey === 'name'" class="o-sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="o-table-th" style="width:200px;">商品名</th>
+            <th class="o-table-th" style="width:180px;">検品コード</th>
+            <th class="o-table-th" style="width:80px;">カテゴリ</th>
+            <th class="o-table-th" style="width:100px;">クール区分</th>
+            <th class="o-table-th" style="width:100px;">メール便</th>
+            <th class="o-table-th" style="width:90px;">商品金額</th>
+            <th class="o-table-th" style="width:80px;">在庫管理</th>
+            <th class="o-table-th" style="width:140px;">子SKU</th>
+            <th class="o-table-th" style="width:140px;">作成日時</th>
+            <th class="o-table-th" style="width:180px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="loading">
+            <td colspan="14" class="o-table-empty">読み込み中...</td>
+          </tr>
+          <tr v-else-if="paginatedRows.length === 0">
+            <td colspan="14" class="o-table-empty">データがありません</td>
+          </tr>
+          <tr
+            v-for="row in paginatedRows"
+            :key="row._id"
+            class="o-table-row"
+            :class="{ 'o-table-row--selected': selectedKeys.includes(row._id) }"
+          >
+            <td class="o-table-td o-table-td--checkbox">
+              <input
+                type="checkbox"
+                :checked="selectedKeys.includes(row._id)"
+                @change="toggleRowSelection(row)"
+              />
+            </td>
+            <!-- 画像 -->
+            <td class="o-table-td">
+              <img
+                :src="resolveImageUrl(row.imageUrl)"
+                class="product-img"
+                alt=""
+                @error="(e: Event) => { (e.target as HTMLImageElement).src = noImageSrc }"
+              />
+            </td>
+            <!-- SKU -->
+            <td class="o-table-td">
+              <a href="#" class="mgmt-cell__link" @click.prevent="openEdit(row)">{{ row.sku || '-' }}</a>
+            </td>
+            <!-- 印刷用商品名 -->
+            <td class="o-table-td">
+              <span class="o-cell">{{ row.name || '-' }}</span>
+            </td>
+            <!-- 商品名 -->
+            <td class="o-table-td">
+              <span class="o-cell">{{ row.nameFull || '-' }}</span>
+            </td>
+            <!-- 検品コード -->
+            <td class="o-table-td">
+              <span class="o-cell">{{ formatBarcode(row.barcode) }}</span>
+            </td>
+            <!-- カテゴリー -->
+            <td class="o-table-td">
+              <span class="o-cell category-badge" :class="`cat-${row.category || '0'}`">{{ getCategoryLabel(row.category) }}</span>
+            </td>
+            <!-- クール区分 -->
+            <td class="o-table-td">
+              <span class="o-cell" :style="{ color: getCoolTypeColor(row.coolType) }">{{ getCoolTypeLabel(row.coolType) }}</span>
+            </td>
+            <!-- メール便 -->
+            <td class="o-table-td">
+              <div class="mgmt-cell">
+                <span class="o-cell">{{ row.mailCalcEnabled ? 'する' : 'しない' }}</span>
+                <span v-if="row.mailCalcEnabled" class="o-cell" style="font-size:11px;color:#909399;">最大: {{ row.mailCalcMaxQuantity ?? '-' }}</span>
+              </div>
+            </td>
+            <!-- 商品金額 -->
+            <td class="o-table-td">
+              <span class="o-cell">{{ row.price != null ? `¥${row.price.toLocaleString()}` : '-' }}</span>
+            </td>
+            <!-- 在庫管理 -->
+            <td class="o-table-td">
+              <span class="o-cell" :style="{ color: row.inventoryEnabled ? '#67c23a' : '#909399' }">{{ row.inventoryEnabled ? 'する' : 'しない' }}</span>
+            </td>
+            <!-- 子SKU -->
+            <td class="o-table-td">
+              <OButton variant="secondary" size="sm" @click="openSubSkuDialog(row)">
+                {{ row.subSkus?.length ? row.subSkus.map((s: SubSku) => s.subSku).join(', ') : '-' }}
+              </OButton>
+            </td>
+            <!-- 作成日時 -->
+            <td class="o-table-td">
+              <span class="o-cell">{{ formatDate(row.createdAt) }}</span>
+            </td>
+            <!-- 操作 -->
+            <td class="o-table-td o-table-td--actions">
+              <div style="display:inline-flex;gap:4px;flex-wrap:wrap;">
+                <OButton variant="primary" size="sm" @click="openEdit(row)">編集</OButton>
+                <OButton variant="secondary" size="sm" @click="duplicateProduct(row)">複製</OButton>
+                <OButton variant="danger" size="sm" @click="confirmDelete(row)">削除</OButton>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-    <FormDialog
+    <!-- Pagination -->
+    <div class="o-table-pagination">
+      <span class="o-table-pagination__info">{{ filteredList.length }} 件</span>
+      <div class="o-table-pagination__controls">
+        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;">
+          <option :value="10">10</option>
+          <option :value="25">25</option>
+          <option :value="50">50</option>
+          <option :value="100">100</option>
+        </select>
+        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--">&lsaquo;</OButton>
+        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
+        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">&rsaquo;</OButton>
+      </div>
+    </div>
+
+    <ProductFormDialog
       v-model="dialogVisible"
+      ref="productFormDialogRef"
       :title="isEditing ? '商品を編集' : '商品を追加'"
-      :columns="formColumns"
+      :is-editing="isEditing"
       :initial-data="editingRow || { mailCalcEnabled: false }"
-      width="720px"
+      :edit-dialog-sub-skus="editDialogSubSkus"
+      :edit-dialog-sub-sku-validation-errors="editDialogSubSkuValidationErrors"
       @submit="handleDialogSubmitWithSubSkus"
-    >
-      <template #extra>
-        <ProductImageUpload
-          ref="imageUploadRef"
-          :image-url="editImageUrl"
-          @update:image-url="editImageUrl = $event"
-        />
-
-        <SubSkuInlineEditor
-          :sub-skus="editDialogSubSkus"
-          :validation-errors="editDialogSubSkuValidationErrors"
-          @add="addEditDialogSubSku"
-          @remove="removeEditDialogSubSku"
-          @validate="(index) => validateEditDialogSubSkuInput(index)"
-        />
-      </template>
-    </FormDialog>
+      @add-sub-sku="addEditDialogSubSku"
+      @remove-sub-sku="removeEditDialogSubSku"
+      @validate-sub-sku="(index: number) => validateEditDialogSubSkuInput(index)"
+    />
 
     <!-- Sub-SKU Management Dialog -->
     <SubSkuDialog
@@ -85,32 +246,217 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useToast } from '@/composables/useToast'
 import { getApiBaseUrl } from '@/api/base'
 import noImageSrc from '@/assets/images/no_image.png'
 import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
-import FormDialog from '@/components/form/FormDialog.vue'
+import ProductFormDialog from './product-settings/ProductFormDialog.vue'
 import ImportDialog from '@/components/import/ImportDialog.vue'
 import type { TableColumn, Operator } from '@/types/table'
 import { bulkUpdateProducts, checkSkuAvailability, createProduct, deleteProduct, fetchProducts, importProductsWithStrategy, updateProduct, type ImportStrategy } from '@/api/product'
 import type { Product, ProductFilters, UpsertProductDto, SubSku } from '@/types/product'
 import ImportResultDialog, { type ImportResultData } from '@/components/import/ImportResultDialog.vue'
-import ProductImageUpload from './product-settings/ProductImageUpload.vue'
-import SubSkuInlineEditor from './product-settings/SubSkuInlineEditor.vue'
 import SubSkuDialog from './product-settings/SubSkuDialog.vue'
 import { useSkuValidation } from './product-settings/useSkuValidation'
 
 const toast = useToast()
+
+// --- CSV Export ---
+const EXPORT_STORAGE_KEY = 'zelix_product_export_presets'
+
+interface ExportColumn {
+  key: string
+  label: string
+  getValue: (r: Product) => string | number
+}
+
+interface ExportPreset {
+  name: string
+  columns: string[]
+}
+
+const allExportColumns: ExportColumn[] = [
+  { key: 'sku', label: 'SKU管理番号', getValue: r => r.sku },
+  { key: 'name', label: '印刷用商品名', getValue: r => r.name },
+  { key: 'nameFull', label: '商品名', getValue: r => r.nameFull || '' },
+  { key: 'barcode', label: '検品コード', getValue: r => (r.barcode || []).join(' / ') },
+  { key: 'category', label: 'カテゴリー', getValue: r => { const m: Record<string, string> = { '0': '商品', '1': '消耗品', '2': '作業', '3': 'おまけ', '4': '部材' }; return m[r.category || '0'] || '商品' } },
+  { key: 'coolType', label: 'クール区分', getValue: r => { const m: Record<string, string> = { '0': '通常', '1': 'クール冷凍', '2': 'クール冷蔵' }; return m[r.coolType || ''] || '' } },
+  { key: 'mailCalcEnabled', label: 'メール便計算', getValue: r => r.mailCalcEnabled ? 'する' : 'しない' },
+  { key: 'mailCalcMaxQuantity', label: 'メール便最大数量', getValue: r => r.mailCalcMaxQuantity ?? '' },
+  { key: 'price', label: '商品金額', getValue: r => r.price ?? '' },
+  { key: 'handlingTypes', label: '荷扱い', getValue: r => (r.handlingTypes || []).join(' / ') },
+  { key: 'memo', label: 'メモ', getValue: r => r.memo || '' },
+  { key: 'subSkus', label: '子SKU', getValue: r => (r.subSkus || []).map(s => s.subSku).join(' / ') },
+  { key: 'customField1', label: '独自1', getValue: r => r.customField1 || '' },
+  { key: 'customField2', label: '独自2', getValue: r => r.customField2 || '' },
+  { key: 'customField3', label: '独自3', getValue: r => r.customField3 || '' },
+  { key: 'customField4', label: '独自4', getValue: r => r.customField4 || '' },
+  { key: 'width', label: '幅(mm)', getValue: r => r.width ?? '' },
+  { key: 'depth', label: '奥行(mm)', getValue: r => r.depth ?? '' },
+  { key: 'height', label: '高さ(mm)', getValue: r => r.height ?? '' },
+  { key: 'weight', label: '重量(g)', getValue: r => r.weight ?? '' },
+  { key: 'nameEn', label: '英語商品名', getValue: r => r.nameEn || '' },
+  { key: 'countryOfOrigin', label: '原産国', getValue: r => r.countryOfOrigin || '' },
+  { key: 'allocationRule', label: '引当規則', getValue: r => r.allocationRule || 'FIFO' },
+  { key: 'serialTrackingEnabled', label: 'シリアルNo管理', getValue: r => r.serialTrackingEnabled ? 'する' : 'しない' },
+  { key: 'inboundExpiryDays', label: '入庫期限日数', getValue: r => r.inboundExpiryDays ?? '' },
+  { key: 'imageUrl', label: '画像URL', getValue: r => r.imageUrl || '' },
+  { key: 'createdAt', label: '作成日時', getValue: r => r.createdAt ? new Date(r.createdAt).toLocaleString('ja-JP') : '' },
+  { key: 'updatedAt', label: '更新日時', getValue: r => r.updatedAt ? new Date(r.updatedAt).toLocaleString('ja-JP') : '' },
+]
+
+const showExportPanel = ref(false)
+const exportColumnKeys = ref<string[]>(allExportColumns.map(c => c.key))
+const exportPresets = ref<ExportPreset[]>([])
+const selectedExportPreset = ref('')
+
+const loadExportPresets = () => {
+  try {
+    const raw = localStorage.getItem(EXPORT_STORAGE_KEY)
+    exportPresets.value = raw ? JSON.parse(raw) : []
+  } catch { exportPresets.value = [] }
+}
+const persistExportPresets = () => {
+  localStorage.setItem(EXPORT_STORAGE_KEY, JSON.stringify(exportPresets.value))
+}
+const loadExportPreset = () => {
+  if (!selectedExportPreset.value) {
+    exportColumnKeys.value = allExportColumns.map(c => c.key)
+    return
+  }
+  const p = exportPresets.value.find(x => x.name === selectedExportPreset.value)
+  if (p) exportColumnKeys.value = [...p.columns]
+}
+const saveExportPreset = () => {
+  const name = prompt('プリセット名を入力してください:')
+  if (!name) return
+  const preset: ExportPreset = { name, columns: [...exportColumnKeys.value] }
+  const idx = exportPresets.value.findIndex(x => x.name === name)
+  if (idx >= 0) {
+    exportPresets.value = exportPresets.value.map((p, i) => i === idx ? preset : p)
+  } else {
+    exportPresets.value = [...exportPresets.value, preset]
+  }
+  persistExportPresets()
+  selectedExportPreset.value = name
+  toast.showSuccess(`プリセット「${name}」を保存しました`)
+}
+const deleteExportPreset = () => {
+  if (!selectedExportPreset.value) return
+  if (!confirm(`プリセット「${selectedExportPreset.value}」を削除しますか？`)) return
+  exportPresets.value = exportPresets.value.filter(p => p.name !== selectedExportPreset.value)
+  persistExportPresets()
+  selectedExportPreset.value = ''
+  exportColumnKeys.value = allExportColumns.map(c => c.key)
+}
+const exportCsv = () => {
+  const data = filteredList.value
+  if (data.length === 0) { toast.showError('エクスポートするデータがありません'); return }
+  const activeCols = allExportColumns.filter(c => exportColumnKeys.value.includes(c.key))
+  if (activeCols.length === 0) { toast.showError('出力する列を1つ以上選択してください'); return }
+  const headers = activeCols.map(c => c.label)
+  const csvRows = data.map(r => activeCols.map(c => c.getValue(r)))
+  const bom = '\uFEFF'
+  const csv = bom + [headers.join(','), ...csvRows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `商品マスター_${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+  toast.showSuccess(`${data.length}件をエクスポートしました`)
+}
+
+// --- Bulk delete ---
+const isBulkDeleting = ref(false)
+const handleBulkDelete = async () => {
+  if (selectedKeys.value.length === 0) return
+  if (!confirm(`${selectedKeys.value.length}件の商品を削除しますか？この操作は取り消せません。`)) return
+  isBulkDeleting.value = true
+  let successCount = 0
+  let failCount = 0
+  for (const id of selectedKeys.value) {
+    try {
+      await deleteProduct(id)
+      successCount++
+    } catch {
+      failCount++
+    }
+  }
+  isBulkDeleting.value = false
+  selectedKeys.value = []
+  if (successCount > 0) toast.showSuccess(`${successCount}件を削除しました`)
+  if (failCount > 0) toast.showError(`${failCount}件の削除に失敗しました`)
+  await loadList()
+}
+
+// --- Category ---
+const CATEGORY_OPTIONS = [
+  { label: '商品', value: '0' },
+  { label: '消耗品', value: '1' },
+  { label: '作業', value: '2' },
+  { label: 'おまけ', value: '3' },
+  { label: '部材', value: '4' },
+]
+const getCategoryLabel = (val?: string) => {
+  const found = CATEGORY_OPTIONS.find(o => o.value === val)
+  return found?.label || '商品'
+}
+
+// --- Barcode bulk generate ---
+const isBulkBarcode = ref(false)
+const handleBulkBarcodeGenerate = async () => {
+  const targets = list.value.filter(r => selectedKeys.value.includes(r._id) && (!r.barcode || r.barcode.length === 0))
+  if (targets.length === 0) {
+    toast.showError('選択された商品にバーコード未設定の商品がありません')
+    return
+  }
+  if (!confirm(`${targets.length}件の商品にバーコードを自動生成しますか？\n（SKUコードをバーコードとして設定します）`)) return
+  isBulkBarcode.value = true
+  let successCount = 0
+  let failCount = 0
+  for (const p of targets) {
+    try {
+      await updateProduct(p._id, { barcode: [p.sku] })
+      successCount++
+    } catch {
+      failCount++
+    }
+  }
+  isBulkBarcode.value = false
+  if (successCount > 0) toast.showSuccess(`${successCount}件にバーコードを設定しました`)
+  if (failCount > 0) toast.showError(`${failCount}件の設定に失敗しました`)
+  await loadList()
+}
 
 const COOL_TYPE_OPTIONS = [
   { label: '通常', value: '0' },
   { label: 'クール冷凍', value: '1' },
   { label: 'クール冷蔵', value: '2' },
 ]
+
+const COOL_TYPE_COLORS: Record<string, string> = {
+  '0': '#666',
+  '1': '#1d4ed8',
+  '2': '#0e7490',
+}
+
+const getCoolTypeLabel = (val?: string) => {
+  const found = COOL_TYPE_OPTIONS.find((o) => o.value === val)
+  return found?.label || '-'
+}
+
+const getCoolTypeColor = (val?: string) => COOL_TYPE_COLORS[val || ''] || '#666'
+
+const formatBarcode = (bc: any) => {
+  if (!Array.isArray(bc) || bc.length === 0) return '-'
+  return bc.join(', ')
+}
 
 const list = ref<Product[]>([])
 const loading = ref(false)
@@ -128,7 +474,13 @@ const dialogVisible = ref(false)
 const showImportDialog = ref(false)
 const editingRow = ref<Product | null>(null)
 const globalSearchText = ref('')
-const selectedKeys = ref<(string | number)[]>([])
+const selectedKeys = ref<string[]>([])
+
+// Pagination & sorting
+const currentPage = ref(1)
+const pageSize = ref(25)
+const sortKey = ref<string | null>(null)
+const sortOrder = ref<'asc' | 'desc'>('asc')
 
 // Sub-SKU management (separate dialog)
 const subSkuDialogVisible = ref(false)
@@ -136,9 +488,8 @@ const subSkuEditingProduct = ref<Product | null>(null)
 const tempSubSkus = ref<SubSku[]>([])
 const savingSubSkus = ref(false)
 
-// Image upload state
-const editImageUrl = ref<string>('')
-const imageUploadRef = ref<InstanceType<typeof ProductImageUpload> | null>(null)
+// Product form dialog ref
+const productFormDialogRef = ref<InstanceType<typeof ProductFormDialog> | null>(null)
 
 // Sub-SKU management (edit dialog inline)
 const editDialogSubSkus = ref<SubSku[]>([])
@@ -233,7 +584,6 @@ const baseColumns: TableColumn[] = [
     required: false,
     searchable: false,
     min: 1,
-    // Conditional behavior: required when mailCalcEnabled is true, disabled otherwise
     disabledWhen: (formData: Record<string, any>) => !formData.mailCalcEnabled,
     requiredWhen: (formData: Record<string, any>) => formData.mailCalcEnabled === true,
   },
@@ -293,110 +643,80 @@ const resolveImageUrl = (url?: string): string => {
   return `${API_BASE}${url}`
 }
 
-const tableColumns: TableColumn[] = [
-  ...baseColumns.map((col) => {
-    if (col.key === 'imageUrl') {
-      return {
-        ...col,
-        cellRenderer: ({ rowData }: { rowData: Product }) => {
-          return h('img', {
-            src: resolveImageUrl(rowData.imageUrl),
-            style: 'width:80px;height:80px;object-fit:cover;object-position:center;border-radius:4px;',
-            onError: (e: Event) => { (e.target as HTMLImageElement).src = noImageSrc },
-          })
-        },
-      }
-    }
-    if (col.key === 'createdAt') {
-      return { ...col, cellRenderer: ({ rowData }: { rowData: Product }) => formatDate(rowData.createdAt) }
-    }
-    if (col.key === 'barcode') {
-      return {
-        ...col,
-        cellRenderer: ({ rowData }: { rowData: Product }) => {
-          const bc = (rowData as any).barcode
-          if (!Array.isArray(bc) || bc.length === 0) return '-'
-          return bc.join(', ')
-        },
-      }
-    }
-    if (col.key === 'coolType') {
-      return {
-        ...col,
-        cellRenderer: ({ rowData }: { rowData: Product }) => {
-          const found = COOL_TYPE_OPTIONS.find((o) => o.value === rowData.coolType)
-          return found?.label || '-'
-        },
-      }
-    }
-    if (col.key === 'mailCalcEnabled') {
-      return {
-        ...col,
-        cellRenderer: ({ rowData }: { rowData: Product }) => {
-          return rowData.mailCalcEnabled ? 'する' : 'しない'
-        },
-      }
-    }
-    if (col.key === 'mailCalcMaxQuantity') {
-      return {
-        ...col,
-        cellRenderer: ({ rowData }: { rowData: Product }) => {
-          if (!rowData.mailCalcEnabled) return '-'
-          return rowData.mailCalcMaxQuantity ?? '-'
-        },
-      }
-    }
-    // handlingTypes array
-    if (col.key === 'handlingTypes') {
-      return {
-        ...col,
-        cellRenderer: ({ rowData }: { rowData: Product }) => {
-          const ht = rowData.handlingTypes
-          if (!Array.isArray(ht) || ht.length === 0) return '-'
-          return ht.join(', ')
-        },
-      }
-    }
-    // subSkusCount column with button to open sub-SKU dialog
-    if (col.key === 'subSkusCount') {
-      return {
-        ...col,
-        cellRenderer: ({ rowData }: { rowData: Product }) => {
-          const subSkus = rowData.subSkus || []
-          const displayText = subSkus.length > 0
-            ? subSkus.map((s) => s.subSku).join(', ')
-            : '-'
-          return h(
-            OButton,
-            {
-              variant: 'secondary',
-              size: 'sm',
-              onClick: () => openSubSkuDialog(rowData),
-            },
-            () => displayText,
-          )
-        },
-      }
-    }
-    return {
-      ...col,
-      cellRenderer: ({ rowData }: { rowData: Product }) => (rowData as any)[col.dataKey || col.key] ?? '-',
-    }
-  }),
-  {
-    key: 'actions',
-    title: '操作',
-    width: 200,
-    cellRenderer: ({ rowData }: { rowData: Product }) =>
-      h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateProduct(rowData) }, () => '複製'),
-        h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
-      ]),
-  },
-]
+// Filtered + sorted list
+const filteredList = computed(() => {
+  let rows = [...list.value]
+  // Global search text filtering
+  if (globalSearchText.value) {
+    const q = globalSearchText.value.toLowerCase()
+    rows = rows.filter((r) => {
+      const searchable = [r.sku, r.name, r.nameFull, ...(r.barcode || [])].filter(Boolean).join(' ').toLowerCase()
+      return searchable.includes(q)
+    })
+  }
+  // Sort
+  if (sortKey.value) {
+    const key = sortKey.value
+    const dir = sortOrder.value === 'asc' ? 1 : -1
+    rows.sort((a, b) => {
+      const va = (a as any)[key] ?? ''
+      const vb = (b as any)[key] ?? ''
+      return va < vb ? -dir : va > vb ? dir : 0
+    })
+  }
+  return rows
+})
 
-const formColumns = baseColumns.filter((col) => col.formEditable !== false)
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredList.value.length / pageSize.value)))
+
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredList.value.slice(start, start + pageSize.value)
+})
+
+// Reset page when data changes
+watch(filteredList, () => {
+  if (currentPage.value > totalPages.value) currentPage.value = 1
+})
+
+const isAllCurrentPageSelected = computed(() => {
+  if (paginatedRows.value.length === 0) return false
+  return paginatedRows.value.every((r) => selectedKeys.value.includes(r._id))
+})
+
+const isSomeCurrentPageSelected = computed(() => {
+  return paginatedRows.value.some((r) => selectedKeys.value.includes(r._id))
+})
+
+const toggleSelectAll = () => {
+  const pageIds = paginatedRows.value.map((r) => r._id)
+  if (isAllCurrentPageSelected.value) {
+    selectedKeys.value = selectedKeys.value.filter((k) => !pageIds.includes(k))
+  } else {
+    const existing = new Set(selectedKeys.value)
+    for (const id of pageIds) existing.add(id)
+    selectedKeys.value = [...existing]
+  }
+}
+
+const toggleRowSelection = (row: Product) => {
+  const id = row._id
+  const idx = selectedKeys.value.indexOf(id)
+  if (idx >= 0) {
+    selectedKeys.value = selectedKeys.value.filter((k) => k !== id)
+  } else {
+    selectedKeys.value = [...selectedKeys.value, id]
+  }
+}
+
+const handleSortClick = (field: string) => {
+  if (sortKey.value === field) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = field
+    sortOrder.value = 'asc'
+  }
+}
 
 const currentFilters = ref<ProductFilters>({})
 
@@ -408,8 +728,6 @@ const resetForm = () => {
 
 const openCreate = () => {
   resetForm()
-  editImageUrl.value = ''
-  imageUploadRef.value?.resetUrlInput()
   editDialogSubSkus.value = []
   resetEditDialogErrors()
   resetDialogErrors()
@@ -418,9 +736,6 @@ const openCreate = () => {
 
 const openEdit = (row: Product) => {
   editingRow.value = row
-  editImageUrl.value = row.imageUrl || ''
-  imageUploadRef.value?.resetUrlInput()
-  // Clone subSkus for editing in the dialog
   editDialogSubSkus.value = (row.subSkus || []).map((s) => ({ ...s }))
   resetEditDialogErrors()
   resetDialogErrors()
@@ -428,15 +743,12 @@ const openEdit = (row: Product) => {
 }
 
 const duplicateProduct = (row: Product) => {
-  // Open as new product (empty _id → isEditing = false), with SKU and subSkus cleared
   editingRow.value = {
     ...row,
     _id: '',
     sku: '',
     subSkus: [],
   } as Product
-  editImageUrl.value = row.imageUrl || ''
-  imageUploadRef.value?.resetUrlInput()
   editDialogSubSkus.value = []
   resetEditDialogErrors()
   resetDialogErrors()
@@ -499,16 +811,13 @@ const validateEditDialogSubSkuInput = async (index: number) => {
 const saveSubSkus = async () => {
   if (!subSkuEditingProduct.value) return
 
-  // Check if there are any validation errors
   if (Object.keys(subSkuValidationErrors.value).length > 0) {
     toast.showWarning('入力エラーがあります。修正してください。')
     return
   }
 
-  // Validate sub-SKUs
   const validSubSkus = tempSubSkus.value.filter((s) => s.subSku && s.subSku.trim())
 
-  // Check for duplicates within the list
   const codes = validSubSkus.map((s) => s.subSku.trim())
   const uniqueCodes = new Set(codes)
   if (uniqueCodes.size !== codes.length) {
@@ -516,13 +825,11 @@ const saveSubSkus = async () => {
     return
   }
 
-  // Check if any sub-SKU matches the parent SKU
   if (codes.includes(subSkuEditingProduct.value.sku)) {
     toast.showWarning('子SKUコードは親SKUと同じにできません')
     return
   }
 
-  // Validate all sub-SKUs against database
   if (codes.length > 0) {
     const excludeId = subSkuEditingProduct.value._id
     const results = await checkSkuAvailability(codes, excludeId)
@@ -538,7 +845,7 @@ const saveSubSkus = async () => {
       }
     }
     if (conflictErrors.length > 0) {
-      toast.showWarning(conflictErrors[0])
+      toast.showWarning(conflictErrors[0] ?? '')
       return
     }
   }
@@ -564,7 +871,6 @@ const saveSubSkus = async () => {
 }
 
 const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
-  // Extract global search text (client-side only, strip from payload)
   if (payload.__global?.value) {
     globalSearchText.value = String(payload.__global.value).trim()
     delete payload.__global
@@ -639,14 +945,14 @@ const normalizeArrayInput = (val: any): string[] => {
   return [String(val).trim()].filter((x) => x.length > 0)
 }
 
-const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
-  // Check if there are any validation errors
+const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>, imageUrl: string) => {
   if (Object.keys(editDialogSubSkuValidationErrors.value).length > 0) {
     toast.showWarning('子SKUに入力エラーがあります。修正してください。')
     return
   }
 
   saving.value = true
+  if (productFormDialogRef.value) productFormDialogRef.value.submitting = true
   try {
     const normalizeMailCalcEnabled = (val: any): boolean => {
       if (val === true || val === 'true' || val === '1' || val === 'する') return true
@@ -667,7 +973,6 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
       return Number.isFinite(n) ? n : undefined
     }
 
-    // Validate sub-SKUs from edit dialog
     const validSubSkus = editDialogSubSkus.value.filter((s) => s.subSku && s.subSku.trim())
     const subSkuCodes = validSubSkus.map((s) => s.subSku.trim())
     const uniqueSubSkuCodes = new Set(subSkuCodes)
@@ -683,7 +988,6 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
       return
     }
 
-    // Validate main SKU uniqueness against database
     const mainSkuError = await validateMainSkuInput(parentSku, editingRow.value?._id)
     if (mainSkuError) {
       toast.showWarning(mainSkuError)
@@ -691,7 +995,6 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
       return
     }
 
-    // Validate all sub-SKUs against database
     if (subSkuCodes.length > 0) {
       const excludeId = editingRow.value?._id
       const results = await checkSkuAvailability(subSkuCodes, excludeId)
@@ -707,14 +1010,13 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
         }
       }
       if (conflictErrors.length > 0) {
-        toast.showWarning(conflictErrors[0]) // Show first error
+        toast.showWarning(conflictErrors[0] ?? '')
         saving.value = false
         return
       }
     }
 
     const mailCalcEnabledValue = normalizeMailCalcEnabled(payload.mailCalcEnabled)
-    // Only set mailCalcMaxQuantity if mailCalcEnabled is true
     const mailCalcMaxQuantityValue = mailCalcEnabledValue
       ? normalizeMailCalcMaxQuantity(payload.mailCalcMaxQuantity)
       : undefined
@@ -730,8 +1032,22 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
       memo: payload.memo ? String(payload.memo).trim() : undefined,
       price: normalizeOptionalNumber(payload.price),
       handlingTypes: normalizeArrayInput(payload.handlingTypes),
-      imageUrl: editImageUrl.value || undefined,
-      // Include sub-SKUs
+      imageUrl: imageUrl || undefined,
+      inventoryEnabled: payload.inventoryEnabled === true || payload.inventoryEnabled === 'true',
+      category: payload.category || undefined,
+      customField1: payload.customField1 ? String(payload.customField1).trim() : undefined,
+      customField2: payload.customField2 ? String(payload.customField2).trim() : undefined,
+      customField3: payload.customField3 ? String(payload.customField3).trim() : undefined,
+      customField4: payload.customField4 ? String(payload.customField4).trim() : undefined,
+      width: normalizeOptionalNumber(payload.width),
+      depth: normalizeOptionalNumber(payload.depth),
+      height: normalizeOptionalNumber(payload.height),
+      weight: normalizeOptionalNumber(payload.weight),
+      nameEn: payload.nameEn ? String(payload.nameEn).trim() : undefined,
+      countryOfOrigin: payload.countryOfOrigin ? String(payload.countryOfOrigin).trim() : undefined,
+      allocationRule: payload.allocationRule || 'FIFO',
+      serialTrackingEnabled: payload.serialTrackingEnabled === true || payload.serialTrackingEnabled === 'true',
+      inboundExpiryDays: normalizeOptionalNumber(payload.inboundExpiryDays),
       subSkus: validSubSkus.map((s) => ({
         subSku: s.subSku.trim(),
         price: s.price,
@@ -754,23 +1070,7 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
     toast.showError(error?.response?.data?.message || error?.message || '保存に失敗しました')
   } finally {
     saving.value = false
-  }
-}
-
-const handleBulkEdit = async (payload: { columnKey: string; dataKey: string; fieldType?: string; value: any; overwrite: boolean; selectedKeys: (string | number)[]; selectedRows: Record<string, any>[] }) => {
-  const { dataKey, value, selectedKeys: keys } = payload
-  if (!keys || keys.length === 0) {
-    toast.showWarning('商品が選択されていません')
-    return
-  }
-  try {
-    const updates = { [dataKey]: value }
-    const result = await bulkUpdateProducts(keys.map(String), updates)
-    toast.showSuccess(`${result.modifiedCount}件更新しました`)
-    await loadList()
-    selectedKeys.value = []
-  } catch (error: any) {
-    toast.showError(error?.message || '一括更新に失敗しました')
+    if (productFormDialogRef.value) productFormDialogRef.value.submitting = false
   }
 }
 
@@ -789,7 +1089,6 @@ const handleImportProducts = async (rows: any[], strategy: ImportStrategy = 'err
   try {
     const result = await importProductsWithStrategy(rows, strategy)
 
-    // 結果を保存
     importResult.value = {
       insertedCount: result.insertedCount,
       updatedCount: result.updatedCount,
@@ -798,7 +1097,6 @@ const handleImportProducts = async (rows: any[], strategy: ImportStrategy = 'err
       errors: [],
     }
 
-    // 成功メッセージを表示
     const messages: string[] = []
     if (result.insertedCount > 0) messages.push(`${result.insertedCount}件登録`)
     if (result.updatedCount > 0) messages.push(`${result.updatedCount}件更新`)
@@ -808,7 +1106,6 @@ const handleImportProducts = async (rows: any[], strategy: ImportStrategy = 'err
       toast.showSuccess(messages.join('、') + 'しました')
     }
 
-    // スキップまたは更新がある場合は結果ダイアログを表示
     if (result.skippedCount > 0 || result.updatedCount > 0) {
       importResultDialogVisible.value = true
     }
@@ -857,25 +1154,85 @@ const formatDate = (iso: string) => {
 }
 
 onMounted(() => {
+  loadExportPresets()
   loadList()
 })
 </script>
 
 <style scoped>
+@import '@/styles/order-table.css';
+
 .product-settings {
   display: flex;
   flex-direction: column;
 }
 
 .search-section {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
-:deep(.action-cell) {
-  display: inline-flex;
-  align-items: center;
+.product-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 4px;
+  border: 1px solid var(--o-border-color, #e0e0e0);
+}
+
+.o-card {
+  background: var(--o-view-background, #fff);
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.export-panel {
+  background: var(--o-gray-50, #fafafa);
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--o-gray-700, #303133);
+  margin: 0;
+}
+
+.export-col-grid {
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
+.export-col-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s;
+}
 
+.export-col-item--active {
+  background: #e8f5e9;
+  border-color: #66bb6a;
+  color: #2e7d32;
+}
+
+.category-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.cat-0 { background: #e8f5e9; color: #2e7d32; }
+.cat-1 { background: #fff3e0; color: #e65100; }
+.cat-2 { background: #e3f2fd; color: #1565c0; }
+.cat-3 { background: #fce4ec; color: #c62828; }
+.cat-4 { background: #f3e5f5; color: #6a1b9a; }
 </style>

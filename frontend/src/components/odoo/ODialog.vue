@@ -1,17 +1,21 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import OButton from './OButton.vue'
 
 const { t } = useI18n()
 
 interface Props {
-  open: boolean
+  open?: boolean
+  modelValue?: boolean
   title?: string
   size?: 'sm' | 'md' | 'lg' | 'xl'
   danger?: boolean
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
+  open: undefined,
+  modelValue: undefined,
   title: '',
   size: 'md',
   danger: false,
@@ -20,7 +24,15 @@ withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   close: []
   confirm: []
+  'update:modelValue': [value: boolean]
 }>()
+
+const isOpen = computed(() => props.modelValue ?? props.open ?? false)
+
+function handleClose() {
+  emit('close')
+  emit('update:modelValue', false)
+}
 
 
 </script>
@@ -28,20 +40,20 @@ const emit = defineEmits<{
 <template>
   <Teleport to="body">
     <Transition name="o-dialog">
-      <div v-if="open" class="o-dialog-backdrop">
+      <div v-if="isOpen" class="o-dialog-backdrop">
         <div class="o-dialog" :class="[`o-dialog--${size}`]">
           <div class="o-dialog-header">
             <h4 class="o-dialog-title">
               <slot name="title">{{ title }}</slot>
             </h4>
-            <button class="o-dialog-close" @click="emit('close')">&times;</button>
+            <button class="o-dialog-close" @click="handleClose()">&times;</button>
           </div>
           <div class="o-dialog-body">
             <slot />
           </div>
           <div class="o-dialog-footer">
             <slot name="footer">
-              <OButton variant="secondary" @click="emit('close')">{{ t('dialog.cancel') }}</OButton>
+              <OButton variant="secondary" @click="handleClose()">{{ t('dialog.cancel') }}</OButton>
               <OButton
                 :variant="danger ? 'danger' : 'primary'"
                 @click="emit('confirm')"

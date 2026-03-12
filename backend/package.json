@@ -13,7 +13,9 @@
     "format": "prettier --write \"src/**/*.{ts,js,json}\" && prettier --write \"docs/**/*.md\"",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
     "seed:b2-mapping": "ts-node -r tsconfig-paths/register src/scripts/seedB2Mapping.ts",
-    "db:clear": "ts-node -r tsconfig-paths/register src/scripts/clearDb.ts"
+    "db:clear": "ts-node -r tsconfig-paths/register src/scripts/clearDb.ts",
+    "db:dump": "ts-node -r tsconfig-paths/register src/scripts/dumpDb.ts",
+    "db:restore": "ts-node -r tsconfig-paths/register src/scripts/restoreDb.ts"
   },
   "engines": {
     "node": ">=20.0.0",

@@ -12,20 +12,23 @@ const { locale, setLocale, availableLocales } = useI18n()
 // ---------------------------------------------------------------------------
 // Menu state
 // ---------------------------------------------------------------------------
-const showAppSwitcher = ref(false)
 const showUserMenu = ref(false)
 const showLangMenu = ref(false)
 const mobileSidebarOpen = ref(false)
 
 // ZELIXWMS main navigation
 const wmsMenuItems = computed(() => [
-  { label: 'ホーム', to: '/home', icon: '🏠' },
-  { label: '商品管理', to: '/products', icon: '🏷️' },
-  { label: '出荷指示', to: '/shipment-orders', icon: '📝' },
-  { label: '送り状管理', to: '/waybill-management', icon: '🚚' },
-  { label: '出荷作業', to: '/shipment-operations', icon: '📦' },
-  { label: '出荷実績', to: '/shipment-results', icon: '📊' },
-  { label: '設定', to: '/settings', icon: '⚙️' },
+  { label: '入庫管理', to: '/inbound' },
+  { label: '在庫管理', to: '/inventory' },
+  { label: '商品管理', to: '/products' },
+  { label: 'セット組管理', to: '/set-products' },
+  { label: '出荷指示', to: '/shipment-orders' },
+  { label: '出荷作業', to: '/shipment-operations' },
+  { label: '出荷実績', to: '/shipment-results' },
+  { label: '棚卸管理', to: '/stocktaking' },
+  { label: '返品管理', to: '/returns' },
+  { label: '日次管理', to: '/daily' },
+  { label: '設定管理', to: '/settings' },
 ])
 
 // ---------------------------------------------------------------------------
@@ -39,14 +42,15 @@ interface SubMenuItem {
 const subMenuMap: Record<string, SubMenuItem[]> = {
   '/products': [
     { label: '商品設定', to: '/products/list' },
+    { label: 'バーコード管理', to: '/products/barcodes' },
+  ],
+  '/set-products': [
+    { label: 'セット組一覧', to: '/set-products/list' },
+    { label: 'セット組制作指示', to: '/set-products/assembly' },
+    { label: '指示履歴', to: '/set-products/history' },
   ],
   '/shipment-orders': [
     { label: '出荷指示作成', to: '/shipment-orders/create' },
-    { label: '出荷指示確定', to: '/shipment-orders/confirm' },
-  ],
-  '/waybill-management': [
-    { label: 'データ出力', to: '/waybill-management/export' },
-    { label: 'データ取込', to: '/waybill-management/import' },
   ],
   '/shipment-operations': [
     { label: '出荷作業一覧', to: '/shipment-operations/tasks' },
@@ -55,6 +59,32 @@ const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'N-1検品', to: '/shipment-operations/n-by-one/inspection' },
   ],
   '/shipment-results': [],
+  '/inbound': [
+    { label: '入庫ダッシュボード', to: '/inbound/dashboard' },
+    { label: '入庫指示一覧', to: '/inbound/orders' },
+    { label: '入庫指示作成', to: '/inbound/create' },
+    { label: 'CSV取込', to: '/inbound/import' },
+    { label: '入庫実績', to: '/inbound/history' },
+  ],
+  '/inventory': [
+    { label: '在庫一覧', to: '/inventory/stock' },
+    { label: '入出庫履歴', to: '/inventory/movements' },
+    { label: '在庫調整', to: '/inventory/adjustments' },
+    { label: 'ロット管理', to: '/inventory/lots' },
+    { label: '賞味期限アラート', to: '/inventory/expiry-alerts' },
+    { label: 'ロケーション', to: '/inventory/locations' },
+  ],
+  '/stocktaking': [
+    { label: '棚卸一覧', to: '/stocktaking/list' },
+    { label: '棚卸作成', to: '/stocktaking/create' },
+  ],
+  '/returns': [
+    { label: '返品一覧', to: '/returns/list' },
+    { label: '返品作成', to: '/returns/create' },
+  ],
+  '/daily': [
+    { label: '日次レポート', to: '/daily/list' },
+  ],
   '/settings': [
     { label: '基本設定', to: '/settings/basic' },
     { label: 'ご依頼主設定', to: '/settings/orderSourceCompany' },
@@ -66,6 +96,14 @@ const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '配送業者自動化', to: '/settings/carrier-automation' },
     { label: '検品グループ', to: '/settings/order-groups' },
     { label: '自動処理', to: '/settings/auto-processing' },
+    { label: '出荷メール設定', to: '/settings/email-templates' },
+    { label: '得意先一覧', to: '/settings/customers' },
+    { label: '仕入先一覧', to: '/settings/suppliers' },
+    { label: '在庫区分', to: '/settings/inventory-categories' },
+    { label: '操作ログ', to: '/settings/operation-logs' },
+    { label: 'API連携ログ', to: '/settings/api-logs' },
+    { label: 'WMSスケジュール', to: '/settings/wms-schedules' },
+    { label: '応用設定', to: '/settings/system' },
   ],
 }
 
@@ -84,19 +122,6 @@ function isSubActive(to: string) {
   return route.path === to || route.path.startsWith(to + '/')
 }
 
-const allApps = computed(() => [
-  ...wmsMenuItems.value,
-  { label: '出荷指示作成', to: '/shipment-orders/create', icon: '➕' },
-  { label: '出荷指示確定', to: '/shipment-orders/confirm', icon: '✅' },
-  { label: 'データ出力', to: '/waybill-management/export', icon: '📤' },
-  { label: 'データ取込', to: '/waybill-management/import', icon: '📥' },
-  { label: '1-1検品', to: '/shipment-operations/one-by-one/inspection', icon: '🔍' },
-  { label: 'N-1検品', to: '/shipment-operations/n-by-one/inspection', icon: '🔎' },
-  { label: '配送業者設定', to: '/settings/carrier', icon: '🚛' },
-  { label: '印刷テンプレート', to: '/settings/print-templates', icon: '🖨️' },
-  { label: 'ファイルレイアウト', to: '/settings/mapping-patterns', icon: '📋' },
-])
-
 function isActive(to: string) {
   if (to === '/home') return route.path === '/home' || route.path === '/'
   return route.path.startsWith(to)
@@ -104,7 +129,6 @@ function isActive(to: string) {
 
 function navigateTo(to: string) {
   router.push(to)
-  showAppSwitcher.value = false
   mobileSidebarOpen.value = false
 }
 
@@ -113,7 +137,6 @@ function navigateTo(to: string) {
 // ---------------------------------------------------------------------------
 function closeMenus(e: MouseEvent) {
   const target = e.target as HTMLElement
-  if (!target.closest('.o-navbar-apps-menu')) showAppSwitcher.value = false
   if (!target.closest('.o-user-menu')) showUserMenu.value = false
   if (!target.closest('.o-lang-switcher')) showLangMenu.value = false
 }
@@ -142,42 +165,25 @@ watch(() => route.path, () => {
         </svg>
       </button>
 
-      <!-- App Switcher -->
-      <div class="o-navbar-apps-menu" @click.stop>
-        <button
-          class="o-navbar-entry"
-          :class="{ active: showAppSwitcher }"
-          title="Home menu"
-          @click="showAppSwitcher = !showAppSwitcher"
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-            <rect x="1" y="1" width="4" height="4" rx="1"/>
-            <rect x="7" y="1" width="4" height="4" rx="1"/>
-            <rect x="13" y="1" width="4" height="4" rx="1"/>
-            <rect x="1" y="7" width="4" height="4" rx="1"/>
-            <rect x="7" y="7" width="4" height="4" rx="1"/>
-            <rect x="13" y="7" width="4" height="4" rx="1"/>
-            <rect x="1" y="13" width="4" height="4" rx="1"/>
-            <rect x="7" y="13" width="4" height="4" rx="1"/>
-            <rect x="13" y="13" width="4" height="4" rx="1"/>
-          </svg>
-        </button>
-
-        <div v-if="showAppSwitcher" class="o-app-switcher-dropdown">
-          <div class="o-app-grid">
-            <button
-              v-for="app in allApps"
-              :key="app.to"
-              class="o-app-tile"
-              :class="{ active: isActive(app.to) }"
-              @click="navigateTo(app.to)"
-            >
-              <span class="o-app-tile-icon">{{ app.icon }}</span>
-              <span class="o-app-tile-label">{{ app.label }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- Home button -->
+      <button
+        class="o-navbar-entry o-home-btn"
+        :class="{ active: isActive('/home') }"
+        title="ホーム"
+        @click="navigateTo('/home')"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+          <rect x="1" y="1" width="4" height="4" rx="1"/>
+          <rect x="7" y="1" width="4" height="4" rx="1"/>
+          <rect x="13" y="1" width="4" height="4" rx="1"/>
+          <rect x="1" y="7" width="4" height="4" rx="1"/>
+          <rect x="7" y="7" width="4" height="4" rx="1"/>
+          <rect x="13" y="7" width="4" height="4" rx="1"/>
+          <rect x="1" y="13" width="4" height="4" rx="1"/>
+          <rect x="7" y="13" width="4" height="4" rx="1"/>
+          <rect x="13" y="13" width="4" height="4" rx="1"/>
+        </svg>
+      </button>
 
       <!-- Menu entries -->
       <div class="o-navbar-menu" :class="{ 'o-mobile-open': mobileSidebarOpen }">
@@ -188,7 +194,6 @@ watch(() => route.path, () => {
           :class="{ active: isActive(item.to) }"
           @click="navigateTo(item.to)"
         >
-          <span class="o-navbar-entry-icon">{{ item.icon }}</span>
           {{ item.label }}
         </button>
       </div>
@@ -305,73 +310,8 @@ watch(() => route.path, () => {
   font-size: var(--o-font-size-base);
 }
 
-.o-navbar-apps-menu {
-  position: relative;
-  height: 100%;
-  display: flex;
-  align-items: center;
-}
-.o-navbar-apps-menu > .o-navbar-entry {
-  height: 100%;
+.o-home-btn {
   padding: 0 14px;
-  display: flex;
-  align-items: center;
-  color: var(--NavBar-entry-color);
-  border: none;
-  background: none;
-}
-.o-navbar-apps-menu > .o-navbar-entry:hover,
-.o-navbar-apps-menu > .o-navbar-entry.active {
-  background: var(--NavBar-entry-bg-hover);
-}
-
-.o-app-switcher-dropdown {
-  position: absolute;
-  top: var(--o-navbar-height);
-  left: 0;
-  width: 360px;
-  background: var(--o-view-background);
-  border: 1px solid var(--o-border-color);
-  border-radius: 0 0 var(--o-border-radius-lg) var(--o-border-radius-lg);
-  box-shadow: var(--o-shadow-lg);
-  z-index: 1001;
-  padding: 0.75rem;
-}
-.o-app-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.25rem;
-}
-.o-app-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.75rem 0.5rem;
-  border: none;
-  background: none;
-  border-radius: var(--o-border-radius);
-  cursor: pointer;
-  transition: background 0.1s;
-}
-.o-app-tile:hover { background: var(--o-gray-100); }
-.o-app-tile.active { background: var(--o-brand-lighter); }
-.o-app-tile-icon {
-  font-size: 1.75rem;
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--o-gray-100);
-  border-radius: 8px;
-}
-.o-app-tile.active .o-app-tile-icon { background: var(--o-brand-lightest); }
-.o-app-tile-label {
-  font-size: 0.6875rem;
-  color: var(--o-gray-700);
-  text-align: center;
-  line-height: 1.2;
 }
 
 .o-navbar-menu {
@@ -408,7 +348,6 @@ watch(() => route.path, () => {
   color: #fff;
   font-weight: 500;
 }
-.o-navbar-entry-icon { margin-right: 6px; font-size: 1rem; }
 
 .o-navbar-systray {
   display: flex;

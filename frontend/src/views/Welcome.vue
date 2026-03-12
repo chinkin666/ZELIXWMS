@@ -65,12 +65,6 @@ const quickNavCards = [
     path: '/shipment-orders/create'
   },
   {
-    title: '出荷指示確定',
-    description: '出荷指示を確定・管理',
-    emoji: '☰',
-    path: '/shipment-orders/confirm'
-  },
-  {
     title: '出荷作業一覧',
     description: '出荷作業を管理',
     emoji: '☰',
@@ -91,15 +85,6 @@ const modules = [
     ]
   },
   {
-    name: '送り状管理',
-    emoji: '📍',
-    path: '/waybill-management/export',
-    features: [
-      '配送業者データ出力',
-      '配送業者データ取込'
-    ]
-  },
-  {
     name: '出荷作業',
     emoji: '📋',
     path: '/shipment-operations/tasks',
@@ -110,7 +95,57 @@ const modules = [
     ]
   },
   {
-    name: '設定',
+    name: '入庫管理',
+    emoji: '📥',
+    path: '/inbound/dashboard',
+    features: [
+      '入庫ダッシュボード・CSV取込',
+      '3種検品（スキャン・数量入力・一括）',
+      '棚入れ（ロケーション割当）・入庫実績'
+    ]
+  },
+  {
+    name: '在庫管理',
+    emoji: '📦',
+    path: '/inventory/stock',
+    features: [
+      '在庫一覧・集計',
+      '入出庫履歴',
+      '在庫調整・ロケーション管理'
+    ]
+  },
+  {
+    name: '棚卸管理',
+    emoji: '📋',
+    path: '/stocktaking/list',
+    features: [
+      '全棚卸・循環棚卸・スポット棚卸',
+      '実数量カウント・差異確認',
+      '棚卸調整の在庫反映'
+    ]
+  },
+  {
+    name: '返品管理',
+    emoji: '🔄',
+    path: '/returns/list',
+    features: [
+      '返品受付・検品',
+      '良品再入庫・不良廃棄判定',
+      '元出荷指示との紐付け'
+    ]
+  },
+  {
+    name: '日次管理',
+    emoji: '📅',
+    path: '/daily/list',
+    features: [
+      '日次レポート自動集計',
+      '日次締め処理',
+      '出荷・入庫・返品・在庫サマリー'
+    ]
+  },
+  {
+    name: '設定管理',
     emoji: '⚙',
     path: '/settings/basic',
     features: [
@@ -135,7 +170,7 @@ const navigateTo = (path: string) => {
 .welcome-banner {
   text-align: center;
   padding: 40px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #D97756 0%, #B85D3A 100%);
   border-radius: 8px;
   margin-bottom: 40px;
   color: white;

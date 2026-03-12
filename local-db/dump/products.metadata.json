@@ -1,0 +1,29 @@
+{
+  "indexes": [
+    {
+      "v": 2,
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_"
+    },
+    {
+      "v": 2,
+      "key": {
+        "sku": 1
+      },
+      "name": "sku_1",
+      "background": true,
+      "unique": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "_allSku": 1
+      },
+      "name": "_allSku_1",
+      "background": true,
+      "unique": true
+    }
+  ]
+}

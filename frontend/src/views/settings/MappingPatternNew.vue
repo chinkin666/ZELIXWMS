@@ -13,7 +13,7 @@
       :can-save="canSave"
       @update:config-type="onConfigTypeUpdate"
       @update:carrier-id="onCarrierIdUpdate"
-      @update:encoding="encoding = $event"
+      @update:encoding="encoding = $event as typeof encoding"
       @update:config-name="configName = $event"
       @update:config-description="configDescription = $event"
       @load-sample-orders="loadSampleOrders"

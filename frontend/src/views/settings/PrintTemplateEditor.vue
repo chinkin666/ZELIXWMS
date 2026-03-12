@@ -15,7 +15,7 @@
         :uploaded-table-data="uploadedTableData"
         :table-headers="tableHeaders"
         :selected-row-index="selectedRowIndex"
-        :requires-yamato-sort-code="template.requiresYamatoSortCode"
+        :requires-yamato-sort-code="template.requiresYamatoSortCode ?? false"
         @insert-field="insertField"
         @clear-table-data="clearTableData"
         @table-file-change="parseTableFile"

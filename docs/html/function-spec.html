@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZELIXWMS 功能说明书</title>
+  <style>
+    :root { --bg:#f7f3ed; --panel:#fffdfa; --ink:#1f2a31; --muted:#59656e; --line:#d9cfbf; --brand:#24505d; --soft:#eaf1ef; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7}
+    .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 56px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:24px;margin-top:18px;box-shadow:0 10px 24px rgba(0,0,0,.05)}
+    h1{font-size:36px;margin:10px 0 0} h2{font-size:24px;margin:0 0 10px} p,li,td{color:var(--muted)}
+    table{width:100%;border-collapse:collapse;margin-top:10px} th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top} th{background:var(--soft);color:var(--ink)}
+    a,code{color:var(--brand)} code{background:var(--soft);padding:2px 6px;border-radius:6px;font-family:Consolas,monospace}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="./index.html">返回文档中心</a>
+    <h1>功能说明书</h1>
+
+    <section class="panel">
+      <h2>1. 功能模块总览</h2>
+      <table>
+        <tr><th>模块</th><th>主要功能</th><th>输入</th><th>输出</th></tr>
+        <tr><td>订单管理</td><td>订单导入、手工创建、列表筛选、状态更新</td><td>Excel/CSV、表单数据</td><td>订单记录、状态流转</td></tr>
+        <tr><td>商品管理</td><td>商品主档、子 SKU、条码、图片维护</td><td>商品主数据文件或手工录入</td><td>可解析商品和检品依据</td></tr>
+        <tr><td>配送管理</td><td>配送业者、回执导入、Yamato B2 联动</td><td>订单、配置、回执文件</td><td>trackingId、回执状态、标签 PDF</td></tr>
+        <tr><td>模板管理</td><td>打印模板、帐票模板编辑和预览</td><td>模板参数、字段绑定</td><td>标签图像、PDF、作业帐票</td></tr>
+        <tr><td>自动处理</td><td>按条件自动加商品、设定检品组、记录日志</td><td>订单事件、规则配置</td><td>变更后的订单、执行日志</td></tr>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>2. 订单管理功能</h2>
+      <ul>
+        <li>支持手工批量创建订单，接口入口为 <code>POST /api/shipment-orders/manual/bulk</code>。</li>
+        <li>支持条件分页查询、单据详情查看、单笔和批量状态变更。</li>
+        <li>支持配送回执导入，将 trackingId 及回执字段写回订单。</li>
+        <li>支持订单批量更新、批量删除、按 ID 批量取回。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>3. 商品与主数据功能</h2>
+      <ul>
+        <li>商品支持主 SKU、子 SKU、条码、价格、温层、尺寸、图片、库存相关字段。</li>
+        <li>系统可通过 <code>/api/products/resolve/:sku</code> 解析扫描输入，区分主 SKU 和子 SKU。</li>
+        <li>依頼主数据用于自动补全发件人信息和 Yamato 发店代码。</li>
+        <li>配送业者数据包含格式定义和自动化类型，支撑回执导入和运单联动。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>4. 映射与导入功能</h2>
+      <ul>
+        <li>映射配置负责将外部文件列转换为内部订单字段，适用于 EC 平台或配送数据导入。</li>
+        <li>转换链支持插件化处理，前后端均存在 transform 类型定义。</li>
+        <li>用户可维护默认映射、按依頼主/配送业者/配置类型筛选映射。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>5. 打印与帐票功能</h2>
+      <ul>
+        <li>打印模板支持按画布尺寸、元素、绑定字段生成标签图像或 PDF。</li>
+        <li>帐票模板支持多列布局、页边距、页眉页脚、条码和日期格式。</li>
+        <li>前端提供预览、批量打印、Yamato B2 批量 PDF 获取等功能。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>6. 自动处理功能</h2>
+      <table>
+        <tr><th>项</th><th>说明</th></tr>
+        <tr><td>触发方式</td><td>自动触发或手动运行。</td></tr>
+        <tr><td>触发事件</td><td>订单创建、状态变化等事件。</td></tr>
+        <tr><td>条件类型</td><td>订单字段、订单状态、检品组、sourceRawRow、carrierRawRow。</td></tr>
+        <tr><td>动作类型</td><td>自动加商品、设置检品组。</td></tr>
+        <tr><td>日志</td><td>成功与失败均写入 <code>auto_processing_logs</code>。</td></tr>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

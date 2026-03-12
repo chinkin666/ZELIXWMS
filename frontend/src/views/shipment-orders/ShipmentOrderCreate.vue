@@ -634,7 +634,7 @@ const carrierExportSourceOrders = ref<any[]>([])
 const parseB2Error = (err: string): string => {
   // Python dict 文字列: {'error_description': '...', ...}
   const descMatch = err.match(/['"]error_description['"]\s*:\s*['"](.+?)['"]/)
-  if (descMatch) return descMatch[1]
+  if (descMatch) return descMatch[1] ?? err
   // JSON 文字列: {"error_description": "...", ...}
   try {
     const parsed = JSON.parse(err)
@@ -1181,7 +1181,7 @@ const handleFormSubmit = async (data: Record<string, any>) => {
         await loadPendingWaybillOrders()
         toast.showSuccess('出荷指示を更新しました')
       } catch (e: any) {
-        console.error('Order update failed:', e, 'payload:', JSON.stringify(payload, null, 2))
+        console.error('Order update failed:', e)
         toast.showError(e?.message || '更新に失敗しました')
         return
       }

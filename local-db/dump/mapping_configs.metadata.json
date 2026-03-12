@@ -1,0 +1,79 @@
+{
+  "indexes": [
+    {
+      "v": 2,
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_"
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1
+      },
+      "name": "tenantId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "configType": 1
+      },
+      "name": "configType_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "isDefault": 1
+      },
+      "name": "isDefault_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "orderSourceCompanyId": 1
+      },
+      "name": "orderSourceCompanyId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "carrierId": 1
+      },
+      "name": "carrierId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1,
+        "configType": 1
+      },
+      "name": "tenantId_1_configType_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1,
+        "configType": 1,
+        "isDefault": 1
+      },
+      "name": "tenantId_1_configType_1_isDefault_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1,
+        "name": 1
+      },
+      "name": "tenantId_1_name_1",
+      "background": true
+    }
+  ]
+}

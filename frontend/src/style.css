@@ -8,29 +8,29 @@
 }
 
 :root {
-  /* Brand Colors */
-  --o-brand-odoo: #714B67;
-  --o-brand-primary: #714B67;
-  --o-brand-secondary: #8f8f8f;
-  --o-brand-lightsecondary: #f8f9fa;
-  --o-action: #00A09D;
+  /* Brand Colors — Claude / Anthropic warm palette */
+  --o-brand-odoo: #D97756;
+  --o-brand-primary: #D97756;
+  --o-brand-secondary: #8B7E74;
+  --o-brand-lightsecondary: #FAF7F5;
+  --o-action: #D97756;
 
   /* Semantic */
-  --o-success: #28a745;
-  --o-info: #17a2b8;
-  --o-warning: #ffac00;
-  --o-danger: #dc3545;
+  --o-success: #3D8B37;
+  --o-info: #4A90A4;
+  --o-warning: #D4A017;
+  --o-danger: #C0392B;
 
-  /* Grayscale (Bootstrap) */
-  --o-gray-100: #f8f9fa;
-  --o-gray-200: #e9ecef;
-  --o-gray-300: #dee2e6;
-  --o-gray-400: #ced4da;
-  --o-gray-500: #adb5bd;
-  --o-gray-600: #6c757d;
-  --o-gray-700: #495057;
-  --o-gray-800: #343a40;
-  --o-gray-900: #212529;
+  /* Grayscale — warm neutral */
+  --o-gray-100: #FAF7F5;
+  --o-gray-200: #F0EBE6;
+  --o-gray-300: #E2DBD5;
+  --o-gray-400: #C8BEB6;
+  --o-gray-500: #A69B91;
+  --o-gray-600: #7A706A;
+  --o-gray-700: #4A433D;
+  --o-gray-800: #2D2926;
+  --o-gray-900: #1A1613;
 
   /* Layout */
   --o-navbar-height: 46px;
@@ -38,41 +38,41 @@
   --o-font-size-small: 0.8125rem;
   --o-font-size-smaller: 0.75rem;
   --o-spacer: 1rem;
-  --o-border-color: #dee2e6;
+  --o-border-color: #E2DBD5;
   --o-border-radius: 0.25rem;
   --o-border-radius-sm: 0.1875rem;
   --o-border-radius-lg: 0.375rem;
 
-  --o-webclient-background: #f8f9fa;
+  --o-webclient-background: #FAF7F5;
   --o-view-background: #ffffff;
 
   /* Hover & Selection */
-  --o-list-hover: #edf2ff;
-  --o-list-selected: #e8f0fe;
-  --o-brand-light: #f0e6ed;
-  --o-brand-lighter: #ede8eb;
-  --o-brand-lightest: #e8dfe6;
-  --o-brand-hover-dark: #1a2d50;
+  --o-list-hover: #FDF5F0;
+  --o-list-selected: #FAEEE7;
+  --o-brand-light: #F5E1D8;
+  --o-brand-lighter: #FAF0EA;
+  --o-brand-lightest: #FDF7F4;
+  --o-brand-hover-dark: #B85D3A;
 
   /* Danger light */
-  --o-danger-light: #fdf0f1;
-  --o-danger-bg: #f8d7da;
-  --o-danger-text: #721c24;
-  --o-danger-border: #f5c6cb;
+  --o-danger-light: #FDF2F0;
+  --o-danger-bg: #F8D7D2;
+  --o-danger-text: #8B1A10;
+  --o-danger-border: #F0B8AF;
 
   /* Success light */
-  --o-success-bg: #d4edda;
-  --o-success-text: #155724;
-  --o-success-border: #c3e6cb;
+  --o-success-bg: #D8EDD5;
+  --o-success-text: #1B5E1B;
+  --o-success-border: #B8D9B3;
 
   /* Warning light */
-  --o-warning-bg: #fff3cd;
-  --o-warning-text: #856404;
-  --o-warning-note-bg: #fffdf5;
+  --o-warning-bg: #FFF5D6;
+  --o-warning-text: #7A5B04;
+  --o-warning-note-bg: #FFFDF5;
 
   /* Info light */
-  --o-info-bg: #d1ecf1;
-  --o-info-text: #0c5460;
+  --o-info-bg: #D9EEF3;
+  --o-info-text: #1A5F6F;
 
   /* Toggle */
   --o-toggle-off: #ccc;
@@ -105,7 +105,7 @@
   --text-muted: var(--o-gray-500);
   --odoo-brand: var(--o-brand-primary);
   --odoo-purple: var(--o-brand-primary);
-  --odoo-purple-dark: #5B3D54;
+  --odoo-purple-dark: #B85D3A;
   --success: var(--o-success);
   --danger: var(--o-danger);
   --warning: var(--o-warning);
@@ -114,36 +114,36 @@
   --shadow-md: var(--o-shadow-md);
   --shadow-lg: var(--o-shadow-lg);
   --topbar-height: var(--o-navbar-height);
-  --bg-sidebar: #2c2c3e;
-  --bg-sidebar-hover: rgba(255, 255, 255, 0.05);
-  --bg-sidebar-active: rgba(113, 75, 103, 0.3);
+  --bg-sidebar: #2D2926;
+  --bg-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --bg-sidebar-active: rgba(217, 119, 86, 0.3);
   --text-sidebar: rgba(255, 255, 255, 0.7);
   --text-sidebar-active: #fff;
 }
 
 /* ===== Dark Mode ===== */
 [data-theme="dark"] {
-  --o-gray-100: #1e1e2e;
-  --o-gray-200: #2a2a3e;
-  --o-gray-300: #3a3a4e;
-  --o-gray-400: #4a4a5e;
-  --o-gray-500: #6c6c7e;
-  --o-gray-600: #a0a0b0;
-  --o-gray-700: #c0c0d0;
-  --o-gray-800: #d8d8e8;
-  --o-gray-900: #e8e8f0;
+  --o-gray-100: #1E1B18;
+  --o-gray-200: #2A2622;
+  --o-gray-300: #3A3530;
+  --o-gray-400: #4D4740;
+  --o-gray-500: #706860;
+  --o-gray-600: #A09890;
+  --o-gray-700: #C8C0B8;
+  --o-gray-800: #DCD6D0;
+  --o-gray-900: #EDE8E4;
 
-  --o-border-color: #3a3a4e;
-  --o-webclient-background: #14141e;
-  --o-view-background: #1e1e2e;
+  --o-border-color: #3A3530;
+  --o-webclient-background: #141210;
+  --o-view-background: #1E1B18;
 
   /* Hover & Selection */
-  --o-list-hover: rgba(113, 75, 103, 0.12);
-  --o-list-selected: rgba(113, 75, 103, 0.18);
-  --o-brand-light: rgba(113, 75, 103, 0.15);
-  --o-brand-lighter: rgba(113, 75, 103, 0.12);
-  --o-brand-lightest: rgba(113, 75, 103, 0.2);
-  --o-brand-hover-dark: #8a5e7e;
+  --o-list-hover: rgba(217, 119, 86, 0.12);
+  --o-list-selected: rgba(217, 119, 86, 0.18);
+  --o-brand-light: rgba(217, 119, 86, 0.15);
+  --o-brand-lighter: rgba(217, 119, 86, 0.12);
+  --o-brand-lightest: rgba(217, 119, 86, 0.2);
+  --o-brand-hover-dark: #E8946E;
 
   /* Danger light */
   --o-danger-light: rgba(220, 53, 69, 0.1);
@@ -173,7 +173,7 @@
   --text-primary: var(--o-gray-900);
   --text-secondary: var(--o-gray-600);
   --text-muted: var(--o-gray-500);
-  --bg-sidebar: #12121e;
+  --bg-sidebar: #141210;
 }
 
 [data-theme="dark"] body {
@@ -371,7 +371,7 @@ select.o-input {
 .o-input:focus {
   border-color: var(--o-brand-primary);
   outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(113, 75, 103, 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(217, 119, 86, 0.25);
 }
 
 /* ===== Odoo Badge ===== */

@@ -1,0 +1,92 @@
+{
+  "indexes": [
+    {
+      "v": 2,
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_"
+    },
+    {
+      "v": 2,
+      "key": {
+        "orderNumber": 1
+      },
+      "name": "orderNumber_1",
+      "background": true,
+      "unique": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "orderGroupId": 1
+      },
+      "name": "orderGroupId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "carrierId": 1
+      },
+      "name": "carrierId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "shipPlanDate": 1
+      },
+      "name": "shipPlanDate_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "_productsMeta.skus": 1
+      },
+      "name": "_productsMeta.skus_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "_productsMeta.names": 1
+      },
+      "name": "_productsMeta.names_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "_productsMeta.barcodes": 1
+      },
+      "name": "_productsMeta.barcodes_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "_productsMeta.totalQuantity": 1
+      },
+      "name": "_productsMeta.totalQuantity_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "_productsMeta.skuCount": 1
+      },
+      "name": "_productsMeta.skuCount_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "_productsMeta.totalPrice": 1
+      },
+      "name": "_productsMeta.totalPrice_1",
+      "background": true
+    }
+  ]
+}

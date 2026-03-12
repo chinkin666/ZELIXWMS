@@ -1,0 +1,171 @@
+<template>
+  <div class="return-create">
+    <ControlPanel title="返品作成" :show-search="false">
+      <template #actions>
+        <OButton variant="secondary" size="sm" @click="$router.back()">戻る</OButton>
+      </template>
+    </ControlPanel>
+
+    <div class="form-card o-card">
+      <div class="form-grid">
+        <div class="form-row">
+          <label class="form-label">返品理由 <span class="required">*</span></label>
+          <select v-model="form.returnReason" class="o-input" style="width:200px;">
+            <option value="customer_request">お客様都合</option>
+            <option value="defective">不良品</option>
+            <option value="wrong_item">誤配送</option>
+            <option value="damaged">破損</option>
+            <option value="other">その他</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">顧客名</label>
+          <input v-model="form.customerName" class="o-input" style="width:200px;" placeholder="顧客名" />
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">受付日</label>
+          <input v-model="form.receivedDate" type="date" class="o-input" style="width:200px;" />
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">元出荷番号</label>
+          <input v-model="form.shipmentOrderNumber" class="o-input" style="width:200px;" placeholder="SH..." />
+        </div>
+
+        <div class="form-row" style="grid-column:1/-1;">
+          <label class="form-label">理由詳細</label>
+          <textarea v-model="form.reasonDetail" class="o-input" rows="2" style="width:100%;max-width:500px;" />
+        </div>
+      </div>
+
+      <!-- 返品明細 -->
+      <div class="lines-section">
+        <h3 class="lines-title">返品明細</h3>
+        <table class="o-table" style="margin-bottom:0.5rem;">
+          <thead>
+            <tr>
+              <th class="o-table-th" style="width:200px;">商品 (SKU検索)</th>
+              <th class="o-table-th o-table-th--right" style="width:80px;">数量</th>
+              <th class="o-table-th" style="width:120px;">メモ</th>
+              <th class="o-table-th" style="width:50px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(line, idx) in form.lines" :key="idx">
+              <td class="o-table-td">
+                <input v-model="line.productSku" class="o-input o-input-sm" placeholder="SKU" style="width:100%;" />
+              </td>
+              <td class="o-table-td o-table-td--right">
+                <input v-model.number="line.quantity" type="number" min="1" class="o-input o-input-sm" style="width:70px;text-align:right;" />
+              </td>
+              <td class="o-table-td">
+                <input v-model="line.memo" class="o-input o-input-sm" style="width:100%;" />
+              </td>
+              <td class="o-table-td">
+                <button class="remove-btn" @click="form.lines.splice(idx, 1)">&times;</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <OButton variant="secondary" size="sm" @click="addLine">+ 行追加</OButton>
+      </div>
+
+      <div class="form-actions">
+        <OButton variant="primary" :disabled="isSubmitting" @click="handleCreate">
+          {{ isSubmitting ? '作成中...' : '作成' }}
+        </OButton>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useToast } from '@/composables/useToast'
+import OButton from '@/components/odoo/OButton.vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { createReturnOrder } from '@/api/returnOrder'
+import { getApiBaseUrl } from '@/api/base'
+
+const router = useRouter()
+const toast = useToast()
+const isSubmitting = ref(false)
+
+const form = reactive({
+  returnReason: 'customer_request' as string,
+  reasonDetail: '',
+  customerName: '',
+  receivedDate: new Date().toISOString().slice(0, 10),
+  shipmentOrderNumber: '',
+  lines: [{ productSku: '', quantity: 1, memo: '' }] as Array<{ productSku: string; quantity: number; memo: string }>,
+})
+
+const addLine = () => form.lines.push({ productSku: '', quantity: 1, memo: '' })
+
+const handleCreate = async () => {
+  const validLines = form.lines.filter(l => l.productSku.trim())
+  if (validLines.length === 0) { toast.showError('少なくとも1行の商品を入力してください'); return }
+
+  isSubmitting.value = true
+  try {
+    // SKUから商品IDを解決
+    const resolvedLines = []
+    for (const line of validLines) {
+      const res = await fetch(`${getApiBaseUrl()}/products?search=${encodeURIComponent(line.productSku)}&limit=1`)
+      const data = await res.json()
+      const products = data.data || data || []
+      const product = Array.isArray(products) ? products[0] : null
+      if (!product) { toast.showError(`商品 ${line.productSku} が見つかりません`); isSubmitting.value = false; return }
+      resolvedLines.push({
+        productId: product._id,
+        productSku: product.sku,
+        productName: product.name,
+        quantity: line.quantity,
+        memo: line.memo || undefined,
+      })
+    }
+
+    const result = await createReturnOrder({
+      returnReason: form.returnReason,
+      reasonDetail: form.reasonDetail || undefined,
+      customerName: form.customerName || undefined,
+      receivedDate: form.receivedDate || undefined,
+      lines: resolvedLines,
+      memo: undefined,
+    })
+    toast.showSuccess(`返品 ${result.orderNumber} を作成しました`)
+    router.push(`/returns/${result._id}`)
+  } catch (e: any) {
+    toast.showError(e?.message || '作成に失敗しました')
+  } finally {
+    isSubmitting.value = false
+  }
+}
+</script>
+
+<style>
+@import '@/styles/order-table.css';
+</style>
+
+<style scoped>
+.return-create { padding: 1rem; }
+.form-card { max-width: 800px; padding: 1.5rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+.form-row { display: flex; flex-direction: column; gap: 4px; }
+.form-label { font-weight: 600; font-size: 13px; color: var(--o-gray-700); }
+.required { color: #f56c6c; }
+.lines-section { margin-bottom: 1.5rem; }
+.lines-title { font-size: 15px; font-weight: 600; margin-bottom: 0.5rem; color: var(--o-gray-700); }
+.form-actions { margin-top: 1rem; }
+.remove-btn { background: none; border: none; cursor: pointer; color: #f56c6c; font-size: 18px; }
+.o-table-td--right { text-align: right; }
+.o-table-th--right { text-align: right; }
+.o-card {
+  background: var(--o-view-background, #fff);
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: var(--o-border-radius, 8px);
+}
+</style>

@@ -87,7 +87,7 @@ defineEmits<{
 
 const parseB2Error = (err: string): string => {
   const descMatch = err.match(/['"]error_description['"]\s*:\s*['"](.+?)['"]/)
-  if (descMatch) return descMatch[1]
+  if (descMatch) return descMatch[1] ?? err
   try {
     const parsed = JSON.parse(err)
     if (parsed?.error_description) return parsed.error_description

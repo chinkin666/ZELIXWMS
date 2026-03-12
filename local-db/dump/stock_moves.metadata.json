@@ -1,0 +1,88 @@
+{
+  "indexes": [
+    {
+      "v": 2,
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_"
+    },
+    {
+      "v": 2,
+      "key": {
+        "moveNumber": 1
+      },
+      "name": "moveNumber_1",
+      "background": true,
+      "unique": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "moveType": 1,
+        "state": 1
+      },
+      "name": "moveType_1_state_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "productId": 1,
+        "state": 1
+      },
+      "name": "productId_1_state_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "fromLocationId": 1
+      },
+      "name": "fromLocationId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "toLocationId": 1
+      },
+      "name": "toLocationId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "referenceType": 1,
+        "referenceId": 1
+      },
+      "name": "referenceType_1_referenceId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "lotId": 1
+      },
+      "name": "lotId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "executedAt": -1
+      },
+      "name": "executedAt_-1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "scheduledDate": 1,
+        "state": 1
+      },
+      "name": "scheduledDate_1_state_1",
+      "background": true
+    }
+  ]
+}

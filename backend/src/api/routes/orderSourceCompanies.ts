@@ -13,9 +13,9 @@ export const orderSourceCompanyRouter = Router();
 
 orderSourceCompanyRouter.get('/', listOrderSourceCompanies);
 orderSourceCompanyRouter.get('/:id', getOrderSourceCompany);
-orderSourceCompanyRouter.post('/', createOrderSourceCompany);
 orderSourceCompanyRouter.post('/validate-import', validateImportOrderSourceCompanies);
 orderSourceCompanyRouter.post('/import-bulk', importOrderSourceCompaniesBulk);
+orderSourceCompanyRouter.post('/', createOrderSourceCompany);
 orderSourceCompanyRouter.put('/:id', updateOrderSourceCompany);
 orderSourceCompanyRouter.delete('/:id', deleteOrderSourceCompany);
 

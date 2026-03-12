@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZELIXWMS 业务流程说明书</title>
+  <style>
+    :root { --bg:#f4f1ea; --panel:#fffdf8; --ink:#1d2931; --muted:#59656e; --line:#d8d0c3; --brand:#224e5b; --soft:#e8f0ef; --accent:#9a5d39; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7}
+    .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 56px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:24px;margin-top:18px;box-shadow:0 10px 24px rgba(0,0,0,.05)}
+    h1{font-size:36px;margin:10px 0 0} h2{font-size:24px;margin:0 0 10px} h3{font-size:18px;margin:18px 0 8px} p,li,td{color:var(--muted)}
+    pre{background:#20323a;color:#edf7f7;padding:14px;border-radius:14px;overflow:auto;font-family:Consolas,monospace}
+    table{width:100%;border-collapse:collapse;margin-top:10px} th,td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top} th{background:var(--soft);color:var(--ink)}
+    a,code{color:var(--brand)} code{background:var(--soft);padding:2px 6px;border-radius:6px;font-family:Consolas,monospace}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="./index.html">返回文档中心</a>
+    <h1>业务流程说明书</h1>
+
+    <section class="panel">
+      <h2>1. 总体流程</h2>
+      <pre>外部订单文件/手工录入
+  -> 映射转换
+  -> 生成出荷订单
+  -> 订单确认
+  -> 运单验证/导出/回执取得
+  -> 检品与打印
+  -> 出荷完成
+  -> 出荷实绩查询</pre>
+    </section>
+
+    <section class="panel">
+      <h2>2. 订单导入流程</h2>
+      <ol>
+        <li>业务人员准备来自 EC 或外部系统的订单文件。</li>
+        <li>系统根据映射配置将原始列转换为内部订单字段。</li>
+        <li>订单写入 <code>orders</code> 集合，自动生成 <code>orderNumber</code> 和 <code>_productsMeta</code>。</li>
+        <li>若配置了自动处理规则，系统按触发事件执行后处理。</li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <h2>3. 出荷确认与运单流程</h2>
+      <table>
+        <tr><th>阶段</th><th>关键条件</th><th>主要动作</th></tr>
+        <tr><td>确认前</td><td>未确认、可能保留、可能无 trackingId</td><td>检查地址、商品、依頼主、配送方式。</td></tr>
+        <tr><td>确认</td><td><code>status.confirm.isConfirmed=true</code></td><td>锁定该批订单进入后续作业。</td></tr>
+        <tr><td>B2 验证</td><td>Yamato B2 已配置</td><td>调用 validate 接口校验必填和格式。</td></tr>
+        <tr><td>B2 导出</td><td>验证通过</td><td>向外部 API 送信并回写 trackingId。</td></tr>
+        <tr><td>回执取得</td><td>导出成功或回执导入</td><td><code>status.carrierReceipt.isReceived=true</code>。</td></tr>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>4. 检品与出荷流程</h2>
+      <ol>
+        <li>系统筛选“已确认 + 已取得运单 + 未出荷”订单进入作业列表。</li>
+        <li>现场根据检品组、订单类型选择 1-1 或 N-1 检品方式。</li>
+        <li>扫描商品条码，系统通过商品主档和子 SKU 进行匹配。</li>
+        <li>必要时打印标签、帐票或获取 Yamato 批量 PDF。</li>
+        <li>完成后写入 <code>status.printed.isPrinted</code> 和 <code>status.shipped.isShipped</code>。</li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <h2>5. 异常回退流程</h2>
+      <ul>
+        <li>Yamato B2 异常时，可执行 <code>yamatoB2Unconfirm</code> 回退。</li>
+        <li>取消确认时，系统可将 confirm、printed、carrierReceipt、shipped 等状态复位。</li>
+        <li>自动处理规则执行失败不会阻断全局流程，但会记录失败日志供追踪。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>6. 状态流转定义</h2>
+      <pre>新建订单
+  -> confirm
+  -> carrierReceipt
+  -> printed
+  -> shipped
+
+支持逆向操作:
+  shipped/printed/carrierReceipt/confirm
+  <- unconfirm or carrier-specific rollback</pre>
+    </section>
+  </div>
+</body>
+</html>

@@ -7,6 +7,9 @@ export interface SubSku {
   isActive?: boolean    // 有効かどうか (デフォルト: true)
 }
 
+export type ProductCategory = '0' | '1' | '2' | '3' | '4'  // 0:商品 1:消耗品 2:作業 3:おまけ 4:部材
+export type AllocationRule = 'FIFO' | 'FEFO' | 'LIFO'  // FIFO:先入先出 FEFO:先期限先出 LIFO:後入先出
+
 export interface Product {
   _id: string
   sku: string
@@ -14,6 +17,7 @@ export interface Product {
   nameFull?: string
   barcode?: string[]
   coolType?: '0' | '1' | '2'
+  category?: ProductCategory
   // メール便計算設定
   mailCalcEnabled: boolean                 // メール便計算（true: 自動計算する, false: 自動計算しない）
   mailCalcMaxQuantity?: number             // メール便最大数量（mailCalcEnabled が true の時のみ有効・編集可能）
@@ -22,6 +26,26 @@ export interface Product {
   handlingTypes?: string[]
   imageUrl?: string
   subSkus?: SubSku[]
+  customField1?: string
+  customField2?: string
+  customField3?: string
+  customField4?: string
+  width?: number
+  depth?: number
+  height?: number
+  weight?: number
+  nameEn?: string
+  countryOfOrigin?: string
+  allocationRule?: AllocationRule
+  serialTrackingEnabled: boolean
+  inboundExpiryDays?: number
+  // 在庫管理設定
+  inventoryEnabled: boolean
+  lotTrackingEnabled: boolean
+  expiryTrackingEnabled: boolean
+  alertDaysBeforeExpiry: number
+  defaultLocationId?: string
+  safetyStock: number
   createdAt: string
   updatedAt: string
 }
@@ -31,6 +55,7 @@ export interface ProductFilters {
   name?: string
   nameFull?: string
   coolType?: '0' | '1' | '2'
+  category?: ProductCategory
   mailCalcEnabled?: boolean
 }
 
@@ -40,6 +65,7 @@ export interface UpsertProductDto {
   nameFull?: string
   barcode?: string[]
   coolType?: '0' | '1' | '2'
+  category?: ProductCategory
   // メール便計算設定
   mailCalcEnabled: boolean
   mailCalcMaxQuantity?: number
@@ -48,6 +74,24 @@ export interface UpsertProductDto {
   handlingTypes?: string[]
   imageUrl?: string
   subSkus?: SubSku[]
+  customField1?: string
+  customField2?: string
+  customField3?: string
+  customField4?: string
+  width?: number
+  depth?: number
+  height?: number
+  weight?: number
+  nameEn?: string
+  countryOfOrigin?: string
+  allocationRule?: AllocationRule
+  serialTrackingEnabled?: boolean
+  inboundExpiryDays?: number
+  inventoryEnabled?: boolean
+  lotTrackingEnabled?: boolean
+  expiryTrackingEnabled?: boolean
+  alertDaysBeforeExpiry?: number
+  safetyStock?: number
 }
 
 export function getProductFieldDefinitions(): TableColumn[] {

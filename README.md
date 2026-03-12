@@ -36,7 +36,10 @@ cd backend
 cp env.example .env
 cd ..
 
-# 4. 初回のみ: シードデータを投入（配送業者マスタ等）
+# 4a. データバックアップがある場合: ダンプから復元
+npm run db:restore
+
+# 4b. 初回（バックアップなし）: シードデータを投入（配送業者マスタ等）
 npm run seed
 
 # 5. バックエンド起動（別ターミナル）
@@ -56,9 +59,22 @@ npm run dev:frontend
 
 ### データベースについて
 
-- データは `local-db/mongo/` ディレクトリに保存されます
-- プロジェクトフォルダごとコピーすれば別PCでもそのまま動きます
+- データは `local-db/mongo/` ディレクトリに保存されます（`.gitignore` 対象）
+- `local-db/dump/` にポータブルな BSON バックアップが保存されます（git 管理対象）
+- 別PCでセットアップする場合は `npm run db:restore` で復元できます
 - MongoDB Compass で接続: `mongodb://localhost:27017/nexand-shipment`
+
+### データバックアップ・復元
+
+```bash
+# データベースを local-db/dump/ に BSON エクスポート
+npm run db:dump
+
+# local-db/dump/ から データベースへ復元
+npm run db:restore
+```
+
+> **運用フロー**: 作業後に `npm run db:dump` → git commit → 別PCで `npm run db:restore` でデータを持ち運べます。
 
 ### よく使うコマンド
 
@@ -66,7 +82,9 @@ npm run dev:frontend
 npm run db              # MongoDB 起動
 npm run dev:backend     # バックエンド起動
 npm run dev:frontend    # フロントエンド起動
-npm run seed            # シードデータ投入
+npm run seed            # シードデータ投入（初回のみ）
+npm run db:dump         # データベースをダンプ（local-db/dump/）
+npm run db:restore      # ダンプからデータベースを復元
 ```
 
 ---

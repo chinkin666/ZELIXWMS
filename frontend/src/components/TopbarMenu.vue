@@ -1,9 +1,35 @@
 <template>
   <nav class="topbar-menu">
-    <!-- ホーム -->
-    <router-link to="/home" class="menu-item" :class="{ active: isActiveGroup('home') }">
-      <span>ホーム</span>
-    </router-link>
+    <!-- 入庫管理 dropdown -->
+    <div class="menu-dropdown" :class="{ active: isActiveGroup('inbound') }">
+      <div class="menu-item">
+        <span>入庫管理</span>
+        <span class="dropdown-arrow">▾</span>
+      </div>
+      <div class="dropdown-panel">
+        <router-link to="/inbound/dashboard" class="dropdown-item">入庫ダッシュボード</router-link>
+        <router-link to="/inbound/orders" class="dropdown-item">入庫指示一覧</router-link>
+        <router-link to="/inbound/create" class="dropdown-item">入庫指示作成</router-link>
+        <router-link to="/inbound/import" class="dropdown-item">CSV取込</router-link>
+        <router-link to="/inbound/history" class="dropdown-item">入庫実績</router-link>
+      </div>
+    </div>
+
+    <!-- 在庫管理 dropdown -->
+    <div class="menu-dropdown" :class="{ active: isActiveGroup('inventory') }">
+      <div class="menu-item">
+        <span>在庫管理</span>
+        <span class="dropdown-arrow">▾</span>
+      </div>
+      <div class="dropdown-panel">
+        <router-link to="/inventory/stock" class="dropdown-item">在庫一覧</router-link>
+        <router-link to="/inventory/movements" class="dropdown-item">入出庫履歴</router-link>
+        <router-link to="/inventory/adjustments" class="dropdown-item">在庫調整</router-link>
+        <router-link to="/inventory/lots" class="dropdown-item">ロット管理</router-link>
+        <router-link to="/inventory/expiry-alerts" class="dropdown-item">賞味期限アラート</router-link>
+        <router-link to="/inventory/locations" class="dropdown-item">ロケーション</router-link>
+      </div>
+    </div>
 
     <!-- 商品管理 dropdown -->
     <div class="menu-dropdown" :class="{ active: isActiveGroup('products') }">
@@ -24,19 +50,6 @@
       </div>
       <div class="dropdown-panel">
         <router-link to="/shipment-orders/create" class="dropdown-item">出荷指示作成</router-link>
-        <router-link to="/shipment-orders/confirm" class="dropdown-item">出荷指示確定</router-link>
-      </div>
-    </div>
-
-    <!-- 送り状発行 dropdown -->
-    <div class="menu-dropdown" :class="{ active: isActiveGroup('waybill-management') }">
-      <div class="menu-item">
-        <span>送り状発行</span>
-        <span class="dropdown-arrow">▾</span>
-      </div>
-      <div class="dropdown-panel">
-        <router-link to="/waybill-management/export" class="dropdown-item">配送業者データ出力</router-link>
-        <router-link to="/waybill-management/import" class="dropdown-item">配送業者データ取込</router-link>
       </div>
     </div>
 
@@ -52,9 +65,38 @@
       </div>
     </div>
 
-    <!-- 出荷実績一覧 -->
+    <!-- 出荷実績 -->
     <router-link to="/shipment-results" class="menu-item" :class="{ active: isActiveGroup('shipment-results') }">
-      <span>出荷実績一覧</span>
+      <span>出荷実績</span>
+    </router-link>
+
+    <!-- 棚卸管理 dropdown -->
+    <div class="menu-dropdown" :class="{ active: isActiveGroup('stocktaking') }">
+      <div class="menu-item">
+        <span>棚卸管理</span>
+        <span class="dropdown-arrow">▾</span>
+      </div>
+      <div class="dropdown-panel">
+        <router-link to="/stocktaking/list" class="dropdown-item">棚卸一覧</router-link>
+        <router-link to="/stocktaking/create" class="dropdown-item">棚卸作成</router-link>
+      </div>
+    </div>
+
+    <!-- 返品管理 dropdown -->
+    <div class="menu-dropdown" :class="{ active: isActiveGroup('returns') }">
+      <div class="menu-item">
+        <span>返品管理</span>
+        <span class="dropdown-arrow">▾</span>
+      </div>
+      <div class="dropdown-panel">
+        <router-link to="/returns/list" class="dropdown-item">返品一覧</router-link>
+        <router-link to="/returns/create" class="dropdown-item">返品作成</router-link>
+      </div>
+    </div>
+
+    <!-- 日次管理 -->
+    <router-link to="/daily" class="menu-item" :class="{ active: isActiveGroup('daily') }">
+      <span>日次管理</span>
     </router-link>
 
     <!-- 設定管理 dropdown -->

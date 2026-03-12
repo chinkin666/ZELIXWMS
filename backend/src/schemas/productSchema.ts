@@ -46,6 +46,18 @@ const optionalNumberPreprocess = (val: unknown) => {
   return val;
 };
 
+const categoryEnum = z.enum(['0', '1', '2', '3', '4']);
+const allocationRuleEnum = z.enum(['FIFO', 'FEFO', 'LIFO']);
+
+const booleanPreprocess = (val: unknown) => {
+  if (typeof val === 'string') {
+    const s = val.trim().toLowerCase();
+    if (s === 'true' || s === '1' || s === 'する') return true;
+    if (s === 'false' || s === '0' || s === 'しない' || s === '') return false;
+  }
+  return val;
+};
+
 const baseProductSchema = z.object({
   sku: z.string().trim().min(1, 'SKUは必須です'),
   name: z.string().trim().min(1, '商品名は必須です'),
@@ -54,6 +66,7 @@ const baseProductSchema = z.object({
     .array(z.string().trim().min(1))
     .default([]),
   coolType: coolTypeEnum.optional(),
+  category: categoryEnum.optional().default('0'),
   // メール便計算設定
   mailCalcEnabled: z.preprocess(
     (val) => {
@@ -79,6 +92,70 @@ const baseProductSchema = z.object({
   handlingTypes: z.array(z.string().trim().min(1)).default([]),
   imageUrl: z.string().trim().optional(),
   subSkus: z.array(subSkuSchema).default([]),
+  // 在庫管理設定
+  inventoryEnabled: z.preprocess(
+    (val) => {
+      if (typeof val === 'string') {
+        const s = val.trim().toLowerCase();
+        if (s === 'true' || s === '1' || s === 'する') return true;
+        if (s === 'false' || s === '0' || s === 'しない' || s === '') return false;
+      }
+      return val;
+    },
+    z.boolean().default(false),
+  ),
+  lotTrackingEnabled: z.preprocess(
+    (val) => {
+      if (typeof val === 'string') {
+        const s = val.trim().toLowerCase();
+        if (s === 'true' || s === '1') return true;
+        if (s === 'false' || s === '0' || s === '') return false;
+      }
+      return val;
+    },
+    z.boolean().default(false),
+  ),
+  expiryTrackingEnabled: z.preprocess(
+    (val) => {
+      if (typeof val === 'string') {
+        const s = val.trim().toLowerCase();
+        if (s === 'true' || s === '1') return true;
+        if (s === 'false' || s === '0' || s === '') return false;
+      }
+      return val;
+    },
+    z.boolean().default(false),
+  ),
+  alertDaysBeforeExpiry: z.preprocess(
+    optionalIntPreprocess,
+    z.number().int().nonnegative().default(30),
+  ),
+  safetyStock: z.preprocess(
+    optionalIntPreprocess,
+    z.number().int().nonnegative().default(0),
+  ),
+  // P1: カスタムフィールド
+  customField1: z.string().trim().optional(),
+  customField2: z.string().trim().optional(),
+  customField3: z.string().trim().optional(),
+  customField4: z.string().trim().optional(),
+  // P2: 寸法・重量
+  width: z.preprocess(optionalNumberPreprocess, z.number().nonnegative().optional()),
+  depth: z.preprocess(optionalNumberPreprocess, z.number().nonnegative().optional()),
+  height: z.preprocess(optionalNumberPreprocess, z.number().nonnegative().optional()),
+  weight: z.preprocess(optionalNumberPreprocess, z.number().nonnegative().optional()),
+  // P3: 国際・追加情報
+  nameEn: z.string().trim().optional(),
+  countryOfOrigin: z.string().trim().optional(),
+  // P3: 引当規則
+  allocationRule: allocationRuleEnum.optional().default('FIFO'),
+  // P3: シリアルNo管理
+  serialTrackingEnabled: z.preprocess(booleanPreprocess, z.boolean().default(false)),
+  // P3: 入庫期限日数
+  inboundExpiryDays: z.preprocess(
+    optionalIntPreprocess,
+    z.number().int().positive('入庫期限日数は正の整数である必要があります').optional(),
+  ),
 });
 
 // Refinement functions for subSku validation

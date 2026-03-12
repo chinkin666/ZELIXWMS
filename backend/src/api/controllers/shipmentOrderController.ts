@@ -11,6 +11,7 @@ import { fetchYamatoSortCodeBatchByPostcode, type YamatoCalcBatchByPostcodeItem 
 import mongoose from 'mongoose';
 import { processOrderEvent, processOrderEventBulk } from '@/services/autoProcessingEngine';
 import { isBuiltInCarrierId, getBuiltInCarrier } from '@/data/builtInCarriers';
+import { reserveStockForOrder, completeStockForOrder, unreserveStockForOrder } from '@/services/stockService';
 /**
  * 軽量クエリ用の projection（原始データを除外）
  * - listOrders (列表查询) で使用
@@ -1275,6 +1276,14 @@ export const handleStatus = async (req: Request, res: Response): Promise<void> =
     if (triggerEvent) {
       processOrderEvent(id, triggerEvent as any).catch(console.error);
     }
+
+    // Stock hooks (fire-and-forget)
+    // 引当は出荷作業画面から手動実行（mark-print-ready では自動引当しない）
+    if (action === 'mark-shipped') {
+      completeStockForOrder(String(updated._id)).catch(console.error);
+    } else if (action === 'unconfirm' && statusType === 'confirm') {
+      unreserveStockForOrder(String(updated._id)).catch(console.error);
+    }
   } catch (error: any) {
     res.status(500).json({ message: 'Failed to update order status', error: error.message });
   }
@@ -1491,6 +1500,22 @@ export const handleStatusBulk = async (req: Request, res: Response): Promise<voi
     if (bulkTriggerEvent) {
       processOrderEventBulk(validIds, bulkTriggerEvent as any).catch(console.error);
     }
+
+    // Stock hooks (fire-and-forget, bulk)
+    // 引当は出荷作業画面から手動実行（mark-print-ready では自動引当しない）
+    if (action === 'mark-shipped') {
+      (async () => {
+        for (const id of validIds) {
+          await completeStockForOrder(id).catch(console.error);
+        }
+      })().catch(console.error);
+    } else if (action === 'unconfirm' && statusType === 'confirm') {
+      (async () => {
+        for (const id of validIds) {
+          await unreserveStockForOrder(id).catch(console.error);
+        }
+      })().catch(console.error);
+    }
   } catch (error: any) {
     console.error('Error in handleStatusBulk:', error);
     res.status(500).json({
@@ -1631,6 +1656,7 @@ export const importCarrierReceiptRows = async (req: Request, res: Response): Pro
 
     const ambiguous: string[] = [];
     const unmatched: string[] = [];
+    const overwrittenOrders: string[] = [];
 
     const ops: any[] = [];
     let matchedOrders = 0;
@@ -1650,6 +1676,9 @@ export const importCarrierReceiptRows = async (req: Request, res: Response): Pro
       const doc = docMap.get(id);
       const trackingIdColumnName = doc?.carrierId ? carrierTrackingMap.get(String(doc.carrierId)) : undefined;
       const existingTrackingId = normalizeKey((doc as any)?.trackingId);
+      if ((doc as any)?.status?.carrierReceipt?.isReceived) {
+        overwrittenOrders.push(key);
+      }
       const candidateTrackingId =
         extractTrackingId(rawRow as any, trackingIdColumnName) ||
         extractTrackingId(doc?.carrierRawRow as any, trackingIdColumnName);
@@ -1691,12 +1720,15 @@ export const importCarrierReceiptRows = async (req: Request, res: Response): Pro
 
     // Collect debug info for first matched order
     res.json({
-      message: 'Imported carrier receipt rows',
+      message: overwrittenOrders.length > 0
+        ? `送り状データを取り込みました（${overwrittenOrders.length}件は既存データを上書きしました）`
+        : '送り状データを取り込みました',
       data: {
         totalRows: items.length,
         skippedEmpty,
         matchedOrders,
         updatedOrders,
+        overwrittenOrders,
         unmatched,
         ambiguous,
         duplicatedInFile,

@@ -1,0 +1,503 @@
+<template>
+  <div class="barcode-mgmt">
+    <ControlPanel title="バーコード管理" :show-search="false">
+      <template #center>
+        <input
+          v-model="searchText"
+          type="text"
+          class="o-input"
+          placeholder="SKU・商品名・バーコードで検索..."
+          style="width: 280px;"
+        />
+      </template>
+      <template #actions>
+        <div style="display:flex;gap:6px;">
+          <OButton variant="secondary" size="sm" @click="showImportPanel = !showImportPanel">
+            CSV取込
+          </OButton>
+          <OButton variant="secondary" size="sm" @click="exportCsv">
+            CSVエクスポート
+          </OButton>
+        </div>
+      </template>
+    </ControlPanel>
+
+    <!-- CSV Import Panel -->
+    <div v-if="showImportPanel" class="import-panel">
+      <div class="import-panel-header">
+        <strong>バーコードCSV取込</strong>
+        <span class="import-hint">CSVフォーマット: SKU, バーコード (1行に1つのSKU-バーコードペア)</span>
+      </div>
+      <div class="import-panel-body">
+        <input ref="fileInputRef" type="file" accept=".csv,.txt" @change="handleFileSelect" />
+        <div v-if="importPreview.length > 0" class="import-preview">
+          <p>{{ importPreview.length }}件のバーコードを検出</p>
+          <table class="o-table" style="margin-top:8px;">
+            <thead>
+              <tr>
+                <th class="o-table-th">SKU</th>
+                <th class="o-table-th">バーコード</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row, i) in importPreview.slice(0, 10)" :key="i" class="o-table-row">
+                <td class="o-table-td">{{ row.sku }}</td>
+                <td class="o-table-td">{{ row.barcode }}</td>
+              </tr>
+              <tr v-if="importPreview.length > 10">
+                <td colspan="2" class="o-table-td" style="text-align:center;color:#909399;">
+                  ... 他{{ importPreview.length - 10 }}件
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin-top:8px;display:flex;gap:6px;">
+            <select v-model="importMode" class="o-input" style="width:160px;">
+              <option value="append">追加 (既存に追加)</option>
+              <option value="replace">置換 (既存を上書き)</option>
+            </select>
+            <OButton variant="primary" size="sm" :disabled="importing" @click="executeImport">
+              {{ importing ? '取込中...' : '取込実行' }}
+            </OButton>
+            <OButton variant="secondary" size="sm" @click="clearImport">キャンセル</OButton>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="o-table-wrapper">
+      <table class="o-table">
+        <thead>
+          <tr>
+            <th class="o-table-th" style="width:140px;">SKU</th>
+            <th class="o-table-th" style="width:200px;">商品名</th>
+            <th class="o-table-th">バーコード一覧</th>
+            <th class="o-table-th" style="width:120px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="isLoading">
+            <td colspan="4" class="o-table-empty">読み込み中...</td>
+          </tr>
+          <tr v-else-if="filteredProducts.length === 0">
+            <td colspan="4" class="o-table-empty">該当する商品がありません</td>
+          </tr>
+          <tr v-for="product in filteredProducts" :key="product._id" class="o-table-row">
+            <td class="o-table-td"><strong>{{ product.sku }}</strong></td>
+            <td class="o-table-td">{{ product.name }}</td>
+            <td class="o-table-td">
+              <div class="barcode-list">
+                <span
+                  v-for="(bc, idx) in (product.barcode || [])"
+                  :key="idx"
+                  class="barcode-tag"
+                >
+                  {{ bc }}
+                  <button class="barcode-tag-remove" @click="removeBarcode(product, idx)" title="削除">&times;</button>
+                </span>
+                <span v-if="!product.barcode || product.barcode.length === 0" class="no-barcode">未登録</span>
+              </div>
+            </td>
+            <td class="o-table-td">
+              <OButton variant="primary" size="sm" @click="openAddDialog(product)">追加</OButton>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Add Barcode Dialog -->
+    <ODialog v-model="addDialogVisible" title="バーコード追加" size="sm">
+      <div class="dialog-form">
+        <div class="form-field">
+          <label class="form-label">商品: {{ addTarget?.sku }} - {{ addTarget?.name }}</label>
+        </div>
+        <div class="form-field">
+          <label class="form-label">バーコード</label>
+          <input
+            v-model="newBarcode"
+            type="text"
+            class="o-input"
+            placeholder="バーコードを入力"
+            @keyup.enter="handleAddBarcode"
+          />
+        </div>
+        <div v-if="addedBarcodes.length > 0" class="form-field">
+          <label class="form-label">追加待ち</label>
+          <div class="barcode-list">
+            <span v-for="(bc, idx) in addedBarcodes" :key="idx" class="barcode-tag">
+              {{ bc }}
+              <button class="barcode-tag-remove" @click="removeAddedBarcode(idx)">&times;</button>
+            </span>
+          </div>
+        </div>
+        <OButton variant="secondary" size="sm" @click="handleAddBarcode" :disabled="!newBarcode.trim()">
+          + リストに追加
+        </OButton>
+      </div>
+      <template #footer>
+        <OButton variant="secondary" @click="addDialogVisible = false">キャンセル</OButton>
+        <OButton variant="primary" :disabled="addedBarcodes.length === 0 || saving" @click="saveAddedBarcodes">
+          {{ saving ? '保存中...' : '保存' }}
+        </OButton>
+      </template>
+    </ODialog>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import OButton from '@/components/odoo/OButton.vue'
+import ODialog from '@/components/odoo/ODialog.vue'
+import { fetchProducts, updateProduct } from '@/api/product'
+import type { Product } from '@/types/product'
+import { useToast } from '@/composables/useToast'
+
+const toast = useToast()
+
+const products = ref<Product[]>([])
+const isLoading = ref(false)
+const searchText = ref('')
+const showImportPanel = ref(false)
+
+// Search is reactive via computed filteredProducts — no debounce needed for client-side filter
+
+const filteredProducts = computed(() => {
+  if (!searchText.value.trim()) return products.value
+  const q = searchText.value.trim().toLowerCase()
+  return products.value.filter(p =>
+    p.sku.toLowerCase().includes(q) ||
+    p.name.toLowerCase().includes(q) ||
+    (p.nameFull || '').toLowerCase().includes(q) ||
+    (p.barcode || []).some(bc => bc.toLowerCase().includes(q))
+  )
+})
+
+// Add barcode dialog
+const addDialogVisible = ref(false)
+const addTarget = ref<Product | null>(null)
+const newBarcode = ref('')
+const addedBarcodes = ref<string[]>([])
+const saving = ref(false)
+
+function openAddDialog(product: Product) {
+  addTarget.value = product
+  newBarcode.value = ''
+  addedBarcodes.value = []
+  addDialogVisible.value = true
+}
+
+function handleAddBarcode() {
+  const bc = newBarcode.value.trim()
+  if (!bc) return
+  if (addedBarcodes.value.includes(bc)) {
+    toast.showWarning('既に追加済みです')
+    return
+  }
+  const existing = addTarget.value?.barcode || []
+  if (existing.includes(bc)) {
+    toast.showWarning('このバーコードは既に登録されています')
+    return
+  }
+  addedBarcodes.value = [...addedBarcodes.value, bc]
+  newBarcode.value = ''
+}
+
+function removeAddedBarcode(idx: number) {
+  addedBarcodes.value = addedBarcodes.value.filter((_, i) => i !== idx)
+}
+
+async function saveAddedBarcodes() {
+  if (!addTarget.value || addedBarcodes.value.length === 0) return
+  saving.value = true
+  try {
+    const existing = addTarget.value.barcode || []
+    const merged = [...existing, ...addedBarcodes.value]
+    await updateProduct(addTarget.value._id, { barcode: merged } as any)
+    toast.showSuccess(`${addedBarcodes.value.length}件のバーコードを追加しました`)
+    addDialogVisible.value = false
+    await loadData()
+  } catch (e: any) {
+    toast.showError(e.message || '保存に失敗しました')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function removeBarcode(product: Product, index: number) {
+  const bc = (product.barcode || [])[index]
+  if (!confirm(`バーコード「${bc}」を削除しますか？`)) return
+  try {
+    const updated = [...(product.barcode || [])]
+    updated.splice(index, 1)
+    await updateProduct(product._id, { barcode: updated } as any)
+    toast.showSuccess('バーコードを削除しました')
+    await loadData()
+  } catch (e: any) {
+    toast.showError(e.message || '削除に失敗しました')
+  }
+}
+
+// CSV Import
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const importPreview = ref<Array<{ sku: string; barcode: string }>>([])
+const importMode = ref<'append' | 'replace'>('append')
+const importing = ref(false)
+
+function handleFileSelect(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    const text = (e.target?.result as string || '').replace(/^\uFEFF/, '')
+    const lines = text.split(/\r?\n/).filter(l => l.trim())
+    const parsed: Array<{ sku: string; barcode: string }> = []
+    for (const line of lines) {
+      const parts = line.split(',').map(s => s.trim().replace(/^["']|["']$/g, ''))
+      if (parts.length >= 2 && parts[0] && parts[1]) {
+        // Skip header
+        if (parts[0].toLowerCase() === 'sku' || parts[0] === 'SKU管理番号') continue
+        parsed.push({ sku: parts[0], barcode: parts[1] })
+      }
+    }
+    importPreview.value = parsed
+  }
+  reader.readAsText(file, 'UTF-8')
+}
+
+async function executeImport() {
+  if (importPreview.value.length === 0) return
+  importing.value = true
+  let successCount = 0
+  let failCount = 0
+  try {
+    // Group by SKU
+    const grouped = new Map<string, string[]>()
+    for (const row of importPreview.value) {
+      const existing = grouped.get(row.sku) || []
+      grouped.set(row.sku, [...existing, row.barcode])
+    }
+
+    for (const [sku, barcodes] of grouped) {
+      const product = products.value.find(p => p.sku === sku)
+      if (!product) {
+        failCount += barcodes.length
+        continue
+      }
+      try {
+        let newBarcodes: string[]
+        if (importMode.value === 'replace') {
+          newBarcodes = [...new Set(barcodes)]
+        } else {
+          const existing = product.barcode || []
+          newBarcodes = [...new Set([...existing, ...barcodes])]
+        }
+        await updateProduct(product._id, { barcode: newBarcodes } as any)
+        successCount += barcodes.length
+      } catch {
+        failCount += barcodes.length
+      }
+    }
+
+    toast.showSuccess(`取込完了: 成功${successCount}件${failCount > 0 ? `、失敗${failCount}件` : ''}`)
+    clearImport()
+    await loadData()
+  } catch (e: any) {
+    toast.showError(e.message || '取込に失敗しました')
+  } finally {
+    importing.value = false
+  }
+}
+
+function clearImport() {
+  importPreview.value = []
+  if (fileInputRef.value) fileInputRef.value.value = ''
+  showImportPanel.value = false
+}
+
+// CSV Export
+function exportCsv() {
+  const rows: string[] = ['SKU管理番号,バーコード']
+  for (const p of filteredProducts.value) {
+    for (const bc of (p.barcode || [])) {
+      rows.push(`"${p.sku}","${bc}"`)
+    }
+  }
+  const bom = '\uFEFF'
+  const blob = new Blob([bom + rows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `barcodes_${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+// Load
+async function loadData() {
+  isLoading.value = true
+  try {
+    products.value = await fetchProducts()
+  } catch (e: any) {
+    toast.showError('商品の取得に失敗しました')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadData()
+})
+</script>
+
+<style scoped>
+.barcode-mgmt {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.o-table-wrapper {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+.o-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--o-view-background, #fff);
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: var(--o-border-radius, 8px);
+  overflow: hidden;
+}
+
+.o-table-th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--o-gray-100, #f5f7fa);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--o-gray-600, #606266);
+  border-bottom: 1px solid var(--o-border-color, #e4e7ed);
+  white-space: nowrap;
+}
+
+.o-table-row:hover {
+  background: var(--o-gray-50, #fafafa);
+}
+
+.o-table-td {
+  padding: 8px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--o-border-color-light, #ebeef5);
+  color: var(--o-gray-700, #303133);
+}
+
+.o-table-empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--o-gray-400, #c0c4cc);
+}
+
+.barcode-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.barcode-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #ecf5ff;
+  color: #409eff;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.barcode-tag-remove {
+  background: none;
+  border: none;
+  color: #409eff;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.6;
+}
+.barcode-tag-remove:hover {
+  opacity: 1;
+  color: #f56c6c;
+}
+
+.no-barcode {
+  color: var(--o-gray-400, #c0c4cc);
+  font-size: 12px;
+}
+
+.import-panel {
+  margin-top: 8px;
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: var(--o-border-radius, 8px);
+  background: var(--o-view-background, #fff);
+  overflow: hidden;
+}
+
+.import-panel-header {
+  padding: 10px 14px;
+  background: var(--o-gray-100, #f5f7fa);
+  border-bottom: 1px solid var(--o-border-color, #e4e7ed);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.import-hint {
+  color: var(--o-gray-500, #909399);
+  font-size: 12px;
+}
+
+.import-panel-body {
+  padding: 14px;
+}
+
+.import-preview {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--o-gray-600, #606266);
+}
+
+.o-input {
+  padding: 6px 10px;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.o-input:focus {
+  border-color: var(--o-brand-primary, #714b67);
+}
+</style>

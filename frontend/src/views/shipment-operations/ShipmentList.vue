@@ -41,36 +41,183 @@
       @groups-loaded="handleOrderGroupsLoaded"
     />
 
-    <Table
-      class="table-attached"
-      :columns="tableColumns"
-      :data="displayRows"
-      :global-search-text="globalSearchText"
-      :height="560"
-      row-key="_id"
-      highlight-columns-on-hover
-      row-selection-enabled
-      pagination-enabled
-      pagination-mode="client"
-      :page-size="pageSize"
-      :page-sizes="[10,25,50,100,500]"
-      :header-grouping-enabled="true"
-      :header-grouping-config="headerGroupingConfig"
-      :header-height="[50, 50]"
-      :header-class="headerClass"
-      :table-props="tableProps"
-      sort-enabled
-      sort-mode="server"
-      :sort-by="sortBy"
-      :sort-order="sortOrder"
-      :batch-delete-enabled="batchDeleteEnabled"
-      :products="products"
-      :show-status-tags="true"
-      page-key="shipment-operations-list"
-      v-model:selected-keys="tableSelectedKeys"
-      @selection-change="handleTableSelectionChange"
-      @sort-change="handleSortChange"
-    />
+    <!-- Plain table (same style as shipment-orders/create) -->
+    <div class="o-table-wrapper table-attached">
+      <div v-if="tableSelectedKeys.length > 0" class="o-list-toolbar o-toolbar-active">
+        <span class="o-selected-count">{{ tableSelectedKeys.length }}件選択中</span>
+      </div>
+      <table class="o-table">
+        <thead>
+          <tr>
+            <th class="o-table-th o-table-th--checkbox" style="width:40px;">
+              <input
+                type="checkbox"
+                :checked="isAllCurrentPageSelected"
+                :indeterminate="isSomeCurrentPageSelected && !isAllCurrentPageSelected"
+                @change="toggleSelectAll"
+              />
+            </th>
+            <th class="o-table-th" style="width:90px;">状態</th>
+            <th class="o-table-th o-table-th--sortable" style="width:220px;" @click="handleSortClick('orderNumber')">
+              出荷管理番号
+              <span v-if="sortBy === 'orderNumber'" class="o-sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="o-table-th" style="width:200px;">配送情報</th>
+            <th class="o-table-th" style="width:180px;">配送指定</th>
+            <th class="o-table-th" style="width:200px;">お届け先</th>
+            <th class="o-table-th" style="width:250px;">商品</th>
+            <th class="o-table-th" style="width:170px;">履歴</th>
+            <th class="o-table-th" style="width:220px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="isLoadingOrders">
+            <td colspan="9" class="o-table-empty">読み込み中...</td>
+          </tr>
+          <tr v-else-if="paginatedRows.length === 0">
+            <td colspan="9" class="o-table-empty">データがありません</td>
+          </tr>
+          <tr
+            v-for="row in paginatedRows"
+            :key="row._id"
+            class="o-table-row"
+            :class="{ 'o-table-row--selected': tableSelectedKeys.includes(String(row._id)) }"
+          >
+            <td class="o-table-td o-table-td--checkbox">
+              <input
+                type="checkbox"
+                :checked="tableSelectedKeys.includes(String(row._id))"
+                @change="toggleRowSelection(row)"
+              />
+            </td>
+            <td class="o-table-td o-table-td--status">
+              <div class="status-cell">
+                <span v-if="row.status?.confirm?.isConfirmed" class="o-status-tag o-status-tag--confirmed">確定済</span>
+                <span v-if="row.status?.carrierReceipt?.isReceived" class="o-status-tag o-status-tag--issued">送り状発行済</span>
+                <span v-if="row.status?.printed?.isPrinted" class="o-status-tag o-status-tag--printed">印刷済</span>
+                <span v-if="row.status?.inspected?.isInspected" class="o-status-tag o-status-tag--confirmed">検品済</span>
+              </div>
+            </td>
+            <!-- 出荷管理番号 -->
+            <td class="o-table-td o-table-td--mgmt">
+              <div class="mgmt-cell">
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">出荷管理No</span>
+                  <a href="#" class="mgmt-cell__link mgmt-cell__value" @click.prevent="handleView(row)">{{ row.orderNumber || '-' }}</a>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">注文番号</span>
+                  <span class="mgmt-cell__value">{{ row.customerManagementNumber || '-' }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">送り状番号</span>
+                  <span class="mgmt-cell__value">{{ row.trackingId || '-' }}</span>
+                </div>
+              </div>
+            </td>
+            <!-- 配送情報 -->
+            <td class="o-table-td o-table-td--mgmt">
+              <div class="mgmt-cell">
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">配送会社</span>
+                  <span class="mgmt-cell__value">{{ getCarrierLabel(row) }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">配送サービス</span>
+                  <span class="mgmt-cell__value">{{ getInvoiceTypeLabel(row) }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">温度帯</span>
+                  <span class="mgmt-cell__value" :style="{ color: getCoolTypeInfo(row).color }">{{ getCoolTypeInfo(row).label }}</span>
+                </div>
+              </div>
+            </td>
+            <!-- 配送指定 -->
+            <td class="o-table-td o-table-td--mgmt">
+              <div class="mgmt-cell">
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">出荷予定日</span>
+                  <span class="mgmt-cell__value">{{ row.shipPlanDate || '-' }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">お届け日</span>
+                  <span class="mgmt-cell__value">{{ row.deliveryDatePreference || '最短' }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">時間帯指定</span>
+                  <span class="mgmt-cell__value">{{ getTimeSlotLabel(row) }}</span>
+                </div>
+              </div>
+            </td>
+            <!-- お届け先 -->
+            <td class="o-table-td">
+              <div class="recipient-cell">
+                <div>〒{{ fmtPostal(row.recipient?.postalCode) }}</div>
+                <div>{{ [row.recipient?.prefecture, row.recipient?.city, row.recipient?.street, row.recipient?.building].filter(Boolean).join(' ') || '-' }}</div>
+                <div>{{ row.recipient?.phone || '-' }}</div>
+                <div class="recipient-cell__name">{{ row.recipient?.name || '-' }} {{ row.honorific || '様' }}</div>
+              </div>
+            </td>
+            <!-- 商品 -->
+            <td class="o-table-td">
+              <div class="product-list">
+                <div v-for="(p, pi) in (row.products || [])" :key="pi" class="product-item">
+                  <img :src="resolveImageUrl(p.imageUrl)" class="product-item__img" alt="" @error="(e: Event) => { (e.target as HTMLImageElement).src = noImageSrc }" />
+                  <div class="product-item__info">
+                    <span class="product-item__name">{{ p.productName || '-' }}</span>
+                    <span class="product-item__meta">SKU: {{ p.inputSku || p.productSku || '-' }} / 個数: {{ p.quantity ?? 0 }}</span>
+                  </div>
+                </div>
+                <span v-if="!row.products?.length" class="o-cell">-</span>
+              </div>
+            </td>
+            <!-- 履歴 -->
+            <td class="o-table-td o-table-td--mgmt">
+              <div class="mgmt-cell">
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">確定日時</span>
+                  <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.confirm?.confirmedAt) }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">送り状発行</span>
+                  <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.carrierReceipt?.receivedAt) }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">印刷日時</span>
+                  <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.printed?.printedAt) }}</span>
+                </div>
+              </div>
+            </td>
+            <!-- 操作 -->
+            <td class="o-table-td o-table-td--actions">
+              <div style="display:inline-flex;gap:4px;flex-wrap:wrap;">
+                <OButton variant="primary" size="sm" @click="handleView(row)">詳細</OButton>
+                <OButton variant="warning" size="sm" :disabled="isUnconfirming" @click="openUnconfirmDialog(row)">確認取消</OButton>
+                <OButton variant="secondary" size="sm" :disabled="isChangingInvoiceType" @click="openChangeInvoiceTypeDialog(row)">種類変更</OButton>
+                <OButton variant="success" size="sm" :disabled="!canSplitOrder(row) || isSplittingOrder" @click="openSplitOrderDialog(row)">分割</OButton>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="o-table-pagination">
+      <span class="o-table-pagination__info">{{ displayRows.length }} 件</span>
+      <div class="o-table-pagination__controls">
+        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;">
+          <option :value="10">10</option>
+          <option :value="25">25</option>
+          <option :value="50">50</option>
+          <option :value="100">100</option>
+          <option :value="500">500</option>
+        </select>
+        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--">&lsaquo;</OButton>
+        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
+        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">&rsaquo;</OButton>
+      </div>
+    </div>
 
     <!-- Bottom bar -->
     <OrderBottomBar
@@ -79,6 +226,14 @@
       total-label="表示件数"
     >
       <template #left>
+        <OButton
+          variant="success"
+          size="sm"
+          :disabled="tableSelectedKeys.length === 0 || isReserving"
+          @click="handleReserveStock"
+        >
+          {{ isReserving ? '引当中...' : '出荷引当' }}
+        </OButton>
         <OButton
           variant="warning"
           size="sm"
@@ -205,11 +360,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useRouter } from 'vue-router'
-import Table from '@/components/table/OrderTable.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
 import CarrierSelector from '@/components/search/CarrierSelector.vue'
@@ -225,12 +379,14 @@ import SplitOrderDialog from '@/components/dialogs/SplitOrderDialog.vue'
 import CustomExportDialog from '@/components/export/CustomExportDialog.vue'
 import SchemaAnalysisDrawer from './shipment-list/SchemaAnalysisDrawer.vue'
 import { useOrderUnconfirm } from './shipment-list/useOrderUnconfirm'
-import type { HeaderGroupingConfig } from '@/components/table/tableHeaderGroup'
 import type { Operator } from '@/types/table'
 import { getOrderFieldDefinitions } from '@/types/order'
-import { buildOrderHeaderGroupingConfig } from '@/utils/orderHeaderGrouping'
+import { useOrderCellHelpers } from '@/composables/useOrderCellHelpers'
+import { getApiBaseUrl } from '@/api/base'
+import noImageSrc from '@/assets/images/no_image.png'
 
 import { fetchShipmentOrder, fetchShipmentOrdersPage, fetchShipmentOrdersByIds } from '@/api/shipmentOrders'
+import { reserveOrdersStock } from '@/api/inventory'
 
 import type { Carrier } from '@/types/carrier'
 import { fetchProducts } from '@/api/product'
@@ -241,15 +397,52 @@ import type { OrderDocument } from '@/types/order'
 
 const router = useRouter()
 
+const API_BASE = getApiBaseUrl().replace(/\/api$/, '')
+const resolveImageUrl = (url?: string) => {
+  if (!url) return noImageSrc
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return `${API_BASE}${url}`
+}
+
 type SortOrder = 'asc' | 'desc' | null
 type OrderRow = Record<string, any>
 
 const rows = ref<OrderRow[]>([])
-const tableSelectedKeys = ref<Array<string | number>>([])
+const tableSelectedKeys = ref<string[]>([])
 const isLoadingOrders = ref(false)
 
-// 批量删除功能已禁用（此页面使用確認取消功能代替）
-const batchDeleteEnabled = ref(false)
+// 出荷引当
+const isReserving = ref(false)
+
+const handleReserveStock = async () => {
+  if (tableSelectedKeys.value.length === 0) return
+  if (!confirm(`${tableSelectedKeys.value.length}件の出荷指示に対して在庫引当を実行しますか？`)) return
+
+  isReserving.value = true
+  try {
+    const result = await reserveOrdersStock(tableSelectedKeys.value)
+
+    // 結果メッセージ構築
+    const lines: string[] = [result.message]
+
+    // 各注文の詳細
+    for (const r of result.results) {
+      if (r.reservationCount > 0) {
+        lines.push(`  ✓ ${r.orderNumber}: ${r.reservationCount}件引当`)
+      }
+      for (const err of r.errors) {
+        lines.push(`  ⚠ ${r.orderNumber}: ${err}`)
+      }
+    }
+
+    alert(lines.join('\n'))
+    tableSelectedKeys.value = []
+  } catch (e: any) {
+    alert(e?.message || '在庫引当に失敗しました')
+  } finally {
+    isReserving.value = false
+  }
+}
 
 // Forward reference for loadOrders (defined later)
 let _loadOrders: () => Promise<void> = async () => {}
@@ -289,6 +482,17 @@ const handleUnconfirmConfirm = async (reason: string, skipCarrierDelete = false)
   }
 }
 
+// Cell helpers
+const carriers = ref<Carrier[]>([])
+const {
+  getCarrierLabel,
+  getInvoiceTypeLabel,
+  getTimeSlotLabel,
+  getCoolTypeInfo,
+  fmtDateTime,
+  fmtPostal,
+} = useOrderCellHelpers(carriers)
+
 // データ分析 Drawer
 const schemaAnalysisDrawerVisible = ref(false)
 
@@ -299,18 +503,18 @@ const selectedOrdersForCustomExport = ref<OrderDocument[]>([])
 // Search form ref for external filter addition
 const searchFormRef = ref<{ addFilter: (fieldKey: string, value: any) => boolean } | null>(null)
 
-const pageSize = ref(10)
-const sortBy = ref<string | null>('orderNumber') // 默认按出荷管理No排序
-const sortOrder = ref<SortOrder>('asc') // 默认升序
+const currentPage = ref(1)
+const pageSize = ref(25)
+const sortBy = ref<string | null>('orderNumber')
+const sortOrder = ref<SortOrder>('asc')
 
-// Carrier selector (handled by CarrierSelector component)
+// Carrier selector
 const selectedCarrierId = ref<string>('')
-const carriers = ref<Carrier[]>([])
 // Order group selector
 const selectedOrderGroupId = ref<string>('')
 const orderGroups = ref<OrderGroup[]>([])
 const orderGroupSelectorRef = ref<{ reloadCounts: () => Promise<void> } | null>(null)
-// Products for OrderTable
+// Products
 const products = ref<Product[]>([])
 const showInspected = ref(false)
 const showPrinted = ref(false)
@@ -321,7 +525,6 @@ const handleCarrierChange = (carrierId: string) => {
 
 const handleCarriersLoaded = (loadedCarriers: Carrier[]) => {
   carriers.value = loadedCarriers
-  // CarrierSelector 不再自动选择，直接加载订单（无配送業者过滤时显示全部）
   void loadOrders()
 }
 
@@ -342,24 +545,10 @@ const carrierOptions = computed(() => {
 })
 
 const allFieldDefinitions = computed(() =>
-  getOrderFieldDefinitions({ carrierOptions: carrierOptions.value }).map((col) =>
-    col.key === 'trackingId' ? { ...col, tableVisible: true } : col,
-  ),
+  getOrderFieldDefinitions({ carrierOptions: carrierOptions.value }),
 )
-const baseColumns = computed(() => {
-  const systemFieldKeys = ['tenantId']
-  // 在 shipment-list 页面显示ステータス字段
-  const statusKeys = ['statusCarrierReceipt', 'statusPrintReady', 'statusPrinted']
-  return allFieldDefinitions.value.filter((col) => {
-    if (systemFieldKeys.includes(col.key)) return false
-    // 如果字段设置了 tableVisible: false，但在 statusKeys 中，则显示
-    if (statusKeys.includes(col.key)) return true
-    // 否则遵循 tableVisible 设置
-    return col.tableVisible !== false
-  })
-})
+
 const searchColumns = computed(() => {
-  // Carrier is controlled by the radio above (not by SearchForm)
   return allFieldDefinitions.value.filter(
     (col) => col.searchType !== undefined && col.key !== 'carrierId',
   )
@@ -371,26 +560,19 @@ const globalSearchText = ref<string>('')
 const effectiveSearchPayload = computed(() => {
   const base = currentSearchPayload.value || searchInitialValues.value
   const q: Record<string, { operator: Operator; value: any }> = { ...(base || {}) }
-  // Carrier selector acts as a dedicated filter for this page
   if (selectedCarrierId.value) {
     q.carrierId = { operator: 'is', value: selectedCarrierId.value }
   }
-  // Order group selector filter
   if (selectedOrderGroupId.value) {
     if (selectedOrderGroupId.value === UNCATEGORIZED_VALUE) {
-      // 筛选未分类的订单（orderGroupId 为空）
       q.orderGroupId = { operator: 'isEmpty', value: null }
     } else {
       q.orderGroupId = { operator: 'is', value: selectedOrderGroupId.value }
     }
   }
-  // 只显示 confirm.isConfirmed 为 true 的订单
   q['status.confirm.isConfirmed'] = { operator: 'is', value: true }
-  // 只显示 carrierReceipt.isReceived 为 true 的订单
   q['status.carrierReceipt.isReceived'] = { operator: 'is', value: true }
-  // 隐藏过滤：不显示已出荷済み的订单
   q['status.shipped.isShipped'] = { operator: 'isNot', value: true }
-  // 検品済み・印刷済みの表示制御
   if (!showInspected.value) {
     q['status.inspected.isInspected'] = { operator: 'isNot', value: true }
   }
@@ -400,9 +582,54 @@ const effectiveSearchPayload = computed(() => {
   return q
 })
 
-const displayRows = computed(() => {
-  return [...rows.value]
+const displayRows = computed(() => [...rows.value])
+
+const totalPages = computed(() => Math.max(1, Math.ceil(displayRows.value.length / pageSize.value)))
+
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return displayRows.value.slice(start, start + pageSize.value)
 })
+
+const isAllCurrentPageSelected = computed(() => {
+  if (paginatedRows.value.length === 0) return false
+  return paginatedRows.value.every((r) => tableSelectedKeys.value.includes(String(r._id)))
+})
+
+const isSomeCurrentPageSelected = computed(() => {
+  return paginatedRows.value.some((r) => tableSelectedKeys.value.includes(String(r._id)))
+})
+
+const toggleSelectAll = () => {
+  const pageIds = paginatedRows.value.map((r) => String(r._id))
+  if (isAllCurrentPageSelected.value) {
+    tableSelectedKeys.value = tableSelectedKeys.value.filter((k) => !pageIds.includes(k))
+  } else {
+    const existing = new Set(tableSelectedKeys.value)
+    for (const id of pageIds) existing.add(id)
+    tableSelectedKeys.value = [...existing]
+  }
+}
+
+const toggleRowSelection = (row: any) => {
+  const id = String(row._id)
+  const idx = tableSelectedKeys.value.indexOf(id)
+  if (idx >= 0) {
+    tableSelectedKeys.value = tableSelectedKeys.value.filter((k) => k !== id)
+  } else {
+    tableSelectedKeys.value = [...tableSelectedKeys.value, id]
+  }
+}
+
+const handleSortClick = (field: string) => {
+  if (sortBy.value === field) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = field
+    sortOrder.value = 'asc'
+  }
+  void loadOrders()
+}
 
 const viewDialogVisible = ref(false)
 const selectedOrder = ref<any>(null)
@@ -411,21 +638,18 @@ const previewOrders = ref<OrderDocument[]>([])
 const formExportDialogVisible = ref(false)
 const formExportTargetType = ref<'shipment-list-picking' | 'shipment-detail-list'>('shipment-list-picking')
 
-// 帳票出力用の選択された注文
 const selectedOrdersForExport = computed(() => {
-  const keySet = new Set(tableSelectedKeys.value.map((k) => String(k)))
+  const keySet = new Set(tableSelectedKeys.value)
   return rows.value.filter((r: any) => keySet.has(String(r?._id))) as OrderDocument[]
 })
 
 // Print templates cache
 const printTemplatesCache = ref<PrintTemplate[]>([])
 
-// Load all print templates
 const loadPrintTemplates = async () => {
   try {
     const templates = await fetchPrintTemplates()
     printTemplatesCache.value = templates
-    // Also save to localStorage for consistency with other pages
     localStorage.setItem('allPrintTemplatesCache', JSON.stringify(templates))
   } catch (e) {
     console.error('Failed to load print templates:', e)
@@ -445,11 +669,6 @@ const handleView = async (row: any) => {
   }
 }
 
-
-const handleTableSelectionChange = (payload: { selectedKeys: Array<string | number>; selectedRows: any[] }) => {
-  tableSelectedKeys.value = payload.selectedKeys
-}
-
 const handlePickingListClick = () => {
   if (tableSelectedKeys.value.length === 0) return
   formExportTargetType.value = 'shipment-list-picking'
@@ -464,7 +683,6 @@ const handleShipmentDetailListClick = () => {
 
 const handleCustomExportClick = async () => {
   if (tableSelectedKeys.value.length === 0) return
-  // Fetch full order data for selected rows
   const orderIds = tableSelectedKeys.value.map((k) => String(k))
   try {
     const orders = await fetchShipmentOrdersByIds(orderIds)
@@ -478,8 +696,6 @@ const handleCustomExportClick = async () => {
 
 const handlePrintClick = async () => {
   if (tableSelectedKeys.value.length === 0) return
-
-  // 打开预览对话框
   await openPrintPreview()
 }
 
@@ -493,10 +709,9 @@ const handleOneByOneStart = () => {
 
 const handleNByOneStart = () => {
   if (tableSelectedKeys.value.length === 0) return
-  const keySet = new Set(tableSelectedKeys.value.map((k) => String(k)))
+  const keySet = new Set(tableSelectedKeys.value)
   const selectedOrders = rows.value.filter((r: any) => keySet.has(String(r?._id)))
 
-  // Validate: all selected orders must have totalQuantity === 1
   const invalidOrders = selectedOrders.filter((o: any) => {
     const totalQty = o._productsMeta?.totalQuantity
       ?? (Array.isArray(o.products)
@@ -519,20 +734,15 @@ const handleNByOneStart = () => {
   router.push('/shipment-operations/n-by-one/inspection')
 }
 
-/**
- * 打开打印预览对话框
- */
 const openPrintPreview = async () => {
-  const keySet = new Set(tableSelectedKeys.value.map((k) => String(k)))
+  const keySet = new Set(tableSelectedKeys.value)
   const selectedRows = rows.value.filter((r: any) => keySet.has(String(r?._id)))
   if (!selectedRows.length) return
 
-  // 确保打印模板已加载
   if (printTemplatesCache.value.length === 0) {
     await loadPrintTemplates()
   }
 
-  // 尝试从 localStorage 加载模板（如果 API 加载失败）
   if (printTemplatesCache.value.length === 0) {
     try {
       const storedTemplates = localStorage.getItem('allPrintTemplatesCache')
@@ -549,7 +759,6 @@ const openPrintPreview = async () => {
     return
   }
 
-  // 从后端获取完整的订单数据（包含 carrierRawRow）
   const orderIds = selectedRows
     .map((row) => String((row as any)?._id))
     .filter((id) => id && id !== 'undefined')
@@ -568,7 +777,6 @@ const openPrintPreview = async () => {
     return
   }
 
-  // 确保订单有必要的字段
   orders = orders.filter((order) => {
     return order && order._id && order.carrierId && order.invoiceType
   })
@@ -582,13 +790,8 @@ const openPrintPreview = async () => {
   printPreviewVisible.value = true
 }
 
-/**
- * 打印完成后的回调
- */
 const handlePrintCompleted = async () => {
-  // 重新加载列表以更新打印状态
   await loadOrders()
-  // 清空选择
   tableSelectedKeys.value = []
 }
 
@@ -606,16 +809,12 @@ const handleSave = (_payload: Record<string, { operator: Operator; value: any }>
 }
 
 const handleSchemaFilter = (fieldPath: string, value: any) => {
-  // SearchForm のフィルターに追加
   const success = searchFormRef.value?.addFilter(fieldPath, value)
-
-  // Close the drawer
   schemaAnalysisDrawerVisible.value = false
 
   if (success) {
     alert('フィルタを追加しました')
   } else {
-    // フィールドが SearchForm にない場合は、直接 payload に追加してフォールバック
     const payload = currentSearchPayload.value || {}
     payload[fieldPath] = { operator: 'is', value }
     currentSearchPayload.value = { ...payload }
@@ -624,92 +823,17 @@ const handleSchemaFilter = (fieldPath: string, value: any) => {
   }
 }
 
-const tableColumns = computed(() => {
-  const actionColumn = {
-    key: 'actions',
-    dataKey: 'actions',
-    title: '操作',
-    width: 350,
-    fixed: 'right' as const,
-    align: 'center' as const,
-    cellRenderer: ({ rowData }: { rowData: any }) =>
-      h(
-        'div',
-        { style: 'display:inline-flex;gap:4px;flex-wrap:wrap;' },
-        [
-          h(
-            OButton,
-            {
-              variant: 'primary',
-              size: 'sm',
-              onClick: () => handleView(rowData),
-            },
-            () => '詳細',
-          ),
-          h(
-            OButton,
-            {
-              variant: 'warning',
-              size: 'sm',
-              disabled: isUnconfirming.value,
-              onClick: () => openUnconfirmDialog(rowData),
-            },
-            () => '確認取消',
-          ),
-          h(
-            OButton,
-            {
-              variant: 'secondary',
-              size: 'sm',
-              disabled: isChangingInvoiceType.value,
-              onClick: () => openChangeInvoiceTypeDialog(rowData),
-            },
-            () => '送り状種類変更',
-          ),
-          h(
-            OButton,
-            {
-              variant: 'success',
-              size: 'sm',
-              disabled: !canSplitOrder(rowData) || isSplittingOrder.value,
-              onClick: () => openSplitOrderDialog(rowData),
-            },
-            () => '分割',
-          ),
-        ],
-      ),
-  }
-
-  const cols = [
-    ...baseColumns.value,
-    actionColumn,
-  ]
-  return cols
-})
-
-const headerGroupingConfig = computed<HeaderGroupingConfig>(() => {
-  return buildOrderHeaderGroupingConfig(baseColumns.value as any)
-})
-
-const headerClass = (): string => ''
-
-const tableProps = computed(() => ({}))
-
-
 const loadOrders = async () => {
-  // Prevent concurrent calls
   if (isLoadingOrders.value) return
   isLoadingOrders.value = true
 
   try {
     const tzOffsetMinutes = new Date().getTimezoneOffset()
-    // Fetch ALL items from backend by paging (server max limit is 1000)
     const limit = 1000
     const all: OrderRow[] = []
     let page = 1
     let total = Infinity
 
-    // Capture query params at the start to ensure consistency across pages
     const q = effectiveSearchPayload.value || undefined
     const currentSortBy = sortBy.value
     const currentSortOrder = sortOrder.value
@@ -735,7 +859,7 @@ const loadOrders = async () => {
     }
 
     rows.value = all
-    // Refresh group counts after loading orders
+    currentPage.value = 1
     orderGroupSelectorRef.value?.reloadCounts()
   } catch (e: any) {
     alert(e?.message || '出荷予定の取得に失敗しました')
@@ -744,15 +868,7 @@ const loadOrders = async () => {
   }
 }
 
-// Connect the forward reference so the composable can call loadOrders
 _loadOrders = loadOrders
-
-const handleSortChange = (payload: { sortBy: string | null; sortOrder: SortOrder; mode: 'client' | 'server' }) => {
-  if (payload.mode !== 'server') return
-  sortBy.value = payload.sortBy
-  sortOrder.value = payload.sortOrder
-  void loadOrders()
-}
 
 watch(
   () => selectedCarrierId.value,
@@ -776,7 +892,6 @@ watch(
 )
 
 onMounted(async () => {
-  // 注意：loadOrders() 不在这里调用，由 handleCarriersLoaded() 触发
   await Promise.all([
     loadPrintTemplates(),
     (async () => {
@@ -791,52 +906,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+@import '@/styles/order-table.css';
+
 .shipment-list {
   display: flex;
   flex-direction: column;
-}
-
-
-
-.bottom-bar {
-  position: sticky;
-  bottom: 0;
-  margin-top: 16px;
-  padding: 12px 14px;
-  background: #ffffff;
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  z-index: 10;
-}
-
-.bottom-bar__left {
-  min-width: 0;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-
-.bottom-bar__meta {
-  color: #303133;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-.bottom-bar__right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-::v-deep(.error-cell) {
-  background-color: #ffebee !important;
 }
 
 .between-controls {
@@ -857,14 +931,9 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
-/* OrderGroupSelector tabs 紧贴 table，无间距 */
+/* OrderGroupSelector tabs 紧贴 table */
 .table-attached {
   margin-top: 0 !important;
-}
-
-.table-attached :deep(.el-table) {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
 }
 
 .o-toggle { position:relative; display:inline-flex; align-items:center; cursor:pointer; }

@@ -11,6 +11,22 @@ import { carrierAutomationRouter } from './carrierAutomation';
 import { orderGroupRouter } from './orderGroups';
 import { autoProcessingRuleRouter } from './autoProcessingRules';
 import { renderRouter } from './render';
+import { locationRouter } from './locations';
+import { inventoryRouter } from './inventory';
+import { inboundOrderRouter } from './inboundOrders';
+import { lotRouter } from './lots';
+import { stocktakingOrderRouter } from './stocktakingOrders';
+import { returnOrderRouter } from './returnOrders';
+import { dailyReportRouter } from './dailyReports';
+import { setProductRouter } from './setProducts';
+import { supplierRouter } from './suppliers';
+import { inventoryCategoryRouter } from './inventoryCategories';
+import { customerRouter } from './customers';
+import { operationLogRouter } from './operationLogs';
+import { systemSettingsRouter } from './systemSettings';
+import { emailTemplateRouter } from './emailTemplates';
+import { apiLogRouter } from './apiLogs';
+import { wmsScheduleRouter } from './wmsSchedules';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -26,6 +42,22 @@ export const registerCoreRoutes = (app: Application): void => {
   api.use('/order-groups', orderGroupRouter);
   api.use('/auto-processing-rules', autoProcessingRuleRouter);
   api.use('/render', renderRouter);
+  api.use('/locations', locationRouter);
+  api.use('/inventory', inventoryRouter);
+  api.use('/inbound-orders', inboundOrderRouter);
+  api.use('/lots', lotRouter);
+  api.use('/stocktaking-orders', stocktakingOrderRouter);
+  api.use('/return-orders', returnOrderRouter);
+  api.use('/daily-reports', dailyReportRouter);
+  api.use('/set-products', setProductRouter);
+  api.use('/suppliers', supplierRouter);
+  api.use('/inventory-categories', inventoryCategoryRouter);
+  api.use('/customers', customerRouter);
+  api.use('/operation-logs', operationLogRouter);
+  api.use('/system-settings', systemSettingsRouter);
+  api.use('/email-templates', emailTemplateRouter);
+  api.use('/api-logs', apiLogRouter);
+  api.use('/wms-schedules', wmsScheduleRouter);
 
   app.use('/api', api);
 };

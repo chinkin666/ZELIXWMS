@@ -73,7 +73,8 @@ export const getMinDeliveryDays = (
   const from = getRegion(senderPrefecture)
   const to = getRegion(recipientPrefecture)
   if (from === null || to === null) return DEFAULT_DAYS
-  return DAYS[from][to]
+  const row = DAYS[from]
+  return row ? (row[to] ?? DEFAULT_DAYS) : DEFAULT_DAYS
 }
 
 /**

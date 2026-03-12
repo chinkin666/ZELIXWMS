@@ -547,7 +547,7 @@
 
         <StylesTab
           :visible="activeTab === 'styles'"
-          :styles="template.styles"
+          :styles="template.styles!"
           @update-style="onUpdateStyle"
         />
 
