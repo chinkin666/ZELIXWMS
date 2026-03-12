@@ -482,8 +482,14 @@
       @close="deleteDialogOpen = false"
       @confirm="confirmDelete"
     >
-      <p>{{ deleteDialogMessage }}</p>
-      <template #confirm-text>削除</template>
+      <div class="delete-confirm">
+        <div class="delete-confirm__icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <p class="delete-confirm__message">{{ deleteDialogMessage }}</p>
+        <p class="delete-confirm__hint">この操作は元に戻せません。</p>
+      </div>
+      <template #confirm-text>削除する</template>
     </ODialog>
 
     <!-- B2 Cloud validate dialog -->
@@ -2250,6 +2256,12 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   width: 100%;
 }
+
+/* Delete confirm dialog */
+.delete-confirm { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.75rem; padding: 0.5rem 0; }
+.delete-confirm__icon { line-height: 0; }
+.delete-confirm__message { font-size: 14px; font-weight: 500; color: var(--o-gray-900, #212529); margin: 0; }
+.delete-confirm__hint { font-size: 12px; color: var(--o-gray-500, #909399); margin: 0; }
 
 .error-list { display: flex; flex-direction: column; gap: 0.5rem; }
 .error-list__meta { font-size: var(--o-font-size-small, 13px); color: var(--o-gray-600, #606266); margin-bottom: 0.5rem; }
