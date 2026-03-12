@@ -138,15 +138,14 @@
                 />
               </th>
               <th class="o-table-th" style="width:170px;">履歴</th>
-              <th class="o-table-th" style="width:60px;">操作</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="isLoadingPendingWaybill && displayFilter !== 'pending_confirm'">
-              <td :colspan="displayColumns.length + 7" class="o-table-empty">読み込み中...</td>
+              <td :colspan="displayColumns.length + 6" class="o-table-empty">読み込み中...</td>
             </tr>
             <tr v-else-if="paginatedRows.length === 0">
-              <td :colspan="displayColumns.length + 7" class="o-table-empty">データがありません</td>
+              <td :colspan="displayColumns.length + 6" class="o-table-empty">データがありません</td>
             </tr>
             <template
               v-for="row in paginatedRows"
@@ -291,19 +290,9 @@
                   </div>
                 </div>
               </td>
-              <td class="o-table-td o-table-td--actions">
-                <template v-if="displayFilter === 'pending_confirm'">
-                  <OButton variant="icon" title="編集" @click="handleEdit(row)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                  </OButton>
-                  <OButton variant="icon-danger" title="削除" @click="handleDelete(row)">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                  </OButton>
-                </template>
-              </td>
             </tr>
             <tr v-if="b2ValidationErrors.has(String(row._id || row.id)) || getRowErrorMessages(row).length > 0" class="o-table-row--error-bar">
-              <td :colspan="displayColumns.length + 7" class="o-table-td--error-bar">
+              <td :colspan="displayColumns.length + 6" class="o-table-td--error-bar">
                 <div class="error-bar">
                   <span v-for="(err, ei) in [...getRowErrorMessages(row), ...getB2Errors(row)]" :key="ei">{{ err }}</span>
                 </div>
