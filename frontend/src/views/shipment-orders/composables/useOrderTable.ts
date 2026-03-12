@@ -130,9 +130,12 @@ export function useOrderTable(
     })
   })
 
+  // フォーム用カラム（orderNumber・trackingId は読み取り専用で含める）
+  const FORM_READONLY_KEYS = new Set(['orderNumber', 'trackingId'])
   const formColumns = computed(() =>
     allFieldDefinitions.value.filter(
-      (col) => col.formEditable !== false && col.dataKey !== undefined
+      (col) => col.dataKey !== undefined &&
+        (col.formEditable !== false || FORM_READONLY_KEYS.has(String(col.dataKey)))
     )
   )
 
