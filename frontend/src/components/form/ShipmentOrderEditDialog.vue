@@ -57,42 +57,12 @@
           <div class="o-notebook-page">
             <!-- 商品明細 tab -->
             <template v-if="activeTab === 'products'">
-              <!-- 商品検索パネル -->
               <div class="o-product-toolbar">
                 <OButton variant="secondary" size="sm" @click="openProductSearch">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                   商品検索
                 </OButton>
               </div>
-
-              <div v-if="productSearchOpen" class="o-product-search-panel">
-                <input
-                  v-model="productSearchQuery"
-                  class="o-inline-input"
-                  placeholder="SKU・商品名で検索..."
-                  autofocus
-                />
-                <div class="o-product-search-list">
-                  <div v-if="productSearchLoading" class="o-product-search-empty">読み込み中...</div>
-                  <div v-else-if="filteredProductResults.length === 0" class="o-product-search-empty">該当なし</div>
-                  <div
-                    v-for="prod in filteredProductResults"
-                    :key="prod._id"
-                    class="o-product-search-item"
-                    @click="selectProduct(prod)"
-                  >
-                    <div class="o-product-search-main">
-                      <img v-if="prod.imageUrl" :src="prod.imageUrl" class="o-product-search-img" />
-                      <div class="o-product-search-info">
-                        <div class="o-product-search-name">{{ prod.name }}</div>
-                        <div class="o-product-search-meta">SKU: {{ prod.sku }}{{ prod.barcode?.length ? ` / BC: ${prod.barcode[0]}` : '' }}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <button class="o-btn o-btn-sm o-btn-text" @click="productSearchOpen = false" style="margin-top:4px;">閉じる</button>
-              </div>
-
               <table class="o-lines-table">
                 <thead>
                   <tr>
@@ -301,6 +271,53 @@
         </OButton>
       </div>
     </template>
+  </ODialog>
+
+  <!-- 商品検索ダイアログ -->
+  <ODialog :open="productSearchOpen" size="lg" @close="productSearchOpen = false">
+    <template #title>商品検索</template>
+    <div class="o-product-dialog">
+      <div class="o-product-dialog__search">
+        <input
+          v-model="productSearchQuery"
+          class="o-input o-product-dialog__input"
+          placeholder="SKU・商品名・バーコードで検索..."
+          autofocus
+        />
+      </div>
+      <div class="o-product-dialog__list">
+        <div v-if="productSearchLoading" class="o-product-dialog__empty">読み込み中...</div>
+        <div v-else-if="filteredProductResults.length === 0" class="o-product-dialog__empty">該当する商品がありません</div>
+        <table v-else class="o-product-dialog__table">
+          <thead>
+            <tr>
+              <th style="width:50px;"></th>
+              <th>SKU</th>
+              <th>商品名</th>
+              <th>バーコード</th>
+              <th style="width:70px;"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="prod in filteredProductResults" :key="prod._id" class="o-product-dialog__row">
+              <td>
+                <img v-if="prod.imageUrl" :src="prod.imageUrl" class="o-product-dialog__img" />
+                <div v-else class="o-product-dialog__img o-product-dialog__img--empty"></div>
+              </td>
+              <td class="o-product-dialog__sku">{{ prod.sku }}</td>
+              <td>{{ prod.name }}</td>
+              <td class="o-product-dialog__bc">{{ (prod.barcode || []).join(', ') || '-' }}</td>
+              <td>
+                <OButton variant="primary" size="sm" @click="selectProduct(prod)">選択</OButton>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="o-product-dialog__footer">
+        <span class="o-product-dialog__count">{{ filteredProductResults.length }} 件</span>
+      </div>
+    </div>
   </ODialog>
 </template>
 
@@ -1252,71 +1269,98 @@ const handleSubmit = async () => {
   margin-bottom: 0.5rem;
 }
 
-.o-product-search-panel {
-  background: var(--o-gray-50, #f8f9fa);
-  border: 1px solid var(--o-border-color, #d6d6d6);
-  border-radius: var(--o-border-radius, 4px);
-  padding: 8px;
-  margin-bottom: 0.75rem;
+.o-product-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.o-product-search-list {
-  max-height: 240px;
+.o-product-dialog__search {
+  position: sticky;
+  top: 0;
+  background: var(--o-view-background, #fff);
+  z-index: 1;
+}
+
+.o-product-dialog__input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 13px;
+}
+
+.o-product-dialog__list {
+  max-height: 400px;
   overflow-y: auto;
-  margin-top: 6px;
 }
 
-.o-product-search-empty {
-  padding: 12px;
+.o-product-dialog__empty {
+  padding: 2rem;
   text-align: center;
   color: var(--o-gray-500, #adb5bd);
+  font-size: 13px;
+}
+
+.o-product-dialog__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.o-product-dialog__table th {
+  position: sticky;
+  top: 0;
+  background: var(--o-gray-100, #f8f9fa);
+  padding: 6px 10px;
   font-size: 12px;
+  font-weight: 600;
+  color: var(--o-gray-600, #606266);
+  border-bottom: 2px solid var(--o-border-color, #d6d6d6);
+  text-align: left;
+  white-space: nowrap;
 }
 
-.o-product-search-item {
-  padding: 6px 8px;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: background 0.1s;
+.o-product-dialog__table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--o-gray-200, #e5e5e5);
+  vertical-align: middle;
 }
 
-.o-product-search-item:hover {
-  background: rgba(113, 75, 103, 0.08);
+.o-product-dialog__row:hover {
+  background: var(--o-list-hover, #edf2ff);
 }
 
-.o-product-search-main {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.o-product-search-img {
-  width: 32px;
-  height: 32px;
+.o-product-dialog__img {
+  width: 36px;
+  height: 36px;
   object-fit: cover;
   border-radius: 3px;
   border: 1px solid var(--o-border-color, #e0e0e0);
-  flex-shrink: 0;
 }
 
-.o-product-search-info {
-  min-width: 0;
-  overflow: hidden;
+.o-product-dialog__img--empty {
+  background: var(--o-gray-100, #f5f5f5);
 }
 
-.o-product-search-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--o-gray-900, #212529);
+.o-product-dialog__sku {
+  font-family: monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.o-product-dialog__bc {
+  font-size: 11px;
+  color: var(--o-gray-500, #909399);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 150px;
 }
 
-.o-product-search-meta {
-  font-size: 11px;
-  color: var(--o-gray-500, #6c757d);
-  margin-top: 1px;
+.o-product-dialog__footer {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--o-gray-500, #909399);
 }
 
 @media (max-width: 768px) {
