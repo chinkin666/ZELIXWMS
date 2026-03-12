@@ -20,7 +20,7 @@
                   <span v-if="isFieldRequired(col)" class="required-badge">必須</span>
                 </label>
                 <div class="o-field-value">
-                  <FormField :column="col" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
+                  <FormField :column="withPlaceholder(col)" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
                 </div>
               </div>
             </template>
@@ -33,7 +33,7 @@
                   <span v-if="isFieldRequired(col)" class="required-badge">必須</span>
                 </label>
                 <div class="o-field-value">
-                  <FormField :column="col" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
+                  <FormField :column="withPlaceholder(col)" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
                 </div>
               </div>
             </template>
@@ -146,7 +146,7 @@
                     <span v-if="isFieldRequired(col)" class="required-badge">必須</span>
                   </label>
                   <div class="o-form-field">
-                    <FormField :column="col" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
+                    <FormField :column="withPlaceholder(col)" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
                   </div>
                 </div>
               </div>
@@ -196,7 +196,7 @@
                     <span v-if="isFieldRequired(col)" class="required-badge">必須</span>
                   </label>
                   <div class="o-form-field">
-                    <FormField :column="col" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
+                    <FormField :column="withPlaceholder(col)" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
                   </div>
                 </div>
               </div>
@@ -211,7 +211,7 @@
                     <span v-if="isFieldRequired(col)" class="required-badge">必須</span>
                   </label>
                   <div class="o-form-field">
-                    <FormField :column="col" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
+                    <FormField :column="withPlaceholder(col)" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
                   </div>
                 </div>
               </div>
@@ -226,7 +226,7 @@
                     <span v-if="isFieldRequired(col)" class="required-badge">必須</span>
                   </label>
                   <div class="o-form-field">
-                    <FormField :column="col" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
+                    <FormField :column="withPlaceholder(col)" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
                   </div>
                 </div>
               </div>
@@ -504,12 +504,26 @@ const isFieldVisible = (col: TableColumn): boolean => {
 
 // Field helpers
 const READ_ONLY_FIELDS = new Set(['orderNumber', 'trackingId'])
+const READ_ONLY_PLACEHOLDERS: Record<string, string> = {
+  orderNumber: '登録後に自動採番',
+  trackingId: '送り状データ取込で自動設定',
+}
 
 const isFieldDisabled = (column: TableColumn): boolean => {
   const key = getKey(column)
   if (READ_ONLY_FIELDS.has(key)) return true
   if (typeof column.disabledWhen === 'function') return column.disabledWhen(formData.value)
   return false
+}
+
+// 読み取り専用フィールドにプレースホルダーを付与したカラムを返す
+const withPlaceholder = (col: TableColumn): TableColumn => {
+  const key = getKey(col)
+  const ph = READ_ONLY_PLACEHOLDERS[key]
+  if (ph && !getNestedValue(formData.value, key)) {
+    return { ...col, placeholder: ph } as TableColumn
+  }
+  return col
 }
 
 const isFieldRequired = (column: TableColumn): boolean => {

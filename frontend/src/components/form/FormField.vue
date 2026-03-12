@@ -100,7 +100,8 @@
     class="o-input"
     :value="currentValue"
     :maxlength="column.maxLength"
-    :placeholder="`${column.title}を入力`"
+    :disabled="isDisabled"
+    :placeholder="isDisabled ? (column.placeholder || '-') : `${column.title}を入力`"
     @input="onTextInput"
   />
 </template>
