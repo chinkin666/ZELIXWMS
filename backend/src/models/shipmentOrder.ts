@@ -7,7 +7,8 @@ export interface IAddress {
   postalCode: string;
   prefecture: string;  // 都道府県
   city: string;        // 郡市区
-  street: string;      // それ以降の住所
+  street: string;      // 町・番地
+  building?: string;   // アパートマンション名
   name: string;
   phone: string;
 }
@@ -19,6 +20,7 @@ const addressSchema = new mongoose.Schema<IAddress>(
     prefecture: { type: String, required: true, trim: true },
     city: { type: String, required: true, trim: true },
     street: { type: String, required: true, trim: true },
+    building: { type: String, trim: true, default: '' },
     name: { type: String, required: true, trim: true },
     phone: { type: String, required: true, trim: true },
   },
@@ -32,6 +34,7 @@ const optionalAddressSchema = new mongoose.Schema<IAddress>(
     prefecture: { type: String, trim: true },
     city: { type: String, trim: true },
     street: { type: String, trim: true },
+    building: { type: String, trim: true },
     name: { type: String, trim: true },
     phone: { type: String, trim: true },
   },

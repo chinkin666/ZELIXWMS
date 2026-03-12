@@ -23,81 +23,18 @@
             </div>
             <div class="o-tabs-content">
 
-        <!-- 基本設定 -->
-        <div v-show="activeTab === 'basic'" class="settings-section">
-            <h3 class="section-title">基本設定</h3>
-            <div class="o-form">
-              <div class="o-form-group">
-                <label>テンプレート名</label>
-                <input v-model="template.name" class="o-input" placeholder="例：ピッキングリスト" />
-              </div>
-              <div class="o-form-group">
-                <label>種類</label>
-                <select v-model="template.targetType" class="o-input" disabled style="width: 100%">
-                  <option
-                    v-for="t in formTypeRegistry"
-                    :key="t.type"
-                    :value="t.type"
-                  >{{ t.label }}</option>
-                </select>
-                <div class="hint">種類は作成時に設定され、変更できません</div>
-              </div>
-              <div class="o-form-group">
-                <label>デフォルト</label>
-                <div>
-                  <label class="o-toggle">
-                    <input type="checkbox" v-model="template.isDefault" />
-                    <span class="o-toggle-slider"></span>
-                  </label>
-                  <div class="hint">この種類のデフォルトテンプレートとして使用</div>
-                </div>
-              </div>
-            </div>
-        </div>
+        <BasicSettingsTab
+          :visible="activeTab === 'basic'"
+          :template="template"
+          @update-field="onUpdateField"
+        />
 
-        <!-- 用紙設定 -->
-        <div v-show="activeTab === 'page'" class="settings-section">
-            <h3 class="section-title">用紙設定</h3>
-            <div class="o-form">
-              <div class="o-form-group">
-                <label>用紙サイズ</label>
-                <div class="radio-group">
-                  <label><input type="radio" v-model="template.pageSize" value="A4" /> A4</label>
-                  <label><input type="radio" v-model="template.pageSize" value="A3" /> A3</label>
-                  <label><input type="radio" v-model="template.pageSize" value="B4" /> B4</label>
-                  <label><input type="radio" v-model="template.pageSize" value="LETTER" /> Letter</label>
-                </div>
-              </div>
-              <div class="o-form-group">
-                <label>印刷向き</label>
-                <div class="radio-group">
-                  <label><input type="radio" v-model="template.pageOrientation" value="portrait" /> 縦 (portrait)</label>
-                  <label><input type="radio" v-model="template.pageOrientation" value="landscape" /> 横 (landscape)</label>
-                </div>
-              </div>
-              <div class="o-form-group">
-                <label>余白 (pt)</label>
-                <div class="margin-inputs">
-                  <div class="margin-input">
-                    <span>左</span>
-                    <input type="number" v-model.number="template.pageMargins[0]" min="0" max="200" class="o-input" style="width: 80px" />
-                  </div>
-                  <div class="margin-input">
-                    <span>上</span>
-                    <input type="number" v-model.number="template.pageMargins[1]" min="0" max="200" class="o-input" style="width: 80px" />
-                  </div>
-                  <div class="margin-input">
-                    <span>右</span>
-                    <input type="number" v-model.number="template.pageMargins[2]" min="0" max="200" class="o-input" style="width: 80px" />
-                  </div>
-                  <div class="margin-input">
-                    <span>下</span>
-                    <input type="number" v-model.number="template.pageMargins[3]" min="0" max="200" class="o-input" style="width: 80px" />
-                  </div>
-                </div>
-              </div>
-            </div>
-        </div>
+        <PageSettingsTab
+          :visible="activeTab === 'page'"
+          :template="template"
+          @update-field="onUpdateField"
+          @update-margin="onUpdateMargin"
+        />
 
         <!-- ヘッダー・フッター -->
         <div v-show="activeTab === 'header-footer'" class="settings-section">
@@ -608,88 +545,21 @@
             </div>
         </div>
 
-        <!-- スタイル設定 -->
-        <div v-show="activeTab === 'styles'" class="settings-section">
-            <h3 class="section-title">スタイル設定</h3>
-            <div class="o-form">
-              <div class="o-form-group">
-                <label>フォントサイズ</label>
-                <div style="display: flex; align-items: center; gap: 8px">
-                  <input type="number" v-model.number="template.styles.fontSize" min="6" max="24" class="o-input" style="width: 80px" />
-                  <span class="unit">pt</span>
-                </div>
-              </div>
-              <div class="o-form-group">
-                <label>ヘッダー背景色</label>
-                <div style="display: flex; align-items: center; gap: 8px">
-                  <input type="color" v-model="template.styles.headerBgColor" />
-                  <input v-model="template.styles.headerBgColor" class="o-input" style="width: 120px" placeholder="#2a3474" />
-                </div>
-              </div>
-              <div class="o-form-group">
-                <label>ヘッダー文字色</label>
-                <div style="display: flex; align-items: center; gap: 8px">
-                  <input type="color" v-model="template.styles.headerTextColor" />
-                  <input v-model="template.styles.headerTextColor" class="o-input" style="width: 120px" placeholder="#ffffff" />
-                </div>
-              </div>
-              <div class="o-form-group">
-                <label>罫線色</label>
-                <div style="display: flex; align-items: center; gap: 8px">
-                  <input type="color" v-model="template.styles.borderColor" />
-                  <input v-model="template.styles.borderColor" class="o-input" style="width: 120px" placeholder="#cccccc" />
-                </div>
-              </div>
-              <div class="o-form-group">
-                <label>セル内余白</label>
-                <div style="display: flex; align-items: center; gap: 8px">
-                  <input type="number" v-model.number="template.styles.cellPadding" min="0" max="20" class="o-input" style="width: 80px" />
-                  <span class="unit">pt</span>
-                </div>
-              </div>
-
-              <div class="o-divider"></div>
-
-              <h4 class="sub-section-title">セル配置</h4>
-
-              <div class="o-form-group">
-                <label>水平方向</label>
-                <div class="o-segmented">
-                  <button :class="{ active: template.styles.horizontalAlign === 'left' }" @click="template.styles.horizontalAlign = 'left'">&#x21E4; 左</button>
-                  <button :class="{ active: template.styles.horizontalAlign === 'center' }" @click="template.styles.horizontalAlign = 'center'">&#x2014; 中央</button>
-                  <button :class="{ active: template.styles.horizontalAlign === 'right' }" @click="template.styles.horizontalAlign = 'right'">&#x21E5; 右</button>
-                </div>
-              </div>
-            </div>
-        </div>
+        <StylesTab
+          :visible="activeTab === 'styles'"
+          :styles="template.styles"
+          @update-style="onUpdateStyle"
+        />
 
             </div>
           </div>
         </div>
-        <div class="editor-right">
-          <div class="preview-header">
-            <div class="preview-controls">
-              <span class="preview-label">プレビュー行数:</span>
-              <input type="number" v-model.number="previewRowCount" min="1" max="100" class="o-input" style="width: 100px" />
-            </div>
-          </div>
-          <div class="preview-container">
-            <div v-if="previewError" class="preview-error">
-              <span class="error-icon" style="font-size: 48px">&#x26A0;</span>
-              <p>プレビューエラー</p>
-              <pre class="error-message">{{ previewError }}</pre>
-            </div>
-            <iframe
-              v-else-if="previewUrl"
-              :src="previewUrl"
-              class="preview-iframe"
-              frameborder="0"
-            />
-            <div v-else class="preview-placeholder">
-              <p>プレビューを生成中...</p>
-            </div>
-          </div>
-        </div>
+        <PreviewPanel
+          :preview-row-count="previewRowCount"
+          :preview-url="previewUrl"
+          :preview-error="previewError"
+          @update:preview-row-count="previewRowCount = $event"
+        />
       </div>
     </div>
 
@@ -709,6 +579,10 @@ import type { FormTemplate, FormTemplateColumn, FormTemplateColumnChild, Barcode
 import { fetchFormTemplate, updateFormTemplate } from '@/api/formTemplate'
 import { formTypeRegistry, getFormTypeFields } from '@/utils/form-export/formFieldRegistry'
 import { generateFormPdf } from '@/utils/form-export/pdfGenerator'
+import BasicSettingsTab from './form-template-editor/BasicSettingsTab.vue'
+import PageSettingsTab from './form-template-editor/PageSettingsTab.vue'
+import StylesTab from './form-template-editor/StylesTab.vue'
+import PreviewPanel from './form-template-editor/PreviewPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -743,6 +617,22 @@ const availableFields = computed(() => {
 // ユニークID生成
 function generateId(): string {
   return `col_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+}
+
+// Handle field updates from sub-components
+function onUpdateField(field: string, value: any) {
+  if (!template.value) return
+  ;(template.value as any)[field] = value
+}
+
+function onUpdateMargin(index: number, value: number) {
+  if (!template.value) return
+  template.value.pageMargins[index] = value
+}
+
+function onUpdateStyle(key: string, value: any) {
+  if (!template.value) return
+  ;(template.value.styles as any)[key] = value
 }
 
 async function loadTemplate() {
@@ -1300,16 +1190,6 @@ onMounted(() => {
 .editor-content { flex: 1; min-height: 0; }
 .editor-layout { display: flex; gap: 16px; height: 100%; min-height: 600px; }
 .editor-left { flex: 0 0 50%; min-width: 0; overflow-y: auto; }
-.editor-right { flex: 0 0 50%; min-width: 0; display: flex; flex-direction: column; border: 1px solid #dcdfe6; border-radius: 4px; background: #fff; }
-.preview-header { padding: 12px 16px; border-bottom: 1px solid #dcdfe6; background: #f5f7fa; }
-.preview-controls { display: flex; align-items: center; gap: 8px; }
-.preview-label { font-size: 14px; color: #606266; }
-.preview-container { flex: 1; min-height: 0; position: relative; overflow: hidden; }
-.preview-iframe { width: 100%; height: 100%; border: none; }
-.preview-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; color: #909399; font-size: 14px; }
-.preview-error { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; color: #f56c6c; }
-.preview-error p { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
-.preview-error .error-message { max-width: 100%; padding: 12px; background: #fef0f0; border: 1px solid #fbc4c4; border-radius: 4px; font-size: 12px; color: #c45656; white-space: pre-wrap; word-break: break-all; overflow: auto; max-height: 200px; }
 .settings-section { margin-bottom: 24px; }
 .section-title { margin: 0 0 16px; font-size: 16px; font-weight: 600; color: #303133; border-bottom: 1px solid #ebeef5; padding-bottom: 8px; }
 .sub-section-title { margin: 0 0 12px; font-size: 14px; font-weight: 500; color: #606266; }
@@ -1317,9 +1197,6 @@ onMounted(() => {
 .hint-sub { margin-left: 8px; color: #a8abb2; }
 .hint { margin-top: 4px; font-size: 12px; color: #909399; }
 .unit { margin-left: 8px; color: #909399; }
-.margin-inputs { display: flex; gap: 16px; flex-wrap: wrap; }
-.margin-input { display: flex; align-items: center; gap: 8px; }
-.margin-input span { font-size: 12px; color: #606266; width: 20px; }
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .section-header .section-title { margin: 0; border: none; padding: 0; }
 .empty-columns { padding: 40px 0; }
@@ -1388,13 +1265,7 @@ onMounted(() => {
 .radio-group { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; }
 .radio-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
 
-/* o-btn */
-.o-btn { display: inline-flex; align-items: center; justify-content: center; padding: 6px 14px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 13px; cursor: pointer; background: #fff; color: #606266; transition: all 0.15s; white-space: nowrap; }
-.o-btn:hover { background: #f5f7fa; border-color: #c0c4cc; }
-.o-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.o-btn-primary { background: var(--o-primary, #714B67); color: #fff; border-color: var(--o-primary, #714B67); }
-.o-btn-primary:hover { opacity: 0.85; }
-.o-btn-secondary { background: #fff; color: #606266; border-color: #dcdfe6; }
+/* o-btn-text */
 .o-btn-text { background: none; border: none; padding: 2px 6px; font-size: 12px; cursor: pointer; color: var(--o-primary, #714B67); }
 .o-btn-text:hover { text-decoration: underline; }
 .o-btn-text:disabled { opacity: 0.4; cursor: not-allowed; text-decoration: none; }
@@ -1423,13 +1294,6 @@ onMounted(() => {
 .o-toggle-slider::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; }
 .o-toggle input:checked + .o-toggle-slider { background: var(--o-primary, #714B67); }
 .o-toggle input:checked + .o-toggle-slider::after { transform: translateX(16px); }
-
-/* o-segmented */
-.o-segmented { display: inline-flex; border: 1px solid #dcdfe6; border-radius: 4px; overflow: hidden; }
-.o-segmented button { padding: 6px 14px; border: none; background: #fff; cursor: pointer; font-size: 13px; color: #606266; border-right: 1px solid #dcdfe6; }
-.o-segmented button:last-child { border-right: none; }
-.o-segmented button.active { background: var(--o-primary, #714B67); color: #fff; }
-.o-segmented button:hover:not(.active) { background: #f5f7fa; }
 
 /* Dropdown */
 .o-dropdown-menu { position: absolute; top: 100%; left: 0; z-index: 100; min-width: 180px; background: #fff; border: 1px solid #dcdfe6; border-radius: 4px; box-shadow: 0 2px 12px rgba(0,0,0,0.12); margin-top: 4px; }

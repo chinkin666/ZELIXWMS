@@ -14,18 +14,18 @@ const GROUP_DEFS: GroupDef[] = [
     style: { backgroundColor: '#5661b7', color: '#ffffff' },
   },
   {
-    title: '送付先情報',
-    keys: ['recipient.postalCode', 'recipient.prefecture', 'recipient.city', 'recipient.street', 'recipientAddress', 'recipient.name', 'recipient.phone', 'honorific'],
+    title: 'お届け先情報',
+    keys: ['recipient.postalCode', 'recipient.prefecture', 'recipient.city', 'recipient.street', 'recipient.building', 'recipientAddress', 'recipient.name', 'recipient.phone', 'honorific'],
     style: { backgroundColor: '#e6a23c', color: '#ffffff' },
   },
   {
     title: 'ご依頼主情報',
-    keys: ['sender.postalCode', 'sender.prefecture', 'sender.city', 'sender.street', 'senderAddress', 'sender.name', 'sender.phone', 'carrierData.yamato.hatsuBaseNo1', 'carrierData.yamato.hatsuBaseNo2'],
+    keys: ['sender.postalCode', 'sender.prefecture', 'sender.city', 'sender.street', 'sender.building', 'senderAddress', 'sender.name', 'sender.phone', 'carrierData.yamato.hatsuBaseNo1', 'carrierData.yamato.hatsuBaseNo2'],
     style: { backgroundColor: '#3b499f', color: '#ffffff' },
   },
   {
     title: '注文者情報',
-    keys: ['orderer.postalCode', 'orderer.prefecture', 'orderer.city', 'orderer.street', 'ordererAddress', 'orderer.name', 'orderer.phone'],
+    keys: ['orderer.postalCode', 'orderer.prefecture', 'orderer.city', 'orderer.street', 'orderer.building', 'ordererAddress', 'orderer.name', 'orderer.phone'],
     style: { backgroundColor: '#67c23a', color: '#ffffff' },
   },
   {

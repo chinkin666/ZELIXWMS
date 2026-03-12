@@ -258,7 +258,7 @@ const fieldCategories = computed(() => {
   const catLabels: Record<string, string> = {
     shipping: '出荷情報',
     product: '商品',
-    recipient: '送付先情報',
+    recipient: 'お届け先情報',
     sender: 'ご依頼主情報',
     orderer: '注文者情報',
     other: 'その他',

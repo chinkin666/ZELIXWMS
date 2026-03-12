@@ -232,6 +232,13 @@ export default {
     cancel: 'Cancel',
     confirm: 'Confirm',
   },
+  batch: {
+    selectedCount: '{count} selected',
+    selectAll: 'Select All',
+    deselectAll: 'Deselect All',
+    confirmTitle: 'Confirm Action',
+    confirmMessage: 'Are you sure you want to "{action}" {count} item(s)?',
+  },
   mobile: {
     allApps: 'All Apps',
     more: 'More',

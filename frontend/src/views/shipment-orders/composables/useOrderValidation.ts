@@ -2,7 +2,7 @@ import type { Ref } from 'vue'
 import type { UserOrderRow } from '@/types/orderRow'
 import type { TableColumn } from '@/types/table'
 import type { OrderProduct } from '@/types/order'
-import { validateCell } from '@/utils/orderValidation'
+import { validateCell, validateDeliveryDate, validateAddressFields } from '@/utils/orderValidation'
 
 export function useOrderValidation(
   baseColumns: Ref<TableColumn[]>,
@@ -35,5 +35,14 @@ export function useOrderValidation(
     return row.products.some((p: OrderProduct) => !p.productId)
   }
 
-  return { hasRowErrors, hasFrontendRowErrors, isCellError, hasUnregisteredSku }
+  // 行のバリデーションエラーメッセージを取得
+  const getRowErrorMessages = (row: UserOrderRow): string[] => {
+    const messages: string[] = []
+    const deliveryErr = validateDeliveryDate(row)
+    if (deliveryErr) messages.push(deliveryErr)
+    messages.push(...validateAddressFields(row))
+    return messages
+  }
+
+  return { hasRowErrors, hasFrontendRowErrors, isCellError, hasUnregisteredSku, getRowErrorMessages }
 }

@@ -600,17 +600,17 @@ const getFieldCategory = (fieldKey: string): string => {
     const productKeys = [
         '_productsMeta.totalQuantity', '_productsMeta.skuCount', '_productsMeta.names', '_productsMeta.skus', '_productsMeta.barcodes'
     ]
-    // 送付先情報
+    // お届け先情報
     const recipientKeys = [
-        'recipient.postalCode', 'recipient.prefecture', 'recipient.city', 'recipient.street', 'recipient.name', 'recipient.phone', 'honorific'
+        'recipient.postalCode', 'recipient.prefecture', 'recipient.city', 'recipient.street', 'recipient.building', 'recipient.name', 'recipient.phone', 'honorific'
     ]
     // ご依頼主情報
     const senderKeys = [
-        'sender.postalCode', 'sender.prefecture', 'sender.city', 'sender.street', 'sender.name', 'sender.phone', 'carrierData.yamato.hatsuBaseNo1', 'carrierData.yamato.hatsuBaseNo2'
+        'sender.postalCode', 'sender.prefecture', 'sender.city', 'sender.street', 'sender.building', 'sender.name', 'sender.phone', 'carrierData.yamato.hatsuBaseNo1', 'carrierData.yamato.hatsuBaseNo2'
     ]
     // 注文者情報
     const ordererKeys = [
-        'orderer.postalCode', 'orderer.prefecture', 'orderer.city', 'orderer.street', 'orderer.name', 'orderer.phone'
+        'orderer.postalCode', 'orderer.prefecture', 'orderer.city', 'orderer.street', 'orderer.building', 'orderer.name', 'orderer.phone'
     ]
 
     if (shippingKeys.includes(fieldKey)) return 'shipping'
@@ -624,7 +624,7 @@ const getFieldCategory = (fieldKey: string): string => {
 const categoryLabels = {
     shipping: '出荷情報',
     product: '商品',
-    recipient: '送付先情報',
+    recipient: 'お届け先情報',
     sender: 'ご依頼主情報',
     orderer: '注文者情報',
     other: 'その他'

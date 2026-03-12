@@ -112,7 +112,8 @@ const addressSchema = z.object({
     .pipe(z.string().regex(postalCode7, '郵便番号は7桁の数字で入力してください')),
   prefecture: z.string().min(1, '都道府県は必須です'),
   city: z.string().min(1, '郡市区は必須です'),
-  street: z.string().min(1, '住所は必須です'),
+  street: z.string().min(1, '町・番地は必須です'),
+  building: z.string().optional().default(''),
   name: z.string().min(1, '名前は必須です'),
   phone: z
     .string()
@@ -128,6 +129,7 @@ const optionalAddressSchema = z.object({
   prefecture: z.preprocess(emptyToUndefined, z.string().optional()),
   city: z.preprocess(emptyToUndefined, z.string().optional()),
   street: z.preprocess(emptyToUndefined, z.string().optional()),
+  building: z.preprocess(emptyToUndefined, z.string().optional()),
   name: z.preprocess(emptyToUndefined, z.string().optional()),
   phone: z.preprocess(emptyToUndefined, z.string().transform(stripNonDigits).pipe(z.string().regex(digitsOnly, '電話番号は数字のみで入力してください')).optional()),
 });

@@ -1,12 +1,12 @@
 <template>
   <ODialog
     :open="modelValue"
-    title="B2 Cloud 検証エラー"
+    title="B2 Cloud エラー"
     @close="$emit('update:modelValue', false)"
-    width="700px"
+    size="lg"
   >
     <div class="alert-error">
-      B2 Cloud APIへの検証リクエストでエラーが発生しました
+      B2 Cloud との通信中にエラーが発生しました
     </div>
     <div v-if="parsedDetails.length > 0" class="api-error-details">
       <h4>エラー詳細</h4>

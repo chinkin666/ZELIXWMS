@@ -261,6 +261,11 @@ function navigateBreadcrumb(route?: string) {
         </ol>
       </div>
 
+      <!-- Center slot -->
+      <div class="o-cp-center">
+        <slot name="center" />
+      </div>
+
       <!-- Action buttons -->
       <div class="o-cp-actions">
         <OPresenceIndicator />
@@ -350,7 +355,7 @@ function navigateBreadcrumb(route?: string) {
 }
 
 .o-cp-breadcrumbs {
-  flex: 1;
+  flex: 0 0 auto;
   min-width: 0;
 }
 .o-breadcrumb {
@@ -386,6 +391,13 @@ function navigateBreadcrumb(route?: string) {
   color: var(--o-gray-900);
   font-weight: 600;
   font-size: var(--o-font-size-base);
+}
+
+.o-cp-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
 }
 
 .o-cp-actions {

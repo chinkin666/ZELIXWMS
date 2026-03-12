@@ -42,175 +42,35 @@
       @submit="handleDialogSubmitWithSubSkus"
     >
       <template #extra>
-        <!-- Image Upload Section -->
-        <div class="image-upload-section">
-          <div class="o-divider">
-            <span class="o-divider-text">商品画像</span>
-          </div>
-          <div class="image-upload-content">
-            <div class="image-preview">
-              <img :src="resolveImageUrl(editImageUrl)" class="preview-img" @error="(e: Event) => { (e.target as HTMLImageElement).src = noImageSrc }" />
-            </div>
-            <div class="image-inputs">
-              <!-- No image or has image: show action buttons -->
-              <div v-if="!showUrlInput" class="image-input-row">
-                <label class="o-btn o-btn-secondary o-btn-sm">
-                  <span v-if="uploadingImage">...</span>
-                  <span v-else>&#128247; ファイルをアップロード</span>
-                  <input type="file" accept="image/*" class="hidden-input" @change="handleImageFileChangeNative" />
-                </label>
-                <OButton variant="secondary" size="sm" @click="showUrlInput = true">外部URLを指定</OButton>
-                <OButton v-if="editImageUrl" variant="danger" size="sm" @click="editImageUrl = ''">削除</OButton>
-              </div>
-              <!-- URL input mode -->
-              <div v-else class="image-input-row">
-                <input
-                  v-model="editImageUrl"
-                  type="text"
-                  class="o-input o-input-sm"
-                  placeholder="画像URLを入力 (https://...)"
-                />
-                <OButton variant="secondary" size="sm" @click="showUrlInput = false">戻る</OButton>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ProductImageUpload
+          ref="imageUploadRef"
+          :image-url="editImageUrl"
+          @update:image-url="editImageUrl = $event"
+        />
 
-        <!-- Sub-SKU Management Section in Edit Dialog -->
-        <div class="sub-sku-inline-section">
-          <div class="o-divider">
-            <span class="o-divider-text">子SKU管理</span>
-          </div>
-          <table class="o-list-table" style="width: 100%">
-            <thead>
-              <tr>
-                <th style="width: 200px">子SKUコード</th>
-                <th style="width: 100px">価格</th>
-                <th>説明</th>
-                <th style="width: 60px; text-align: center">有効</th>
-                <th style="width: 60px; text-align: center"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, $index) in editDialogSubSkus" :key="$index">
-                <td>
-                  <div>
-                    <input
-                      v-model="row.subSku"
-                      type="text"
-                      class="o-input o-input-sm"
-                      :class="{ 'is-error': editDialogSubSkuValidationErrors[$index] }"
-                      placeholder="子SKUコード"
-                      @blur="validateEditDialogSubSkuInput($index)"
-                    />
-                    <div v-if="editDialogSubSkuValidationErrors[$index]" class="sku-error-message">
-                      {{ editDialogSubSkuValidationErrors[$index] }}
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <input
-                    v-model.number="row.price"
-                    type="number"
-                    class="o-input o-input-sm"
-                    :min="0"
-                    placeholder="親価格"
-                    style="width: 100%"
-                  />
-                </td>
-                <td>
-                  <input v-model="row.description" type="text" class="o-input o-input-sm" placeholder="説明（例: セール価格）" />
-                </td>
-                <td style="text-align: center">
-                  <input type="checkbox" v-model="row.isActive" />
-                </td>
-                <td style="text-align: center">
-                  <OButton variant="danger" size="sm" @click="removeEditDialogSubSku($index)">削除</OButton>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="sub-sku-actions">
-            <OButton variant="primary" size="sm" @click="addEditDialogSubSku">+ 子SKUを追加</OButton>
-          </div>
-        </div>
+        <SubSkuInlineEditor
+          :sub-skus="editDialogSubSkus"
+          :validation-errors="editDialogSubSkuValidationErrors"
+          @add="addEditDialogSubSku"
+          @remove="removeEditDialogSubSku"
+          @validate="(index) => validateEditDialogSubSkuInput(index)"
+        />
       </template>
     </FormDialog>
 
     <!-- Sub-SKU Management Dialog -->
-    <ODialog
+    <SubSkuDialog
       :open="subSkuDialogVisible"
-      title="子SKU管理"
-      size="lg"
-      @close="subSkuDialogVisible = false"
-    >
-      <div v-if="subSkuEditingProduct" class="sub-sku-header">
-        <p><strong>親商品:</strong> {{ subSkuEditingProduct.sku }} - {{ subSkuEditingProduct.name }}</p>
-        <p v-if="subSkuEditingProduct.price"><strong>親商品価格:</strong> &yen;{{ subSkuEditingProduct.price.toLocaleString() }}</p>
-      </div>
-
-      <table class="o-list-table" style="width: 100%">
-        <thead>
-          <tr>
-            <th style="width: 220px">子SKUコード</th>
-            <th style="width: 120px">価格</th>
-            <th>説明</th>
-            <th style="width: 70px; text-align: center">有効</th>
-            <th style="width: 80px; text-align: center">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(row, $index) in tempSubSkus" :key="$index">
-            <td>
-              <div>
-                <input
-                  v-model="row.subSku"
-                  type="text"
-                  class="o-input o-input-sm"
-                  :class="{ 'is-error': subSkuValidationErrors[$index] }"
-                  placeholder="子SKUコード"
-                  @blur="validateSubSkuInput($index)"
-                />
-                <div v-if="subSkuValidationErrors[$index]" class="sku-error-message">
-                  {{ subSkuValidationErrors[$index] }}
-                </div>
-              </div>
-            </td>
-            <td>
-              <input
-                v-model.number="row.price"
-                type="number"
-                class="o-input o-input-sm"
-                :min="0"
-                placeholder="親価格"
-                style="width: 100%"
-              />
-            </td>
-            <td>
-              <input v-model="row.description" type="text" class="o-input o-input-sm" placeholder="説明（例: セール価格）" />
-            </td>
-            <td style="text-align: center">
-              <input type="checkbox" v-model="row.isActive" />
-            </td>
-            <td style="text-align: center">
-              <OButton variant="danger" size="sm" @click="removeSubSku($index)">削除</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="sub-sku-actions">
-        <OButton variant="primary" size="sm" @click="addSubSku">+ 子SKUを追加</OButton>
-      </div>
-
-      <template #footer>
-        <OButton variant="secondary" @click="subSkuDialogVisible = false">キャンセル</OButton>
-        <OButton variant="primary" :disabled="savingSubSkus" @click="saveSubSkus">
-          <span v-if="savingSubSkus">...</span>
-          <span v-else>保存</span>
-        </OButton>
-      </template>
-    </ODialog>
+      :editing-product="subSkuEditingProduct"
+      :sub-skus="tempSubSkus"
+      :validation-errors="subSkuValidationErrors"
+      :saving="savingSubSkus"
+      @update:open="subSkuDialogVisible = $event"
+      @add="addSubSku"
+      @remove="removeSubSku"
+      @validate="(index) => validateSubSkuInput(index)"
+      @save="saveSubSkus"
+    />
 
     <ImportDialog
       v-model="showImportDialog"
@@ -229,18 +89,20 @@ import { computed, h, onMounted, ref } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useToast } from '@/composables/useToast'
-import { uploadProductImage } from '@/api/product'
 import { getApiBaseUrl } from '@/api/base'
 import noImageSrc from '@/assets/images/no_image.png'
 import SearchForm from '@/components/search/SearchForm.vue'
 import Table from '@/components/table/Table.vue'
 import FormDialog from '@/components/form/FormDialog.vue'
 import ImportDialog from '@/components/import/ImportDialog.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
 import type { TableColumn, Operator } from '@/types/table'
 import { bulkUpdateProducts, checkSkuAvailability, createProduct, deleteProduct, fetchProducts, importProductsWithStrategy, updateProduct, type ImportStrategy } from '@/api/product'
 import type { Product, ProductFilters, UpsertProductDto, SubSku } from '@/types/product'
 import ImportResultDialog, { type ImportResultData } from '@/components/import/ImportResultDialog.vue'
+import ProductImageUpload from './product-settings/ProductImageUpload.vue'
+import SubSkuInlineEditor from './product-settings/SubSkuInlineEditor.vue'
+import SubSkuDialog from './product-settings/SubSkuDialog.vue'
+import { useSkuValidation } from './product-settings/useSkuValidation'
 
 const toast = useToast()
 
@@ -276,16 +138,21 @@ const savingSubSkus = ref(false)
 
 // Image upload state
 const editImageUrl = ref<string>('')
-const uploadingImage = ref(false)
-const showUrlInput = ref(false)
+const imageUploadRef = ref<InstanceType<typeof ProductImageUpload> | null>(null)
 
 // Sub-SKU management (edit dialog inline)
 const editDialogSubSkus = ref<SubSku[]>([])
 
-// SKU validation error tracking
-const skuValidationErrors = ref<Record<string, string>>({}) // { sku: errorMessage }
-const subSkuValidationErrors = ref<Record<number, string>>({}) // { index: errorMessage } for sub-SKU dialog
-const editDialogSubSkuValidationErrors = ref<Record<number, string>>({}) // { index: errorMessage } for edit dialog
+// SKU validation (composable)
+const {
+  subSkuValidationErrors,
+  editDialogSubSkuValidationErrors,
+  validateDialogSubSku,
+  validateEditDialogSubSku,
+  validateMainSkuInput,
+  resetDialogErrors,
+  resetEditDialogErrors,
+} = useSkuValidation()
 
 const baseColumns: TableColumn[] = [
   {
@@ -542,21 +409,21 @@ const resetForm = () => {
 const openCreate = () => {
   resetForm()
   editImageUrl.value = ''
-  showUrlInput.value = false
+  imageUploadRef.value?.resetUrlInput()
   editDialogSubSkus.value = []
-  editDialogSubSkuValidationErrors.value = {}
-  skuValidationErrors.value = {}
+  resetEditDialogErrors()
+  resetDialogErrors()
   dialogVisible.value = true
 }
 
 const openEdit = (row: Product) => {
   editingRow.value = row
   editImageUrl.value = row.imageUrl || ''
-  showUrlInput.value = false
+  imageUploadRef.value?.resetUrlInput()
   // Clone subSkus for editing in the dialog
   editDialogSubSkus.value = (row.subSkus || []).map((s) => ({ ...s }))
-  editDialogSubSkuValidationErrors.value = {}
-  skuValidationErrors.value = {}
+  resetEditDialogErrors()
+  resetDialogErrors()
   dialogVisible.value = true
 }
 
@@ -569,36 +436,18 @@ const duplicateProduct = (row: Product) => {
     subSkus: [],
   } as Product
   editImageUrl.value = row.imageUrl || ''
-  showUrlInput.value = false
+  imageUploadRef.value?.resetUrlInput()
   editDialogSubSkus.value = []
-  editDialogSubSkuValidationErrors.value = {}
-  skuValidationErrors.value = {}
+  resetEditDialogErrors()
+  resetDialogErrors()
   dialogVisible.value = true
-}
-
-const handleImageFileChangeNative = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  uploadingImage.value = true
-  try {
-    const result = await uploadProductImage(file)
-    editImageUrl.value = result.imageUrl
-    toast.showSuccess('画像をアップロードしました')
-  } catch (error: any) {
-    toast.showError(error?.message || '画像のアップロードに失敗しました')
-  } finally {
-    uploadingImage.value = false
-    // Reset file input so same file can be selected again
-    input.value = ''
-  }
 }
 
 // Sub-SKU management functions
 const openSubSkuDialog = (row: Product) => {
   subSkuEditingProduct.value = row
   tempSubSkus.value = (row.subSkus || []).map((s) => ({ ...s }))
-  subSkuValidationErrors.value = {}
+  resetDialogErrors()
   subSkuDialogVisible.value = true
 }
 
@@ -616,45 +465,12 @@ const removeSubSku = (index: number) => {
 }
 
 const validateSubSkuInput = async (index: number) => {
-  const subSku = tempSubSkus.value[index]
-  if (!subSku) return
-
-  subSku.subSku = (subSku.subSku || '').trim()
-  const code = subSku.subSku
-
-  // Clear previous error
-  delete subSkuValidationErrors.value[index]
-
-  if (!code) return
-
-  // Check if it matches parent SKU
-  if (subSkuEditingProduct.value && code === subSkuEditingProduct.value.sku) {
-    subSkuValidationErrors.value[index] = '親SKUと同じコードは使用できません'
-    return
-  }
-
-  // Check for duplicates within the current list
-  const duplicateIndex = tempSubSkus.value.findIndex((s, i) => i !== index && s.subSku === code)
-  if (duplicateIndex >= 0) {
-    subSkuValidationErrors.value[index] = 'このコードは既に入力されています'
-    return
-  }
-
-  // Check against database
-  try {
-    const excludeId = subSkuEditingProduct.value?._id
-    const results = await checkSkuAvailability([code], excludeId)
-    if (results[code] && !results[code].available) {
-      const conflict = results[code]
-      if (conflict.conflictType === 'mainSku') {
-        subSkuValidationErrors.value[index] = `このコードは既存商品のSKU「${conflict.conflictProductSku}」と重複しています`
-      } else {
-        subSkuValidationErrors.value[index] = `このコードは商品「${conflict.conflictProductSku}」の子SKUと重複しています`
-      }
-    }
-  } catch (error: any) {
-    console.error('SKU validation error:', error)
-  }
+  await validateDialogSubSku(
+    index,
+    tempSubSkus.value,
+    subSkuEditingProduct.value?.sku,
+    subSkuEditingProduct.value?._id,
+  )
 }
 
 // Edit dialog inline sub-SKU functions
@@ -671,70 +487,13 @@ const removeEditDialogSubSku = (index: number) => {
   editDialogSubSkus.value.splice(index, 1)
 }
 
-const validateEditDialogSubSkuInput = async (index: number, parentSku?: string) => {
-  const subSku = editDialogSubSkus.value[index]
-  if (!subSku) return
-
-  subSku.subSku = (subSku.subSku || '').trim()
-  const code = subSku.subSku
-
-  // Clear previous error
-  delete editDialogSubSkuValidationErrors.value[index]
-
-  if (!code) return
-
-  // Check if it matches parent SKU (use provided parentSku or editing row's SKU)
-  const currentParentSku = parentSku || editingRow.value?.sku
-  if (currentParentSku && code === currentParentSku) {
-    editDialogSubSkuValidationErrors.value[index] = '親SKUと同じコードは使用できません'
-    return
-  }
-
-  // Check for duplicates within the current list
-  const duplicateIndex = editDialogSubSkus.value.findIndex((s, i) => i !== index && s.subSku === code)
-  if (duplicateIndex >= 0) {
-    editDialogSubSkuValidationErrors.value[index] = 'このコードは既に入力されています'
-    return
-  }
-
-  // Check against database
-  try {
-    const excludeId = editingRow.value?._id
-    const results = await checkSkuAvailability([code], excludeId)
-    if (results[code] && !results[code].available) {
-      const conflict = results[code]
-      if (conflict.conflictType === 'mainSku') {
-        editDialogSubSkuValidationErrors.value[index] = `このコードは既存商品のSKU「${conflict.conflictProductSku}」と重複しています`
-      } else {
-        editDialogSubSkuValidationErrors.value[index] = `このコードは商品「${conflict.conflictProductSku}」の子SKUと重複しています`
-      }
-    }
-  } catch (error: any) {
-    console.error('SKU validation error:', error)
-  }
-}
-
-// Validate main SKU (for create/edit dialog)
-const validateMainSkuInput = async (sku: string): Promise<string | null> => {
-  const code = (sku || '').trim()
-  if (!code) return null
-
-  // Check against database
-  try {
-    const excludeId = editingRow.value?._id
-    const results = await checkSkuAvailability([code], excludeId)
-    if (results[code] && !results[code].available) {
-      const conflict = results[code]
-      if (conflict.conflictType === 'mainSku') {
-        return `このSKUは既存商品「${conflict.conflictProductSku}」と重複しています`
-      } else {
-        return `このSKUは商品「${conflict.conflictProductSku}」の子SKUと重複しています`
-      }
-    }
-  } catch (error: any) {
-    console.error('SKU validation error:', error)
-  }
-  return null
+const validateEditDialogSubSkuInput = async (index: number) => {
+  await validateEditDialogSubSku(
+    index,
+    editDialogSubSkus.value,
+    editingRow.value?.sku,
+    editingRow.value?._id,
+  )
 }
 
 const saveSubSkus = async () => {
@@ -925,7 +684,7 @@ const handleDialogSubmitWithSubSkus = async (payload: Record<string, any>) => {
     }
 
     // Validate main SKU uniqueness against database
-    const mainSkuError = await validateMainSkuInput(parentSku)
+    const mainSkuError = await validateMainSkuInput(parentSku, editingRow.value?._id)
     if (mainSkuError) {
       toast.showWarning(mainSkuError)
       saving.value = false
@@ -1118,108 +877,5 @@ onMounted(() => {
   gap: 6px;
 }
 
-.sub-sku-header {
-  margin-bottom: 16px;
-  padding: 12px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
-}
-
-.sub-sku-header p {
-  margin: 0 0 4px;
-  font-size: 14px;
-}
-
-.sub-sku-header p:last-child {
-  margin-bottom: 0;
-}
-
-.sub-sku-actions {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-start;
-}
-
-.sub-sku-inline-section {
-  padding: 0 20px 20px;
-}
-
-/* SKU validation error styles */
-.sku-error-message {
-  color: #f56c6c;
-  font-size: 11px;
-  line-height: 1.3;
-  margin-top: 2px;
-  word-break: break-word;
-}
-
-.o-input.is-error {
-  border-color: #f56c6c;
-  box-shadow: 0 0 0 1px #f56c6c inset;
-}
-
-.image-upload-section {
-  padding: 0 20px;
-}
-
-.image-upload-content {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-}
-
-.image-preview {
-  flex-shrink: 0;
-}
-
-.preview-img {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  object-position: center;
-  border-radius: 6px;
-  border: 1px solid #dcdfe6;
-}
-
-.image-inputs {
-  flex: 1;
-  min-width: 0;
-}
-
-.image-input-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.upload-status {
-  font-size: 12px;
-  color: #909399;
-}
-
-.hidden-input {
-  display: none;
-}
-
-/* o-divider */
-.o-divider {
-  display: flex;
-  align-items: center;
-  margin: 16px 0 12px;
-  border: 0;
-  white-space: nowrap;
-}
-.o-divider::before,
-.o-divider::after {
-  content: '';
-  flex: 1;
-  border-top: 1px solid #dcdfe6;
-}
-.o-divider-text {
-  padding: 0 12px;
-  font-weight: 600;
-  color: #409eff;
-  font-size: 14px;
-}
 
 </style>

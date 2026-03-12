@@ -232,6 +232,13 @@ export default {
     cancel: '取消',
     confirm: '确认',
   },
+  batch: {
+    selectedCount: '已选择{count}项',
+    selectAll: '全选',
+    deselectAll: '取消全选',
+    confirmTitle: '确认操作',
+    confirmMessage: '确定要对{count}项执行「{action}」吗？',
+  },
   mobile: {
     allApps: '所有应用',
     more: '更多',

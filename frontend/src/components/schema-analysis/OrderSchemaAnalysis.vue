@@ -101,18 +101,20 @@ const fieldsToAnalyze: FieldDef[] = [
   { path: 'sourceOrderAt', displayName: '注文日時', isDate: true },
 
   // Recipient
-  { path: 'recipient.postalCode', displayName: '送付先郵便番号' },
-  { path: 'recipient.prefecture', displayName: '送付先都道府県' },
-  { path: 'recipient.city', displayName: '送付先郡市区' },
-  { path: 'recipient.street', displayName: '送付先住所' },
-  { path: 'recipient.name', displayName: '送付先名' },
-  { path: 'recipient.phone', displayName: '送付先電話番号' },
+  { path: 'recipient.postalCode', displayName: 'お届け先郵便番号' },
+  { path: 'recipient.prefecture', displayName: 'お届け先都道府県' },
+  { path: 'recipient.city', displayName: 'お届け先郡市区' },
+  { path: 'recipient.street', displayName: 'お届け先町・番地' },
+  { path: 'recipient.building', displayName: 'お届け先アパートマンション名' },
+  { path: 'recipient.name', displayName: 'お届け先名' },
+  { path: 'recipient.phone', displayName: 'お届け先電話番号' },
 
   // Sender
   { path: 'sender.postalCode', displayName: 'ご依頼主郵便番号' },
   { path: 'sender.prefecture', displayName: 'ご依頼主都道府県' },
   { path: 'sender.city', displayName: 'ご依頼主郡市区' },
-  { path: 'sender.street', displayName: 'ご依頼主住所' },
+  { path: 'sender.street', displayName: 'ご依頼主町・番地' },
+  { path: 'sender.building', displayName: 'ご依頼主アパートマンション名' },
   { path: 'sender.name', displayName: 'ご依頼主名' },
   { path: 'sender.phone', displayName: 'ご依頼主電話番号' },
 
@@ -120,7 +122,8 @@ const fieldsToAnalyze: FieldDef[] = [
   { path: 'orderer.postalCode', displayName: '注文者郵便番号' },
   { path: 'orderer.prefecture', displayName: '注文者都道府県' },
   { path: 'orderer.city', displayName: '注文者郡市区' },
-  { path: 'orderer.street', displayName: '注文者住所' },
+  { path: 'orderer.street', displayName: '注文者町・番地' },
+  { path: 'orderer.building', displayName: '注文者アパートマンション名' },
   { path: 'orderer.name', displayName: '注文者名' },
   { path: 'orderer.phone', displayName: '注文者電話番号' },
 

@@ -1,142 +1,35 @@
 <template>
   <div class="inspection-page">
     <!-- 左侧面板 -->
-    <div class="left-panel">
-      <div class="left-panel__header">
-        <OButton variant="secondary" size="sm" @click="handleGoBack">&larr; 戻る</OButton>
-        <h2 class="page-title">1-1検品</h2>
-        <OButton variant="danger" size="sm" @click="handleClear">クリア</OButton>
-      </div>
-
-      <!-- ピッキング指示No -->
-      <div v-if="orderGroupId" class="info-row">
-        <span class="info-label">ピッキング指示No</span>
-        <span class="info-value">{{ orderGroupId }}</span>
-      </div>
-
-      <!-- 订单信息 -->
-      <div class="order-info-section">
-        <div v-for="item in orderInfoItems" :key="item.key" class="info-row">
-          <span class="info-label">{{ item.label }}</span>
-          <span class="info-value">{{ currentOrder ? item.value : '' }}</span>
-        </div>
-      </div>
-
-      <!-- 扫描输入框 -->
-      <div class="scan-input-section">
-        <div class="scan-input-wrapper">
-          <input
-            ref="scanInputRef"
-            v-model="inputValue"
-            type="text"
-            class="scan-input"
-            :placeholder="mode === 'order' ? '注文をスキャン...' : '商品をスキャン...'"
-            @keyup.enter="handleInput"
-          />
-          <span class="scan-input-icon">&#128269;</span>
-        </div>
-      </div>
-
-      <!-- 自动印刷开关 -->
-      <div class="auto-print-section">
-        <label class="o-toggle">
-          <input type="checkbox" v-model="autoPrintEnabled" @change="saveAutoPrintSetting" />
-          <span class="o-toggle-slider"></span>
-          <span class="o-toggle-label">検品完了時 送り状自動出力</span>
-        </label>
-      </div>
-
-      <!-- 商品画像 -->
-      <div class="product-image-section">
-        <img
-          :src="scannedProductImageSrc"
-          class="product-image"
-          @error="(e: Event) => { (e.target as HTMLImageElement).src = noImageSrc }"
-        />
-      </div>
-
-      <!-- 当前扫描商品信息 -->
-      <div class="scanned-product-section">
-        <template v-if="lastScannedProduct">
-          <div class="scanned-product-card">
-            <div class="scanned-product-name">{{ lastScannedProduct.name }}</div>
-            <div class="scanned-product-detail">
-              <span>SKU: {{ lastScannedProduct.sku }}</span>
-            </div>
-            <div v-if="lastScannedProduct.barcodes.length > 0" class="scanned-product-detail">
-              <span>バーコード: {{ lastScannedProduct.barcodes.join(', ') }}</span>
-            </div>
-          </div>
-        </template>
-        <div v-else class="empty-hint">スキャン待ち</div>
-      </div>
-    </div>
+    <InspectionLeftPanel
+      ref="leftPanelRef"
+      :order-group-id="orderGroupId"
+      :current-order="currentOrder"
+      :order-info-items="orderInfoItems"
+      :input-value="inputValue"
+      :mode="mode"
+      :auto-print-enabled="autoPrintEnabled"
+      :product-image-src="scannedProductImageSrc"
+      :last-scanned-product="lastScannedProduct"
+      @go-back="handleGoBack"
+      @clear="handleClear"
+      @update:input-value="inputValue = $event"
+      @submit="handleInput"
+      @toggle-auto-print="toggleAutoPrint"
+    />
 
     <!-- 右侧面板 -->
-    <div class="right-panel">
-      <!-- 统计摘要栏 -->
-      <div class="stats-bar">
-        <div class="stat-item">
-          <span class="stat-label">出荷指示数</span>
-          <span class="stat-value">{{ totalQuantity }}</span>
-        </div>
-        <div class="stat-item stat-inspected-block">
-          <span class="stat-label">検品済</span>
-          <span class="stat-value">{{ inspectedQuantity }}</span>
-        </div>
-        <div class="stat-item stat-remaining-block">
-          <span class="stat-label">残り</span>
-          <span class="stat-value">{{ remainingQuantity }}</span>
-        </div>
-        <div class="stat-item stat-orders stat-clickable" @click="openOrderListDialog">
-          <span class="stat-label">注文</span>
-          <span class="stat-value">{{ processedOrderIds.length }} / {{ totalOrderCount }}</span>
-        </div>
-      </div>
-
-      <!-- 商品表格 -->
-      <div class="product-table-section">
-        <template v-if="currentOrder">
-          <table class="o-list-table o-list-table-border" style="width: 100%">
-            <thead>
-              <tr>
-                <th style="min-width: 180px">商品名</th>
-                <th style="min-width: 140px">SKU</th>
-                <th style="min-width: 160px">検品コード（バーコード）</th>
-                <th style="width: 110px; text-align: center">出荷指示数</th>
-                <th style="width: 110px; text-align: center" class="col-inspected">検品数</th>
-                <th style="width: 110px; text-align: center" class="col-remaining">残数</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="row in inspectionItems"
-                :key="row.productIndex"
-                :class="getRowClassName({ row })"
-              >
-                <td>{{ row.name }}</td>
-                <td>{{ row.sku }}</td>
-                <td>{{ row.barcodes.join(', ') || '-' }}</td>
-                <td style="text-align: center">{{ row.totalQuantity }}</td>
-                <td class="col-inspected" style="padding: 0">
-                  <div class="cell-inspected" @click.stop="handleCellClick(row)">
-                    {{ row.inspectedQuantity }}
-                  </div>
-                </td>
-                <td class="col-remaining" style="padding: 0">
-                  <div class="cell-remaining" @click.stop="handleCellClick(row)">
-                    {{ row.remainingQuantity }}
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </template>
-        <div v-else class="empty-table-hint">
-          注文をスキャンすると商品一覧が表示されます
-        </div>
-      </div>
-    </div>
+    <InspectionRightPanel
+      :current-order="currentOrder"
+      :inspection-items="inspectionItems"
+      :total-quantity="totalQuantity"
+      :inspected-quantity="inspectedQuantity"
+      :remaining-quantity="remainingQuantity"
+      :processed-count="processedOrderIds.length"
+      :total-order-count="totalOrderCount"
+      @open-order-list="openOrderListDialog"
+      @cell-click="handleCellClick"
+    />
 
     <!-- F-key 操作バー -->
     <div class="fkey-bar">
@@ -191,16 +84,16 @@
       </div>
 
       <div class="print-preview-section">
-        <div v-if="printRendering" class="rendering">レンダリング中...</div>
-        <div v-else-if="printError" class="error">{{ printError }}</div>
-        <div v-else-if="currentPdfSource === 'b2-webapi'" class="preview-b2-cloud">
+        <div v-if="inspPrint.printRendering.value" class="rendering">レンダリング中...</div>
+        <div v-else-if="inspPrint.printError.value" class="error">{{ inspPrint.printError.value }}</div>
+        <div v-else-if="inspPrint.currentPdfSource.value === 'b2-webapi'" class="preview-b2-cloud">
           <div class="b2-cloud-icon">PDF</div>
           <div class="b2-cloud-text">B2 Cloudから取得</div>
           <div class="b2-cloud-tracking">{{ currentOrder?.trackingId }}</div>
         </div>
-        <div v-else-if="!printImageUrl" class="placeholder">印刷プレビューを生成中...</div>
+        <div v-else-if="!inspPrint.printImageUrl.value" class="placeholder">印刷プレビューを生成中...</div>
         <div v-else class="preview">
-          <img :src="printImageUrl" class="preview-img" />
+          <img :src="inspPrint.printImageUrl.value" class="preview-img" />
         </div>
       </div>
 
@@ -208,7 +101,7 @@
         <OButton variant="secondary" @click="handleCompletionConfirmNoPrint">確認（印刷なし）</OButton>
         <OButton
           variant="primary"
-          :disabled="(currentPdfSource === 'local' && (!printImageUrl || printRendering)) || (currentPdfSource === 'b2-webapi' && !currentOrder?.trackingId)"
+          :disabled="(inspPrint.currentPdfSource.value === 'local' && (!inspPrint.printImageUrl.value || inspPrint.printRendering.value)) || (inspPrint.currentPdfSource.value === 'b2-webapi' && !currentOrder?.trackingId)"
           @click="handlePrint"
         >
           印刷
@@ -346,26 +239,24 @@ import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vu
 import ChangeInvoiceTypeDialog from '@/components/dialogs/ChangeInvoiceTypeDialog.vue'
 import SplitOrderDialog from '@/components/dialogs/SplitOrderDialog.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import InspectionLeftPanel from './one-by-one/InspectionLeftPanel.vue'
+import InspectionRightPanel from './one-by-one/InspectionRightPanel.vue'
 import type { OrderDocument } from '@/types/order'
 import type { Carrier } from '@/types/carrier'
 import type { Product } from '@/types/product'
 import type { PrintTemplate } from '@/types/printTemplate'
-import type { OrderSourceCompany } from '@/types/orderSourceCompany'
 import { fetchShipmentOrdersByIds, fetchShipmentOrdersPage, fetchShipmentOrder, updateShipmentOrderStatus } from '@/api/shipmentOrders'
 import { fetchCarriers } from '@/api/carrier'
 import { fetchProducts } from '@/api/product'
-import { fetchPrintTemplates, fetchPrintTemplate } from '@/api/printTemplates'
-import { fetchOrderSourceCompanyById } from '@/api/orderSourceCompany'
-import { renderTemplateToPngBlob } from '@/utils/print/renderTemplateToPng'
-import { printImage } from '@/utils/print/printImage'
-import { getPrintConfig } from '@/utils/print/printConfig'
-import { yamatoB2Unconfirm, changeInvoiceType, splitOrder as splitOrderApi, isCarrierDeleteError, fetchCarrierAutomationConfig, yamatoB2FetchBatchPdf } from '@/api/carrierAutomation'
+import { fetchPrintTemplates } from '@/api/printTemplates'
+import { yamatoB2Unconfirm, changeInvoiceType, splitOrder as splitOrderApi, isCarrierDeleteError, fetchCarrierAutomationConfig } from '@/api/carrierAutomation'
 import type { SplitOrderRequest, CarrierAutomationConfig } from '@/types/carrierAutomation'
 import { isBuiltInCarrierId } from '@/utils/carrier'
-import { resolvePrintTemplateId, resolvePdfSource } from '@/utils/print/resolvePrintTemplate'
-import { printPdfBlob } from '@/utils/print/printImage'
+import { resolvePdfSource } from '@/utils/print/resolvePrintTemplate'
 import noImageSrc from '@/assets/images/no_image.png'
 import { getApiBaseUrl } from '@/api/base'
+import { useAutoPrint } from '@/composables/useAutoPrint'
+import { useInspectionPrint } from '@/composables/useInspectionPrint'
 
 const IMAGE_BASE = getApiBaseUrl().replace(/\/api$/, '')
 
@@ -391,6 +282,15 @@ interface ScannedProductInfo {
   imageUrl?: string
 }
 
+// ─── Composables ──────────────────────────────────────────────────────
+const { autoPrintEnabled, saveAutoPrintSetting } = useAutoPrint('orderItemScan_autoPrintEnabled')
+const inspPrint = useInspectionPrint()
+
+function toggleAutoPrint() {
+  autoPrintEnabled.value = !autoPrintEnabled.value
+  saveAutoPrintSetting()
+}
+
 // ─── State ────────────────────────────────────────────────────────────
 
 // Page params
@@ -409,7 +309,7 @@ const lastScannedProduct = ref<ScannedProductInfo | null>(null)
 
 // Input
 const inputValue = ref('')
-const scanInputRef = ref<HTMLInputElement | null>(null)
+const leftPanelRef = ref<InstanceType<typeof InspectionLeftPanel> | null>(null)
 
 // Product cache
 const productCache = new Map<string, Product>()
@@ -420,21 +320,11 @@ const carriers = ref<Carrier[]>([])
 // Print templates cache
 const printTemplatesCache = ref<PrintTemplate[]>([])
 
-// Carrier automation config cache (for built-in carrier template resolution)
+// Carrier automation config cache
 const carrierAutomationConfigCache = ref<CarrierAutomationConfig | null>(null)
-
-// Auto-print
-const autoPrintEnabled = ref<boolean>(loadAutoPrintSettingFn())
 
 // Completion dialog
 const completionDialogVisible = ref(false)
-const printRendering = ref(false)
-const printError = ref('')
-const printImageUrl = ref('')
-const printTemplate = ref<PrintTemplate | null>(null)
-const orderSourceCompany = ref<OrderSourceCompany | null>(null)
-const currentPdfSource = ref<'local' | 'b2-webapi'>('local')
-let lastPrintObjectUrl: string | null = null
 
 // Adjust dialog
 const adjustDialogVisible = ref(false)
@@ -523,24 +413,6 @@ const orderInfoItems = computed(() => {
 
 // ─── Helper Functions ─────────────────────────────────────────────────
 
-function loadAutoPrintSettingFn(): boolean {
-  try {
-    const stored = localStorage.getItem('orderItemScan_autoPrintEnabled')
-    if (stored === null) return true
-    return stored === 'true'
-  } catch {
-    return true
-  }
-}
-
-function saveAutoPrintSetting() {
-  try {
-    localStorage.setItem('orderItemScan_autoPrintEnabled', String(autoPrintEnabled.value))
-  } catch (e) {
-    console.error('Failed to save auto print setting:', e)
-  }
-}
-
 function formatCoolType(v: string | undefined): string {
   if (v === '0') return '通常'
   if (v === '1') return 'クール冷凍'
@@ -560,8 +432,16 @@ const scannedProductImageSrc = computed(() => {
 
 function focusScanInput() {
   nextTick(() => {
-    scanInputRef.value?.focus()
+    leftPanelRef.value?.focus()
   })
+}
+
+function getPrintContext() {
+  return {
+    carriers: carriers.value,
+    printTemplatesCache: printTemplatesCache.value,
+    carrierAutomationConfig: carrierAutomationConfigCache.value,
+  }
 }
 
 // ─── Order Matching ───────────────────────────────────────────────────
@@ -580,7 +460,6 @@ function getOrderMatchingValues(order: OrderDocument): string[] {
       if (sku) values.push(sku)
       if (p.productSku && p.productSku !== sku) values.push(p.productSku)
 
-      // Sub-SKUs from cache
       const productData = productCache.get(p.productSku || sku)
       if (productData && Array.isArray(productData.subSkus)) {
         for (const sub of productData.subSkus) {
@@ -588,17 +467,12 @@ function getOrderMatchingValues(order: OrderDocument): string[] {
         }
       }
 
-      // Barcodes
       if (Array.isArray(p.barcode)) {
-        for (const bc of p.barcode) {
-          if (bc) values.push(String(bc))
-        }
+        for (const bc of p.barcode) { if (bc) values.push(String(bc)) }
       } else {
         const pd = productCache.get(p.productSku || sku)
         if (pd && Array.isArray(pd.barcode)) {
-          for (const bc of pd.barcode) {
-            if (bc) values.push(String(bc))
-          }
+          for (const bc of pd.barcode) { if (bc) values.push(String(bc)) }
         }
       }
     }
@@ -613,9 +487,7 @@ function getItemMatchingValues(item: InspectionItem): string[] {
   const values: string[] = []
   if (item.sku) values.push(item.sku)
   if (item.barcodes.length > 0) {
-    for (const bc of item.barcodes) {
-      if (bc) values.push(bc)
-    }
+    for (const bc of item.barcodes) { if (bc) values.push(bc) }
   }
   const pd = item.productData
   if (pd) {
@@ -625,9 +497,7 @@ function getItemMatchingValues(item: InspectionItem): string[] {
       }
     }
     if (Array.isArray(pd.barcode)) {
-      for (const bc of pd.barcode) {
-        if (bc) values.push(String(bc))
-      }
+      for (const bc of pd.barcode) { if (bc) values.push(String(bc)) }
     }
   }
   return values
@@ -699,14 +569,12 @@ function handleOrderMatch(input: string) {
     return
   }
 
-  // Set current order and switch to product mode
   currentOrder.value = matched
   mode.value = 'product'
   lastScannedProduct.value = null
   initializeInspectionItems()
   focusScanInput()
 
-  // Try to auto-match a product if the scan was a SKU/barcode
   tryAutoProductMatch(input)
 }
 
@@ -736,7 +604,6 @@ function handleProductMatch(input: string) {
   }
 
   if (!matched) {
-    // Show prominent warning dialog - scanned something that doesn't belong to this order
     wrongScanValue.value = input
     wrongScanDialogVisible.value = true
     focusScanInput()
@@ -756,20 +623,17 @@ function checkCompletion() {
   const allDone = inspectionItems.value.every(item => item.remainingQuantity === 0)
   if (!allDone) return
 
-  // Check if order was already printed
   const alreadyPrinted = !!(currentOrder.value as any)?.status?.printed?.isPrinted
 
   if (alreadyPrinted) {
     if (confirm('この注文は既に印刷済みです。もう一度印刷しますか？')) {
-      // User chose to print again
       if (autoPrintEnabled.value) {
         triggerAutoPrint()
       } else {
         completionDialogVisible.value = true
       }
     } else {
-      // User chose not to print - mark inspected only and finish
-      markOrderInspectedOnly().then(() => {
+      inspPrint.markOrderInspectedOnly(currentOrder.value!).then(() => {
         finishCurrentOrder()
       })
     }
@@ -786,7 +650,6 @@ function checkCompletion() {
 async function triggerAutoPrint() {
   if (!currentOrder.value) return
 
-  // Check PDF source for this order
   const pdfSource = resolvePdfSource(currentOrder.value.carrierId, currentOrder.value.invoiceType, {
     carriers: carriers.value,
     carrierAutomationConfig: carrierAutomationConfigCache.value,
@@ -799,21 +662,14 @@ async function triggerAutoPrint() {
         completionDialogVisible.value = true
         return
       }
-      const pdfBlob = await yamatoB2FetchBatchPdf([currentOrder.value.trackingId])
-      await printPdfBlob(pdfBlob, { title: `Print ${currentOrder.value.orderNumber || ''}`.trim(), templateType: 'b2-cloud' })
-      const config = getPrintConfig()
-      if (config.method === 'local-bridge') {
-        alert('印刷ジョブを送信しました')
-      } else {
-        alert('印刷を開始しました')
-      }
-      await markOrderCompleted()
+      await inspPrint.printFromB2WebApi(currentOrder.value)
+      await inspPrint.markOrderCompleted(currentOrder.value)
       finishCurrentOrder()
     } else {
-      await renderPrintPreview()
-      if (printImageUrl.value && printTemplate.value && currentOrder.value) {
-        await executePrint()
-        await markOrderCompleted()
+      await inspPrint.renderPrintPreview(currentOrder.value, getPrintContext())
+      if (inspPrint.printImageUrl.value && inspPrint.printTemplate.value && currentOrder.value) {
+        await inspPrint.executePrint(currentOrder.value)
+        await inspPrint.markOrderCompleted(currentOrder.value)
         finishCurrentOrder()
       } else {
         completionDialogVisible.value = true
@@ -823,136 +679,6 @@ async function triggerAutoPrint() {
     console.error('Auto print failed:', e)
     alert(`自動印刷に失敗しました: ${e?.message || String(e)}`)
     completionDialogVisible.value = true
-  }
-}
-
-async function renderPrintPreview() {
-  if (!currentOrder.value) {
-    printError.value = '注文情報が見つかりません'
-    return
-  }
-
-  printRendering.value = true
-  printError.value = ''
-  cleanupPrintImage()
-
-  const pdfSource = resolvePdfSource(currentOrder.value.carrierId, currentOrder.value.invoiceType, {
-    carriers: carriers.value,
-    carrierAutomationConfig: carrierAutomationConfigCache.value,
-  })
-  currentPdfSource.value = pdfSource
-
-  if (pdfSource === 'b2-webapi') {
-    if (!currentOrder.value.trackingId) {
-      printError.value = '追跡番号がありません（B2 CloudからPDFを取得できません）'
-    }
-    printRendering.value = false
-    return
-  }
-
-  try {
-    const allTemplates = printTemplatesCache.value
-    if (allTemplates.length === 0) {
-      printError.value = '印刷テンプレートが読み込まれていません'
-      return
-    }
-
-    const template = findDefaultTemplate(currentOrder.value, allTemplates)
-    if (!template) {
-      printError.value = '該当する印刷テンプレートが見つかりません'
-      return
-    }
-
-    if (currentOrder.value.orderSourceCompanyId) {
-      try {
-        orderSourceCompany.value = await fetchOrderSourceCompanyById(currentOrder.value.orderSourceCompanyId)
-      } catch {
-        orderSourceCompany.value = null
-      }
-    } else {
-      orderSourceCompany.value = null
-    }
-
-    const fullTemplate = await fetchPrintTemplate(template.id)
-    printTemplate.value = fullTemplate
-
-    const [fullOrder] = await fetchShipmentOrdersByIds<OrderDocument>(
-      [currentOrder.value._id!],
-      { includeRawData: true },
-    )
-    const orderForPrint = fullOrder || currentOrder.value
-
-    const blob = await renderTemplateToPngBlob(
-      fullTemplate,
-      orderForPrint,
-      { exportDpi: 203, background: 'white' },
-      orderSourceCompany.value,
-    )
-
-    const url = URL.createObjectURL(blob)
-    lastPrintObjectUrl = url
-    printImageUrl.value = url
-  } catch (e: any) {
-    console.error('Print preview render error:', e)
-    printError.value = e?.message || String(e)
-  } finally {
-    printRendering.value = false
-  }
-}
-
-function findDefaultTemplate(order: OrderDocument, allTemplates: PrintTemplate[]): PrintTemplate | null {
-  const carrierId = order?.carrierId
-  const invoiceType = order?.invoiceType
-  if (!carrierId || !invoiceType) return null
-
-  const templateId = resolvePrintTemplateId(carrierId, invoiceType, {
-    carriers: carriers.value,
-    carrierAutomationConfig: carrierAutomationConfigCache.value,
-  })
-
-  if (!templateId) return null
-  return allTemplates.find((t) => t.id === templateId) || null
-}
-
-async function executePrint() {
-  if (!printImageUrl.value || !printTemplate.value || !currentOrder.value) return
-
-  await printImage(printImageUrl.value, {
-    widthMm: printTemplate.value.canvas.widthMm,
-    heightMm: printTemplate.value.canvas.heightMm,
-    title: `Print ${currentOrder.value.orderNumber || ''}`.trim(),
-  })
-
-  const config = getPrintConfig()
-  if (config.method === 'local-bridge') {
-    alert('印刷ジョブを送信しました')
-  } else {
-    alert('印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）')
-  }
-}
-
-async function markOrderCompleted() {
-  if (!currentOrder.value?._id) return
-  const orderId = String(currentOrder.value._id)
-  try {
-    await Promise.all([
-      updateShipmentOrderStatus(orderId, 'mark-printed'),
-      updateShipmentOrderStatus(orderId, 'mark-inspected'),
-    ])
-  } catch (e: any) {
-    console.error('Failed to update order status:', e)
-    alert(`ステータス更新に失敗しました: ${e?.message || String(e)}`)
-  }
-}
-
-async function markOrderInspectedOnly() {
-  if (!currentOrder.value?._id) return
-  const orderId = String(currentOrder.value._id)
-  try {
-    await updateShipmentOrderStatus(orderId, 'mark-inspected')
-  } catch (e: any) {
-    console.error('Failed to update order status:', e)
-    alert(`ステータス更新に失敗しました: ${e?.message || String(e)}`)
   }
 }
 
@@ -966,7 +692,7 @@ function finishCurrentOrder() {
     saveOrdersToStorage()
   }
 
-  cleanupPrintImage()
+  inspPrint.cleanupPrintImage()
   completionDialogVisible.value = false
   lastScannedProduct.value = null
 
@@ -994,23 +720,12 @@ async function handlePrint() {
   if (!currentOrder.value) return
 
   try {
-    if (currentPdfSource.value === 'b2-webapi') {
-      if (!currentOrder.value.trackingId) {
-        alert('追跡番号がありません')
-        return
-      }
-      const pdfBlob = await yamatoB2FetchBatchPdf([currentOrder.value.trackingId])
-      await printPdfBlob(pdfBlob, { title: `Print ${currentOrder.value.orderNumber || ''}`.trim(), templateType: 'b2-cloud' })
-      const config = getPrintConfig()
-      if (config.method === 'local-bridge') {
-        alert('印刷ジョブを送信しました')
-      } else {
-        alert('印刷を開始しました')
-      }
+    if (inspPrint.currentPdfSource.value === 'b2-webapi') {
+      await inspPrint.printFromB2WebApi(currentOrder.value)
     } else {
-      await executePrint()
+      await inspPrint.executePrint(currentOrder.value)
     }
-    await markOrderCompleted()
+    await inspPrint.markOrderCompleted(currentOrder.value)
     finishCurrentOrder()
   } catch (e: any) {
     console.error('Print error:', e)
@@ -1019,7 +734,7 @@ async function handlePrint() {
 }
 
 async function handleCompletionConfirmNoPrint() {
-  await markOrderInspectedOnly()
+  await inspPrint.markOrderInspectedOnly(currentOrder.value!)
   finishCurrentOrder()
 }
 
@@ -1027,21 +742,7 @@ function handleCompletionDialogClose() {
   // Do nothing - user must use footer buttons
 }
 
-function cleanupPrintImage() {
-  printError.value = ''
-  printImageUrl.value = ''
-  if (lastPrintObjectUrl) {
-    URL.revokeObjectURL(lastPrintObjectUrl)
-    lastPrintObjectUrl = null
-  }
-}
-
 // ─── Row Click → Manual Adjust ───────────────────────────────────────
-
-function getRowClassName({ row }: { row: InspectionItem }) {
-  if (row.remainingQuantity === 0) return 'row-completed'
-  return ''
-}
 
 function handleCellClick(row: InspectionItem) {
   adjustTarget.value = row
@@ -1076,10 +777,10 @@ watch(adjustDialogVisible, (v) => {
 // ─── Watch completion dialog → render preview ────────────────────────
 
 watch(completionDialogVisible, async (v) => {
-  if (v) {
-    await renderPrintPreview()
+  if (v && currentOrder.value) {
+    await inspPrint.renderPrintPreview(currentOrder.value, getPrintContext())
   } else {
-    cleanupPrintImage()
+    inspPrint.cleanupPrintImage()
   }
 })
 
@@ -1488,7 +1189,7 @@ function handleFKeyDown(e: KeyboardEvent) {
 onBeforeUnmount(() => {
   if (autoPrintTimer) { clearTimeout(autoPrintTimer); autoPrintTimer = null }
   if (autoReturnTimer) { clearTimeout(autoReturnTimer); autoReturnTimer = null }
-  cleanupPrintImage()
+  inspPrint.cleanupPrintImage()
   document.removeEventListener('keydown', handleFKeyDown)
 })
 </script>
@@ -1500,339 +1201,6 @@ onBeforeUnmount(() => {
   gap: 0;
   position: relative;
   padding-bottom: 56px;
-}
-
-/* ─── Left Panel ─────────────────────────── */
-.left-panel {
-  width: 360px;
-  min-width: 360px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border-right: 1px solid #e5e7eb;
-  overflow-y: auto;
-}
-
-.left-panel__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: #2a3474;
-}
-
-/* ─── Info Rows ──────────────────────────── */
-.info-row {
-  display: flex;
-  gap: 8px;
-  font-size: 13px;
-  padding: 4px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.info-label {
-  min-width: 100px;
-  color: #606266;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.info-value {
-  color: #303133;
-  word-break: break-all;
-}
-
-.order-info-section {
-  display: flex;
-  flex-direction: column;
-  background: #f5f7fa;
-  border-radius: 6px;
-  padding: 8px 12px;
-  min-height: 60px;
-}
-
-.empty-hint {
-  color: #909399;
-  font-size: 13px;
-  text-align: center;
-  padding: 16px 0;
-}
-
-/* ─── Scan Input ─────────────────────────── */
-.scan-input-section {
-  padding: 8px 0;
-}
-
-.scan-input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.scan-input {
-  width: 100%;
-  font-size: 18px;
-  padding: 12px 40px 12px 16px;
-  border: 2px solid #e6a23c;
-  border-radius: 4px;
-  background: #fffef5;
-  outline: none;
-  box-sizing: border-box;
-}
-
-.scan-input:focus {
-  border-color: #409eff;
-  background: #fff;
-}
-
-.scan-input-icon {
-  position: absolute;
-  right: 12px;
-  color: #909399;
-  font-size: 16px;
-  pointer-events: none;
-}
-
-/* ─── Auto Print Toggle ──────────────────── */
-.auto-print-section {
-  padding: 8px 0;
-  display: flex;
-  align-items: center;
-}
-
-.o-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.o-toggle input { display: none; }
-
-.o-toggle-slider {
-  width: 40px;
-  height: 20px;
-  background: #dcdfe6;
-  border-radius: 10px;
-  position: relative;
-  transition: background 0.2s;
-  flex-shrink: 0;
-}
-.o-toggle-slider::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  background: #fff;
-  border-radius: 50%;
-  transition: transform 0.2s;
-}
-.o-toggle input:checked + .o-toggle-slider {
-  background: #409eff;
-}
-.o-toggle input:checked + .o-toggle-slider::after {
-  transform: translateX(20px);
-}
-
-/* ─── Product Image ──────────────────────── */
-.product-image-section {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0;
-}
-
-.product-image {
-  width: 180px;
-  height: 180px;
-  object-fit: contain;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: #fff;
-}
-
-/* ─── Scanned Product Card ───────────────── */
-.scanned-product-section {
-  min-height: 60px;
-}
-
-.scanned-product-card {
-  background: #ecf5ff;
-  border: 1px solid #b3d8ff;
-  border-radius: 6px;
-  padding: 12px;
-}
-
-.scanned-product-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-  margin-bottom: 6px;
-}
-
-.scanned-product-detail {
-  font-size: 12px;
-  color: #606266;
-  margin-top: 4px;
-}
-
-/* ─── Right Panel ────────────────────────── */
-.right-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  overflow-y: auto;
-}
-
-/* ─── Stats Bar ──────────────────────────── */
-.stats-bar {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 24px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  min-width: 100px;
-}
-
-.stat-label {
-  font-size: 12px;
-  color: #909399;
-  margin-bottom: 4px;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: #303133;
-}
-
-.stat-inspected-block { background: #81B337; }
-.stat-inspected-block .stat-label,
-.stat-inspected-block .stat-value { color: #fff; }
-
-.stat-remaining-block { background: #1F3A5F; }
-.stat-remaining-block .stat-label,
-.stat-remaining-block .stat-value { color: #fff; }
-
-.stat-orders { background: #ecf5ff; }
-.stat-orders .stat-value { color: #409eff; font-size: 18px; }
-
-.stat-clickable { cursor: pointer; transition: opacity 0.2s; }
-.stat-clickable:hover { opacity: 0.8; }
-
-/* ─── Order List Dialog ─────────────────── */
-.order-list-section { margin-bottom: 16px; }
-.order-list-section h4 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #303133; }
-
-/* ─── Product Table ──────────────────────── */
-.product-table-section { flex: 1; }
-
-.empty-table-hint {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: #909399;
-  font-size: 14px;
-  border: 1px dashed #dcdfe6;
-  border-radius: 8px;
-}
-
-/* ─── Table styles ───────────────────────── */
-.o-list-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 13px;
-}
-.o-list-table-border th,
-.o-list-table-border td {
-  border: 1px solid #ebeef5;
-  padding: 8px 12px;
-}
-.o-list-table th {
-  background: #f5f7fa;
-  font-weight: 600;
-  color: #606266;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-.o-list-table td { color: #303133; }
-
-/* ─── Inspected / Remaining cell blocks ── */
-.col-inspected, .col-remaining { padding: 0 !important; }
-
-.cell-inspected,
-.cell-remaining {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-weight: 700;
-  font-size: 15px;
-  color: #fff;
-  user-select: none;
-  height: 100%;
-  min-height: 48px;
-}
-
-.cell-inspected { background: #81B337; }
-.cell-remaining { background: #1F3A5F; }
-.cell-inspected:hover { background: #6f9e2d; }
-.cell-remaining:hover { background: #162d4a; }
-
-.row-completed { background-color: #f0f9eb !important; }
-.row-completed:hover td { background-color: #e1f3d8 !important; }
-
-/* ─── Wrong scan warning dialog ──────────── */
-.wrong-scan-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 20px 0;
-}
-
-.wrong-scan-icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: #f56c6c;
-  color: #fff;
-  font-size: 40px;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.wrong-scan-title { font-size: 22px; font-weight: 700; color: #f56c6c; }
-.wrong-scan-detail { font-size: 16px; color: #303133; }
-.wrong-scan-hint { font-size: 13px; color: #909399; text-align: center; max-width: 360px; }
-
-.wrong-scan-close-btn {
-  width: 240px;
-  height: 48px;
-  font-size: 16px;
-  font-weight: 600;
-  margin-top: 8px;
 }
 
 /* ─── F-Key Bar ──────────────────────────── */
@@ -1881,6 +1249,65 @@ onBeforeUnmount(() => {
   max-width: 100%;
   padding: 0 4px;
   color: #e0e8f0;
+}
+
+/* ─── Order List Dialog ─────────────────── */
+.order-list-section { margin-bottom: 16px; }
+.order-list-section h4 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #303133; }
+
+/* ─── Table styles ───────────────────────── */
+.o-list-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+.o-list-table-border th,
+.o-list-table-border td {
+  border: 1px solid #ebeef5;
+  padding: 8px 12px;
+}
+.o-list-table th {
+  background: #f5f7fa;
+  font-weight: 600;
+  color: #606266;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.o-list-table td { color: #303133; }
+
+/* ─── Wrong scan warning dialog ──────────── */
+.wrong-scan-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.wrong-scan-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #f56c6c;
+  color: #fff;
+  font-size: 40px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wrong-scan-title { font-size: 22px; font-weight: 700; color: #f56c6c; }
+.wrong-scan-detail { font-size: 16px; color: #303133; }
+.wrong-scan-hint { font-size: 13px; color: #909399; text-align: center; max-width: 360px; }
+
+.wrong-scan-close-btn {
+  width: 240px;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 8px;
 }
 
 /* ─── Completion Dialog ──────────────────── */
@@ -1961,35 +1388,7 @@ onBeforeUnmount(() => {
 
 .adjust-shortcuts { font-size: 12px; color: #909399; }
 
-/* ─── Button styles ──────────────────────── */
-.o-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 16px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  background: #fff;
-  color: #606266;
-  line-height: 1.5;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.o-btn:hover { border-color: #409eff; color: #409eff; }
-.o-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.o-btn-sm { padding: 4px 10px; font-size: 12px; }
-
-.o-btn-primary { background: #409eff; color: #fff; border-color: #409eff; }
-.o-btn-primary:hover { background: #66b1ff; border-color: #66b1ff; }
-
-.o-btn-danger { background: #f56c6c; color: #fff; border-color: #f56c6c; }
-.o-btn-danger:hover { background: #f78989; border-color: #f78989; }
-
-.o-btn-secondary { background: #fff; color: #606266; border-color: #dcdfe6; }
-.o-btn-secondary:hover { border-color: #409eff; color: #409eff; }
-
+/* ─── Button / Input styles ──────────────── */
 .o-input {
   padding: 8px 12px;
   border: 1px solid #dcdfe6;

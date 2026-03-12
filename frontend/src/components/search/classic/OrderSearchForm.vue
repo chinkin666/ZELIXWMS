@@ -121,7 +121,7 @@
           <span class="field-value">氏名</span>
           <select class="o-input o-input-sm" v-model="filters.nameSearchField" style="width: 100px">
             <option value="orderer.name">注文者氏名</option>
-            <option value="recipient.name">送付先名</option>
+            <option value="recipient.name">お届け先名</option>
           </select>
           <input class="o-input o-input-sm" v-model="filters.nameSearchValue" style="width: 120px" placeholder="" />
         </div>
@@ -130,7 +130,7 @@
           <span class="field-value">電話番号</span>
           <select class="o-input o-input-sm" v-model="filters.phoneSearchField" style="width: 100px">
             <option value="orderer.phone">注文者氏名</option>
-            <option value="recipient.phone">送付先</option>
+            <option value="recipient.phone">お届け先</option>
           </select>
           <input class="o-input o-input-sm" v-model="filters.phoneSearchValue" style="width: 100px" placeholder="" />
         </div>

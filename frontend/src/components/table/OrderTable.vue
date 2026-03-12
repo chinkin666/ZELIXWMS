@@ -832,7 +832,7 @@ const getFieldCategory = (key: string): string | null => {
 
   if (shipmentKeys.has(key)) return '出荷情報'
   if (productKeys.has(key)) return '商品情報'
-  if (recipientKeys.has(key)) return '送付先情報'
+  if (recipientKeys.has(key)) return 'お届け先情報'
   if (senderKeys.has(key)) return 'ご依頼主情報'
   if (ordererKeys.has(key)) return '注文者情報'
   if (otherKeys.has(key)) return 'その他'
@@ -857,7 +857,7 @@ const addressSplitFields = new Set([
 
 // 地址合併字段映射
 const addressCombinedFieldMap: Record<string, { key: string; label: string }> = {
-  'recipient': { key: 'recipientAddress', label: '送付先住所' },
+  'recipient': { key: 'recipientAddress', label: 'お届け先住所' },
   'sender': { key: 'senderAddress', label: 'ご依頼主住所' },
   'orderer': { key: 'ordererAddress', label: '注文者住所' },
 }
@@ -955,7 +955,7 @@ const categoryGroups = computed<CategoryGroup[]>(() => {
     }
   }
 
-  const categoryOrder = ['出荷情報', '商品情報', '送付先情報', 'ご依頼主情報', 'その他']
+  const categoryOrder = ['出荷情報', '商品情報', 'お届け先情報', 'ご依頼主情報', 'その他']
   const groups: CategoryGroup[] = []
 
   for (const category of categoryOrder) {

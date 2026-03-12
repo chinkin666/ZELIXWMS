@@ -187,22 +187,14 @@
       @confirm="handleSplitOrderConfirm"
     />
 
-    <!-- Schema Analysis Drawer (native slide-over panel) -->
-    <div v-if="schemaAnalysisDrawerVisible" class="drawer-overlay" @click.self="schemaAnalysisDrawerVisible = false">
-      <div class="drawer-panel">
-        <div class="drawer-header">
-          <h3 class="drawer-title">スキーマ分析</h3>
-          <button class="drawer-close" @click="schemaAnalysisDrawerVisible = false">&times;</button>
-        </div>
-        <div class="drawer-body">
-          <OrderSchemaAnalysis
-            :orders="displayRows as OrderDocument[]"
-            :carriers="carriers"
-            @filter="handleSchemaFilter"
-          />
-        </div>
-      </div>
-    </div>
+    <!-- Schema Analysis Drawer -->
+    <SchemaAnalysisDrawer
+      :visible="schemaAnalysisDrawerVisible"
+      :orders="displayRows as OrderDocument[]"
+      :carriers="carriers"
+      @update:visible="schemaAnalysisDrawerVisible = $event"
+      @filter="handleSchemaFilter"
+    />
 
     <CustomExportDialog
       v-model="customExportDialogVisible"
@@ -230,16 +222,16 @@ import FormExportDialog from '@/components/form-export/FormExportDialog.vue'
 import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vue'
 import ChangeInvoiceTypeDialog from '@/components/dialogs/ChangeInvoiceTypeDialog.vue'
 import SplitOrderDialog from '@/components/dialogs/SplitOrderDialog.vue'
-import OrderSchemaAnalysis from '@/components/schema-analysis/OrderSchemaAnalysis.vue'
 import CustomExportDialog from '@/components/export/CustomExportDialog.vue'
+import SchemaAnalysisDrawer from './shipment-list/SchemaAnalysisDrawer.vue'
+import { useOrderUnconfirm } from './shipment-list/useOrderUnconfirm'
 import type { HeaderGroupingConfig } from '@/components/table/tableHeaderGroup'
 import type { Operator } from '@/types/table'
 import { getOrderFieldDefinitions } from '@/types/order'
 import { buildOrderHeaderGroupingConfig } from '@/utils/orderHeaderGrouping'
-import { isBuiltInCarrierId } from '@/utils/carrier'
+
 import { fetchShipmentOrder, fetchShipmentOrdersPage, fetchShipmentOrdersByIds } from '@/api/shipmentOrders'
-import { yamatoB2Unconfirm, changeInvoiceType, splitOrder as splitOrderApi, isCarrierDeleteError } from '@/api/carrierAutomation'
-import type { SplitOrderRequest } from '@/types/carrierAutomation'
+
 import type { Carrier } from '@/types/carrier'
 import { fetchProducts } from '@/api/product'
 import type { Product } from '@/types/product'
@@ -258,26 +250,44 @@ const isLoadingOrders = ref(false)
 
 // 批量删除功能已禁用（此页面使用確認取消功能代替）
 const batchDeleteEnabled = ref(false)
-const isUnconfirming = ref(false)
 
-// 確認取消ダイアログ用
-const unconfirmDialogVisible = ref(false)
-const unconfirmOrderNumber = ref('')
-const unconfirmOrderId = ref('')
-const unconfirmShowManualCarrierWarning = ref(false)
-// 一括確認取消用
-const batchUnconfirmOrderIds = ref<string[]>([])
-const isBatchUnconfirm = ref(false)
+// Forward reference for loadOrders (defined later)
+let _loadOrders: () => Promise<void> = async () => {}
 
-// 送り状種類変更ダイアログ用
-const changeInvoiceTypeDialogVisible = ref(false)
-const changeInvoiceTypeOrders = ref<OrderDocument[]>([])
-const isChangingInvoiceType = ref(false)
+// Unconfirm / Change invoice type / Split order (composable)
+const {
+  isUnconfirming,
+  unconfirmDialogVisible,
+  unconfirmOrderNumber,
+  unconfirmShowManualCarrierWarning,
+  openUnconfirmDialog,
+  openBatchUnconfirmDialog,
+  isBatchUnconfirm,
+  handleUnconfirmConfirm: _handleUnconfirmConfirm,
+  changeInvoiceTypeDialogVisible,
+  changeInvoiceTypeOrders,
+  isChangingInvoiceType,
+  openChangeInvoiceTypeDialog,
+  handleChangeInvoiceTypeConfirm,
+  splitOrderDialogVisible,
+  splitOrderTarget,
+  isSplittingOrder,
+  openSplitOrderDialog,
+  handleSplitOrderConfirm,
+  canSplitOrder,
+} = useOrderUnconfirm(
+  () => rows.value,
+  () => tableSelectedKeys.value,
+  () => _loadOrders(),
+)
 
-// 注文分割ダイアログ用
-const splitOrderDialogVisible = ref(false)
-const splitOrderTarget = ref<OrderDocument | null>(null)
-const isSplittingOrder = ref(false)
+// Wrap unconfirm handler to clear selection after batch unconfirm
+const handleUnconfirmConfirm = async (reason: string, skipCarrierDelete = false) => {
+  await _handleUnconfirmConfirm(reason, skipCarrierDelete)
+  if (isBatchUnconfirm.value) {
+    tableSelectedKeys.value = []
+  }
+}
 
 // データ分析 Drawer
 const schemaAnalysisDrawerVisible = ref(false)
@@ -435,202 +445,6 @@ const handleView = async (row: any) => {
   }
 }
 
-// 打开确认取消对话框（単一）
-const openUnconfirmDialog = (row: any) => {
-  const id = row?._id
-  if (!id) return
-  isBatchUnconfirm.value = false
-  unconfirmOrderId.value = String(id)
-  unconfirmOrderNumber.value = row.orderNumber || String(id)
-  // 检查是否为手动carrier
-  unconfirmShowManualCarrierWarning.value = !isBuiltInCarrierId(row.carrierId)
-  unconfirmDialogVisible.value = true
-}
-
-// 打开一括確認取消对话框
-const openBatchUnconfirmDialog = () => {
-  if (tableSelectedKeys.value.length === 0) return
-  batchUnconfirmOrderIds.value = tableSelectedKeys.value.map(k => String(k))
-  isBatchUnconfirm.value = true
-  unconfirmOrderNumber.value = `${tableSelectedKeys.value.length}件`
-  // 检查选中的订单是否有手动carrier
-  const keySet = new Set(tableSelectedKeys.value.map(k => String(k)))
-  const selectedOrders = rows.value.filter((r: any) => keySet.has(String(r?._id)))
-  unconfirmShowManualCarrierWarning.value = selectedOrders.some((o: any) => !isBuiltInCarrierId(o.carrierId))
-  unconfirmDialogVisible.value = true
-}
-
-// 打开送り状種類変更对话框
-const openChangeInvoiceTypeDialog = (row: any) => {
-  const id = row?._id
-  if (!id) return
-  changeInvoiceTypeOrders.value = [row as OrderDocument]
-  changeInvoiceTypeDialogVisible.value = true
-}
-
-// B2削除エラーハンドリング共通ヘルパー
-const handleB2DeleteErrorWithRetry = async (
-  error: unknown,
-  loadingRef: { value: boolean },
-  retryFn: () => Promise<void>
-): Promise<boolean> => {
-  if (!isCarrierDeleteError(error)) return false
-  loadingRef.value = false
-  if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${(error as any).error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）`)) {
-    await retryFn()
-  }
-  return true
-}
-
-// 处理送り状種類変更确认
-const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrierDelete = false) => {
-  if (changeInvoiceTypeOrders.value.length === 0) return
-
-  isChangingInvoiceType.value = true
-  try {
-    const orderIds = changeInvoiceTypeOrders.value.map((o) => String(o._id))
-    const result = await changeInvoiceType(orderIds, newInvoiceType, { skipCarrierDelete })
-
-    if (result.success) {
-      let message = `送り状種類を変更しました（${result.updatedCount}件更新）`
-      if (result.resubmittedCount > 0) {
-        message += `、${result.resubmittedCount}件をB2 Cloudに再登録`
-      }
-      if (result.carrierDeleteSkipped) {
-        message += '（B2 Cloud削除スキップ）'
-      }
-      if (result.requiresManualUpload) {
-        message += '。手動連携の注文は運送会社への再登録が必要です。'
-        alert(message)
-      } else {
-        alert(message)
-      }
-    } else {
-      const errorMsg = result.errors?.join(', ') || '送り状種類変更に失敗しました'
-      alert(errorMsg)
-    }
-    await loadOrders()
-    changeInvoiceTypeDialogVisible.value = false
-  } catch (e: any) {
-    const handled = await handleB2DeleteErrorWithRetry(
-      e, isChangingInvoiceType,
-      () => handleChangeInvoiceTypeConfirm(newInvoiceType, true)
-    )
-    if (!handled) {
-      alert(e?.message || '送り状種類変更に失敗しました')
-      changeInvoiceTypeDialogVisible.value = false
-    }
-  } finally {
-    isChangingInvoiceType.value = false
-  }
-}
-
-// 处理确认取消（単一・一括共通）
-const handleUnconfirmConfirm = async (reason: string, skipCarrierDelete = false) => {
-  // 批量模式或单个模式获取 orderIds
-  const orderIds = isBatchUnconfirm.value
-    ? batchUnconfirmOrderIds.value
-    : (unconfirmOrderId.value ? [unconfirmOrderId.value] : [])
-
-  if (orderIds.length === 0) return
-
-  isUnconfirming.value = true
-  try {
-    const result = await yamatoB2Unconfirm(orderIds, reason, { skipCarrierDelete })
-    if (result.success) {
-      let message = isBatchUnconfirm.value
-        ? `${result.updatedCount}件の確認を取り消しました`
-        : '確認を取り消しました'
-      if (result.carrierDeleteSkipped) {
-        message += '（B2 Cloud削除スキップ）'
-      } else if (result.b2DeleteResult) {
-        if (result.b2DeleteResult.success) {
-          message += `（B2 Cloudから${result.b2DeleteResult.deleted}件削除）`
-        } else {
-          message += `（B2 Cloud削除失敗: ${result.b2DeleteResult.error}）`
-        }
-      }
-      alert(message)
-    }
-    await loadOrders()
-    unconfirmDialogVisible.value = false
-    // 一括の場合は選択をクリア
-    if (isBatchUnconfirm.value) {
-      tableSelectedKeys.value = []
-    }
-  } catch (e: any) {
-    const handled = await handleB2DeleteErrorWithRetry(
-      e, isUnconfirming,
-      () => handleUnconfirmConfirm(reason, true)
-    )
-    if (!handled) {
-      alert(e?.message || '確認取消に失敗しました')
-      unconfirmDialogVisible.value = false
-    }
-  } finally {
-    isUnconfirming.value = false
-  }
-}
-
-// 注文分割ダイアログを開く
-const openSplitOrderDialog = (row: any) => {
-  const id = row?._id
-  if (!id) return
-  const totalQty = (row.products || []).reduce(
-    (sum: number, p: any) => sum + (p.quantity || 0), 0
-  )
-  if (totalQty <= 1) {
-    alert('商品が1つの注文は分割できません')
-    return
-  }
-  splitOrderTarget.value = row as OrderDocument
-  splitOrderDialogVisible.value = true
-}
-
-// 注文分割の確認ハンドラ
-const handleSplitOrderConfirm = async (splitGroups: SplitOrderRequest['splitGroups'], skipCarrierDelete = false) => {
-  if (!splitOrderTarget.value) return
-
-  isSplittingOrder.value = true
-  try {
-    const result = await splitOrderApi(
-      { orderId: String(splitOrderTarget.value._id), splitGroups },
-      { skipCarrierDelete }
-    )
-    if (result.success) {
-      const successCount = result.splitOrders.filter((o) => o.success).length
-      let message = `注文を${successCount}件に分割しました`
-      if (result.carrierDeleteSkipped) {
-        message += '（B2 Cloud削除スキップ）'
-      }
-      alert(message)
-    } else {
-      const errorMsg = result.errors?.join(', ') || '注文分割に失敗しました'
-      alert(errorMsg)
-    }
-    await loadOrders()
-    splitOrderDialogVisible.value = false
-  } catch (e: any) {
-    const handled = await handleB2DeleteErrorWithRetry(
-      e, isSplittingOrder,
-      () => handleSplitOrderConfirm(splitGroups, true)
-    )
-    if (!handled) {
-      alert(e?.message || '注文分割に失敗しました')
-      splitOrderDialogVisible.value = false
-    }
-  } finally {
-    isSplittingOrder.value = false
-  }
-}
-
-// 注文が分割可能か判定
-const canSplitOrder = (row: any): boolean => {
-  const totalQty = (row.products || []).reduce(
-    (sum: number, p: any) => sum + (p.quantity || 0), 0
-  )
-  return totalQty > 1
-}
 
 const handleTableSelectionChange = (payload: { selectedKeys: Array<string | number>; selectedRows: any[] }) => {
   tableSelectedKeys.value = payload.selectedKeys
@@ -930,6 +744,9 @@ const loadOrders = async () => {
   }
 }
 
+// Connect the forward reference so the composable can call loadOrders
+_loadOrders = loadOrders
+
 const handleSortChange = (payload: { sortBy: string | null; sortOrder: SortOrder; mode: 'client' | 'server' }) => {
   if (payload.mode !== 'server') return
   sortBy.value = payload.sortBy
@@ -1048,57 +865,6 @@ onMounted(async () => {
 .table-attached :deep(.el-table) {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
-}
-
-/* Drawer styles (replaces el-drawer) */
-.drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: 2000;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.drawer-panel {
-  width: 50%;
-  min-width: 400px;
-  max-width: 100%;
-  height: 100%;
-  background: #fff;
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
-  display: flex;
-  flex-direction: column;
-}
-
-.drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.drawer-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.drawer-close {
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  color: #909399;
-  padding: 4px 8px;
-}
-
-.drawer-body {
-  flex: 1;
-  overflow: auto;
-  padding: 20px;
 }
 
 .o-toggle { position:relative; display:inline-flex; align-items:center; cursor:pointer; }

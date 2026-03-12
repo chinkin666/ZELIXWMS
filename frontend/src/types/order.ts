@@ -82,7 +82,8 @@ export interface Address {
   postalCode: string
   prefecture: string  // 都道府県
   city: string        // 市区郡町村
-  street: string      // それ以降の住所
+  street: string      // 町・番地
+  building?: string   // アパートマンション名
   name: string
   phone: string
 }
@@ -114,7 +115,7 @@ export interface OrderDocument {
   trackingId?: string
   // 注文者（全フィールド optional）
   orderer?: Partial<Address>
-  // 送付先
+  // お届け先
   recipient: Address
   honorific?: string // 敬称（デフォルト: "様"）
   products: OrderProduct[]
@@ -229,7 +230,7 @@ export function getOrderFieldDefinitions(opts?: {
   )
 
   // (出荷情報) 出荷管理No, お客様管理番号, 配送業者, 送り状種類, クール区分, 出荷予定日, お届け日指定, お届け時間帯, 商品, 荷扱い
-  // (送付先情報) 送付先郵便番号, 送付先住所, 送付先名, 送付先電話番号, 敬称
+  // (お届け先情報) お届け先郵便番号, お届け先住所, お届け先名, お届け先電話番号, 敬称
   // (ご依頼主情報) 依頼主郵便番号, 依頼主住所, 依頼主名, 依頼主電話番号, 仕分けコード
   // (注文者情報) 注文者郵便番号, 注文者住所, 注文者名, 注文者電話番号
   // (その他) 作成日時, 更新日時, 印刷日時, 取り込み日時
@@ -412,7 +413,7 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'products',
       dataKey: 'products',
-      title: '商品情報',
+      title: '商品明細',
       description: 'この注文に含まれる商品明細の配列です。各要素にSKU（必須）、数量（必須）、商品名（任意）が含まれます。',
       width: 300,
       fieldType: 'array',
@@ -503,7 +504,7 @@ export function getOrderFieldDefinitions(opts?: {
         return barcodes.length > 0 ? barcodes.join(', ') : '-'
       },
     },
-    // (送付先情報)
+    // (お届け先情報)
     {
       key: 'recipient.postalCode',
       dataKey: 'recipient.postalCode',
@@ -519,7 +520,7 @@ export function getOrderFieldDefinitions(opts?: {
       key: 'recipient.prefecture',
       dataKey: 'recipient.prefecture',
       title: '都道府県',
-      description: '送付先の都道府県を保持します。',
+      description: 'お届け先の都道府県を保持します。',
       width: 140,
       fieldType: 'string',
       required: true,
@@ -531,7 +532,7 @@ export function getOrderFieldDefinitions(opts?: {
       key: 'recipient.city',
       dataKey: 'recipient.city',
       title: '市区郡町村',
-      description: '送付先の市区郡町村を保持します。',
+      description: 'お届け先の市区郡町村を保持します。',
       width: 180,
       fieldType: 'string',
       required: true,
@@ -541,31 +542,42 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'recipient.street',
       dataKey: 'recipient.street',
-      title: 'それ以降の住所',
-      description: '送付先のそれ以降の住所（町・番地、建物名など）を保持します。',
-      width: 220,
+      title: '町・番地',
+      description: 'お届け先の町・番地を保持します。',
+      width: 200,
       fieldType: 'string',
       required: true,
       searchType: 'string',
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => rowData.recipient?.street || '-',
     },
     {
+      key: 'recipient.building',
+      dataKey: 'recipient.building',
+      title: 'アパートマンション名',
+      description: 'お届け先のアパート・マンション名・部屋番号等を保持します。',
+      width: 200,
+      fieldType: 'string',
+      required: false,
+      searchType: 'string',
+      cellRenderer: ({ rowData }: { rowData: OrderDocument }) => (rowData.recipient as any)?.building || '-',
+    },
+    {
       key: 'recipientAddress',
       dataKey: 'recipientAddress',
       title: '住所（全体）',
-      description: '送付先の住所全体（都道府県＋市区郡町村＋番地以降）を組み合わせて表示します。',
+      description: 'お届け先の住所全体（都道府県＋市区郡町村＋町・番地＋アパートマンション名）を組み合わせて表示します。',
       width: 300,
       fieldType: 'string',
       required: false,
       searchType: 'string',
-      tableVisible: false, // 拆分字段单独显示，組合せ字段不在表格显示
-      formEditable: false, // 虚拟字段，由拆分字段组合生成
+      tableVisible: false,
+      formEditable: false,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
-        // 用空格连接三部分
         const parts = [
           rowData.recipient?.prefecture,
           rowData.recipient?.city,
           rowData.recipient?.street,
+          (rowData.recipient as any)?.building,
         ].filter(Boolean)
         return parts.length > 0 ? parts.join(' ') : '-'
       },
@@ -600,7 +612,7 @@ export function getOrderFieldDefinitions(opts?: {
       key: 'honorific',
       dataKey: 'honorific',
       title: '敬称',
-      description: '送付先名に付ける敬称（デフォルト: "様"）。',
+      description: 'お届け先名に付ける敬称（デフォルト: "様"）。',
       width: 100,
       fieldType: 'string',
       required: false,
@@ -647,31 +659,42 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'sender.street',
       dataKey: 'sender.street',
-      title: 'それ以降の住所',
-      description: 'ご依頼主のそれ以降の住所（町・番地、建物名など）を保持します。',
-      width: 220,
+      title: '町・番地',
+      description: 'ご依頼主の町・番地を保持します。',
+      width: 200,
       fieldType: 'string',
       required: true,
       searchType: 'string',
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => rowData.sender?.street || '-',
     },
     {
+      key: 'sender.building',
+      dataKey: 'sender.building',
+      title: 'アパートマンション名',
+      description: 'ご依頼主のアパート・マンション名・部屋番号等を保持します。',
+      width: 200,
+      fieldType: 'string',
+      required: false,
+      searchType: 'string',
+      cellRenderer: ({ rowData }: { rowData: OrderDocument }) => (rowData.sender as any)?.building || '-',
+    },
+    {
       key: 'senderAddress',
       dataKey: 'senderAddress',
       title: '住所（全体）',
-      description: 'ご依頼主の住所全体（都道府県＋市区郡町村＋番地以降）を組み合わせて表示します。',
+      description: 'ご依頼主の住所全体を組み合わせて表示します。',
       width: 300,
       fieldType: 'string',
       required: false,
       searchType: 'string',
-      tableVisible: false, // 拆分字段单独显示，組合せ字段不在表格显示
-      formEditable: false, // 虚拟字段，由拆分字段组合生成
+      tableVisible: false,
+      formEditable: false,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
-        // 用空格连接三部分
         const parts = [
           rowData.sender?.prefecture,
           rowData.sender?.city,
           rowData.sender?.street,
+          (rowData.sender as any)?.building,
         ].filter(Boolean)
         return parts.length > 0 ? parts.join(' ') : '-'
       },
@@ -759,31 +782,42 @@ export function getOrderFieldDefinitions(opts?: {
     {
       key: 'orderer.street',
       dataKey: 'orderer.street',
-      title: 'それ以降の住所',
-      description: '注文者のそれ以降の住所（町・番地、建物名など）を保持します。',
-      width: 220,
+      title: '町・番地',
+      description: '注文者の町・番地を保持します。',
+      width: 200,
       fieldType: 'string',
       required: false,
       searchType: 'string',
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => rowData.orderer?.street || '-',
     },
     {
+      key: 'orderer.building',
+      dataKey: 'orderer.building',
+      title: 'アパートマンション名',
+      description: '注文者のアパート・マンション名・部屋番号等を保持します。',
+      width: 200,
+      fieldType: 'string',
+      required: false,
+      searchType: 'string',
+      cellRenderer: ({ rowData }: { rowData: OrderDocument }) => (rowData.orderer as any)?.building || '-',
+    },
+    {
       key: 'ordererAddress',
       dataKey: 'ordererAddress',
       title: '住所（全体）',
-      description: '注文者の住所全体（都道府県＋市区郡町村＋番地以降）を組み合わせて表示します。',
+      description: '注文者の住所全体を組み合わせて表示します。',
       width: 300,
       fieldType: 'string',
       required: false,
       searchType: 'string',
-      tableVisible: false, // 拆分字段单独显示，組合せ字段不在表格显示
-      formEditable: false, // 虚拟字段，由拆分字段组合生成
+      tableVisible: false,
+      formEditable: false,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
-        // 用空格连接三部分
         const parts = [
           rowData.orderer?.prefecture,
           rowData.orderer?.city,
           rowData.orderer?.street,
+          (rowData.orderer as any)?.building,
         ].filter(Boolean)
         return parts.length > 0 ? parts.join(' ') : '-'
       },

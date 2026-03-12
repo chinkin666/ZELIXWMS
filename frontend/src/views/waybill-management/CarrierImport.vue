@@ -274,8 +274,8 @@ const fileEncoding = ref<(typeof encodingOptions)[number]['value']>('auto')
 const orderMatchFieldOptions = [
   { label: '出荷管理No（orderNumber）', value: 'orderNumber' },
   { label: 'お客様管理番号（customerManagementNumber）', value: 'customerManagementNumber' },
-  { label: '送付先電話（recipient.phone）', value: 'recipient.phone' },
-  { label: '送付先郵便番号（recipient.postalCode）', value: 'recipient.postalCode' },
+  { label: 'お届け先電話（recipient.phone）', value: 'recipient.phone' },
+  { label: 'お届け先郵便番号（recipient.postalCode）', value: 'recipient.postalCode' },
 ] as const
 
 const canImport = computed(() => {

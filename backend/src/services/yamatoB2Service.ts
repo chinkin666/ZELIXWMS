@@ -191,7 +191,8 @@ function resolveServiceType(order: IShipmentOrder, config: IYamatoB2Config): str
  * アドレス字段マッピング規則：
  * - recipient.prefecture → お届け先都道府県
  * - recipient.city → お届け先市区郡町村
- * - recipient.street → お届け先町・番地 (width 1-32) + お届け先アパートマンション名 (width 33-64)
+ * - recipient.street → お届け先町・番地
+ * - recipient.building → お届け先アパートマンション名
  *
  * フォーマット検証はB2 Cloud側で行われる
  */
@@ -208,9 +209,11 @@ function defaultMapOrderToB2(order: IShipmentOrder, config: IYamatoB2Config): Re
   const itemName1 = sliceByWidth(productStr, 1, 50) || '商品';
   const itemName2 = sliceByWidth(productStr, 51, 100);
 
-  // 使用 sliceByWidth 与 mapping config 中的 jp.sliceByWidth 相同逻辑
+  // 町・番地とアパートマンション名は別フィールドで管理
   const recipientStreet = order.recipient?.street || '';
+  const recipientBuilding = (order.recipient as any)?.building || '';
   const senderStreet = order.sender?.street || '';
+  const senderBuilding = (order.sender as any)?.building || '';
 
   // 設定に基づいてサービス種類を決定
   const serviceType = resolveServiceType(order, config);
@@ -229,7 +232,7 @@ function defaultMapOrderToB2(order: IShipmentOrder, config: IYamatoB2Config): Re
     consignee_address1: order.recipient?.prefecture || '',
     consignee_address2: order.recipient?.city || '',
     consignee_address3: sliceByWidth(recipientStreet, 1, 32),
-    consignee_address4: sliceByWidth(recipientStreet, 33, 64),
+    consignee_address4: recipientBuilding || sliceByWidth(recipientStreet, 33, 64),
     consignee_name: order.recipient?.name,
     consignee_title: order.honorific || '様',
     shipper_telephone_display: order.sender?.phone,
@@ -238,7 +241,7 @@ function defaultMapOrderToB2(order: IShipmentOrder, config: IYamatoB2Config): Re
     shipper_address1: order.sender?.prefecture || '',
     shipper_address2: order.sender?.city || '',
     shipper_address3: sliceByWidth(senderStreet, 1, 32),
-    shipper_address4: sliceByWidth(senderStreet, 33, 64),
+    shipper_address4: senderBuilding || sliceByWidth(senderStreet, 33, 64),
     shipper_name: order.sender?.name,
     item_name1: itemName1,
     item_name2: itemName2,
@@ -415,8 +418,21 @@ export class YamatoB2Service {
 
     const response = await fetch(url, { ...init, headers });
 
-    if (isAuthErrorStatus(response.status)) {
-      logger.warn({ status: response.status, url }, 'Yamato B2 auth error, invalidating cache and retrying');
+    // 401/403 または 500 + 'entry' エラー（B2 Cloud セッション切れ）の場合はリトライ
+    let shouldRetry = isAuthErrorStatus(response.status);
+    if (!shouldRetry && response.status === 500) {
+      const body = await response.text();
+      if (body.includes("'entry'")) {
+        logger.warn({ status: response.status, url }, 'Yamato B2 session expired (entry error), retrying with fresh login');
+        shouldRetry = true;
+      } else {
+        // 500 だが 'entry' エラーでない場合はそのまま返す（bodyを再構築）
+        return new Response(body, { status: response.status, headers: response.headers });
+      }
+    }
+
+    if (shouldRetry) {
+      logger.warn({ status: response.status, url }, 'Yamato B2 auth/session error, invalidating cache and retrying');
       await this.invalidateCache();
       const newToken = await this.loginFromApi();
 
@@ -452,8 +468,35 @@ export class YamatoB2Service {
    * 配送データを検証（B2 Cloud のフォーマットチェック）
    */
   async validateShipments(orders: IShipmentOrder[]): Promise<YamatoValidateResponse> {
-    // 注文をB2形式に変換
-    const shipments = orders.map((order) => this.mapOrderToB2(order));
+    // B2 Cloud API（/api/v1/shipments/validate）で検証
+    // ShipmentInput スキーマ（日本語キー）を使用
+    const { b2ApiToJapaneseKeyMapping } = require('../utils/yamatoB2Format');
+    const addressMapping: Record<string, string> = {
+      consignee_address1: 'お届け先都道府県',
+      consignee_address2: 'お届け先市区郡町村',
+      consignee_address3: 'お届け先町・番地',
+      consignee_address4: 'お届け先アパートマンション名',
+      consignee_telephone_display: 'お届け先電話番号',
+      shipper_address1: 'ご依頼主都道府県',
+      shipper_address2: 'ご依頼主市区郡町村',
+      shipper_address3: 'ご依頼主町・番地',
+      shipper_address4: 'ご依頼主アパートマンション',
+      shipper_telephone_display: 'ご依頼主電話番号',
+      invoice_code: '請求先顧客コード',
+    };
+    const fieldMapping: Record<string, string> = { ...b2ApiToJapaneseKeyMapping, ...addressMapping };
+
+    const shipments = orders.map((order) => {
+      const english = this.mapOrderToB2(order);
+      const japanese: Record<string, string> = {};
+      for (const [key, value] of Object.entries(english)) {
+        const jpKey = fieldMapping[key] || key;
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+          japanese[jpKey] = String(value);
+        }
+      }
+      return japanese;
+    });
 
     logger.info({ shipmentCount: shipments.length, sample: shipments[0] }, 'Validating shipments');
 
@@ -463,19 +506,40 @@ export class YamatoB2Service {
       body: JSON.stringify(shipments),
     });
 
+    const responseText = await response.text();
+    logger.info({ status: response.status, responsePreview: responseText.substring(0, 2000) }, 'Yamato B2 validate response');
+
     if (!response.ok) {
-      const error = await response.text();
-      logger.error({ status: response.status, error }, 'Yamato B2 validation failed');
-      throw new Error(`Yamato B2 検証失敗: ${response.status} - ${error}`);
+      logger.error({ status: response.status, error: responseText }, 'Yamato B2 validation failed');
+      throw new Error(`Yamato B2 検証失敗: ${response.status} - ${responseText}`);
     }
 
-    const data = (await response.json()) as YamatoValidateApiResponse;
+    let data: any;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      throw new Error(`Yamato B2 検証レスポンス解析失敗: ${responseText.substring(0, 200)}`);
+    }
 
-    const results: YamatoValidateResult[] = (data || []).map((r, index: number) => ({
-      index: r.index ?? index,
-      valid: r.valid || false,
-      errors: r.errors || [],
-    }));
+    // レスポンス: 配列形式 [{ index, valid, errors: [{error_property_name, error_message, raw}] }]
+    const rawResults = Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : [];
+    const results: YamatoValidateResult[] = rawResults.map((r: any, index: number) => {
+      const errors = (r.errors || []).map((e: any) => {
+        if (typeof e === 'string') {
+          // Python dict 文字列の場合 error_description を抽出
+          const descMatch = e.match(/['"]error_description['"]\s*:\s*['"](.+?)['"]/);
+          if (descMatch) return descMatch[1];
+          return e;
+        }
+        return e.error_message || e.error_description || JSON.stringify(e);
+      });
+      return {
+        index: r.index ?? index,
+        valid: r.valid ?? (errors.length === 0),
+        errors,
+      };
+    });
+    logger.info({ parsedResults: JSON.stringify(results).substring(0, 2000) }, 'Yamato B2 validation results');
 
     const validCount = results.filter((r) => r.valid).length;
     const invalidCount = results.filter((r) => !r.valid).length;

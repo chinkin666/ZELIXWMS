@@ -56,8 +56,9 @@ function buildPrintContext(
     recipientAddressPrefecture: order?.recipient?.prefecture,
     recipientAddressCity: order?.recipient?.city,
     recipientAddressStreet: order?.recipient?.street,
+    recipientAddressBuilding: (order?.recipient as any)?.building || '',
     recipientAddress:
-      [order?.recipient?.prefecture, order?.recipient?.city, order?.recipient?.street]
+      [order?.recipient?.prefecture, order?.recipient?.city, order?.recipient?.street, (order?.recipient as any)?.building]
         .filter(Boolean)
         .join(' ') || '',
     recipientName: order?.recipient?.name,
@@ -66,8 +67,9 @@ function buildPrintContext(
     senderAddressPrefecture: order?.sender?.prefecture,
     senderAddressCity: order?.sender?.city,
     senderAddressStreet: order?.sender?.street,
+    senderAddressBuilding: (order?.sender as any)?.building || '',
     senderAddress:
-      [order?.sender?.prefecture, order?.sender?.city, order?.sender?.street]
+      [order?.sender?.prefecture, order?.sender?.city, order?.sender?.street, (order?.sender as any)?.building]
         .filter(Boolean)
         .join(' ') || '',
     senderName: order?.sender?.name,

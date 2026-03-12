@@ -9,16 +9,21 @@ interface BatchAction {
   readonly id: string
   readonly label: string
   readonly icon?: string
-  readonly variant?: 'primary' | 'danger' | 'secondary' | 'warning'
+  readonly variant?: 'primary' | 'danger' | 'secondary' | 'warning' | 'success'
+  readonly position?: 'left' | 'right'
+  readonly separated?: boolean
+  readonly disabled?: boolean
 }
 
 interface Props {
   selectedCount: number
   actions: readonly BatchAction[]
+  alwaysVisible?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   actions: () => [],
+  alwaysVisible: false,
 })
 
 const emit = defineEmits<{
@@ -29,7 +34,10 @@ const emit = defineEmits<{
 
 const confirmingAction = ref<BatchAction | null>(null)
 
-const isVisible = computed(() => props.selectedCount > 0)
+const isVisible = computed(() => props.alwaysVisible || props.selectedCount > 0)
+
+const leftActions = computed(() => props.actions.filter(a => a.position === 'left'))
+const rightActions = computed(() => props.actions.filter(a => a.position !== 'left'))
 
 const DESTRUCTIVE_VARIANTS = new Set(['danger'])
 
@@ -61,6 +69,7 @@ function variantClass(variant: string | undefined): string {
     case 'danger': return 'o-batch-btn--danger'
     case 'warning': return 'o-batch-btn--warning'
     case 'secondary': return 'o-batch-btn--secondary'
+    case 'success': return 'o-batch-btn--success'
     default: return 'o-batch-btn--primary'
   }
 }
@@ -85,24 +94,48 @@ function getIconSvg(icon: string | undefined): string {
   <Transition name="o-batch-slide">
     <div v-if="isVisible" class="o-batch-bar">
       <div class="o-batch-bar-inner">
-        <div class="o-batch-info">
-          <span class="o-batch-count">
-            {{ t('batch.selectedCount', { count: String(selectedCount) }) }}
-          </span>
-          <button class="o-batch-link" @click="emit('select-all')">
-            {{ t('batch.selectAll') }}
-          </button>
-          <button class="o-batch-link" @click="emit('deselect-all')">
-            {{ t('batch.deselectAll') }}
-          </button>
+        <div class="o-batch-left">
+          <div class="o-batch-info">
+            <span class="o-batch-count">
+              {{ t('batch.selectedCount', { count: String(selectedCount) }) }}
+            </span>
+            <button class="o-batch-link" @click="emit('select-all')">
+              {{ t('batch.selectAll') }}
+            </button>
+            <button class="o-batch-link" @click="emit('deselect-all')">
+              {{ t('batch.deselectAll') }}
+            </button>
+          </div>
+          <div v-if="leftActions.length > 0" class="o-batch-actions">
+            <button
+              v-for="action in leftActions"
+              :key="action.id"
+              class="o-batch-btn"
+              :class="variantClass(action.variant)"
+              :disabled="action.disabled"
+              @click="onActionClick(action)"
+            >
+              <svg
+                v-if="action.icon"
+                class="o-batch-btn-icon"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                v-html="getIconSvg(action.icon)"
+              />
+              {{ action.label }}
+            </button>
+          </div>
         </div>
 
-        <div class="o-batch-actions">
+        <div v-if="rightActions.length > 0" class="o-batch-actions">
           <button
-            v-for="action in actions"
+            v-for="action in rightActions"
             :key="action.id"
             class="o-batch-btn"
-            :class="variantClass(action.variant)"
+            :class="[variantClass(action.variant), { 'o-batch-btn--separated': action.separated }]"
+            :disabled="action.disabled"
             @click="onActionClick(action)"
           >
             <svg
@@ -132,16 +165,11 @@ function getIconSvg(icon: string | undefined): string {
         <div class="o-batch-confirm-dialog">
           <div class="o-batch-confirm-header">
             <h4 class="o-batch-confirm-title">
-              {{ t('batch.confirmTitle') }}
+              {{ confirmingAction.label }}の確認
             </h4>
           </div>
           <div class="o-batch-confirm-body">
-            <p>
-              {{ t('batch.confirmMessage', {
-                action: confirmingAction.label,
-                count: String(selectedCount),
-              }) }}
-            </p>
+            <p>選択した{{ selectedCount }}件を{{ confirmingAction.label }}しますか？</p>
           </div>
           <div class="o-batch-confirm-footer">
             <OButton variant="secondary" @click="onCancelConfirm">
@@ -173,21 +201,25 @@ function getIconSvg(icon: string | undefined): string {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  gap: 1rem;
+  padding: 0.5rem 1rem;
+  gap: 0.75rem;
 }
 
-.o-batch-info {
+.o-batch-left {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
+.o-batch-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .o-batch-count {
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
 }
 
 .o-batch-link {
@@ -195,7 +227,7 @@ function getIconSvg(icon: string | undefined): string {
   border: none;
   color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   text-decoration: underline;
   padding: 0;
 }
@@ -214,11 +246,11 @@ function getIconSvg(icon: string | undefined): string {
 .o-batch-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
-  padding: 0.4375rem 0.875rem;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
   border-radius: var(--o-border-radius, 4px);
   border: 1px solid transparent;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -263,6 +295,23 @@ function getIconSvg(icon: string | undefined): string {
 }
 .o-batch-btn--warning:hover {
   background: #e0a800;
+}
+
+.o-batch-btn--success {
+  background: var(--o-success, #28a745);
+  color: #fff;
+  border-color: var(--o-success, #28a745);
+}
+.o-batch-btn--success:hover {
+  background: #218838;
+}
+
+.o-batch-btn--separated {
+  margin-left: 1.5rem;
+}
+.o-batch-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* Slide transition */
@@ -317,8 +366,11 @@ function getIconSvg(icon: string | undefined): string {
 
 .o-batch-confirm-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
+  justify-content: space-between;
+}
+.o-batch-confirm-footer :deep(.o-btn) {
+  padding: 0.3125rem 0.75rem;
+  font-size: 0.8125rem;
   padding: 0.75rem 1.25rem;
   border-top: 1px solid var(--o-border-color, #dee2e6);
 }

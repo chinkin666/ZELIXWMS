@@ -278,7 +278,13 @@ export async function updateShipmentOrder(id: string, data: Record<string, any>)
   })
   const json = await response.json().catch(() => ({}))
   if (!response.ok) {
-    const message = json?.message || response.statusText || '出荷予定の更新に失敗しました'
+    const errors = json?.errors
+    let message = json?.message || response.statusText || '出荷予定の更新に失敗しました'
+    if (Array.isArray(errors) && errors.length > 0) {
+      const details = errors.map((e: any) => `${e.field}: ${e.message}`).join(', ')
+      message = `${message} (${details})`
+      console.error('updateShipmentOrder validation errors:', errors)
+    }
     throw new Error(message)
   }
   return json

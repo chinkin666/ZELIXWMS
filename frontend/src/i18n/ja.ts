@@ -232,6 +232,13 @@ export default {
     cancel: 'キャンセル',
     confirm: '確認',
   },
+  batch: {
+    selectedCount: '{count}件を選択中',
+    selectAll: 'すべて選択',
+    deselectAll: '選択解除',
+    confirmTitle: '操作の確認',
+    confirmMessage: '選択した{count}件に対して「{action}」を実行しますか？',
+  },
   mobile: {
     allApps: 'すべてのアプリ',
     more: 'その他',

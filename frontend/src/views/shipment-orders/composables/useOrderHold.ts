@@ -27,6 +27,9 @@ export function useOrderHold(
     allRows.value.filter((r) => !isHeld(r.id))
   )
 
+  // 出荷確認まち件数（新規 + エラー、保留除外）
+  const pendingConfirmCount = computed(() => nonHeldRows.value.length)
+
   // 保留件数合計（ローカル + バックエンド）
   const totalHeldCount = computed(() => {
     const localCount = heldRowIds.value.length
@@ -34,9 +37,18 @@ export function useOrderHold(
     return localCount + backendCount
   })
 
-  // 送り状未発行の非保留件数
+  // 処理中の非保留件数（未確定 & trackingId なし）
+  const processingNonHeldCount = computed(() =>
+    pendingWaybillRows.value.filter((r: any) =>
+      !r.status?.held?.isHeld && !r.trackingId && !r.status?.confirm?.isConfirmed
+    ).length
+  )
+
+  // 送り状未発行の件数（確定済み or trackingId あり & 保留なし）
   const pendingWaybillNonHeldCount = computed(() =>
-    pendingWaybillRows.value.filter((r: any) => !r.status?.held?.isHeld).length
+    pendingWaybillRows.value.filter((r: any) =>
+      !r.status?.held?.isHeld && (r.status?.confirm?.isConfirmed || r.trackingId)
+    ).length
   )
 
   // 選択中の行の保留状態をトグル
@@ -94,7 +106,9 @@ export function useOrderHold(
     heldRowIds,
     isHeld,
     nonHeldRows,
+    pendingConfirmCount,
     totalHeldCount,
+    processingNonHeldCount,
     pendingWaybillNonHeldCount,
     toggleHoldSelected,
   }

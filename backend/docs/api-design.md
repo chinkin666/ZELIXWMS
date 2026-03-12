@@ -461,6 +461,88 @@ B2 APIに出荷データを送信し、伝票番号を取得。
 
 ---
 
+## 10. Yamato B2 Cloud 連携詳細設計
+
+### アーキテクチャ
+
+```
+Frontend (Vue)
+    ↓ POST /api/carrier-automation/yamato-b2/validate
+Backend (Express)
+    ↓ POST /api/v1/shipments/validate (日本語キー)
+Proxy (yamato-b2-webapi.nexand.org)
+    ↓ Atom/XML 変換
+B2 Cloud (ヤマト運輸)
+```
+
+### 認証フロー
+
+1. `POST /api/v1/login` にビジネスメンバーズ認証情報を送信
+2. プロキシが B2 Cloud にログインし、セッション Cookie を JWT でラップして返却
+3. トークンを MongoDB（`carrier_session_caches`）+ インメモリにキャッシュ（約4時間有効）
+
+**キャッシュ優先順位:** インメモリ → MongoDB → API 新規ログイン
+
+### セッション切れ対策
+
+B2 Cloud セッション切れ時、プロキシは `500` + `'entry'` エラーを返す（401/403 ではない）。
+`authenticatedFetch()` で自動リトライ:
+
+```
+401/403         → 認証エラー → キャッシュ無効化 → 再ログイン → リトライ
+500 + 'entry'   → セッション切れ → キャッシュ無効化 → 再ログイン → リトライ
+```
+
+### バリデーション フィールドマッピング
+
+`mapOrderToB2()` が内部英語キーを生成し、`validateShipments()` で日本語キーに変換。
+
+**マッピングソース:**
+- `b2ApiToJapaneseKeyMapping`（`yamatoB2Format.ts`）: 基本フィールド（送り状種類、名前等）
+- `addressMapping`（`yamatoB2Service.ts`）: 住所・電話・請求先の追加マッピング
+
+| 内部キー | ShipmentInput キー | 備考 |
+|---------|-------------------|------|
+| `service_type` | `送り状種類` | 必須, 1文字 |
+| `shipment_date` | `出荷予定日` | 必須, YYYY/MM/DD |
+| `consignee_telephone_display` | `お届け先電話番号` | 必須, 15文字 |
+| `consignee_zip_code` | `お届け先郵便番号` | 必須, 8文字 |
+| `consignee_name` | `お届け先名` | 必須, 32文字 |
+| `consignee_address1~4` | `お届け先都道府県/市区郡町村/町・番地/アパートマンション名` | addressMapping |
+| `shipper_*` | `ご依頼主*` | 同様 |
+| `invoice_code` | `請求先顧客コード` | 12文字 |
+
+### プロキシ API エンドポイント
+
+| エンドポイント | メソッド | 用途 |
+|--------------|---------|------|
+| `/api/v1/login` | POST | ログイン |
+| `/api/v1/shipments/validate` | POST | ShipmentInput 検証（**使用推奨**） |
+| `/api/v1/shipments/validate-full` | POST | 全フィールド検証（幅チェッカーに既知問題あり） |
+| `/api/v1/shipments` | POST | 出荷データ登録 |
+| `/api/v1/shipments/print` | POST | 送り状印刷 |
+| `/api/v1/shipments/pdf/batch` | POST | 一括 PDF 取得 |
+| `/api/v1/history` | GET | 発行済み履歴検索 |
+
+### トラブルシューティング
+
+| エラー | 原因 | 対策 |
+|--------|------|------|
+| `500 - 'entry'` | B2 Cloud セッション切れ | `authenticatedFetch()` が自動リトライ。手動: `carrier_session_caches` クリア + 再起動 |
+| `Unknown field` (validate-full) | 幅チェッカーがフィールド名未認識 | `/api/v1/shipments/validate` を使用 |
+
+### ファイル構成
+
+| ファイル | 役割 |
+|---------|------|
+| `services/yamatoB2Service.ts` | B2 Cloud サービス（認証・検証・エクスポート・印刷） |
+| `utils/yamatoB2Format.ts` | フィールドマッピング定義・変換ユーティリティ |
+| `api/controllers/carrierAutomationController.ts` | API コントローラ |
+| `models/carrierAutomationConfig.ts` | 設定モデル（認証情報・請求先コード等） |
+| `data/builtInCarriers.ts` | B2 フィールド定義（78フィールド） |
+
+---
+
 ## 共通仕様
 
 ### リクエストヘッダー

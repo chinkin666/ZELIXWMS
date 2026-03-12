@@ -6,12 +6,15 @@
       :breadcrumbs="['出荷指示', '出荷指示作成']"
       :show-search="false"
     >
-      <template #actions>
+      <template #center>
         <input
           class="o-input o-cp-search-input"
           v-model="globalSearchText"
           placeholder="検索..."
         />
+      </template>
+      <template #actions>
+        <template v-if="displayFilter === 'pending_confirm'">
         <OButton
           v-if="!bundleModeEnabled"
           variant="secondary"
@@ -26,7 +29,8 @@
         >
           同梱モード終了
         </OButton>
-        <template v-if="displayFilter !== 'pending_waybill'">
+        </template>
+        <template v-if="displayFilter === 'pending_confirm'">
           <OButton variant="success" @click="handleImportClick">
             一括登録
           </OButton>
@@ -38,71 +42,19 @@
     </ControlPanel>
 
     <div class="o-content">
-      <!-- Quick Stats Row -->
-      <div class="o-quick-stats">
-        <div class="o-stat-card">
-          <div class="o-stat-icon o-stat-icon-total">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/><path d="M5 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 5 8zm0-2.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0 5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-1-5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zM4 8a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm0 2.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/></svg>
-          </div>
-          <div class="o-stat-info">
-            <span class="o-stat-value">{{ nonHeldRows.length }}</span>
-            <span class="o-stat-label">登録対象</span>
-          </div>
-        </div>
-        <div class="o-stat-card">
-          <div class="o-stat-icon o-stat-icon-error">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
-          </div>
-          <div class="o-stat-info">
-            <span class="o-stat-value">{{ errorRowCount }}</span>
-            <span class="o-stat-label">エラー件数</span>
-          </div>
-        </div>
-        <div class="o-stat-card">
-          <div class="o-stat-icon o-stat-icon-unregistered">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M11 5.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1z"/><path d="M2 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H2zm13 2v5H1V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zm-1 9H2a1 1 0 0 1-1-1v-1h14v1a1 1 0 0 1-1 1z"/></svg>
-          </div>
-          <div class="o-stat-info">
-            <span class="o-stat-value">{{ pendingWaybillNonHeldCount }}</span>
-            <span class="o-stat-label">送り状未発行</span>
-          </div>
-        </div>
-        <div
-          class="o-stat-card"
-          :class="{ 'o-stat-card--clickable': displayFilter === 'pending_waybill' || displayFilter === 'held' }"
-          @click="handleStatCardHoldClick"
-          title="選択中の行を保留/解除（送り状未発行・保留タブのみ）"
-        >
-          <div class="o-stat-icon o-stat-icon-held">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5z"/></svg>
-          </div>
-          <div class="o-stat-info">
-            <span class="o-stat-value">{{ totalHeldCount }}</span>
-            <span class="o-stat-label">保留</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Filter Tabs -->
       <div class="o-filter-tabs">
-        <button class="o-filter-tab" :class="{ active: displayFilter === 'new' }" @click="displayFilter = 'new'">
-          新規 <span class="o-tab-count">{{ nonHeldRows.length - errorRowCount }}</span>
+        <button class="o-filter-tab" :class="{ active: displayFilter === 'pending_confirm' }" @click="displayFilter = 'pending_confirm'">
+          出荷確認待ち <span class="o-tab-count">{{ pendingConfirmCount }}</span>
         </button>
-        <button class="o-filter-tab" :class="{ active: displayFilter === 'error' }" @click="displayFilter = 'error'">
-          エラー <span class="o-tab-count">{{ errorRowCount }}</span>
+        <button class="o-filter-tab" :class="{ active: displayFilter === 'processing' }" @click="displayFilter = 'processing'">
+          処理中 <span class="o-tab-count">{{ processingNonHeldCount }}</span>
         </button>
         <button class="o-filter-tab" :class="{ active: displayFilter === 'pending_waybill' }" @click="displayFilter = 'pending_waybill'">
           送り状未発行 <span class="o-tab-count">{{ pendingWaybillNonHeldCount }}</span>
         </button>
         <button class="o-filter-tab" :class="{ active: displayFilter === 'held' }" @click="displayFilter = 'held'">
           保留 <span class="o-tab-count">{{ totalHeldCount }}</span>
-        </button>
-        <button
-          v-if="tableSelectedKeys.length > 0 && displayFilter !== 'pending_waybill'"
-          class="o-btn o-btn-sm o-batch-delete-btn"
-          @click="handleBatchDeleteFromBar"
-        >
-          {{ tableSelectedKeys.length }}件選択中 削除
         </button>
       </div>
 
@@ -143,6 +95,10 @@
 
       <!-- Plain table -->
       <div class="o-table-wrapper">
+        <!-- Selection toolbar -->
+        <div v-if="tableSelectedKeys.length > 0" class="o-list-toolbar o-toolbar-active">
+          <span class="o-selected-count">{{ tableSelectedKeys.length }}件選択中</span>
+        </div>
         <table class="o-table" :class="{ 'o-table--resizing': resizingCol }">
           <thead>
             <tr>
@@ -155,6 +111,9 @@
                 />
               </th>
               <th class="o-table-th" style="width:90px;">状態</th>
+              <th class="o-table-th" style="width:220px;">出荷管理番号</th>
+              <th class="o-table-th" style="width:200px;">配送情報</th>
+              <th class="o-table-th" style="width:180px;">配送指定</th>
               <th
                 v-for="col in displayColumns"
                 :key="col.key"
@@ -173,18 +132,21 @@
                   @click.stop
                 />
               </th>
+              <th class="o-table-th" style="width:170px;">履歴</th>
               <th class="o-table-th" style="width:60px;">操作</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="paginatedRows.length === 0">
-              <td :colspan="displayColumns.length + 3" class="o-table-empty">データがありません</td>
+              <td :colspan="displayColumns.length + 7" class="o-table-empty">データがありません</td>
             </tr>
-            <tr
+            <template
               v-for="row in paginatedRows"
               :key="row.id"
+            >
+            <tr
               class="o-table-row"
-              :class="{ 'o-table-row--selected': tableSelectedKeys.includes(row.id) }"
+              :class="{ 'o-table-row--selected': tableSelectedKeys.includes(row.id), 'o-table-row--has-error': b2ValidationErrors.has(String(row._id || row.id)) || getRowErrorMessages(row).length > 0 }"
             >
               <td class="o-table-td o-table-td--checkbox">
                 <input
@@ -193,11 +155,70 @@
                   @change="toggleRowSelection(row)"
                 />
               </td>
-              <td class="o-table-td">
-                <span v-if="displayFilter === 'pending_waybill'" class="o-status-tag o-status-tag--pending">送り状未発行</span>
-                <span v-else-if="isHeld(row.id)" class="o-status-tag o-status-tag--held">保留</span>
-                <span v-else-if="hasRowErrors(row)" class="o-status-tag o-status-tag--error">エラー</span>
-                <span v-else class="o-status-tag o-status-tag--new">新規</span>
+              <td class="o-table-td o-table-td--status">
+                <div class="status-cell">
+                  <span v-if="displayFilter === 'pending_waybill'" class="o-status-tag o-status-tag--processing">送り状未発行</span>
+                  <span v-else-if="b2ValidationErrors.has(String(row._id || row.id))" class="o-status-tag o-status-tag--error" :title="getB2Errors(row).join('\n')">エラー</span>
+                  <span v-else-if="displayFilter === 'pending_confirm' && hasRowErrors(row)" class="o-status-tag o-status-tag--error">エラー</span>
+                  <span v-else-if="isHeld(row.id)" class="o-status-tag o-status-tag--held">保留</span>
+                  <span v-else-if="displayFilter === 'processing' && isAutoValidating" class="o-status-tag o-status-tag--validating">検証中...</span>
+                  <span v-if="isBundleable(row)" class="o-status-tag o-status-tag--bundleable">同捆可能</span>
+                  <span v-if="hasDeliverySpec(row)" class="o-status-tag o-status-tag--delivery">配送指定</span>
+                  <span v-if="isOkinawa(row)" class="o-status-tag o-status-tag--okinawa">沖縄配送</span>
+                  <span v-if="isRemoteIsland(row)" class="o-status-tag o-status-tag--remote">離島配送</span>
+                </div>
+              </td>
+              <!-- 出荷管理番号（3行表示） -->
+              <td class="o-table-td o-table-td--mgmt">
+                <div class="mgmt-cell">
+                  <div class="mgmt-cell__row">
+                    <span class="mgmt-cell__label">出荷管理No</span>
+                    <a v-if="(row as any).orderNumber" href="#" class="mgmt-cell__link mgmt-cell__value" @click.prevent="handleEdit(row)">{{ (row as any).orderNumber }}</a>
+                    <span v-else class="mgmt-cell__value mgmt-cell__value--muted">登録後に自動採番</span>
+                  </div>
+                  <div class="mgmt-cell__row">
+                    <span class="mgmt-cell__label">注文番号</span>
+                    <a href="#" class="mgmt-cell__link mgmt-cell__value" @click.prevent="handleEdit(row)">{{ row.customerManagementNumber || '-' }}</a>
+                  </div>
+                  <div class="mgmt-cell__row">
+                    <span class="mgmt-cell__label">送り状番号</span>
+                    <span class="mgmt-cell__value">{{ (row as any).trackingId || '未発行' }}</span>
+                  </div>
+                </div>
+              </td>
+              <!-- 配送情報（3行表示） -->
+              <td class="o-table-td o-table-td--mgmt">
+                <div class="mgmt-cell">
+                  <div class="mgmt-cell__row">
+                    <span class="mgmt-cell__label">配送会社</span>
+                    <span class="mgmt-cell__value">{{ getCarrierLabel(row) }}</span>
+                  </div>
+                  <div class="mgmt-cell__row">
+                    <span class="mgmt-cell__label">配送サービス</span>
+                    <span class="mgmt-cell__value">{{ getInvoiceTypeLabel(row) }}</span>
+                  </div>
+                  <div class="mgmt-cell__row">
+                    <span class="mgmt-cell__label">温度帯</span>
+                    <span class="mgmt-cell__value" :style="{ color: getCoolTypeInfo(row).color }">{{ getCoolTypeInfo(row).label }}</span>
+                  </div>
+                </div>
+              </td>
+              <!-- 配送日時（3行表示） -->
+              <td class="o-table-td o-table-td--mgmt">
+                <div class="mgmt-cell">
+                  <div class="mgmt-cell__row">
+                    <span class="mgmt-cell__label">出荷予定日</span>
+                    <span class="mgmt-cell__value">{{ (row as any).shipPlanDate || '-' }}</span>
+                  </div>
+                  <div class="mgmt-cell__row">
+                    <span class="mgmt-cell__label">お届け日</span>
+                    <span class="mgmt-cell__value">{{ (row as any).deliveryDatePreference || '最短' }}</span>
+                  </div>
+                  <div class="mgmt-cell__row">
+                    <span class="mgmt-cell__label">時間帯指定</span>
+                    <span class="mgmt-cell__value">{{ getTimeSlotLabel(row) }}</span>
+                  </div>
+                </div>
               </td>
               <td
                 v-for="col in displayColumns"
@@ -205,34 +226,38 @@
                 class="o-table-td"
                 :class="{ 'o-table-td--error': isCellError(row, col) }"
               >
-                <template v-if="(col.dataKey || col.key) === 'customerManagementNumber'">
-                  <a href="#" class="customer-mgmt-link o-cell" @click.prevent="handleEdit(row)">
-                    {{ row.customerManagementNumber || '-' }}
-                  </a>
-                </template>
-                <template v-else-if="(col.dataKey || col.key) === '__recipient_name__'">
-                  <span class="o-cell">{{ row.recipient?.name || '-' }} {{ row.honorific || '様' }}<br/><span class="o-cell-sub">{{ row.recipient?.phone || '-' }}</span></span>
-                </template>
-                <template v-else-if="(col.dataKey || col.key) === '__recipient_addr__'">
-                  <span class="o-cell">〒{{ fmtPostal(row.recipient?.postalCode) }}<br/><span class="o-cell-sub">{{ [row.recipient?.prefecture, row.recipient?.city, row.recipient?.street].filter(Boolean).join(' ') || '-' }}</span></span>
+                <template v-if="(col.dataKey || col.key) === '__recipient_addr__'">
+                  <div class="recipient-cell">
+                    <div>〒{{ fmtPostal(row.recipient?.postalCode) }}</div>
+                    <div>{{ [row.recipient?.prefecture, row.recipient?.city, row.recipient?.street, row.recipient?.building].filter(Boolean).join(' ') || '-' }}</div>
+                    <div>{{ row.recipient?.phone || '-' }}</div>
+                    <div class="recipient-cell__name">{{ row.recipient?.name || '-' }} {{ row.honorific || '様' }}</div>
+                  </div>
                 </template>
                 <template v-else-if="(col.dataKey || col.key) === '__sender_name__'">
-                  <span class="o-cell">{{ row.sender?.name || '-' }}</span>
+                  <div class="recipient-cell">
+                    <div>〒{{ fmtPostal(row.sender?.postalCode) }}</div>
+                    <div>{{ [row.sender?.prefecture, row.sender?.city, row.sender?.street, row.sender?.building].filter(Boolean).join(' ') || '-' }}</div>
+                    <div>{{ row.sender?.phone || '-' }}</div>
+                    <div class="recipient-cell__name">{{ row.sender?.name || '-' }}</div>
+                  </div>
                 </template>
                 <template v-else-if="(col.dataKey || col.key) === '__orderer_name__'">
                   <span class="o-cell">{{ row.orderer?.name || '-' }}</span>
                 </template>
-                <template v-else-if="(col.dataKey || col.key) === 'deliveryDatePreference'">
-                  <span class="o-cell">{{ getCellValue(row, col) }}<br/><span class="o-cell-sub">{{ getTimeSlotLabel(row) }}</span></span>
-                </template>
-                <template v-else-if="(col.dataKey || col.key) === 'invoiceType'">
-                  <span class="o-cell">{{ getCellValue(row, col) }}<br/><span
-                    class="o-cool-tag"
-                    :style="{ color: getCoolTypeInfo(row).color, background: getCoolTypeInfo(row).bg }"
-                  >{{ getCoolTypeInfo(row).label }}</span></span>
-                </template>
                 <template v-else-if="(col.dataKey || col.key) === 'products'">
-                  <span class="o-cell">{{ formatProductsSku(row) }}<br/><span class="o-cell-sub">{{ formatProductsName(row) }}</span></span>
+                  <div class="product-list">
+                    <div v-for="(p, pi) in (row.products || [])" :key="pi" class="product-item">
+                      <img :src="resolveImageUrl(p.imageUrl)" class="product-item__img" alt="" @error="(e: Event) => { (e.target as HTMLImageElement).src = noImageSrc }" />
+                      <div class="product-item__info">
+                        <span class="product-item__name">{{ p.productName || '-' }}</span>
+                        <span class="product-item__meta">SKU: {{ p.inputSku || p.productSku || '-' }}</span>
+                        <span class="product-item__meta">バーコード: {{ Array.isArray(p.barcode) ? p.barcode.join(', ') : (p.barcode || '-') }}</span>
+                        <span class="product-item__meta">個数: {{ p.quantity ?? 0 }}</span>
+                      </div>
+                    </div>
+                    <span v-if="!row.products?.length" class="o-cell">-</span>
+                  </div>
                 </template>
                 <template v-else-if="(col.dataKey || col.key) === 'handlingTags'">
                   <span class="o-cell"><span v-for="(tag, ti) in (row.handlingTags || [])" :key="ti" class="o-badge">{{ tag }}</span></span>
@@ -241,8 +266,25 @@
                   <span class="o-cell">{{ getCellValue(row, col) }}</span>
                 </template>
               </td>
+              <!-- 履歴（3行表示） -->
+              <td class="o-table-td o-table-td--mgmt">
+                <div class="mgmt-cell">
+                  <div class="mgmt-cell__row">
+                    <span class="mgmt-cell__label">作成日時</span>
+                    <span class="mgmt-cell__value">{{ fmtDateTime((row as any).createdAt) }}</span>
+                  </div>
+                  <div class="mgmt-cell__row">
+                    <span class="mgmt-cell__label">更新日時</span>
+                    <span class="mgmt-cell__value">{{ (row as any).updatedAt && (row as any).updatedAt !== (row as any).createdAt ? fmtDateTime((row as any).updatedAt) : '-' }}</span>
+                  </div>
+                  <div class="mgmt-cell__row">
+                    <span class="mgmt-cell__label">送り状発行日時</span>
+                    <span class="mgmt-cell__value">{{ fmtDateTime((row as any).status?.carrierReceipt?.receivedAt) }}</span>
+                  </div>
+                </div>
+              </td>
               <td class="o-table-td o-table-td--actions">
-                <template v-if="displayFilter !== 'pending_waybill'">
+                <template v-if="displayFilter === 'pending_confirm'">
                   <OButton variant="icon" title="編集" @click="handleEdit(row)">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </OButton>
@@ -252,6 +294,14 @@
                 </template>
               </td>
             </tr>
+            <tr v-if="b2ValidationErrors.has(String(row._id || row.id)) || getRowErrorMessages(row).length > 0" class="o-table-row--error-bar">
+              <td :colspan="displayColumns.length + 7" class="o-table-td--error-bar">
+                <div class="error-bar">
+                  <span v-for="(err, ei) in [...getRowErrorMessages(row), ...getB2Errors(row)]" :key="ei">{{ err }}</span>
+                </div>
+              </td>
+            </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -275,111 +325,13 @@
     </div>
 
     <!-- Bottom bar -->
-    <OrderBottomBar
-      :total-count="allRows.length"
+    <OBatchActionBar
       :selected-count="tableSelectedKeys.length"
-      :error-count="errorRowCount"
-      total-label="登録対象"
-    >
-      <template #left>
-        <template v-if="bundleModeEnabled">
-          <OButton
-            variant="primary"
-            size="sm"
-            :disabled="tableSelectedKeys.length === 0 || selectedBundleGroupKeys.length === 0"
-            @click="handleBundleMergeAllSelected"
-          >
-            同梱する
-          </OButton>
-          <OButton
-            variant="warning"
-            size="sm"
-            :disabled="!hasUnbundleableRows"
-            @click="handleUnbundleSelected"
-          >
-            同梱を解除する
-          </OButton>
-        </template>
-        <template v-else>
-          <OButton
-            variant="primary"
-            size="sm"
-            :disabled="tableSelectedKeys.length === 0"
-            @click="shipPlanDateDialogVisible = true"
-          >
-            出荷予定日一括設定
-          </OButton>
-          <OButton
-            variant="primary"
-            size="sm"
-            :disabled="tableSelectedKeys.length === 0"
-            @click="senderBulkDialogVisible = true"
-          >
-            ご依頼主一括設定
-          </OButton>
-          <OButton
-            variant="primary"
-            size="sm"
-            :disabled="tableSelectedKeys.length === 0 || carriers.length === 0"
-            @click="carrierBulkDialogVisible = true"
-          >
-            配送業者一括設定
-          </OButton>
-          <OButton
-            variant="danger"
-            size="sm"
-            :disabled="allRows.length === 0"
-            @click="handleClearAll"
-          >
-            データクリア
-          </OButton>
-        </template>
-      </template>
-      <template #center>
-        <div class="bottom-bar__meta">
-          登録対象：<strong>{{ allRows.length }}</strong>件
-          <span v-if="errorRowCount > 0" class="bottom-bar__errors">
-            （誤り：<strong>{{ errorRowCount }}</strong>件）
-          </span>
-          <span v-if="unregisteredSkuRowCount > 0" class="bottom-bar__unregistered">
-            （商品SKU未登録：<strong>{{ unregisteredSkuRowCount }}</strong>件）
-          </span>
-        </div>
-      </template>
-      <template #alert>
-        <div v-if="backendErrorCount > 0" class="bottom-bar__alert">
-          <span>サーバー側でエラーが発生しました。エラー行のみ表示に切り替えています。</span>
-          <button class="bottom-bar__alert-close" @click="clearBackendErrors">&times;</button>
-        </div>
-      </template>
-      <template #right>
-        <template v-if="displayFilter !== 'pending_waybill'">
-          <OButton
-            variant="primary"
-            :disabled="allRows.length === 0 || isSubmitting"
-            @click="handleSubmitClick"
-          >
-            {{ isSubmitting ? '登録中...' : '出荷指示登録' }}
-          </OButton>
-          <OButton
-            v-if="backendErrorCount > 0"
-            variant="danger"
-            @click="submitErrorDialogVisible = true"
-          >
-            エラー詳細
-          </OButton>
-        </template>
-        <template v-else>
-          <OButton
-            variant="secondary"
-            :disabled="isLoadingPendingWaybill"
-            @click="loadPendingWaybillOrders"
-          >
-            {{ isLoadingPendingWaybill ? '読込中...' : '再読込' }}
-          </OButton>
-        </template>
-      </template>
-    </OrderBottomBar>
+      :actions="batchActions"
+      @action-click="handleBatchAction"
+      @select-all="handleSelectAll"
+      @deselect-all="tableSelectedKeys = []"
+    />
 
     <!-- Dialogs -->
     <ShipmentOrderEditDialog
@@ -438,39 +390,34 @@
       </template>
     </ODialog>
 
-    <!-- ご依頼主一括設定 -->
+    <!-- ご依頼主情報の一括設定 -->
     <ODialog
       :open="senderBulkDialogVisible"
-      title="ご依頼主一括設定"
+      title="ご依頼主情報の一括設定"
       @close="senderBulkDialogVisible = false"
     >
-      <div class="sender-bulk__meta">
-        選択中件数：<strong>{{ tableSelectedKeys.length }}</strong>
-      </div>
-      <div class="o-form-group">
-        <label class="o-form-label">ご依頼主</label>
-        <select class="o-input" v-model="senderBulkCompanyId" style="width: 100%">
-          <option value="">ご依頼主を選択</option>
-          <option v-for="company in orderSourceCompanies" :key="company._id" :value="company._id">{{ company.senderName }}</option>
-        </select>
-      </div>
-      <div class="o-form-group">
-        <label class="o-form-label">発店コードの上書き</label>
-        <div class="row">
-          <label class="o-checkbox">
+      <div class="bulk-dialog">
+        <div class="bulk-dialog__badge">
+          対象 <strong>{{ tableSelectedKeys.length }}</strong> 件
+        </div>
+        <div class="bulk-dialog__field">
+          <label class="bulk-dialog__label">ご依頼主</label>
+          <select class="bulk-dialog__select" v-model="senderBulkCompanyId">
+            <option value="">ご依頼主を選択してください</option>
+            <option v-for="company in orderSourceCompanies" :key="company._id" :value="company._id">{{ company.senderName }}</option>
+          </select>
+        </div>
+        <div class="bulk-dialog__field">
+          <label class="bulk-dialog__checkbox">
             <input type="checkbox" v-model="senderBulkOverwriteBaseNo">
-            <span>既存の値を上書きする</span>
+            <span>上書きする</span>
           </label>
-          <div class="hint">
-            発店コード1・2が既に設定されている場合、ご依頼主の情報で上書きします<br />
-            チェックを外すと、既存の値がある場合は保持し、ない場合のみご依頼主の情報を設定します
-          </div>
         </div>
       </div>
       <template #footer>
-        <div class="sender-bulk__footer">
+        <div class="bulk-dialog__footer-split">
           <OButton variant="secondary" @click="senderBulkDialogVisible = false">キャンセル</OButton>
-          <OButton variant="primary" @click="applySenderBulkCompany">確定</OButton>
+          <OButton variant="primary" @click="applySenderBulkCompany">適用</OButton>
         </div>
       </template>
     </ODialog>
@@ -481,20 +428,22 @@
       title="配送業者一括設定"
       @close="carrierBulkDialogVisible = false"
     >
-      <div class="sender-bulk__meta">
-        選択中件数：<strong>{{ tableSelectedKeys.length }}</strong>
-      </div>
-      <div class="o-form-group">
-        <label class="o-form-label">配送業者</label>
-        <select class="o-input" v-model="carrierBulkId" style="width: 100%">
-          <option value="">配送業者を選択</option>
-          <option v-for="opt in carrierOptions" :key="String(opt.value)" :value="opt.value">{{ opt.label }}</option>
-        </select>
+      <div class="bulk-dialog">
+        <div class="bulk-dialog__badge">
+          対象 <strong>{{ tableSelectedKeys.length }}</strong> 件
+        </div>
+        <div class="bulk-dialog__field">
+          <label class="bulk-dialog__label">配送業者</label>
+          <select class="bulk-dialog__select" v-model="carrierBulkId">
+            <option value="">配送業者を選択してください</option>
+            <option v-for="opt in carrierOptions" :key="String(opt.value)" :value="opt.value">{{ opt.label }}</option>
+          </select>
+        </div>
       </div>
       <template #footer>
-        <div class="sender-bulk__footer">
+        <div class="bulk-dialog__footer-split">
           <OButton variant="secondary" @click="carrierBulkDialogVisible = false">キャンセル</OButton>
-          <OButton variant="primary" @click="applyCarrierBulk">確定</OButton>
+          <OButton variant="primary" @click="applyCarrierBulk">適用</OButton>
         </div>
       </template>
     </ODialog>
@@ -505,17 +454,19 @@
       title="出荷予定日一括設定"
       @close="shipPlanDateDialogVisible = false"
     >
-      <div class="sender-bulk__meta">
-        選択中件数：<strong>{{ tableSelectedKeys.length }}</strong>
-      </div>
-      <div class="o-form-group">
-        <label class="o-form-label">出荷予定日</label>
-        <input type="date" class="o-input" v-model="shipPlanDateSelected" :min="todayDate" style="width: 100%" />
+      <div class="bulk-dialog">
+        <div class="bulk-dialog__badge">
+          対象 <strong>{{ tableSelectedKeys.length }}</strong> 件
+        </div>
+        <div class="bulk-dialog__field">
+          <label class="bulk-dialog__label">出荷予定日</label>
+          <input type="date" class="bulk-dialog__input" v-model="shipPlanDateSelected" :min="todayDate" />
+        </div>
       </div>
       <template #footer>
-        <div class="sender-bulk__footer">
+        <div class="bulk-dialog__footer-split">
           <OButton variant="secondary" @click="shipPlanDateDialogVisible = false">キャンセル</OButton>
-          <OButton variant="primary" @click="applyShipPlanDateToSelected">確定</OButton>
+          <OButton variant="primary" @click="applyShipPlanDateToSelected">適用</OButton>
         </div>
       </template>
     </ODialog>
@@ -532,14 +483,46 @@
       <p>{{ deleteDialogMessage }}</p>
       <template #confirm-text>削除</template>
     </ODialog>
+
+    <!-- B2 Cloud validate dialog -->
+    <YamatoB2ValidateResultDialog
+      v-model="b2ValidateDialogVisible"
+      :result="b2ValidateResult"
+      :order-map="b2ValidateOrderMap"
+      confirm-button-text="出荷指示を確定"
+      @cancel="handleB2ValidateDialogCancel"
+      @confirm="handleB2ValidateDialogConfirm"
+    />
+
+    <!-- B2 Cloud API error dialog -->
+    <YamatoB2ApiErrorDialog
+      v-model="b2ApiErrorDialogVisible"
+      :error-message="b2ApiErrorMessage"
+    />
+
+    <YamatoB2ExportResultDialog
+      v-model="b2ExportResultDialogVisible"
+      :result="b2ExportResult"
+      @confirm="handleB2ExportResultClose"
+    />
+
+    <CarrierExportResultDialog
+      v-model="carrierExportDialogVisible"
+      :carrier-label="carrierExportCarrierLabel"
+      :mapping-options="carrierExportMappingOptions"
+      v-model:selected-mapping-id="carrierExportSelectedMappingId"
+      :headers="carrierExportHeaders"
+      :rows="carrierExportOutputRows"
+      :file-name-base="carrierExportFileNameBase"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
 import ShipmentOrderEditDialog from '@/components/form/ShipmentOrderEditDialog.vue'
+import OBatchActionBar from '@/components/odoo/OBatchActionBar.vue'
 import ShipmentOrderImportDialog from '@/components/import/ShipmentOrderImportDialog.vue'
 import BundleFilterDialog from '@/components/bundle/BundleFilterDialog.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
@@ -554,9 +537,19 @@ import type { Carrier } from '@/types/carrier'
 import { type UserOrderRow, generateTempId } from '@/types/orderRow'
 import { fetchOrderSourceCompanies } from '@/api/orderSourceCompany'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
-import { ShipmentOrderBulkApiError, createShipmentOrdersBulk, fetchShipmentOrders } from '@/api/shipmentOrders'
+import { ShipmentOrderBulkApiError, createShipmentOrdersBulk, fetchShipmentOrders, updateShipmentOrder, updateShipmentOrderStatusBulk, deleteShipmentOrdersBulk } from '@/api/shipmentOrders'
+import { yamatoB2Validate, yamatoB2Export } from '@/api/carrierAutomation'
+import type { YamatoB2ValidateResult, YamatoB2ExportResult } from '@/types/carrierAutomation'
+import YamatoB2ValidateResultDialog from '@/components/carrier-automation/YamatoB2ValidateResultDialog.vue'
+import YamatoB2ExportResultDialog from '@/components/carrier-automation/YamatoB2ExportResultDialog.vue'
+import YamatoB2ApiErrorDialog from '@/components/carrier-automation/YamatoB2ApiErrorDialog.vue'
+import CarrierExportResultDialog from '@/components/waybill-management/CarrierExportResultDialog.vue'
+import { getAllMappingConfigs, type MappingConfig } from '@/api/mappingConfig'
+import { applyTransformMappings } from '@/utils/transformRunner'
+import { formatOrderProductsText } from '@/utils/formatOrderProductsText'
 import { normalizeDateOnly } from '@/utils/dateNormalize'
 import { getNestedValue } from '@/utils/nestedObject'
+import { getStringWidth, splitByWidth } from '@/utils/japaneseCharWidth'
 import {
   createProductMap,
   resolveAndFillProduct,
@@ -569,6 +562,15 @@ import { useOrderHold } from './composables/useOrderHold'
 import { useOrderBulkActions } from './composables/useOrderBulkActions'
 import { useOrderTable } from './composables/useOrderTable'
 import { setCookie, getCookie, BUNDLE_FILTER_COOKIE_KEY, BUNDLE_MODE_COOKIE_KEY } from './composables/useOrderStorage'
+import { getApiBaseUrl } from '@/api/base'
+import noImageSrc from '@/assets/images/no_image.png'
+
+const API_BASE = getApiBaseUrl().replace(/\/api$/, '')
+const resolveImageUrl = (url?: string) => {
+  if (!url) return noImageSrc
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return `${API_BASE}${url}`
+}
 
 // --- Toast ---
 const toast = useToast()
@@ -591,6 +593,53 @@ const submitErrorDialogVisible = ref(false)
 const isSubmitting = ref(false)
 const isLoadingPendingWaybill = ref(false)
 
+// --- B2 Cloud バリデーション ---
+const b2Validating = ref(false)
+const b2ValidateDialogVisible = ref(false)
+const b2ValidateResult = ref<YamatoB2ValidateResult | null>(null)
+const b2PendingConfirmIds = ref<string[]>([])
+const b2PendingB2OrderIds = ref<string[]>([]) // B2 検証対象の ID 配列（index とマッピング）
+const b2ValidateOrderMap = ref<Map<number, string>>(new Map()) // index → orderNumber
+const b2ApiErrorDialogVisible = ref(false)
+const b2ApiErrorMessage = ref('')
+const b2ValidationErrors = ref<Map<string, string[]>>(new Map()) // orderId → error messages
+const isAutoValidating = ref(false)
+let autoValidateRetryTimer: ReturnType<typeof setTimeout> | null = null
+
+// --- B2 Cloud 送信 & 配送業者データ出力 ---
+const b2Exporting = ref(false)
+const b2ExportResultDialogVisible = ref(false)
+const b2ExportResult = ref<YamatoB2ExportResult | null>(null)
+const carrierExportDialogVisible = ref(false)
+const carrierExportCarrierLabel = ref('')
+const carrierExportFileNameBase = ref('')
+const carrierExportHeaders = ref<string[]>([])
+const carrierExportOutputRows = ref<Array<Record<string, any>>>([])
+const carrierExportMappingOptions = ref<Array<{ label: string; value: string }>>([])
+const carrierExportSelectedMappingId = ref<string>('')
+const carrierExportMappingConfigsById = ref<Map<string, MappingConfig>>(new Map())
+const carrierExportSourceOrders = ref<any[]>([])
+
+// B2 エラー文字列からユーザー向けメッセージを抽出
+const parseB2Error = (err: string): string => {
+  // Python dict 文字列: {'error_description': '...', ...}
+  const descMatch = err.match(/['"]error_description['"]\s*:\s*['"](.+?)['"]/)
+  if (descMatch) return descMatch[1]
+  // JSON 文字列: {"error_description": "...", ...}
+  try {
+    const parsed = JSON.parse(err)
+    if (parsed?.error_description) return parsed.error_description
+    if (parsed?.error_message) return parsed.error_message
+  } catch { /* not JSON */ }
+  return err
+}
+const getB2Errors = (row: any): string[] => {
+  const id = String(row._id || row.id)
+  const errors = b2ValidationErrors.value.get(id)
+  if (!errors) return []
+  return errors.map(parseB2Error)
+}
+
 // --- バンドルモード ---
 const bundleFilterKeys = ref<string[]>([])
 const bundleModeEnabled = ref(false)
@@ -599,7 +648,7 @@ const bundleModeEnabled = ref(false)
 const pendingWaybillRows = ref<UserOrderRow[]>([])
 
 // --- フィルター・表示 ---
-const displayFilter = ref<'new' | 'error' | 'pending_waybill' | 'held'>('new')
+const displayFilter = ref<'pending_confirm' | 'processing' | 'pending_waybill' | 'held'>('pending_confirm')
 const showOnlyErrors = ref(false)
 
 // --- バックエンドエラー ---
@@ -649,16 +698,22 @@ const {
   toggleSelectAll,
   toggleRowSelection,
   getCellValue,
+  getCarrierLabel,
+  getInvoiceTypeLabel,
   getTimeSlotLabel,
+  fmtDateTime,
   fmtPostal,
   getCoolTypeInfo,
   formatProductsSku,
   formatProductsName,
+  isOkinawa,
+  isRemoteIsland,
+  hasDeliverySpec,
 } = table
 
 // --- バリデーション composable（tableのbaseColumnsを参照） ---
 const validation = useOrderValidation(baseColumns, backendErrorsByRowId)
-const { hasRowErrors, hasFrontendRowErrors, isCellError, hasUnregisteredSku } = validation
+const { hasRowErrors, hasFrontendRowErrors, isCellError, hasUnregisteredSku, getRowErrorMessages } = validation
 // 遅延参照を実際の実装に更新
 _hasRowErrors = hasRowErrors
 
@@ -671,7 +726,7 @@ const hold = useOrderHold(
   loadPendingWaybillOrders,
   toast,
 )
-const { isHeld, nonHeldRows, totalHeldCount, pendingWaybillNonHeldCount, toggleHoldSelected } = hold
+const { isHeld, nonHeldRows, pendingConfirmCount, totalHeldCount, processingNonHeldCount, pendingWaybillNonHeldCount, toggleHoldSelected } = hold
 // 遅延参照を実際の実装に更新
 _isHeld = isHeld
 
@@ -752,12 +807,38 @@ const clearBackendErrors = () => {
   backendErrorsByRowId.value = {}
 }
 
+// --- 同捆可能判定（同一お届け先の注文が2件以上あるか） ---
+const bundleableRowIds = computed(() => {
+  const rows = displayFilter.value === 'pending_confirm' ? filteredRows.value : []
+  if (rows.length < 2) return new Set<string>()
+  const groupCounts = new Map<string, string[]>()
+  for (const row of rows) {
+    const name = getNestedValue(row, 'recipient.name') ?? ''
+    const postal = getNestedValue(row, 'recipient.postalCode') ?? ''
+    if (!name && !postal) continue
+    const key = `${name}|${postal}`
+    if (!groupCounts.has(key)) groupCounts.set(key, [])
+    groupCounts.get(key)!.push(row.id)
+  }
+  const ids = new Set<string>()
+  for (const [, rowIds] of groupCounts) {
+    if (rowIds.length >= 2) {
+      for (const id of rowIds) ids.add(id)
+    }
+  }
+  return ids
+})
+
+const isBundleable = (row: any): boolean => {
+  return bundleableRowIds.value.has(row.id)
+}
+
 // --- バンドル関連 ---
 const bundleFilterFields = computed(() => [
-  { key: 'recipient.name', title: '送付先氏名', description: '送付先の氏名が一致する注文を同梱候補とする' },
-  { key: 'recipient.postalCode', title: '送付先郵便番号', description: '送付先の郵便番号が一致する注文を同梱候補とする' },
-  { key: 'recipient.street', title: '送付先住所', description: '送付先の住所が一致する注文を同梱候補とする' },
-  { key: 'recipient.phone', title: '送付先電話番号', description: '送付先の電話番号が一致する注文を同梱候補とする' },
+  { key: 'recipient.name', title: 'お届け先氏名', description: 'お届け先の氏名が一致する注文を同梱候補とする' },
+  { key: 'recipient.postalCode', title: 'お届け先郵便番号', description: 'お届け先の郵便番号が一致する注文を同梱候補とする' },
+  { key: 'recipient.street', title: 'お届け先住所', description: 'お届け先の住所が一致する注文を同梱候補とする' },
+  { key: 'recipient.phone', title: 'お届け先電話番号', description: 'お届け先の電話番号が一致する注文を同梱候補とする' },
   { key: 'orderSourceCompanyId', title: '販売分類', description: '※ご依頼主を超えて同梱する時には「販売分類」のチェックを外してください' },
 ])
 
@@ -809,12 +890,12 @@ const mergeGroup = (targetGroup: UserOrderRow[]): UserOrderRow => {
     recipient: {
       postalCode: first!.recipient?.postalCode || '', prefecture: first!.recipient?.prefecture || '',
       city: first!.recipient?.city || '', street: first!.recipient?.street || '',
-      name: first!.recipient?.name || '', phone: first!.recipient?.phone || '',
+      building: first!.recipient?.building || '', name: first!.recipient?.name || '', phone: first!.recipient?.phone || '',
     },
     sender: {
       postalCode: first!.sender?.postalCode || '', prefecture: first!.sender?.prefecture || '',
       city: first!.sender?.city || '', street: first!.sender?.street || '',
-      name: first!.sender?.name || '', phone: first!.sender?.phone || '',
+      building: first!.sender?.building || '', name: first!.sender?.name || '', phone: first!.sender?.phone || '',
     },
     handlingTags: first!.handlingTags || [],
     products: mergedProducts,
@@ -1003,7 +1084,7 @@ const handleAdd = () => {
   showDialog.value = true
 }
 
-const handleFormSubmit = (data: Record<string, any>) => {
+const handleFormSubmit = async (data: Record<string, any>) => {
   const now = new Date().toISOString()
 
   if (editingRow.value) {
@@ -1016,12 +1097,12 @@ const handleFormSubmit = (data: Record<string, any>) => {
       orderer: {
         postalCode: data.orderer?.postalCode || '', prefecture: data.orderer?.prefecture || '',
         city: data.orderer?.city || '', street: data.orderer?.street || '',
-        name: data.orderer?.name || '', phone: data.orderer?.phone || '',
+        building: data.orderer?.building || '', name: data.orderer?.name || '', phone: data.orderer?.phone || '',
       },
       recipient: {
         postalCode: data.recipient?.postalCode || '', prefecture: data.recipient?.prefecture || '',
         city: data.recipient?.city || '', street: data.recipient?.street || '',
-        name: data.recipient?.name || '', phone: data.recipient?.phone || '',
+        building: data.recipient?.building || '', name: data.recipient?.name || '', phone: data.recipient?.phone || '',
       },
       honorific: data.honorific !== undefined ? data.honorific : (editingRow.value.honorific ?? '様'),
       products: Array.isArray(data.products) && data.products.length > 0
@@ -1039,14 +1120,50 @@ const handleFormSubmit = (data: Record<string, any>) => {
       sender: {
         postalCode: data.sender?.postalCode || '', prefecture: data.sender?.prefecture || '',
         city: data.sender?.city || '', street: data.sender?.street || '',
-        name: data.sender?.name || '', phone: data.sender?.phone || '',
+        building: data.sender?.building || '', name: data.sender?.name || '', phone: data.sender?.phone || '',
       },
       handlingTags: Array.isArray(data.handlingTags) ? data.handlingTags : editingRow.value.handlingTags || [],
       updatedAt: now,
     }
     updatedRow = applyProductDefaults(updatedRow)
-    allRows.value = allRows.value.map(r => r.id === editingRow.value!.id ? updatedRow : r)
-    toast.showSuccess('出荷指示を更新しました')
+
+    // バックエンド注文（_id あり）の場合は API で更新
+    const backendId = (editingRow.value as any)._id
+    if (backendId) {
+      try {
+        // バックエンドスキーマに合致するフィールドのみ送信（余分なフロントエンド専用フィールドを除外）
+        const allowedFields = [
+          'sourceOrderAt', 'carrierId', 'customerManagementNumber',
+          'orderer', 'recipient', 'honorific', 'products',
+          'shipPlanDate', 'invoiceType', 'coolType',
+          'deliveryTimeSlot', 'deliveryDatePreference',
+          'orderSourceCompanyId', 'carrierData', 'sender',
+          'handlingTags', 'trackingId', 'updatedAt',
+        ] as const
+        // 空文字列のオプションフィールドはスキップ（バックエンド .min(1) バリデーション回避）
+        const optionalSkipIfEmpty = new Set([
+          'deliveryTimeSlot', 'deliveryDatePreference', 'orderSourceCompanyId',
+          'honorific', 'trackingId', 'sourceOrderAt',
+        ])
+        const payload: Record<string, any> = {}
+        for (const key of allowedFields) {
+          const val = (updatedRow as any)[key]
+          if (val === undefined || val === null) continue
+          if (optionalSkipIfEmpty.has(key) && typeof val === 'string' && val.trim() === '') continue
+          payload[key] = val
+        }
+        await updateShipmentOrder(String(backendId), payload)
+        await loadPendingWaybillOrders()
+        toast.showSuccess('出荷指示を更新しました')
+      } catch (e: any) {
+        console.error('Order update failed:', e, 'payload:', JSON.stringify(payload, null, 2))
+        toast.showError(e?.message || '更新に失敗しました')
+        return
+      }
+    } else {
+      allRows.value = allRows.value.map(r => r.id === editingRow.value!.id ? updatedRow : r)
+      toast.showSuccess('出荷指示を更新しました')
+    }
   } else {
     const tempId = generateTempId()
     let newRow: UserOrderRow = {
@@ -1058,12 +1175,12 @@ const handleFormSubmit = (data: Record<string, any>) => {
       orderer: {
         postalCode: data.orderer?.postalCode || '', prefecture: data.orderer?.prefecture || '',
         city: data.orderer?.city || '', street: data.orderer?.street || '',
-        name: data.orderer?.name || '', phone: data.orderer?.phone || '',
+        building: data.orderer?.building || '', name: data.orderer?.name || '', phone: data.orderer?.phone || '',
       },
       recipient: {
         postalCode: data.recipient?.postalCode || '', prefecture: data.recipient?.prefecture || '',
         city: data.recipient?.city || '', street: data.recipient?.street || '',
-        name: data.recipient?.name || '', phone: data.recipient?.phone || '',
+        building: data.recipient?.building || '', name: data.recipient?.name || '', phone: data.recipient?.phone || '',
       },
       honorific: data.honorific ?? '様',
       products: Array.isArray(data.products) && data.products.length > 0
@@ -1081,7 +1198,7 @@ const handleFormSubmit = (data: Record<string, any>) => {
       sender: {
         postalCode: data.sender?.postalCode || '', prefecture: data.sender?.prefecture || '',
         city: data.sender?.city || '', street: data.sender?.street || '',
-        name: data.sender?.name || '', phone: data.sender?.phone || '',
+        building: data.sender?.building || '', name: data.sender?.name || '', phone: data.sender?.phone || '',
       },
       handlingTags: Array.isArray(data.handlingTags) ? data.handlingTags : [],
       sourceRawRows: [],
@@ -1099,10 +1216,36 @@ const handleFormSubmit = (data: Record<string, any>) => {
 // --- インポート ---
 const handleImportClick = () => { showImportDialog.value = true }
 
+// 住所フィールド文字数制限の正規化（半角幅ベース）
+// 住所フィールドの正規化（B2 Cloud フィールド幅制限に合わせて分割）
+const normalizeAddress = (addr: { city?: string; street?: string; building?: string } | undefined) => {
+  if (!addr) return addr
+  let city = addr.city || ''
+  let street = addr.street || ''
+  let building = addr.building || ''
+  // 市区郡町村が24半角幅を超える場合、超過分を町・番地の先頭に移動
+  const cityWidth = getStringWidth(city)
+  if (cityWidth > 24) {
+    const [cityFit, cityOverflow] = splitByWidth(city, 24)
+    city = cityFit
+    street = cityOverflow + street
+  }
+  // 町・番地が32半角幅を超える場合、超過分をアパートマンション名の先頭に移動
+  const streetWidth = getStringWidth(street)
+  if (streetWidth > 32) {
+    const [streetFit, streetOverflow] = splitByWidth(street, 32)
+    street = streetFit
+    building = streetOverflow + building
+  }
+  return { ...addr, city, street, building }
+}
+
 const handleImport = (importedRows: UserOrderRow[]) => {
   const rowsWithDefaults = importedRows.map((row: UserOrderRow) => {
     const updatedRow = {
       ...row,
+      recipient: normalizeAddress(row.recipient) as typeof row.recipient,
+      sender: normalizeAddress(row.sender) as typeof row.sender,
       products: Array.isArray(row.products)
         ? row.products.map((p: any): OrderProduct => {
             const quantityNum = p?.quantity !== undefined ? Number(p.quantity) : 1
@@ -1118,7 +1261,14 @@ const handleImport = (importedRows: UserOrderRow[]) => {
     return applyProductDefaults(updatedRow)
   })
   allRows.value = [...allRows.value, ...rowsWithDefaults]
-  toast.showSuccess(`${importedRows.length}件のデータを取り込みしました`)
+
+  // バリデーションエラーチェック
+  const errorRows = rowsWithDefaults.filter((r) => getRowErrorMessages(r).length > 0)
+  if (errorRows.length > 0) {
+    toast.showWarning(`${importedRows.length}件取り込み完了。${errorRows.length}件にエラーがあります。修正してください。`)
+  } else {
+    toast.showSuccess(`${importedRows.length}件のデータを取り込みしました`)
+  }
 }
 
 // --- バックエンド送信 ---
@@ -1130,9 +1280,9 @@ const buildBulkUploadPayload = (rows: typeof allRows.value) => ({
       carrierId: row.carrierId,
       customerManagementNumber: row.customerManagementNumber,
       orderer: (row.orderer?.postalCode || row.orderer?.name || row.orderer?.phone)
-        ? { postalCode: row.orderer.postalCode || undefined, prefecture: row.orderer.prefecture || undefined, city: row.orderer.city || undefined, street: row.orderer.street || undefined, name: row.orderer.name || undefined, phone: row.orderer.phone || undefined }
+        ? { postalCode: row.orderer.postalCode || undefined, prefecture: row.orderer.prefecture || undefined, city: row.orderer.city || undefined, street: row.orderer.street || undefined, building: row.orderer.building || undefined, name: row.orderer.name || undefined, phone: row.orderer.phone || undefined }
         : undefined,
-      recipient: { postalCode: row.recipient?.postalCode || '', prefecture: row.recipient?.prefecture || '', city: row.recipient?.city || '', street: row.recipient?.street || '', name: row.recipient?.name || '', phone: row.recipient?.phone || '' },
+      recipient: { postalCode: row.recipient?.postalCode || '', prefecture: row.recipient?.prefecture || '', city: row.recipient?.city || '', street: row.recipient?.street || '', building: row.recipient?.building || '', name: row.recipient?.name || '', phone: row.recipient?.phone || '' },
       honorific: row.honorific ?? '様',
       products: Array.isArray(row.products)
         ? row.products.map((p: OrderProduct) => ({
@@ -1150,7 +1300,7 @@ const buildBulkUploadPayload = (rows: typeof allRows.value) => ({
       carrierData: row.carrierData ? {
         yamato: row.carrierData.yamato ? { sortingCode: row.carrierData.yamato.sortingCode || undefined, hatsuBaseNo1: row.carrierData.yamato.hatsuBaseNo1 || undefined, hatsuBaseNo2: row.carrierData.yamato.hatsuBaseNo2 || undefined } : undefined,
       } : undefined,
-      sender: { postalCode: row.sender?.postalCode || '', prefecture: row.sender?.prefecture || '', city: row.sender?.city || '', street: row.sender?.street || '', name: row.sender?.name || '', phone: row.sender?.phone || '' },
+      sender: { postalCode: row.sender?.postalCode || '', prefecture: row.sender?.prefecture || '', city: row.sender?.city || '', street: row.sender?.street || '', building: row.sender?.building || '', name: row.sender?.name || '', phone: row.sender?.phone || '' },
       handlingTags: Array.isArray(row.handlingTags) ? row.handlingTags : [],
       sourceRawRows: Array.isArray((row as any).sourceRawRows) ? (row as any).sourceRawRows : undefined,
     },
@@ -1190,12 +1340,10 @@ const handleSubmitClick = async () => {
   const invalidRows = targetRows.filter((r) => hasFrontendRowErrors(r))
 
   if (invalidRows.length > 0) {
-    displayFilter.value = 'error'
+    displayFilter.value = 'pending_confirm'
     toast.showError(`入力に誤りがある行が${invalidRows.length}件あります。エラー行のみ表示に切り替えました。`)
     return
   }
-
-  if (!confirm(`登録対象：${targetRows.length}件\n出荷指示登録しますか？`)) return
 
   try {
     isSubmitting.value = true
@@ -1215,14 +1363,17 @@ const handleSubmitClick = async () => {
 
     if (failures.length > 0) {
       applyBackendErrors(failures)
-      displayFilter.value = 'error'
+      displayFilter.value = 'pending_confirm'
       submitErrorDialogVisible.value = true
     } else {
-      allRows.value = []
       clearBackendErrors()
-      draftStore.clearAll()
+      if (allRows.value.length === 0) {
+        draftStore.clearAll()
+      }
       await loadPendingWaybillOrders()
-      displayFilter.value = 'pending_waybill'
+      displayFilter.value = 'processing'
+      // 自動 B2 Cloud 検証をバックグラウンドで実行（ブロックしない）
+      autoValidateProcessingOrders()
     }
   } catch (err: any) {
     if (err instanceof ShipmentOrderBulkApiError) {
@@ -1243,32 +1394,520 @@ const handleSubmitClick = async () => {
 }
 
 // --- データクリア ---
-const handleClearAll = async () => {
-  if (allRows.value.length === 0) {
-    toast.showWarning('クリアするデータがありません')
+const handleClearSelected = () => {
+  if (tableSelectedKeys.value.length === 0) {
+    toast.showWarning('削除する行を選択してください')
     return
   }
-  if (!confirm(`すべてのデータ（${allRows.value.length}件）をクリアしますか？\nこの操作は元に戻せません。`)) return
-
+  const count = tableSelectedKeys.value.length
+  const selectedSet = new Set(tableSelectedKeys.value)
+  allRows.value = allRows.value.filter((r) => !selectedSet.has(r.id))
   tableSelectedKeys.value = []
-  displayFilter.value = 'new'
-  clearBackendErrors()
-  draftStore.clearAll()
-  toast.showSuccess('すべてのデータをクリアしました')
+  toast.showSuccess(`${count}件を削除しました`)
 }
 
-// --- 送り状未発行注文の読み込み ---
+const handleReleaseHold = async () => {
+  if (tableSelectedKeys.value.length === 0) {
+    toast.showWarning('保留解除する行を選択してください')
+    return
+  }
+  const backendIds: string[] = []
+  const localIds: (string | number)[] = []
+  for (const id of tableSelectedKeys.value) {
+    const isPendingWaybill = pendingWaybillRows.value.some(r => r.id === id)
+    if (isPendingWaybill) {
+      backendIds.push(String(id))
+    } else {
+      localIds.push(id)
+    }
+  }
+  // ローカル行の保留解除
+  if (localIds.length > 0) {
+    const currentSet = new Set(heldRowIds.value)
+    for (const id of localIds) currentSet.delete(id)
+    heldRowIds.value = [...currentSet]
+  }
+  // バックエンド注文の保留解除
+  if (backendIds.length > 0) {
+    try {
+      await updateShipmentOrderStatusBulk(backendIds, 'unhold')
+      await loadPendingWaybillOrders()
+    } catch (err) {
+      toast.showError('保留解除に失敗しました')
+      return
+    }
+  }
+  const count = tableSelectedKeys.value.length
+  tableSelectedKeys.value = []
+  toast.showSuccess(`${count}件の保留を解除しました`)
+}
+
+const handleDeleteHeld = async () => {
+  if (tableSelectedKeys.value.length === 0) {
+    toast.showWarning('削除する行を選択してください')
+    return
+  }
+  const backendIds: string[] = []
+  const localIds: (string | number)[] = []
+  for (const id of tableSelectedKeys.value) {
+    const isPendingWaybill = pendingWaybillRows.value.some(r => r.id === id)
+    if (isPendingWaybill) {
+      const row = pendingWaybillRows.value.find(r => r.id === id)
+      if (row) backendIds.push(String((row as any)._id || row.id))
+    } else {
+      localIds.push(id)
+    }
+  }
+  // ローカル行の削除
+  if (localIds.length > 0) {
+    const localSet = new Set(localIds)
+    allRows.value = allRows.value.filter((r) => !localSet.has(r.id))
+    const currentHeld = new Set(heldRowIds.value)
+    for (const id of localIds) currentHeld.delete(id)
+    heldRowIds.value = [...currentHeld]
+  }
+  // バックエンド注文の削除
+  if (backendIds.length > 0) {
+    try {
+      await deleteShipmentOrdersBulk(backendIds)
+      await loadPendingWaybillOrders()
+    } catch (e: any) {
+      toast.showError(e?.message || '削除に失敗しました')
+      return
+    }
+  }
+  const count = tableSelectedKeys.value.length
+  tableSelectedKeys.value = []
+  toast.showSuccess(`${count}件を削除しました`)
+}
+
+// --- バックエンド注文の読み込み（送り状未発行・発行中・発行済） ---
 async function loadPendingWaybillOrders() {
   try {
     isLoadingPendingWaybill.value = true
     const orders = await fetchShipmentOrders({ limit: 500 })
     pendingWaybillRows.value = (orders || [])
-      .filter((o: any) => !o.trackingId)
       .map((o: any) => ({ ...o, id: o._id } as UserOrderRow))
   } catch (err) {
-    console.error('送り状未発行注文の取得に失敗しました:', err)
+    console.error('注文の取得に失敗しました:', err)
   } finally {
     isLoadingPendingWaybill.value = false
+  }
+}
+
+// --- 出荷指示確定（B2 Cloud バリデーション） ---
+const isYamatoB2Carrier = (carrierId: string): boolean => {
+  const carrier = carriers.value.find((c) => c._id === carrierId)
+  return carrier?.automationType === 'yamato-b2'
+}
+
+const handleConfirmPrintReady = async () => {
+  if (tableSelectedKeys.value.length === 0) {
+    toast.showWarning('確認する行を選択してください')
+    return
+  }
+
+  const selectedRows = sortedRows.value.filter((row) =>
+    tableSelectedKeys.value.includes(row.id),
+  )
+
+  if (!confirm(`選択した${selectedRows.length}件の出荷指示確定しますか？`)) return
+
+  const ids = selectedRows.map((row) => String(row._id || row.id)).filter(Boolean)
+  if (ids.length === 0) {
+    toast.showWarning('有効なIDがありません')
+    return
+  }
+
+  const b2OrderIds = selectedRows
+    .filter((row) => isYamatoB2Carrier(row.carrierId))
+    .map((row) => String(row._id || row.id))
+
+  if (b2OrderIds.length > 0) {
+    b2Validating.value = true
+    // index → orderNumber マッピング構築
+    const b2Rows = selectedRows.filter((row) => isYamatoB2Carrier(row.carrierId))
+    const orderMap = new Map<number, string>()
+    b2Rows.forEach((row, i) => {
+      orderMap.set(i, (row as any).orderNumber || row.customerManagementNumber || '-')
+    })
+    b2ValidateOrderMap.value = orderMap
+    try {
+      const validateResult = await yamatoB2Validate(b2OrderIds)
+      b2ValidateResult.value = validateResult
+      b2PendingConfirmIds.value = ids
+      b2PendingB2OrderIds.value = b2OrderIds
+      b2Validating.value = false
+      b2ValidateDialogVisible.value = true
+    } catch (e: any) {
+      b2Validating.value = false
+      b2ApiErrorMessage.value = e?.message || 'B2 Cloud の検証中にエラーが発生しました'
+      b2ApiErrorDialogVisible.value = true
+    }
+  } else {
+    await doConfirmOrders(ids)
+  }
+}
+
+const doConfirmOrders = async (ids: string[]) => {
+  if (ids.length === 0) return
+  try {
+    await updateShipmentOrderStatusBulk(ids, 'mark-print-ready')
+    toast.showSuccess(`${ids.length}件の出荷指示を確定しました`)
+    tableSelectedKeys.value = []
+    await loadPendingWaybillOrders()
+  } catch (e: any) {
+    toast.showError(e?.message || '出荷指示確定に失敗しました')
+  }
+}
+
+const handleB2ValidateDialogCancel = () => {
+  b2ValidateDialogVisible.value = false
+  b2ValidateResult.value = null
+  b2PendingConfirmIds.value = []
+  b2PendingB2OrderIds.value = []
+}
+
+const handleB2ValidateDialogConfirm = async () => {
+  b2ValidateDialogVisible.value = false
+
+  // 検証結果から正常な B2 注文 ID のみ抽出
+  const validB2Ids = new Set<string>()
+  const invalidB2Ids = new Set<string>()
+  if (b2ValidateResult.value) {
+    for (const item of b2ValidateResult.value.results) {
+      const orderId = b2PendingB2OrderIds.value[item.index]
+      if (!orderId) continue
+      if (item.valid) {
+        validB2Ids.add(orderId)
+      } else {
+        invalidB2Ids.add(orderId)
+      }
+    }
+  }
+
+  // 非 B2 注文 + 正常な B2 注文のみ確定
+  const confirmIds = b2PendingConfirmIds.value.filter((id) => !invalidB2Ids.has(id))
+  await doConfirmOrders(confirmIds)
+
+  b2PendingConfirmIds.value = []
+  b2PendingB2OrderIds.value = []
+  b2ValidateResult.value = null
+}
+
+// --- 自動 B2 Cloud 検証（処理中の注文をバックグラウンドで検証） ---
+const autoValidateProcessingOrders = async () => {
+  // リトライタイマーをクリア
+  if (autoValidateRetryTimer) {
+    clearTimeout(autoValidateRetryTimer)
+    autoValidateRetryTimer = null
+  }
+
+  // 処理中の注文を取得（未確定 & trackingId なし & 保留なし）
+  const processingOrders = pendingWaybillRows.value.filter(
+    (r: any) => !r.trackingId && !r.status?.held?.isHeld && !r.status?.confirm?.isConfirmed,
+  )
+  if (processingOrders.length === 0) return
+
+  // B2 キャリアの注文のみ抽出
+  const b2Orders = processingOrders.filter((r) => isYamatoB2Carrier(r.carrierId))
+  if (b2Orders.length === 0) {
+    // B2 以外の注文は直接確定
+    const nonB2Ids = processingOrders.map((r) => String(r._id || r.id)).filter(Boolean)
+    if (nonB2Ids.length > 0) {
+      await doConfirmOrders(nonB2Ids)
+    }
+    return
+  }
+
+  const b2OrderIds = b2Orders.map((r) => String(r._id || r.id)).filter(Boolean)
+  const nonB2Orders = processingOrders.filter((r) => !isYamatoB2Carrier(r.carrierId))
+  const nonB2Ids = nonB2Orders.map((r) => String(r._id || r.id)).filter(Boolean)
+
+  isAutoValidating.value = true
+  b2ValidationErrors.value = new Map()
+
+  try {
+    const validateResult = await yamatoB2Validate(b2OrderIds)
+
+    const validIds: string[] = []
+    const newErrors = new Map<string, string[]>()
+
+    for (const item of validateResult.results) {
+      const orderId = b2OrderIds[item.index]
+      if (!orderId) continue
+      if (item.valid) {
+        validIds.push(orderId)
+      } else {
+        newErrors.set(orderId, item.errors)
+      }
+    }
+
+    b2ValidationErrors.value = newErrors
+
+    // 検証通過した注文 + 非B2注文を確定（送り状未発行へ移動）
+    const confirmIds = [...validIds, ...nonB2Ids]
+    if (confirmIds.length > 0) {
+      await doConfirmOrders(confirmIds)
+    }
+
+    // 結果メッセージ
+    if (newErrors.size > 0) {
+      toast.showWarning(`${newErrors.size}件のデータにエラーがあります。処理中タブをご確認ください。`)
+      // エラーがある場合、5分後に自動リトライ
+      autoValidateRetryTimer = setTimeout(() => {
+        autoValidateRetryTimer = null
+        autoValidateProcessingOrders()
+      }, 5 * 60 * 1000)
+    } else if (validIds.length > 0) {
+      toast.showSuccess(`${validIds.length}件の検証が正常に完了しました`)
+    }
+  } catch (e: any) {
+    toast.showError(e?.message || 'B2 Cloud の検証中にエラーが発生しました')
+    // API エラーの場合も5分後にリトライ
+    autoValidateRetryTimer = setTimeout(() => {
+      autoValidateRetryTimer = null
+      autoValidateProcessingOrders()
+    }, 5 * 60 * 1000)
+  } finally {
+    isAutoValidating.value = false
+  }
+}
+
+// --- 送り状未発行の削除 ---
+// --- バッチアクションバー ---
+const batchActions = computed(() => {
+  if (displayFilter.value === 'pending_confirm') {
+    if (bundleModeEnabled.value) {
+      return [
+        { id: 'bundle-merge', label: '同梱する', variant: 'primary' as const },
+        { id: 'unbundle', label: '同梱を解除する', variant: 'warning' as const },
+      ]
+    }
+    const noSel = tableSelectedKeys.value.length === 0
+    const actions: Array<{ id: string; label: string; icon?: string; variant?: 'primary' | 'danger' | 'secondary' | 'warning'; position?: 'left' | 'right'; separated?: boolean; disabled?: boolean }> = [
+      { id: 'ship-plan-date', label: '出荷予定日一括設定', variant: 'primary', position: 'left', disabled: noSel },
+      { id: 'sender-bulk', label: 'ご依頼主情報の一括設定', variant: 'primary', position: 'left', disabled: noSel },
+      { id: 'carrier-bulk', label: '配送業者一括設定', variant: 'primary', position: 'left', disabled: noSel },
+      { id: 'clear-selected', label: '削除', variant: 'danger', position: 'left', disabled: noSel },
+      { id: 'hold-toggle', label: '保留切替', variant: 'secondary', disabled: noSel },
+      { id: 'submit', label: isSubmitting.value ? '確認中...' : '出荷確認する', variant: 'primary', separated: true, disabled: noSel || isSubmitting.value },
+    ]
+    if (backendErrorCount.value > 0) {
+      actions.push({ id: 'show-error-detail', label: 'エラー詳細', variant: 'danger' })
+    }
+    return actions
+  }
+  if (displayFilter.value === 'processing') {
+    const noSel = tableSelectedKeys.value.length === 0
+    return [
+      { id: 'delete-pending', label: '削除', variant: 'danger' as const, position: 'left' as const, disabled: noSel },
+      { id: 'confirm-print-ready', label: (b2Validating.value || isAutoValidating.value) ? '確定中...' : '再検証', variant: 'success' as const, disabled: noSel || b2Validating.value || isAutoValidating.value },
+    ]
+  }
+  if (displayFilter.value === 'pending_waybill') {
+    const noSel = tableSelectedKeys.value.length === 0
+    return [
+      { id: 'b2-export', label: b2Exporting.value ? '処理中...' : 'B2 Cloudで伝票作成', variant: 'success' as const, disabled: !canSendToB2Cloud.value || b2Exporting.value },
+      { id: 'carrier-export', label: '配送業者データ出力', variant: 'primary' as const, disabled: noSel },
+    ]
+  }
+  if (displayFilter.value === 'held') {
+    const noSel = tableSelectedKeys.value.length === 0
+    return [
+      { id: 'delete-held', label: '削除', variant: 'danger' as const, position: 'left' as const, disabled: noSel },
+      { id: 'release-hold', label: '保留解除', variant: 'primary' as const, disabled: noSel },
+    ]
+  }
+  return []
+})
+
+const handleBatchAction = (actionId: string) => {
+  switch (actionId) {
+    case 'bundle-merge': handleBundleMergeAllSelected(); break
+    case 'unbundle': handleUnbundleSelected(); break
+    case 'ship-plan-date': shipPlanDateDialogVisible.value = true; break
+    case 'sender-bulk': senderBulkDialogVisible.value = true; break
+    case 'carrier-bulk': carrierBulkDialogVisible.value = true; break
+    case 'submit': handleSubmitClick(); break
+    case 'clear-selected': handleClearSelected(); break
+    case 'hold-toggle': toggleHoldSelected(); break
+    case 'show-error-detail': submitErrorDialogVisible.value = true; break
+    case 'delete-pending': handleDeletePending(); break
+    case 'confirm-print-ready': handleConfirmPrintReady(); break
+    case 'reload-pending': loadPendingWaybillOrders(); break
+    case 'b2-export': handleB2Export(); break
+    case 'carrier-export': handleCarrierExport(); break
+    case 'clear-backend-errors': clearBackendErrors(); break
+    case 'release-hold': handleReleaseHold(); break
+    case 'delete-held': handleDeleteHeld(); break
+  }
+}
+
+const handleSelectAll = () => {
+  const allIds = paginatedRows.value.map((r) => r.id)
+  tableSelectedKeys.value = allIds
+}
+
+const handleDeletePending = async () => {
+  if (tableSelectedKeys.value.length === 0) {
+    toast.showWarning('削除する行を選択してください')
+    return
+  }
+  if (!confirm(`選択した${tableSelectedKeys.value.length}件の出荷指示を削除しますか？\nこの操作は元に戻せません。`)) return
+
+  const ids = sortedRows.value
+    .filter((row) => tableSelectedKeys.value.includes(row.id))
+    .map((row) => String(row._id || row.id))
+    .filter(Boolean)
+
+  try {
+    const result = await deleteShipmentOrdersBulk(ids)
+    toast.showSuccess(`${result.deletedCount}件の出荷指示を削除しました`)
+    tableSelectedKeys.value = []
+    await loadPendingWaybillOrders()
+  } catch (e: any) {
+    toast.showError(e?.message || '削除に失敗しました')
+  }
+}
+
+// --- B2 Cloud 送信 ---
+const canSendToB2Cloud = computed(() => {
+  if (tableSelectedKeys.value.length === 0) return false
+  const keySet = new Set(tableSelectedKeys.value)
+  const selectedRows = pendingWaybillRows.value.filter((r) => keySet.has(r.id))
+  if (selectedRows.length === 0) return false
+  return selectedRows.every((row) => {
+    const carrierId = String(row.carrierId || '')
+    if (!carrierId) return false
+    const carrier = carriers.value.find((c) => c._id === carrierId)
+    return carrier?.automationType === 'yamato-b2'
+  })
+})
+
+const handleB2Export = async () => {
+  if (tableSelectedKeys.value.length === 0) return
+  const keySet = new Set(tableSelectedKeys.value)
+  const selectedRows = pendingWaybillRows.value.filter((r) => keySet.has(r.id))
+  if (!selectedRows.length) return
+
+  const carrierIdSet = new Set(selectedRows.map((r) => String(r.carrierId || '')).filter(Boolean))
+  if (carrierIdSet.size !== 1) {
+    toast.showWarning('選択した行の配送業者が一致しません。配送業者ごとに出力してください。')
+    return
+  }
+  const carrierId = Array.from(carrierIdSet)[0]!
+  const carrier = carriers.value.find((c) => c._id === carrierId)
+  if (!carrier || carrier.automationType !== 'yamato-b2') {
+    toast.showWarning('選択した配送業者はB2 Cloud自動連携に対応していません')
+    return
+  }
+
+  const orderIds = selectedRows.map((r) => String((r as any)._id)).filter(Boolean)
+  if (!orderIds.length) return
+
+  b2Exporting.value = true
+  try {
+    const result = await yamatoB2Export(orderIds)
+    b2ExportResult.value = result
+    b2ExportResultDialogVisible.value = true
+    if (result.success_count > 0) toast.showSuccess(`${result.success_count}件の送信に成功しました`)
+    if (result.error_count > 0) toast.showError(`${result.error_count}件の送信に失敗しました`)
+  } catch (e: any) {
+    b2ApiErrorMessage.value = e?.message || 'B2 Cloudへの送信に失敗しました'
+    b2ApiErrorDialogVisible.value = true
+  } finally {
+    b2Exporting.value = false
+  }
+}
+
+const handleB2ExportResultClose = async () => {
+  b2ExportResultDialogVisible.value = false
+  b2ExportResult.value = null
+  tableSelectedKeys.value = []
+  await loadPendingWaybillOrders()
+}
+
+// --- 配送業者データ出力 ---
+const normalizeOrderValueForExport = (sourcePath: string, raw: any): any => {
+  if (sourcePath === 'products') {
+    if (Array.isArray(raw)) return formatOrderProductsText(raw)
+    if (raw && typeof raw === 'object') return formatOrderProductsText([raw])
+  }
+  return raw
+}
+
+const buildFlatRowForMappings = (order: any, mappings: MappingConfig['mappings']): Record<string, any> => {
+  const flat: Record<string, any> = {}
+  for (const m of mappings || []) {
+    for (const input of (m as any)?.inputs || []) {
+      if (input?.type !== 'column') continue
+      const col = String(input.column || '')
+      if (!col || col in flat) continue
+      const raw = getNestedValue(order as any, col)
+      flat[col] = normalizeOrderValueForExport(col, raw)
+    }
+  }
+  return flat
+}
+
+const rebuildCarrierExportRows = async () => {
+  const mappingId = carrierExportSelectedMappingId.value
+  const cfg = carrierExportMappingConfigsById.value.get(String(mappingId || ''))
+  if (!cfg) { carrierExportOutputRows.value = []; return }
+  const headers = carrierExportHeaders.value
+  const out = await Promise.all(
+    carrierExportSourceOrders.value.map(async (order: any) => {
+      const flatRow = buildFlatRowForMappings(order, cfg.mappings || [])
+      const mapped = await applyTransformMappings(cfg.mappings || [], flatRow, { meta: { row: flatRow } })
+      const row: Record<string, any> = {}
+      for (const h of headers) row[h] = mapped?.[h] ?? ''
+      return row
+    }),
+  )
+  carrierExportOutputRows.value = out
+}
+
+const handleCarrierExport = async () => {
+  if (tableSelectedKeys.value.length === 0) return
+  const keySet = new Set(tableSelectedKeys.value)
+  const selectedRows = pendingWaybillRows.value.filter((r) => keySet.has(r.id))
+  if (!selectedRows.length) return
+
+  const carrierIdSet = new Set(selectedRows.map((r) => String(r.carrierId || '')).filter(Boolean))
+  if (carrierIdSet.size !== 1) {
+    toast.showWarning('選択した行の配送業者が一致しません。配送業者ごとに出力してください。')
+    return
+  }
+
+  const carrierId = Array.from(carrierIdSet)[0]!
+  const carrier = carriers.value.find((c) => c._id === carrierId)
+  if (!carrier) { toast.showError('配送業者情報が見つかりません'); return }
+
+  const headers = (carrier.formatDefinition?.columns || []).map((c: any) => c.name).filter(Boolean)
+  carrierExportHeaders.value = headers
+  carrierExportSourceOrders.value = selectedRows
+
+  try {
+    const all = await getAllMappingConfigs('order-to-carrier')
+    const filtered = (all || []).filter((c) => c?.configType === 'order-to-carrier' && c?.carrierCode === String(carrier.code || ''))
+    filtered.sort((a, b) => Number(!!b.isDefault) - Number(!!a.isDefault) || a.name.localeCompare(b.name))
+    carrierExportMappingConfigsById.value = new Map(filtered.map((c) => [c._id, c]))
+    carrierExportMappingOptions.value = filtered.map((c) => ({ label: `${c.name}${c.isDefault ? ' (default)' : ''}`, value: c._id }))
+
+    if (!carrierExportMappingOptions.value.length) {
+      toast.showWarning('この配送業者に出力レイアウトが未設定です（レイアウト設定で作成してください）。')
+      return
+    }
+
+    carrierExportSelectedMappingId.value = carrierExportMappingOptions.value[0]!.value
+    const ymd = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    carrierExportCarrierLabel.value = `${carrier.name} (${carrier.code})`
+    carrierExportFileNameBase.value = `${carrier.code || 'carrier'}_${ymd}`
+    await rebuildCarrierExportRows()
+    carrierExportDialogVisible.value = true
+  } catch (e: any) {
+    toast.showError(e?.message || '配送業者データ出力に失敗しました')
   }
 }
 
@@ -1300,16 +1939,21 @@ const handleBundleFilterUpdate = (keys: string[]) => {
 
 // --- 保留カードクリック ---
 const handleStatCardHoldClick = () => {
-  if (displayFilter.value === 'pending_waybill' || displayFilter.value === 'held') {
+  if (displayFilter.value === 'processing' || displayFilter.value === 'pending_waybill' || displayFilter.value === 'held') {
     toggleHoldSelected()
   }
 }
 
 // --- フィルター変更時の処理 ---
+watch(carrierExportSelectedMappingId, async () => {
+  if (!carrierExportDialogVisible.value) return
+  try { await rebuildCarrierExportRows() } catch (e: any) { toast.showError(e?.message || '出力レイアウトの適用に失敗しました') }
+})
+
 watch(displayFilter, (val) => {
-  showOnlyErrors.value = val === 'error'
+  showOnlyErrors.value = false
   tableSelectedKeys.value = []
-  if (val === 'pending_waybill') {
+  if (val === 'processing' || val === 'pending_waybill') {
     loadPendingWaybillOrders()
   }
 })
@@ -1369,6 +2013,13 @@ onMounted(() => {
   // Piniaストアからテーブルデータを復元
   draftStore.loadFromStorage()
 })
+
+onBeforeUnmount(() => {
+  if (autoValidateRetryTimer) {
+    clearTimeout(autoValidateRetryTimer)
+    autoValidateRetryTimer = null
+  }
+})
 </script>
 
 <style scoped>
@@ -1383,71 +2034,6 @@ onMounted(() => {
   flex: 1;
   padding: 1rem;
   overflow-y: auto;
-}
-
-/* Quick Stats */
-.o-quick-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.o-stat-card {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  background: var(--o-view-background, #fff);
-  border: 1px solid var(--o-border-color, #d6d6d6);
-  border-radius: var(--o-border-radius, 4px);
-  transition: box-shadow 0.15s;
-}
-
-.o-stat-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.o-stat-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.o-stat-icon-total { background: #e8f0fe; color: #1a73e8; }
-.o-stat-icon-error { background: #fce8e6; color: #d93025; }
-.o-stat-icon-unregistered { background: #fef7e0; color: #f9ab00; }
-.o-stat-icon-held { background: #fff3e0; color: #e65100; }
-
-.o-stat-card--clickable { cursor: pointer; transition: box-shadow 0.15s; }
-.o-stat-card--clickable:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-
-[data-theme="dark"] .o-stat-icon-total { background: rgba(26, 115, 232, 0.15); }
-[data-theme="dark"] .o-stat-icon-error { background: rgba(217, 48, 37, 0.15); }
-[data-theme="dark"] .o-stat-icon-unregistered { background: rgba(249, 171, 0, 0.15); }
-[data-theme="dark"] .o-stat-icon-held { background: rgba(230, 81, 0, 0.15); }
-
-.o-stat-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.o-stat-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--o-gray-900, #303133);
-  line-height: 1.2;
-}
-
-.o-stat-label {
-  font-size: var(--o-font-size-smaller, 12px);
-  color: var(--o-gray-500, #909399);
-  white-space: nowrap;
 }
 
 /* Filter Tabs */
@@ -1486,11 +2072,35 @@ onMounted(() => {
   font-weight: 500;
   line-height: 18px;
   white-space: nowrap;
+  text-align: center;
 }
 .o-status-tag--new { background: #dbeafe; color: #1d4ed8; }
 .o-status-tag--error { background: #fee2e2; color: #dc2626; }
 .o-status-tag--pending { background: #fef3c7; color: #d97706; }
+.o-status-tag--processing { background: #e0e7ff; color: #4338ca; }
+.o-status-tag--issued { background: #d1fae5; color: #059669; }
 .o-status-tag--held { background: #fff3e0; color: #e65100; }
+.o-status-tag--bundleable { background: #2563eb; color: #fff; }
+.o-status-tag--delivery { background: #f59e0b; color: #fff; }
+.o-status-tag--okinawa { background: #dc2626; color: #fff; }
+.o-status-tag--remote { background: #dc2626; color: #fff; }
+.o-status-tag--validating { background: #e0e7ff; color: #4338ca; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.o-table-row--has-error { background: #fff5f5 !important; }
+.o-table-row--error-bar td { padding: 0 !important; border-top: none !important; }
+.error-bar {
+  background: #dc2626;
+  color: #fff;
+  font-size: 12px;
+  padding: 4px 12px;
+  line-height: 1.4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.o-table-td--status { white-space: normal; vertical-align: top; height: 88px; }
+.status-cell { display: flex; flex-direction: column; gap: 3px; }
 
 .o-filter-tab {
   padding: 0.375rem 0.75rem;
@@ -1542,8 +2152,16 @@ onMounted(() => {
 
 /* Plain table */
 .o-table-wrapper { overflow-x: auto; border: 1px solid var(--o-border-color, #d6d6d6); border-radius: var(--o-border-radius, 4px); background: var(--o-view-background, #fff); }
+.o-list-toolbar { display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.75rem; background: var(--o-gray-100); border-bottom: 1px solid var(--o-border-color); font-size: var(--o-font-size-small); min-height: 36px; }
+.o-list-toolbar.o-toolbar-active { background: var(--o-brand-primary); color: #fff; }
+.o-selected-count { font-weight: 500; flex: 1; }
+.o-toolbar-btn { background: rgba(255,255,255,0.2); border: none; color: #fff; padding: 0.25rem 0.625rem; border-radius: var(--o-border-radius-sm); font-size: var(--o-font-size-smaller); cursor: pointer; }
+.o-toolbar-btn:hover { background: rgba(255,255,255,0.3); }
+.o-toolbar-danger { background: var(--o-danger); }
+.o-toolbar-danger:hover { background: #c82333; }
 .o-table { width: 100%; border-collapse: collapse; font-size: var(--o-font-size-small, 13px); table-layout: fixed; }
-.o-table-th { position: sticky; top: 0; background: var(--o-gray-100, #f8f9fa); color: var(--o-gray-700, #495057); font-weight: 600; text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--o-border-color, #d6d6d6); user-select: none; font-size: 12px; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.o-table-th { position: sticky; top: 0; background: var(--o-gray-100, #f8f9fa); color: var(--o-gray-700, #495057); font-weight: 600; text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--o-border-color, #d6d6d6); border-left: 1px solid var(--o-border-color, #d6d6d6); user-select: none; font-size: 12px; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.o-table-th:first-child { border-left: none; }
 .o-table-th--sortable { cursor: pointer; }
 .o-table-th--sortable:hover { background: var(--o-gray-200, #e9ecef); }
 
@@ -1555,10 +2173,19 @@ onMounted(() => {
 .o-table-th--checkbox { text-align: center; }
 .o-sort-icon { font-size: 10px; margin-left: 4px; opacity: 0.6; }
 
-.o-table-td { padding: 6px 10px; border-bottom: 1px solid var(--o-border-color, #f0f0f0); font-size: var(--o-font-size-small, 13px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.o-table-td { padding: 6px 10px; border-bottom: 1px solid var(--o-border-color, #f0f0f0); border-left: 1px solid var(--o-border-color, #f0f0f0); font-size: var(--o-font-size-small, 13px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: top; }
+.o-table-td:first-child { border-left: none; }
 .o-table-td--checkbox { text-align: center; }
 .o-table-td--actions { text-align: center; white-space: nowrap; }
 .o-table-td--error { background: #fff0f0; }
+.o-table-td--mgmt { white-space: normal; padding: 6px 10px; }
+.mgmt-cell { display: flex; flex-direction: column; gap: 5px; }
+.mgmt-cell__row { display: flex; align-items: baseline; gap: 6px; line-height: 1.3; }
+.mgmt-cell__label { font-size: 10px; color: var(--o-gray-500, #6c757d); white-space: nowrap; min-width: 72px; }
+.mgmt-cell__value { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mgmt-cell__value--muted { color: var(--o-gray-400, #adb5bd); }
+.mgmt-cell__link { color: #1d6ce0; text-decoration: none; font-weight: 500; }
+.mgmt-cell__link:hover { text-decoration: underline; }
 
 .o-table-row:hover { background: var(--o-list-hover, #edf2ff); }
 .o-table-row--selected { background: var(--o-list-selected, #e8f0fe); }
@@ -1567,6 +2194,22 @@ onMounted(() => {
 
 .o-cell { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .o-cell-sub { font-size: 11px; color: var(--o-gray-500, #909399); }
+
+/* Recipient cell */
+.recipient-cell { display: flex; flex-direction: column; gap: 2px; font-size: 12px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recipient-cell div { overflow: hidden; text-overflow: ellipsis; }
+.recipient-cell__name { font-weight: 500; }
+
+/* Product list in products column */
+.o-table-td:has(.product-list) { white-space: normal; vertical-align: top; }
+.o-table-td:has(.recipient-cell) { white-space: normal; vertical-align: top; }
+.product-list { display: flex; flex-direction: column; gap: 6px; }
+.product-item { display: flex; gap: 8px; align-items: flex-start; }
+.product-item__img { width: 40px; height: 40px; object-fit: cover; border-radius: 3px; border: 1px solid var(--o-border-color, #e0e0e0); flex-shrink: 0; }
+.product-item__img--empty { background: var(--o-gray-100, #f5f5f5); }
+.product-item__info { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow: hidden; }
+.product-item__name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.product-item__meta { font-size: 11px; color: var(--o-gray-500, #909399); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .o-cool-tag { font-size: 11px; padding: 1px 5px; border-radius: 3px; display: inline-block; }
 .o-badge { display: inline-block; background: var(--o-gray-200, #e9ecef); color: var(--o-gray-700, #495057); font-size: 11px; padding: 1px 6px; border-radius: 3px; margin-right: 2px; }
 .customer-mgmt-link { color: var(--o-brand-primary, #714B67); text-decoration: none; font-weight: 500; }
@@ -1578,28 +2221,80 @@ onMounted(() => {
 .o-table-pagination__controls { display: flex; align-items: center; gap: 0.5rem; }
 .o-table-pagination__page { color: var(--o-gray-700, #495057); min-width: 60px; text-align: center; }
 
-/* Bottom bar */
-.bottom-bar__meta { font-size: var(--o-font-size-small, 13px); color: var(--o-gray-700, #495057); }
-.bottom-bar__errors { color: var(--o-danger, #dc3545); }
-.bottom-bar__unregistered { color: var(--o-warning, #ffac00); }
-.bottom-bar__alert {
-  background: #fef0f0;
-  border: 1px solid #fde2e2;
-  border-radius: 6px;
-  padding: 8px 12px;
-  color: #f56c6c;
-  font-size: 13px;
+/* Bulk Dialogs */
+.bulk-dialog {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 1.25rem;
 }
-.bottom-bar__alert-close { background: none; border: none; font-size: 16px; cursor: pointer; color: #f56c6c; }
-
-/* Dialogs */
-.sender-bulk__meta { margin-bottom: 1rem; font-size: var(--o-font-size-small, 13px); color: var(--o-gray-600, #606266); }
-.sender-bulk__footer { display: flex; justify-content: flex-end; gap: 0.5rem; }
-.hint { font-size: 12px; color: var(--o-gray-500, #909399); margin-top: 4px; }
-.row { display: flex; flex-direction: column; gap: 4px; }
+.bulk-dialog__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  background: var(--o-gray-100, #f1f3f5);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: 0.8125rem;
+  color: var(--o-gray-700, #495057);
+  width: fit-content;
+}
+.bulk-dialog__badge strong {
+  color: var(--o-brand-primary, #714B67);
+  font-size: 0.9375rem;
+}
+.bulk-dialog__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.bulk-dialog__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--o-gray-800, #343a40);
+}
+.bulk-dialog__select,
+.bulk-dialog__input {
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--o-border-color, #dee2e6);
+  border-radius: var(--o-border-radius, 4px);
+  font-size: 0.875rem;
+  color: var(--o-gray-900, #212529);
+  background: var(--o-view-background, #fff);
+  transition: border-color 0.15s;
+  outline: none;
+  box-sizing: border-box;
+}
+.bulk-dialog__select:focus,
+.bulk-dialog__input:focus {
+  border-color: var(--o-brand-primary, #714B67);
+  box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.12);
+}
+.bulk-dialog__checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--o-gray-800, #343a40);
+  cursor: pointer;
+}
+.bulk-dialog__checkbox input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--o-brand-primary, #714B67);
+  cursor: pointer;
+}
+.bulk-dialog__hint {
+  font-size: 0.75rem;
+  color: var(--o-gray-500, #909399);
+  line-height: 1.5;
+  margin: 0;
+}
+.bulk-dialog__footer-split {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
 
 .error-list { display: flex; flex-direction: column; gap: 0.5rem; }
 .error-list__meta { font-size: var(--o-font-size-small, 13px); color: var(--o-gray-600, #606266); margin-bottom: 0.5rem; }

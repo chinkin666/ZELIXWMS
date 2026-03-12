@@ -106,7 +106,8 @@
     <YamatoB2ValidateResultDialog
       v-model="b2ValidateDialogVisible"
       :result="b2ValidateResult"
-      confirm-button-text="確認する"
+      :order-map="b2ValidateOrderMap"
+      confirm-button-text="出荷指示を確定"
       @cancel="handleB2ValidateDialogCancel"
       @confirm="handleB2ValidateDialogConfirm"
     />
@@ -201,6 +202,8 @@ const b2Validating = ref(false)
 const b2ValidateDialogVisible = ref(false)
 const b2ValidateResult = ref<YamatoB2ValidateResult | null>(null)
 const b2PendingConfirmIds = ref<string[]>([])
+const b2PendingB2OrderIds = ref<string[]>([])
+const b2ValidateOrderMap = ref<Map<number, string>>(new Map())
 const b2ApiErrorDialogVisible = ref(false)
 const b2ApiErrorMessage = ref('')
 
@@ -350,12 +353,26 @@ const handleB2ValidateDialogCancel = () => {
   b2ValidateDialogVisible.value = false
   b2ValidateResult.value = null
   b2PendingConfirmIds.value = []
+  b2PendingB2OrderIds.value = []
 }
 
 const handleB2ValidateDialogConfirm = async () => {
   b2ValidateDialogVisible.value = false
-  await doConfirmOrders(b2PendingConfirmIds.value)
+
+  const invalidB2Ids = new Set<string>()
+  if (b2ValidateResult.value) {
+    for (const item of b2ValidateResult.value.results) {
+      const orderId = b2PendingB2OrderIds.value[item.index]
+      if (orderId && !item.valid) invalidB2Ids.add(orderId)
+    }
+  }
+
+  const confirmIds = b2PendingConfirmIds.value.filter((id) => !invalidB2Ids.has(id))
+  await doConfirmOrders(confirmIds)
+
   b2PendingConfirmIds.value = []
+  b2PendingB2OrderIds.value = []
+  b2ValidateResult.value = null
 }
 
 const doConfirmOrders = async (ids: string[]) => {
@@ -397,16 +414,21 @@ const handleConfirmPrintReady = async () => {
       return
     }
 
-    const b2OrderIds = selectedRows
-      .filter((row: any) => isYamatoB2Carrier(row.carrierId))
-      .map((row: any) => String(row._id))
+    const b2Rows = selectedRows.filter((row: any) => isYamatoB2Carrier(row.carrierId))
+    const b2OrderIds = b2Rows.map((row: any) => String(row._id))
 
     if (b2OrderIds.length > 0) {
       b2Validating.value = true
+      const orderMap = new Map<number, string>()
+      b2Rows.forEach((row: any, i: number) => {
+        orderMap.set(i, row.orderNumber || row.customerManagementNumber || '-')
+      })
+      b2ValidateOrderMap.value = orderMap
       try {
         const validateResult = await yamatoB2Validate(b2OrderIds)
         b2ValidateResult.value = validateResult
         b2PendingConfirmIds.value = ids
+        b2PendingB2OrderIds.value = b2OrderIds
         b2Validating.value = false
         b2ValidateDialogVisible.value = true
       } catch (e: any) {

@@ -6,11 +6,11 @@ import type { OrderProduct } from '@/types/order'
 import { getOrderFieldDefinitions } from '@/types/order'
 import type { Carrier } from '@/types/carrier'
 import { getNestedValue } from '@/utils/nestedObject'
-// 送付先関連の仮想列定義
+// お届け先関連の仮想列定義
 export const recipientAddrColumn: TableColumn = {
   key: '__recipient_addr__',
   dataKey: '__recipient_addr__',
-  title: '送付先',
+  title: 'お届け先',
   width: 260,
   fieldType: 'string',
   searchType: 'string',
@@ -18,26 +18,63 @@ export const recipientAddrColumn: TableColumn = {
 export const recipientNameColumn: TableColumn = {
   key: '__recipient_name__',
   dataKey: '__recipient_name__',
-  title: '送付先名',
-  width: 180,
+  title: 'お届け先名',
+  width: 80,
   fieldType: 'string',
   searchType: 'string',
 }
 export const senderNameColumn: TableColumn = {
   key: '__sender_name__',
   dataKey: '__sender_name__',
-  title: 'ご依頼主氏名',
-  width: 150,
+  title: 'ご依頼主',
+  width: 220,
   fieldType: 'string',
   searchType: 'string',
 }
 export const ordererNameColumn: TableColumn = {
   key: '__orderer_name__',
   dataKey: '__orderer_name__',
-  title: '注文者氏名',
+  title: '注文者',
   width: 150,
   fieldType: 'string',
   searchType: 'string',
+}
+
+// 離島判定用郵便番号プレフィックス（ヤマト運輸基準の主要離島）
+const REMOTE_ISLAND_POSTAL_PREFIXES = new Set([
+  // 東京都島しょ部
+  '100-01', '100-02', '100-04',
+  // 新潟県佐渡
+  '952-',
+  // 島根県隠岐
+  '685-',
+  // 長崎県離島（対馬・壱岐・五島）
+  '817-', '811-5', '853-', '857-4',
+  // 鹿児島県離島（奄美・屋久島・種子島）
+  '891-', '890-09', '891-3', '891-4', '891-5', '891-6', '891-7', '891-8', '891-9',
+  '892-08', '893-1', '893-2',
+])
+
+const isOkinawa = (row: UserOrderRow): boolean => {
+  const pref = row.recipient?.prefecture
+  return pref === '沖縄' || pref === '沖縄県'
+}
+
+const isRemoteIsland = (row: UserOrderRow): boolean => {
+  if (isOkinawa(row)) return false // 沖縄は別表示
+  const postal = row.recipient?.postalCode?.replace(/[^0-9]/g, '')
+  if (!postal) return false
+  for (const prefix of REMOTE_ISLAND_POSTAL_PREFIXES) {
+    const clean = prefix.replace(/[^0-9]/g, '')
+    if (postal.startsWith(clean)) return true
+  }
+  return false
+}
+
+const hasDeliverySpec = (row: UserOrderRow): boolean => {
+  const pref = (row as any).deliveryDatePreference
+  const slot = (row as any).deliveryTimeSlot
+  return (!!pref && pref !== '最短日' && pref !== '') || !!slot
 }
 
 const TIME_SLOT_LABELS: Record<string, string> = {
@@ -56,7 +93,7 @@ export function useOrderTable(
   carriers: Ref<Carrier[]>,
   bundleModeEnabled: Ref<boolean>,
   bundleFilterKeys: Ref<string[]>,
-  displayFilter: Ref<'new' | 'error' | 'pending_waybill' | 'held'>,
+  displayFilter: Ref<'pending_confirm' | 'processing' | 'pending_waybill' | 'held'>,
   isHeld: (id: string | number) => boolean,
   hasRowErrors: (row: UserOrderRow) => boolean,
 ) {
@@ -76,11 +113,11 @@ export function useOrderTable(
       'orderNumber', 'createdAt', 'updatedAt', 'sourceRawRows', 'carrierRawRow',
       'status.carrierReceipt.isReceived', 'status.confirm.isConfirmed', 'status.printed.isPrinted',
       'handlingTags', 'coolType', 'deliveryTimeSlot',
-      'recipient.postalCode', 'recipient.prefecture', 'recipient.city', 'recipient.street', 'recipient.name', 'recipient.phone',
+      'recipient.postalCode', 'recipient.prefecture', 'recipient.city', 'recipient.street', 'recipient.building', 'recipient.name', 'recipient.phone',
       'honorific',
-      'sender.postalCode', 'sender.prefecture', 'sender.city', 'sender.street', 'sender.name', 'sender.phone',
+      'sender.postalCode', 'sender.prefecture', 'sender.city', 'sender.street', 'sender.building', 'sender.name', 'sender.phone',
       'carrierData.yamato.hatsuBaseNo1', 'carrierData.yamato.hatsuBaseNo2',
-      'orderer.postalCode', 'orderer.prefecture', 'orderer.city', 'orderer.street', 'orderer.name', 'orderer.phone',
+      'orderer.postalCode', 'orderer.prefecture', 'orderer.city', 'orderer.street', 'orderer.building', 'orderer.name', 'orderer.phone',
     ])
     return (allFieldDefinitions.value || []).filter((col) => {
       if (col.tableVisible === false) return false
@@ -115,9 +152,9 @@ export function useOrderTable(
     cols.sort((a, b) => keyOrder.indexOf(String(a.dataKey)) - keyOrder.indexOf(String(b.dataKey)))
     const deliveryIdx = cols.findIndex(c => (c.dataKey || c.key) === 'deliveryDatePreference')
     if (deliveryIdx >= 0) {
-      cols.splice(deliveryIdx + 1, 0, recipientNameColumn, recipientAddrColumn)
+      cols.splice(deliveryIdx + 1, 0, recipientAddrColumn)
     } else {
-      cols.push(recipientNameColumn, recipientAddrColumn)
+      cols.push(recipientAddrColumn)
     }
     return cols as TableColumn[]
   })
@@ -130,7 +167,7 @@ export function useOrderTable(
     const insertAfter = cols.findIndex(c => (c.dataKey || c.key) === 'deliveryDatePreference')
     const virtualCols = [
       ...(productsCol ? [productsCol] : []),
-      recipientNameColumn, recipientAddrColumn, senderNameColumn, ordererNameColumn,
+      recipientAddrColumn, senderNameColumn, ordererNameColumn,
     ]
     if (insertAfter >= 0) {
       cols.splice(insertAfter + 1, 0, ...virtualCols)
@@ -140,9 +177,20 @@ export function useOrderTable(
     return cols as TableColumn[]
   })
 
-  // タブに応じた列切り替え
+  // グループ化する列キー（出荷管理番号 + 配送情報）
+  const groupedColumnKeys = new Set(['orderNumber', 'customerManagementNumber', 'trackingId', 'carrierId', 'invoiceType', 'coolType', 'shipPlanDate', 'deliveryDatePreference', 'deliveryTimeSlot', 'createdAt', 'updatedAt', 'status.printed.printedAt'])
+
+  const managementGroupColumns = computed(() => {
+    const keys = ['orderNumber', 'customerManagementNumber', 'trackingId']
+    return keys.map(k =>
+      (allFieldDefinitions.value || []).find(col => String(col.dataKey) === k)
+    ).filter((col): col is TableColumn => !!col)
+  })
+
+  // タブに応じた列切り替え（グループ列を除外）
+  // 全タブ共通列（新規タブの flatColumns を基準）
   const displayColumns = computed(() =>
-    displayFilter.value === 'pending_waybill' ? pendingWaybillColumns.value : flatColumns.value
+    flatColumns.value.filter(col => !groupedColumnKeys.has(String(col.dataKey)))
   )
 
   // --- 列リサイズ ---
@@ -237,34 +285,35 @@ export function useOrderTable(
     const q = globalSearchText.value.trim().toLowerCase()
     if (!q) return enriched
     return enriched.filter((row: UserOrderRow) => {
-      const fields = [
-        row.customerManagementNumber, row.orderNumber,
-        row.recipient?.name, row.recipient?.phone, row.recipient?.postalCode,
-        row.recipient?.prefecture, row.recipient?.city, row.recipient?.street,
-        row.sender?.name, row.sender?.phone, row.orderer?.name, row.orderer?.phone,
-        ...(row.products || []).flatMap((p: any) => [p.inputSku, p.productSku, p.productName]),
-      ]
-      return fields.some(f => f && String(f).toLowerCase().includes(q))
+      return collectSearchFields(row).some(f => f && String(f).toLowerCase().includes(q))
     })
   })
 
+  // --- バックエンド注文の共通テキスト検索 ---
+  const filterBackendRowsBySearch = (rows: UserOrderRow[]): UserOrderRow[] => {
+    const q = globalSearchText.value.trim().toLowerCase()
+    if (!q) return rows
+    return rows.filter((row: UserOrderRow) => {
+      return collectSearchFields(row).some(f => f && String(f).toLowerCase().includes(q))
+    })
+  }
+
   // --- フィルタリング ---
   const filteredRows = computed(() => {
+    if (displayFilter.value === 'processing') {
+      // 処理中: 未確定（isConfirmed でない）& trackingId なし & 保留なし
+      const rows = pendingWaybillRows.value.filter((row: any) =>
+        !row.status?.held?.isHeld && !row.trackingId && !row.status?.confirm?.isConfirmed
+      )
+      return filterBackendRowsBySearch(rows)
+    }
+
     if (displayFilter.value === 'pending_waybill') {
-      // バックエンドで保留済みの注文を除外
-      let rows = pendingWaybillRows.value.filter((row: any) => !row.status?.held?.isHeld)
-      const q = globalSearchText.value.trim().toLowerCase()
-      if (q) {
-        rows = rows.filter((row: UserOrderRow) => {
-          const fields = [
-            row.customerManagementNumber, row.orderNumber,
-            row.recipient?.name, row.recipient?.phone,
-            row.sender?.name, row.orderer?.name,
-          ]
-          return fields.some(f => f && String(f).toLowerCase().includes(q))
-        })
-      }
-      return rows
+      // 送り状未発行: 確定済み（isConfirmed）または trackingId あり & 保留なし
+      const rows = pendingWaybillRows.value.filter((row: any) =>
+        !row.status?.held?.isHeld && (row.status?.confirm?.isConfirmed || row.trackingId)
+      )
+      return filterBackendRowsBySearch(rows)
     }
 
     if (displayFilter.value === 'held') {
@@ -274,13 +323,8 @@ export function useOrderTable(
       return [...localHeld, ...backendHeld]
     }
 
-    let result = searchedRows.value.filter((row: UserOrderRow) => !isHeld(row.id))
-    if (displayFilter.value === 'new') {
-      result = result.filter((row: UserOrderRow) => !hasRowErrors(row))
-    } else if (displayFilter.value === 'error') {
-      result = result.filter((row: UserOrderRow) => hasRowErrors(row))
-    }
-    return result
+    // pending_confirm: 新規 + エラー（保留除外）
+    return searchedRows.value.filter((row: UserOrderRow) => !isHeld(row.id))
   })
 
   // バンドルモード時のグループ化表示
@@ -328,6 +372,12 @@ export function useOrderTable(
     const key = sortKey.value
     const order = sortOrder.value === 'asc' ? 1 : -1
     data.sort((a, b) => {
+      // 出荷確認待ち: エラー行を先頭に表示
+      if (displayFilter.value === 'pending_confirm') {
+        const aErr = hasRowErrors(a) ? 0 : 1
+        const bErr = hasRowErrors(b) ? 0 : 1
+        if (aErr !== bErr) return aErr - bErr
+      }
       const va = getNestedValue(a, key) ?? ''
       const vb = getNestedValue(b, key) ?? ''
       if (va < vb) return -1 * order
@@ -402,10 +452,33 @@ export function useOrderTable(
     return String(val)
   }
 
+  const getCarrierLabel = (row: UserOrderRow): string => {
+    const id = (row as any).carrierId
+    if (!id) return '-'
+    const hit = carrierOptions.value.find(opt => String(opt.value) === String(id))
+    return hit ? hit.label : String(id)
+  }
+
+  const getInvoiceTypeLabel = (row: UserOrderRow): string => {
+    const col = (allFieldDefinitions.value || []).find(c => String(c.dataKey) === 'invoiceType')
+    const val = (row as any).invoiceType
+    if (!val && val !== '0') return '-'
+    if (col?.searchOptions) {
+      const hit = col.searchOptions.find(opt => String(opt.value) === String(val))
+      if (hit) return hit.label
+    }
+    return String(val)
+  }
+
   const getTimeSlotLabel = (row: UserOrderRow): string => {
     const val = (row as any).deliveryTimeSlot
     if (!val) return '時間指定なし'
     return TIME_SLOT_LABELS[val] || val
+  }
+
+  const fmtDateTime = (val?: string): string => {
+    if (!val) return '-'
+    try { return new Date(val).toLocaleString('ja-JP') } catch { return val }
   }
 
   const fmtPostal = (val?: string): string => {
@@ -418,6 +491,21 @@ export function useOrderTable(
     const val = (row as any).coolType
     return COOL_TYPE_MAP[val] || COOL_TYPE_MAP['0']!
   }
+
+  // --- 全文検索用フィールド収集（表示ラベルを含む） ---
+  const collectSearchFields = (row: UserOrderRow): (string | undefined)[] => [
+    row.customerManagementNumber, row.orderNumber, (row as any).trackingId,
+    row.recipient?.name, row.recipient?.phone, row.recipient?.postalCode,
+    row.recipient?.prefecture, row.recipient?.city, row.recipient?.street, row.recipient?.building,
+    row.sender?.name, row.sender?.phone, row.sender?.postalCode,
+    row.sender?.prefecture, row.sender?.city, row.sender?.street, row.sender?.building,
+    row.orderer?.name, row.orderer?.phone,
+    getCarrierLabel(row), getInvoiceTypeLabel(row), getCoolTypeInfo(row).label,
+    (row as any).shipPlanDate, (row as any).deliveryDatePreference,
+    (row as any).internalRecord,
+    ...(row.products || []).flatMap((p: any) => [p.inputSku, p.productSku, p.productName]),
+    ...((row as any).handlingTags || []),
+  ]
 
   const formatProductsSku = (row: UserOrderRow): string => {
     const prods = row.products
@@ -438,6 +526,7 @@ export function useOrderTable(
     baseColumns,
     formColumns,
     displayColumns,
+    managementGroupColumns,
     flatColumns,
     pendingWaybillColumns,
     columnWidths,
@@ -461,10 +550,16 @@ export function useOrderTable(
     toggleSelectAll,
     toggleRowSelection,
     getCellValue,
+    getCarrierLabel,
+    getInvoiceTypeLabel,
     getTimeSlotLabel,
+    fmtDateTime,
     fmtPostal,
     getCoolTypeInfo,
     formatProductsSku,
     formatProductsName,
+    isOkinawa,
+    isRemoteIsland,
+    hasDeliverySpec,
   }
 }

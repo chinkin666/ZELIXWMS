@@ -100,6 +100,7 @@ export function useOrderBulkActions(
           prefecture: company.senderAddressPrefecture || '',
           city: company.senderAddressCity || '',
           street: company.senderAddressStreet || '',
+          building: (company as any).senderAddressBuilding || '',
           name: company.senderName || '',
           phone: company.senderPhone || '',
         },

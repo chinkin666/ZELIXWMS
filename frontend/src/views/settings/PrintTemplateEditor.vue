@@ -11,270 +11,61 @@
 
     <div class="layout">
       <!-- Left: carrierRawRow fields -->
-      <div class="panel left">
-        <div class="panel-title">carrierRawRow 字段</div>
-
-        <input v-model="fieldFilter" class="o-input" placeholder="搜索 key" style="width: 100%" />
-        <div class="fields">
-          <div
-            v-for="k in filteredFieldKeys"
-            :key="k"
-            class="field-item"
-            @click="insertField(k)"
-            :title="String(getFieldValue(k) ?? '')"
-          >
-            <div class="k">{{ k }}</div>
-            <div class="v">{{ String(getFieldValue(k) ?? '') }}</div>
-          </div>
-        </div>
-
-        <div class="panel-title" style="margin-top: 12px">上传表格</div>
-        <input ref="tableFileInput" type="file" accept=".csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" class="hidden-input" @change="onTableFileChange" />
-        <div class="row">
-          <OButton variant="secondary" @click="triggerTableUpload">选择文件</OButton>
-          <OButton variant="secondary" :disabled="!uploadedTableData" @click="clearTableData">清空</OButton>
-        </div>
-        <div v-if="uploadedTableData && uploadedTableData.length > 0" class="meta" style="margin-top: 8px">
-          <div>已加载 {{ uploadedTableData.length }} 行数据（第1行为表头）</div>
-          <div style="margin-top: 8px">
-            <select v-model="selectedRowIndex" class="o-input" style="width: 100%">
-              <option
-                v-for="(row, idx) in uploadedTableData"
-                :key="idx"
-                :value="idx"
-              >第 {{ idx + 2 }} 行</option>
-            </select>
-          </div>
-        </div>
-        <div style="margin-bottom: 8px">
-          <label class="o-toggle">
-            <input type="checkbox" v-model="template.requiresYamatoSortCode" />
-            <span class="o-toggle-slider"></span>
-            <span style="margin-left: 8px; font-size: 12px">yamato仕分けコードが必要</span>
-          </label>
-        </div>
-      </div>
+      <FieldPanel
+        :uploaded-table-data="uploadedTableData"
+        :table-headers="tableHeaders"
+        :selected-row-index="selectedRowIndex"
+        :requires-yamato-sort-code="template.requiresYamatoSortCode"
+        @insert-field="insertField"
+        @clear-table-data="clearTableData"
+        @table-file-change="parseTableFile"
+        @update:selected-row-index="selectedRowIndex = $event"
+        @update:requires-yamato-sort-code="template.requiresYamatoSortCode = $event"
+      />
 
       <!-- Center: canvas -->
-      <div class="panel center">
-        <div class="panel-title">画布（Konva）</div>
-        <div class="canvas-toolbar">
-          <div class="toolbar-form">
-            <div class="form-group-inline">
-              <label>宽(mm)</label>
-              <input v-model.number="template.canvas.widthMm" type="number" min="1" class="o-input" style="width: 110px" />
-            </div>
-            <div class="form-group-inline">
-              <label>高(mm)</label>
-              <input v-model.number="template.canvas.heightMm" type="number" min="1" class="o-input" style="width: 110px" />
-            </div>
-            <div class="form-group-inline">
-              <label>pxPerMm</label>
-              <input v-model.number="template.canvas.pxPerMm" type="number" min="1" step="0.5" class="o-input" style="width: 110px" />
-            </div>
-          </div>
-          <div class="row">
-            <OButton variant="secondary" @click="addText">+ Text</OButton>
-            <OButton variant="secondary" @click="addBarcode">+ Barcode</OButton>
-            <OButton variant="secondary" @click="addImage">+ Image</OButton>
-          </div>
-        </div>
-
-        <div class="canvas-toolbar" style="margin-top: 8px">
-          <div class="row">
-            <input ref="bgFileInput" type="file" accept="image/*" class="hidden-input" @change="onBgFileChange" />
-            <OButton variant="secondary" @click="triggerBgUpload">上传参考图</OButton>
-            <OButton variant="secondary" :disabled="!bgImageUrl" @click="clearBgImage">清除参考图</OButton>
-          </div>
-          <div class="row" style="align-items: center">
-            <div class="opacity-label">透明度</div>
-            <input type="range" v-model.number="bgOpacity" min="0" max="1" step="0.05" style="width: 220px" />
-            <span style="font-size: 12px; color: #6b7280; margin-left: 4px">{{ bgOpacity.toFixed(2) }}</span>
-          </div>
-        </div>
-
-        <div class="canvas-wrap">
-          <div ref="stageEl" class="stage-host"></div>
-        </div>
-      </div>
+      <CanvasPreview
+        ref="canvasPreviewRef"
+        :canvas="template.canvas"
+        :bg-image-url="bgImageUrl"
+        :bg-opacity="bgOpacity"
+        @add-text="addText"
+        @add-barcode="addBarcode"
+        @add-image="addImage"
+        @clear-bg-image="clearBgImage"
+        @bg-file-change="setBgImageFromFile"
+        @update-canvas="onUpdateCanvas"
+        @update:bg-opacity="bgOpacity = $event"
+      />
 
       <!-- Right: properties + layers -->
       <div class="right-col">
-        <div class="panel right-top">
-          <div class="panel-title">属性</div>
-          <div v-if="!selectedEl" class="placeholder">请选择一个元素</div>
-          <div v-else class="props">
-            <div class="o-form-group">
-              <label>name</label>
-              <input v-model="selectedEl.name" class="o-input" />
-            </div>
-            <div class="o-form-group">
-              <label>x(mm)</label>
-              <input v-model.number="selectedEl.xMm" type="number" step="1" class="o-input" />
-            </div>
-            <div class="o-form-group">
-              <label>y(mm)</label>
-              <input v-model.number="selectedEl.yMm" type="number" step="1" class="o-input" />
-            </div>
-            <div class="o-form-group">
-              <label>visible</label>
-              <label class="o-toggle">
-                <input type="checkbox" v-model="selectedEl.visible" />
-                <span class="o-toggle-slider"></span>
-              </label>
-            </div>
-            <div class="o-form-group">
-              <label>locked</label>
-              <label class="o-toggle">
-                <input type="checkbox" v-model="selectedEl.locked" />
-                <span class="o-toggle-slider"></span>
-              </label>
-            </div>
+        <ElementEditor
+          :selected-el="selectedEl"
+          :text-preview-value="textPreviewValue"
+          :barcode-preview-value="barcodePreviewValue"
+          :barcode-options-json="barcodeOptionsJson"
+          :codabar-start-char="codabarStartChar"
+          :codabar-stop-char="codabarStopChar"
+          @update-prop="onUpdateElementProp"
+          @open-transform-mapping="openTransformMappingDialog"
+          @remove-selected="removeSelected"
+          @clear-image="clearImage"
+          @image-file-change="onImageFileChange"
+          @update:codabar-start-char="codabarStartChar = $event"
+          @update:codabar-stop-char="codabarStopChar = $event"
+          @update:barcode-options-json="barcodeOptionsJson = $event"
+        />
 
-            <template v-if="selectedEl.type === 'text'">
-              <div class="o-form-group">
-                <label>fontFamily</label>
-                <input v-model="(selectedEl as any).fontFamily" class="o-input" placeholder="例: sans-serif / NotoSansJP" />
-              </div>
-              <div class="o-form-group">
-                <label>fontSize(pt)</label>
-                <input v-model.number="(selectedEl as any).fontSizePt" type="number" step="1" class="o-input" />
-              </div>
-              <div class="o-form-group">
-                <label>letterSpacing(px)</label>
-                <input v-model.number="(selectedEl as any).letterSpacingPx" type="number" step="0.5" class="o-input" />
-              </div>
-              <div class="o-form-group">
-                <label>align</label>
-                <select v-model="(selectedEl as any).align" class="o-input" style="width: 100%">
-                  <option value="left">left</option>
-                  <option value="right">right</option>
-                </select>
-              </div>
-              <div class="o-form-group">
-                <label>内容转换</label>
-                <OButton variant="primary" @click="openTransformMappingDialog('text')">
-                  {{ (selectedEl as PrintTextElement).transformMapping ? '编辑转换' : '配置转换' }}
-                </OButton>
-              </div>
-              <div class="o-form-group">
-                <label>预览</label>
-                <textarea :value="textPreviewValue" readonly rows="2" class="o-input" style="width: 100%; resize: vertical"></textarea>
-              </div>
-            </template>
-
-            <template v-else-if="selectedEl.type === 'barcode'">
-              <div class="o-form-group">
-                <label>format</label>
-                <select v-model="(selectedEl as any).format" class="o-input" style="width: 100%">
-                  <option value="code128">Code 128</option>
-                  <option value="qrcode">QR Code</option>
-                  <option value="codabar">Codabar (NW-7)</option>
-                  <option value="ean13">EAN-13</option>
-                  <option value="ean8">EAN-8</option>
-                  <option value="code39">Code 39</option>
-                  <option value="code93">Code 93</option>
-                  <option value="interleaved2of5">Interleaved 2 of 5 (ITF)</option>
-                  <option value="datamatrix">Data Matrix</option>
-                  <option value="pdf417">PDF417</option>
-                </select>
-              </div>
-              <div class="o-form-group">
-                <label>width(mm)</label>
-                <input v-model.number="(selectedEl as any).widthMm" type="number" step="1" class="o-input" />
-              </div>
-              <div class="o-form-group">
-                <label>height(mm)</label>
-                <input v-model.number="(selectedEl as any).heightMm" type="number" step="1" class="o-input" />
-              </div>
-              <div class="o-form-group">
-                <label>内容转换</label>
-                <OButton variant="primary" @click="openTransformMappingDialog('barcode')">
-                  {{ (selectedEl as PrintBarcodeElement).transformMapping ? '编辑转换' : '配置转換' }}
-                </OButton>
-              </div>
-              <div class="o-form-group">
-                <label>预览</label>
-                <textarea :value="barcodePreviewValue" readonly rows="2" class="o-input" style="width: 100%; resize: vertical"></textarea>
-              </div>
-              <template v-if="(selectedEl as PrintBarcodeElement).format === 'codabar'">
-                <div class="o-form-group">
-                  <label>起始字符</label>
-                  <select v-model="codabarStartChar" class="o-input" style="width: 100%">
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="C">C</option>
-                    <option value="D">D</option>
-                  </select>
-                </div>
-                <div class="o-form-group">
-                  <label>终止字符</label>
-                  <select v-model="codabarStopChar" class="o-input" style="width: 100%">
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="C">C</option>
-                    <option value="D">D</option>
-                  </select>
-                </div>
-              </template>
-              <div class="o-form-group">
-                <label>options(JSON)</label>
-                <textarea v-model="barcodeOptionsJson" rows="4" class="o-input" style="width: 100%; resize: vertical"></textarea>
-              </div>
-            </template>
-
-            <template v-else-if="selectedEl.type === 'image'">
-              <div class="o-form-group">
-                <label>图片</label>
-                <div style="display: flex; gap: 8px">
-                  <input ref="imageFileInput" type="file" accept="image/*" class="hidden-input" @change="onImageFileChange" />
-                  <OButton variant="secondary" @click="triggerImageUpload">上传图片</OButton>
-                  <OButton variant="secondary" :disabled="!((selectedEl as any).imageData)" @click="clearImage">清除图片</OButton>
-                </div>
-              </div>
-              <div class="o-form-group" v-if="(selectedEl as any).imageData">
-                <label>预览</label>
-                <img :src="(selectedEl as any).imageData" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd;" />
-              </div>
-              <div class="o-form-group">
-                <label>width(mm)</label>
-                <input v-model.number="(selectedEl as any).widthMm" type="number" step="1" class="o-input" />
-              </div>
-              <div class="o-form-group">
-                <label>height(mm)</label>
-                <input v-model.number="(selectedEl as any).heightMm" type="number" step="1" class="o-input" />
-              </div>
-            </template>
-
-            <div class="row">
-              <OButton variant="danger" @click="removeSelected">删除</OButton>
-            </div>
-          </div>
-        </div>
-
-        <div class="panel right-bottom">
-          <div class="panel-title">图层</div>
-          <div class="layers">
-            <div
-              v-for="(e, idx) in template.elements"
-              :key="e.id"
-              class="layer"
-              :class="{ active: e.id === selectedId }"
-              @click="select(e.id)"
-            >
-              <div class="name">{{ idx + 1 }}. {{ e.name }} <span class="type">({{ e.type }})</span></div>
-              <div class="ops">
-                <button class="o-btn-text" @click.stop="toggleVisible(e)">{{ e.visible === false ? '显示' : '隐藏' }}</button>
-                <button class="o-btn-text" @click.stop="toggleLocked(e)">{{ e.locked ? '解锁' : '锁定' }}</button>
-                <button class="o-btn-text" @click.stop="duplicateLayer(idx)">复制</button>
-                <button class="o-btn-text" :disabled="idx === 0" @click.stop="moveLayer(idx, -1)">上移</button>
-                <button class="o-btn-text" :disabled="idx === template.elements.length - 1" @click.stop="moveLayer(idx, 1)">
-                  下移
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ElementList
+          :elements="template.elements"
+          :selected-id="selectedId"
+          @select="select"
+          @toggle-visible="toggleVisible"
+          @toggle-locked="toggleLocked"
+          @duplicate-layer="duplicateLayer"
+          @move-layer="moveLayer"
+        />
       </div>
     </div>
 
@@ -306,13 +97,17 @@ import * as XLSX from 'xlsx'
 import MappingDetailDialog from '@/components/mapping/MappingDetailDialog.vue'
 import type { TransformMapping } from '@/api/mappingConfig'
 import { runTransformMapping } from '@/utils/transformRunner'
+import FieldPanel from './print-template-editor/FieldPanel.vue'
+import CanvasPreview from './print-template-editor/CanvasPreview.vue'
+import ElementEditor from './print-template-editor/ElementEditor.vue'
+import ElementList from './print-template-editor/ElementList.vue'
 
 const route = useRoute()
 const router = useRouter()
 
 const templateId = String(route.params.id || '')
 
-const stageEl = ref<HTMLDivElement | null>(null)
+const canvasPreviewRef = ref<InstanceType<typeof CanvasPreview> | null>(null)
 let stage: Konva.Stage | null = null
 let layer: Konva.Layer | null = null
 let transformer: Konva.Transformer | null = null
@@ -321,16 +116,11 @@ const template = ref<PrintTemplate>(createEmptyPrintTemplate({ id: templateId })
 const saving = ref(false)
 
 // Temporary background reference image (editor-only, not persisted)
-const bgFileInput = ref<HTMLInputElement | null>(null)
 const bgImageUrl = ref<string>('')
 const bgImageEl = ref<HTMLImageElement | null>(null)
 const bgOpacity = ref<number>(0.35)
 
-// Image element file input
-const imageFileInput = ref<HTMLInputElement | null>(null)
-
 // Table upload for carrierRawRow fields
-const tableFileInput = ref<HTMLInputElement | null>(null)
 const uploadedTableData = ref<Record<string, any>[]>([])
 const tableHeaders = ref<string[]>([])
 const selectedRowIndex = ref<number>(0)
@@ -556,6 +346,19 @@ function handleTransformMappingSubmit(mapping: TransformMapping) {
   scheduleRender()
 }
 
+// Handle element property updates from ElementEditor
+function onUpdateElementProp(key: string, value: any) {
+  const el = selectedEl.value
+  if (!el) return
+  ;(el as any)[key] = value
+  scheduleRender()
+}
+
+// Handle canvas property updates from CanvasPreview
+function onUpdateCanvas(key: string, value: number) {
+  ;(template.value.canvas as any)[key] = value
+}
+
 // Debounced re-render
 let renderTimer: number | null = null
 let renderSeq = 0
@@ -573,25 +376,13 @@ watch(
   () => scheduleRender(),
 )
 
-function triggerBgUpload() {
-  bgFileInput.value?.click()
-}
-
 function clearBgImage() {
   if (bgImageUrl.value && !bgImageUrl.value.startsWith('data:')) {
     URL.revokeObjectURL(bgImageUrl.value)
   }
   bgImageUrl.value = ''
   bgImageEl.value = null
-  if (bgFileInput.value) bgFileInput.value.value = ''
   scheduleRender()
-}
-
-function onBgFileChange(e: Event) {
-  const input = e.target as HTMLInputElement
-  const f = input?.files?.[0]
-  if (!f) return
-  setBgImageFromFile(f)
 }
 
 function setBgImageFromFile(file: File) {
@@ -633,38 +424,6 @@ watch(
     }
   },
 )
-
-// carrierRawRow fields from uploaded table
-const fieldFilter = ref('')
-const filteredFieldKeys = computed(() => {
-  let keys = [...tableHeaders.value]
-
-  if (template.value.requiresYamatoSortCode) {
-    const yamatoFields = ['仕分けコード', '発ベースNo-1', '発ベースNo-2']
-    for (const field of yamatoFields) {
-      if (!keys.includes(field)) {
-        keys = [field, ...keys]
-      }
-    }
-  }
-
-  const q = fieldFilter.value.trim().toLowerCase()
-  return q ? keys.filter((k) => k.toLowerCase().includes(q)) : keys
-})
-
-function getFieldValue(key: string): any {
-  if (key === '仕分けコード') {
-    return '999999'
-  }
-  if (key === '発ベースNo-1' || key === '発ベースNo-2') {
-    return '000'
-  }
-
-  if (!uploadedTableData.value || uploadedTableData.value.length === 0) return ''
-  const rowIndex = selectedRowIndex.value
-  if (rowIndex < 0 || rowIndex >= uploadedTableData.value.length) return ''
-  return uploadedTableData.value[rowIndex]?.[key] ?? ''
-}
 
 function goBack() {
   router.push('/settings/print-templates')
@@ -827,23 +586,11 @@ function insertField(key: string) {
   alert(`已添加文字图层: ${key}`)
 }
 
-function triggerTableUpload() {
-  tableFileInput.value?.click()
-}
-
 function clearTableData() {
   uploadedTableData.value = []
   tableHeaders.value = []
   selectedRowIndex.value = 0
-  if (tableFileInput.value) tableFileInput.value.value = ''
   scheduleRender()
-}
-
-function onTableFileChange(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input?.files?.[0]
-  if (!file) return
-  parseTableFile(file)
 }
 
 async function parseTableFile(file: File) {
@@ -852,9 +599,9 @@ async function parseTableFile(file: File) {
     let result: { headers: string[]; rows: Record<string, any>[] }
 
     if (isExcel) {
-      result = await parseExcelFile(file)
+      result = await parseExcelFileInternal(file)
     } else {
-      result = await parseCsvFile(file)
+      result = await parseCsvFileInternal(file)
     }
 
     if (result.rows.length === 0) {
@@ -878,13 +625,13 @@ async function parseTableFile(file: File) {
   }
 }
 
-async function parseExcelFile(file: File): Promise<{ headers: string[]; rows: Record<string, any>[] }> {
+async function parseExcelFileInternal(file: File): Promise<{ headers: string[]; rows: Record<string, any>[] }> {
   const buf = await file.arrayBuffer()
   const wb = XLSX.read(buf, { type: 'array' })
   return parseSheetToRows(wb)
 }
 
-async function parseCsvFile(file: File): Promise<{ headers: string[]; rows: Record<string, any>[] }> {
+async function parseCsvFileInternal(file: File): Promise<{ headers: string[]; rows: Record<string, any>[] }> {
   const buf = await file.arrayBuffer()
   const detectEncoding = (buf: ArrayBuffer): string => {
     const bytes = new Uint8Array(buf)
@@ -1000,8 +747,9 @@ async function barcodeToImage(b: PrintBarcodeElement, value: string): Promise<HT
 }
 
 function ensureStage() {
-  if (stage || !stageEl.value) return
-  stage = new Konva.Stage({ container: stageEl.value, width: 10, height: 10 })
+  const stageEl = canvasPreviewRef.value?.stageEl
+  if (stage || !stageEl) return
+  stage = new Konva.Stage({ container: stageEl, width: 10, height: 10 })
   layer = new Konva.Layer()
   stage.add(layer)
   transformer = new Konva.Transformer({
@@ -1289,13 +1037,6 @@ function addImage() {
   } as any)
   selectedId.value = id
   scheduleRender()
-  setTimeout(() => {
-    imageFileInput.value?.click()
-  }, 100)
-}
-
-function triggerImageUpload() {
-  imageFileInput.value?.click()
 }
 
 function clearImage() {
@@ -1326,11 +1067,8 @@ function onImageFileChange(e: Event) {
       img.onload = () => {
         const aspectRatio = img.width / img.height
         const currentWidth = (el as PrintImageElement).widthMm || 50
-        const currentHeight = (el as PrintImageElement).heightMm || 50
         if (currentWidth > 0) {
           (el as PrintImageElement).heightMm = currentWidth / aspectRatio
-        } else if (currentHeight > 0) {
-          (el as PrintImageElement).widthMm = currentHeight * aspectRatio
         }
         scheduleRender()
       }
@@ -1409,250 +1147,5 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-.panel {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #fff;
-  padding: 10px;
-}
-.panel-title {
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.left .fields {
-  height: 360px;
-  overflow: auto;
-  border: 1px solid #f0f0f0;
-  border-radius: 6px;
-  padding: 6px;
-  margin-top: 8px;
-}
-.field-item {
-  padding: 6px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.field-item:hover {
-  background: #f9fafb;
-}
-.field-item .k {
-  font-size: 12px;
-  font-weight: 600;
-}
-.field-item .v {
-  font-size: 12px;
-  color: #6b7280;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.row {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-.meta {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #374151;
-}
-.center .canvas-toolbar {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.toolbar-form {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.form-group-inline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-}
-.form-group-inline label {
-  white-space: nowrap;
-  font-size: 12px;
-  color: #374151;
-}
-.canvas-wrap {
-  margin-top: 10px;
-  border: 1px dashed #d1d5db;
-  background: #f9fafb;
-  border-radius: 8px;
-  padding: 10px;
-  overflow: auto;
-  height: 560px;
-}
-.stage-host {
-  display: inline-block;
-}
-.hidden-input {
-  display: none;
-}
-.opacity-label {
-  font-size: 12px;
-  color: #374151;
-  width: 48px;
-}
-.right .placeholder {
-  color: #6b7280;
-  font-size: 12px;
-}
-.right-top {
-  max-height: 520px;
-  overflow: auto;
-}
-.right-bottom {
-  max-height: 360px;
-  overflow: auto;
-}
-.layers {
-  max-height: 320px;
-  overflow: auto;
-  border: 1px solid #f0f0f0;
-  border-radius: 6px;
-  padding: 6px;
-}
-.layer {
-  padding: 6px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.layer.active {
-  background: #eef2ff;
-}
-.layer .name {
-  font-size: 12px;
-  font-weight: 600;
-}
-.layer .type {
-  color: #6b7280;
-  font-weight: 400;
-}
-.layer .ops {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-/* o-btn styles */
-.o-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 14px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  background: #fff;
-  color: #606266;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.o-btn:hover { background: #f5f7fa; border-color: #c0c4cc; }
-.o-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.o-btn-primary {
-  background: var(--o-primary, #714B67);
-  color: #fff;
-  border-color: var(--o-primary, #714B67);
-}
-.o-btn-primary:hover { opacity: 0.85; }
-
-.o-btn-secondary {
-  background: #fff;
-  color: #606266;
-  border-color: #dcdfe6;
-}
-
-.o-btn-danger {
-  background: #fff;
-  color: #f56c6c;
-  border-color: #fbc4c4;
-}
-.o-btn-danger:hover { background: #fef0f0; }
-
-.o-btn-text {
-  background: none;
-  border: none;
-  padding: 2px 6px;
-  font-size: 12px;
-  cursor: pointer;
-  color: var(--o-primary, #714B67);
-}
-.o-btn-text:hover { text-decoration: underline; }
-.o-btn-text:disabled { opacity: 0.4; cursor: not-allowed; text-decoration: none; }
-
-/* o-input */
-.o-input {
-  padding: 6px 10px;
-  border: 1px solid var(--o-border-color, #dee2e6);
-  border-radius: 4px;
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.o-input:focus { border-color: var(--o-primary, #714B67); }
-
-/* o-form-group */
-.o-form-group {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.o-form-group > label {
-  width: 120px;
-  flex-shrink: 0;
-  font-size: 12px;
-  color: #374151;
-  padding-top: 6px;
-}
-.o-form-group > input,
-.o-form-group > select,
-.o-form-group > textarea {
-  flex: 1;
-  min-width: 0;
-}
-
-/* o-toggle */
-.o-toggle {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-}
-.o-toggle input { display: none; }
-.o-toggle-slider {
-  width: 36px;
-  height: 20px;
-  background: #ccc;
-  border-radius: 10px;
-  position: relative;
-  transition: background 0.2s;
-}
-.o-toggle-slider::after {
-  content: '';
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  background: #fff;
-  border-radius: 50%;
-  top: 2px;
-  left: 2px;
-  transition: transform 0.2s;
-}
-.o-toggle input:checked + .o-toggle-slider {
-  background: var(--o-primary, #714B67);
-}
-.o-toggle input:checked + .o-toggle-slider::after {
-  transform: translateX(16px);
 }
 </style>

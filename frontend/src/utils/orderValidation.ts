@@ -4,6 +4,8 @@
  */
 import { getNestedValue } from './nestedObject'
 import type { TableColumn } from '@/types/table'
+import { getMinDeliveryDate } from './yamatoDeliveryDays'
+import { getStringWidth } from './japaneseCharWidth'
 
 // Validation rule constants
 export const VALIDATION_RULES = {
@@ -110,6 +112,27 @@ export function validateCell(row: any, column: TableColumn): boolean {
       }
     }
 
+    // 市区郡町村: 24半角幅（12全角文字）以内
+    if (dataKey === 'recipient.city' || dataKey === 'sender.city') {
+      if (typeof normalizedValue === 'string' && getStringWidth(normalizedValue) > 24) {
+        return false
+      }
+    }
+
+    // 町・番地: 32半角幅（16全角文字）以内
+    if (dataKey === 'recipient.street' || dataKey === 'sender.street') {
+      if (typeof normalizedValue === 'string' && getStringWidth(normalizedValue) > 32) {
+        return false
+      }
+    }
+
+    // アパートマンション名: 32半角幅（16全角文字）以内
+    if (dataKey === 'recipient.building' || dataKey === 'sender.building') {
+      if (typeof normalizedValue === 'string' && getStringWidth(normalizedValue) > 32) {
+        return false
+      }
+    }
+
     // Delivery time slot: "HHHH" format (startHH + endHH), 00-24, start < end
     if (dataKey === 'deliveryTimeSlot') {
       if (typeof normalizedValue !== 'string' || !VALIDATION_RULES.deliveryTimeSlot.test(normalizedValue)) {
@@ -171,6 +194,10 @@ export function validateCell(row: any, column: TableColumn): boolean {
       if (typeof normalizedValue !== 'string' || !VALIDATION_RULES.dateOnly.test(normalizedValue)) {
         return false
       }
+      // お届け日: 今日・過去・ヤマト最短配達日より前は不可
+      if (dataKey === 'deliveryDatePreference') {
+        if (validateDeliveryDate(row) !== null) return false
+      }
     } else if (fieldType === 'array') {
       if (!Array.isArray(normalizedValue)) {
         return false
@@ -202,6 +229,74 @@ export function validateCell(row: any, column: TableColumn): boolean {
   }
 
   return true
+}
+
+/**
+ * お届け日のバリデーション（ヤマト運輸ルール準拠）
+ * - 今日・過去の日付は不可
+ * - 出荷予定日 + 最短配達日数より前は不可
+ * @returns エラーメッセージ（正常なら null）
+ */
+export function validateDeliveryDate(row: any): string | null {
+  const deliveryDate = row.deliveryDatePreference
+  if (!deliveryDate || deliveryDate === '-' || deliveryDate === '最短' || deliveryDate === '最短日') return null
+
+  const normalized = String(deliveryDate).replace(/\//g, '-').substring(0, 10)
+  if (!VALIDATION_RULES.dateOnly.test(deliveryDate) && !VALIDATION_RULES.dateOnly.test(normalized)) return null
+
+  const deliveryTime = new Date(normalized).getTime()
+  if (isNaN(deliveryTime)) return null
+
+  // 今日・過去の日付チェック
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  if (deliveryTime <= today.getTime()) {
+    return 'お届け日は明日以降の日付を指定してください'
+  }
+
+  // ヤマト最短配達日チェック
+  const shipPlanDate = row.shipPlanDate
+  const senderPref = row.sender?.prefecture
+  const recipientPref = row.recipient?.prefecture
+  if (shipPlanDate) {
+    const minDate = getMinDeliveryDate(shipPlanDate, senderPref, recipientPref)
+    if (minDate) {
+      const minTime = new Date(minDate).getTime()
+      if (!isNaN(minTime) && deliveryTime < minTime) {
+        const display = minDate.replace(/-/g, '/')
+        return `お届け日は${display}以降を指定してください（ヤマト運輸の最短配達日数に基づく）`
+      }
+    }
+  }
+
+  return null
+}
+
+/**
+ * 住所フィールドのバリデーション
+ * @returns エラーメッセージ配列
+ */
+export function validateAddressFields(row: any): string[] {
+  const messages: string[] = []
+  const rCity = row.recipient?.city
+  const rStreet = row.recipient?.street
+  const rBuilding = row.recipient?.building
+  const sCity = row.sender?.city
+  const sStreet = row.sender?.street
+  const sBuilding = row.sender?.building
+  const rCityW = rCity ? getStringWidth(rCity) : 0
+  const rStreetW = rStreet ? getStringWidth(rStreet) : 0
+  const rBuildingW = rBuilding ? getStringWidth(rBuilding) : 0
+  const sCityW = sCity ? getStringWidth(sCity) : 0
+  const sStreetW = sStreet ? getStringWidth(sStreet) : 0
+  const sBuildingW = sBuilding ? getStringWidth(sBuilding) : 0
+  if (rCityW > 24) messages.push(`お届け先 市区郡町村が${rCityW}半角幅です（上限24半角幅＝全角12文字）`)
+  if (rStreetW > 32) messages.push(`お届け先 町・番地が${rStreetW}半角幅です（上限32半角幅＝全角16文字）`)
+  if (rBuildingW > 32) messages.push(`お届け先 アパートマンション名が${rBuildingW}半角幅です（上限32半角幅＝全角16文字）`)
+  if (sCityW > 24) messages.push(`ご依頼主 市区郡町村が${sCityW}半角幅です（上限24半角幅＝全角12文字）`)
+  if (sStreetW > 32) messages.push(`ご依頼主 町・番地が${sStreetW}半角幅です（上限32半角幅＝全角16文字）`)
+  if (sBuildingW > 32) messages.push(`ご依頼主 アパートマンション名が${sBuildingW}半角幅です（上限32半角幅＝全角16文字）`)
+  return messages
 }
 
 /**

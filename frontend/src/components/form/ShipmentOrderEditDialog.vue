@@ -137,7 +137,7 @@
               </div>
             </template>
 
-            <!-- 送付先 tab -->
+            <!-- お届け先 tab -->
             <template v-if="activeTab === 'recipient'">
               <div class="o-form-grid">
                 <div v-for="col in recipientFields" :key="col.key" class="o-form-group">
@@ -281,15 +281,15 @@ import { lookupPostalCode } from '@/utils/postalCodeLookup'
 import { fetchOrderSourceCompanies } from '@/api/orderSourceCompany'
 
 // Top-level field keys (shown above tabs, like Odoo header fields)
-const TOP_LEFT_KEYS = ['customerManagementNumber', 'carrierId', 'invoiceType', 'coolType']
-const TOP_RIGHT_KEYS = ['shipPlanDate', 'deliveryDatePreference', 'deliveryTimeSlot']
+const TOP_LEFT_KEYS = ['orderNumber', 'customerManagementNumber', 'carrierId', 'invoiceType', 'coolType']
+const TOP_RIGHT_KEYS = ['shipPlanDate', 'deliveryDatePreference', 'deliveryTimeSlot', 'trackingId']
 // Other shipping keys (shown in "その他" tab)
-const OTHER_KEYS = new Set(['ecCompanyId', 'trackingId'])
+const OTHER_KEYS = new Set(['ecCompanyId', 'handlingTags'])
 
 // Tab field keys
-const RECIPIENT_KEYS = new Set(['recipient.postalCode', 'recipient.prefecture', 'recipient.city', 'recipient.street', 'recipientAddress', 'recipient.name', 'recipient.phone'])
-const SENDER_KEYS = new Set(['sender.postalCode', 'sender.prefecture', 'sender.city', 'sender.street', 'senderAddress', 'sender.name', 'sender.phone', 'carrierData.yamato.hatsuBaseNo1', 'carrierData.yamato.hatsuBaseNo2'])
-const ORDERER_KEYS = new Set(['orderer.postalCode', 'orderer.prefecture', 'orderer.city', 'orderer.street', 'ordererAddress', 'orderer.name', 'orderer.phone'])
+const RECIPIENT_KEYS = new Set(['recipient.postalCode', 'recipient.prefecture', 'recipient.city', 'recipient.street', 'recipient.building', 'recipientAddress', 'recipient.name', 'recipient.phone'])
+const SENDER_KEYS = new Set(['sender.postalCode', 'sender.prefecture', 'sender.city', 'sender.street', 'sender.building', 'senderAddress', 'sender.name', 'sender.phone', 'carrierData.yamato.hatsuBaseNo1', 'carrierData.yamato.hatsuBaseNo2'])
+const ORDERER_KEYS = new Set(['orderer.postalCode', 'orderer.prefecture', 'orderer.city', 'orderer.street', 'orderer.building', 'ordererAddress', 'orderer.name', 'orderer.phone'])
 
 interface Props {
   modelValue: boolean
@@ -323,7 +323,7 @@ const getKey = (col: TableColumn) => (col.dataKey || col.key) as string
 
 // All editable columns
 const formColumns = computed(() => {
-  const systemFields = ['_id', 'tenantId', 'status', 'createdAt', 'updatedAt', 'systemIds', 'clientOrderIds', 'itemBarcodes', 'orderNumber', 'carrierRawRow', 'internalRecord']
+  const systemFields = ['_id', 'tenantId', 'status', 'createdAt', 'updatedAt', 'systemIds', 'clientOrderIds', 'itemBarcodes', 'carrierRawRow', 'internalRecord']
   const computedFields = ['itemsCount']
   const actionFields = ['actions', 'selection']
   return props.columns.filter((col) => {
@@ -354,7 +354,7 @@ const otherFields = computed(() => formColumns.value.filter(c => OTHER_KEYS.has(
 const tabDefs = computed(() => {
   const tabs = [
     { key: 'products', title: '商品明細', fields: [] as TableColumn[] },
-    { key: 'recipient', title: '送付先情報', fields: recipientFields.value },
+    { key: 'recipient', title: 'お届け先情報', fields: recipientFields.value },
     { key: 'sender', title: 'ご依頼主情報', fields: senderFields.value },
     { key: 'orderer', title: '注文者情報', fields: ordererFields.value },
   ]
@@ -479,6 +479,7 @@ const applySenderCompany = (company: OrderSourceCompany) => {
   setNestedValue(formData.value, 'sender.prefecture', company.senderAddressPrefecture || '')
   setNestedValue(formData.value, 'sender.city', company.senderAddressCity || '')
   setNestedValue(formData.value, 'sender.street', company.senderAddressStreet || '')
+  setNestedValue(formData.value, 'sender.building', (company as any).senderAddressBuilding || '')
   setNestedValue(formData.value, 'sender.name', company.senderName || '')
   setNestedValue(formData.value, 'sender.phone', company.senderPhone || '')
   setNestedValue(formData.value, 'carrierData.yamato.hatsuBaseNo1', company.hatsuBaseNo1 || '')
@@ -489,17 +490,26 @@ const applySenderCompany = (company: OrderSourceCompany) => {
 // Visibility rules based on invoiceType
 const COOL_TYPE_INVOICE_TYPES = new Set(['0', '2', '5']) // 発払い, コレクト, 着払い
 const TIME_SLOT_INVOICE_TYPES = new Set(['0', '2', '5', '6', '8', '9']) // + 発払複数口, 宅急便コンパクト, コンパクトコレクト
+const DELIVERY_DATE_INVOICE_TYPES = new Set(['0', '1', '2', '4', '5', '6', '8', '9']) // ネコポス(A),クロネコゆうメール(3),クロネコゆうパケット(7)はお届け日指定不可
 
 const isFieldVisible = (col: TableColumn): boolean => {
   const key = getKey(col)
+  // 新規作成時は出荷管理No・送り状番号を非表示
+  if (key === 'orderNumber' && !props.initialData?.orderNumber) return false
+  if (key === 'trackingId' && !props.initialData?.trackingId) return false
   const invoiceType = String(getNestedValue(formData.value, 'invoiceType') || '')
   if (key === 'coolType') return COOL_TYPE_INVOICE_TYPES.has(invoiceType)
   if (key === 'deliveryTimeSlot') return TIME_SLOT_INVOICE_TYPES.has(invoiceType)
+  if (key === 'deliveryDatePreference') return DELIVERY_DATE_INVOICE_TYPES.has(invoiceType)
   return true
 }
 
 // Field helpers
+const READ_ONLY_FIELDS = new Set(['orderNumber', 'trackingId'])
+
 const isFieldDisabled = (column: TableColumn): boolean => {
+  const key = getKey(column)
+  if (READ_ONLY_FIELDS.has(key)) return true
   if (typeof column.disabledWhen === 'function') return column.disabledWhen(formData.value)
   return false
 }
