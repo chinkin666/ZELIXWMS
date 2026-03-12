@@ -1084,6 +1084,14 @@ const applyProductDefaults = (row: UserOrderRow): UserOrderRow => {
       if (calculatedInvoiceType !== null) next.invoiceType = calculatedInvoiceType
     }
   }
+
+  // ネコポス・ゆうメール・ゆうパケット等メール便はお届け日・時間帯指定不可
+  const noDateTimeTypes = new Set(['3', '7', 'A'])
+  if (noDateTimeTypes.has(next.invoiceType)) {
+    next.deliveryDatePreference = undefined as any
+    next.deliveryTimeSlot = ''
+  }
+
   return next
 }
 
