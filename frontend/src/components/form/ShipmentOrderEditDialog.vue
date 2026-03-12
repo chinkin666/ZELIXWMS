@@ -57,6 +57,42 @@
           <div class="o-notebook-page">
             <!-- 商品明細 tab -->
             <template v-if="activeTab === 'products'">
+              <!-- 商品検索パネル -->
+              <div class="o-product-toolbar">
+                <OButton variant="secondary" size="sm" @click="openProductSearch">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                  商品検索
+                </OButton>
+              </div>
+
+              <div v-if="productSearchOpen" class="o-product-search-panel">
+                <input
+                  v-model="productSearchQuery"
+                  class="o-inline-input"
+                  placeholder="SKU・商品名で検索..."
+                  autofocus
+                />
+                <div class="o-product-search-list">
+                  <div v-if="productSearchLoading" class="o-product-search-empty">読み込み中...</div>
+                  <div v-else-if="filteredProductResults.length === 0" class="o-product-search-empty">該当なし</div>
+                  <div
+                    v-for="prod in filteredProductResults"
+                    :key="prod._id"
+                    class="o-product-search-item"
+                    @click="selectProduct(prod)"
+                  >
+                    <div class="o-product-search-main">
+                      <img v-if="prod.imageUrl" :src="prod.imageUrl" class="o-product-search-img" />
+                      <div class="o-product-search-info">
+                        <div class="o-product-search-name">{{ prod.name }}</div>
+                        <div class="o-product-search-meta">SKU: {{ prod.sku }}{{ prod.barcode?.length ? ` / BC: ${prod.barcode[0]}` : '' }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button class="o-btn o-btn-sm o-btn-text" @click="productSearchOpen = false" style="margin-top:4px;">閉じる</button>
+              </div>
+
               <table class="o-lines-table">
                 <thead>
                   <tr>
@@ -97,7 +133,7 @@
                       />
                     </td>
                     <td style="text-align:center;">
-                      <OButton variant="icon-danger" @click="removeProduct(index)" title="削除">
+                      <OButton v-if="index > 0" variant="icon-danger" @click="removeProduct(index)" title="削除">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                       </OButton>
                     </td>
@@ -275,8 +311,10 @@ import OButton from '@/components/odoo/OButton.vue'
 import FormField from './FormField.vue'
 import type { TableColumn } from '@/types/table'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
+import type { Product } from '@/types/product'
 import { setNestedValue, getNestedValue } from '@/utils/nestedObject'
 import { getCoolTypeOptionsForInvoiceType } from '@/utils/orderValidation'
+import { fetchProducts } from '@/api/product'
 import { lookupPostalCode } from '@/utils/postalCodeLookup'
 import { fetchOrderSourceCompanies } from '@/api/orderSourceCompany'
 
@@ -416,6 +454,49 @@ const onProductNameInput = (index: number, raw: string) => {
   const arr = [...productItems.value]
   arr[index] = { ...arr[index], productName: truncated }
   setNestedValue(formData.value, 'products', arr)
+}
+
+// ── 商品検索 ──
+const productSearchOpen = ref(false)
+const productSearchQuery = ref('')
+const productSearchResults = ref<Product[]>([])
+const productSearchLoading = ref(false)
+
+const openProductSearch = async () => {
+  productSearchOpen.value = true
+  productSearchQuery.value = ''
+  productSearchLoading.value = true
+  try {
+    productSearchResults.value = await fetchProducts()
+  } catch {
+    productSearchResults.value = []
+  } finally {
+    productSearchLoading.value = false
+  }
+}
+
+const filteredProductResults = computed(() => {
+  const q = productSearchQuery.value.trim().toLowerCase()
+  if (!q) return productSearchResults.value
+  return productSearchResults.value.filter(p =>
+    p.sku.toLowerCase().includes(q) ||
+    p.name.toLowerCase().includes(q) ||
+    (p.nameFull || '').toLowerCase().includes(q) ||
+    (p.barcode || []).some(b => b.includes(q))
+  )
+})
+
+const selectProduct = (prod: Product) => {
+  const arr = [...productItems.value]
+  // 最初の行が空ならそこに入れる、そうでなければ新行追加
+  const emptyIndex = arr.findIndex(item => !item.inputSku && !item.productName)
+  if (emptyIndex >= 0) {
+    arr[emptyIndex] = { inputSku: prod.sku, productName: prod.name, quantity: 1 }
+  } else {
+    arr.push({ inputSku: prod.sku, productName: prod.name, quantity: 1 })
+  }
+  setNestedValue(formData.value, 'products', arr)
+  productSearchOpen.value = false
 }
 
 // 元データ (read-only)
@@ -1161,6 +1242,78 @@ const handleSubmit = async () => {
 }
 
 .o-sender-search-detail {
+  font-size: 11px;
+  color: var(--o-gray-500, #6c757d);
+  margin-top: 1px;
+}
+
+/* ── Product search ── */
+.o-product-toolbar {
+  margin-bottom: 0.5rem;
+}
+
+.o-product-search-panel {
+  background: var(--o-gray-50, #f8f9fa);
+  border: 1px solid var(--o-border-color, #d6d6d6);
+  border-radius: var(--o-border-radius, 4px);
+  padding: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.o-product-search-list {
+  max-height: 240px;
+  overflow-y: auto;
+  margin-top: 6px;
+}
+
+.o-product-search-empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--o-gray-500, #adb5bd);
+  font-size: 12px;
+}
+
+.o-product-search-item {
+  padding: 6px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.o-product-search-item:hover {
+  background: rgba(113, 75, 103, 0.08);
+}
+
+.o-product-search-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.o-product-search-img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--o-border-color, #e0e0e0);
+  flex-shrink: 0;
+}
+
+.o-product-search-info {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.o-product-search-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--o-gray-900, #212529);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.o-product-search-meta {
   font-size: 11px;
   color: var(--o-gray-500, #6c757d);
   margin-top: 1px;
