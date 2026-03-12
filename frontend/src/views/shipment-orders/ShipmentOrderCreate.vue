@@ -38,6 +38,11 @@
             個別登録
           </OButton>
         </template>
+        <template v-if="displayFilter === 'pending_waybill'">
+          <OButton variant="success" @click="showCarrierImportDialog = true">
+            送り状データ取込
+          </OButton>
+        </template>
       </template>
     </ControlPanel>
 
@@ -137,7 +142,10 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-if="paginatedRows.length === 0">
+            <tr v-if="isLoadingPendingWaybill && displayFilter !== 'pending_confirm'">
+              <td :colspan="displayColumns.length + 7" class="o-table-empty">読み込み中...</td>
+            </tr>
+            <tr v-else-if="paginatedRows.length === 0">
               <td :colspan="displayColumns.length + 7" class="o-table-empty">データがありません</td>
             </tr>
             <template
@@ -351,6 +359,11 @@
       @import="handleImport"
     />
 
+    <CarrierImportDialog
+      v-model="showCarrierImportDialog"
+      @imported="loadPendingWaybillOrders"
+    />
+
     <BundleFilterDialog
       v-model="showBundleFilterDialog"
       :fields="bundleFilterFields"
@@ -522,6 +535,7 @@
 import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import ShipmentOrderEditDialog from '@/components/form/ShipmentOrderEditDialog.vue'
+import CarrierImportDialog from '@/components/import/CarrierImportDialog.vue'
 import OBatchActionBar from '@/components/odoo/OBatchActionBar.vue'
 import ShipmentOrderImportDialog from '@/components/import/ShipmentOrderImportDialog.vue'
 import BundleFilterDialog from '@/components/bundle/BundleFilterDialog.vue'
@@ -587,6 +601,7 @@ const carriers = ref<Carrier[]>([])
 // --- ダイアログ状態 ---
 const showDialog = ref(false)
 const showImportDialog = ref(false)
+const showCarrierImportDialog = ref(false)
 const showBundleFilterDialog = ref(false)
 const editingRow = ref<UserOrderRow | null>(null)
 const submitErrorDialogVisible = ref(false)
@@ -649,7 +664,6 @@ const pendingWaybillRows = ref<UserOrderRow[]>([])
 
 // --- フィルター・表示 ---
 const displayFilter = ref<'pending_confirm' | 'processing' | 'pending_waybill' | 'held'>('pending_confirm')
-const showOnlyErrors = ref(false)
 
 // --- バックエンドエラー ---
 type BackendErrorByRow = Record<string, Record<string, string[]>>
@@ -1372,14 +1386,14 @@ const handleSubmitClick = async () => {
       }
       await loadPendingWaybillOrders()
       displayFilter.value = 'processing'
-      // 自動 B2 Cloud 検証をバックグラウンドで実行（ブロックしない）
-      autoValidateProcessingOrders()
+      // 自動 B2 Cloud 検証をバックグラウンドで実行（今回提出した注文のみ対象）
+      const submittedIds = new Set(successes.map((s) => s?.insertedId).filter(Boolean))
+      autoValidateProcessingOrders(submittedIds)
     }
   } catch (err: any) {
     if (err instanceof ShipmentOrderBulkApiError) {
       if (Array.isArray(err.errors) && err.errors.length > 0) {
         applyBackendErrors(err.errors)
-        showOnlyErrors.value = true
         submitErrorDialogVisible.value = true
         toast.showError('サーバー側のバリデーションエラーがあります。')
         return
@@ -1391,19 +1405,6 @@ const handleSubmitClick = async () => {
   } finally {
     isSubmitting.value = false
   }
-}
-
-// --- データクリア ---
-const handleClearSelected = () => {
-  if (tableSelectedKeys.value.length === 0) {
-    toast.showWarning('削除する行を選択してください')
-    return
-  }
-  const count = tableSelectedKeys.value.length
-  const selectedSet = new Set(tableSelectedKeys.value)
-  allRows.value = allRows.value.filter((r) => !selectedSet.has(r.id))
-  tableSelectedKeys.value = []
-  toast.showSuccess(`${count}件を削除しました`)
 }
 
 const handleReleaseHold = async () => {
@@ -1423,9 +1424,9 @@ const handleReleaseHold = async () => {
   }
   // ローカル行の保留解除
   if (localIds.length > 0) {
-    const currentSet = new Set(heldRowIds.value)
-    for (const id of localIds) currentSet.delete(id)
-    heldRowIds.value = [...currentSet]
+    const removeSet = new Set(localIds)
+    heldRowIds.value = heldRowIds.value.filter(id => !removeSet.has(id))
+    draftStore.setHeldIds(heldRowIds.value)
   }
   // バックエンド注文の保留解除
   if (backendIds.length > 0) {
@@ -1462,9 +1463,8 @@ const handleDeleteHeld = async () => {
   if (localIds.length > 0) {
     const localSet = new Set(localIds)
     allRows.value = allRows.value.filter((r) => !localSet.has(r.id))
-    const currentHeld = new Set(heldRowIds.value)
-    for (const id of localIds) currentHeld.delete(id)
-    heldRowIds.value = [...currentHeld]
+    heldRowIds.value = heldRowIds.value.filter(id => !localSet.has(id))
+    draftStore.setHeldIds(heldRowIds.value)
   }
   // バックエンド注文の削除
   if (backendIds.length > 0) {
@@ -1482,16 +1482,25 @@ const handleDeleteHeld = async () => {
 }
 
 // --- バックエンド注文の読み込み（送り状未発行・発行中・発行済） ---
+let loadPendingWaybillVersion = 0
+
 async function loadPendingWaybillOrders() {
+  const version = ++loadPendingWaybillVersion
   try {
     isLoadingPendingWaybill.value = true
     const orders = await fetchShipmentOrders({ limit: 500 })
+    // 古いリクエストの結果は破棄
+    if (version !== loadPendingWaybillVersion) return
     pendingWaybillRows.value = (orders || [])
       .map((o: any) => ({ ...o, id: o._id } as UserOrderRow))
-  } catch (err) {
+  } catch (err: any) {
+    if (version !== loadPendingWaybillVersion) return
     console.error('注文の取得に失敗しました:', err)
+    toast.showError('注文の取得に失敗しました')
   } finally {
-    isLoadingPendingWaybill.value = false
+    if (version === loadPendingWaybillVersion) {
+      isLoadingPendingWaybill.value = false
+    }
   }
 }
 
@@ -1596,16 +1605,17 @@ const handleB2ValidateDialogConfirm = async () => {
 }
 
 // --- 自動 B2 Cloud 検証（処理中の注文をバックグラウンドで検証） ---
-const autoValidateProcessingOrders = async () => {
+const autoValidateProcessingOrders = async (scopeIds?: Set<string>) => {
   // リトライタイマーをクリア
   if (autoValidateRetryTimer) {
     clearTimeout(autoValidateRetryTimer)
     autoValidateRetryTimer = null
   }
 
-  // 処理中の注文を取得（未確定 & trackingId なし & 保留なし）
+  // 処理中の注文を取得（未確定 & 保留なし、scopeIds があれば今回提出分のみ）
   const processingOrders = pendingWaybillRows.value.filter(
-    (r: any) => !r.trackingId && !r.status?.held?.isHeld && !r.status?.confirm?.isConfirmed,
+    (r: any) => !r.status?.held?.isHeld && !r.status?.confirm?.isConfirmed
+      && (!scopeIds || scopeIds.has(String(r._id || r.id))),
   )
   if (processingOrders.length === 0) return
 
@@ -1708,6 +1718,7 @@ const batchActions = computed(() => {
   if (displayFilter.value === 'pending_waybill') {
     const noSel = tableSelectedKeys.value.length === 0
     return [
+      { id: 'delete-pending', label: '削除', icon: 'delete', variant: 'danger' as const, position: 'left' as const, disabled: noSel },
       { id: 'b2-export', label: b2Exporting.value ? '処理中...' : 'B2 Cloudで伝票作成', variant: 'success' as const, disabled: !canSendToB2Cloud.value || b2Exporting.value },
       { id: 'carrier-export', label: '配送業者データ出力', variant: 'primary' as const, disabled: noSel },
     ]
@@ -1730,7 +1741,7 @@ const handleBatchAction = (actionId: string) => {
     case 'sender-bulk': senderBulkDialogVisible.value = true; break
     case 'carrier-bulk': carrierBulkDialogVisible.value = true; break
     case 'submit': handleSubmitClick(); break
-    case 'clear-selected': handleClearSelected(); break
+    case 'clear-selected': handleBatchDeleteFromBar(); break
     case 'hold-toggle': toggleHoldSelected(); break
     case 'show-error-detail': submitErrorDialogVisible.value = true; break
     case 'delete-pending': handleDeletePending(); break
@@ -1745,8 +1756,7 @@ const handleBatchAction = (actionId: string) => {
 }
 
 const handleSelectAll = () => {
-  const allIds = paginatedRows.value.map((r) => r.id)
-  tableSelectedKeys.value = allIds
+  tableSelectedKeys.value = sortedRows.value.map((r) => r.id)
 }
 
 const handleDeletePending = async () => {
@@ -1937,13 +1947,6 @@ const handleBundleFilterUpdate = (keys: string[]) => {
   setCookie(BUNDLE_FILTER_COOKIE_KEY, JSON.stringify(keys ?? []), 30)
 }
 
-// --- 保留カードクリック ---
-const handleStatCardHoldClick = () => {
-  if (displayFilter.value === 'processing' || displayFilter.value === 'pending_waybill' || displayFilter.value === 'held') {
-    toggleHoldSelected()
-  }
-}
-
 // --- フィルター変更時の処理 ---
 watch(carrierExportSelectedMappingId, async () => {
   if (!carrierExportDialogVisible.value) return
@@ -1951,7 +1954,6 @@ watch(carrierExportSelectedMappingId, async () => {
 })
 
 watch(displayFilter, (val) => {
-  showOnlyErrors.value = false
   tableSelectedKeys.value = []
   if (val === 'processing' || val === 'pending_waybill') {
     loadPendingWaybillOrders()
@@ -2023,6 +2025,8 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+@import '@/styles/order-table.css';
+
 /* Root layout */
 .o-view {
   display: flex;
@@ -2064,26 +2068,8 @@ onBeforeUnmount(() => {
   border-color: #bd2130;
 }
 
-.o-status-tag {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 18px;
-  white-space: nowrap;
-  text-align: center;
-}
-.o-status-tag--new { background: #dbeafe; color: #1d4ed8; }
-.o-status-tag--error { background: #fee2e2; color: #dc2626; }
-.o-status-tag--pending { background: #fef3c7; color: #d97706; }
-.o-status-tag--processing { background: #e0e7ff; color: #4338ca; }
-.o-status-tag--issued { background: #d1fae5; color: #059669; }
-.o-status-tag--held { background: #fff3e0; color: #e65100; }
+/* Page-specific status tags */
 .o-status-tag--bundleable { background: #2563eb; color: #fff; }
-.o-status-tag--delivery { background: #f59e0b; color: #fff; }
-.o-status-tag--okinawa { background: #dc2626; color: #fff; }
-.o-status-tag--remote { background: #dc2626; color: #fff; }
 .o-status-tag--validating { background: #e0e7ff; color: #4338ca; animation: pulse 1.5s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
@@ -2099,8 +2085,6 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   gap: 8px;
 }
-.o-table-td--status { white-space: normal; vertical-align: top; height: 88px; }
-.status-cell { display: flex; flex-direction: column; gap: 3px; }
 
 .o-filter-tab {
   padding: 0.375rem 0.75rem;
@@ -2150,76 +2134,23 @@ onBeforeUnmount(() => {
 .bundle-mode-bar__labels { font-size: var(--o-font-size-small, 13px); color: var(--o-gray-900, #102040); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bundle-mode-actions { display: flex; align-items: center; gap: 8px; }
 
-/* Plain table */
-.o-table-wrapper { overflow-x: auto; border: 1px solid var(--o-border-color, #d6d6d6); border-radius: var(--o-border-radius, 4px); background: var(--o-view-background, #fff); }
-.o-list-toolbar { display: flex; align-items: center; gap: 0.5rem; padding: 0.375rem 0.75rem; background: var(--o-gray-100); border-bottom: 1px solid var(--o-border-color); font-size: var(--o-font-size-small); min-height: 36px; }
-.o-list-toolbar.o-toolbar-active { background: var(--o-brand-primary); color: #fff; }
-.o-selected-count { font-weight: 500; flex: 1; }
+/* Toolbar buttons */
 .o-toolbar-btn { background: rgba(255,255,255,0.2); border: none; color: #fff; padding: 0.25rem 0.625rem; border-radius: var(--o-border-radius-sm); font-size: var(--o-font-size-smaller); cursor: pointer; }
 .o-toolbar-btn:hover { background: rgba(255,255,255,0.3); }
 .o-toolbar-danger { background: var(--o-danger); }
 .o-toolbar-danger:hover { background: #c82333; }
-.o-table { width: 100%; border-collapse: collapse; font-size: var(--o-font-size-small, 13px); table-layout: fixed; }
-.o-table-th { position: sticky; top: 0; background: var(--o-gray-100, #f8f9fa); color: var(--o-gray-700, #495057); font-weight: 600; text-align: left; padding: 8px 10px; border-bottom: 2px solid var(--o-border-color, #d6d6d6); border-left: 1px solid var(--o-border-color, #d6d6d6); user-select: none; font-size: 12px; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.o-table-th:first-child { border-left: none; }
-.o-table-th--sortable { cursor: pointer; }
-.o-table-th--sortable:hover { background: var(--o-gray-200, #e9ecef); }
 
 /* Column resize handle */
 .o-resize-handle { position: absolute; top: 0; right: 0; bottom: 0; width: 5px; cursor: col-resize; background: transparent; transition: background 0.15s; z-index: 1; }
 .o-resize-handle:hover, .o-table--resizing .o-resize-handle { background: var(--o-brand-primary, #714B67); }
-.o-table-th { position: relative; }
 
-.o-table-th--checkbox { text-align: center; }
-.o-sort-icon { font-size: 10px; margin-left: 4px; opacity: 0.6; }
-
-.o-table-td { padding: 6px 10px; border-bottom: 1px solid var(--o-border-color, #f0f0f0); border-left: 1px solid var(--o-border-color, #f0f0f0); font-size: var(--o-font-size-small, 13px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: top; }
-.o-table-td:first-child { border-left: none; }
-.o-table-td--checkbox { text-align: center; }
-.o-table-td--actions { text-align: center; white-space: nowrap; }
+/* Page-specific cell styles */
 .o-table-td--error { background: #fff0f0; }
-.o-table-td--mgmt { white-space: normal; padding: 6px 10px; }
-.mgmt-cell { display: flex; flex-direction: column; gap: 5px; }
-.mgmt-cell__row { display: flex; align-items: baseline; gap: 6px; line-height: 1.3; }
-.mgmt-cell__label { font-size: 10px; color: var(--o-gray-500, #6c757d); white-space: nowrap; min-width: 72px; }
-.mgmt-cell__value { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mgmt-cell__value--muted { color: var(--o-gray-400, #adb5bd); }
-.mgmt-cell__link { color: #1d6ce0; text-decoration: none; font-weight: 500; }
-.mgmt-cell__link:hover { text-decoration: underline; }
-
-.o-table-row:hover { background: var(--o-list-hover, #edf2ff); }
-.o-table-row--selected { background: var(--o-list-selected, #e8f0fe); }
-.o-table-row--selected:hover { background: #d0e4fd; }
-.o-table-empty { text-align: center; padding: 2rem; color: var(--o-gray-500, #909399); }
-
-.o-cell { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .o-cell-sub { font-size: 11px; color: var(--o-gray-500, #909399); }
-
-/* Recipient cell */
-.recipient-cell { display: flex; flex-direction: column; gap: 2px; font-size: 12px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.recipient-cell div { overflow: hidden; text-overflow: ellipsis; }
-.recipient-cell__name { font-weight: 500; }
-
-/* Product list in products column */
-.o-table-td:has(.product-list) { white-space: normal; vertical-align: top; }
-.o-table-td:has(.recipient-cell) { white-space: normal; vertical-align: top; }
-.product-list { display: flex; flex-direction: column; gap: 6px; }
-.product-item { display: flex; gap: 8px; align-items: flex-start; }
-.product-item__img { width: 40px; height: 40px; object-fit: cover; border-radius: 3px; border: 1px solid var(--o-border-color, #e0e0e0); flex-shrink: 0; }
 .product-item__img--empty { background: var(--o-gray-100, #f5f5f5); }
-.product-item__info { display: flex; flex-direction: column; gap: 1px; min-width: 0; overflow: hidden; }
-.product-item__name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.product-item__meta { font-size: 11px; color: var(--o-gray-500, #909399); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .o-cool-tag { font-size: 11px; padding: 1px 5px; border-radius: 3px; display: inline-block; }
-.o-badge { display: inline-block; background: var(--o-gray-200, #e9ecef); color: var(--o-gray-700, #495057); font-size: 11px; padding: 1px 6px; border-radius: 3px; margin-right: 2px; }
 .customer-mgmt-link { color: var(--o-brand-primary, #714B67); text-decoration: none; font-weight: 500; }
 .customer-mgmt-link:hover { text-decoration: underline; }
-
-/* Pagination */
-.o-table-pagination { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.25rem; font-size: var(--o-font-size-small, 13px); }
-.o-table-pagination__info { color: var(--o-gray-600, #606266); }
-.o-table-pagination__controls { display: flex; align-items: center; gap: 0.5rem; }
-.o-table-pagination__page { color: var(--o-gray-700, #495057); min-width: 60px; text-align: center; }
 
 /* Bulk Dialogs */
 .bulk-dialog {

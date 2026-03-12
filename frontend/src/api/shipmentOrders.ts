@@ -143,6 +143,7 @@ export type ImportCarrierReceiptRowsResult = {
     updatedOrders: number
     unmatched: string[]
     ambiguous: string[]
+    duplicatedInFile: string[]
   }
 }
 

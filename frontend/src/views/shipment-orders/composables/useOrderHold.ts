@@ -30,24 +30,26 @@ export function useOrderHold(
   // 出荷確認まち件数（新規 + エラー、保留除外）
   const pendingConfirmCount = computed(() => nonHeldRows.value.length)
 
-  // 保留件数合計（ローカル + バックエンド）
+  // 保留件数合計（ローカル + バックエンド、重複排除）
   const totalHeldCount = computed(() => {
-    const localCount = heldRowIds.value.length
-    const backendCount = pendingWaybillRows.value.filter((r: any) => r.status?.held?.isHeld).length
-    return localCount + backendCount
+    const localIds = new Set(heldRowIds.value)
+    const backendOnlyCount = pendingWaybillRows.value.filter((r: any) =>
+      r.status?.held?.isHeld && !localIds.has(r.id)
+    ).length
+    return localIds.size + backendOnlyCount
   })
 
-  // 処理中の非保留件数（未確定 & trackingId なし）
+  // 処理中の非保留件数（未確定）
   const processingNonHeldCount = computed(() =>
     pendingWaybillRows.value.filter((r: any) =>
-      !r.status?.held?.isHeld && !r.trackingId && !r.status?.confirm?.isConfirmed
+      !r.status?.held?.isHeld && !r.status?.confirm?.isConfirmed
     ).length
   )
 
-  // 送り状未発行の件数（確定済み or trackingId あり & 保留なし）
+  // 送り状未発行の件数（確定済み & trackingId 未設定 & 保留なし）
   const pendingWaybillNonHeldCount = computed(() =>
     pendingWaybillRows.value.filter((r: any) =>
-      !r.status?.held?.isHeld && (r.status?.confirm?.isConfirmed || r.trackingId)
+      !r.status?.held?.isHeld && r.status?.confirm?.isConfirmed && !r.trackingId
     ).length
   )
 
@@ -70,16 +72,14 @@ export function useOrderHold(
       }
     }
 
-    // ローカル行の保留処理
+    // ローカル行の保留処理（不変パターン）
     if (localIds.length > 0) {
       const currentSet = new Set(heldRowIds.value)
       const allHeld = localIds.every(id => currentSet.has(id))
-      if (allHeld) {
-        for (const id of localIds) currentSet.delete(id)
-      } else {
-        for (const id of localIds) currentSet.add(id)
-      }
-      heldRowIds.value = [...currentSet]
+      const localSet = new Set(localIds)
+      heldRowIds.value = allHeld
+        ? heldRowIds.value.filter(id => !localSet.has(id))
+        : [...new Set([...heldRowIds.value, ...localIds])]
       saveStorage(allRows.value, heldRowIds.value)
     }
 

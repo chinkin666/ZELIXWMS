@@ -301,25 +301,29 @@ export function useOrderTable(
   // --- フィルタリング ---
   const filteredRows = computed(() => {
     if (displayFilter.value === 'processing') {
-      // 処理中: 未確定（isConfirmed でない）& trackingId なし & 保留なし
+      // 処理中: 未確定（isConfirmed でない）& 保留なし
       const rows = pendingWaybillRows.value.filter((row: any) =>
-        !row.status?.held?.isHeld && !row.trackingId && !row.status?.confirm?.isConfirmed
+        !row.status?.held?.isHeld && !row.status?.confirm?.isConfirmed
       )
       return filterBackendRowsBySearch(rows)
     }
 
     if (displayFilter.value === 'pending_waybill') {
-      // 送り状未発行: 確定済み（isConfirmed）または trackingId あり & 保留なし
+      // 送り状未発行: 確定済み & trackingId 未設定 & 保留なし
+      // trackingId がある注文は出荷作業（shipment-operations/tasks）に移動
       const rows = pendingWaybillRows.value.filter((row: any) =>
-        !row.status?.held?.isHeld && (row.status?.confirm?.isConfirmed || row.trackingId)
+        !row.status?.held?.isHeld && row.status?.confirm?.isConfirmed && !row.trackingId
       )
       return filterBackendRowsBySearch(rows)
     }
 
     if (displayFilter.value === 'held') {
-      // ローカル保留行 + バックエンド保留行
+      // ローカル保留行 + バックエンド保留行（重複排除）
       const localHeld = searchedRows.value.filter((row: UserOrderRow) => isHeld(row.id))
-      const backendHeld = pendingWaybillRows.value.filter((row: UserOrderRow) => (row as any).status?.held?.isHeld)
+      const localHeldIds = new Set(localHeld.map(r => r.id))
+      const backendHeld = pendingWaybillRows.value.filter((row: UserOrderRow) =>
+        (row as any).status?.held?.isHeld && !localHeldIds.has(row.id)
+      )
       return [...localHeld, ...backendHeld]
     }
 

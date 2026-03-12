@@ -20,35 +20,178 @@
       </label>
     </div>
 
-    <Table
-      :columns="tableColumns"
-      :data="displayRows"
-      :global-search-text="globalSearchText"
-      :height="560"
-      row-key="_id"
-      highlight-columns-on-hover
-      row-selection-enabled
-      pagination-enabled
-      pagination-mode="client"
-      :page-size="pageSize"
-      :page-sizes="[10,25,50,100,500]"
-      :header-grouping-enabled="true"
-      :header-grouping-config="headerGroupingConfig"
-      :header-height="[50, 50]"
-      :header-class="headerClass"
-      :table-props="tableProps"
-      sort-enabled
-      sort-mode="server"
-      :sort-by="sortBy"
-      :sort-order="sortOrder"
-      :batch-delete-enabled="batchDeleteEnabled"
-      :products="products"
-      :show-status-tags="true"
-      page-key="shipment-operations-tasks"
-      v-model:selected-keys="tableSelectedKeys"
-      @selection-change="handleTableSelectionChange"
-      @sort-change="handleSortChange"
-    />
+    <!-- Plain table (same style as shipment-orders/create) -->
+    <div class="o-table-wrapper">
+      <div v-if="tableSelectedKeys.length > 0" class="o-list-toolbar o-toolbar-active">
+        <span class="o-selected-count">{{ tableSelectedKeys.length }}件選択中</span>
+      </div>
+      <table class="o-table">
+        <thead>
+          <tr>
+            <th class="o-table-th o-table-th--checkbox" style="width:40px;">
+              <input
+                type="checkbox"
+                :checked="isAllCurrentPageSelected"
+                :indeterminate="isSomeCurrentPageSelected && !isAllCurrentPageSelected"
+                @change="toggleSelectAll"
+              />
+            </th>
+            <th class="o-table-th" style="width:90px;">状態</th>
+            <th class="o-table-th o-table-th--sortable" style="width:220px;" @click="handleSortClick('orderNumber')">
+              出荷管理番号
+              <span v-if="sortBy === 'orderNumber'" class="o-sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
+            </th>
+            <th class="o-table-th" style="width:200px;">配送情報</th>
+            <th class="o-table-th" style="width:180px;">配送指定</th>
+            <th class="o-table-th" style="width:200px;">お届け先</th>
+            <th class="o-table-th" style="width:200px;">商品</th>
+            <th class="o-table-th" style="width:170px;">履歴</th>
+            <th class="o-table-th" style="width:140px;">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="isLoadingOrders">
+            <td colspan="9" class="o-table-empty">読み込み中...</td>
+          </tr>
+          <tr v-else-if="paginatedRows.length === 0">
+            <td colspan="9" class="o-table-empty">データがありません</td>
+          </tr>
+          <tr
+            v-for="row in paginatedRows"
+            :key="row._id"
+            class="o-table-row"
+            :class="{ 'o-table-row--selected': tableSelectedKeys.includes(row._id) }"
+          >
+            <td class="o-table-td o-table-td--checkbox">
+              <input
+                type="checkbox"
+                :checked="tableSelectedKeys.includes(row._id)"
+                @change="toggleRowSelection(row)"
+              />
+            </td>
+            <td class="o-table-td o-table-td--status">
+              <div class="status-cell">
+                <span v-if="row.status?.confirm?.isConfirmed" class="o-status-tag o-status-tag--confirmed">確定済</span>
+                <span v-if="row.status?.carrierReceipt?.isReceived" class="o-status-tag o-status-tag--issued">送り状発行済</span>
+                <span v-if="row.status?.printed?.isPrinted" class="o-status-tag o-status-tag--printed">印刷済</span>
+                <span v-if="row.status?.inspected?.isInspected" class="o-status-tag o-status-tag--confirmed">検品済</span>
+              </div>
+            </td>
+            <!-- 出荷管理番号 -->
+            <td class="o-table-td o-table-td--mgmt">
+              <div class="mgmt-cell">
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">出荷管理No</span>
+                  <a href="#" class="mgmt-cell__link mgmt-cell__value" @click.prevent="handleView(row)">{{ row.orderNumber || '-' }}</a>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">注文番号</span>
+                  <span class="mgmt-cell__value">{{ row.customerManagementNumber || '-' }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">送り状番号</span>
+                  <span class="mgmt-cell__value">{{ row.trackingId || '-' }}</span>
+                </div>
+              </div>
+            </td>
+            <!-- 配送情報 -->
+            <td class="o-table-td o-table-td--mgmt">
+              <div class="mgmt-cell">
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">配送会社</span>
+                  <span class="mgmt-cell__value">{{ getCarrierLabel(row) }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">配送サービス</span>
+                  <span class="mgmt-cell__value">{{ getInvoiceTypeLabel(row) }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">温度帯</span>
+                  <span class="mgmt-cell__value" :style="{ color: getCoolTypeInfo(row).color }">{{ getCoolTypeInfo(row).label }}</span>
+                </div>
+              </div>
+            </td>
+            <!-- 配送指定 -->
+            <td class="o-table-td o-table-td--mgmt">
+              <div class="mgmt-cell">
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">出荷予定日</span>
+                  <span class="mgmt-cell__value">{{ row.shipPlanDate || '-' }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">お届け日</span>
+                  <span class="mgmt-cell__value">{{ row.deliveryDatePreference || '最短' }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">時間帯指定</span>
+                  <span class="mgmt-cell__value">{{ getTimeSlotLabel(row) }}</span>
+                </div>
+              </div>
+            </td>
+            <!-- お届け先 -->
+            <td class="o-table-td">
+              <div class="recipient-cell">
+                <div>〒{{ fmtPostal(row.recipient?.postalCode) }}</div>
+                <div>{{ [row.recipient?.prefecture, row.recipient?.city, row.recipient?.street, row.recipient?.building].filter(Boolean).join(' ') || '-' }}</div>
+                <div>{{ row.recipient?.phone || '-' }}</div>
+                <div class="recipient-cell__name">{{ row.recipient?.name || '-' }} {{ row.honorific || '様' }}</div>
+              </div>
+            </td>
+            <!-- 商品 -->
+            <td class="o-table-td">
+              <div class="product-list">
+                <div v-for="(p, pi) in (row.products || [])" :key="pi" class="product-item">
+                  <div class="product-item__info">
+                    <span class="product-item__name">{{ p.productName || '-' }}</span>
+                    <span class="product-item__meta">SKU: {{ p.inputSku || p.productSku || '-' }} / 個数: {{ p.quantity ?? 0 }}</span>
+                  </div>
+                </div>
+                <span v-if="!row.products?.length" class="o-cell">-</span>
+              </div>
+            </td>
+            <!-- 履歴 -->
+            <td class="o-table-td o-table-td--mgmt">
+              <div class="mgmt-cell">
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">確定日時</span>
+                  <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.confirm?.confirmedAt) }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">送り状発行</span>
+                  <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.carrierReceipt?.receivedAt) }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">印刷日時</span>
+                  <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.printed?.printedAt) }}</span>
+                </div>
+              </div>
+            </td>
+            <!-- 操作 -->
+            <td class="o-table-td o-table-td--actions">
+              <OButton variant="primary" size="sm" @click="handleView(row)">詳細</OButton>
+              <OButton variant="secondary" size="sm" :disabled="isUnconfirming" style="border-color:#e6a23c;color:#e6a23c;" @click="handleUnconfirm(row)">確認取消</OButton>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="o-table-pagination">
+      <span class="o-table-pagination__info">{{ displayRows.length }} 件</span>
+      <div class="o-table-pagination__controls">
+        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;">
+          <option :value="10">10</option>
+          <option :value="25">25</option>
+          <option :value="50">50</option>
+          <option :value="100">100</option>
+          <option :value="500">500</option>
+        </select>
+        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--">&lsaquo;</OButton>
+        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
+        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">&rsaquo;</OButton>
+      </div>
+    </div>
 
     <!-- Bottom bar -->
     <OrderBottomBar
@@ -89,13 +232,11 @@
       mode="view"
     />
 
-    <!-- Custom Export Dialog -->
     <CustomExportDialog
       v-model="customExportDialogVisible"
       :orders="selectedOrdersForCustomExport"
     />
 
-    <!-- Form Export Dialog (PDF) -->
     <FormExportDialog
       v-model="formExportDialogVisible"
       target-type="shipment-detail-list"
@@ -107,19 +248,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import Table from '@/components/table/OrderTable.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
 import OrderViewDialog from '@/components/shipment-orders/OrderViewDialog.vue'
 import CustomExportDialog from '@/components/export/CustomExportDialog.vue'
 import FormExportDialog from '@/components/form-export/FormExportDialog.vue'
-import type { HeaderGroupingConfig } from '@/components/table/tableHeaderGroup'
 import type { Operator } from '@/types/table'
 import { getOrderFieldDefinitions } from '@/types/order'
-import { buildOrderHeaderGroupingConfig } from '@/utils/orderHeaderGrouping'
 import { fetchShipmentOrder, fetchShipmentOrdersPage, updateShipmentOrderStatusBulk } from '@/api/shipmentOrders'
 import { fetchCarriers } from '@/api/carrier'
 import type { Carrier } from '@/types/carrier'
@@ -127,20 +265,21 @@ import { fetchProducts } from '@/api/product'
 import type { Product } from '@/types/product'
 import type { OrderDocument } from '@/types/order'
 import { yamatoB2Unconfirm, isCarrierDeleteError } from '@/api/carrierAutomation'
+import { useOrderCellHelpers } from '@/composables/useOrderCellHelpers'
+import { useToast } from '@/composables/useToast'
 
 type SortOrder = 'asc' | 'desc' | null
 type OrderRow = Record<string, any>
 
+const toast = useToast()
 const rows = ref<OrderRow[]>([])
 const tableSelectedKeys = ref<Array<string | number>>([])
 const isLoadingOrders = ref(false)
 
-// 批量删除功能已禁用（此页面使用確認取消功能代替）
-const batchDeleteEnabled = ref(false)
-
-const pageSize = ref(10)
-const sortBy = ref<string | null>('orderNumber') // 默认按出荷管理No排序
-const sortOrder = ref<SortOrder>('asc') // 默认升序
+const pageSize = ref(25)
+const currentPage = ref(1)
+const sortBy = ref<string | null>('orderNumber')
+const sortOrder = ref<SortOrder>('asc')
 const isMarkingShipped = ref(false)
 const isUnconfirming = ref(false)
 const showPrintedOnly = ref(true)
@@ -153,38 +292,17 @@ const selectedOrdersForCustomExport = ref<any[]>([])
 const formExportDialogVisible = ref(false)
 const selectedOrdersForFormExport = ref<OrderDocument[]>([])
 
-// Carrier options
+// Carrier & products
 const carriers = ref<Carrier[]>([])
-const carrierOptions = computed(() => {
-  return (carriers.value || []).map((c) => ({ label: c.name, value: c._id }))
-})
-// Products for OrderTable
 const products = ref<Product[]>([])
 
-const searchInitialValues = computed(() => {
-  return {}
-})
+// Cell helpers (shared with create page)
+const { carrierOptions, allFieldDefinitions, getCarrierLabel, getInvoiceTypeLabel, getTimeSlotLabel, getCoolTypeInfo, fmtDateTime, fmtPostal } = useOrderCellHelpers(carriers)
 
-const allFieldDefinitions = computed(() =>
-  getOrderFieldDefinitions({ carrierOptions: carrierOptions.value }).map((col) =>
-    col.key === 'trackingId' ? { ...col, tableVisible: true } : col,
-  ),
+const searchInitialValues = computed(() => ({}))
+const searchColumns = computed(() =>
+  allFieldDefinitions.value.filter((col) => col.searchType !== undefined),
 )
-const baseColumns = computed(() => {
-  const systemFieldKeys = ['tenantId']
-  // 在 shipment-operations/list 页面显示ステータス字段
-  const statusKeys = ['statusCarrierReceipt', 'statusPrintReady', 'statusPrinted', 'statusShipped']
-  return allFieldDefinitions.value.filter((col) => {
-    if (systemFieldKeys.includes(col.key)) return false
-    // 如果字段设置了 tableVisible: false，但在 statusKeys 中，则显示
-    if (statusKeys.includes(col.key)) return true
-    // 否则遵循 tableVisible 设置
-    return col.tableVisible !== false
-  })
-})
-const searchColumns = computed(() => {
-  return allFieldDefinitions.value.filter((col) => col.searchType !== undefined)
-})
 
 const currentSearchPayload = ref<Record<string, { operator: Operator; value: any }> | null>(null)
 const globalSearchText = ref<string>('')
@@ -192,24 +310,58 @@ const globalSearchText = ref<string>('')
 const effectiveSearchPayload = computed(() => {
   const base = currentSearchPayload.value || searchInitialValues.value
   const q: Record<string, { operator: Operator; value: any }> = { ...(base || {}) }
-  // 只显示 confirm.isConfirmed 为 true 的订单
   q['status.confirm.isConfirmed'] = { operator: 'is', value: true }
-  // 只显示 carrierReceipt.isReceived 为 true 的订单
   q['status.carrierReceipt.isReceived'] = { operator: 'is', value: true }
-  // 只显示 shipped.isShipped 不为 true（未出荷）的订单
   q['status.shipped.isShipped'] = { operator: 'isNot', value: true }
-  // 印刷済みフィルター（トグルで制御）
   if (showPrintedOnly.value) {
     q['status.printed.isPrinted'] = { operator: 'is', value: true }
   }
   return q
 })
 
-// 显示数据（直接使用从后端获取的数据，过滤已在后端完成）
-const displayRows = computed(() => {
-  return [...rows.value]
+const displayRows = computed(() => [...rows.value])
+
+// --- Pagination ---
+const totalPages = computed(() => Math.max(1, Math.ceil(displayRows.value.length / pageSize.value)))
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return displayRows.value.slice(start, start + pageSize.value)
 })
 
+watch(pageSize, () => { currentPage.value = 1 })
+watch(displayRows, () => { if (currentPage.value > totalPages.value) currentPage.value = totalPages.value })
+
+// --- Selection ---
+const isAllCurrentPageSelected = computed(() =>
+  paginatedRows.value.length > 0 && paginatedRows.value.every(r => tableSelectedKeys.value.includes(r._id)),
+)
+const isSomeCurrentPageSelected = computed(() =>
+  paginatedRows.value.some(r => tableSelectedKeys.value.includes(r._id)),
+)
+
+const toggleSelectAll = () => {
+  if (isAllCurrentPageSelected.value) {
+    const pageIds = new Set(paginatedRows.value.map(r => r._id))
+    tableSelectedKeys.value = tableSelectedKeys.value.filter(k => !pageIds.has(k))
+  } else {
+    const existing = new Set(tableSelectedKeys.value)
+    for (const r of paginatedRows.value) {
+      existing.add(r._id)
+    }
+    tableSelectedKeys.value = [...existing]
+  }
+}
+
+const toggleRowSelection = (row: any) => {
+  const id = row._id
+  if (tableSelectedKeys.value.includes(id)) {
+    tableSelectedKeys.value = tableSelectedKeys.value.filter(k => k !== id)
+  } else {
+    tableSelectedKeys.value = [...tableSelectedKeys.value, id]
+  }
+}
+
+// --- View ---
 const viewDialogVisible = ref(false)
 const selectedOrder = ref<any>(null)
 
@@ -220,7 +372,7 @@ const handleView = async (row: any) => {
     selectedOrder.value = await fetchShipmentOrder(String(id))
     viewDialogVisible.value = true
   } catch (e: any) {
-    alert(e?.message || '詳細の取得に失敗しました')
+    toast.showError(e?.message || '詳細の取得に失敗しました')
   }
 }
 
@@ -231,7 +383,6 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
 
     let reason: string
 
-    // 如果是跳过B2删除的重试，不再弹出理由输入框
     if (skipCarrierDelete && row._unconfirmReason) {
       reason = row._unconfirmReason
     } else {
@@ -239,13 +390,12 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
         `注文番号: ${row.orderNumber || id}\n確認を取り消し、未確認状態に戻します。\nB2 Cloud連携を使用している場合、B2 Cloudからも削除されます。\n\n取消理由を入力してください（内部データとして記録されます）`
       )
 
-      if (inputReason === null) return // cancelled
+      if (inputReason === null) return
       if (!inputReason.trim()) {
-        alert('理由を入力してください')
+        toast.showWarning('理由を入力してください')
         return
       }
       reason = inputReason.trim()
-      // 保存理由以便重试时使用
       row._unconfirmReason = reason
     }
 
@@ -263,14 +413,13 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
             message += `（B2 Cloud削除失敗: ${result.b2DeleteResult.error}）`
           }
         }
-        alert(message)
+        toast.showSuccess(message)
       }
       await loadOrders()
     } catch (e: any) {
-      // B2削除エラーの場合はスキップ確認ダイアログを表示
       if (isCarrierDeleteError(e)) {
         isUnconfirming.value = false
-        if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）`)) {
+        if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？`)) {
           await handleUnconfirm(row, true)
           return
         }
@@ -282,93 +431,61 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
     }
   } catch (e: any) {
     if (e === 'cancel') return
-    alert(e?.message || '確認取消に失敗しました')
+    toast.showError(e?.message || '確認取消に失敗しました')
     isUnconfirming.value = false
   }
 }
 
-const handleTableSelectionChange = (payload: { selectedKeys: Array<string | number>; selectedRows: any[] }) => {
-  tableSelectedKeys.value = payload.selectedKeys
-}
-
+// --- Export ---
 const handleCustomExportClick = () => {
   if (tableSelectedKeys.value.length === 0) return
   const keySet = new Set(tableSelectedKeys.value.map((k) => String(k)))
-  selectedOrdersForCustomExport.value = displayRows.value.filter((r: any) =>
-    keySet.has(String(r?._id)),
-  )
+  selectedOrdersForCustomExport.value = displayRows.value.filter((r: any) => keySet.has(String(r?._id)))
   customExportDialogVisible.value = true
 }
 
 const handleFormExportClick = () => {
   if (tableSelectedKeys.value.length === 0) return
   const keySet = new Set(tableSelectedKeys.value.map((k) => String(k)))
-  selectedOrdersForFormExport.value = displayRows.value.filter((r: any) =>
-    keySet.has(String(r?._id)),
-  ) as OrderDocument[]
+  selectedOrdersForFormExport.value = displayRows.value.filter((r: any) => keySet.has(String(r?._id))) as OrderDocument[]
   formExportDialogVisible.value = true
 }
 
+// --- Mark Shipped ---
 const handleMarkShipped = async () => {
   if (tableSelectedKeys.value.length === 0) {
-    alert('出荷完了行を選択してください')
+    toast.showWarning('出荷完了行を選択してください')
     return
   }
 
+  const selectedRows = displayRows.value.filter((row: any) => tableSelectedKeys.value.includes(row._id))
+  const orderNumbers = selectedRows.map((row: any) => row.orderNumber || row._id).filter(Boolean).slice(0, 5)
+  const moreText = selectedRows.length > 5 ? `他${selectedRows.length - 5}件` : ''
+
+  if (!confirm(`選択した${tableSelectedKeys.value.length}件の出荷を完了にしますか？\n${orderNumbers.join(', ')}${moreText ? `\n${moreText}` : ''}`)) return
+
+  isMarkingShipped.value = true
+  const ids = tableSelectedKeys.value.map((key) => String(key)).filter(Boolean)
+
   try {
-    const selectedRows = displayRows.value.filter((row: any) =>
-      tableSelectedKeys.value.includes(row._id)
-    )
-
-    const orderNumbers = selectedRows
-      .map((row: any) => row.orderNumber || row._id)
-      .filter(Boolean)
-      .slice(0, 5)
-    const orderNumbersText = orderNumbers.length > 0 ? orderNumbers.join(', ') : ''
-    const moreText = selectedRows.length > 5 ? `他${selectedRows.length - 5}件` : ''
-
-    if (!confirm(`選択した${tableSelectedKeys.value.length}件の出荷を完了にしますか？\n${orderNumbersText}${moreText ? `\n${moreText}` : ''}`)) return
-
-    isMarkingShipped.value = true
-    const ids = tableSelectedKeys.value.map((key) => String(key)).filter(Boolean)
-
-    if (ids.length === 0) {
-      alert('有効なIDがありません')
-      isMarkingShipped.value = false
-      return
+    const result = await updateShipmentOrderStatusBulk(ids, 'mark-shipped')
+    if (result?.modifiedCount !== undefined) {
+      toast.showSuccess(result.modifiedCount > 0
+        ? `${result.modifiedCount}件の出荷を完了にしました`
+        : '更新されたレコードがありません。既に出荷完了になっている可能性があります。')
+    } else {
+      toast.showSuccess(`${ids.length}件の出荷を完了にしました`)
     }
-
-    try {
-      console.log('Marking shipped for ids:', ids)
-      const result = await updateShipmentOrderStatusBulk(ids, 'mark-shipped')
-      console.log('Mark shipped result:', result)
-
-      if (result && result.modifiedCount !== undefined) {
-        if (result.modifiedCount > 0) {
-          alert(`${result.modifiedCount}件の出荷を完了にしました`)
-        } else {
-          alert('更新されたレコードがありません。既に出荷完了になっている可能性があります。')
-        }
-      } else {
-        alert(`${ids.length}件の出荷を完了にしました`)
-      }
-
-      // 清空选择并重新加载列表
-      tableSelectedKeys.value = []
-      await loadOrders()
-    } catch (e: any) {
-      console.error('Error marking shipped:', e)
-      alert(e?.message || '出荷完了の更新に失敗しました')
-    } finally {
-      isMarkingShipped.value = false
-    }
+    tableSelectedKeys.value = []
+    await loadOrders()
   } catch (e: any) {
-    if (e === 'cancel') return
-    alert(e?.message || '出荷完了の更新に失敗しました')
+    toast.showError(e?.message || '出荷完了の更新に失敗しました')
+  } finally {
     isMarkingShipped.value = false
   }
 }
 
+// --- Search ---
 const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
   const nextPayload: Record<string, { operator: Operator; value: any }> = { ...(payload || {}) }
   const keyword = (nextPayload as any)?.__global?.value
@@ -379,82 +496,42 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
 }
 
 const handleSave = (_payload: Record<string, { operator: Operator; value: any }>) => {
-  alert('検索条件を保存しました（ダミー）')
+  toast.showSuccess('検索条件を保存しました')
 }
 
-const tableColumns = computed(() => {
-  const actionColumn = {
-    key: 'actions',
-    dataKey: 'actions',
-    title: '操作',
-    width: 180,
-    fixed: 'right' as const,
-    align: 'center' as const,
-    cellRenderer: ({ rowData }: { rowData: any }) =>
-      h(
-        'div',
-        { style: 'display:inline-flex;gap:8px;' },
-        [
-          h(
-            'button',
-            {
-              class: 'o-btn o-btn-primary o-btn-sm',
-              onClick: () => handleView(rowData),
-            },
-            '詳細',
-          ),
-          h(
-            'button',
-            {
-              class: 'o-btn o-btn-sm',
-              style: 'border-color:#e6a23c;color:#e6a23c;background:transparent;',
-              disabled: isUnconfirming.value,
-              onClick: () => handleUnconfirm(rowData),
-            },
-            '確認取消',
-          ),
-        ],
-      ),
+// --- Sort ---
+const handleSortClick = (field: string) => {
+  if (sortBy.value === field) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = field
+    sortOrder.value = 'asc'
   }
+  void loadOrders()
+}
 
-  const cols = [
-    ...baseColumns.value,
-    actionColumn,
-  ]
-  return cols
-})
-
-const headerGroupingConfig = computed<HeaderGroupingConfig>(() => {
-  return buildOrderHeaderGroupingConfig(baseColumns.value as any)
-})
-
-const headerClass = (): string => ''
-
-const tableProps = computed(() => ({}))
-
+// --- Data loading ---
 const loadCarriers = async () => {
   try {
     carriers.value = await fetchCarriers()
-  } catch (e) {
-    console.error(e)
-    alert('配送業者マスタの取得に失敗しました')
+  } catch (e: any) {
+    toast.showError('配送業者マスタの取得に失敗しました')
   }
 }
 
+let loadOrdersVersion = 0
+
 const loadOrders = async () => {
-  // Prevent concurrent calls
-  if (isLoadingOrders.value) return
+  const version = ++loadOrdersVersion
   isLoadingOrders.value = true
 
   try {
     const tzOffsetMinutes = new Date().getTimezoneOffset()
-    // Fetch ALL items from backend by paging (server max limit is 1000)
     const limit = 1000
     const all: OrderRow[] = []
     let page = 1
     let total = Infinity
 
-    // Capture query params at the start to ensure consistency across pages
     const q = effectiveSearchPayload.value || undefined
     const currentSortBy = sortBy.value
     const currentSortOrder = sortOrder.value
@@ -468,6 +545,8 @@ const loadOrders = async () => {
         sortOrder: currentSortOrder,
         tzOffsetMinutes,
       })
+      if (version !== loadOrdersVersion) return
+
       const items = Array.isArray(res?.items) ? res.items : []
       const t = typeof res?.total === 'number' ? res.total : undefined
       if (typeof t === 'number') total = t
@@ -481,24 +560,18 @@ const loadOrders = async () => {
 
     rows.value = all
   } catch (e: any) {
-    alert(e?.message || '出荷予定の取得に失敗しました')
+    if (version !== loadOrdersVersion) return
+    toast.showError(e?.message || '出荷予定の取得に失敗しました')
   } finally {
-    isLoadingOrders.value = false
+    if (version === loadOrdersVersion) {
+      isLoadingOrders.value = false
+    }
   }
-}
-
-const handleSortChange = (payload: { sortBy: string | null; sortOrder: SortOrder; mode: 'client' | 'server' }) => {
-  if (payload.mode !== 'server') return
-  sortBy.value = payload.sortBy
-  sortOrder.value = payload.sortOrder
-  void loadOrders()
 }
 
 watch(
   () => showPrintedOnly.value,
-  () => {
-    void loadOrders()
-  },
+  () => { void loadOrders() },
 )
 
 onMounted(async () => {
@@ -512,49 +585,15 @@ onMounted(async () => {
 })
 </script>
 
+<style>
+@import '@/styles/order-table.css';
+</style>
+
 <style scoped>
 .shipment-operations-list {
   display: flex;
   flex-direction: column;
-}
-
-
-
-.bottom-bar {
-  position: sticky;
-  bottom: 0;
-  margin-top: 16px;
-  padding: 12px 14px;
-  background: #ffffff;
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  z-index: 10;
-}
-
-.bottom-bar__left {
-  min-width: 0;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-
-.bottom-bar__meta {
-  color: #303133;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-.bottom-bar__right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
+  padding: 1rem;
 }
 
 .between-controls {
@@ -573,10 +612,6 @@ onMounted(async () => {
   color: #606266;
   cursor: pointer;
   white-space: nowrap;
-}
-
-::v-deep(.error-cell) {
-  background-color: #ffebee !important;
 }
 
 .o-toggle { position:relative; display:inline-flex; align-items:center; cursor:pointer; }

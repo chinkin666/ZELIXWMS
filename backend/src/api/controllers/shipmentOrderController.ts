@@ -10,6 +10,7 @@ import { naturalSort } from '@/utils/naturalSort';
 import { fetchYamatoSortCodeBatchByPostcode, type YamatoCalcBatchByPostcodeItem } from '@/services/yamatoCalcService';
 import mongoose from 'mongoose';
 import { processOrderEvent, processOrderEventBulk } from '@/services/autoProcessingEngine';
+import { isBuiltInCarrierId, getBuiltInCarrier } from '@/data/builtInCarriers';
 /**
  * 軽量クエリ用の projection（原始データを除外）
  * - listOrders (列表查询) で使用
@@ -106,22 +107,7 @@ const localDayToDateRange = (
   return { start, end };
 };
 
-const normalizeDateOp = (op: Operator): Operator => {
-  // Relative operators behave like equals/between depending on value shape
-  if (
-    op === 'today' ||
-    op === 'yesterday' ||
-    op === 'thisWeek' ||
-    op === 'thisMonth' ||
-    op === 'last7Days' ||
-    op === 'last30Days' ||
-    op === 'next7Days' ||
-    op === 'next30Days'
-  ) {
-    return op;
-  }
-  return op;
-};
+// normalizeDateOp は現在不要（各相対日付演算子は buildMongoQueryFromFilters 内で直接処理される）
 
 const buildEmptyCondition = (field: string) => ({
   $or: [{ [field]: { $exists: false } }, { [field]: null }, { [field]: '' }],
@@ -180,8 +166,7 @@ const buildMongoQueryFromFilters = (filters: FilterPayload): Record<string, any>
   };
 
   for (const [field, cond] of Object.entries(filters || {})) {
-    const opRaw = cond?.operator as Operator;
-    const op = normalizeDateOp(opRaw);
+    const op = cond?.operator as Operator;
     const value = (cond as any)?.value;
 
     if (!field || typeof field !== 'string') continue;
@@ -983,14 +968,13 @@ export const listOrders = async (req: Request, res: Response): Promise<void> => 
     // 如果没有提供 page 参数，返回所有数据（用于前端分页）
     const hasPageParam = pageRaw !== undefined && pageRaw !== null && pageRaw !== '';
     const page = hasPageParam ? (typeof pageRaw === 'string' ? Math.max(Number(pageRaw) || 1, 1) : 1) : 1;
-    // NOTE: page が指定される場合はサーバー側で上限を設ける（過大レスポンス防止）
-    const limit = hasPageParam
-      ? (typeof limitRaw === 'string'
-          ? Math.min(Math.max(Number(limitRaw) || 10, 1), 1000)
-          : typeof limitRaw === 'number'
-            ? Math.min(Math.max(limitRaw || 10, 1), 1000)
-            : 10)
-      : undefined; // 没有 page 参数时，不限制 limit
+    // limit は page の有無にかかわらず適用（過大レスポンス防止）
+    const parsedLimit = typeof limitRaw === 'string'
+      ? Math.min(Math.max(Number(limitRaw) || 10, 1), 5000)
+      : typeof limitRaw === 'number'
+        ? Math.min(Math.max(limitRaw || 10, 1), 5000)
+        : undefined;
+    const limit = hasPageParam ? (parsedLimit ?? 10) : parsedLimit;
 
     // 不再使用时区偏移，直接使用本地时间
 
@@ -1032,8 +1016,10 @@ export const listOrders = async (req: Request, res: Response): Promise<void> => 
 
     // 如果没有 page 参数，返回所有数据
     if (!hasPageParam) {
-      const items = await ShipmentOrder.find(mongoQuery).select(LIGHT_PROJECTION).lean();
-      
+      let query = ShipmentOrder.find(mongoQuery).select(LIGHT_PROJECTION);
+      if (limit) query = query.limit(limit);
+      const items = await query.lean();
+
       // 如果是 orderNumber 排序，使用自然排序
       if (isOrderNumberSort) {
         items.sort((a, b) => {
@@ -1041,10 +1027,19 @@ export const listOrders = async (req: Request, res: Response): Promise<void> => 
           return sortOrder === 1 ? result : -result;
         });
       } else {
-        // 其他字段使用 MongoDB 排序
+        // 其他字段使用内存排序（支持嵌套字段）
+        const getVal = (obj: any, path: string): any => {
+          const parts = path.split('.');
+          let cur = obj;
+          for (const p of parts) {
+            if (cur == null) return undefined;
+            cur = cur[p];
+          }
+          return cur;
+        };
         items.sort((a: any, b: any) => {
-          const aVal = a[sortBy];
-          const bVal = b[sortBy];
+          const aVal = getVal(a, sortBy);
+          const bVal = getVal(b, sortBy);
           if (aVal === null || aVal === undefined) return sortOrder === 1 ? -1 : 1;
           if (bVal === null || bVal === undefined) return sortOrder === 1 ? 1 : -1;
           if (aVal < bVal) return sortOrder === 1 ? -1 : 1;
@@ -1052,7 +1047,7 @@ export const listOrders = async (req: Request, res: Response): Promise<void> => 
           return 0;
         });
       }
-      
+
       res.json(items); // 直接返回数组，兼容前端 fetchShipmentOrders 的解析逻辑
       return;
     }
@@ -1329,9 +1324,6 @@ export const bulkUpdateOrders = async (req: Request, res: Response): Promise<voi
 
     const now = new Date();
     
-    // 检查是否有 status 相关的更新字段
-    const hasStatusFields = Object.keys(updateFields).some(key => key.startsWith('status.'));
-    
     // 构建更新 payload
     const updatePayload: any = {
       $set: {
@@ -1339,13 +1331,6 @@ export const bulkUpdateOrders = async (req: Request, res: Response): Promise<voi
         updatedAt: now,
       },
     };
-
-    // 如果更新 status 字段，确保 status 对象存在
-    if (hasStatusFields) {
-      updatePayload.$setOnInsert = {
-        status: {},
-      };
-    }
 
     const result = await ShipmentOrder.updateMany(
       { _id: { $in: validIds.map((id: string) => new mongoose.Types.ObjectId(id)) } },
@@ -1579,21 +1564,38 @@ export const importCarrierReceiptRows = async (req: Request, res: Response): Pro
       .lean();
 
     const docMap = new Map<string, any>();
+    const rawIdMap = new Map<string, any>(); // string key -> original _id value
     const carrierIdsSet = new Set<string>();
     for (const d of docs) {
       const id = String((d as any)?._id);
       docMap.set(id, d);
-      if ((d as any)?.carrierId) carrierIdsSet.add(String((d as any).carrierId));
+      rawIdMap.set(id, (d as any)?._id);
+      const cid = (d as any)?.carrierId;
+      if (cid) carrierIdsSet.add(String(cid));
     }
 
     const carrierIds = Array.from(carrierIdsSet);
-    const carriers = await Carrier.find({ _id: { $in: carrierIds } })
-      .select(['_id', 'trackingIdColumnName'])
-      .lean();
+    // Use native collection query to handle mixed _id types (ObjectId and string like "__builtin_yamato_b2__")
+    const carrierIdFilters = carrierIds.map((cid) =>
+      mongoose.Types.ObjectId.isValid(cid) ? new mongoose.Types.ObjectId(cid) : cid,
+    );
+    const carriers = await Carrier.collection
+      .find({ _id: { $in: carrierIdFilters } as any }, { projection: { _id: 1, trackingIdColumnName: 1 } })
+      .toArray();
 
     const carrierTrackingMap = new Map<string, string | undefined>();
     for (const c of carriers) {
       carrierTrackingMap.set(String((c as any)?._id), (c as any)?.trackingIdColumnName);
+    }
+
+    // Fallback to built-in carriers for IDs not found in DB
+    for (const cid of carrierIds) {
+      if (!carrierTrackingMap.has(cid) && isBuiltInCarrierId(cid)) {
+        const builtIn = getBuiltInCarrier(cid);
+        if (builtIn) {
+          carrierTrackingMap.set(cid, builtIn.trackingIdColumnName);
+        }
+      }
     }
 
     const extractTrackingId = (
@@ -1651,18 +1653,26 @@ export const importCarrierReceiptRows = async (req: Request, res: Response): Pro
       const candidateTrackingId =
         extractTrackingId(rawRow as any, trackingIdColumnName) ||
         extractTrackingId(doc?.carrierRawRow as any, trackingIdColumnName);
+      // Sanitize rawRow keys: MongoDB rejects keys containing '.' or starting with '$'
+      const sanitizedRow: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(rawRow)) {
+        const safeKey = k.replace(/\./g, '_').replace(/^\$/, '_$');
+        sanitizedRow[safeKey] = v;
+      }
       const setPayload: Record<string, unknown> = {
-        carrierRawRow: rawRow,
+        carrierRawRow: sanitizedRow,
         'status.carrierReceipt.isReceived': true,
         'status.carrierReceipt.receivedAt': now,
         updatedAt: now,
       };
-      if (!existingTrackingId && candidateTrackingId) {
+      if (candidateTrackingId) {
         setPayload.trackingId = candidateTrackingId;
       }
+      // Use the original _id value from the document (preserves type: ObjectId or string)
+      const rawId = rawIdMap.get(id) ?? id;
       ops.push({
         updateOne: {
-          filter: { _id: id },
+          filter: { _id: rawId },
           update: {
             $set: setPayload,
           },
@@ -1679,6 +1689,7 @@ export const importCarrierReceiptRows = async (req: Request, res: Response): Pro
     // Collect matched order IDs for auto-processing
     const carrierMatchedIds = ops.map((op) => String((op as any).updateOne.filter._id));
 
+    // Collect debug info for first matched order
     res.json({
       message: 'Imported carrier receipt rows',
       data: {
@@ -1687,7 +1698,8 @@ export const importCarrierReceiptRows = async (req: Request, res: Response): Pro
         matchedOrders,
         updatedOrders,
         unmatched,
-        ambiguous: [...ambiguous, ...duplicatedInFile],
+        ambiguous,
+        duplicatedInFile,
       },
     });
 
@@ -1696,6 +1708,7 @@ export const importCarrierReceiptRows = async (req: Request, res: Response): Pro
       processOrderEventBulk(carrierMatchedIds, 'order.carrierReceived').catch(console.error);
     }
   } catch (error: any) {
+    console.error('[importCarrierReceiptRows] error:', error);
     res.status(500).json({ message: 'Failed to import carrier receipt rows', error: error.message });
   }
 };
