@@ -18,6 +18,7 @@ import {
 import { generateOrderNumbers } from '@/utils/idGenerator';
 import { isBuiltInCarrierId } from '@/data/builtInCarriers';
 import { logger } from '@/lib/logger';
+import { createApiLog, completeApiLog } from '@/services/apiLogger';
 
 /**
  * テナントIDを取得（将来的にはJWTなどから取得）
@@ -72,6 +73,11 @@ export const getCarrierAutomationConfig = async (req: Request, res: Response): P
             '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', 'A': 'A',
           },
         } : undefined,
+        autoValidation: {
+          enabled: false,
+          intervalMinutes: 5,
+          maxRetries: 5,
+        },
       });
       return;
     }
@@ -168,8 +174,21 @@ export const testCarrierAutomationConnection = async (req: Request, res: Respons
         return;
       }
 
+      const testLogId = await createApiLog({
+        apiName: 'Yamato B2',
+        action: '接続テスト',
+        requestUrl: config.yamatoB2.apiEndpoint,
+        requestMethod: 'POST',
+      });
+
       const service = createYamatoB2Service(config.yamatoB2, tenantId);
       const result = await service.testConnection();
+
+      await completeApiLog(testLogId, {
+        status: result.success ? 'success' : 'error',
+        message: result.message,
+      });
+
       res.json(result);
     } else {
       res.status(400).json({ message: `未対応の自動化タイプ: ${type}` });
@@ -223,8 +242,24 @@ export const yamatoB2Validate = async (req: Request, res: Response): Promise<voi
     }
 
     // Yamato B2 APIを呼び出し（検証のみ）
+    const logId = await createApiLog({
+      apiName: 'Yamato B2',
+      action: '検証',
+      requestUrl: config.yamatoB2.apiEndpoint,
+      requestMethod: 'POST',
+      metadata: { orderCount: orders.length },
+    });
+
     const service = createYamatoB2Service(config.yamatoB2, tenantId);
     const result = await service.validateShipments(orders);
+
+    await completeApiLog(logId, {
+      status: result.invalid_count > 0 ? 'error' : 'success',
+      processedCount: result.total,
+      successCount: result.valid_count,
+      errorCount: result.invalid_count,
+      message: `検証完了: ${result.valid_count}件成功, ${result.invalid_count}件エラー`,
+    });
 
     logger.info({
       total: result.total,
@@ -282,6 +317,14 @@ export const yamatoB2Export = async (req: Request, res: Response): Promise<void>
     }
 
     // Yamato B2 APIを呼び出し（エクスポート + 自動発行）
+    const exportLogId = await createApiLog({
+      apiName: 'Yamato B2',
+      action: 'エクスポート',
+      requestUrl: config.yamatoB2.apiEndpoint,
+      requestMethod: 'POST',
+      metadata: { orderCount: orders.length },
+    });
+
     const service = createYamatoB2Service(config.yamatoB2, tenantId);
     const exportResult = await service.exportAndPrint(orders);
 
@@ -385,6 +428,14 @@ export const yamatoB2Export = async (req: Request, res: Response): Promise<void>
       }
     }
 
+    await completeApiLog(exportLogId, {
+      status: exportResult.error_count > 0 ? 'error' : 'success',
+      processedCount: exportResult.total,
+      successCount: exportResult.success_count,
+      errorCount: exportResult.error_count,
+      message: `エクスポート完了: ${exportResult.success_count}件成功, ${exportResult.error_count}件エラー, ${updatedCount}件更新`,
+    });
+
     logger.info({
       total: exportResult.total,
       success: exportResult.success_count,
@@ -441,8 +492,26 @@ export const yamatoB2Print = async (req: Request, res: Response): Promise<void> 
     }
 
     // Yamato B2 APIを呼び出し
+    const printLogId = await createApiLog({
+      apiName: 'Yamato B2',
+      action: 'ラベル印刷',
+      requestUrl: config.yamatoB2.apiEndpoint,
+      requestMethod: 'POST',
+      metadata: { trackingCount: parsed.data.trackingNumbers.length },
+    });
+
     const service = createYamatoB2Service(config.yamatoB2, tenantId);
     const result = await service.printLabels(parsed.data.trackingNumbers);
+
+    await completeApiLog(printLogId, {
+      status: result.success ? 'success' : 'error',
+      processedCount: result.tracking_numbers.length,
+      successCount: result.success ? result.tracking_numbers.length : 0,
+      errorCount: result.success ? 0 : result.tracking_numbers.length,
+      message: result.success
+        ? `印刷完了: ${result.tracking_numbers.length}件`
+        : `印刷失敗: ${result.error || '不明なエラー'}`,
+    });
 
     logger.info({
       trackingNumbers: result.tracking_numbers,
@@ -540,6 +609,17 @@ export const yamatoB2Import = async (req: Request, res: Response): Promise<void>
     }
 
     // Yamato B2 APIから履歴を取得（日付フィルタ付き）
+    const importLogId = await createApiLog({
+      apiName: 'Yamato B2',
+      action: 'インポート',
+      requestUrl: config.yamatoB2.apiEndpoint,
+      requestMethod: 'POST',
+      metadata: {
+        shipmentDateFrom: parsed.data.shipmentDateFrom,
+        shipmentDateTo: parsed.data.shipmentDateTo,
+      },
+    });
+
     logger.info({
       shipmentDateFrom: parsed.data.shipmentDateFrom,
       shipmentDateTo: parsed.data.shipmentDateTo,
@@ -599,6 +679,14 @@ export const yamatoB2Import = async (req: Request, res: Response): Promise<void>
         }
       }
     }
+
+    await completeApiLog(importLogId, {
+      status: 'success',
+      processedCount: history.length,
+      successCount: matchedCount,
+      errorCount: unmatchedCount,
+      message: `インポート完了: ${history.length}件取得, ${matchedCount}件マッチ, ${unmatchedCount}件未マッチ`,
+    });
 
     logger.info({
       total: history.length,
@@ -990,6 +1078,13 @@ export const yamatoB2Unconfirm = async (req: Request, res: Response): Promise<vo
     }
 
     // B2 Cloud からの削除
+    const unconfirmLogId = await createApiLog({
+      apiName: 'Yamato B2',
+      action: '確認取消',
+      requestMethod: 'POST',
+      metadata: { orderCount: orders.length },
+    });
+
     let b2DeleteResult: { success: boolean; deleted: number; error?: string } | null = null;
     let carrierDeleteSkipped = false;
 
@@ -1027,6 +1122,13 @@ export const yamatoB2Unconfirm = async (req: Request, res: Response): Promise<vo
         { 'status.shipped.shippedAt': '' }
       );
     }
+
+    await completeApiLog(unconfirmLogId, {
+      status: 'success',
+      processedCount: orders.length,
+      successCount: orders.length,
+      message: `確認取消完了: ${orders.length}件`,
+    });
 
     logger.info({
       orderIds,

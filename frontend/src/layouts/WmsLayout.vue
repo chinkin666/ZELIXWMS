@@ -27,6 +27,7 @@ const wmsMenuItems = computed(() => [
   { label: '出荷実績', to: '/shipment-results' },
   { label: '棚卸管理', to: '/stocktaking' },
   { label: '返品管理', to: '/returns' },
+  { label: '倉庫オペレーション', to: '/warehouse-ops' },
   { label: '日次管理', to: '/daily' },
   { label: '設定管理', to: '/settings' },
 ])
@@ -73,6 +74,7 @@ const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'ロット管理', to: '/inventory/lots' },
     { label: '賞味期限アラート', to: '/inventory/expiry-alerts' },
     { label: 'ロケーション', to: '/inventory/locations' },
+    { label: '在庫台帳', to: '/inventory/ledger' },
   ],
   '/stocktaking': [
     { label: '棚卸一覧', to: '/stocktaking/list' },
@@ -81,6 +83,11 @@ const subMenuMap: Record<string, SubMenuItem[]> = {
   '/returns': [
     { label: '返品一覧', to: '/returns/list' },
     { label: '返品作成', to: '/returns/create' },
+  ],
+  '/warehouse-ops': [
+    { label: 'タスクダッシュボード', to: '/warehouse-ops/tasks' },
+    { label: 'ウェーブ管理', to: '/warehouse-ops/waves' },
+    { label: 'シリアル番号', to: '/warehouse-ops/serial-numbers' },
   ],
   '/daily': [
     { label: '日次レポート', to: '/daily/list' },
@@ -98,11 +105,15 @@ const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '自動処理', to: '/settings/auto-processing' },
     { label: '出荷メール設定', to: '/settings/email-templates' },
     { label: '得意先一覧', to: '/settings/customers' },
+    { label: '顧客（3PL荷主）', to: '/settings/clients' },
+    { label: '倉庫管理', to: '/settings/warehouses' },
     { label: '仕入先一覧', to: '/settings/suppliers' },
     { label: '在庫区分', to: '/settings/inventory-categories' },
     { label: '操作ログ', to: '/settings/operation-logs' },
     { label: 'API連携ログ', to: '/settings/api-logs' },
     { label: 'WMSスケジュール', to: '/settings/wms-schedules' },
+    { label: 'ルール設定', to: '/settings/rules' },
+    { label: 'テナント管理', to: '/settings/tenants' },
     { label: '応用設定', to: '/settings/system' },
   ],
 }

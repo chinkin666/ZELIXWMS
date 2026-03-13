@@ -547,8 +547,8 @@ import { type UserOrderRow, generateTempId } from '@/types/orderRow'
 import { fetchOrderSourceCompanies } from '@/api/orderSourceCompany'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
 import { ShipmentOrderBulkApiError, createShipmentOrdersBulk, fetchShipmentOrders, updateShipmentOrder, updateShipmentOrderStatusBulk, deleteShipmentOrdersBulk } from '@/api/shipmentOrders'
-import { yamatoB2Validate, yamatoB2Export } from '@/api/carrierAutomation'
-import type { YamatoB2ValidateResult, YamatoB2ExportResult } from '@/types/carrierAutomation'
+import { yamatoB2Validate, yamatoB2Export, fetchCarrierAutomationConfig } from '@/api/carrierAutomation'
+import type { YamatoB2ValidateResult, YamatoB2ExportResult, AutoValidationConfig } from '@/types/carrierAutomation'
 import YamatoB2ValidateResultDialog from '@/components/carrier-automation/YamatoB2ValidateResultDialog.vue'
 import YamatoB2ExportResultDialog from '@/components/carrier-automation/YamatoB2ExportResultDialog.vue'
 import YamatoB2ApiErrorDialog from '@/components/carrier-automation/YamatoB2ApiErrorDialog.vue'
@@ -1616,22 +1616,58 @@ const handleB2ValidateDialogConfirm = async () => {
 }
 
 // --- 自動 B2 Cloud 検証（処理中の注文をバックグラウンドで検証） ---
-// 初回検証失敗時は「検証中」を維持し、短い待機後に再検証。2回目も失敗した場合のみエラー表示。
-const RETRY_DELAY_MS = 8_000 // 初回失敗→リトライまでの待機時間
+// 設定に基づいて自動リトライ。設定がOFFの場合は従来の2回リトライ（8秒間隔）にフォールバック。
+const FALLBACK_RETRY_DELAY_MS = 8_000
+const FALLBACK_MAX_RETRIES = 2
+let autoValidateRetryCount = 0
+let cachedAutoValidationConfig: AutoValidationConfig | null = null
+
+const getAutoValidationConfig = async (): Promise<AutoValidationConfig> => {
+  if (cachedAutoValidationConfig) return cachedAutoValidationConfig
+  try {
+    const config = await fetchCarrierAutomationConfig('yamato-b2')
+    if (config.autoValidation?.enabled) {
+      cachedAutoValidationConfig = config.autoValidation
+      return config.autoValidation
+    }
+  } catch { /* use fallback */ }
+  return { enabled: false, intervalMinutes: 0, maxRetries: FALLBACK_MAX_RETRIES }
+}
 
 const autoValidateProcessingOrders = async (scopeIds?: Set<string>, isRetry = false) => {
+  console.log(`[autoValidate] called: isRetry=${isRetry}, retryCount=${autoValidateRetryCount}, scopeIds=${scopeIds ? [...scopeIds].join(',') : 'none'}`)
+
   // リトライタイマーをクリア
   if (autoValidateRetryTimer) {
     clearTimeout(autoValidateRetryTimer)
     autoValidateRetryTimer = null
   }
 
-  // 処理中の注文を取得（未確定 & 保留なし、scopeIds があれば今回提出分のみ）
+  if (!isRetry) {
+    autoValidateRetryCount = 0
+    cachedAutoValidationConfig = null
+  }
+
+  const avConfig = await getAutoValidationConfig()
+  const maxRetries = avConfig.enabled ? avConfig.maxRetries : FALLBACK_MAX_RETRIES
+  const retryDelayMs = avConfig.enabled ? avConfig.intervalMinutes * 60_000 : FALLBACK_RETRY_DELAY_MS
+  console.log(`[autoValidate] config: enabled=${avConfig.enabled}, interval=${avConfig.intervalMinutes}min, maxRetries=${maxRetries}, delayMs=${retryDelayMs}`)
+
+  // リトライ時は最新データを再取得（前回の doConfirmOrders でステータスが変わっている可能性）
+  if (isRetry) {
+    await loadPendingWaybillOrders()
+  }
+
+  // 処理中の注文を取得（未確定 & 保留なし、scopeIds があれば対象分のみ）
   const processingOrders = pendingWaybillRows.value.filter(
     (r: any) => !r.status?.held?.isHeld && !r.status?.confirm?.isConfirmed
       && (!scopeIds || scopeIds.has(String(r._id || r.id))),
   )
-  if (processingOrders.length === 0) return
+  console.log(`[autoValidate] processingOrders=${processingOrders.length}, pendingWaybillRows=${pendingWaybillRows.value.length}`)
+  if (processingOrders.length === 0) {
+    isAutoValidating.value = false
+    return
+  }
 
   // B2 キャリアの注文のみ抽出
   const b2Orders = processingOrders.filter((r) => isYamatoB2Carrier(r.carrierId))
@@ -1677,16 +1713,20 @@ const autoValidateProcessingOrders = async (scopeIds?: Set<string>, isRetry = fa
     }
 
     if (newErrors.size > 0) {
-      if (!isRetry) {
-        // 初回失敗: エラーを表示せず「検証中」を維持、短い待機後にリトライ
+      autoValidateRetryCount++
+      console.log(`[autoValidate] errors=${newErrors.size}, retryCount=${autoValidateRetryCount}/${maxRetries}`)
+      if (autoValidateRetryCount < maxRetries) {
+        // リトライ上限未到達: 検証中を維持し、設定間隔後にリトライ
+        console.log(`[autoValidate] scheduling retry in ${retryDelayMs}ms (${retryDelayMs / 60000}min)`)
         autoValidateRetryTimer = setTimeout(() => {
+          console.log(`[autoValidate] retry timer fired`)
           autoValidateRetryTimer = null
-          // 失敗した注文IDのみを対象にリトライ
           const failedIds = new Set(newErrors.keys())
           autoValidateProcessingOrders(failedIds, true)
-        }, RETRY_DELAY_MS)
+        }, retryDelayMs)
       } else {
-        // 2回目失敗: エラーを表示（ユーザーが修正して手動で再検証）
+        // リトライ上限到達: エラーを表示（ユーザーが修正して手動で再検証）
+        console.log(`[autoValidate] max retries reached, showing errors`)
         b2ValidationErrors.value = newErrors
         isAutoValidating.value = false
         toast.showWarning(`${newErrors.size}件のデータにエラーがあります。修正後、再度確認してください。`)
@@ -1700,14 +1740,15 @@ const autoValidateProcessingOrders = async (scopeIds?: Set<string>, isRetry = fa
     }
     return // finally で isAutoValidating をリセットしないよう早期 return
   } catch (e: any) {
-    if (!isRetry) {
-      // 初回 API エラー: 検証中を維持、短い待機後にリトライ
+    autoValidateRetryCount++
+    if (autoValidateRetryCount < maxRetries) {
+      // リトライ上限未到達: 検証中を維持、設定間隔後にリトライ
       autoValidateRetryTimer = setTimeout(() => {
         autoValidateRetryTimer = null
         autoValidateProcessingOrders(scopeIds, true)
-      }, RETRY_DELAY_MS)
+      }, retryDelayMs)
     } else {
-      // 2回目 API エラー: エラーを表示（ユーザーが手動で再検証）
+      // リトライ上限到達: エラーを表示
       isAutoValidating.value = false
       toast.showError(e?.message || 'B2 Cloud の検証中にエラーが発生しました')
     }

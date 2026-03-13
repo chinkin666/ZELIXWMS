@@ -46,6 +46,18 @@ export interface IYamatoB2Config {
 }
 
 /**
+ * 自動検証設定
+ */
+export interface IAutoValidationConfig {
+  /** 自動検証有効フラグ */
+  enabled: boolean;
+  /** 検証間隔（分） */
+  intervalMinutes: number;
+  /** 最大リトライ回数 */
+  maxRetries: number;
+}
+
+/**
  * 配送業者自動化設定
  */
 export interface ICarrierAutomationConfig {
@@ -58,6 +70,8 @@ export interface ICarrierAutomationConfig {
   enabled: boolean;
   /** Yamato B2 設定 */
   yamatoB2?: IYamatoB2Config;
+  /** 自動検証設定 */
+  autoValidation?: IAutoValidationConfig;
   /** 作成日時 */
   createdAt: Date;
   /** 更新日時 */
@@ -162,6 +176,13 @@ const carrierAutomationConfigSchema = new mongoose.Schema<ICarrierAutomationConf
     },
     yamatoB2: {
       type: yamatoB2ConfigSchema,
+    },
+    autoValidation: {
+      type: new mongoose.Schema({
+        enabled: { type: Boolean, default: false },
+        intervalMinutes: { type: Number, default: 5, enum: [1, 5, 10, 30, 60] },
+        maxRetries: { type: Number, default: 5, min: 1, max: 20 },
+      }, { _id: false }),
     },
   },
   {

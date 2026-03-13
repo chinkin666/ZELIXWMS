@@ -139,6 +139,42 @@
               <input class="o-input" v-model="yamatoB2Form.invoiceFreightNo" placeholder="2桁" maxlength="2" style="width:100px" />
               <div class="field-hint">運賃の管理番号（2桁）</div>
             </div>
+            <hr class="o-divider" />
+            <h4 class="section-label">自動検証設定</h4>
+            <div class="field-hint" style="margin-bottom:16px">出荷確認時にB2 Cloudへの自動検証を定期的にリトライする設定です</div>
+
+            <div class="o-form-group">
+              <label class="o-form-label">自動検証</label>
+              <div style="display:flex;align-items:center;gap:12px">
+                <label class="o-toggle">
+                  <input type="checkbox" v-model="autoValidationForm.enabled" />
+                  <span class="o-toggle-slider"></span>
+                </label>
+                <span class="form-hint">ONにすると、検証失敗時に自動でリトライします</span>
+              </div>
+            </div>
+
+            <div class="o-form-group" v-if="autoValidationForm.enabled">
+              <label class="o-form-label">検証間隔</label>
+              <div style="display:flex;align-items:center;gap:12px">
+                <select class="o-input" v-model.number="autoValidationForm.intervalMinutes" style="width:160px">
+                  <option :value="1">1分</option>
+                  <option :value="5">5分</option>
+                  <option :value="10">10分</option>
+                  <option :value="30">30分</option>
+                  <option :value="60">60分</option>
+                </select>
+                <span class="form-hint">検証失敗後、次のリトライまでの間隔</span>
+              </div>
+            </div>
+
+            <div class="o-form-group" v-if="autoValidationForm.enabled">
+              <label class="o-form-label">最大リトライ回数</label>
+              <div style="display:flex;align-items:center;gap:12px">
+                <input class="o-input" type="number" v-model.number="autoValidationForm.maxRetries" min="1" max="20" style="width:100px" />
+                <span class="form-hint">この回数を超えるとエラーを表示して停止します</span>
+              </div>
+            </div>
           </div>
 
           <div class="form-actions">
@@ -166,7 +202,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import type { YamatoB2Config, ConnectionTestResult, ServiceTypeConfig, PdfSource } from '@/types/carrierAutomation'
+import type { YamatoB2Config, ConnectionTestResult, ServiceTypeConfig, PdfSource, AutoValidationConfig } from '@/types/carrierAutomation'
 import {
   fetchCarrierAutomationConfig,
   saveCarrierAutomationConfig,
@@ -296,6 +332,12 @@ function updateMappingRow(invoiceType: string, field: 'b2ServiceType' | 'printTe
   }
 }
 
+const autoValidationForm = ref<AutoValidationConfig>({
+  enabled: false,
+  intervalMinutes: 5,
+  maxRetries: 5,
+})
+
 const enabled = ref(false)
 
 // For template binding
@@ -326,6 +368,13 @@ const loadConfig = async () => {
 
     const config = await fetchCarrierAutomationConfig('yamato-b2')
     enabled.value = config.enabled || false
+    if (config.autoValidation) {
+      autoValidationForm.value = {
+        enabled: config.autoValidation.enabled ?? false,
+        intervalMinutes: config.autoValidation.intervalMinutes ?? 5,
+        maxRetries: config.autoValidation.maxRetries ?? 5,
+      }
+    }
     if (config.yamatoB2) {
       // Merge serviceTypeMapping with defaults
       const mergedMapping: Record<string, ServiceTypeConfig> = JSON.parse(JSON.stringify(defaultServiceTypeMapping))
@@ -366,6 +415,7 @@ const saveConfig = async () => {
     await saveCarrierAutomationConfig('yamato-b2', {
       enabled: enabled.value,
       yamatoB2: yamatoB2Form.value,
+      autoValidation: autoValidationForm.value,
     })
     showToast('設定を保存しました', 'success')
   } catch (error: any) {
@@ -388,6 +438,7 @@ const testConnection = async () => {
     await saveCarrierAutomationConfig('yamato-b2', {
       enabled: enabled.value,
       yamatoB2: yamatoB2Form.value,
+      autoValidation: autoValidationForm.value,
     })
 
     // Then test

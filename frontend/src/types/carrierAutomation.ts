@@ -38,6 +38,18 @@ export interface YamatoB2Config {
 }
 
 /**
+ * 自動検証設定
+ */
+export interface AutoValidationConfig {
+  /** 自動検証有効フラグ */
+  enabled: boolean
+  /** 検証間隔（分）: 5, 10, 30, 60 */
+  intervalMinutes: number
+  /** 最大リトライ回数 */
+  maxRetries: number
+}
+
+/**
  * 配送業者自動化設定
  */
 export interface CarrierAutomationConfig {
@@ -46,6 +58,7 @@ export interface CarrierAutomationConfig {
   automationType: string
   enabled: boolean
   yamatoB2?: YamatoB2Config
+  autoValidation?: AutoValidationConfig
   createdAt?: string
   updatedAt?: string
 }
@@ -56,6 +69,7 @@ export interface CarrierAutomationConfig {
 export interface UpsertCarrierAutomationConfigDto {
   enabled: boolean
   yamatoB2?: YamatoB2Config
+  autoValidation?: AutoValidationConfig
 }
 
 /**

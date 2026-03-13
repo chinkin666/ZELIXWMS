@@ -27,6 +27,15 @@ import { systemSettingsRouter } from './systemSettings';
 import { emailTemplateRouter } from './emailTemplates';
 import { apiLogRouter } from './apiLogs';
 import { wmsScheduleRouter } from './wmsSchedules';
+import { taskRouter } from './tasks';
+import { waveRouter } from './waves';
+import { ruleRouter } from './rules';
+import { serialNumberRouter } from './serialNumbers';
+import { tenantRouter } from './tenants';
+import { inventoryLedgerRouter } from './inventoryLedger';
+import { clientRouter } from './clients';
+import { warehouseRouter } from './warehouses';
+import { workflowRouter } from './workflows';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -58,6 +67,15 @@ export const registerCoreRoutes = (app: Application): void => {
   api.use('/email-templates', emailTemplateRouter);
   api.use('/api-logs', apiLogRouter);
   api.use('/wms-schedules', wmsScheduleRouter);
+  api.use('/tasks', taskRouter);
+  api.use('/waves', waveRouter);
+  api.use('/rules', ruleRouter);
+  api.use('/serial-numbers', serialNumberRouter);
+  api.use('/tenants', tenantRouter);
+  api.use('/inventory-ledger', inventoryLedgerRouter);
+  api.use('/clients', clientRouter);
+  api.use('/warehouses', warehouseRouter);
+  api.use('/workflows', workflowRouter);
 
   app.use('/api', api);
 };

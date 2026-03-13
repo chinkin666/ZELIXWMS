@@ -93,6 +93,12 @@ const router = createRouter({
               component: () => import('@/views/shipment-orders/ShipmentOrderCreate.vue'),
               meta: { title: '出荷指示作成' },
             },
+            {
+              path: 'create-v2',
+              name: 'ShipmentOrderCreateV2',
+              component: () => import('@/modules/shipment/pages/ShipmentOrderCreatePage.vue'),
+              meta: { title: '出荷指示作成 V2' },
+            },
           ],
         },
         {
@@ -222,6 +228,12 @@ const router = createRouter({
               component: () => import('@/views/inventory/LocationSettings.vue'),
               meta: { title: 'ロケーション管理' },
             },
+            {
+              path: 'ledger',
+              name: 'InventoryLedgerDashboard',
+              component: () => import('@/views/inventory/InventoryLedgerDashboard.vue'),
+              meta: { title: '在庫台帳ダッシュボード' },
+            },
           ],
         },
         {
@@ -271,6 +283,31 @@ const router = createRouter({
               name: 'ReturnOrderDetail',
               component: () => import('@/views/returns/ReturnOrderDetail.vue'),
               meta: { title: '返品詳細' },
+            },
+          ],
+        },
+        {
+          path: 'warehouse-ops',
+          meta: { title: '倉庫オペレーション' },
+          redirect: '/warehouse-ops/tasks',
+          children: [
+            {
+              path: 'tasks',
+              name: 'TaskDashboard',
+              component: () => import('@/views/warehouse/TaskDashboard.vue'),
+              meta: { title: 'タスクダッシュボード' },
+            },
+            {
+              path: 'waves',
+              name: 'WaveManagement',
+              component: () => import('@/views/warehouse/WaveManagement.vue'),
+              meta: { title: 'ウェーブ管理' },
+            },
+            {
+              path: 'serial-numbers',
+              name: 'SerialNumberTracking',
+              component: () => import('@/views/warehouse/SerialNumberTracking.vue'),
+              meta: { title: 'シリアル番号管理' },
             },
           ],
         },
@@ -419,10 +456,34 @@ const router = createRouter({
               meta: { title: '得意先一覧' },
             },
             {
+              path: 'clients',
+              name: 'ClientSettings',
+              component: () => import('@/views/settings/ClientSettings.vue'),
+              meta: { title: '顧客一覧（3PL荷主）' },
+            },
+            {
+              path: 'warehouses',
+              name: 'WarehouseSettings',
+              component: () => import('@/views/settings/WarehouseSettings.vue'),
+              meta: { title: '倉庫管理' },
+            },
+            {
               path: 'wms-schedules',
               name: 'WmsScheduleView',
               component: () => import('@/views/settings/WmsScheduleView.vue'),
               meta: { title: 'WMSスケジュール' },
+            },
+            {
+              path: 'rules',
+              name: 'RuleSettings',
+              component: () => import('@/views/settings/RuleSettings.vue'),
+              meta: { title: 'ルール設定' },
+            },
+            {
+              path: 'tenants',
+              name: 'TenantSettings',
+              component: () => import('@/views/settings/TenantSettings.vue'),
+              meta: { title: 'テナント管理' },
             },
             {
               path: 'system',

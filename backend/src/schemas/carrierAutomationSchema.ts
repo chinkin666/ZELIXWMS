@@ -26,11 +26,23 @@ export const yamatoB2ConfigSchema = z.object({
 });
 
 /**
+ * 自動検証設定スキーマ
+ */
+export const autoValidationConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  intervalMinutes: z.number().refine(v => [1, 5, 10, 30, 60].includes(v), {
+    message: '検証間隔は1, 5, 10, 30, 60分のいずれかです',
+  }).default(5),
+  maxRetries: z.number().int().min(1).max(20).default(5),
+});
+
+/**
  * CarrierAutomationConfig 作成/更新スキーマ
  */
 export const upsertCarrierAutomationConfigSchema = z.object({
   enabled: z.boolean().default(false),
   yamatoB2: yamatoB2ConfigSchema.optional(),
+  autoValidation: autoValidationConfigSchema.optional(),
 });
 
 /**
