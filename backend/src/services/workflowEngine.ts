@@ -65,7 +65,7 @@ export class WorkflowEngine {
 
   static async createOutboundWave(params: {
     warehouseId: string;
-    shipmentIds: string[];
+    shipmentOrderIds: string[];
     priority?: string;
     assignedTo?: string;
     memo?: string;

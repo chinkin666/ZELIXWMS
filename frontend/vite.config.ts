@@ -18,6 +18,7 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
     port: 4001,
     proxy: {
       // 代理本地打印桥接服务，避免 CORS 问题

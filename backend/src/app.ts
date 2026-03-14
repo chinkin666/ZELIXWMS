@@ -16,7 +16,10 @@ export const createApp = () => {
   // CORS 配置
   app.use(
     cors({
-      origin: process.env.FRONTEND_URL || 'http://localhost:4001',
+      origin: process.env.FRONTEND_URL || [
+        'http://localhost:4001',
+        'http://192.168.0.166:4001',
+      ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],

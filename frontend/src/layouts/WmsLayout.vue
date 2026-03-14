@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter, RouterView } from 'vue-router'
 import { useI18n } from '../composables/useI18n'
 import ToastContainer from '../components/odoo/ToastContainer.vue'
@@ -127,6 +127,30 @@ const activeSection = computed(() => {
 
 const subMenuItems = computed<SubMenuItem[]>(() => {
   return subMenuMap[activeSection.value] ?? []
+})
+
+const subNavRef = ref<HTMLElement | null>(null)
+const subNavHeight = ref(36)
+
+const updateSubNavHeight = () => {
+  if (subNavRef.value) {
+    subNavHeight.value = subNavRef.value.offsetHeight
+  }
+}
+
+watch(subMenuItems, () => {
+  nextTick(updateSubNavHeight)
+})
+
+onMounted(() => {
+  nextTick(updateSubNavHeight)
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(updateSubNavHeight)
+    watch(subNavRef, (el, _, onCleanup) => {
+      if (el) ro.observe(el)
+      onCleanup(() => ro.disconnect())
+    }, { immediate: true })
+  }
 })
 
 function isSubActive(to: string) {
@@ -262,7 +286,7 @@ watch(() => route.path, () => {
     </nav>
 
     <!-- ===== Sub-header ===== -->
-    <nav v-if="activeSection !== ''" class="o-sub-navbar">
+    <nav v-if="activeSection !== ''" ref="subNavRef" class="o-sub-navbar">
       <div class="o-sub-navbar-inner">
         <button
           v-for="item in subMenuItems"
@@ -286,7 +310,7 @@ watch(() => route.path, () => {
     </Transition>
 
     <!-- Main content area -->
-    <main class="o-action-manager">
+    <main class="o-action-manager" :style="activeSection ? { marginTop: `calc(var(--o-navbar-height) + ${subNavHeight}px)` } : undefined">
       <RouterView v-slot="{ Component }">
         <Transition name="o-page" mode="out-in">
           <component :is="Component" :key="$route.path" />
@@ -457,24 +481,24 @@ watch(() => route.path, () => {
   top: var(--o-navbar-height);
   left: 0;
   right: 0;
-  height: var(--o-sub-navbar-height, 36px);
+  height: auto;
   background: var(--o-view-background);
   border-bottom: 1px solid var(--o-border-color);
   z-index: 999;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
 }
 .o-sub-navbar-inner {
   display: flex;
   align-items: center;
-  height: 100%;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  overflow-x: hidden;
   padding: 0 0.5rem;
   gap: 0;
 }
 .o-sub-navbar-inner::-webkit-scrollbar { display: none; }
 .o-sub-navbar-entry {
-  height: 100%;
+  height: 36px;
   display: flex;
   align-items: center;
   padding: 0 0.75rem;
@@ -501,9 +525,6 @@ watch(() => route.path, () => {
   margin-top: var(--o-navbar-height);
   overflow-y: auto;
   background: var(--o-webclient-background);
-}
-.o-web-client:has(.o-sub-navbar) .o-action-manager {
-  margin-top: calc(var(--o-navbar-height) + var(--o-sub-navbar-height, 36px));
 }
 
 .o-mobile-backdrop { display: none; }
