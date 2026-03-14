@@ -148,7 +148,7 @@ export function useInspectionPrint() {
       lastPrintObjectUrl = url
       printImageUrl.value = url
     } catch (e: any) {
-      console.error('Print preview render error:', e)
+      // 印刷プレビューエラー / 打印预览错误
       printError.value = e?.message || String(e)
     } finally {
       printRendering.value = false
@@ -203,7 +203,7 @@ export function useInspectionPrint() {
       lastPrintObjectUrl = url
       printImageUrl.value = url
     } catch (e: any) {
-      console.error('Print preview render error:', e)
+      // 印刷プレビューエラー / 打印预览错误
       printError.value = e?.message || String(e)
     } finally {
       printRendering.value = false
@@ -211,37 +211,55 @@ export function useInspectionPrint() {
   }
 
   async function executePrint(order: OrderDocument) {
-    if (!printImageUrl.value || !printTemplate.value) return
+    if (!printImageUrl.value || !printTemplate.value) {
+      printError.value = '印刷データが準備できていません'
+      showToast('印刷データが準備できていません', 'danger')
+      return
+    }
 
-    await printImage(printImageUrl.value, {
-      widthMm: printTemplate.value.canvas.widthMm,
-      heightMm: printTemplate.value.canvas.heightMm,
-      title: `Print ${order.orderNumber || ''}`.trim(),
-    })
+    try {
+      await printImage(printImageUrl.value, {
+        widthMm: printTemplate.value.canvas.widthMm,
+        heightMm: printTemplate.value.canvas.heightMm,
+        title: `Print ${order.orderNumber || ''}`.trim(),
+      })
 
-    const config = getPrintConfig()
-    if (config.method === 'local-bridge') {
-      showToast('印刷ジョブを送信しました', 'success')
-    } else {
-      showToast('印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）', 'info', 5000)
+      const config = getPrintConfig()
+      if (config.method === 'local-bridge') {
+        showToast('印刷ジョブを送信しました', 'success')
+      } else {
+        showToast('印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）', 'info', 5000)
+      }
+    } catch (e: any) {
+      const msg = e?.message || String(e)
+      printError.value = msg
+      showToast(`印刷に失敗しました: ${msg}`, 'danger', 5000)
     }
   }
 
   async function printFromB2WebApi(order: OrderDocument) {
     if (!order.trackingId) {
-      showToast('追跡番号がありません', 'warning')
+      printError.value = '追跡番号がありません'
+      showToast('追跡番号がありません（B2 CloudからPDFを取得できません）', 'danger')
       return
     }
-    const pdfBlob = await yamatoB2FetchBatchPdf([order.trackingId])
-    await printPdfBlob(pdfBlob, {
-      title: `Print ${order.orderNumber || ''}`.trim(),
-      templateType: 'b2-cloud',
-    })
-    const config = getPrintConfig()
-    if (config.method === 'local-bridge') {
-      showToast('印刷ジョブを送信しました', 'success')
-    } else {
-      showToast('印刷を開始しました', 'success')
+
+    try {
+      const pdfBlob = await yamatoB2FetchBatchPdf([order.trackingId])
+      await printPdfBlob(pdfBlob, {
+        title: `Print ${order.orderNumber || ''}`.trim(),
+        templateType: 'b2-cloud',
+      })
+      const config = getPrintConfig()
+      if (config.method === 'local-bridge') {
+        showToast('印刷ジョブを送信しました', 'success')
+      } else {
+        showToast('印刷を開始しました', 'success')
+      }
+    } catch (e: any) {
+      const msg = e?.message || String(e)
+      printError.value = msg
+      showToast(`B2 Cloud PDF印刷に失敗しました: ${msg}`, 'danger', 5000)
     }
   }
 
@@ -254,7 +272,7 @@ export function useInspectionPrint() {
         updateShipmentOrderStatus(orderId, 'mark-inspected'),
       ])
     } catch (e: any) {
-      console.error('Failed to update order status:', e)
+      // ステータス更新失敗 / 状态更新失败
       showToast(`ステータス更新に失敗しました: ${e?.message || String(e)}`, 'danger')
     }
   }
@@ -265,7 +283,7 @@ export function useInspectionPrint() {
     try {
       await updateShipmentOrderStatus(orderId, 'mark-inspected')
     } catch (e: any) {
-      console.error('Failed to update order status:', e)
+      // ステータス更新失敗 / 状态更新失败
       showToast(`ステータス更新に失敗しました: ${e?.message || String(e)}`, 'danger')
     }
   }
