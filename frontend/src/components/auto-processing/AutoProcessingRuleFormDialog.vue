@@ -1,7 +1,7 @@
 <template>
   <ODialog
     :open="modelValue"
-    :title="isEditing ? 'ルールを編集' : 'ルールを追加'"
+    :title="isEditing ? '自動処理ルールを編集' : '自動処理の新規登録'"
     @close="emit('update:modelValue', false)"
     width="900px"
   >
@@ -11,7 +11,7 @@
         <h3 class="section-title">基本設定</h3>
         <div class="form-grid">
           <div class="o-form-group">
-            <label class="o-form-label">名前 *</label>
+            <label class="o-form-label">ルール名 <span class="required-badge">必須</span></label>
             <input class="o-input" v-model="form.name" placeholder="ルール名を入力" />
           </div>
           <div class="o-form-group">
@@ -159,7 +159,7 @@ const handleSubmit = () => {
 .form-section {
   margin-bottom: 24px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid var(--o-border-color, #ebeef5);
 }
 
 .form-section:last-child {
@@ -170,13 +170,13 @@ const handleSubmit = () => {
 .section-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--o-gray-800, #303133);
   margin: 0 0 12px 0;
 }
 
 .section-hint {
   font-size: 13px;
-  color: #909399;
+  color: var(--o-gray-500, #909399);
   margin: 0 0 12px 0;
 }
 
@@ -210,7 +210,14 @@ const handleSubmit = () => {
 .o-toggle input { position:absolute; opacity:0; width:0; height:0; }
 .o-toggle-slider { width:40px; height:20px; background:var(--o-toggle-off, #ccc); border-radius:10px; transition:0.2s; position:relative; }
 .o-toggle-slider::after { content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; top:2px; left:2px; transition:0.2s; }
-.o-toggle input:checked + .o-toggle-slider { background:var(--o-brand-primary, #714b67); }
+.o-toggle input:checked + .o-toggle-slider { background:var(--o-brand-primary, #D97756); }
+
+.required-badge {
+  display: inline-block; background: #dc3545; color: #fff;
+  font-size: 10px; font-weight: 700; line-height: 1;
+  padding: 2px 5px; border-radius: 3px; white-space: nowrap;
+  vertical-align: middle; margin-left: 4px;
+}
 .o-toggle input:checked + .o-toggle-slider::after { left:22px; }
 
 .o-form-group { margin-bottom:1rem; }
