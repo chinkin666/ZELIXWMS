@@ -4,26 +4,26 @@
     <div v-if="!selectedEl" class="placeholder">{{ t('wms.printTemplate.selectElement') }}</div>
     <div v-else class="props">
       <div class="o-form-group">
-        <label>name</label>
+        <label>要素名</label>
         <input :value="selectedEl.name" class="o-input" @input="updateProp('name', ($event.target as HTMLInputElement).value)" />
       </div>
       <div class="o-form-group">
-        <label>x(mm)</label>
+        <label>X座標 (mm)</label>
         <input :value="selectedEl.xMm" type="number" step="1" class="o-input" @input="updateProp('xMm', Number(($event.target as HTMLInputElement).value))" />
       </div>
       <div class="o-form-group">
-        <label>y(mm)</label>
+        <label>Y座標 (mm)</label>
         <input :value="selectedEl.yMm" type="number" step="1" class="o-input" @input="updateProp('yMm', Number(($event.target as HTMLInputElement).value))" />
       </div>
       <div class="o-form-group">
-        <label>visible</label>
+        <label>表示</label>
         <label class="o-toggle">
           <input type="checkbox" :checked="selectedEl.visible" @change="updateProp('visible', ($event.target as HTMLInputElement).checked)" />
           <span class="o-toggle-slider"></span>
         </label>
       </div>
       <div class="o-form-group">
-        <label>locked</label>
+        <label>ロック</label>
         <label class="o-toggle">
           <input type="checkbox" :checked="selectedEl.locked" @change="updateProp('locked', ($event.target as HTMLInputElement).checked)" />
           <span class="o-toggle-slider"></span>
@@ -32,22 +32,22 @@
 
       <template v-if="selectedEl.type === 'text'">
         <div class="o-form-group">
-          <label>fontFamily</label>
+          <label>フォント</label>
           <input :value="(selectedEl as any).fontFamily" class="o-input" placeholder="例: sans-serif / NotoSansJP" @input="updateProp('fontFamily', ($event.target as HTMLInputElement).value)" />
         </div>
         <div class="o-form-group">
-          <label>fontSize(pt)</label>
+          <label>文字サイズ (pt)</label>
           <input :value="(selectedEl as any).fontSizePt" type="number" step="1" class="o-input" @input="updateProp('fontSizePt', Number(($event.target as HTMLInputElement).value))" />
         </div>
         <div class="o-form-group">
-          <label>letterSpacing(px)</label>
+          <label>字間 (px)</label>
           <input :value="(selectedEl as any).letterSpacingPx" type="number" step="0.5" class="o-input" @input="updateProp('letterSpacingPx', Number(($event.target as HTMLInputElement).value))" />
         </div>
         <div class="o-form-group">
-          <label>align</label>
+          <label>揃え</label>
           <select :value="(selectedEl as any).align" class="o-input" style="width: 100%" @change="updateProp('align', ($event.target as HTMLSelectElement).value)">
-            <option value="left">left</option>
-            <option value="right">right</option>
+            <option value="left">左揃え</option>
+            <option value="right">右揃え</option>
           </select>
         </div>
         <div class="o-form-group">

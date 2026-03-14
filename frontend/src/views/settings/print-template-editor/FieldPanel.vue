@@ -1,6 +1,6 @@
 <template>
   <div class="panel left">
-    <div class="panel-title">carrierRawRow {{ t('wms.printTemplate.fields') }}</div>
+    <div class="panel-title">データフィールド</div>
 
     <input v-model="localFieldFilter" class="o-input" :placeholder="t('wms.printTemplate.searchKey')" style="width: 100%" />
     <div class="fields">
@@ -38,7 +38,7 @@
       <label class="o-toggle">
         <input type="checkbox" :checked="requiresYamatoSortCode" @change="$emit('update:requiresYamatoSortCode', ($event.target as HTMLInputElement).checked)" />
         <span class="o-toggle-slider"></span>
-        <span style="margin-left: 8px; font-size: 12px">yamato仕分けコードが必要</span>
+        <span style="margin-left: 8px; font-size: 12px">ヤマト仕分けコード必要</span>
       </label>
     </div>
   </div>

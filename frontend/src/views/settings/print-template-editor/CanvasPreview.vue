@@ -1,6 +1,6 @@
 <template>
   <div class="panel center">
-    <div class="panel-title">{{ t('wms.printTemplate.canvas') }}（Konva）</div>
+    <div class="panel-title">{{ t('wms.printTemplate.canvas') }}</div>
     <div class="canvas-toolbar">
       <div class="toolbar-form">
         <div class="form-group-inline">
@@ -12,7 +12,7 @@
           <input :value="canvas.heightMm" type="number" min="1" class="o-input" style="width: 110px" @input="$emit('update-canvas', 'heightMm', Number(($event.target as HTMLInputElement).value))" />
         </div>
         <div class="form-group-inline">
-          <label>pxPerMm</label>
+          <label>解像度 (px/mm)</label>
           <input :value="canvas.pxPerMm" type="number" min="1" step="0.5" class="o-input" style="width: 110px" @input="$emit('update-canvas', 'pxPerMm', Number(($event.target as HTMLInputElement).value))" />
         </div>
       </div>
