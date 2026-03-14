@@ -7,7 +7,7 @@ export type PdfSource = 'local' | 'b2-webapi'
  * 送り状種類ごとの設定
  */
 export interface ServiceTypeConfig {
-  /** B2サービス種類 (0-9, A) */
+  /** B2送り状種類 (0-9, A) */
   b2ServiceType: string
   /** 印刷テンプレートID */
   printTemplateId?: string
@@ -28,7 +28,7 @@ export interface YamatoB2Config {
   /**
    * 送り状種類ごとの設定マッピング
    * key: 送り状種類 (0-9, A)
-   * value: ServiceTypeConfig（B2サービス種類 + 印刷テンプレート）
+   * value: ServiceTypeConfig（B2送り状種類 + 印刷テンプレート）
    */
   serviceTypeMapping?: Record<string, ServiceTypeConfig>
   /** 請求先顧客コード（10-12桁）- B2 webapi field: invoice_code */

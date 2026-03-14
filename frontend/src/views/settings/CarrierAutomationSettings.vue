@@ -73,52 +73,6 @@
                   </button>
                 </div>
               </div>
-              <div class="o-form-group">
-                <label class="form-label">分類コード</label>
-                <input class="o-input" v-model="yamatoB2Form.customerClsCode" placeholder="任意" />
-              </div>
-              <div class="o-form-group">
-                <label class="form-label">ログインユーザーID</label>
-                <input class="o-input" v-model="yamatoB2Form.loginUserId" placeholder="任意" />
-              </div>
-            </div>
-
-            <hr class="o-divider" />
-            <h4 class="section-label">サービス種類マッピング</h4>
-            <p class="field-hint" style="margin-bottom:12px">各送り状種類のB2サービス種類と印刷テンプレートを設定します</p>
-
-            <div class="service-mapping-wrapper">
-              <table class="o-list-table service-mapping-table">
-                <thead>
-                  <tr>
-                    <th style="width:180px">送り状種類</th>
-                    <th style="width:180px">B2サービス種類</th>
-                    <th style="width:160px">PDF取得元</th>
-                    <th style="min-width:180px">印刷テンプレート</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="row in serviceTypeMappingList" :key="row.invoiceType">
-                    <td>{{ row.label }}</td>
-                    <td>
-                      <select class="o-input" :value="row.b2ServiceType" @change="updateMappingRow(row.invoiceType, 'b2ServiceType', ($event.target as HTMLSelectElement).value)">
-                        <option v-for="opt in b2ServiceTypeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                      </select>
-                    </td>
-                    <td>
-                      <select class="o-input" :value="row.pdfSource" @change="updateMappingRow(row.invoiceType, 'pdfSource', ($event.target as HTMLSelectElement).value)">
-                        <option v-for="opt in pdfSourceOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                      </select>
-                    </td>
-                    <td>
-                      <select class="o-input" :value="row.printTemplateId || ''" @change="updateMappingRow(row.invoiceType, 'printTemplateId', ($event.target as HTMLSelectElement).value || undefined)" :disabled="row.pdfSource === 'b2-webapi'">
-                        <option value="">テンプレートを選択</option>
-                        <option v-for="tpl in printTemplates" :key="tpl.id" :value="tpl.id">{{ tpl.name }}</option>
-                      </select>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
 
             <hr class="o-divider" />
@@ -166,6 +120,44 @@
               </div>
             </div>
           </div>
+
+            <hr class="o-divider" />
+            <h4 class="section-label">送り状種類マッピング</h4>
+            <p class="field-hint" style="margin-bottom:12px">各送り状種類のB2送り状種類と印刷テンプレートを設定します</p>
+
+            <div class="service-mapping-wrapper">
+              <table class="o-list-table service-mapping-table">
+                <thead>
+                  <tr>
+                    <th style="width:180px">送り状種類</th>
+                    <th style="width:180px">B2送り状種類</th>
+                    <th style="width:160px">PDF取得元</th>
+                    <th style="min-width:180px">印刷テンプレート</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in serviceTypeMappingList" :key="row.invoiceType">
+                    <td>{{ row.label }}</td>
+                    <td>
+                      <select class="o-input" :value="row.b2ServiceType" @change="updateMappingRow(row.invoiceType, 'b2ServiceType', ($event.target as HTMLSelectElement).value)">
+                        <option v-for="opt in b2ServiceTypeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select class="o-input" :value="row.pdfSource" @change="updateMappingRow(row.invoiceType, 'pdfSource', ($event.target as HTMLSelectElement).value)">
+                        <option v-for="opt in pdfSourceOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <select class="o-input" :value="row.printTemplateId || ''" @change="updateMappingRow(row.invoiceType, 'printTemplateId', ($event.target as HTMLSelectElement).value || undefined)" :disabled="row.pdfSource === 'b2-webapi'">
+                        <option value="">テンプレートを選択</option>
+                        <option v-for="tpl in printTemplates" :key="tpl.id" :value="tpl.id">{{ tpl.name }}</option>
+                      </select>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
           <div class="form-actions">
             <OButton variant="secondary" @click="testConnection" :disabled="testing || !canTest">
