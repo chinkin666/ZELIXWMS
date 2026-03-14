@@ -1,8 +1,8 @@
 <template>
   <div class="print-template-settings">
-    <ControlPanel title="印刷テンプレート" :show-search="false">
+    <ControlPanel title="印刷テンプレート設定" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">新規追加</OButton>
+        <OButton variant="primary" @click="openCreate">テンプレートを作成</OButton>
       </template>
     </ControlPanel>
 
@@ -10,49 +10,46 @@
       <Table
         :columns="tableColumns"
         :data="templates"
-        :height="520"
+        :height="560"
         row-key="id"
         highlight-columns-on-hover
         pagination-enabled
         pagination-mode="client"
-        :page-size="10"
+        :page-size="20"
         :page-sizes="[10, 20, 50]"
       />
     </div>
 
-    <ODialog :open="dialogVisible" :title="isEditing ? 'テンプレート編集' : 'テンプレート追加'" @close="dialogVisible = false">
-      <div class="form-row">
-        <div class="o-form-group">
+    <ODialog :open="dialogVisible" :title="isEditing ? 'テンプレート編集' : 'テンプレート作成'" size="lg" @close="dialogVisible = false">
+      <div class="form-grid">
+        <div class="form-group">
           <label class="form-label">テンプレート名 <span class="required-badge">必須</span></label>
           <input class="o-input" v-model="editForm.name" placeholder="例: ヤマトB2（メール便）" />
         </div>
-        <div class="o-form-group">
-          <label class="form-label">ピクセル解像度(mm)</label>
+        <div class="form-group">
+          <label class="form-label">解像度 (px/mm)</label>
           <input class="o-input" v-model.number="editForm.canvas.pxPerMm" type="number" min="1" step="0.5" />
         </div>
-      </div>
-
-      <div class="form-row">
-        <div class="o-form-group">
-          <label class="form-label">幅(mm) <span class="required-badge">必須</span></label>
+        <div class="form-group">
+          <label class="form-label">幅 (mm) <span class="required-badge">必須</span></label>
           <input class="o-input" v-model.number="editForm.canvas.widthMm" type="number" min="1" step="1" />
         </div>
-        <div class="o-form-group">
-          <label class="form-label">高さ(mm) <span class="required-badge">必須</span></label>
+        <div class="form-group">
+          <label class="form-label">高さ (mm) <span class="required-badge">必須</span></label>
           <input class="o-input" v-model.number="editForm.canvas.heightMm" type="number" min="1" step="1" />
         </div>
       </div>
 
-      <div class="o-form-group">
-        <label class="form-label">プログラムコード <span class="required-badge">必須</span></label>
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">エレメント定義 (JSON) <span class="required-badge">必須</span></label>
         <textarea
-          class="o-input"
+          class="o-input code-textarea"
           v-model="elementsJson"
-          rows="10"
+          rows="12"
           placeholder='例: [{"id":"t1","type":"text",...}]'
         ></textarea>
-        <div class="hint">
-          プログラムコードでも直接編集ができます。可視編集は一覧の「レイアウト編集」から開けます。
+        <div class="field-hint">
+          JSONで直接編集できます。ビジュアル編集は一覧の「レイアウト編集」から開けます。
         </div>
       </div>
 
@@ -93,12 +90,8 @@ const isEditing = computed(() => Boolean(editingId.value))
 
 function reload() {
   fetchPrintTemplates()
-    .then((list) => {
-      templates.value = Array.isArray(list) ? list : []
-    })
-    .catch(() => {
-      templates.value = []
-    })
+    .then((list) => { templates.value = Array.isArray(list) ? list : [] })
+    .catch(() => { templates.value = [] })
 }
 
 function openCreate() {
@@ -132,8 +125,7 @@ async function duplicatePrintTemplate(row: PrintTemplate) {
 }
 
 async function removeTemplate(row: PrintTemplate) {
-  if (!confirm(`削除しますか？: ${row.name}`)) return
-
+  if (!confirm(`「${row.name}」を削除しますか？`)) return
   await deletePrintTemplate(row.id)
   templates.value = templates.value.filter((t) => t.id !== row.id)
   showToast('削除しました', 'success')
@@ -145,20 +137,14 @@ async function handleSave() {
     const parsed = JSON.parse(elementsJson.value || '[]')
     if (!Array.isArray(parsed)) throw new Error('elements JSON must be an array')
 
-    const next: PrintTemplate = {
-      ...editForm.value,
-      elements: parsed,
-    }
+    const next: PrintTemplate = { ...editForm.value, elements: parsed }
 
     const isUpdate = templates.value.some((t) => t.id === next.id)
     if (isUpdate) {
       const saved = await updatePrintTemplate(next.id, next as any)
       next.id = saved.id
     } else {
-      const created = await createPrintTemplate({
-        ...(next as any),
-        id: undefined,
-      })
+      const created = await createPrintTemplate({ ...(next as any), id: undefined })
       next.id = created.id
     }
 
@@ -177,35 +163,43 @@ async function handleSave() {
   }
 }
 
-const tableColumns = computed((): TableColumn[] => {
-  return [
-    { key: 'name', dataKey: 'name', title: 'テンプレート名', width: 300, fieldType: 'string' },
-    {
-      key: 'size',
-      dataKey: 'canvas',
-      title: 'サイズ(mm)',
-      width: 160,
-      fieldType: 'string',
-      cellRenderer: ({ rowData }: { rowData: PrintTemplate }) =>
-        `${rowData.canvas?.widthMm ?? '-'}x${rowData.canvas?.heightMm ?? '-'}`,
-    },
-    {
-      key: 'actions',
-      dataKey: 'actions',
-      title: t('wms.common.actions', '操作'),
-      width: 180,
-      fixed: 'right',
-      align: 'center',
-      cellRenderer: ({ rowData }: { rowData: PrintTemplate }) =>
-        h('div', { class: 'action-cell' }, [
-          h(OButton, { variant: 'success', size: 'sm', onClick: () => openVisualEditor(rowData) }, () => 'レイアウト編集'),
-          h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => 'コード編集'),
-          h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicatePrintTemplate(rowData) }, () => '複製'),
-          h(OButton, { variant: 'danger', size: 'sm', onClick: () => removeTemplate(rowData) }, () => '削除'),
-        ]),
-    },
-  ]
-})
+const tableColumns = computed((): TableColumn[] => [
+  { key: 'name', dataKey: 'name', title: 'テンプレート名', width: 280, fieldType: 'string' },
+  {
+    key: 'size',
+    dataKey: 'canvas',
+    title: 'サイズ (mm)',
+    width: 120,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: PrintTemplate }) =>
+      `${rowData.canvas?.widthMm ?? '-'} × ${rowData.canvas?.heightMm ?? '-'}`,
+  },
+  {
+    key: 'elements',
+    title: 'エレメント数',
+    width: 100,
+    fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: PrintTemplate }) =>
+      String(rowData.elements?.length ?? 0),
+  },
+  {
+    key: 'actions',
+    title: '操作',
+    width: 280,
+    cellRenderer: ({ rowData }: { rowData: PrintTemplate }) =>
+      h('div', { style: 'display:flex;gap:6px;' }, [
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openVisualEditor(rowData) }, () => 'レイアウト編集'),
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openEdit(rowData) }, () => 'JSON編集'),
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicatePrintTemplate(rowData) }, () => '複製'),
+        h('button', {
+          class: 'delete-icon-btn',
+          onClick: () => removeTemplate(rowData),
+          title: '削除',
+          innerHTML: '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H5.5l1-1h3l1 1H14a1 1 0 0 1 1 1v1z"/></svg>',
+        }),
+      ]),
+  },
+])
 
 onMounted(() => reload())
 </script>
@@ -217,52 +211,26 @@ onMounted(() => reload())
   gap: 16px;
   padding: 0 20px 20px;
 }
+:deep(.o-control-panel) { margin-left: -20px; margin-right: -20px; }
+.table-section { width: 100%; }
 
-:deep(.o-control-panel) {
-  margin-left: -20px;
-  margin-right: -20px;
+/* Form */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-label { font-size: 13px; font-weight: 500; color: var(--o-gray-700); }
+.required-badge {
+  display: inline-block; background: #dc3545; color: #fff;
+  font-size: 10px; font-weight: 700; line-height: 1;
+  padding: 2px 5px; border-radius: 3px; white-space: nowrap;
+  vertical-align: middle; margin-left: 4px;
 }
+.field-hint { font-size: 11px; color: var(--o-gray-400); margin-top: 4px; }
+.code-textarea { resize: vertical; font-family: var(--o-font-family-mono); font-size: 12px; line-height: 1.5; }
 
-
-.o-input {
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid var(--o-border-color, #dcdfe6);
-  border-radius: var(--o-border-radius, 4px);
-  font-size: var(--o-font-size-base, 14px);
-  color: var(--o-gray-700, #303133);
-  background: var(--o-view-background, #fff);
-  box-sizing: border-box;
+.delete-icon-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border: none; background: none;
+  color: var(--o-gray-400); cursor: pointer; transition: color 0.15s;
 }
-textarea.o-input { resize: vertical; font-family: monospace; }
-
-.o-form-group { margin-bottom: 1rem; }
-.form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
-.required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.hint {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #6b7280;
-}
-
-/* 操作列スタイル - 縦並び / 操作列样式 - 垂直排列 */
-:deep(.action-cell) {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 4px;
-}
-
-:deep(.action-cell .o-btn) {
-  margin: 0;
-  min-width: 54px;
-}
+.delete-icon-btn:hover { color: var(--o-danger, #C0392B); }
 </style>
