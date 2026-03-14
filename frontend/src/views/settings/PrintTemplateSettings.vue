@@ -185,7 +185,7 @@ const tableColumns = computed((): TableColumn[] => [
   {
     key: 'actions',
     title: '操作',
-    width: 280,
+    width: 360,
     cellRenderer: ({ rowData }: { rowData: PrintTemplate }) =>
       h('div', { style: 'display:flex;gap:6px;' }, [
         h(OButton, { variant: 'primary', size: 'sm', onClick: () => openVisualEditor(rowData) }, () => 'レイアウト編集'),
