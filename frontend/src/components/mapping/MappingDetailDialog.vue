@@ -3,7 +3,7 @@
     :open="visibleProxy"
     :title="title"
     @close="visibleProxy = false"
-    width="1000px"
+    size="xl"
   >
     <div class="layout">
       <div class="left">
