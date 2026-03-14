@@ -443,14 +443,24 @@ const getFilteredOptions = (column: TableColumn) => {
     const invoiceType = getNestedValue(formData.value, 'invoiceType') || '0'
     return getCoolTypeOptionsForInvoiceType(String(invoiceType))
   }
-  // 送り状種類の場合、carrierId に依存してオプションをフィルタリング
-  // 送り状種類の場合、carrierId に基づいてフィルタリング
-  if (dataKey === 'invoiceType' && column.dependsOn === 'carrierId') {
+  // carrierId に依存するフィールドをフィルタリング / carrierId 依赖字段过滤
+  if (column.dependsOn === 'carrierId') {
     const carrierId = String(getNestedValue(formData.value, 'carrierId') || '')
-    if (carrierId === '__builtin_sagawa__' || carrierId.includes('sagawa')) {
-      return sagawaInvoiceTypeOptions
+    const isSagawa = carrierId === '__builtin_sagawa__' || carrierId.includes('sagawa')
+    if (isSagawa) {
+      if (dataKey === 'invoiceType') return sagawaInvoiceTypeOptions
+      if (dataKey === 'deliveryTimeSlot') return [
+        { label: '指定なし', value: '' },
+        { label: '午前中', value: '午前中' },
+        { label: '12:00-14:00', value: '12-14' },
+        { label: '14:00-16:00', value: '14-16' },
+        { label: '16:00-18:00', value: '16-18' },
+        { label: '18:00-20:00', value: '18-20' },
+        { label: '18:00-21:00', value: '18-21' },
+        { label: '19:00-21:00', value: '19-21' },
+        { label: '20:00-21:00', value: '20-21' },
+      ]
     }
-    // ヤマト or その他はデフォルト全オプション
   }
   // デフォルトは全オプションを返す
   return column.searchOptions || []

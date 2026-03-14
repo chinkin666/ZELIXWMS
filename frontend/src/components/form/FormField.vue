@@ -135,14 +135,30 @@ const SAGAWA_INVOICE_OPTIONS = [
   { label: 'e-コレクト（代引き）', value: '2' },
 ]
 
+// 佐川急便用 お届け時間帯 / 佐川急便用配達時間帯
+const SAGAWA_TIME_SLOT_OPTIONS = [
+  { label: '指定なし', value: '' },
+  { label: '午前中', value: '午前中' },
+  { label: '12:00-14:00', value: '12-14' },
+  { label: '14:00-16:00', value: '14-16' },
+  { label: '16:00-18:00', value: '16-18' },
+  { label: '18:00-20:00', value: '18-20' },
+  { label: '18:00-21:00', value: '18-21' },
+  { label: '19:00-21:00', value: '19-21' },
+  { label: '20:00-21:00', value: '20-21' },
+]
+
+function isSagawa(): boolean {
+  const carrierId = String(getNestedValue(props.formData, 'carrierId') || '')
+  return carrierId === '__builtin_sagawa__' || carrierId.includes('sagawa')
+}
+
 // 依存フィールドに基づいてオプションをフィルタリング / 依赖字段过滤选项
 const filteredOptions = computed(() => {
   const col = props.column
-  if (dataKey.value === 'invoiceType' && col.dependsOn === 'carrierId') {
-    const carrierId = String(getNestedValue(props.formData, 'carrierId') || '')
-    if (carrierId === '__builtin_sagawa__' || carrierId.includes('sagawa')) {
-      return SAGAWA_INVOICE_OPTIONS
-    }
+  if (col.dependsOn === 'carrierId' && isSagawa()) {
+    if (dataKey.value === 'invoiceType') return SAGAWA_INVOICE_OPTIONS
+    if (dataKey.value === 'deliveryTimeSlot') return SAGAWA_TIME_SLOT_OPTIONS
   }
   return col.searchOptions || []
 })

@@ -376,10 +376,11 @@ export function getOrderFieldDefinitions(opts?: {
       key: 'deliveryTimeSlot',
       dataKey: 'deliveryTimeSlot',
       title: 'お届け時間帯',
-      description: 'お届け時間帯（時間帯レンジ）を4桁数字で保持します（例: 0812 = 午前中）。',
+      description: 'ヤマト: 4桁数字(0812等) / 佐川: 文字列(午前中等)。配送業者により選択肢が変わります。',
       width: 150,
       fieldType: 'string',
       searchType: 'select',
+      dependsOn: 'carrierId',
       searchOptions: [
         { label: '指定なし', value: '' },
         { label: '午前中（8-12時）', value: '0812' },
@@ -389,14 +390,15 @@ export function getOrderFieldDefinitions(opts?: {
         { label: '19時〜21時', value: '1921' },
       ],
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
-        const map: Record<string, string> = {
-          '0812': '午前中（8-12時）',
-          '1416': '14時〜16時',
-          '1618': '16時〜18時',
-          '1820': '18時〜20時',
-          '1921': '19時〜21時',
+        const val = rowData.deliveryTimeSlot || ''
+        if (!val) return '-'
+        // ヤマト用 4桁数字マッピング / ヤマト用4桁数字マッピング
+        const yamatoMap: Record<string, string> = {
+          '0812': '午前中', '1416': '14-16時', '1618': '16-18時', '1820': '18-20時', '1921': '19-21時',
         }
-        return map[rowData.deliveryTimeSlot || ''] || rowData.deliveryTimeSlot || '-'
+        if (yamatoMap[val]) return yamatoMap[val]
+        // 佐川はそのまま表示 / 佐川はそのまま表示
+        return val
       },
     },
     {
