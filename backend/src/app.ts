@@ -7,6 +7,7 @@ import path from 'path';
 import { loadEnv } from '@/config/env';
 import { logger } from '@/lib/logger';
 import { registerCoreRoutes } from '@/api/routes';
+import { extensionManager } from '@/core/extensions';
 
 loadEnv();
 
@@ -51,6 +52,10 @@ export const createApp = () => {
   }));
 
   registerCoreRoutes(app);
+
+  // 插件自定义 API 路由 / プラグインカスタム API ルート
+  // 插件通过 registerAPI() 注册的路由挂载到 /api/plugins/{name}/*
+  app.use('/api/plugins', extensionManager.getPluginManager().getRouter());
 
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });

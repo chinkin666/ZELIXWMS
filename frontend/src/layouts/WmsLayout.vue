@@ -114,6 +114,8 @@ const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'WMSスケジュール', to: '/settings/wms-schedules' },
     { label: 'ルール設定', to: '/settings/rules' },
     { label: 'テナント管理', to: '/settings/tenants' },
+    { label: 'Webhook', to: '/settings/webhooks' },
+    { label: 'プラグイン', to: '/settings/plugins' },
     { label: '応用設定', to: '/settings/system' },
   ],
 }

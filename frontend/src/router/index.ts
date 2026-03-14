@@ -486,6 +486,18 @@ const router = createRouter({
               meta: { title: 'テナント管理' },
             },
             {
+              path: 'webhooks',
+              name: 'WebhookSettings',
+              component: () => import('@/views/settings/WebhookSettings.vue'),
+              meta: { title: 'Webhook 管理' },
+            },
+            {
+              path: 'plugins',
+              name: 'PluginManagement',
+              component: () => import('@/views/settings/PluginManagement.vue'),
+              meta: { title: 'プラグイン管理' },
+            },
+            {
               path: 'system',
               name: 'SystemSettings',
               component: () => import('@/views/settings/SystemSettings.vue'),

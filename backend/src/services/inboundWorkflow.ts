@@ -5,6 +5,8 @@ import { Location } from '@/models/location';
 import { WarehouseTask, IWarehouseTask } from '@/models/warehouseTask';
 import { TaskEngine } from '@/services/taskEngine';
 import { RuleEngine } from '@/services/ruleEngine';
+import { extensionManager } from '@/core/extensions';
+import { HOOK_EVENTS } from '@/core/extensions/types';
 
 interface WorkflowProgress {
   totalLines: number;
@@ -122,7 +124,7 @@ export class InboundWorkflow {
         executedAt: new Date(),
       });
 
-      // 全ライン受入完了チェック
+      // 全ライン受入完了チェック / 全ライン受入完了チェック
       const allReceived = order.lines.every(
         (l) => l.receivedQuantity >= l.expectedQuantity,
       );
@@ -131,6 +133,15 @@ export class InboundWorkflow {
       }
 
       await order.save();
+
+      // 全ライン受入完了時に事件发射 / 全ライン受入完了時にイベント発行
+      if (allReceived) {
+        extensionManager.emit(HOOK_EVENTS.INBOUND_RECEIVED, {
+          orderId,
+          orderNumber: order.orderNumber,
+        }).catch(() => {/* サイレント */});
+      }
+
       return order;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -263,7 +274,7 @@ export class InboundWorkflow {
         executedAt: new Date(),
       });
 
-      // 全ライン棚入れ完了チェック
+      // 全ライン棚入れ完了チェック / 全ライン棚入れ完了チェック
       const allPutaway = order.lines.every(
         (l) => l.putawayQuantity >= l.receivedQuantity && l.receivedQuantity > 0,
       );
@@ -273,6 +284,15 @@ export class InboundWorkflow {
       }
 
       await order.save();
+
+      // 全ライン棚入れ完了時にイベント発行 / 全ライン棚入れ完了時にイベント発行
+      if (allPutaway) {
+        extensionManager.emit(HOOK_EVENTS.INBOUND_PUTAWAY_COMPLETED, {
+          orderId,
+          orderNumber: order.orderNumber,
+        }).catch(() => {/* サイレント */});
+      }
+
       return order;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

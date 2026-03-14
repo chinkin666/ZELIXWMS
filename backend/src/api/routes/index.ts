@@ -36,6 +36,7 @@ import { inventoryLedgerRouter } from './inventoryLedger';
 import { clientRouter } from './clients';
 import { warehouseRouter } from './warehouses';
 import { workflowRouter } from './workflows';
+import { extensionRouter } from './extensions';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -76,6 +77,9 @@ export const registerCoreRoutes = (app: Application): void => {
   api.use('/clients', clientRouter);
   api.use('/warehouses', warehouseRouter);
   api.use('/workflows', workflowRouter);
+
+  // 扩展系统 / 拡張システム
+  api.use('/extensions', extensionRouter);
 
   app.use('/api', api);
 };

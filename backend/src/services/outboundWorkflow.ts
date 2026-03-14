@@ -10,6 +10,8 @@ import {
   reserveStockForOrder,
   completeStockForOrder,
 } from '@/services/stockService';
+import { extensionManager } from '@/core/extensions';
+import { HOOK_EVENTS } from '@/core/extensions/types';
 
 /**
  * Generate a wave number in format: WV-{YYYYMMDD}-{random5digits}
@@ -79,6 +81,13 @@ export class OutboundWorkflow {
       assignedTo: params.assignedTo,
       memo: params.memo,
     });
+
+    // 扩展系统事件 / 拡張システムイベント
+    extensionManager.emit(HOOK_EVENTS.WAVE_CREATED, {
+      waveId: String(wave._id),
+      waveNumber: wave.waveNumber,
+      shipmentCount: shipments.length,
+    }).catch(() => {/* サイレント */});
 
     return wave;
   }
@@ -399,6 +408,11 @@ export class OutboundWorkflow {
           completedAt: new Date(),
         },
       });
+
+      // 扩展系统事件: Wave 完成 / 拡張システムイベント: Wave 完了
+      extensionManager.emit(HOOK_EVENTS.WAVE_COMPLETED, {
+        waveId: String(task.waveId),
+      }).catch(() => {/* サイレント */});
     }
 
     return task;

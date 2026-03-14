@@ -1,0 +1,20 @@
+{
+  "name": "inventory-alert",
+  "version": "1.0.0",
+  "description": "库存预警插件 — 库存变化时检查是否低于阈值并记录日志 / 在庫アラートプラグイン — 在庫変動時に閾値を下回ったらログを記録",
+  "author": "ZELIX",
+  "hooks": ["inventory.changed"],
+  "permissions": ["inventory.read"],
+  "config": {
+    "threshold": {
+      "type": "number",
+      "default": 10,
+      "description": "低库存阈值 / 低在庫閾値"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "是否启用预警 / アラート有効化"
+    }
+  }
+}

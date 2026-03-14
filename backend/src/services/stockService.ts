@@ -5,6 +5,8 @@ import { Location } from '@/models/location';
 import { Product } from '@/models/product';
 import { Lot } from '@/models/lot';
 import { generateSequenceNumber } from '@/utils/sequenceGenerator';
+import { extensionManager } from '@/core/extensions';
+import { HOOK_EVENTS } from '@/core/extensions/types';
 
 interface OrderProductForReserve {
   productId?: string;
@@ -162,6 +164,16 @@ export async function reserveStockForOrder(
     }
   }
 
+  // 扩展系统事件 / 拡張システムイベント
+  if (result.reservations.length > 0) {
+    extensionManager.emit(HOOK_EVENTS.STOCK_RESERVED, {
+      orderId,
+      orderNumber,
+      reservationCount: result.reservations.length,
+      errors: result.errors,
+    }).catch(() => {/* サイレント */});
+  }
+
   return result;
 }
 
@@ -204,6 +216,15 @@ export async function completeStockForOrder(orderId: string): Promise<{ movedCou
     movedCount++;
   }
 
+  // 扩展系统事件 / 拡張システムイベント
+  if (movedCount > 0) {
+    extensionManager.emit(HOOK_EVENTS.INVENTORY_CHANGED, {
+      orderId,
+      type: 'outbound',
+      movedCount,
+    }).catch(() => {/* サイレント */});
+  }
+
   return { movedCount };
 }
 
@@ -239,6 +260,14 @@ export async function unreserveStockForOrder(orderId: string): Promise<{ cancell
     await move.save();
 
     cancelledCount++;
+  }
+
+  // 扩展系统事件 / 拡張システムイベント
+  if (cancelledCount > 0) {
+    extensionManager.emit(HOOK_EVENTS.STOCK_RELEASED, {
+      orderId,
+      cancelledCount,
+    }).catch(() => {/* サイレント */});
   }
 
   return { cancelledCount };

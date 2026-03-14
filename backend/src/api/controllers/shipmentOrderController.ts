@@ -12,6 +12,8 @@ import mongoose from 'mongoose';
 import { processOrderEvent, processOrderEventBulk } from '@/services/autoProcessingEngine';
 import { isBuiltInCarrierId, getBuiltInCarrier } from '@/data/builtInCarriers';
 import { reserveStockForOrder, completeStockForOrder, unreserveStockForOrder } from '@/services/stockService';
+import { extensionManager } from '@/core/extensions';
+import { HOOK_EVENTS } from '@/core/extensions/types';
 /**
  * 軽量クエリ用の projection（原始データを除外）
  * - listOrders (列表查询) で使用
@@ -937,9 +939,15 @@ export const createManualOrdersBulk = async (req: Request, res: Response): Promi
     });
 
     // Auto-processing hook (fire-and-forget) for newly created orders
+    // 自動処理フック（fire-and-forget）新規作成注文用
     const createdIds = successes.map((s: any) => s.insertedId).filter(Boolean);
     if (createdIds.length > 0) {
       processOrderEventBulk(createdIds, 'order.created').catch(console.error);
+
+      // 扩展系统事件 / 拡張システムイベント
+      for (const orderId of createdIds) {
+        extensionManager.emit(HOOK_EVENTS.ORDER_CREATED, { orderId }).catch(console.error);
+      }
     }
   } catch (error: any) {
     // Keep previous behavior for unexpected failures (request-level errors).
@@ -1265,6 +1273,7 @@ export const handleStatus = async (req: Request, res: Response): Promise<void> =
     res.json(updated);
 
     // Auto-processing hook (fire-and-forget)
+    // 自動処理フック（fire-and-forget）
     const actionEventMap: Record<string, string> = {
       'mark-print-ready': 'order.confirmed',
       'mark-printed': 'order.printed',
@@ -1283,6 +1292,21 @@ export const handleStatus = async (req: Request, res: Response): Promise<void> =
       completeStockForOrder(String(updated._id)).catch(console.error);
     } else if (action === 'unconfirm' && statusType === 'confirm') {
       unreserveStockForOrder(String(updated._id)).catch(console.error);
+    }
+
+    // 扩展系统事件 / 拡張システムイベント
+    const extensionEventMap: Record<string, string> = {
+      'mark-print-ready': HOOK_EVENTS.ORDER_CONFIRMED,
+      'mark-shipped': HOOK_EVENTS.ORDER_SHIPPED,
+      'mark-held': HOOK_EVENTS.ORDER_HELD,
+      'unhold': HOOK_EVENTS.ORDER_UNHELD,
+    };
+    const extEvent = extensionEventMap[action];
+    if (extEvent) {
+      extensionManager.emit(extEvent as any, { orderId: id, order: updated }).catch(console.error);
+    }
+    if (action === 'unconfirm' && statusType === 'confirm') {
+      extensionManager.emit(HOOK_EVENTS.ORDER_CANCELLED, { orderId: id, reason: 'unconfirm' }).catch(console.error);
     }
   } catch (error: any) {
     res.status(500).json({ message: 'Failed to update order status', error: error.message });
@@ -1489,6 +1513,7 @@ export const handleStatusBulk = async (req: Request, res: Response): Promise<voi
     });
 
     // Auto-processing hook (fire-and-forget, bulk)
+    // 自動処理フック（fire-and-forget、一括）
     const bulkActionEventMap: Record<string, string> = {
       'mark-print-ready': 'order.confirmed',
       'mark-printed': 'order.printed',
@@ -1515,6 +1540,25 @@ export const handleStatusBulk = async (req: Request, res: Response): Promise<voi
           await unreserveStockForOrder(id).catch(console.error);
         }
       })().catch(console.error);
+    }
+
+    // 扩展系统事件（一括）/ 拡張システムイベント（一括）
+    const bulkExtEventMap: Record<string, string> = {
+      'mark-print-ready': HOOK_EVENTS.ORDER_CONFIRMED,
+      'mark-shipped': HOOK_EVENTS.ORDER_SHIPPED,
+      'mark-held': HOOK_EVENTS.ORDER_HELD,
+      'unhold': HOOK_EVENTS.ORDER_UNHELD,
+    };
+    const bulkExtEvent = bulkExtEventMap[action];
+    if (bulkExtEvent) {
+      for (const orderId of validIds) {
+        extensionManager.emit(bulkExtEvent as any, { orderId }).catch(console.error);
+      }
+    }
+    if (action === 'unconfirm' && statusType === 'confirm') {
+      for (const orderId of validIds) {
+        extensionManager.emit(HOOK_EVENTS.ORDER_CANCELLED, { orderId, reason: 'unconfirm' }).catch(console.error);
+      }
     }
   } catch (error: any) {
     console.error('Error in handleStatusBulk:', error);
@@ -1876,6 +1920,13 @@ export const deleteOrder = async (req: Request, res: Response): Promise<void> =>
       message: '注文が正常に削除されました',
       data: { order: deleted },
     });
+
+    // 扩展系统事件 / 拡張システムイベント
+    extensionManager.emit(HOOK_EVENTS.ORDER_CANCELLED, {
+      orderId: id,
+      reason: 'deleted',
+      orderNumber: deleted.orderNumber,
+    }).catch(console.error);
   } catch (error: any) {
     res.status(500).json({
       message: 'サーバーエラーが発生しました',

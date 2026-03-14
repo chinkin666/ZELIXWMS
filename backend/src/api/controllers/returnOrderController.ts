@@ -5,6 +5,8 @@ import { StockQuant } from '@/models/stockQuant';
 import { StockMove } from '@/models/stockMove';
 import { Location } from '@/models/location';
 import { Product } from '@/models/product';
+import { extensionManager } from '@/core/extensions';
+import { HOOK_EVENTS } from '@/core/extensions/types';
 
 // ---------------------------------------------------------------------------
 // 番号生成
@@ -327,6 +329,14 @@ export async function completeReturnOrder(req: Request, res: Response) {
       disposedTotal,
       errors,
     });
+
+    // 扩展系统事件: 退货完成 / 拡張システムイベント: 返品完了
+    extensionManager.emit(HOOK_EVENTS.RETURN_COMPLETED, {
+      orderId: String(doc._id),
+      orderNumber: doc.orderNumber,
+      restockedTotal,
+      disposedTotal,
+    }).catch(console.error);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
