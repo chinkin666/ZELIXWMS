@@ -595,18 +595,32 @@ const applySenderCompany = (company: OrderSourceCompany) => {
   senderSearchOpen.value = false
 }
 
-// Visibility rules based on invoiceType
-const COOL_TYPE_INVOICE_TYPES = new Set(['0', '2', '5']) // 発払い, コレクト, 着払い
-const TIME_SLOT_INVOICE_TYPES = new Set(['0', '2', '5', '6', '8', '9']) // + 発払複数口, 宅急便コンパクト, コンパクトコレクト
-const DELIVERY_DATE_INVOICE_TYPES = new Set(['0', '1', '2', '4', '5', '6', '8', '9']) // ネコポス(A),クロネコゆうメール(3),クロネコゆうパケット(7)はお届け日指定不可
+// 配送業者判定 / 配送業者判定
+const currentCarrierId = computed(() => String(getNestedValue(formData.value, 'carrierId') || ''))
+const isSagawaCarrier = computed(() => currentCarrierId.value === '__builtin_sagawa__' || currentCarrierId.value.includes('sagawa'))
+
+// ヤマト: invoiceType に基づく表示制御 / ヤマト: invoiceType ベースの表示制御
+const YAMATO_COOL_TYPES = new Set(['0', '2', '5']) // 発払い, コレクト, 着払い
+const YAMATO_TIME_SLOTS = new Set(['0', '2', '5', '6', '8', '9'])
+const YAMATO_DELIVERY_DATES = new Set(['0', '1', '2', '4', '5', '6', '8', '9'])
 
 const isFieldVisible = (col: TableColumn): boolean => {
   const key = getKey(col)
-  // 出荷管理No・送り状番号は常に表示（読み取り専用）
   const invoiceType = String(getNestedValue(formData.value, 'invoiceType') || '')
-  if (key === 'coolType') return COOL_TYPE_INVOICE_TYPES.has(invoiceType)
-  if (key === 'deliveryTimeSlot') return TIME_SLOT_INVOICE_TYPES.has(invoiceType)
-  if (key === 'deliveryDatePreference') return DELIVERY_DATE_INVOICE_TYPES.has(invoiceType)
+
+  if (isSagawaCarrier.value) {
+    // 佐川: クール便は元払い(0)のみ、時間帯・お届け日は全種類で表示
+    // 佐川: クール便は元払い(0)のみ対応、時間帯・お届け日は常に表示
+    if (key === 'coolType') return invoiceType === '0'
+    if (key === 'deliveryTimeSlot') return true
+    if (key === 'deliveryDatePreference') return true
+    return true
+  }
+
+  // ヤマト（デフォルト）
+  if (key === 'coolType') return YAMATO_COOL_TYPES.has(invoiceType)
+  if (key === 'deliveryTimeSlot') return YAMATO_TIME_SLOTS.has(invoiceType)
+  if (key === 'deliveryDatePreference') return YAMATO_DELIVERY_DATES.has(invoiceType)
   return true
 }
 
@@ -683,8 +697,9 @@ const handleFieldUpdate = (key: string, value: any) => {
         if (!isValid) setNestedValue(formData.value, 'coolType', '0')
       }
     }
-    // Reset deliveryTimeSlot when hidden
-    if (!TIME_SLOT_INVOICE_TYPES.has(inv)) {
+    // Reset deliveryTimeSlot when hidden（ヤマトのみ。佐川は常に表示）
+    // ヤマトのみリセット、佐川は常に表示するためスキップ
+    if (!isSagawaCarrier.value && !YAMATO_TIME_SLOTS.has(inv)) {
       setNestedValue(formData.value, 'deliveryTimeSlot', '')
     }
   }
