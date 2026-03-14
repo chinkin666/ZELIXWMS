@@ -21,8 +21,19 @@
       </div>
     </div>
 
+    <!-- 検品進捗バー / 检品进度条 -->
+    <div class="inspection-progress" v-if="order">
+      <div class="progress-text">
+        <span>検品進捗: {{ scannedItems.length }} / {{ scannedItems.length + pendingItems.length }}</span>
+        <span>{{ Math.round(scannedItems.length / (scannedItems.length + pendingItems.length || 1) * 100) }}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-bar-fill" :style="{ width: `${scannedItems.length / (scannedItems.length + pendingItems.length || 1) * 100}%` }"></div>
+      </div>
+    </div>
+
     <!-- 中间输入区域 -->
-    <div class="input-section">
+    <div class="input-section" :class="{ 'scan-success-flash': lastScanSuccess }">
       <input
         class="o-input main-input"
         v-model="inputValue"
@@ -174,6 +185,9 @@ const scannedItems = ref<ProductItem[]>([])
 // 输入框
 const inputValue = ref('')
 const mainInputRef = ref<HTMLInputElement | null>(null)
+
+// スキャン成功フラッシュ / 扫描成功闪烁
+const lastScanSuccess = ref(false)
 
 // 完成弹窗
 const completionDialogVisible = ref(false)
@@ -500,7 +514,16 @@ const handleInput = () => {
   }
 
   if (!matchedItem || matchedIndex === -1) {
-    toast.warning(t('wms.inspection.noMatchingProduct', 'マッチする商品が見つかりません') + `: ${input}`)
+    // 既にスキャン済みか確認 / 检查是否已扫描完成
+    const alreadyScanned = scannedItems.value.some(item => {
+      const matchValues = getProductMatchingValues(item)
+      return matchValues.includes(input)
+    })
+    if (alreadyScanned) {
+      toast.warning('この商品は既にスキャン済みです / 该商品已扫描完成')
+    } else {
+      toast.warning(t('wms.inspection.noMatchingProduct', 'マッチする商品が見つかりません') + `: ${input}`)
+    }
     inputValue.value = ''
     return
   }
@@ -513,6 +536,10 @@ const handleInput = () => {
     productData: matchedItem.productData,
   }
   scannedItems.value.push(scannedItem)
+
+  // スキャン成功フラッシュ / 扫描成功闪烁
+  lastScanSuccess.value = true
+  setTimeout(() => { lastScanSuccess.value = false }, 600)
 
   matchedItem.quantity -= 1
 
@@ -938,5 +965,46 @@ onMounted(async () => {
 
 .bottom-table {
   flex: 0 0 auto;
+}
+
+/* 検品進捗バー / 检品进度条 */
+.inspection-progress {
+  padding: 8px 16px;
+  background: #f5f7fa;
+  border-bottom: 1px solid #ebeef5;
+  border-radius: var(--o-border-radius, 4px);
+}
+
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #606266;
+  margin-bottom: 4px;
+}
+
+.progress-bar {
+  height: 6px;
+  background: #ebeef5;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #67c23a;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* スキャン成功フラッシュ / 扫描成功闪烁 */
+.scan-success-flash {
+  animation: successFlash 0.6s ease;
+}
+
+@keyframes successFlash {
+  0% { background-color: inherit; }
+  30% { background-color: #f0f9eb; border-color: #67c23a; }
+  100% { background-color: inherit; }
 }
 </style>

@@ -558,6 +558,7 @@
           :preview-row-count="previewRowCount"
           :preview-url="previewUrl"
           :preview-error="previewError"
+          :previewing="previewing"
           @update:preview-row-count="previewRowCount = $event"
         />
       </div>
@@ -577,7 +578,7 @@ import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { FormTemplate, FormTemplateColumn, FormTemplateColumnChild, BarcodeConfig, HeaderFooterItem } from '@/types/formTemplate'
 import { fetchFormTemplate, updateFormTemplate } from '@/api/formTemplate'
-import { formTypeRegistry, getFormTypeFields } from '@/utils/form-export/formFieldRegistry'
+import { formTypeRegistry, getFormTypeFields, createDefaultColumns } from '@/utils/form-export/formFieldRegistry'
 import { generateFormPdf } from '@/utils/form-export/pdfGenerator'
 import BasicSettingsTab from './form-template-editor/BasicSettingsTab.vue'
 import PageSettingsTab from './form-template-editor/PageSettingsTab.vue'
@@ -648,6 +649,10 @@ async function loadTemplate() {
 
   try {
     template.value = await fetchFormTemplate(id)
+    // 列が空の場合はデフォルト列を自動追加 / 列为空时自动填充默认列
+    if (template.value && template.value.columns.length === 0) {
+      template.value.columns = createDefaultColumns(template.value.targetType)
+    }
   } catch (e: any) {
     showToast(e?.message || t('wms.formEditor.loadFailed', 'テンプレートの読み込みに失敗しました'), 'danger')
   }

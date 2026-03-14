@@ -1,8 +1,20 @@
 <template>
   <div class="inspection-page">
+    <!-- 検品進捗バー / 検品進捗バー -->
+    <div class="inspection-progress-bar">
+      <div class="progress-info">
+        <span>検品進捗: {{ inspectionProgress.done }} / {{ inspectionProgress.total }}</span>
+        <span>{{ inspectionProgress.percent }}%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" :style="{ width: inspectionProgress.percent + '%' }"></div>
+      </div>
+    </div>
+
     <!-- 左侧面板 -->
     <ProductInspectionLeftPanel
       ref="leftPanelRef"
+      :class="{ 'scan-success-flash': scanSuccessFlash }"
       :order-group-id="orderGroupId"
       :input-value="inputValue"
       :auto-print-enabled="autoPrintEnabled"
@@ -101,6 +113,13 @@
         </div>
         <div class="wrong-scan-hint">
           {{ t('wms.inspection.noMatchHint', '未検品の注文の中に、このバーコード/SKUに一致する商品が見つかりませんでした。') }}
+        </div>
+        <div v-if="expectedSkus.length > 0" class="wrong-scan-expected">
+          <div class="wrong-scan-expected-label">スキャン可能なSKU:</div>
+          <div class="wrong-scan-expected-list">
+            <span v-for="sku in expectedSkus.slice(0, 5)" :key="sku" class="expected-sku-tag">{{ sku }}</span>
+            <span v-if="expectedSkus.length > 5" class="expected-sku-more">...他{{ expectedSkus.length - 5 }}件</span>
+          </div>
         </div>
         <OButton
           variant="danger"
@@ -204,10 +223,32 @@ const isUnconfirming = ref(false)
 
 const wrongScanDialogVisible = ref(false)
 const wrongScanValue = ref('')
+const scanSuccessFlash = ref(false)
 
 // ─── Computed ─────────────────────────────────────────────────────────
 
 const inspectedCount = computed(() => inspectedOrderIds.value.size)
+
+// 検品進捗 / 検品進捗
+const inspectionProgress = computed(() => {
+  const total = allOrders.value.length
+  const done = inspectedOrderIds.value.size
+  return { total, done, percent: total > 0 ? Math.round((done / total) * 100) : 0 }
+})
+
+// 未検品注文の期待SKU一覧 / 未検品注文の期待SKU一覧
+const expectedSkus = computed(() => {
+  const skus = new Set<string>()
+  for (const order of allOrders.value) {
+    if (inspectedOrderIds.value.has(String(order._id))) continue
+    const prod = (order.products as any[])?.[0]
+    if (prod) {
+      const sku = prod.inputSku || prod.productSku || ''
+      if (sku) skus.add(sku)
+    }
+  }
+  return [...skus]
+})
 
 const tableRows = computed<TableRow[]>(() => {
   const rows = allOrders.value.map((order, idx) => {
@@ -331,6 +372,10 @@ function handleScan() {
 
   rightPanelRef.value?.scrollToRow(matchedRowNo! - 1)
   handleOrderCompletion(matchedOrder)
+
+  // スキャン成功フラッシュ / スキャン成功フラッシュ
+  scanSuccessFlash.value = true
+  setTimeout(() => { scanSuccessFlash.value = false }, 600)
 }
 
 // ─── Order Completion ─────────────────────────────────────────────────
@@ -714,10 +759,25 @@ onBeforeUnmount(() => {
 <style scoped>
 .inspection-page {
   display: flex;
+  flex-wrap: wrap;
   height: 100%;
   gap: 0;
   position: relative;
   padding-bottom: 56px;
+}
+
+/* ─── Progress Bar ───────────────────────── */
+.inspection-progress-bar { width: 100%; padding: 8px 16px; background: #f5f7fa; border-radius: 4px; margin-bottom: 8px; }
+.progress-info { display: flex; justify-content: space-between; font-size: 12px; color: #606266; margin-bottom: 4px; }
+.progress-track { height: 6px; background: #ebeef5; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: #67c23a; border-radius: 3px; transition: width 0.3s ease; }
+
+/* ─── Scan Success Flash ─────────────────── */
+.scan-success-flash { animation: successFlash 0.6s ease; }
+@keyframes successFlash {
+  0% { background-color: inherit; }
+  30% { background-color: #f0f9eb; border-color: #67c23a; }
+  100% { background-color: inherit; }
 }
 
 /* ─── F-Key Bar ──────────────────────────── */
@@ -801,6 +861,12 @@ onBeforeUnmount(() => {
   font-weight: 600;
   margin-top: 8px;
 }
+
+.wrong-scan-expected { margin-top: 12px; padding: 8px 12px; background: #f5f7fa; border-radius: 4px; }
+.wrong-scan-expected-label { font-size: 12px; color: #909399; margin-bottom: 4px; }
+.wrong-scan-expected-list { display: flex; flex-wrap: wrap; gap: 4px; }
+.expected-sku-tag { font-family: monospace; font-size: 12px; padding: 2px 8px; background: #fff; border: 1px solid #dcdfe6; border-radius: 3px; color: #303133; }
+.expected-sku-more { font-size: 12px; color: #909399; padding: 2px 4px; }
 
 /* ─── Completion Dialog ──────────────────── */
 .completion-message {

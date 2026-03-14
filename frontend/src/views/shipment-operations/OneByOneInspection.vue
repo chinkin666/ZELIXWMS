@@ -3,6 +3,7 @@
     <!-- 左侧面板 -->
     <InspectionLeftPanel
       ref="leftPanelRef"
+      :class="{ 'scan-success-flash': scanSuccessFlash }"
       :order-group-id="orderGroupId"
       :current-order="currentOrder"
       :order-info-items="orderInfoItems"
@@ -17,6 +18,17 @@
       @submit="handleInput"
       @toggle-auto-print="toggleAutoPrint"
     />
+
+    <!-- 検品進捗バー / 検品進捗バー -->
+    <div v-if="totalOrderCount > 0" class="inspection-progress-bar">
+      <div class="progress-info">
+        <span>検品進捗: {{ inspectionProgress.done }} / {{ inspectionProgress.total }}</span>
+        <span>{{ inspectionProgress.percent }}%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" :style="{ width: inspectionProgress.percent + '%' }"></div>
+      </div>
+    </div>
 
     <!-- 右侧面板 -->
     <InspectionRightPanel
@@ -187,6 +199,12 @@
         <div class="wrong-scan-hint">
           {{ t('wms.inspection.wrongScanHint', '現在の注文に含まれない商品がスキャンされました。') }}
         </div>
+        <div v-if="expectedScanValues.length > 0" class="wrong-scan-expected">
+          <div class="wrong-scan-expected-label">この注文の商品SKU:</div>
+          <div class="wrong-scan-expected-list">
+            <span v-for="sku in expectedScanValues" :key="sku" class="expected-sku-tag">{{ sku }}</span>
+          </div>
+        </div>
         <OButton
           variant="danger"
           class="wrong-scan-close-btn"
@@ -352,6 +370,9 @@ const isSplittingOrder = ref(false)
 const wrongScanDialogVisible = ref(false)
 const wrongScanValue = ref('')
 
+// Scan success flash / スキャン成功フラッシュ
+const scanSuccessFlash = ref(false)
+
 // Split order auto-chain queue
 const splitOrderQueue = ref<string[]>([])
 
@@ -396,6 +417,26 @@ const inspectedQuantity = computed(() =>
 const remainingQuantity = computed(() =>
   inspectionItems.value.reduce((sum, item) => sum + item.remainingQuantity, 0),
 )
+
+// 検品進捗 / 検品進捗
+const inspectionProgress = computed(() => {
+  const total = totalOrderCount.value
+  const done = processedOrderIds.value.length
+  return { total, done, percent: total > 0 ? Math.round((done / total) * 100) : 0 }
+})
+
+// 誤スキャン時の期待SKU一覧 / 誤スキャン時の期待SKU一覧
+const expectedScanValues = computed(() => {
+  if (!currentOrder.value) return []
+  const values: string[] = []
+  if (Array.isArray(currentOrder.value.products)) {
+    for (const prod of currentOrder.value.products as any[]) {
+      const sku = prod.inputSku || prod.sku || prod.productSku || ''
+      if (sku && !values.includes(sku)) values.push(sku)
+    }
+  }
+  return values
+})
 
 const orderInfoItems = computed(() => {
   const o: any = currentOrder.value || {}
@@ -582,6 +623,8 @@ function tryAutoProductMatch(input: string) {
       item.inspectedQuantity++
       item.remainingQuantity--
       lastScannedProduct.value = { sku: item.sku, name: item.name, barcodes: item.barcodes, imageUrl: item.productData?.imageUrl }
+      scanSuccessFlash.value = true
+      setTimeout(() => { scanSuccessFlash.value = false }, 600)
       checkCompletion()
       return
     }
@@ -609,6 +652,8 @@ function handleProductMatch(input: string) {
   matched.inspectedQuantity++
   matched.remainingQuantity--
   lastScannedProduct.value = { sku: matched.sku, name: matched.name, barcodes: matched.barcodes, imageUrl: matched.productData?.imageUrl }
+  scanSuccessFlash.value = true
+  setTimeout(() => { scanSuccessFlash.value = false }, 600)
   focusScanInput()
   checkCompletion()
 }
@@ -1375,4 +1420,24 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 .o-input:focus { border-color: var(--o-info); }
+
+/* ─── Inspection Progress Bar ────────────── */
+.inspection-progress-bar { position: absolute; top: 0; left: 0; right: 0; padding: 8px 16px; background: #f5f7fa; border-radius: 0 0 4px 4px; z-index: 10; }
+.progress-info { display: flex; justify-content: space-between; font-size: 12px; color: #606266; margin-bottom: 4px; }
+.progress-track { height: 6px; background: #ebeef5; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: #67c23a; border-radius: 3px; transition: width 0.3s ease; }
+
+/* ─── Wrong Scan Expected SKU ────────────── */
+.wrong-scan-expected { margin-top: 12px; padding: 8px 12px; background: #f5f7fa; border-radius: 4px; }
+.wrong-scan-expected-label { font-size: 12px; color: #909399; margin-bottom: 4px; }
+.wrong-scan-expected-list { display: flex; flex-wrap: wrap; gap: 4px; }
+.expected-sku-tag { font-family: monospace; font-size: 12px; padding: 2px 8px; background: #fff; border: 1px solid #dcdfe6; border-radius: 3px; color: #303133; }
+
+/* ─── Scan Success Flash ─────────────────── */
+.scan-success-flash { animation: successFlash 0.6s ease; }
+@keyframes successFlash {
+  0% { background-color: inherit; }
+  30% { background-color: #f0f9eb; border-color: #67c23a; }
+  100% { background-color: inherit; }
+}
 </style>

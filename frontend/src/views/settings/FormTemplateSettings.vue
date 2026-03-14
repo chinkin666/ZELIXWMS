@@ -22,6 +22,25 @@
 
     <!-- 作成ダイアログ / 新建对话框 -->
     <ODialog :open="createDialogVisible" :title="t('wms.settings.addFormTemplate', '帳票テンプレートを追加')" @close="createDialogVisible = false">
+      <!-- 预设模板快速选择 / プリセットテンプレート -->
+      <div class="preset-section">
+        <label class="form-label">{{ t('wms.settings.presetTemplates', 'プリセットから作成') }}</label>
+        <div class="preset-grid">
+          <button
+            v-for="preset in presetTemplates"
+            :key="preset.type"
+            class="preset-card"
+            :class="{ 'preset-card--selected': createForm.targetType === preset.type && createForm.name === preset.name }"
+            @click="applyPreset(preset)"
+          >
+            <span class="preset-name">{{ preset.name }}</span>
+            <span class="preset-desc">{{ preset.description }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="preset-divider"><span>{{ t('wms.settings.orCustom', 'またはカスタム設定') }}</span></div>
+
       <div class="o-form-group">
         <label class="form-label">{{ t('wms.settings.templateName', 'テンプレート名') }} <span class="required-badge">必須</span></label>
         <input class="o-input" v-model="createForm.name" :placeholder="t('wms.settings.templateNamePlaceholder', '例：ピッキングリスト')" />
@@ -71,6 +90,20 @@ const createForm = ref({
   name: '',
   targetType: '',
 })
+
+// 预设模板列表 / プリセットテンプレート一覧
+const presetTemplates = [
+  { type: 'shipment-list-picking', name: 'ピッキングリスト', description: '出荷商品の集計リスト' },
+  { type: 'shipment-detail-list', name: '出荷明細リスト', description: '出荷指示の詳細一覧' },
+  { type: 'inbound-detail-list', name: '入庫リスト', description: '入庫指示のライン明細' },
+  { type: 'inbound-inspection-sheet', name: '入庫検品シート', description: '入庫検品チェックリスト' },
+  { type: 'product-label', name: '商品ラベル', description: '商品小標籤・外箱ラベル' },
+]
+
+function applyPreset(preset: { type: string; name: string }) {
+  createForm.value.targetType = preset.type
+  createForm.value.name = preset.name
+}
 
 function getTypeLabel(type: string): string {
   const found = formTypeRegistry.find((ft) => ft.type === type)
@@ -256,4 +289,19 @@ onMounted(() => {
 .o-form-group { margin-bottom: 1rem; }
 .form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
 .required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
+
+/* 预设模板卡片 / プリセットテンプレートカード */
+.preset-section { margin-bottom: 16px; }
+.preset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin-top: 8px; }
+.preset-card {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 10px 12px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: 6px;
+  background: #fff; cursor: pointer; text-align: left; transition: all 0.15s;
+}
+.preset-card:hover { border-color: var(--o-brand-primary, #D97756); background: #fdf8f6; }
+.preset-card--selected { border-color: var(--o-brand-primary, #D97756); background: #fdf8f6; box-shadow: 0 0 0 2px rgba(217,119,86,0.2); }
+.preset-name { font-size: 13px; font-weight: 600; color: #303133; }
+.preset-desc { font-size: 11px; color: #909399; }
+.preset-divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: #909399; font-size: 12px; }
+.preset-divider::before, .preset-divider::after { content: ''; flex: 1; border-top: 1px solid #ebeef5; }
 </style>
