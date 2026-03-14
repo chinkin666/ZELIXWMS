@@ -5,7 +5,22 @@
  * e飛伝Ⅲ フォーマット CSV 出力。
  */
 
-import { formatProductNameSplit, type ProductNameFormatOptions, type ProductNameRule } from '../../../backend/src/utils/productNameFormatter';
+// 延迟加载以避免路径解析问题 / 遅延ロードでパス解決問題を回避
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { formatProductNameSplit } = require(require('path').resolve(process.cwd(), 'src/utils/productNameFormatter'));
+
+type ProductNameRule =
+  | { type: 'front'; maxChars: number }
+  | { type: 'back'; maxChars: number }
+  | { type: 'between'; startKeyword: string; endKeyword: string; maxChars: number }
+  | { type: 'fixed'; text: string }
+
+interface ProductNameFormatOptions {
+  rule?: ProductNameRule
+  maxChars?: number
+  multiSkuMode?: 'first' | 'count' | 'concat'
+  includeQuantity?: boolean
+}
 
 /**
  * 导出配置 / エクスポート設定
