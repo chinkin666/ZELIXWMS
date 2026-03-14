@@ -38,9 +38,15 @@
     <!-- Browser Mode: Simple Info -->
     <template v-if="config.method === 'browser'">
       <div class="o-card browser-info">
-        <p style="text-align:center;color:#909399;padding:20px 0">
-          {{ t('wms.settings.browserPrintDescription', 'ブラウザの標準印刷機能を使用します。印刷時にブラウザのダイアログが表示されます。') }}
-        </p>
+        <div class="browser-info-content">
+          <svg width="32" height="32" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.3">
+            <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
+            <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
+          </svg>
+          <p><strong>ブラウザ印刷モード</strong></p>
+          <p class="browser-info-desc">ブラウザの標準印刷機能を使用します。印刷時にブラウザのダイアログが表示されます。</p>
+          <p class="browser-info-hint">追加設定は不要です。プリンターはブラウザ側で選択してください。</p>
+        </div>
       </div>
     </template>
 
@@ -153,9 +159,6 @@ onMounted(() => {
 }
 
 
-
-
-
 .o-card {
   background: var(--o-view-background, #fff);
   border: 1px solid var(--o-border-color, #e4e7ed);
@@ -183,7 +186,7 @@ onMounted(() => {
 }
 
 .radio-option input[type="radio"] {
-  accent-color: var(--o-brand-primary, #714b67);
+  accent-color: var(--o-brand-primary, #D97756);
 }
 
 .method-card {
@@ -211,12 +214,24 @@ onMounted(() => {
 }
 
 .o-tab.active {
-  color: var(--o-brand-primary, #714b67);
-  border-bottom-color: var(--o-brand-primary, #714b67);
+  color: var(--o-brand-primary, #D97756);
+  border-bottom-color: var(--o-brand-primary, #D97756);
   font-weight: 500;
 }
 
 .tab-content {
   padding: 20px;
 }
+
+.browser-info-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 20px;
+  text-align: center;
+}
+.browser-info-content p { margin: 0; }
+.browser-info-desc { font-size: 13px; color: var(--o-gray-600); }
+.browser-info-hint { font-size: 12px; color: var(--o-gray-400); }
 </style>
