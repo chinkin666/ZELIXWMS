@@ -16,7 +16,7 @@ export const TRIGGER_EVENTS: TriggerEvent[] = [
 ]
 
 export const TRIGGER_EVENT_LABELS: Record<TriggerEvent, string> = {
-  'order.created': '注文作成時',
+  'order.created': '出荷指示作成時',
   'order.confirmed': '出荷確定時',
   'order.shipped': '出荷完了時',
 }
