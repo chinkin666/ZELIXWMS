@@ -93,7 +93,7 @@ defineEmits<{
   padding: 2px 6px;
   font-size: 12px;
   cursor: pointer;
-  color: var(--o-primary, #714B67);
+  color: var(--o-brand-primary, #D97756);
 }
 .o-btn-text:hover { text-decoration: underline; }
 .o-btn-text:disabled { opacity: 0.4; cursor: not-allowed; text-decoration: none; }

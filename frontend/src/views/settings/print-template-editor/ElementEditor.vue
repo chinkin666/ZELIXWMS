@@ -197,7 +197,7 @@ function onImageFileChange(e: Event) {
 
 <style scoped>
 .panel {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--o-border-color, #e4e7ed);
   border-radius: 8px;
   background: #fff;
   padding: 10px;
@@ -232,7 +232,7 @@ function onImageFileChange(e: Event) {
   width: 120px;
   flex-shrink: 0;
   font-size: 12px;
-  color: #374151;
+  color: var(--o-gray-700);
   padding-top: 6px;
 }
 .o-form-group > input,
@@ -249,7 +249,7 @@ function onImageFileChange(e: Event) {
   outline: none;
   transition: border-color 0.15s;
 }
-.o-input:focus { border-color: var(--o-primary, #714B67); }
+.o-input:focus { border-color: var(--o-brand-primary, #D97756); }
 .o-toggle {
   position: relative;
   display: inline-flex;
@@ -277,7 +277,7 @@ function onImageFileChange(e: Event) {
   transition: transform 0.2s;
 }
 .o-toggle input:checked + .o-toggle-slider {
-  background: var(--o-primary, #714B67);
+  background: var(--o-brand-primary, #D97756);
 }
 .o-toggle input:checked + .o-toggle-slider::after {
   transform: translateX(16px);

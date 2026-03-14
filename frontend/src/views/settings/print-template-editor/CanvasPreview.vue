@@ -17,9 +17,9 @@
         </div>
       </div>
       <div class="row">
-        <OButton variant="secondary" @click="$emit('add-text')">+ Text</OButton>
-        <OButton variant="secondary" @click="$emit('add-barcode')">+ Barcode</OButton>
-        <OButton variant="secondary" @click="$emit('add-image')">+ Image</OButton>
+        <OButton variant="secondary" @click="$emit('add-text')">+ テキスト</OButton>
+        <OButton variant="secondary" @click="$emit('add-barcode')">+ バーコード</OButton>
+        <OButton variant="secondary" @click="$emit('add-image')">+ 画像</OButton>
       </div>
     </div>
 
@@ -84,13 +84,14 @@ defineExpose({ stageEl })
 
 <style scoped>
 .panel {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #fff;
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  background: var(--o-view-background, #fff);
   padding: 10px;
 }
 .panel-title {
   font-weight: 600;
+  font-size: 13px;
+  color: var(--o-gray-800);
   margin-bottom: 8px;
 }
 .center .canvas-toolbar {
@@ -114,12 +115,12 @@ defineExpose({ stageEl })
 .form-group-inline label {
   white-space: nowrap;
   font-size: 12px;
-  color: #374151;
+  color: var(--o-gray-700);
 }
 .canvas-wrap {
   margin-top: 10px;
-  border: 1px dashed #d1d5db;
-  background: #f9fafb;
+  border: 1px dashed var(--o-border-color, #e4e7ed);
+  background: var(--o-gray-100, #f5f7fa);
   border-radius: 8px;
   padding: 10px;
   overflow: auto;
@@ -133,7 +134,7 @@ defineExpose({ stageEl })
 }
 .opacity-label {
   font-size: 12px;
-  color: #374151;
+  color: var(--o-gray-700);
   width: 48px;
 }
 .row {
@@ -149,5 +150,5 @@ defineExpose({ stageEl })
   outline: none;
   transition: border-color 0.15s;
 }
-.o-input:focus { border-color: var(--o-primary, #714B67); }
+.o-input:focus { border-color: var(--o-brand-primary, #D97756); }
 </style>

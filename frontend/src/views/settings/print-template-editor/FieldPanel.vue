@@ -109,7 +109,7 @@ function onTableFileChange(e: Event) {
 
 <style scoped>
 .panel {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--o-border-color, #e4e7ed);
   border-radius: 8px;
   background: #fff;
   padding: 10px;
@@ -153,7 +153,7 @@ function onTableFileChange(e: Event) {
 .meta {
   margin-top: 8px;
   font-size: 12px;
-  color: #374151;
+  color: var(--o-gray-700);
 }
 .hidden-input {
   display: none;
@@ -166,7 +166,7 @@ function onTableFileChange(e: Event) {
   outline: none;
   transition: border-color 0.15s;
 }
-.o-input:focus { border-color: var(--o-primary, #714B67); }
+.o-input:focus { border-color: var(--o-brand-primary, #D97756); }
 .o-toggle {
   position: relative;
   display: inline-flex;
@@ -194,7 +194,7 @@ function onTableFileChange(e: Event) {
   transition: transform 0.2s;
 }
 .o-toggle input:checked + .o-toggle-slider {
-  background: var(--o-primary, #714B67);
+  background: var(--o-brand-primary, #D97756);
 }
 .o-toggle input:checked + .o-toggle-slider::after {
   transform: translateX(16px);
