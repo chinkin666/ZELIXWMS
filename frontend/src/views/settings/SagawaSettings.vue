@@ -1,11 +1,11 @@
 <template>
   <div class="sagawa-settings">
-    <ControlPanel :title="t('wms.settings.sagawa.title', '佐川急便 e飛伝 連携')" :show-search="false" />
+    <ControlPanel :title="t('wms.settings.sagawa.title', '佐川急便 e飛伝Ⅲ 連携')" :show-search="false" />
 
     <!-- ── CSV 出力セクション / CSV 导出区域 ── -->
     <section class="settings-section">
-      <h3 class="section-title">{{ t('wms.settings.sagawa.csvExportTitle', 'CSV出力（e飛伝取込用）') }}</h3>
-      <p class="section-description">{{ t('wms.settings.sagawa.csvExportDescription', '出荷指示を佐川急便 e飛伝形式の CSV としてエクスポートします。') }}</p>
+      <h3 class="section-title">{{ t('wms.settings.sagawa.csvExportTitle', 'CSV出力（e飛伝Ⅲ取込用）') }}</h3>
+      <p class="section-description">{{ t('wms.settings.sagawa.csvExportDescription', '出荷指示を佐川急便 e飛伝Ⅲ形式の CSV としてエクスポートします。') }}</p>
 
       <div class="form-row">
         <div class="o-form-group">
@@ -129,8 +129,8 @@
 
     <!-- ── 追跡番号取込セクション / 追踪号导入区域 ── -->
     <section class="settings-section">
-      <h3 class="section-title">{{ t('wms.settings.sagawa.trackingImportTitle', '追跡番号取込（e飛伝 → WMS）') }}</h3>
-      <p class="section-description">{{ t('wms.settings.sagawa.trackingImportDescription', 'e飛伝から出力された追跡番号付き CSV をアップロードして、出荷指示に追跡番号を反映します。') }}</p>
+      <h3 class="section-title">{{ t('wms.settings.sagawa.trackingImportTitle', '追跡番号取込（e飛伝Ⅲ → WMS）') }}</h3>
+      <p class="section-description">{{ t('wms.settings.sagawa.trackingImportDescription', 'e飛伝Ⅲから出力された追跡番号付き CSV をアップロードして、出荷指示に追跡番号を反映します。') }}</p>
 
       <div class="form-row">
         <div class="o-form-group" style="flex: 2">

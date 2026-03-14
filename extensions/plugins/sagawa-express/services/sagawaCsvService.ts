@@ -1,8 +1,8 @@
 /**
  * 佐川 CSV 生成服务 / 佐川 CSV 生成サービス
  *
- * e飛伝II/III 格式 CSV 导出。
- * e飛伝II/III フォーマット CSV 出力。
+ * e飛伝Ⅲ 格式 CSV 导出。
+ * e飛伝Ⅲ フォーマット CSV 出力。
  */
 
 import { formatProductNameSplit, type ProductNameFormatOptions, type ProductNameRule } from '../../../backend/src/utils/productNameFormatter';

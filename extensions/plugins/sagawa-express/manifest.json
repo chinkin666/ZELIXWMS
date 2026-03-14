@@ -1,7 +1,7 @@
 {
   "name": "sagawa-express",
   "version": "1.0.0",
-  "description": "佐川急便 e飛伝 CSV 连携插件 / 佐川急便 e飛伝 CSV 連携プラグイン",
+  "description": "佐川急便 e飛伝Ⅲ CSV 连携插件 / 佐川急便 e飛伝Ⅲ CSV 連携プラグイン",
   "author": "ZELIX",
   "hooks": ["order.shipped", "order.confirmed"],
   "permissions": ["shipmentOrder.read", "shipmentOrder.write"],

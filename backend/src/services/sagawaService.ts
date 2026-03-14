@@ -1,8 +1,8 @@
 /**
  * 佐川急便 Service / 佐川急便サービス
  *
- * e飛伝II/III CSV 出力与追跡連携。
- * e飛伝II/III CSV 出力と追跡連携。
+ * e飛伝Ⅲ CSV 出力与追跡連携。
+ * e飛伝Ⅲ CSV 出力と追跡連携。
  *
  * Phase 1: CSV 导出（e飛伝取込用）
  * Phase 2: 追跡番号反映

@@ -428,7 +428,7 @@ const router = createRouter({
               path: 'sagawa',
               name: 'sagawa-settings',
               component: () => import('@/views/settings/SagawaSettings.vue'),
-              meta: { title: '佐川急便 e飛伝連携', requiresAuth: true },
+              meta: { title: '佐川急便 e飛伝Ⅲ連携', requiresAuth: true },
             },
             {
               path: 'order-groups',

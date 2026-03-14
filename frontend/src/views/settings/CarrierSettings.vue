@@ -202,7 +202,7 @@ const CARRIER_INVOICE_TYPES: Record<string, ReadonlyArray<{ invoiceType: string;
     { invoiceType: '9', name: 'コンパクトコレクト' },
     { invoiceType: 'A', name: 'ネコポス' },
   ],
-  // 佐川急便 e飛伝
+  // 佐川急便 e飛伝Ⅲ
   sagawa: [
     { invoiceType: '0', name: '元払い' },
     { invoiceType: '1', name: '着払い' },
