@@ -9,7 +9,7 @@
       <div class="left">
         <div class="mapping-form">
           <div class="o-form-group">
-            <label class="o-form-label">対象フィールド（出力先）</label>
+            <label class="o-form-label">出力先フィールド</label>
             <span>{{ target ? getTargetDisplayName(target.field) : '未選択' }}</span>
           </div>
 
@@ -93,7 +93,7 @@
                 </div>
 
                 <div v-if="input.type === 'column'" class="input-pipeline">
-                  <div class="pipeline-label">入力パイプライン:</div>
+                  <div class="pipeline-label">変換ステップ:</div>
                   <div
                     v-for="(step, stepIdx) in input.pipelineSteps"
                     :key="step.id"
@@ -612,7 +612,7 @@
 
 
           <div class="o-form-group">
-            <label class="o-form-label">出力パイプライン</label>
+            <label class="o-form-label">出力変換</label>
             <div class="pipeline-steps">
               <div
                 v-for="(step, stepIdx) in form.outputPipelineSteps"
@@ -1369,9 +1369,9 @@ const getTargetDisplayName = (targetKey: string): string => {
 const title = computed(() => {
   const targetName = props.target ? getTargetDisplayName(props.target.field) : ''
   if (props.preSelectedSources && props.preSelectedSources.length > 0) {
-    return `変換付き紐付け: ${targetName}`
+    return `変換設定: ${targetName}`
   }
-  return `紐付け項目の詳細設定: ${targetName}`
+  return `マッピング詳細: ${targetName}`
 })
 
 const referencedSources = computed(() => {

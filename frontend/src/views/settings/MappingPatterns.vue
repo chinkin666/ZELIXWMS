@@ -128,7 +128,7 @@ const baseColumns: TableColumn[] = [
   {
     key: 'mappingsCount',
     dataKey: 'mappingsCount',
-    title: t('wms.settings.mapping.mappingsCount', '紐付け数'),
+    title: t('wms.settings.mapping.mappingsCount', 'マッピング数'),
     width: 100,
     fieldType: 'number',
   },

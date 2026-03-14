@@ -31,7 +31,7 @@
           <tr>
             <th style="width: 70px">{{ t('wms.mapping.required', '必須') }}</th>
             <th style="min-width: 220px">{{ t('wms.mapping.fieldName', '項目名') }}</th>
-            <th style="min-width: 240px">{{ t('wms.mapping.mappingContent', '紐付け内容') }}</th>
+            <th style="min-width: 240px">{{ t('wms.mapping.mappingContent', 'マッピング内容') }}</th>
           </tr>
         </thead>
         <tbody>

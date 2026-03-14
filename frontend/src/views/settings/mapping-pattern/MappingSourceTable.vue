@@ -6,7 +6,7 @@
         <thead>
           <tr>
             <th style="min-width: 240px">{{ t('wms.mapping.fieldName', '項目名') }}</th>
-            <th style="min-width: 200px">{{ t('wms.mapping.linkedTarget', '紐付け先') }}</th>
+            <th style="min-width: 200px">{{ t('wms.mapping.linkedTarget', 'マッピング先') }}</th>
           </tr>
         </thead>
         <tbody>

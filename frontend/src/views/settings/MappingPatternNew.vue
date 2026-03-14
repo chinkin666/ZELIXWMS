@@ -837,7 +837,7 @@ const handleDirectLink = () => {
     required: selectedTarget.value.required,
   }
   mappings.value = { ...mappings.value, [selectedTarget.value.field]: mapping }
-  showToast(t('wms.mapping.linked', '紐付けました'), 'success')
+  showToast(t('wms.mapping.linked', 'マッピングを設定しました'), 'success')
 }
 
 const handleAddLiteral = async () => {

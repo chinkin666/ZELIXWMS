@@ -86,7 +86,7 @@
         :disabled="!selectedTarget || selectedSources.length === 0"
         @click="$emit('direct-link')"
       >
-        &lt;&lt; {{ t('wms.mapping.link', '紐付け') }}
+        &lt;&lt; {{ t('wms.mapping.link', 'マッピング') }}
       </OButton>
       <OButton
         variant="warning"
@@ -100,14 +100,14 @@
         :disabled="!selectedTarget"
         @click="$emit('open-transform-dialog')"
       >
-        &lt;&lt; {{ t('wms.mapping.linkWithTransform', '変換付き紐付け') }}
+        &lt;&lt; {{ t('wms.mapping.linkWithTransform', '変換付きマッピング') }}
       </OButton>
       <OButton
         variant="secondary"
         :disabled="!selectedTarget"
         @click="$emit('open-detail-dialog')"
       >
-        {{ t('wms.mapping.linkDetailSettings', '紐付け項目の詳細設定') }}
+        {{ t('wms.mapping.linkDetailSettings', 'マッピング詳細設定') }}
       </OButton>
       <OButton variant="danger" :disabled="!selectedTarget" @click="$emit('clear-selected')">
         {{ t('wms.mapping.clear', 'クリア') }}
