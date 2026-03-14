@@ -585,7 +585,7 @@ function saveAllToStorage() {
 // ─── Navigation ───────────────────────────────────────────────────────
 
 function handleGoBack() {
-  router.push('/shipment-operations/tasks')
+  router.push('/shipment/operations/tasks')
 }
 
 function handleClear() {
@@ -597,7 +597,7 @@ function handleClear() {
   currentMatchedRowNo.value = null
   currentMatchedProduct.value = null
   productCache.clear()
-  router.push('/shipment-operations/tasks')
+  router.push('/shipment/operations/tasks')
 }
 
 // ─── F-Key Bar ────────────────────────────────────────────────────────
@@ -682,7 +682,7 @@ onMounted(async () => {
 
   if (orderIds.length === 0) {
     showToast('検品対象の注文がありません。一覧ページに戻ります。', 'warning')
-    router.push('/shipment-operations/tasks')
+    router.push('/shipment/operations/tasks')
     return
   }
 

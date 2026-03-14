@@ -111,7 +111,11 @@ onMounted(loadSettings)
     <div v-if="loading" class="settings-loading">{{ t('wms.settings.loading', '読み込み中...') }}</div>
 
     <div v-else class="settings-body">
-      <!-- 入荷設定 -->
+      <p class="settings-hint">
+        基本的な設定は「基本設定」ページで行えます。こちらは入庫・在庫・出荷の詳細設定です。
+      </p>
+
+      <!-- 入荷设定 / 入荷設定 -->
       <div class="o-card settings-card">
         <div class="card-header">
           <span class="card-title">{{ t('wms.settings.inboundSettings', '入荷設定') }}</span>
@@ -134,17 +138,12 @@ onMounted(loadSettings)
           </div>
           <div class="o-form-group">
             <label class="form-label">{{ t('wms.settings.defaultInboundLocation', 'デフォルト入荷ロケーション') }}</label>
-            <input
-              v-model="form.inboundDefaultLocationCode"
-              type="text"
-              class="o-input"
-              placeholder="例: WH-IN-01"
-            />
+            <input v-model="form.inboundDefaultLocationCode" type="text" class="o-input" placeholder="例: WH-IN-01" />
           </div>
         </div>
       </div>
 
-      <!-- 在庫設定 -->
+      <!-- 在库设定 / 在庫設定 -->
       <div class="o-card settings-card">
         <div class="card-header">
           <span class="card-title">{{ t('wms.settings.inventorySettings', '在庫設定') }}</span>
@@ -160,12 +159,7 @@ onMounted(loadSettings)
           </div>
           <div class="o-form-group">
             <label class="form-label">{{ t('wms.settings.defaultSafetyStock', 'デフォルト安全在庫数') }}</label>
-            <input
-              v-model.number="form.inventoryDefaultSafetyStock"
-              type="number"
-              class="o-input"
-              min="0"
-            />
+            <input v-model.number="form.inventoryDefaultSafetyStock" type="number" class="o-input" min="0" />
           </div>
           <div class="o-form-group">
             <label class="form-label">{{ t('wms.settings.enableLotTracking', 'ロット追跡を有効化') }}</label>
@@ -176,21 +170,16 @@ onMounted(loadSettings)
           </div>
           <div class="o-form-group">
             <label class="form-label">{{ t('wms.settings.expiryAlertDays', '賞味期限アラート日数') }}</label>
-            <input
-              v-model.number="form.inventoryExpiryAlertDays"
-              type="number"
-              class="o-input"
-              min="0"
-            />
+            <input v-model.number="form.inventoryExpiryAlertDays" type="number" class="o-input" min="0" />
           </div>
         </div>
       </div>
 
-      <!-- 出荷設定 -->
+      <!-- 出荷高级设定 / 出荷詳細設定 -->
       <div class="o-card settings-card">
         <div class="card-header">
-          <span class="card-title">{{ t('wms.settings.outboundSettings', '出荷設定') }}</span>
-          <span class="card-description">{{ t('wms.settings.outboundSettingsDesc', '出荷時の自動引当・検品に関する設定') }}</span>
+          <span class="card-title">{{ t('wms.settings.outboundAdvanced', '出荷詳細設定') }}</span>
+          <span class="card-description">出荷時の自動引当に関する詳細設定（検品・引当ルールは基本設定で変更可能）</span>
         </div>
         <div class="card-body">
           <div class="o-form-group">
@@ -199,94 +188,6 @@ onMounted(loadSettings)
               <input v-model="form.outboundAutoAllocate" type="checkbox" />
               <span class="toggle-slider" />
             </label>
-          </div>
-          <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.allocationRule', '引当ルール') }}</label>
-            <select v-model="form.outboundAllocationRule" class="o-input">
-              <option value="FIFO">{{ t('wms.settings.fifo', 'FIFO（先入先出）') }}</option>
-              <option value="FEFO">{{ t('wms.settings.fefo', 'FEFO（先期限先出）') }}</option>
-              <option value="LIFO">{{ t('wms.settings.lifo', 'LIFO（後入先出）') }}</option>
-            </select>
-          </div>
-          <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.outboundRequireInspection', '出荷検品必須') }}</label>
-            <label class="toggle-switch">
-              <input v-model="form.outboundRequireInspection" type="checkbox" />
-              <span class="toggle-slider" />
-            </label>
-          </div>
-        </div>
-      </div>
-
-      <!-- バーコード設定 -->
-      <div class="o-card settings-card">
-        <div class="card-header">
-          <span class="card-title">{{ t('wms.settings.barcodeSettings', 'バーコード設定') }}</span>
-          <span class="card-description">{{ t('wms.settings.barcodeSettingsDesc', 'バーコードフォーマットとスキャンモードの設定') }}</span>
-        </div>
-        <div class="card-body">
-          <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.defaultBarcodeFormat', 'デフォルトバーコード形式') }}</label>
-            <select v-model="form.barcodeDefaultFormat" class="o-input">
-              <option value="code128">Code 128</option>
-              <option value="ean13">EAN-13</option>
-              <option value="code39">Code 39</option>
-              <option value="qrcode">{{ t('wms.settings.qrCode', 'QRコード') }}</option>
-            </select>
-          </div>
-          <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.scanMode', 'スキャンモード') }}</label>
-            <select v-model="form.barcodeScanMode" class="o-input">
-              <option value="single">{{ t('wms.settings.scanSingle', 'シングル（1件ずつ）') }}</option>
-              <option value="continuous">{{ t('wms.settings.scanContinuous', '連続スキャン') }}</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- 一般設定 -->
-      <div class="o-card settings-card">
-        <div class="card-header">
-          <span class="card-title">{{ t('wms.settings.generalSettings', '一般設定') }}</span>
-          <span class="card-description">{{ t('wms.settings.generalSettingsDesc', '言語・タイムゾーン・表示形式の設定') }}</span>
-        </div>
-        <div class="card-body">
-          <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.systemLanguage', 'システム言語') }}</label>
-            <select v-model="form.systemLanguage" class="o-input">
-              <option value="ja">{{ t('wms.settings.langJa', '日本語') }}</option>
-              <option value="en">English</option>
-              <option value="zh">{{ t('wms.settings.langZh', '中文') }}</option>
-            </select>
-          </div>
-          <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.timezone', 'タイムゾーン') }}</label>
-            <select v-model="form.timezone" class="o-input">
-              <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
-              <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
-              <option value="UTC">UTC</option>
-              <option value="America/New_York">America/New_York (EST)</option>
-              <option value="Europe/London">Europe/London (GMT)</option>
-            </select>
-          </div>
-          <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.dateFormat', '日付フォーマット') }}</label>
-            <select v-model="form.dateFormat" class="o-input">
-              <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-              <option value="YYYY/MM/DD">YYYY/MM/DD</option>
-              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-            </select>
-          </div>
-          <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.defaultPageSize', 'デフォルトページサイズ') }}</label>
-            <input
-              v-model.number="form.pageSize"
-              type="number"
-              class="o-input"
-              min="10"
-              max="200"
-            />
           </div>
         </div>
       </div>
@@ -313,14 +214,20 @@ onMounted(loadSettings)
   justify-content: center;
   padding: 3rem;
   color: var(--o-gray-500, #6c757d);
-  font-size: var(--o-font-size-base, 14px);
+}
+
+.settings-hint {
+  font-size: 13px;
+  color: var(--o-gray-500, #6c757d);
+  padding: 8px 12px;
+  background: var(--o-gray-100, #f5f7fa);
+  border-left: 3px solid var(--o-brand-primary, #D97756);
 }
 
 .settings-body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1rem;
   max-width: 800px;
 }
 
@@ -390,13 +297,11 @@ onMounted(loadSettings)
 }
 
 .o-input:focus {
-  border-color: var(--o-brand-primary, #714b67);
-  box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.15);
+  border-color: var(--o-brand-primary, #D97756);
+  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.15);
 }
 
-select.o-input {
-  cursor: pointer;
-}
+select.o-input { cursor: pointer; }
 
 /* Toggle switch */
 .toggle-switch {
@@ -407,40 +312,26 @@ select.o-input {
   flex-shrink: 0;
   cursor: pointer;
 }
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
 .toggle-slider {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  top: 0; left: 0; right: 0; bottom: 0;
   background-color: var(--o-gray-300, #ced4da);
   border-radius: 12px;
   transition: background-color 0.2s;
 }
-
 .toggle-slider::before {
   content: '';
   position: absolute;
-  width: 18px;
-  height: 18px;
-  left: 3px;
-  bottom: 3px;
+  width: 18px; height: 18px;
+  left: 3px; bottom: 3px;
   background: #fff;
   border-radius: 50%;
   transition: transform 0.2s;
 }
-
 .toggle-switch input:checked + .toggle-slider {
-  background-color: var(--o-brand-primary, #714b67);
+  background-color: var(--o-brand-primary, #D97756);
 }
-
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(20px);
 }
@@ -451,14 +342,7 @@ select.o-input {
     align-items: flex-start;
     gap: 0.5rem;
   }
-
-  .o-input {
-    max-width: 100%;
-    width: 100%;
-  }
-
-  .form-label {
-    min-width: auto;
-  }
+  .o-input { max-width: 100%; width: 100%; }
+  .form-label { min-width: auto; }
 }
 </style>

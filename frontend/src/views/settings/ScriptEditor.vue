@@ -69,11 +69,11 @@
     <ODialog v-model="dialogOpen" :title="isEditing ? t('wms.settings.editScript', 'スクリプトを編集') : t('wms.settings.addScript', 'スクリプトを追加')" size="xl" @confirm="handleSave">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.settings.name', '名称') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.settings.name', '名称') }} <span class="required-badge">必須</span></label>
           <input v-model="form.name" type="text" class="o-input" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.settings.event', 'イベント') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.settings.event', 'イベント') }} <span class="required-badge">必須</span></label>
           <select v-model="form.event" class="o-input">
             <option value="" disabled>{{ t('wms.settings.selectPlease', '選択してください') }}</option>
             <option v-for="ev in availableEvents" :key="ev" :value="ev">{{ ev }}</option>
@@ -88,7 +88,7 @@
           <input v-model="form.description" type="text" class="o-input" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.settings.code', 'コード') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.settings.code', 'コード') }} <span class="required-badge">必須</span></label>
           <textarea
             v-model="form.code"
             class="o-input code-textarea"

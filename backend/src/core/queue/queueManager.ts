@@ -16,9 +16,9 @@ import { logger } from '@/lib/logger';
 
 // 队列名称常量 / キュー名定数
 export const QUEUE_NAMES = {
-  WEBHOOK: 'wms:webhook',
-  SCRIPT: 'wms:script',
-  AUDIT: 'wms:audit',
+  WEBHOOK: 'wms-webhook',
+  SCRIPT: 'wms-script',
+  AUDIT: 'wms-audit',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -69,15 +69,28 @@ class QueueManager {
       this.connection = new IORedis(redisUrl, {
         maxRetriesPerRequest: null, // BullMQ 要求 / BullMQ 要件
         enableReadyCheck: false,
+        retryStrategy(times: number) {
+          // 重试3次后放弃，避免无限刷日志 / 3回リトライ後に諦め、ログ無限出力を防止
+          if (times > 3) return null;
+          return Math.min(times * 500, 2000);
+        },
+        lazyConnect: true,
       });
 
+      let redisErrorLogged = false;
       this.connection.on('error', (err: Error) => {
-        logger.error({ err }, 'Redis connection error / Redis 接続エラー');
+        if (!redisErrorLogged) {
+          logger.warn({ err: err.message }, 'Redis unavailable, queue features disabled / Redis 利用不可、キュー機能を無効化');
+          redisErrorLogged = true;
+        }
       });
 
       this.connection.on('connect', () => {
+        redisErrorLogged = false;
         logger.info('Redis connected / Redis 接続完了');
       });
+
+      await this.connection.connect();
 
       // 创建队列 / キューを作成
       for (const name of Object.values(QUEUE_NAMES)) {

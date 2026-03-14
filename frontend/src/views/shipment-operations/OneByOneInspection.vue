@@ -1009,7 +1009,7 @@ async function loadOrdersFromStorage(): Promise<void> {
 // ─── Navigation ───────────────────────────────────────────────────────
 
 function handleGoBack() {
-  router.push('/shipment-operations/tasks')
+  router.push('/shipment/operations/tasks')
 }
 
 function handleClear() {
@@ -1022,7 +1022,7 @@ function handleClear() {
   inspectionItems.value = []
   lastScannedProduct.value = null
   productCache.clear()
-  router.push('/shipment-operations/tasks')
+  router.push('/shipment/operations/tasks')
 }
 
 // ─── Initialize ───────────────────────────────────────────────────────
@@ -1078,7 +1078,7 @@ onMounted(async () => {
 
   if (pendingOrders.value.length === 0 && processedOrderIds.value.length === 0) {
     showToast(t('wms.inspection.noOrdersToInspect', '検品対象の注文がありません。一覧ページに戻ります。'), 'warning')
-    router.push('/shipment-operations/tasks')
+    router.push('/shipment/operations/tasks')
     return
   }
 

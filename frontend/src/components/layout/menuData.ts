@@ -13,9 +13,7 @@ export const wmsMenuItems: Array<{ label: string; to: string }> = [
   { label: '在庫管理', to: '/inventory' },
   { label: '商品管理', to: '/products' },
   { label: 'セット組管理', to: '/set-products' },
-  { label: '出荷指示', to: '/shipment-orders' },
-  { label: '出荷作業', to: '/shipment-operations' },
-  { label: '出荷実績', to: '/shipment-results' },
+  { label: '出荷管理', to: '/shipment' },
   { label: '棚卸管理', to: '/stocktaking' },
   { label: '返品管理', to: '/returns' },
   { label: '倉庫オペレーション', to: '/warehouse-ops' },
@@ -89,16 +87,14 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'セット組制作指示', to: '/set-products/assembly' },
     { label: '指示履歴', to: '/set-products/history' },
   ],
-  '/shipment-orders': [
-    { label: '出荷指示作成', to: '/shipment-orders/create' },
+  '/shipment': [
+    { label: '出荷指示作成', to: '/shipment/orders/create' },
+    { label: '出荷作業一覧', to: '/shipment/operations/tasks' },
+    { label: '出荷一覧', to: '/shipment/operations/list' },
+    { label: '1-1検品', to: '/shipment/operations/one-by-one/inspection' },
+    { label: 'N-1検品', to: '/shipment/operations/n-by-one/inspection' },
+    { label: '出荷実績', to: '/shipment/results' },
   ],
-  '/shipment-operations': [
-    { label: '出荷作業一覧', to: '/shipment-operations/tasks' },
-    { label: '出荷一覧', to: '/shipment-operations/list' },
-    { label: '1-1検品', to: '/shipment-operations/one-by-one/inspection' },
-    { label: 'N-1検品', to: '/shipment-operations/n-by-one/inspection' },
-  ],
-  '/shipment-results': [],
   '/inbound': [
     { label: '入庫ダッシュボード', to: '/inbound/dashboard' },
     { label: '入庫指示一覧', to: '/inbound/orders' },
@@ -130,6 +126,7 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
   ],
   '/daily': [
     { label: '日次レポート', to: '/daily/list' },
+    { label: '出荷統計', to: '/daily/statistics' },
   ],
   '/settings': settingsGroups.flatMap((g) => g.items),
 }

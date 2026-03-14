@@ -19,6 +19,22 @@ const { locale, setLocale, availableLocales } = useI18n()
 
 const showUserMenu = ref(false)
 const showLangMenu = ref(false)
+const isDark = ref(document.documentElement.getAttribute('data-theme') === 'dark')
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  document.documentElement.setAttribute('data-theme', isDark.value ? 'dark' : 'light')
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
+
+// 启动时恢复主题 / 起動時にテーマを復元
+;(() => {
+  const saved = localStorage.getItem('theme')
+  if (saved === 'dark') {
+    isDark.value = true
+    document.documentElement.setAttribute('data-theme', 'dark')
+  }
+})()
 
 function isActive(to: string) {
   if (to === '/home') return route.path === '/home' || route.path === '/'
@@ -114,6 +130,24 @@ function closeMenus(e: MouseEvent) {
         </div>
       </div>
 
+      <!-- Quick search hint / クイック検索ヒント -->
+      <button class="o-systray-btn o-search-hint" title="Ctrl+K" @click="document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+        </svg>
+        <kbd class="o-nav-kbd">Ctrl K</kbd>
+      </button>
+
+      <!-- Theme toggle / テーマ切替 -->
+      <button class="o-systray-btn" :title="isDark ? 'ライトモード' : 'ダークモード'" @click="toggleTheme">
+        <svg v-if="isDark" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+        </svg>
+        <svg v-else width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+        </svg>
+      </button>
+
       <!-- User menu -->
       <div class="o-user-menu" @click.stop>
         <button class="o-navbar-entry o-user-btn" @click="showUserMenu = !showUserMenu">
@@ -156,6 +190,7 @@ function closeMenus(e: MouseEvent) {
 
 .o-home-btn {
   padding: 0 14px;
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .o-navbar-menu {
@@ -191,6 +226,7 @@ function closeMenus(e: MouseEvent) {
   background: rgba(0, 0, 0, 0.15);
   color: #fff;
   font-weight: 500;
+  box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.8);
 }
 
 .o-navbar-systray {
@@ -213,6 +249,22 @@ function closeMenus(e: MouseEvent) {
   transition: background 0.1s;
 }
 .o-systray-btn:hover { background: var(--NavBar-entry-bg-hover); }
+
+.o-search-hint {
+  gap: 6px;
+}
+.o-nav-kbd {
+  font-size: 10px;
+  padding: 1px 5px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.7);
+  font-family: var(--o-font-family-mono);
+}
+
+@media (max-width: 768px) {
+  .o-nav-kbd { display: none; }
+}
 
 /* Language Switcher */
 .o-lang-switcher { position: relative; height: 100%; display: flex; align-items: center; }

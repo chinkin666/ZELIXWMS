@@ -266,6 +266,11 @@ function navigateBreadcrumb(route?: string) {
   border-radius: var(--o-border-radius);
   background: var(--o-view-background);
   min-height: 30px;
+  transition: border-color 0.15s;
+}
+.o-searchview:focus-within {
+  border-color: var(--o-brand-primary, #D97756);
+  box-shadow: 0 0 0 1px rgba(217, 119, 86, 0.15);
 }
 .o-searchview-input-container {
   display: flex;

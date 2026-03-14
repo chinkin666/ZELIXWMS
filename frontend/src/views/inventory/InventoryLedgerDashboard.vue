@@ -202,11 +202,11 @@
     <ODialog v-model="adjustmentDialogOpen" :title="t('wms.inventory.manualAdjustment', '手動調整')" size="md" @confirm="handleCreateAdjustment">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.productSku', '商品SKU') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inventory.productSku', '商品SKU') }} <span class="required-badge">必須</span></label>
           <input v-model="adjustmentForm.productSku" type="text" class="o-input" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.quantity', '数量') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inventory.quantity', '数量') }} <span class="required-badge">必須</span></label>
           <input v-model.number="adjustmentForm.quantity" type="number" class="o-input" />
         </div>
         <div class="form-field">

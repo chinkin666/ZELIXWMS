@@ -18,12 +18,12 @@
       <Table
         :columns="tableColumns"
         :data="list"
-        :height="520"
+        :height="560"
         row-key="_id"
         highlight-columns-on-hover
         pagination-enabled
         pagination-mode="client"
-        :page-size="10"
+        :page-size="20"
         :page-sizes="[10, 20, 50]"
         :global-search-text="globalSearchText"
       />
@@ -67,95 +67,101 @@
       @close="dialogVisible = false"
     >
       <div class="carrier-form">
-        <div class="form-row">
-          <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.carrierCode') }} <span class="required">*</span></label>
-            <input class="o-input" v-model="editForm.code" placeholder="例: yamato_b2" :disabled="isEditing" />
+        <!-- 基本信息区 / 基本情報エリア -->
+        <div class="form-section">
+          <div class="form-section-title">基本情報</div>
+          <div class="form-grid">
+            <div class="o-form-group">
+              <label class="form-label">配送業者コード <span class="required-badge">必須</span></label>
+              <input class="o-input" v-model="editForm.code" placeholder="例: yamato_b2" :disabled="isEditing" :class="{ 'o-input--disabled': isEditing }" />
+              <span v-if="isEditing" class="form-hint">コードは変更できません</span>
+            </div>
+            <div class="o-form-group">
+              <label class="form-label">配送業者名 <span class="required-badge">必須</span></label>
+              <input class="o-input" v-model="editForm.name" placeholder="配送業者名" />
+            </div>
+            <div class="o-form-group">
+              <label class="form-label">追跡番号列名</label>
+              <input class="o-input" v-model="editForm.trackingIdColumnName" placeholder="回执/実績ファイルの列名（例: 伝票番号）" />
+            </div>
+            <div class="o-form-group">
+              <label class="form-label">有効</label>
+              <label class="o-toggle">
+                <input type="checkbox" v-model="editForm.enabled" />
+                <span class="o-toggle-slider"></span>
+              </label>
+            </div>
           </div>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.carrierName') }} <span class="required">*</span></label>
-            <input class="o-input" v-model="editForm.name" :placeholder="t('wms.settings.carrierName')" />
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.enabled', '有効') }}</label>
-            <label class="o-toggle">
-              <input type="checkbox" v-model="editForm.enabled" />
-              <span class="o-toggle-slider"></span>
-            </label>
-          </div>
-          <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.trackingColumn') }}</label>
-            <input class="o-input" v-model="editForm.trackingIdColumnName" :placeholder="t('wms.settings.trackingColumnPlaceholder', '回执/実績ファイルの列名（例: 伝票番号）')" />
-          </div>
-        </div>
-        <div class="o-form-group">
-          <label class="form-label">{{ t('wms.settings.description') }}</label>
-          <textarea class="o-input" v-model="editForm.description" rows="2" :placeholder="t('wms.settings.supplementary')"></textarea>
-        </div>
-
-        <div class="format-header">
-          <div>
-            <h4>{{ t('wms.settings.formatDefinition', 'フォーマット定義（列）') }}</h4>
-            <p class="subtext">{{ t('wms.settings.formatDefinitionHint', '列名・型・最大文字数・必須・ユーザー入力可否を編集できます') }}</p>
-          </div>
-          <div class="format-actions">
-            <OButton variant="secondary" size="sm" @click="addColumn">{{ t('wms.settings.addColumn', '列を追加') }}</OButton>
-            <OButton variant="secondary" size="sm" @click="resetColumnsFromEditing">{{ t('wms.settings.reset', 'リセット') }}</OButton>
+            <label class="form-label">説明</label>
+            <textarea class="o-input" v-model="editForm.description" rows="2" placeholder="補足説明"></textarea>
           </div>
         </div>
 
-        <div class="format-table-wrapper">
-          <table class="o-list-table format-table">
-            <thead>
-              <tr>
-                <th style="min-width:150px">{{ t('wms.settings.columnName', '列名') }}</th>
-                <th style="min-width:220px">{{ t('wms.settings.columnDescription', '列説明') }}</th>
-                <th style="width:120px">{{ t('wms.settings.columnType', '型') }}</th>
-                <th style="width:110px">{{ t('wms.settings.maxWidth', '最大文字数') }}</th>
-                <th style="width:90px;text-align:center">{{ t('wms.settings.required', '必須') }}</th>
-                <th style="width:120px;text-align:center">{{ t('wms.settings.userUploadable', 'ユーザー入力') }}</th>
-                <th style="width:90px">{{ t('wms.settings.actions') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, $index) in editForm.formatDefinition.columns" :key="row.__key">
-                <td><input class="o-input" v-model="row.name" :placeholder="t('wms.settings.columnName', '列名')" /></td>
-                <td><input class="o-input" v-model="row.description" :placeholder="t('wms.settings.columnDescriptionPlaceholder', '説明・型・長さなど')" /></td>
-                <td>
-                  <select class="o-input" v-model="row.type">
-                    <option value="string">{{ t('wms.settings.typeString', '文字列') }}</option>
-                    <option value="number">{{ t('wms.settings.typeNumber', '数値') }}</option>
-                    <option value="date">{{ t('wms.settings.typeDate', '日付') }}</option>
-                    <option value="boolean">{{ t('wms.settings.typeBoolean', '真偽値') }}</option>
-                  </select>
-                </td>
-                <td><input class="o-input" v-model.number="row.maxWidth" type="number" min="1" :placeholder="t('wms.settings.halfWidthChars', '半角幅')" /></td>
-                <td style="text-align:center">
-                  <input type="checkbox" v-model="row.required" />
-                </td>
-                <td style="text-align:center">
-                  <input type="checkbox" v-model="row.userUploadable" />
-                </td>
-                <td>
-                  <OButton
-                    variant="danger"
-                    size="sm"
-                    @click="removeColumn($index)"
-                    :disabled="editForm.formatDefinition.columns.length <= 1"
-                  >{{ t('wms.common.delete') }}</OButton>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- 格式定义区 / フォーマット定義エリア -->
+        <div class="form-section">
+          <div class="format-header">
+            <div>
+              <div class="form-section-title">フォーマット定義 <span class="format-count">{{ editForm.formatDefinition.columns.length }}列</span></div>
+              <p class="subtext">列名・型・最大文字数・必須・ユーザー入力可否を編集できます</p>
+            </div>
+            <div class="format-actions">
+              <OButton variant="secondary" size="sm" @click="addColumn">列を追加</OButton>
+              <OButton variant="secondary" size="sm" @click="resetColumnsFromEditing">リセット</OButton>
+            </div>
+          </div>
+
+          <div class="format-table-wrapper">
+            <table class="o-list-table format-table">
+              <thead>
+                <tr>
+                  <th style="width:30px;text-align:center">#</th>
+                  <th style="min-width:140px">列名</th>
+                  <th style="min-width:180px">説明</th>
+                  <th style="width:100px">型</th>
+                  <th style="width:80px">最大幅</th>
+                  <th style="width:50px;text-align:center">必須</th>
+                  <th style="width:60px;text-align:center">入力</th>
+                  <th style="width:50px"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, $index) in editForm.formatDefinition.columns" :key="row.__key">
+                  <td style="text-align:center;color:var(--o-gray-400);font-size:11px;">{{ $index + 1 }}</td>
+                  <td><input class="o-input o-input--compact" v-model="row.name" placeholder="列名" /></td>
+                  <td><input class="o-input o-input--compact" v-model="row.description" placeholder="説明" /></td>
+                  <td>
+                    <select class="o-input o-input--compact" v-model="row.type">
+                      <option value="string">文字列</option>
+                      <option value="number">数値</option>
+                      <option value="date">日付</option>
+                      <option value="boolean">真偽値</option>
+                    </select>
+                  </td>
+                  <td><input class="o-input o-input--compact" v-model.number="row.maxWidth" type="number" min="1" placeholder="幅" /></td>
+                  <td style="text-align:center"><input type="checkbox" v-model="row.required" /></td>
+                  <td style="text-align:center"><input type="checkbox" v-model="row.userUploadable" /></td>
+                  <td>
+                    <button
+                      class="o-btn-icon o-btn-icon--danger"
+                      @click="removeColumn($index)"
+                      :disabled="editForm.formatDefinition.columns.length <= 1"
+                      title="削除"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H5.5l1-1h3l1 1H14a1 1 0 0 1 1 1v1z"/></svg>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       <template #footer>
-        <OButton variant="secondary" @click="dialogVisible = false">{{ t('wms.common.cancel') }}</OButton>
+        <OButton variant="secondary" @click="dialogVisible = false">キャンセル</OButton>
         <OButton variant="primary" :disabled="saving" @click="handleSave">
-          {{ isEditing ? t('wms.settings.update', '更新') : t('wms.common.create') }}
+          {{ isEditing ? '更新' : '作成' }}
         </OButton>
       </template>
     </ODialog>
@@ -289,6 +295,18 @@ const tableColumns: TableColumn[] = [
         cellRenderer: ({ rowData }: { rowData: Carrier }) => rowData.formatDefinition?.columns?.length ?? 0,
       }
     }
+    if (col.key === 'name') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Carrier }) => {
+          const children = [h('span', null, rowData.name || '-')]
+          if (rowData.isBuiltIn) {
+            children.push(h('span', { class: 'o-badge o-badge-secondary', style: 'margin-left:6px;font-size:10px;' }, '内蔵'))
+          }
+          return h('span', { style: 'display:inline-flex;align-items:center;' }, children)
+        },
+      }
+    }
     return {
       ...col,
       cellRenderer: ({ rowData }: { rowData: Carrier }) => (rowData as any)[col.dataKey || col.key] || '-',
@@ -297,20 +315,19 @@ const tableColumns: TableColumn[] = [
   {
     key: 'actions',
     title: t('wms.settings.actions'),
-    width: 220,
+    width: 280,
     cellRenderer: ({ rowData }: { rowData: Carrier }) => {
-      if (rowData.isBuiltIn) {
-        return h('div', { class: 'action-cell' }, [
-          h('span', { style: { color: '#909399', fontSize: '12px' } }, t('wms.settings.builtIn', '(内蔵)')),
-          h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => t('wms.common.edit')),
-        ])
+      const buttons = [
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+      ]
+      if (!rowData.isBuiltIn) {
+        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateCarrier(rowData) }, () => '複製'))
       }
-      return h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => t('wms.common.edit')),
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateCarrier(rowData) }, () => t('wms.settings.duplicate', '複製')),
-        h(OButton, { variant: 'success', size: 'sm', onClick: () => openTemplateSettings(rowData) }, () => t('wms.settings.templateSettings', 'テンプレート設定')),
-        h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => t('wms.common.delete')),
-      ])
+      buttons.push(h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openTemplateSettings(rowData) }, () => 'テンプレート'))
+      if (!rowData.isBuiltIn) {
+        buttons.push(h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'))
+      }
+      return h('div', { style: 'display:flex;gap:4px;flex-wrap:wrap;' }, buttons)
     },
   },
 ]
@@ -566,18 +583,7 @@ onMounted(() => {
   margin-left: -20px;
   margin-right: -20px;
 }
-
-
-
-
-.table-section {
-  width: 100%;
-}
-
-
-.o-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
-.o-badge-success { background: #f0f9eb; color: #67c23a; }
-.o-badge-info { background: #f4f4f5; color: #909399; }
+.table-section { width: 100%; }
 
 .o-input {
   width: 100%;
@@ -589,75 +595,105 @@ onMounted(() => {
   background: var(--o-view-background, #fff);
   box-sizing: border-box;
 }
-
-textarea.o-input {
-  resize: vertical;
-}
+textarea.o-input { resize: vertical; }
 
 .o-form-group { margin-bottom: 1rem; }
 .form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
-.required { color: #f56c6c; }
+.required-badge {
+  display: inline-block;
+  background: #dc3545;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  vertical-align: middle;
+  margin-left: 4px;
+}
 
 .o-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
 .o-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
 .o-toggle-slider { width: 40px; height: 20px; background: var(--o-toggle-off, #c0c4cc); border-radius: 10px; transition: 0.2s; position: relative; }
 .o-toggle-slider::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: 0.2s; }
-.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #714b67); }
+.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #D97756); }
 .o-toggle input:checked + .o-toggle-slider::after { left: 22px; }
-
-/* .o-list-table base styles are defined globally in style.css */
-
-/* 操作列スタイル - 縦並び / 操作列样式 - 垂直排列 */
-:deep(.action-cell) {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 4px;
-}
-
-:deep(.action-cell .o-btn) {
-  margin: 0;
-  min-width: 54px;
-}
 
 .carrier-form {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
 }
 
-.form-row {
-  display: flex;
-  gap: 12px;
+.form-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--o-border-color, #e4e7ed);
+}
+.form-section:last-child { border-bottom: none; }
+
+.form-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--o-gray-800, #303133);
+  margin-bottom: 12px;
 }
 
-.form-row .o-form-group {
-  flex: 1;
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin-bottom: 12px;
 }
 
 .format-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-top: 12px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.format-count {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--o-gray-500);
+  margin-left: 6px;
 }
 
 .format-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .format-table-wrapper {
-  max-height: 320px;
+  max-height: 400px;
   overflow: auto;
-  margin-top: 8px;
+  border: 1px solid var(--o-border-color, #e4e7ed);
+}
+
+.o-input--compact {
+  padding: 4px 8px;
+  font-size: 13px;
+  height: 28px;
+}
+
+.o-input--disabled {
+  background: var(--o-gray-100, #f5f7fa);
+  color: var(--o-gray-500);
+  cursor: not-allowed;
+}
+
+.form-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--o-gray-400);
+  margin-top: 2px;
 }
 
 .subtext {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   font-size: 12px;
-  color: #666;
+  color: var(--o-gray-500);
 }
 </style>

@@ -48,7 +48,7 @@
         <div v-for="field in systemFields" :key="field.key" class="mapping-row">
           <div class="mapping-field">
             <span class="mapping-field-label">{{ field.label }}</span>
-            <span v-if="field.required" class="required">*</span>
+            <span v-if="field.required" class="required-badge">必須</span>
           </div>
           <select v-model="columnMapping[field.key]" class="o-input o-input-sm mapping-select">
             <option value="">-- {{ t('wms.inbound.notSet', '未設定') }} --</option>
@@ -594,7 +594,7 @@ onMounted(async () => {
   min-width: 160px;
 }
 
-.required { color: #f56c6c; }
+.required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
 .filter-label { font-size: 13px; font-weight: 600; color: var(--o-gray-600, #606266); }
 
 .sku-text {

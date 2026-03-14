@@ -38,7 +38,7 @@
       @close="dialogVisible = false"
     >
       <div class="form-group">
-        <label class="form-label">コード <span class="required">*</span></label>
+        <label class="form-label">コード <span class="required-badge">必須</span></label>
         <input
           v-model="formData.code"
           type="text"
@@ -48,7 +48,7 @@
         />
       </div>
       <div class="form-group">
-        <label class="form-label">名称 <span class="required">*</span></label>
+        <label class="form-label">名称 <span class="required-badge">必須</span></label>
         <input
           v-model="formData.name"
           type="text"

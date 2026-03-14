@@ -31,18 +31,18 @@
     <ODialog v-model="dialogOpen" :title="isEditing ? 'Webhook を編集' : 'Webhook を追加'" size="lg" @confirm="handleSave">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">名称 <span class="required">*</span></label>
+          <label class="form-label">名称 <span class="required-badge">必須</span></label>
           <input v-model="form.name" type="text" class="o-input" placeholder="例: 出荷通知 Slack" />
         </div>
         <div class="form-field">
-          <label class="form-label">イベント <span class="required">*</span></label>
+          <label class="form-label">イベント <span class="required-badge">必須</span></label>
           <select v-model="form.event" class="o-input">
             <option value="" disabled>選択してください</option>
             <option v-for="ev in availableEvents" :key="ev" :value="ev">{{ ev }}</option>
           </select>
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">URL <span class="required">*</span></label>
+          <label class="form-label">URL <span class="required-badge">必須</span></label>
           <input v-model="form.url" type="url" class="o-input" placeholder="https://example.com/webhook" />
         </div>
         <div class="form-field">

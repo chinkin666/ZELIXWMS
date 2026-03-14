@@ -6,6 +6,7 @@ import OToastManager from '../components/odoo/OToastManager.vue'
 import WmsNavbar from '../components/layout/WmsNavbar.vue'
 import WmsSubNav from '../components/layout/WmsSubNav.vue'
 import WmsSettingsSidebar from '../components/layout/WmsSettingsSidebar.vue'
+import CommandPalette from '../components/layout/CommandPalette.vue'
 import { wmsMenuItems, settingsGroups, subMenuMap } from '../components/layout/menuData'
 import type { SubMenuItem } from '../components/layout/menuData'
 
@@ -87,6 +88,7 @@ watch(() => route.path, () => {
 
     <ToastContainer />
     <OToastManager />
+    <CommandPalette />
   </div>
 </template>
 

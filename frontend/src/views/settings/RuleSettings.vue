@@ -37,11 +37,11 @@
     <ODialog v-model="dialogOpen" :title="isEditing ? 'ルールを編集' : 'ルールを追加'" size="lg" @confirm="handleSave">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">ルール名 <span class="required">*</span></label>
+          <label class="form-label">ルール名 <span class="required-badge">必須</span></label>
           <input v-model="form.name" type="text" class="o-input" />
         </div>
         <div class="form-field">
-          <label class="form-label">モジュール <span class="required">*</span></label>
+          <label class="form-label">モジュール <span class="required-badge">必須</span></label>
           <select v-model="form.module" class="o-input">
             <option value="">選択してください</option>
             <option v-for="m in moduleOptions" :key="m.value" :value="m.value">{{ m.label }}</option>

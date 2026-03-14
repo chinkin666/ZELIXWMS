@@ -513,8 +513,8 @@ const tableColumns: TableColumn[] = [
     cellRenderer: ({ rowData }: { rowData: Product }) =>
       h('img', {
         src: resolveImageUrl(rowData.imageUrl),
-        class: 'product-img',
         alt: '',
+        style: 'width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid #e0e0e0;',
         onError: (e: Event) => { (e.target as HTMLImageElement).src = noImageSrc },
       }),
   },

@@ -89,11 +89,11 @@
       <template #default>
         <form class="supplier-form" @submit.prevent="handleSubmit">
           <div class="form-row">
-            <label class="form-label">仕入先コード <span class="required">*</span></label>
+            <label class="form-label">仕入先コード <span class="required-badge">必須</span></label>
             <input class="o-input" v-model="form.supplierCode" required :disabled="isEditing" />
           </div>
           <div class="form-row">
-            <label class="form-label">仕入先名 <span class="required">*</span></label>
+            <label class="form-label">仕入先名 <span class="required-badge">必須</span></label>
             <input class="o-input" v-model="form.name" required />
           </div>
           <div class="form-row">
@@ -102,11 +102,11 @@
           </div>
           <div class="form-row">
             <label class="form-label">郵便番号</label>
-            <input class="o-input" v-model="form.postalCode" maxlength="8" placeholder="000-0000" />
+            <PostalCodeInput v-model="form.postalCode" @resolved="onPostalResolved" />
           </div>
           <div class="form-row">
             <label class="form-label">住所1</label>
-            <input class="o-input" v-model="form.address1" />
+            <input class="o-input" v-model="form.address1" placeholder="都道府県 市区町村" />
           </div>
           <div class="form-row">
             <label class="form-label">住所2</label>
@@ -141,6 +141,8 @@ import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
+import PostalCodeInput from '@/components/form/PostalCodeInput.vue'
+import type { PostalResult } from '@/utils/postalCode'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import SearchForm from '@/components/search/SearchForm.vue'
@@ -345,6 +347,17 @@ const handlePageChangeEvent = (payload: { page: number; pageSize: number }) => {
 // ---------------------------------------------------------------------------
 // Dialog
 // ---------------------------------------------------------------------------
+// 仕入先は address1=都道府県+市区町村、address2=町名番地、address3=建物
+// 仕入先は address1=都道府県+市区町村、address2=町名番地、address3=建物
+function onPostalResolved(result: PostalResult) {
+  form.value.address1 = `${result.prefecture}${result.city}`
+  const current = (form.value.address2 || '').trim()
+  if (result.street) {
+    if (!current) form.value.address2 = result.street
+    else if (!current.startsWith(result.street)) form.value.address2 = result.street + current
+  }
+}
+
 const openCreate = () => {
   editingId.value = null
   form.value = emptyForm()

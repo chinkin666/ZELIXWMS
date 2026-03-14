@@ -9,7 +9,7 @@
     <div class="o-card">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.destinationLocation', '入庫先ロケーション') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inbound.destinationLocation', '入庫先ロケーション') }} <span class="required-badge">必須</span></label>
           <select v-model="form.destinationLocationId" class="o-input">
             <option value="">{{ t('wms.common.pleaseSelect', '選択してください...') }}</option>
             <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
@@ -46,8 +46,8 @@
         <thead>
           <tr>
             <th class="o-table-th" style="width:40px;">#</th>
-            <th class="o-table-th" style="width:250px;">{{ t('wms.inbound.product', '商品') }} <span class="required">*</span></th>
-            <th class="o-table-th o-table-th--right" style="width:120px;">{{ t('wms.inbound.expectedQuantity', '予定数量') }} <span class="required">*</span></th>
+            <th class="o-table-th" style="width:250px;">{{ t('wms.inbound.product', '商品') }} <span class="required-badge">必須</span></th>
+            <th class="o-table-th o-table-th--right" style="width:120px;">{{ t('wms.inbound.expectedQuantity', '予定数量') }} <span class="required-badge">必須</span></th>
             <th class="o-table-th" style="width:100px;">{{ t('wms.inbound.stockCategory', '在庫区分') }}</th>
             <th class="o-table-th" style="width:130px;">{{ t('wms.inbound.orderReferenceNumber', '注文番号') }}</th>
             <th class="o-table-th" style="width:130px;">{{ t('wms.inbound.lotNumber', 'ロット番号') }}</th>

@@ -115,9 +115,14 @@
           <tr v-if="displayData.length === 0">
             <td
               :colspan="totalColumnCount"
-              style="text-align: center; padding: 20px; color: #909399;"
+              class="empty-state-cell"
             >
-              データがありません
+              <div class="empty-state">
+                <svg width="40" height="40" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.3">
+                  <path d="M2.5 0A2.5 2.5 0 0 0 0 2.5v11A2.5 2.5 0 0 0 2.5 16h11a2.5 2.5 0 0 0 2.5-2.5v-11A2.5 2.5 0 0 0 13.5 0h-11zM1 2.5A1.5 1.5 0 0 1 2.5 1H7v5H1V2.5zM1 7h6v5H2.5A1.5 1.5 0 0 1 1 10.5V7zm7-6h5.5A1.5 1.5 0 0 1 15 2.5V6H8V1zm0 6h7v3.5a1.5 1.5 0 0 1-1.5 1.5H8V7z"/>
+                </svg>
+                <span>データがありません</span>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -886,10 +891,17 @@ watch(
   background-color: #fff0f0 !important;
 }
 
-/* Empty row */
-.o-list-table tbody td[colspan] {
+/* 空状態 / 空状態 */
+.empty-state-cell {
   text-align: center;
   padding: 2rem;
-  color: var(--o-gray-500, #909399);
+  color: var(--o-gray-400, #c0c4cc);
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
 }
 </style>

@@ -31,12 +31,12 @@
     <ODialog v-model="dialogOpen" :title="isEditing ? 'フラグを編集' : 'フラグを追加'" size="lg" @confirm="handleSave">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">キー <span class="required">*</span></label>
+          <label class="form-label">キー <span class="required-badge">必須</span></label>
           <input v-model="form.key" type="text" class="o-input" placeholder="例: extensions.scripts" :disabled="isEditing" />
           <span class="form-hint">英数字、ドット、アンダースコア（先頭は英字）</span>
         </div>
         <div class="form-field">
-          <label class="form-label">名称 <span class="required">*</span></label>
+          <label class="form-label">名称 <span class="required-badge">必須</span></label>
           <input v-model="form.name" type="text" class="o-input" placeholder="例: スクリプト自動化" />
         </div>
         <div class="form-field form-field--full">

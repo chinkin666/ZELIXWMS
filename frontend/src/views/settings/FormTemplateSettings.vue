@@ -44,11 +44,11 @@
     <!-- 作成ダイアログ -->
     <ODialog :open="createDialogVisible" :title="t('wms.settings.addFormTemplate', '帳票テンプレートを追加')" @close="createDialogVisible = false">
       <div class="o-form-group">
-        <label class="form-label">{{ t('wms.settings.templateName', 'テンプレート名') }} <span class="required">*</span></label>
+        <label class="form-label">{{ t('wms.settings.templateName', 'テンプレート名') }} <span class="required-badge">必須</span></label>
         <input class="o-input" v-model="createForm.name" :placeholder="t('wms.settings.templateNamePlaceholder', '例：ピッキングリスト')" />
       </div>
       <div class="o-form-group">
-        <label class="form-label">{{ t('wms.settings.templateType', '種類') }} <span class="required">*</span></label>
+        <label class="form-label">{{ t('wms.settings.templateType', '種類') }} <span class="required-badge">必須</span></label>
         <select class="o-input" v-model="createForm.targetType">
           <option value="">{{ t('wms.settings.selectType', '種類を選択') }}</option>
           <option
@@ -222,7 +222,7 @@ onMounted(() => {
 
 .o-form-group { margin-bottom: 1rem; }
 .form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
-.required { color: #f56c6c; }
+.required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
 
 /* 操作列スタイル - 縦並び / 操作列样式 - 垂直排列 */
 .action-cell {

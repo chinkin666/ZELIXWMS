@@ -23,7 +23,7 @@
     <ODialog :open="dialogVisible" :title="isEditing ? 'テンプレート編集' : 'テンプレート追加'" @close="dialogVisible = false">
       <div class="form-row">
         <div class="o-form-group">
-          <label class="form-label">テンプレート名 <span class="required">*</span></label>
+          <label class="form-label">テンプレート名 <span class="required-badge">必須</span></label>
           <input class="o-input" v-model="editForm.name" placeholder="例: ヤマトB2（メール便）" />
         </div>
         <div class="o-form-group">
@@ -34,17 +34,17 @@
 
       <div class="form-row">
         <div class="o-form-group">
-          <label class="form-label">幅(mm) <span class="required">*</span></label>
+          <label class="form-label">幅(mm) <span class="required-badge">必須</span></label>
           <input class="o-input" v-model.number="editForm.canvas.widthMm" type="number" min="1" step="1" />
         </div>
         <div class="o-form-group">
-          <label class="form-label">高さ(mm) <span class="required">*</span></label>
+          <label class="form-label">高さ(mm) <span class="required-badge">必須</span></label>
           <input class="o-input" v-model.number="editForm.canvas.heightMm" type="number" min="1" step="1" />
         </div>
       </div>
 
       <div class="o-form-group">
-        <label class="form-label">プログラムコード <span class="required">*</span></label>
+        <label class="form-label">プログラムコード <span class="required-badge">必須</span></label>
         <textarea
           class="o-input"
           v-model="elementsJson"
@@ -238,7 +238,7 @@ textarea.o-input { resize: vertical; font-family: monospace; }
 
 .o-form-group { margin-bottom: 1rem; }
 .form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
-.required { color: #f56c6c; }
+.required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
 
 .form-row {
   display: grid;

@@ -177,8 +177,8 @@ const summaryTableColumns: TableColumn[] = [
       if (rowData.product?.imageUrl) {
         return h('img', {
           src: resolveImageUrl(rowData.product.imageUrl),
-          class: 'product-thumb',
           alt: '',
+          style: 'width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid #ebeef5;',
           onError: (e: Event) => { (e.target as HTMLImageElement).style.display = 'none' },
         })
       }

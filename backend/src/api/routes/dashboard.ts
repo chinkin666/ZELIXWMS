@@ -3,7 +3,7 @@
  */
 
 import { Router } from 'express';
-import { getDashboardOverview } from '@/api/controllers/dashboardController';
+import { getDashboardOverview, getShipmentTrend, getShipmentResultStats } from '@/api/controllers/dashboardController';
 
 export const dashboardRouter = Router();
 
@@ -49,3 +49,9 @@ export const dashboardRouter = Router();
  */
 // 概览数据 / 概要データ
 dashboardRouter.get('/overview', getDashboardOverview);
+
+// 7日間出荷トレンド / 7日出荷趋势
+dashboardRouter.get('/trend', getShipmentTrend);
+
+// 出荷实绩统计 / 出荷実績統計
+dashboardRouter.get('/shipment-stats', getShipmentResultStats);

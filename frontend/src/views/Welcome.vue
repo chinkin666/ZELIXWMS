@@ -3,20 +3,27 @@
     <div class="dashboard-banner">
       <div class="banner-left">
         <h1 class="banner-title">{{ t('wms.ui.dashboardTitle', '運営ダッシュボード') }}</h1>
-        <p class="banner-subtitle">{{ t('wms.ui.dashboardSubtitle', 'リアルタイム運営概要') }}</p>
+        <p class="banner-subtitle">{{ todayLabel }}</p>
       </div>
       <div class="banner-right">
         <span class="last-update" v-if="data">
           {{ t('wms.ui.lastUpdate', '最終更新') }}: {{ formatTime(data.generatedAt) }}
         </span>
-        <OButton variant="secondary" size="sm" @click="loadData" :disabled="loading">
+        <span v-if="loading && data" class="refresh-spinner" />
+        <OButton v-else variant="secondary" size="sm" @click="loadData" :disabled="loading">
           {{ loading ? t('wms.ui.loadingShort', '読込中...') : t('wms.ui.refresh', '更新') }}
         </OButton>
       </div>
     </div>
 
-    <div v-if="loading && !data" class="loading-state">
-      {{ t('wms.ui.loadingData', 'データを読み込み中...') }}
+    <div v-if="loading && !data" class="skeleton-wrap">
+      <div class="skeleton-grid">
+        <div v-for="i in 4" :key="i" class="skeleton-card"><div class="skeleton-line lg" /><div class="skeleton-line sm" /></div>
+      </div>
+      <div class="skeleton-grid half">
+        <div v-for="i in 3" :key="i" class="skeleton-card"><div class="skeleton-line lg" /><div class="skeleton-line sm" /></div>
+      </div>
+      <div class="skeleton-table"><div v-for="i in 5" :key="i" class="skeleton-row" /></div>
     </div>
 
     <div v-else-if="error" class="error-state o-card">
@@ -27,13 +34,20 @@
     <template v-else-if="data">
       <div class="section-title-row">
         <h2 class="section-title">{{ t('wms.ui.shipmentStatus', '出荷状況') }}</h2>
+        <span v-if="data.shipments.todayScheduled > 0" class="progress-label">
+          {{ t('wms.ui.todayProgress', '本日達成率') }}:
+          {{ Math.round((data.shipments.todayShipped / data.shipments.todayScheduled) * 100) }}%
+        </span>
+      </div>
+      <div v-if="data.shipments.todayScheduled > 0" class="progress-bar-wrap">
+        <div class="progress-bar" :style="{ width: Math.min(100, Math.round((data.shipments.todayShipped / data.shipments.todayScheduled) * 100)) + '%' }" />
       </div>
       <div class="metrics-grid">
-        <div class="metric-card o-card" @click="navigateTo('/shipment-orders/create')">
+        <div class="metric-card o-card" @click="navigateTo('/shipment/orders/create')">
           <div class="metric-value">{{ data.shipments.todayCreated }}</div>
           <div class="metric-label">{{ t('wms.ui.todayCreated', '本日作成') }}</div>
         </div>
-        <div class="metric-card o-card" @click="navigateTo('/shipment-operations/tasks')">
+        <div class="metric-card o-card" @click="navigateTo('/shipment/operations/tasks')">
           <div class="metric-value highlight-green">{{ data.shipments.todayShipped }}</div>
           <div class="metric-label">{{ t('wms.ui.todayShipped', '本日出荷済') }}</div>
         </div>
@@ -45,11 +59,11 @@
           <div class="metric-value highlight-orange">{{ data.shipments.totalPending }}</div>
           <div class="metric-label">{{ t('wms.ui.unshipped', '未出荷') }}</div>
         </div>
-        <div class="metric-card o-card" v-if="data.shipments.totalHeld > 0">
+        <div class="metric-card o-card metric-card--warn" v-if="data.shipments.totalHeld > 0">
           <div class="metric-value highlight-red">{{ data.shipments.totalHeld }}</div>
           <div class="metric-label">{{ t('wms.ui.onHold', '保留中') }}</div>
         </div>
-        <div class="metric-card o-card" v-if="data.overdueOrders > 0">
+        <div class="metric-card o-card metric-card--danger" v-if="data.overdueOrders > 0" @click="navigateTo('/shipment/operations/tasks')">
           <div class="metric-value highlight-red">{{ data.overdueOrders }}</div>
           <div class="metric-label">{{ t('wms.ui.overdueShipments', '出荷遅延') }}</div>
         </div>
@@ -108,6 +122,23 @@
         </div>
       </div>
 
+      <h2 class="section-title">{{ t('wms.ui.weeklyTrend', '7日間出荷トレンド') }}</h2>
+      <div class="o-card trend-card" v-if="trendData.length > 0">
+        <div class="trend-chart">
+          <div v-for="item in trendData" :key="item.date" class="trend-col">
+            <div class="trend-bars">
+              <div class="trend-bar trend-bar--created" :style="{ height: trendBarHeight(item.created) }" :title="`作成: ${item.created}`" />
+              <div class="trend-bar trend-bar--shipped" :style="{ height: trendBarHeight(item.shipped) }" :title="`出荷: ${item.shipped}`" />
+            </div>
+            <div class="trend-label">{{ item.date }}</div>
+          </div>
+        </div>
+        <div class="trend-legend">
+          <span class="trend-legend-item"><span class="trend-dot trend-dot--created" /> {{ t('wms.ui.created', '作成') }}</span>
+          <span class="trend-legend-item"><span class="trend-dot trend-dot--shipped" /> {{ t('wms.ui.shipped', '出荷') }}</span>
+        </div>
+      </div>
+
       <h2 class="section-title">{{ t('wms.ui.recentShipments', '最近の出荷指示') }}</h2>
       <div class="o-card recent-table-card">
         <table class="o-table">
@@ -125,7 +156,7 @@
               v-for="order in data.recentShipments"
               :key="order._id"
               class="clickable-row"
-              @click="navigateTo('/shipment-orders/create')"
+              @click="navigateTo('/shipment/operations/tasks')"
             >
               <td>{{ order.orderNumber }}</td>
               <td>
@@ -152,7 +183,9 @@
           class="o-card quick-nav-card"
           @click="navigateTo(card.path)"
         >
-          <span class="nav-icon">{{ card.icon }}</span>
+          <span class="nav-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path :d="card.icon" /></svg>
+          </span>
           <span class="nav-label">{{ card.title }}</span>
         </div>
       </div>
@@ -165,36 +198,74 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
-import { fetchDashboardOverview, type DashboardOverview } from '@/api/dashboard'
+import { fetchDashboardOverview, fetchShipmentTrend, type DashboardOverview, type TrendItem } from '@/api/dashboard'
 
 const { t } = useI18n()
 const router = useRouter()
 const data = ref<DashboardOverview | null>(null)
+const trendData = ref<TrendItem[]>([])
 const loading = ref(false)
 const error = ref('')
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
+const todayLabel = computed(() => {
+  const d = new Date()
+  const weekdays = ['日', '月', '火', '水', '木', '金', '土']
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${weekdays[d.getDay()]}）`
+})
+
+// SVG 图标路径 / SVGアイコンパス
+const icons = {
+  // 出荷指示作成: 加号文档 / プラスドキュメント
+  createShipment: 'M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zM8 6.5a.5.5 0 0 0-1 0V8H5.5a.5.5 0 0 0 0 1H7v1.5a.5.5 0 0 0 1 0V9h1.5a.5.5 0 0 0 0-1H8V6.5z',
+  // 出荷作業: トラック
+  shipmentOps: 'M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0h-.5A1.5 1.5 0 0 1-1 10.5v-7zM3 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm9 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2z',
+  // 入庫管理: 箱に入る矢印
+  inbound: 'M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5zM7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z',
+  // 在庫一覧: グリッドボックス
+  inventory: 'M2.5 0A2.5 2.5 0 0 0 0 2.5v11A2.5 2.5 0 0 0 2.5 16h11a2.5 2.5 0 0 0 2.5-2.5v-11A2.5 2.5 0 0 0 13.5 0h-11zM1 2.5A1.5 1.5 0 0 1 2.5 1H7v5H1V2.5zM1 7h6v5H2.5A1.5 1.5 0 0 1 1 10.5V7zm7-6h5.5A1.5 1.5 0 0 1 15 2.5V6H8V1zm0 6h7v3.5a1.5 1.5 0 0 1-1.5 1.5H8V7z',
+  // 棚卸管理: クリップボードチェック
+  stocktaking: 'M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0zM4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1zM9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3z',
+  // 返品管理: リターン矢印
+  returns: 'M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-4.5-.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H11.5z',
+  // 日次管理: カレンダー
+  daily: 'M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z',
+  // 設定: ギア
+  settings: 'M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0zM9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319z',
+}
+
 const quickNavCards = computed(() => [
-  { title: t('wms.ui.navCreateShipment', '出荷指示作成'), icon: '+', path: '/shipment-orders/create' },
-  { title: t('wms.ui.navShipmentOps', '出荷作業'), icon: '>', path: '/shipment-operations/tasks' },
-  { title: t('wms.ui.navInbound', '入庫管理'), icon: 'v', path: '/inbound/dashboard' },
-  { title: t('wms.ui.navInventory', '在庫一覧'), icon: '#', path: '/inventory/stock' },
-  { title: t('wms.ui.navStocktaking', '棚卸管理'), icon: '=', path: '/stocktaking/list' },
-  { title: t('wms.ui.navReturns', '返品管理'), icon: '<', path: '/returns/list' },
-  { title: t('wms.ui.navDaily', '日次管理'), icon: 'D', path: '/daily/list' },
-  { title: t('wms.ui.navSettings', '設定'), icon: '*', path: '/settings/basic' },
+  { title: t('wms.ui.navCreateShipment', '出荷指示作成'), icon: icons.createShipment, path: '/shipment/orders/create' },
+  { title: t('wms.ui.navShipmentOps', '出荷作業'), icon: icons.shipmentOps, path: '/shipment/operations/tasks' },
+  { title: t('wms.ui.navInbound', '入庫管理'), icon: icons.inbound, path: '/inbound/dashboard' },
+  { title: t('wms.ui.navInventory', '在庫一覧'), icon: icons.inventory, path: '/inventory/stock' },
+  { title: t('wms.ui.navStocktaking', '棚卸管理'), icon: icons.stocktaking, path: '/stocktaking/list' },
+  { title: t('wms.ui.navReturns', '返品管理'), icon: icons.returns, path: '/returns/list' },
+  { title: t('wms.ui.navDaily', '日次管理'), icon: icons.daily, path: '/daily/list' },
+  { title: t('wms.ui.navSettings', '設定'), icon: icons.settings, path: '/settings/basic' },
 ])
 
 async function loadData() {
   loading.value = true
   error.value = ''
   try {
-    data.value = await fetchDashboardOverview()
+    const [overview, trend] = await Promise.all([
+      fetchDashboardOverview(),
+      fetchShipmentTrend().catch(() => [] as TrendItem[]),
+    ])
+    data.value = overview
+    trendData.value = trend
   } catch (err) {
     error.value = (err as Error).message
   } finally {
     loading.value = false
   }
+}
+
+// 柱状图高度计算 / バーの高さ計算
+function trendBarHeight(value: number): string {
+  const max = Math.max(1, ...trendData.value.map(d => Math.max(d.created, d.shipped)))
+  return `${Math.max(2, (value / max) * 100)}%`
 }
 
 function getStatusClass(status: Record<string, unknown>): string {
@@ -246,6 +317,7 @@ onUnmounted(() => {
 .dashboard-page {
   max-width: 1400px;
   margin: 0 auto;
+  padding: 20px 20px 20px;
 }
 
 .dashboard-banner {
@@ -284,10 +356,41 @@ onUnmounted(() => {
   opacity: 0.85;
 }
 
+.refresh-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .section-title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.progress-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--o-gray-600, #606266);
+}
+
+.progress-bar-wrap {
+  width: 100%;
+  height: 6px;
+  background: var(--o-gray-200, #f0f0f0);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #D97756, #67c23a);
+  transition: width 0.6s ease;
 }
 
 .section-title {
@@ -338,6 +441,16 @@ onUnmounted(() => {
 .highlight-orange { color: #e6a23c; }
 .highlight-red { color: #f56c6c; }
 
+.metric-card--warn {
+  border-left: 3px solid #e6a23c;
+  background: #fffbf0;
+}
+
+.metric-card--danger {
+  border-left: 3px solid #f56c6c;
+  background: #fef0f0;
+}
+
 .two-col-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -349,6 +462,76 @@ onUnmounted(() => {
   border: 1px solid var(--o-border-color, #e4e7ed);
   border-radius: var(--o-border-radius, 8px);
   padding: 1.25rem;
+}
+
+/* 趋势图 / トレンドチャート */
+.trend-card {
+  padding: 16px 20px;
+}
+.trend-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 120px;
+  padding-bottom: 4px;
+}
+.trend-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+.trend-bars {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  width: 100%;
+  justify-content: center;
+}
+.trend-bar {
+  width: 16px;
+  min-height: 2px;
+  transition: height 0.5s ease;
+}
+.trend-bar--created {
+  background: var(--o-brand-primary, #D97756);
+  opacity: 0.6;
+}
+.trend-bar--shipped {
+  background: var(--o-success, #3D8B37);
+}
+.trend-label {
+  font-size: 11px;
+  color: var(--o-gray-500, #909399);
+  margin-top: 6px;
+  white-space: nowrap;
+}
+.trend-legend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--o-gray-500, #909399);
+}
+.trend-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.trend-dot {
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+}
+.trend-dot--created {
+  background: var(--o-brand-primary, #D97756);
+  opacity: 0.6;
+}
+.trend-dot--shipped {
+  background: var(--o-success, #3D8B37);
 }
 
 .recent-table-card {
@@ -428,11 +611,9 @@ onUnmounted(() => {
 }
 
 .nav-icon {
-  font-size: 18px;
-  font-weight: 700;
   color: var(--o-brand-primary, #714b67);
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -447,12 +628,40 @@ onUnmounted(() => {
   color: var(--o-gray-700, #303133);
 }
 
-.loading-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--o-gray-500, #909399);
-  font-size: 16px;
+/* 骨架屏 / スケルトンスクリーン */
+.skeleton-wrap { display: flex; flex-direction: column; gap: 20px; }
+.skeleton-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.skeleton-grid.half { grid-template-columns: repeat(3, 1fr); }
+.skeleton-card {
+  background: var(--o-view-background, #fff);
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
 }
+.skeleton-line {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+.skeleton-line.lg { width: 60px; height: 28px; }
+.skeleton-line.sm { width: 80px; height: 14px; }
+.skeleton-table {
+  background: var(--o-view-background, #fff);
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.skeleton-row {
+  height: 16px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
 
 .error-state {
   text-align: center;
@@ -478,5 +687,28 @@ onUnmounted(() => {
   .quick-nav-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .skeleton-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .skeleton-grid.half {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 暗色模式 / ダークモード */
+:global([data-theme="dark"]) .dashboard-banner {
+  background: linear-gradient(135deg, #8B4A30 0%, #6B3A22 100%);
+}
+:global([data-theme="dark"]) .metric-card--warn {
+  background: rgba(230, 162, 60, 0.1);
+}
+:global([data-theme="dark"]) .metric-card--danger {
+  background: rgba(245, 108, 108, 0.1);
+}
+:global([data-theme="dark"]) .skeleton-line,
+:global([data-theme="dark"]) .skeleton-row {
+  background: linear-gradient(90deg, #2a2622 25%, #3a3530 50%, #2a2622 75%);
+  background-size: 200% 100%;
 }
 </style>

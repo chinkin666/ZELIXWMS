@@ -108,7 +108,7 @@
     <ODialog v-model="dialogOpen" :title="isEditing ? t('wms.warehouse.editWaveTitle', 'ウェーブを編集') : t('wms.warehouse.createWaveTitle', 'ウェーブを追加')" size="lg" @confirm="handleSave">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.waveNumber', 'ウェーブ番号') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.waveNumber', 'ウェーブ番号') }} <span class="required-badge">必須</span></label>
           <input v-model="form.waveNumber" type="text" class="o-input" />
         </div>
         <div class="form-field">

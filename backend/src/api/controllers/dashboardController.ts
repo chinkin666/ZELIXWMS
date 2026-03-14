@@ -150,6 +150,145 @@ async function getInventoryStats() {
   return result[0];
 }
 
+/**
+ * 获取 7 日出荷趋势 / 7日間出荷トレンド取得
+ * GET /api/dashboard/trend
+ */
+export async function getShipmentTrend(_req: Request, res: Response) {
+  try {
+    const days = 7;
+    const result: Array<{ date: string; created: number; shipped: number }> = [];
+
+    for (let i = days - 1; i >= 0; i--) {
+      const dayStart = new Date();
+      dayStart.setDate(dayStart.getDate() - i);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayEnd.getDate() + 1);
+
+      const [created, shipped] = await Promise.all([
+        ShipmentOrder.countDocuments({
+          createdAt: { $gte: dayStart, $lt: dayEnd },
+        }),
+        ShipmentOrder.countDocuments({
+          'status.shipped.isShipped': true,
+          'status.shipped.shippedAt': { $gte: dayStart, $lt: dayEnd },
+        }),
+      ]);
+
+      result.push({
+        date: `${dayStart.getMonth() + 1}/${dayStart.getDate()}`,
+        created,
+        shipped,
+      });
+    }
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+}
+
+/**
+ * 出荷实绩统计 / 出荷実績統計
+ * GET /api/dashboard/shipment-stats?from=YYYY-MM-DD&to=YYYY-MM-DD
+ */
+export async function getShipmentResultStats(req: Request, res: Response) {
+  try {
+    const fromStr = (req.query.from as string) || '';
+    const toStr = (req.query.to as string) || '';
+
+    // 默认最近 30 天 / デフォルト直近30日
+    const to = toStr ? new Date(toStr + 'T23:59:59') : new Date();
+    const from = fromStr ? new Date(fromStr + 'T00:00:00') : new Date(to.getTime() - 29 * 86400000);
+    from.setHours(0, 0, 0, 0);
+
+    const toEnd = new Date(to);
+    toEnd.setHours(23, 59, 59, 999);
+
+    // 并行查询 / 並列クエリ
+    const [totalShipped, totalQuantity, dailyBreakdown, carrierBreakdown] = await Promise.all([
+      // 出荷件数 / 出荷件数
+      ShipmentOrder.countDocuments({
+        'status.shipped.isShipped': true,
+        'status.shipped.shippedAt': { $gte: from, $lte: toEnd },
+      }),
+      // 出荷个数汇总 / 出荷個数集計
+      ShipmentOrder.aggregate([
+        {
+          $match: {
+            'status.shipped.isShipped': true,
+            'status.shipped.shippedAt': { $gte: from, $lte: toEnd },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalQuantity: { $sum: { $ifNull: ['$_productsMeta.totalQuantity', 0] } },
+            totalSkus: { $sum: { $ifNull: ['$_productsMeta.skuCount', 0] } },
+          },
+        },
+      ]),
+      // 日别出荷件数 / 日別出荷件数
+      ShipmentOrder.aggregate([
+        {
+          $match: {
+            'status.shipped.isShipped': true,
+            'status.shipped.shippedAt': { $gte: from, $lte: toEnd },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: '%Y-%m-%d', date: '$status.shipped.shippedAt', timezone: '+09:00' },
+            },
+            count: { $sum: 1 },
+            quantity: { $sum: { $ifNull: ['$_productsMeta.totalQuantity', 0] } },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      // 配送商分布 / 配送業者分布
+      ShipmentOrder.aggregate([
+        {
+          $match: {
+            'status.shipped.isShipped': true,
+            'status.shipped.shippedAt': { $gte: from, $lte: toEnd },
+          },
+        },
+        {
+          $group: {
+            _id: '$carrierId',
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+      ]),
+    ]);
+
+    const qtyResult = totalQuantity[0] || { totalQuantity: 0, totalSkus: 0 };
+
+    res.json({
+      from: from.toISOString().slice(0, 10),
+      to: toEnd.toISOString().slice(0, 10),
+      totalShipped,
+      totalQuantity: qtyResult.totalQuantity,
+      totalSkus: qtyResult.totalSkus,
+      daily: dailyBreakdown.map((d: any) => ({
+        date: d._id,
+        count: d.count,
+        quantity: d.quantity,
+      })),
+      carriers: carrierBreakdown.map((c: any) => ({
+        carrierId: c._id || 'unknown',
+        count: c.count,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+}
+
 function formatDate(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');

@@ -5,6 +5,71 @@
 
 ---
 
+## [2026-03-14] Phase 8: 佐川急便插件实装 / Phase 8: 佐川急便プラグイン実装
+
+**变更类型 / 変更種別**: feat
+**影响范围 / 影響範囲**: `extensions/plugins/sagawa-express/`、`frontend/src/api/sagawa.ts`、`backend/src/api/routes/sagawa.ts`
+**关联文档 / 関連ドキュメント**: `docs/extension/05-plan.md` Phase 8
+
+### 内容 / 内容
+
+将佐川急便 CSV 连携从硬编码路由迁移到标准插件架构。
+佐川急便 CSV 連携をハードコードルートから標準プラグインアーキテクチャに移行。
+
+#### 新增文件 / 新規ファイル
+- `extensions/plugins/sagawa-express/manifest.json` — 插件声明
+- `extensions/plugins/sagawa-express/index.ts` — 插件入口（Hook 注册 + API 注册）
+- `extensions/plugins/sagawa-express/routes.ts` — 插件 API 路由（5个端点）
+- `extensions/plugins/sagawa-express/services/sagawaCsvService.ts` — CSV 生成服务
+- `extensions/plugins/sagawa-express/services/sagawaTrackingService.ts` — 追踪号解析服务
+- `extensions/plugins/sagawa-express/data/invoiceTypes.ts` — 送り状种类 + 配达时间带定义
+
+#### 变更文件 / 変更ファイル
+- `frontend/src/api/sagawa.ts` — API 路径迁移到 `/api/plugins/sagawa-express/*`
+- `backend/src/api/routes/sagawa.ts` — 旧路由添加 deprecation 警告
+
+#### API 端点 / API エンドポイント
+- `GET /api/plugins/sagawa-express/status` — 插件状态
+- `GET /api/plugins/sagawa-express/invoice-types` — 送り状种类
+- `GET /api/plugins/sagawa-express/config` — 插件配置
+- `POST /api/plugins/sagawa-express/export` — CSV 导出
+- `POST /api/plugins/sagawa-express/import-tracking` — 追踪号导入
+
+#### Hook 连携 / Hook 連携
+- `order.shipped` — 佐川订单出荷完了时记录日志
+- `order.confirmed` — 佐川订单确认时记录日志
+
+---
+
+## [2026-03-14] UI 打磨 + Dashboard 改善 / UI ポリッシュ + ダッシュボード改善
+
+**变更类型 / 変更種別**: fix / refactor
+**影响范围 / 影響範囲**: `frontend/src/views/Welcome.vue`、`frontend/src/components/odoo/ODialog.vue`、`frontend/src/components/layout/WmsNavbar.vue`、`backend/src/core/queue/queueManager.ts`、`frontend/.env.development`、`frontend/src/views/settings/ProductSettings.vue`、`frontend/src/views/inventory/InventoryStock.vue`
+**关联文档 / 関連ドキュメント**: 无 / なし
+
+### 内容 / 内容
+
+#### Dashboard 改善 / ダッシュボード改善
+- Dashboard 页面增加 padding，修复内容紧贴顶部/边缘的问题 / ダッシュボードページに padding を追加、コンテンツが上端・端に密着する問題を修正
+- Quick Nav 图标从纯文字符号（+, >, v, #）改为 SVG 图标 / クイックナビのアイコンをテキスト文字から SVG アイコンに変更
+- 保留・逾期订单卡片增加警告/危险背景色 / 保留・遅延注文カードに警告・危険背景色を追加
+- 最近出荷表格点击修复（从创建页改为作业列表）/ 最近出荷テーブルのクリック先を修正（作成ページ→作業一覧）
+
+#### Navbar 改善 / ナビバー改善
+- Home 按钮与菜单之间增加分隔线 / ホームボタンとメニュー間にセパレーターを追加
+
+#### Bug 修复 / バグ修正
+- ODialog `width` 属性警告消除（`inheritAttrs: false`）/ ODialog width 属性警告を解消
+- 前端 `.env.development` 中 API 地址从 `192.168.0.99` 改为 `localhost` / フロントエンド API アドレスを localhost に変更
+- 后端 + 前端 host 绑定从 `0.0.0.0` 改为 `localhost` / バックエンド・フロントエンドの host バインドを localhost に変更
+- 商品一览 + 在库一览的产品图片大小限制（inline style 替代 scoped CSS）/ 商品・在庫一覧の商品画像サイズを制限
+
+#### 基础设施 / インフラ
+- Redis 连接失败不再无限刷错误日志（3次重试后放弃，只打一次 WARN）/ Redis 接続失敗時の無限ログ出力を修正
+- BullMQ 队列名从 `wms:webhook` 改为 `wms-webhook`（修复 `:` 不允许的问题）/ BullMQ キュー名のコロンをハイフンに修正
+
+---
+
 ## [2026-03-14] Extension Architecture Phase 5 完成 / 拡張アーキテクチャ Phase 5 完了
 
 **变更类型 / 変更種別**: feat

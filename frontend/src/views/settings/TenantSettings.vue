@@ -36,11 +36,11 @@
     <ODialog v-model="dialogOpen" :title="isEditing ? 'テナントを編集' : 'テナントを追加'" size="lg" @confirm="handleSave">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">テナントコード <span class="required">*</span></label>
+          <label class="form-label">テナントコード <span class="required-badge">必須</span></label>
           <input v-model="form.tenantCode" type="text" class="o-input" />
         </div>
         <div class="form-field">
-          <label class="form-label">テナント名 <span class="required">*</span></label>
+          <label class="form-label">テナント名 <span class="required-badge">必須</span></label>
           <input v-model="form.name" type="text" class="o-input" />
         </div>
         <div class="form-field">

@@ -420,7 +420,7 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
     >
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label">{{ t('wms.settings.email.templateName', 'テンプレート名') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.settings.email.templateName', 'テンプレート名') }} <span class="required-badge">必須</span></label>
           <input v-model="form.name" type="text" class="form-input" :placeholder="t('wms.settings.email.templateNamePlaceholder', '例: ヤマト運輸 出荷完了メール')" />
         </div>
 
@@ -433,12 +433,12 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
         </div>
 
         <div class="form-group">
-          <label class="form-label">{{ t('wms.settings.email.senderName', '発送元名') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.settings.email.senderName', '発送元名') }} <span class="required-badge">必須</span></label>
           <input v-model="form.senderName" type="text" class="form-input" placeholder="例: ZELIX倉庫" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">{{ t('wms.settings.email.senderEmailAddress', '送信元メールアドレス') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.settings.email.senderEmailAddress', '送信元メールアドレス') }} <span class="required-badge">必須</span></label>
           <input v-model="form.senderEmail" type="email" class="form-input" placeholder="例: noreply@example.com" />
         </div>
 
@@ -448,14 +448,14 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
         </div>
 
         <div class="form-group full-width">
-          <label class="form-label">{{ t('wms.settings.email.subject', 'メールタイトル') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.settings.email.subject', 'メールタイトル') }} <span class="required-badge">必須</span></label>
           <input v-model="form.subject" type="text" class="form-input" placeholder="例: 【{{senderName}}】ご注文 {{orderNumber}} を発送いたしました" />
         </div>
 
         <div class="form-group full-width body-section">
           <div class="body-layout">
             <div class="body-editor">
-              <label class="form-label">{{ t('wms.settings.email.bodyTemplate', 'メール本文テンプレート') }} <span class="required">*</span></label>
+              <label class="form-label">{{ t('wms.settings.email.bodyTemplate', 'メール本文テンプレート') }} <span class="required-badge">必須</span></label>
               <textarea
                 v-model="form.bodyTemplate"
                 class="form-input form-textarea"

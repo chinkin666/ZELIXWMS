@@ -82,11 +82,11 @@
     <ODialog v-model="dialogOpen" :title="isEditing ? '得意先を編集' : '得意先を追加'" size="lg" @confirm="handleSave">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">得意先コード <span class="required">*</span></label>
+          <label class="form-label">得意先コード <span class="required-badge">必須</span></label>
           <input v-model="form.customerCode" type="text" class="o-input" />
         </div>
         <div class="form-field">
-          <label class="form-label">名称 <span class="required">*</span></label>
+          <label class="form-label">名称 <span class="required-badge">必須</span></label>
           <input v-model="form.name" type="text" class="o-input" />
         </div>
         <div class="form-field">
@@ -95,11 +95,14 @@
         </div>
         <div class="form-field">
           <label class="form-label">郵便番号</label>
-          <input v-model="form.postalCode" type="text" class="o-input" />
+          <PostalCodeInput v-model="form.postalCode" @resolved="onPostalResolved" />
         </div>
         <div class="form-field">
           <label class="form-label">都道府県</label>
-          <input v-model="form.prefecture" type="text" class="o-input" />
+          <select class="o-input" v-model="form.prefecture">
+            <option value="">選択してください</option>
+            <option v-for="p in PREFECTURES" :key="p" :value="p">{{ p }}</option>
+          </select>
         </div>
         <div class="form-field">
           <label class="form-label">市区町村</label>
@@ -135,6 +138,19 @@ import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
+import PostalCodeInput from '@/components/form/PostalCodeInput.vue'
+import type { PostalResult } from '@/utils/postalCode'
+
+const PREFECTURES = [
+  '北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県',
+  '茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県',
+  '新潟県','富山県','石川県','福井県','山梨県','長野県',
+  '岐阜県','静岡県','愛知県','三重県',
+  '滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県',
+  '鳥取県','島根県','岡山県','広島県','山口県',
+  '徳島県','香川県','愛媛県','高知県',
+  '福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県',
+] as const
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import SearchForm from '@/components/search/SearchForm.vue'
@@ -326,6 +342,16 @@ const handlePageChange = (payload: { page: number; pageSize: number }) => {
 }
 
 // CRUD
+function onPostalResolved(result: PostalResult) {
+  form.value.prefecture = result.prefecture
+  form.value.city = result.city
+  const current = (form.value.address || '').trim()
+  if (result.street) {
+    if (!current) form.value.address = result.street
+    else if (!current.startsWith(result.street)) form.value.address = result.street + current
+  }
+}
+
 const openCreate = () => {
   editingId.value = null
   form.value = emptyForm()

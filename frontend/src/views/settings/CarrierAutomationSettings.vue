@@ -32,23 +32,23 @@
             <h4 class="section-label">{{ t('wms.settings.apiConnectionSettings', 'API接続設定') }}</h4>
 
             <div class="o-form-group">
-              <label class="form-label">{{ t('wms.settings.apiEndpoint', 'APIエンドポイント') }} <span class="required">*</span></label>
+              <label class="form-label">{{ t('wms.settings.apiEndpoint', 'APIエンドポイント') }} <span class="required-badge">必須</span></label>
               <input class="o-input" v-model="yamatoB2Form.apiEndpoint" placeholder="https://yamato-b2-webapi.nexand.org" style="max-width:400px" />
             </div>
 
             <div class="o-form-group">
-              <label class="form-label">API Key <span class="required">*</span></label>
+              <label class="form-label">API Key <span class="required-badge">必須</span></label>
               <input class="o-input" v-model="yamatoB2Form.apiKey" type="password" :placeholder="t('wms.settings.apiKeyPlaceholder', '公開API用のアクセスキー')" style="max-width:400px" />
               <div class="field-hint">{{ t('wms.settings.apiKeyHint', 'API提供者から発行されたアクセスキーを入力してください') }}</div>
             </div>
 
             <div class="o-form-group">
-              <label class="form-label">{{ t('wms.settings.customerCode', 'お客様コード') }} <span class="required">*</span></label>
+              <label class="form-label">{{ t('wms.settings.customerCode', 'お客様コード') }} <span class="required-badge">必須</span></label>
               <input class="o-input" v-model="yamatoB2Form.customerCode" :placeholder="t('wms.settings.customerCodePlaceholder', 'ヤマトビジネスメンバーズID')" style="max-width:400px" />
             </div>
 
             <div class="o-form-group">
-              <label class="form-label">{{ t('wms.settings.password', 'パスワード') }} <span class="required">*</span></label>
+              <label class="form-label">{{ t('wms.settings.password', 'パスワード') }} <span class="required-badge">必須</span></label>
               <input class="o-input" v-model="yamatoB2Form.customerPassword" type="password" :placeholder="t('wms.settings.password', 'パスワード')" style="max-width:400px" />
             </div>
 
@@ -559,7 +559,7 @@ onMounted(() => {
 
 .o-form-group { margin-bottom: 1rem; }
 .form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
-.required { color: #f56c6c; }
+.required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
 
 .o-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
 .o-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }

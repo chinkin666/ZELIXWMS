@@ -40,15 +40,15 @@
     <ODialog v-model="dialogVisible" :title="editingId ? t('wms.inventory.editLocation', 'ロケーション編集') : t('wms.inventory.createLocation', 'ロケーション新規作成')" size="md">
       <div class="dialog-form">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.code', 'コード') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inventory.code', 'コード') }} <span class="required-badge">必須</span></label>
           <input v-model="dialogForm.code" type="text" class="o-input" :placeholder="t('wms.inventory.codePlaceholder', '例: WH-MAIN/A-01')" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.locationName', '名称') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inventory.locationName', '名称') }} <span class="required-badge">必須</span></label>
           <input v-model="dialogForm.name" type="text" class="o-input" :placeholder="t('wms.inventory.locationNamePlaceholder', '例: A棟 1列')" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.locationType', 'タイプ') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inventory.locationType', 'タイプ') }} <span class="required-badge">必須</span></label>
           <select v-model="dialogForm.type" class="o-input">
             <option value="warehouse">{{ t('wms.inventory.typeWarehouse', '倉庫') }}</option>
             <option value="zone">{{ t('wms.inventory.typeZone', 'ゾーン') }}</option>
@@ -398,7 +398,7 @@ onMounted(() => loadLocations())
   color: var(--o-gray-700, #303133);
 }
 
-.required { color: #f56c6c; }
+.required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
 
 .o-input {
   padding: 8px 12px;

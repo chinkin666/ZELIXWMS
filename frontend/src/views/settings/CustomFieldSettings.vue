@@ -31,19 +31,19 @@
     <ODialog v-model="dialogOpen" :title="isEditing ? 'フィールド定義を編集' : 'フィールド定義を追加'" size="lg" @confirm="handleSave">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">エンティティ <span class="required">*</span></label>
+          <label class="form-label">エンティティ <span class="required-badge">必須</span></label>
           <select v-model="form.entityType" class="o-input" :disabled="isEditing">
             <option value="" disabled>選択してください</option>
             <option v-for="et in entityTypes" :key="et.value" :value="et.value">{{ et.label }}</option>
           </select>
         </div>
         <div class="form-field">
-          <label class="form-label">フィールドキー <span class="required">*</span></label>
+          <label class="form-label">フィールドキー <span class="required-badge">必須</span></label>
           <input v-model="form.fieldKey" type="text" class="o-input" placeholder="例: priority" :disabled="isEditing" />
           <span class="form-hint">英数字と _ のみ（先頭は英字または_）</span>
         </div>
         <div class="form-field">
-          <label class="form-label">ラベル（中文） <span class="required">*</span></label>
+          <label class="form-label">ラベル（中文） <span class="required-badge">必須</span></label>
           <input v-model="form.label" type="text" class="o-input" placeholder="例: 优先级" />
         </div>
         <div class="form-field">
@@ -51,7 +51,7 @@
           <input v-model="form.labelJa" type="text" class="o-input" placeholder="例: 優先度" />
         </div>
         <div class="form-field">
-          <label class="form-label">フィールドタイプ <span class="required">*</span></label>
+          <label class="form-label">フィールドタイプ <span class="required-badge">必須</span></label>
           <select v-model="form.fieldType" class="o-input">
             <option value="text">text（テキスト）</option>
             <option value="number">number（数値）</option>
@@ -65,7 +65,7 @@
           <input v-model="form.defaultValue" type="text" class="o-input" placeholder="省略可" />
         </div>
         <div v-if="form.fieldType === 'select'" class="form-field form-field--full">
-          <label class="form-label">選択肢（カンマ区切り） <span class="required">*</span></label>
+          <label class="form-label">選択肢（カンマ区切り） <span class="required-badge">必須</span></label>
           <input v-model="optionsStr" type="text" class="o-input" placeholder="例: 高,中,低" />
         </div>
         <div class="form-field">

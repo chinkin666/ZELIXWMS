@@ -139,7 +139,7 @@
     <ODialog v-model="createDialogOpen" :title="t('wms.warehouse.newTask', '新規タスク')" size="lg" @confirm="handleCreate">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.type', 'タイプ') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.type', 'タイプ') }} <span class="required-badge">必須</span></label>
           <select v-model="createForm.type" class="o-input">
             <option value="">{{ t('wms.common.pleaseSelect', '選択してください') }}</option>
             <option value="picking">{{ t('wms.warehouse.typePicking', 'ピッキング') }}</option>
@@ -153,7 +153,7 @@
           </select>
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.priority', '優先度') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.priority', '優先度') }} <span class="required-badge">必須</span></label>
           <select v-model="createForm.priority" class="o-input">
             <option value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</option>
             <option value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</option>
@@ -180,7 +180,7 @@
     <ODialog v-model="assignDialogOpen" :title="t('wms.warehouse.taskAssign', 'タスク割当')" size="sm" @confirm="handleAssign">
       <div class="form-grid">
         <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.assigneeId', '担当者ID') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.assigneeId', '担当者ID') }} <span class="required-badge">必須</span></label>
           <input v-model="assignForm.assignedTo" type="text" class="o-input" />
         </div>
         <div class="form-field form-field--full">
@@ -194,7 +194,7 @@
     <ODialog v-model="completeDialogOpen" :title="t('wms.warehouse.taskComplete', 'タスク完了')" size="sm" @confirm="handleComplete">
       <div class="form-grid">
         <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.completedQuantity', '完了数量') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.completedQuantity', '完了数量') }} <span class="required-badge">必須</span></label>
           <input v-model.number="completeForm.completedQuantity" type="number" class="o-input" min="0" />
         </div>
         <div class="form-field form-field--full">

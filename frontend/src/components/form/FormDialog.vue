@@ -670,11 +670,6 @@ const handleSubmit = async () => {
     })
 
     emit('submit', submitData)
-    if (props.allowInvalidSubmit) {
-      alert('保存しました（未入力/形式エラーの項目は赤枠で表示されます）')
-    } else {
-      alert('保存しました')
-    }
     handleClose()
   } catch (_error) {
     alert('入力内容を確定してください')

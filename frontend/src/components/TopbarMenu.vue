@@ -49,7 +49,7 @@
         <span class="dropdown-arrow">▾</span>
       </div>
       <div class="dropdown-panel">
-        <router-link to="/shipment-orders/create" class="dropdown-item">出荷指示作成</router-link>
+        <router-link to="/shipment/orders/create" class="dropdown-item">出荷指示作成</router-link>
       </div>
     </div>
 
@@ -60,13 +60,13 @@
         <span class="dropdown-arrow">▾</span>
       </div>
       <div class="dropdown-panel">
-        <router-link to="/shipment-operations/tasks" class="dropdown-item">出荷作業一覧</router-link>
-        <router-link to="/shipment-operations/list" class="dropdown-item">出荷一覧</router-link>
+        <router-link to="/shipment/operations/tasks" class="dropdown-item">出荷作業一覧</router-link>
+        <router-link to="/shipment/operations/list" class="dropdown-item">出荷一覧</router-link>
       </div>
     </div>
 
     <!-- 出荷実績 -->
-    <router-link to="/shipment-results" class="menu-item" :class="{ active: isActiveGroup('shipment-results') }">
+    <router-link to="/shipment/results" class="menu-item" :class="{ active: isActiveGroup('shipment-results') }">
       <span>出荷実績</span>
     </router-link>
 

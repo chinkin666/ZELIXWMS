@@ -97,11 +97,11 @@
     <ODialog v-model="createDialogOpen" :title="t('wms.warehouse.createSerialTitle', 'シリアル番号を登録')" size="lg" @confirm="handleCreate">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.serialNumber', 'シリアル番号') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.serialNumber', 'シリアル番号') }} <span class="required-badge">必須</span></label>
           <input v-model="createForm.serialNumber" type="text" class="o-input" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.productId', '商品ID') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.productId', '商品ID') }} <span class="required-badge">必須</span></label>
           <input v-model="createForm.productId" type="text" class="o-input" />
         </div>
         <div class="form-field">
@@ -127,7 +127,7 @@
     <ODialog v-model="bulkDialogOpen" :title="t('wms.warehouse.bulkCreateTitle', 'シリアル番号一括登録')" size="lg" @confirm="handleBulkCreate">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.productId', '商品ID') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.productId', '商品ID') }} <span class="required-badge">必須</span></label>
           <input v-model="bulkForm.productId" type="text" class="o-input" />
         </div>
         <div class="form-field">
@@ -135,7 +135,7 @@
           <input v-model="bulkForm.warehouseId" type="text" class="o-input" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.serialNumbersPerLine', 'シリアル番号（1行に1つ）') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.serialNumbersPerLine', 'シリアル番号（1行に1つ）') }} <span class="required-badge">必須</span></label>
           <textarea v-model="bulkForm.serialNumbersText" class="o-input form-textarea" rows="8" placeholder="SN001&#10;SN002&#10;SN003" />
         </div>
         <div v-if="bulkResult" class="form-field form-field--full">

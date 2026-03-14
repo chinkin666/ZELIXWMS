@@ -8,7 +8,7 @@
 
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.product', '商品') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inventory.product', '商品') }} <span class="required-badge">必須</span></label>
           <select v-model="form.productId" class="o-input" @change="handleProductChange">
             <option value="">{{ t('wms.inventory.selectProduct', '商品を選択...') }}</option>
             <option v-for="p in products" :key="p._id" :value="p._id">
@@ -18,7 +18,7 @@
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.location', 'ロケーション') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inventory.location', 'ロケーション') }} <span class="required-badge">必須</span></label>
           <select v-model="form.locationId" class="o-input">
             <option value="">{{ t('wms.inventory.selectLocation', 'ロケーションを選択...') }}</option>
             <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
@@ -28,7 +28,7 @@
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.adjustQuantity', '調整数量') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inventory.adjustQuantity', '調整数量') }} <span class="required-badge">必須</span></label>
           <input v-model.number="form.adjustQuantity" type="number" class="o-input" :placeholder="t('wms.inventory.adjustQuantityPlaceholder', '例: +10 or -5')" />
           <span class="form-hint">{{ t('wms.inventory.adjustQuantityHint', '正: 在庫増加 / 負: 在庫減少') }}</span>
         </div>
@@ -297,7 +297,7 @@ onMounted(async () => {
   color: var(--o-gray-700, #303133);
 }
 
-.required { color: #f56c6c; }
+.required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
 
 .form-hint {
   font-size: 12px;

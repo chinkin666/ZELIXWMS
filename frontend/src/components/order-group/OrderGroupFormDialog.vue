@@ -6,7 +6,7 @@
     width="500px"
   >
     <div class="o-form-group">
-      <label class="o-form-label">グループ名 <span class="required">*</span></label>
+      <label class="o-form-label">グループ名 <span class="required-badge">必須</span></label>
       <input
         class="o-input"
         v-model="formData.name"

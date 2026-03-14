@@ -9,7 +9,7 @@
     <div class="form-card o-card">
       <div class="form-grid">
         <div class="form-row">
-          <label class="form-label">{{ t('wms.returns.returnReason', '返品理由') }} <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.returns.returnReason', '返品理由') }} <span class="required-badge">必須</span></label>
           <select v-model="form.returnReason" class="o-input" style="width:200px;">
             <option value="customer_request">{{ t('wms.returns.reasonCustomerRequest', 'お客様都合') }}</option>
             <option value="defective">{{ t('wms.returns.reasonDefective', '不良品') }}</option>
@@ -158,7 +158,7 @@ const handleCreate = async () => {
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
 .form-row { display: flex; flex-direction: column; gap: 4px; }
 .form-label { font-weight: 600; font-size: 13px; color: var(--o-gray-700); }
-.required { color: #f56c6c; }
+.required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
 .lines-section { margin-bottom: 1.5rem; }
 .lines-title { font-size: 15px; font-weight: 600; margin-bottom: 0.5rem; color: var(--o-gray-700); }
 .form-actions { margin-top: 1rem; }

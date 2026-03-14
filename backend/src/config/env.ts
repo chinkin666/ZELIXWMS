@@ -25,7 +25,7 @@ export const loadEnv = (): AppEnv => {
   return {
     nodeEnv: (process.env.NODE_ENV as AppEnv['nodeEnv']) ?? 'development',
     port: Number(process.env.PORT) || 4000,
-    host: process.env.HOST ?? '0.0.0.0',
+    host: process.env.HOST ?? 'localhost',
     mongoUri: process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017/nexand-shipment',
     mongoDb: process.env.MONGODB_DB ?? 'nexand-shipment',
     fileBucket: process.env.FILE_STORAGE_BUCKET ?? 'local',

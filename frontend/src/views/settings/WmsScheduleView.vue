@@ -118,11 +118,11 @@
       <template #default>
         <div class="form-grid">
           <div class="form-field">
-            <label class="form-label">{{ t('wms.schedule.name', '名前') }} <span class="required">*</span></label>
+            <label class="form-label">{{ t('wms.schedule.name', '名前') }} <span class="required-badge">必須</span></label>
             <input type="text" class="o-input" v-model="form.name" :placeholder="t('wms.schedule.scheduleName', 'スケジュール名')" />
           </div>
           <div class="form-field">
-            <label class="form-label">{{ t('wms.schedule.action', 'アクション') }} <span class="required">*</span></label>
+            <label class="form-label">{{ t('wms.schedule.action', 'アクション') }} <span class="required-badge">必須</span></label>
             <select class="o-input" v-model="form.action">
               <option value="">{{ t('wms.schedule.selectPlaceholder', '選択してください') }}</option>
               <option v-for="(label, key) in ACTION_LABELS" :key="key" :value="key">{{ label }}</option>

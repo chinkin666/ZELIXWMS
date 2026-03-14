@@ -92,9 +92,11 @@ function isSubActive(to: string) {
   color: var(--o-gray-900, #1d1d1d);
 }
 .o-settings-sidebar-item.active {
-  background: var(--o-brand-primary-light, #f0e8ee);
-  color: var(--o-brand-primary, #714b67);
+  background: var(--o-brand-lighter, #FAF0EA);
+  color: var(--o-brand-primary, #D97756);
   font-weight: 600;
+  border-left: 3px solid var(--o-brand-primary, #D97756);
+  padding-left: 17px;
 }
 
 @media (max-width: 768px) {

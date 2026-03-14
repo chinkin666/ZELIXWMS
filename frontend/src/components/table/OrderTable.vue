@@ -396,9 +396,14 @@
           <tr v-if="displayData.length === 0">
             <td
               :colspan="totalColumnCount"
-              style="text-align: center; padding: 20px; color: #909399;"
+              style="text-align: center; padding: 2rem; color: var(--o-gray-400, #c0c4cc);"
             >
-              データがありません
+              <div style="display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;">
+                <svg width="40" height="40" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.3">
+                  <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zM9.5 3A1.5 1.5 0 0 1 8 1.5V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2.5z"/>
+                </svg>
+                <span>データがありません</span>
+              </div>
             </td>
           </tr>
         </tbody>

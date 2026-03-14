@@ -87,66 +87,68 @@ const router = createRouter({
             },
           ],
         },
+        // === 出荷管理（统一）/ 出荷管理（統合） ===
         {
-          path: 'shipment-orders',
-          meta: { title: '出荷指示', requiresAuth: true },
-          redirect: '/shipment-orders/create',
+          path: 'shipment',
+          meta: { title: '出荷管理', requiresAuth: true },
+          redirect: '/shipment/orders/create',
           children: [
+            // 出荷指示 / 出荷指示
             {
-              path: '',
-              redirect: '/shipment-orders/create',
-            },
-            {
-              path: 'create',
+              path: 'orders/create',
               name: 'ShipmentOrderCreate',
               component: () => import('@/views/shipment-orders/ShipmentOrderCreate.vue'),
               meta: { title: '出荷指示作成', requiresAuth: true },
             },
             {
-              path: 'create-v2',
+              path: 'orders/create-v2',
               name: 'ShipmentOrderCreateV2',
               component: () => import('@/modules/shipment/pages/ShipmentOrderCreatePage.vue'),
               meta: { title: '出荷指示作成 V2', requiresAuth: true },
             },
-          ],
-        },
-        {
-          path: 'shipment-operations',
-          meta: { title: '出荷作業', requiresAuth: true },
-          redirect: '/shipment-operations/tasks',
-          children: [
+            // 出荷作業 / 出荷作業
             {
-              path: 'list',
-              name: 'ShipmentOperationsList',
-              component: () => import('@/views/shipment-operations/ShipmentOperationsList.vue'),
-              meta: { title: '出荷一覧', requiresAuth: true },
-            },
-            {
-              path: 'tasks',
+              path: 'operations/tasks',
               name: 'ShipmentList',
               component: () => import('@/views/shipment-operations/ShipmentList.vue'),
               meta: { title: '出荷作業一覧', requiresAuth: true },
             },
             {
-              path: 'one-by-one/inspection',
+              path: 'operations/list',
+              name: 'ShipmentOperationsList',
+              component: () => import('@/views/shipment-operations/ShipmentOperationsList.vue'),
+              meta: { title: '出荷一覧', requiresAuth: true },
+            },
+            {
+              path: 'operations/one-by-one/inspection',
               name: 'OneByOneInspection',
               component: () => import('@/views/shipment-operations/OneByOneInspection.vue'),
               meta: { title: '1-1検品', requiresAuth: true },
             },
             {
-              path: 'n-by-one/inspection',
+              path: 'operations/n-by-one/inspection',
               name: 'OneProductInspection',
               component: () => import('@/views/shipment-operations/OneProductInspection.vue'),
               meta: { title: 'N-1検品', requiresAuth: true },
             },
+            // 出荷実績 / 出荷実績
+            {
+              path: 'results',
+              name: 'ShipmentResults',
+              component: () => import('@/views/shipment-results/ShipmentResults.vue'),
+              meta: { title: '出荷実績', requiresAuth: true },
+            },
           ],
         },
-        {
-          path: 'shipment-results',
-          name: 'ShipmentResults',
-          component: () => import('@/views/shipment-results/ShipmentResults.vue'),
-          meta: { title: '出荷実績一覧', requiresAuth: true },
-        },
+        // === 旧路径重定向（向后兼容）/ 旧パスリダイレクト（後方互換） ===
+        { path: 'shipment-orders', redirect: '/shipment/orders/create' },
+        { path: 'shipment-orders/create', redirect: '/shipment/orders/create' },
+        { path: 'shipment-operations', redirect: '/shipment/operations/tasks' },
+        { path: 'shipment-operations/tasks', redirect: '/shipment/operations/tasks' },
+        { path: 'shipment-operations/list', redirect: '/shipment/operations/list' },
+        { path: 'shipment-operations/one-by-one/inspection', redirect: '/shipment/operations/one-by-one/inspection' },
+        { path: 'shipment-operations/n-by-one/inspection', redirect: '/shipment/operations/n-by-one/inspection' },
+        { path: 'shipment-results', redirect: '/shipment/results' },
         {
           path: 'inbound',
           meta: { title: '入庫管理', requiresAuth: true },
@@ -330,6 +332,12 @@ const router = createRouter({
               name: 'DailyReportList',
               component: () => import('@/views/daily/DailyReportList.vue'),
               meta: { title: '日次レポート', requiresAuth: true },
+            },
+            {
+              path: 'statistics',
+              name: 'ShipmentStatistics',
+              component: () => import('@/views/daily/ShipmentStatistics.vue'),
+              meta: { title: '出荷統計', requiresAuth: true },
             },
             {
               path: ':date',
@@ -557,6 +565,12 @@ router.beforeEach((to, _from, next) => {
   // TODO: ログインページ実装後に認証ガードを有効化する
   // 現在はモック認証のためスキップ
   next()
+})
+
+// 页面标题动态更新 / ページタイトル動的更新
+router.afterEach((to) => {
+  const title = to.meta?.title as string | undefined
+  document.title = title ? `${title} | ZELIX WMS` : 'ZELIX WMS'
 })
 
 export default router

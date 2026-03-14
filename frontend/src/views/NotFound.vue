@@ -32,7 +32,7 @@ function goHome() {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--o-webclient-background, #FAF7F5);
 }
 
 .not-found__content {
@@ -43,34 +43,34 @@ function goHome() {
 .not-found__code {
   font-size: 6rem;
   font-weight: 700;
-  color: #409eff;
+  color: var(--o-brand-primary, #D97756);
   margin: 0;
   line-height: 1;
+  opacity: 0.8;
 }
 
 .not-found__title {
   font-size: 1.5rem;
-  color: #303133;
+  color: var(--o-gray-800, #303133);
   margin: 1rem 0 0.5rem;
 }
 
 .not-found__description {
-  color: #909399;
+  color: var(--o-gray-500, #909399);
   margin-bottom: 2rem;
 }
 
 .not-found__button {
   padding: 0.75rem 2rem;
-  background: #409eff;
+  background: var(--o-brand-primary, #D97756);
   color: #fff;
   border: none;
-  border-radius: 4px;
   font-size: 1rem;
   cursor: pointer;
   transition: background 0.2s;
 }
 
 .not-found__button:hover {
-  background: #66b1ff;
+  background: var(--o-brand-hover-dark, #B85D3A);
 }
 </style>
