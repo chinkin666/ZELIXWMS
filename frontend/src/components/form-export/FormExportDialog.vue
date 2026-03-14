@@ -22,11 +22,11 @@
         >
           <option value="" disabled>テンプレートを選択</option>
           <option
-            v-for="t in templatesForType"
-            :key="t._id"
-            :value="t._id"
+            v-for="tpl in templatesForType"
+            :key="tpl._id"
+            :value="tpl._id"
           >
-            {{ t.name }}{{ t.isDefault ? ' (デフォルト)' : '' }}
+            {{ tpl.name }}{{ tpl.isDefault ? ' (デフォルト)' : '' }}
           </option>
         </select>
         <div v-if="templatesForType.length === 0" class="no-template-hint">

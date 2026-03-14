@@ -154,3 +154,51 @@ export async function searchInboundHistory(params?: {
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to search history')
   return res.json()
 }
+
+/** 差異レポート / 差异报告 */
+export interface InboundVarianceLine {
+  lineNumber: number
+  productSku: string
+  productName: string
+  expectedQuantity: number
+  receivedQuantity: number
+  variance: number
+  variancePercent: number
+  status: 'ok' | 'shortage' | 'pending'
+}
+
+export interface InboundVarianceReport {
+  orderNumber: string
+  orderStatus: string
+  supplierName: string
+  totalExpected: number
+  totalReceived: number
+  totalVariance: number
+  hasVariance: boolean
+  shortageCount: number
+  pendingCount: number
+  lines: InboundVarianceLine[]
+}
+
+export async function fetchInboundVariance(id: string): Promise<InboundVarianceReport> {
+  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}/variance`)
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch variance')
+  return res.json()
+}
+
+/** 棚入れロケーション推薦 / 上架位置推荐 */
+export interface LocationSuggestion {
+  lineNumber: number
+  productSku: string
+  suggestedLocationId: string | null
+  suggestedLocationCode: string | null
+  suggestedLocationName: string | null
+  existingStock: number
+  reason: string | null
+}
+
+export async function fetchPutawaySuggestions(id: string): Promise<{ suggestions: LocationSuggestion[] }> {
+  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}/suggest-locations`)
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch suggestions')
+  return res.json()
+}

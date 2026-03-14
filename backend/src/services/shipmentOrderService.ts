@@ -15,6 +15,7 @@ import { completeStockForOrder, unreserveStockForOrder } from '@/services/stockS
 import { extensionManager } from '@/core/extensions';
 import { HOOK_EVENTS } from '@/core/extensions/types';
 import { ValidationError, NotFoundError } from '@/lib/errors';
+import { logOperation } from '@/services/operationLogger';
 
 // ============================================================
 // 类型定义 / 型定義
@@ -1013,6 +1014,16 @@ export const createOrders = async (
     }
   }
 
+  // 操作ログ記録 / 操作日志记录 (fire-and-forget)
+  if (successes.length > 0) {
+    logOperation({
+      action: 'order_create',
+      description: `出荷指示を作成: ${successes.length}件`,
+      referenceType: 'shipmentOrder',
+      quantity: successes.length,
+    }).catch(() => {});
+  }
+
   return {
     total: baseRows.length,
     successCount: successes.length,
@@ -1098,6 +1109,15 @@ export const updateOrder = async (
     throw new NotFoundError('Order not found');
   }
 
+  // 操作ログ / 操作日志 (fire-and-forget)
+  logOperation({
+    action: 'order_update',
+    description: `出荷指示を更新: ${updated.orderNumber}（${Object.keys(fieldsToUpdate).join(', ')}）`,
+    referenceNumber: updated.orderNumber,
+    referenceType: 'shipmentOrder',
+    referenceId: id,
+  }).catch(() => {});
+
   return { order: updated };
 };
 
@@ -1153,6 +1173,15 @@ export const deleteOrder = async (id: string): Promise<{ order: any }> => {
     orderNumber: deleted.orderNumber,
   }).catch(console.error);
 
+  // 操作ログ / 操作日志 (fire-and-forget)
+  logOperation({
+    action: 'order_cancel',
+    description: `出荷指示を削除: ${deleted.orderNumber}`,
+    referenceNumber: deleted.orderNumber,
+    referenceType: 'shipmentOrder',
+    referenceId: id,
+  }).catch(() => {});
+
   return { order: deleted };
 };
 
@@ -1165,6 +1194,18 @@ export const deleteOrder = async (id: string): Promise<{ order: any }> => {
  */
 export const confirmOrders = async (ids: string[]): Promise<StatusBulkResult> => {
   return updateOrderStatusBulk(ids, { action: 'mark-print-ready' });
+};
+
+// ステータスアクションの日本語ラベル / 状态操作的日语标签
+const STATUS_ACTION_LABELS: Record<string, string> = {
+  'mark-print-ready': '出荷確認',
+  'mark-printed': '印刷完了',
+  'mark-shipped': '出荷完了',
+  'mark-ec-exported': 'EC出力完了',
+  'mark-inspected': '検品完了',
+  'mark-held': '保留',
+  'unhold': '保留解除',
+  'unconfirm': '確認取消',
 };
 
 /**
@@ -1304,6 +1345,16 @@ export const updateOrderStatus = async (
   // 异步副作用 / 非同期副作用
   emitStatusSideEffects(input.action, input.statusType, [id], [updated]);
 
+  // 操作ログ / 操作日志 (fire-and-forget)
+  const actionLabel = STATUS_ACTION_LABELS[input.action] || input.action;
+  logOperation({
+    action: 'order_update',
+    description: `${actionLabel}: ${updated.orderNumber}`,
+    referenceNumber: updated.orderNumber,
+    referenceType: 'shipmentOrder',
+    referenceId: id,
+  }).catch(() => {});
+
   return updated;
 };
 
@@ -1340,6 +1391,15 @@ export const updateOrderStatusBulk = async (
 
   // 异步副作用 / 非同期副作用
   emitStatusSideEffects(input.action, input.statusType, validIds);
+
+  // 操作ログ / 操作日志 (fire-and-forget)
+  const bulkActionLabel = STATUS_ACTION_LABELS[input.action] || input.action;
+  logOperation({
+    action: 'order_update',
+    description: `一括${bulkActionLabel}: ${result.modifiedCount}件`,
+    referenceType: 'shipmentOrder',
+    quantity: result.modifiedCount,
+  }).catch(() => {});
 
   return {
     action: input.action,

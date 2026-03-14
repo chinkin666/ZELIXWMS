@@ -5,6 +5,7 @@
  * Uses Worker Threads for parallel rendering
  */
 
+import { logger } from '@/lib/logger'
 import Piscina from 'piscina'
 import path from 'path'
 import type { PdfPage } from './konva/pdfAssembler';
@@ -34,13 +35,13 @@ function scheduleCleanup(): void {
 
   // Run cleanup immediately on first load
   setTimeout(() => {
-    cleanupOldCache().catch((err) => console.error('[PDFCache] Cleanup error:', err))
+    cleanupOldCache().catch((err) => logger.error({ err }, '[PDFCache] Cleanup error'))
   }, 5000)
 
   // Then run every 24 hours
   setInterval(
     () => {
-      cleanupOldCache().catch((err) => console.error('[PDFCache] Cleanup error:', err))
+      cleanupOldCache().catch((err) => logger.error({ err }, '[PDFCache] Cleanup error'))
     },
     24 * 60 * 60 * 1000
   )
@@ -62,7 +63,7 @@ export async function renderBatch(
   const startTime = Date.now()
 
   // Step 1: Batch prefetch all data to avoid N+1 queries
-  console.log(`[Render] Prefetching data for ${items.length} items...`)
+  logger.info(`[Render] Prefetching data for ${items.length} items...`)
   const prefetchStart = Date.now()
 
   // Collect unique IDs
@@ -87,7 +88,7 @@ export async function renderBatch(
   const companyMap = new Map(companyDocs.map((doc) => [String(doc._id), doc.toObject()]))
 
   const prefetchTime = Date.now() - prefetchStart
-  console.log(`[Render] Prefetched data in ${prefetchTime}ms`)
+  logger.info(`[Render] Prefetched data in ${prefetchTime}ms`)
 
   // Step 2: Create Worker Pool
   // In development, use .ts files directly; in production, use compiled .js files
@@ -113,7 +114,7 @@ export async function renderBatch(
   // Wait for workers to initialize
   await new Promise((resolve) => setTimeout(resolve, 100))
 
-  console.log(
+  logger.info(
     `[Render] Dispatching ${items.length} items to ${workerCount} workers (pool has ${pool.threads.length} threads)...`
   )
 
@@ -122,7 +123,7 @@ export async function renderBatch(
   const renderStart = Date.now()
   let completedCount = 0
   const progressInterval = setInterval(() => {
-    console.log(
+    logger.info(
       `[Render] Progress: ${completedCount}/${items.length} (${Math.round((completedCount / items.length) * 100)}%)`
     )
   }, 5000)
@@ -167,7 +168,7 @@ export async function renderBatch(
 
       completedCount++
     } catch (error) {
-      console.error(`[Render] Task ${index} failed:`, error)
+      logger.error({ err: error }, `[Render] Task ${index} failed`)
       // Write error result
       resultStream.write(
         JSON.stringify({
@@ -203,14 +204,14 @@ export async function renderBatch(
   clearInterval(progressInterval)
 
   const renderTime = Date.now() - renderStart
-  console.log(`[Render] Rendered ${items.length} pages in ${renderTime}ms`)
+  logger.info(`[Render] Rendered ${items.length} pages in ${renderTime}ms`)
 
   // Clear data maps immediately (workers still running in background)
   orderMap.clear()
   templateMap.clear()
   companyMap.clear()
 
-  console.log('[Render] Proceeding to PDF assembly (workers will auto-cleanup)...')
+  logger.info('[Render] Proceeding to PDF assembly (workers will auto-cleanup)...')
 
   // NOTE: We intentionally DON'T call pool.destroy() here
   // Destroying the pool while native resources (skia-canvas) are cleaning up causes crashes
@@ -256,7 +257,7 @@ export async function renderBatch(
   // Free results array
   results.length = 0
 
-  console.log(`[Render] Assembling ${pdfPages.length} pages from cache...`)
+  logger.info(`[Render] Assembling ${pdfPages.length} pages from cache...`)
 
   const pdfBuffer = await assemblePdf(pdfPages, {
     title: 'Print Labels',
@@ -265,7 +266,7 @@ export async function renderBatch(
 
   const pdfTime = Date.now() - pdfStartTime
   const totalTime = Date.now() - startTime
-  console.log(
+  logger.info(
     `[Render] Assembled PDF in ${pdfTime}ms, total: ${totalTime}ms (prefetch: ${prefetchTime}ms, render: ${renderTime}ms, pdf: ${pdfTime}ms)`
   )
 
@@ -276,7 +277,7 @@ export async function renderBatch(
   // 1. Workers will auto-terminate after idleTimeout (60s)
   // 2. Calling destroy() with native resources still cleaning up causes crashes
   // 3. The PDF has already been returned to the client, so cleanup can be lazy
-  console.log('[Render] Worker pool will auto-cleanup after 60s idle')
+  logger.info('[Render] Worker pool will auto-cleanup after 60s idle')
 
   return pdfBuffer
 }

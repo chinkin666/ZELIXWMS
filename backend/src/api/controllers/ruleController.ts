@@ -1,6 +1,21 @@
 import type { Request, Response } from 'express';
 import { RuleDefinition } from '@/models/ruleDefinition';
 import { RuleEngine } from '@/services/ruleEngine';
+import { createRuleSchema, updateRuleSchema } from '@/schemas/ruleSchema';
+import { AppError } from '@/lib/errors';
+
+/**
+ * エラーレスポンスヘルパー / 错误响应辅助函数
+ * AppError はステータスコードを保持、それ以外は 500
+ */
+function handleError(res: Response, error: unknown, fallbackMessage: string): void {
+  if (error instanceof AppError) {
+    res.status(error.statusCode).json({ message: error.message, code: error.code, details: error.details });
+    return;
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  res.status(500).json({ message: fallbackMessage, error: message });
+}
 
 /** ルール一覧 */
 export const listRules = async (req: Request, res: Response): Promise<void> => {
@@ -15,7 +30,9 @@ export const listRules = async (req: Request, res: Response): Promise<void> => {
       filter.isActive = isActive === 'true';
     }
     if (typeof search === 'string' && search.trim()) {
-      const regex = new RegExp(search.trim(), 'i');
+      // 正規表現の特殊文字をエスケープ / 转义正则特殊字符
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, 'i');
       filter.$or = [
         { name: regex },
         { description: regex },
@@ -36,8 +53,8 @@ export const listRules = async (req: Request, res: Response): Promise<void> => {
     ]);
 
     res.json({ data, total, page, limit });
-  } catch (error: any) {
-    res.status(500).json({ message: 'ルール一覧の取得に失敗しました', error: error.message });
+  } catch (error) {
+    handleError(res, error, 'ルール一覧の取得に失敗しました');
   }
 };
 
@@ -50,37 +67,46 @@ export const getRule = async (req: Request, res: Response): Promise<void> => {
       return;
     }
     res.json(rule);
-  } catch (error: any) {
-    res.status(500).json({ message: 'ルールの取得に失敗しました', error: error.message });
+  } catch (error) {
+    handleError(res, error, 'ルールの取得に失敗しました');
   }
 };
 
 /** ルール作成 */
 export const createRule = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, module, conditionGroups, actions } = req.body;
-
-    if (!name || !module || !conditionGroups || !actions) {
+    const parsed = createRuleSchema.safeParse(req.body);
+    if (!parsed.success) {
       res.status(400).json({
-        message: 'name, module, conditionGroups, actions は必須です',
+        message: 'バリデーションエラー',
+        error: parsed.error.flatten().fieldErrors,
       });
       return;
     }
 
     const rule = await RuleDefinition.create({
-      ...req.body,
-      name: name.trim(),
+      ...parsed.data,
+      name: parsed.data.name.trim(),
     });
 
     res.status(201).json(rule);
-  } catch (error: any) {
-    res.status(500).json({ message: 'ルールの作成に失敗しました', error: error.message });
+  } catch (error) {
+    handleError(res, error, 'ルールの作成に失敗しました');
   }
 };
 
 /** ルール更新 */
 export const updateRule = async (req: Request, res: Response): Promise<void> => {
   try {
+    const parsed = updateRuleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        message: 'バリデーションエラー',
+        error: parsed.error.flatten().fieldErrors,
+      });
+      return;
+    }
+
     const rule = await RuleDefinition.findById(req.params.id);
     if (!rule) {
       res.status(404).json({ message: 'ルールが見つかりません' });
@@ -94,15 +120,15 @@ export const updateRule = async (req: Request, res: Response): Promise<void> => 
     ] as const;
 
     for (const field of updatableFields) {
-      if (req.body[field] !== undefined) {
-        (rule as any)[field] = req.body[field];
+      if (parsed.data[field] !== undefined) {
+        (rule as any)[field] = parsed.data[field];
       }
     }
 
     await rule.save();
     res.json(rule);
-  } catch (error: any) {
-    res.status(500).json({ message: 'ルールの更新に失敗しました', error: error.message });
+  } catch (error) {
+    handleError(res, error, 'ルールの更新に失敗しました');
   }
 };
 
@@ -117,8 +143,8 @@ export const deleteRule = async (req: Request, res: Response): Promise<void> => 
 
     await RuleDefinition.findByIdAndDelete(req.params.id);
     res.json({ message: 'ルールを削除しました' });
-  } catch (error: any) {
-    res.status(500).json({ message: 'ルールの削除に失敗しました', error: error.message });
+  } catch (error) {
+    handleError(res, error, 'ルールの削除に失敗しました');
   }
 };
 
@@ -134,8 +160,8 @@ export const toggleRule = async (req: Request, res: Response): Promise<void> => 
     rule.isActive = !rule.isActive;
     await rule.save();
     res.json(rule);
-  } catch (error: any) {
-    res.status(500).json({ message: 'ルールの切替に失敗しました', error: error.message });
+  } catch (error) {
+    handleError(res, error, 'ルールの切替に失敗しました');
   }
 };
 
@@ -151,7 +177,7 @@ export const testRule = async (req: Request, res: Response): Promise<void> => {
 
     const matchedRules = await RuleEngine.evaluate(module, context);
     res.json({ matchedRules });
-  } catch (error: any) {
-    res.status(500).json({ message: 'ルールテストの実行に失敗しました', error: error.message });
+  } catch (error) {
+    handleError(res, error, 'ルールテストの実行に失敗しました');
   }
 };

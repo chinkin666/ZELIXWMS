@@ -28,12 +28,12 @@ defineExpose({ add })
   <Teleport to="body">
     <div class="o-toast-container">
       <OToast
-        v-for="t in toasts"
-        :key="t.id"
-        :message="t.message"
-        :type="t.type"
-        :duration="t.duration"
-        @close="remove(t.id)"
+        v-for="item in toasts"
+        :key="item.id"
+        :message="item.message"
+        :type="item.type"
+        :duration="item.duration"
+        @close="remove(item.id)"
       />
     </div>
   </Teleport>

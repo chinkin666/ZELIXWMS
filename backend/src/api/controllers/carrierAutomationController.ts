@@ -19,6 +19,7 @@ import { generateOrderNumbers } from '@/utils/idGenerator';
 import { isBuiltInCarrierId } from '@/data/builtInCarriers';
 import { logger } from '@/lib/logger';
 import { createApiLog, completeApiLog } from '@/services/apiLogger';
+import { logOperation } from '@/services/operationLogger';
 
 /**
  * テナントIDを取得（将来的にはJWTなどから取得）
@@ -448,6 +449,14 @@ export const yamatoB2Export = async (req: Request, res: Response): Promise<void>
         shipmentsCount: pr.shipments?.length || 0,
       })),
     }, 'Yamato B2 export and print completed');
+
+    // 操作ログ / 操作日志 (fire-and-forget)
+    logOperation({
+      action: 'outbound_ship',
+      description: `B2 Cloudエクスポート: ${exportResult.success_count}件成功, ${exportResult.error_count}件エラー`,
+      quantity: exportResult.success_count,
+      referenceType: 'carrierExport',
+    }).catch(() => {});
 
     res.json({
       ...exportResult,

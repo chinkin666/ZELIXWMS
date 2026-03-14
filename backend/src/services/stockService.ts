@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import mongoose from 'mongoose';
 import { StockQuant } from '@/models/stockQuant';
 import { StockMove } from '@/models/stockMove';
@@ -171,7 +172,7 @@ export async function reserveStockForOrder(
       orderNumber,
       reservationCount: result.reservations.length,
       errors: result.errors,
-    }).catch(() => {/* サイレント */});
+    }).catch((err: unknown) => logger.warn({ err }, 'Extension hook failed (non-blocking)'));
   }
 
   return result;
@@ -222,7 +223,7 @@ export async function completeStockForOrder(orderId: string): Promise<{ movedCou
       orderId,
       type: 'outbound',
       movedCount,
-    }).catch(() => {/* サイレント */});
+    }).catch((err: unknown) => logger.warn({ err }, 'Extension hook failed (non-blocking)'));
   }
 
   return { movedCount };
@@ -267,7 +268,7 @@ export async function unreserveStockForOrder(orderId: string): Promise<{ cancell
     extensionManager.emit(HOOK_EVENTS.STOCK_RELEASED, {
       orderId,
       cancelledCount,
-    }).catch(() => {/* サイレント */});
+    }).catch((err: unknown) => logger.warn({ err }, 'Extension hook failed (non-blocking)'));
   }
 
   return { cancelledCount };

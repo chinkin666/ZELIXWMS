@@ -69,16 +69,21 @@
                   <span class="location-badge">{{ getPutawayLocCode(line) }}</span>
                 </template>
                 <template v-else>
-                  <select
-                    v-model="putawaySelections[line.lineNumber]"
-                    class="o-input o-input-sm"
-                    style="width:180px;"
-                  >
-                    <option value="">{{ t('wms.inbound.selectLocation', 'ロケーション選択') }}</option>
-                    <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
-                      {{ loc.code }} ({{ loc.name }})
-                    </option>
-                  </select>
+                  <div style="display:flex;flex-direction:column;gap:2px;">
+                    <select
+                      v-model="putawaySelections[line.lineNumber]"
+                      class="o-input o-input-sm"
+                      style="width:180px;"
+                    >
+                      <option value="">{{ t('wms.inbound.selectLocation', 'ロケーション選択') }}</option>
+                      <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
+                        {{ loc.code }} ({{ loc.name }})
+                      </option>
+                    </select>
+                    <span v-if="suggestions[line.lineNumber]?.reason" class="suggestion-hint">
+                      &#x2728; {{ suggestions[line.lineNumber].reason }}
+                    </span>
+                  </div>
                 </template>
               </td>
               <td class="o-table-td o-table-td--right">
@@ -130,7 +135,8 @@ import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import { fetchInboundOrder, putawayInboundLine, completeInboundOrder } from '@/api/inboundOrder'
+import { fetchInboundOrder, putawayInboundLine, completeInboundOrder, fetchPutawaySuggestions } from '@/api/inboundOrder'
+import type { LocationSuggestion } from '@/api/inboundOrder'
 import { fetchLocations } from '@/api/location'
 import type { InboundOrder, InboundOrderLine, Location } from '@/types/inventory'
 
@@ -144,6 +150,7 @@ const order = ref<InboundOrder | null>(null)
 const physicalLocations = ref<Location[]>([])
 const putawaySelections = reactive<Record<number, string>>({})
 const bulkLocationId = ref('')
+const suggestions = ref<Record<number, LocationSuggestion>>({})
 
 const putawayCount = computed(() =>
   order.value?.lines.filter(l => l.putawayQuantity >= l.receivedQuantity && l.receivedQuantity > 0).length ?? 0,
@@ -242,10 +249,22 @@ const loadOrder = async () => {
   try {
     const id = route.params.id as string
     order.value = await fetchInboundOrder(id)
-    // Initialize putaway selections
+
+    // ロケーション推薦を取得 / 获取位置推荐
+    try {
+      const result = await fetchPutawaySuggestions(id)
+      for (const s of result.suggestions) {
+        suggestions.value[s.lineNumber] = s
+      }
+    } catch {
+      // 推薦取得失敗は無視 / 推荐获取失败忽略
+    }
+
+    // Initialize putaway selections（推薦があれば自動設定）/ 初始化（有推荐则自动设置）
     for (const line of order.value.lines) {
       if (!putawaySelections[line.lineNumber]) {
-        putawaySelections[line.lineNumber] = ''
+        const sg = suggestions.value[line.lineNumber]
+        putawaySelections[line.lineNumber] = sg?.suggestedLocationId || ''
       }
     }
   } catch (e: any) {
@@ -366,4 +385,10 @@ onMounted(() => {
 
 .o-status-tag--draft { background: #f4f4f5; color: #909399; }
 .o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
+
+.suggestion-hint {
+  font-size: 11px;
+  color: var(--o-brand-primary, #D97756);
+  white-space: nowrap;
+}
 </style>

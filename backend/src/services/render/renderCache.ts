@@ -3,6 +3,7 @@
  * File-based caching for rendered PNG pages with 30-day retention
  */
 
+import { logger } from '@/lib/logger'
 import fs from 'fs'
 import path from 'path'
 import crypto from 'crypto'
@@ -21,7 +22,7 @@ function ensureCacheDir(): void {
 
   if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true })
-    console.log(`[RenderCache] Created cache directory: ${CACHE_DIR}`)
+    logger.info(`[RenderCache] Created cache directory: ${CACHE_DIR}`)
   }
   cacheInitialized = true
 }
@@ -84,7 +85,7 @@ function logCacheStats(): void {
   if (now - lastStatsLog > 10000 && (cacheHits > 0 || cacheMisses > 0)) {
     const total = cacheHits + cacheMisses
     const hitRate = total > 0 ? Math.round((cacheHits / total) * 100) : 0
-    console.log(`[RenderCache] Stats: ${cacheHits} hits, ${cacheMisses} misses (${hitRate}% hit rate)`)
+    logger.info(`[RenderCache] Stats: ${cacheHits} hits, ${cacheMisses} misses (${hitRate}% hit rate)`)
     cacheHits = 0
     cacheMisses = 0
     lastStatsLog = now
@@ -146,7 +147,7 @@ export function getCachedRenderPaths(
       metadata,
     }
   } catch (error) {
-    console.error('[RenderCache] Error reading cache metadata:', error)
+    logger.error({ err: error }, '[RenderCache] Error reading cache metadata')
     cacheMisses++
     logCacheStats()
     return null
@@ -221,7 +222,7 @@ export async function getCachedRender(
     logCacheStats()
     return { pngBuffer, pdfBuffer, metadata }
   } catch (error) {
-    console.warn(`[RenderCache] Failed to read cache for ${cacheKey}:`, error)
+    logger.warn({ err: error }, `[RenderCache] Failed to read cache for ${cacheKey}`)
     cacheMisses++
     logCacheStats()
     return null
@@ -263,7 +264,7 @@ export async function setCachedRender(
     }
     fs.writeFileSync(metadataPath, JSON.stringify(fullMetadata))
   } catch (error) {
-    console.warn(`[RenderCache] Failed to write cache for ${cacheKey}:`, error)
+    logger.warn({ err: error }, `[RenderCache] Failed to write cache for ${cacheKey}`)
   }
 }
 
@@ -320,10 +321,10 @@ export async function cleanupExpiredCache(): Promise<{ deleted: number; errors: 
       }
     }
   } catch (error) {
-    console.error('[RenderCache] Cleanup error:', error)
+    logger.error({ err: error }, '[RenderCache] Cleanup error')
   }
 
-  console.log(`[RenderCache] Cleanup completed: ${deleted} deleted, ${errors} errors`)
+  logger.info(`[RenderCache] Cleanup completed: ${deleted} deleted, ${errors} errors`)
   return { deleted, errors }
 }
 
@@ -369,7 +370,7 @@ export async function getCacheStats(): Promise<{
       }
     }
   } catch (error) {
-    console.error('[RenderCache] Stats error:', error)
+    logger.error({ err: error }, '[RenderCache] Stats error')
   }
 
   return { totalFiles, totalSizeBytes, oldestFile, newestFile }

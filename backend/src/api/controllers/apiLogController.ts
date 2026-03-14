@@ -29,7 +29,9 @@ function buildFilter(query: Record<string, unknown>): Record<string, unknown> {
   }
 
   if (typeof search === 'string' && search.trim()) {
-    const regex = new RegExp(search.trim(), 'i');
+    // 正規表現の特殊文字をエスケープ / 转义正则特殊字符
+    const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'i');
     filter.$or = [
       { message: regex },
       { referenceNumber: regex },

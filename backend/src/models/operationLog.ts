@@ -133,5 +133,7 @@ operationLogSchema.index({ action: 1 });
 operationLogSchema.index({ productSku: 1 });
 operationLogSchema.index({ referenceNumber: 1 });
 operationLogSchema.index({ category: 1 });
+// 複合インデックス：カテゴリ×アクション×日時 / 复合索引：类别×操作×时间
+operationLogSchema.index({ category: 1, action: 1, createdAt: -1 });
 
 export const OperationLog = mongoose.model<IOperationLog>('OperationLog', operationLogSchema);

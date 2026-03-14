@@ -479,6 +479,13 @@ shipmentOrderSchema.index({ '_productsMeta.barcodes': 1 }); // 用于バーコ�
 shipmentOrderSchema.index({ '_productsMeta.totalQuantity': 1 }); // 用于数量排序
 shipmentOrderSchema.index({ '_productsMeta.skuCount': 1 }); // 用于种类数排序
 shipmentOrderSchema.index({ '_productsMeta.totalPrice': 1 }); // 用于金额搜索/排序
+// 状态フィルタリング用インデックス / 状态过滤用索引
+shipmentOrderSchema.index({ 'status.confirm.isConfirmed': 1 });
+shipmentOrderSchema.index({ 'status.shipped.isShipped': 1 });
+// ソート用インデックス / 排序用索引
+shipmentOrderSchema.index({ createdAt: -1 });
+// 複合インデックス：配送業者×確認状態 / 复合索引：配送业者×确认状态
+shipmentOrderSchema.index({ carrierId: 1, 'status.confirm.isConfirmed': 1 });
 
 export const ShipmentOrder = mongoose.model<IShipmentOrder>('ShipmentOrder', shipmentOrderSchema);
 

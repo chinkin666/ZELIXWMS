@@ -7,6 +7,7 @@ import { StockQuant } from '@/models/stockQuant';
 import { StockMove } from '@/models/stockMove';
 import { generateSequenceNumber } from '@/utils/sequenceGenerator';
 import { findOrCreateLot } from '@/api/controllers/lotController';
+import { logOperation } from '@/services/operationLogger';
 
 /** 入庫指示一覧 */
 export const listInboundOrders = async (req: Request, res: Response): Promise<void> => {
@@ -115,6 +116,17 @@ export const createInboundOrder = async (req: Request, res: Response): Promise<v
       memo: memo || undefined,
     });
 
+    // 操作ログ / 操作日志 (fire-and-forget)
+    logOperation({
+      action: 'order_create',
+      category: 'inbound',
+      description: `入庫指示を作成: ${order.orderNumber}（${order.lines.length}行）`,
+      referenceNumber: order.orderNumber,
+      referenceType: 'inboundOrder',
+      referenceId: String(order._id),
+      quantity: order.lines.reduce((s: number, l: any) => s + (l.expectedQuantity || 0), 0),
+    }).catch(() => {});
+
     res.status(201).json(order);
   } catch (error: any) {
     res.status(500).json({ message: '入庫指示の作成に失敗しました', error: error.message });
@@ -221,6 +233,14 @@ export const confirmInboundOrder = async (req: Request, res: Response): Promise<
 
     order.status = 'confirmed';
     await order.save();
+
+    logOperation({
+      action: 'inbound_receive',
+      description: `入庫指示を確定: ${order.orderNumber}`,
+      referenceNumber: order.orderNumber,
+      referenceType: 'inboundOrder',
+      referenceId: String(order._id),
+    }).catch(() => {});
 
     res.json({ message: '入庫指示を確定しました', order });
   } catch (error: any) {
@@ -330,6 +350,17 @@ export const receiveInboundLine = async (req: Request, res: Response): Promise<v
 
     await order.save();
 
+    logOperation({
+      action: 'inbound_receive',
+      description: `入庫検品: ${order.orderNumber} 行${lineNumber} ${line.productSku} ${qty}個（${newReceived}/${line.expectedQuantity}）`,
+      referenceNumber: order.orderNumber,
+      referenceType: 'inboundOrder',
+      referenceId: String(order._id),
+      productSku: line.productSku,
+      productName: line.productName,
+      quantity: qty,
+    }).catch(() => {});
+
     res.json({
       message: `行${lineNumber}: ${qty}個を入庫しました（${newReceived}/${line.expectedQuantity}）`,
       line: { lineNumber, receivedQuantity: newReceived, expectedQuantity: line.expectedQuantity },
@@ -367,6 +398,14 @@ export const completeInboundOrder = async (req: Request, res: Response): Promise
     }
 
     await order.save();
+    logOperation({
+      action: 'inbound_putaway',
+      description: `入庫完了: ${order.orderNumber}`,
+      referenceNumber: order.orderNumber,
+      referenceType: 'inboundOrder',
+      referenceId: String(order._id),
+    }).catch(() => {});
+
     res.json({ message: '入庫指示を完了にしました', order });
   } catch (error: any) {
     res.status(500).json({ message: '入庫完了に失敗しました', error: error.message });
@@ -409,6 +448,15 @@ export const cancelInboundOrder = async (req: Request, res: Response): Promise<v
 
     order.status = 'cancelled';
     await order.save();
+    logOperation({
+      action: 'order_cancel',
+      category: 'inbound',
+      description: `入庫指示をキャンセル: ${order.orderNumber}`,
+      referenceNumber: order.orderNumber,
+      referenceType: 'inboundOrder',
+      referenceId: String(order._id),
+    }).catch(() => {});
+
     res.json({ message: '入庫指示をキャンセルしました', order });
   } catch (error: any) {
     res.status(500).json({ message: 'キャンセルに失敗しました', error: error.message });
@@ -503,6 +551,18 @@ export const putawayInboundLine = async (req: Request, res: Response): Promise<v
 
     // 全行棚入れ完了チェック
     const allPutaway = order.lines.every(l => l.putawayQuantity >= l.receivedQuantity && l.receivedQuantity > 0);
+
+    logOperation({
+      action: 'inbound_putaway',
+      description: `棚入れ: ${order.orderNumber} 行${lineNumber} ${line.productSku} ${qty}個 → ${loc.code}`,
+      referenceNumber: order.orderNumber,
+      referenceType: 'inboundOrder',
+      referenceId: String(order._id),
+      productSku: line.productSku,
+      productName: line.productName,
+      locationCode: loc.code,
+      quantity: qty,
+    }).catch(() => {});
 
     res.json({
       message: `行${lineNumber}: 棚入れ完了（${loc.code}）`,
@@ -600,6 +660,15 @@ export const bulkReceiveInbound = async (req: Request, res: Response): Promise<v
     }
 
     await order.save();
+
+    logOperation({
+      action: 'inbound_receive',
+      description: `一括検品: ${order.orderNumber} ${totalProcessed}個`,
+      referenceNumber: order.orderNumber,
+      referenceType: 'inboundOrder',
+      referenceId: String(order._id),
+      quantity: totalProcessed,
+    }).catch(() => {});
 
     res.json({
       message: `一括検品完了: ${totalProcessed}個を入庫しました`,
@@ -762,5 +831,149 @@ export const searchInboundHistory = async (req: Request, res: Response): Promise
     res.json({ items, total, page, limit });
   } catch (error: any) {
     res.status(500).json({ message: '入庫履歴の検索に失敗しました', error: error.message });
+  }
+};
+
+/**
+ * 入庫差異レポート / 入库差异报告
+ * 検品数と予定数の差異を返す
+ * GET /inbound-orders/:id/variance
+ */
+export const getInboundVariance = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const order = await InboundOrder.findById(req.params.id)
+      .populate('destinationLocationId', 'code name')
+      .lean();
+
+    if (!order) {
+      res.status(404).json({ message: '入庫指示が見つかりません' });
+      return;
+    }
+
+    let totalExpected = 0;
+    let totalReceived = 0;
+    const lines: {
+      lineNumber: number;
+      productSku: string;
+      productName: string;
+      expectedQuantity: number;
+      receivedQuantity: number;
+      variance: number;
+      variancePercent: number;
+      status: 'ok' | 'shortage' | 'pending';
+    }[] = [];
+
+    for (const line of order.lines) {
+      const expected = line.expectedQuantity || 0;
+      const received = line.receivedQuantity || 0;
+      const variance = received - expected;
+      totalExpected += expected;
+      totalReceived += received;
+
+      let status: 'ok' | 'shortage' | 'pending' = 'ok';
+      if (received === 0 && expected > 0) status = 'pending';
+      else if (received < expected) status = 'shortage';
+
+      lines.push({
+        lineNumber: line.lineNumber,
+        productSku: line.productSku,
+        productName: line.productName || '',
+        expectedQuantity: expected,
+        receivedQuantity: received,
+        variance,
+        variancePercent: expected > 0 ? Math.round((variance / expected) * 100) : 0,
+        status,
+      });
+    }
+
+    const shortageLines = lines.filter(l => l.status === 'shortage');
+    const pendingLines = lines.filter(l => l.status === 'pending');
+    const hasVariance = shortageLines.length > 0 || pendingLines.length > 0;
+
+    res.json({
+      orderNumber: order.orderNumber,
+      orderStatus: order.status,
+      supplierName: (order as any).supplier?.name || '',
+      totalExpected,
+      totalReceived,
+      totalVariance: totalReceived - totalExpected,
+      hasVariance,
+      shortageCount: shortageLines.length,
+      pendingCount: pendingLines.length,
+      lines,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: '差異レポートの取得に失敗しました', error: error.message });
+  }
+};
+
+/**
+ * 棚入れロケーション推薦 / 上架位置推荐
+ * 各ラインの商品が既に在庫がある場所を推薦する
+ * GET /inbound-orders/:id/suggest-locations
+ */
+export const suggestPutawayLocations = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const order = await InboundOrder.findById(req.params.id).lean();
+    if (!order) {
+      res.status(404).json({ message: '入庫指示が見つかりません' });
+      return;
+    }
+
+    // 各ラインの productId を集約 / 汇总每行的productId
+    const productIds = [...new Set(order.lines.map(l => String(l.productId)))];
+
+    // 各商品の在庫量が最も多いロケーションを取得 / 获取每个商品库存最多的位置
+    const suggestions: Record<string, { locationId: string; locationCode: string; locationName: string; quantity: number }> = {};
+
+    for (const pid of productIds) {
+      const topQuant = await StockQuant.aggregate([
+        { $match: { productId: new mongoose.Types.ObjectId(pid), quantity: { $gt: 0 } } },
+        {
+          $lookup: {
+            from: 'locations',
+            localField: 'locationId',
+            foreignField: '_id',
+            as: 'location',
+          },
+        },
+        { $unwind: '$location' },
+        // 仮想ロケーションを除外 / 排除虚拟位置
+        { $match: { 'location.type': { $not: /^virtual\// } } },
+        { $sort: { quantity: -1 } },
+        { $limit: 1 },
+      ]);
+
+      if (topQuant.length > 0) {
+        const q = topQuant[0];
+        suggestions[pid] = {
+          locationId: String(q.locationId),
+          locationCode: q.location?.code || '',
+          locationName: q.location?.name || '',
+          quantity: q.quantity,
+        };
+      }
+    }
+
+    // ライン単位で推薦結果を返す / 按行返回推荐结果
+    const result = order.lines.map(line => {
+      const pid = String(line.productId);
+      const suggestion = suggestions[pid] || null;
+      return {
+        lineNumber: line.lineNumber,
+        productSku: line.productSku,
+        suggestedLocationId: suggestion?.locationId || null,
+        suggestedLocationCode: suggestion?.locationCode || null,
+        suggestedLocationName: suggestion?.locationName || null,
+        existingStock: suggestion?.quantity || 0,
+        reason: suggestion
+          ? `既存在庫 ${suggestion.quantity}個 @ ${suggestion.locationCode}`
+          : null,
+      };
+    });
+
+    res.json({ suggestions: result });
+  } catch (error: any) {
+    res.status(500).json({ message: 'ロケーション推薦の取得に失敗しました', error: error.message });
   }
 };

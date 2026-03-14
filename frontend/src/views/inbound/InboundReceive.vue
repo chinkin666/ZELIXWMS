@@ -39,6 +39,42 @@
         </div>
       </div>
 
+      <!-- 差異サマリー（検品完了後に表示）/ 差异摘要（检品完成后显示） -->
+      <div class="o-card variance-card" v-if="varianceReport && varianceReport.hasVariance && (order.status === 'received' || order.status === 'done')">
+        <div class="variance-header">
+          <span class="variance-icon">&#x26A0;</span>
+          <h4 class="variance-title">{{ t('wms.inbound.varianceDetected', '差異が検出されました') }}</h4>
+        </div>
+        <div class="variance-summary">
+          <span>{{ t('wms.inbound.totalExpected', '予定数') }}: <strong>{{ varianceReport.totalExpected }}</strong></span>
+          <span>{{ t('wms.inbound.totalReceived', '検品数') }}: <strong>{{ varianceReport.totalReceived }}</strong></span>
+          <span class="variance-diff">{{ t('wms.inbound.variance', '差異') }}: <strong>{{ varianceReport.totalVariance }}</strong></span>
+        </div>
+        <table class="o-table variance-table">
+          <thead><tr>
+            <th>SKU</th>
+            <th>{{ t('wms.inbound.productName', '商品名') }}</th>
+            <th style="text-align:right">{{ t('wms.inbound.expected', '予定') }}</th>
+            <th style="text-align:right">{{ t('wms.inbound.received', '実績') }}</th>
+            <th style="text-align:right">{{ t('wms.inbound.variance', '差異') }}</th>
+            <th>{{ t('wms.common.status', '状態') }}</th>
+          </tr></thead>
+          <tbody>
+            <tr v-for="vl in varianceReport.lines.filter(l => l.status !== 'ok')" :key="vl.lineNumber" :class="{ 'variance-row--shortage': vl.status === 'shortage', 'variance-row--pending': vl.status === 'pending' }">
+              <td class="mono">{{ vl.productSku }}</td>
+              <td>{{ vl.productName }}</td>
+              <td style="text-align:right">{{ vl.expectedQuantity }}</td>
+              <td style="text-align:right">{{ vl.receivedQuantity }}</td>
+              <td style="text-align:right;font-weight:600" :class="{ 'text-danger': vl.variance < 0 }">{{ vl.variance }}</td>
+              <td>
+                <span v-if="vl.status === 'shortage'" class="o-status-tag o-status-tag--cancelled">{{ t('wms.inbound.shortage', '不足') }}</span>
+                <span v-else-if="vl.status === 'pending'" class="o-status-tag o-status-tag--draft">{{ t('wms.inbound.pending', '未検品') }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <!-- 検品モード切替 -->
       <div class="o-card mode-card" v-if="order.status === 'confirmed' || order.status === 'receiving'">
         <div class="mode-row">
@@ -161,8 +197,9 @@ import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import { fetchInboundOrder, receiveInboundLine, bulkReceiveInbound } from '@/api/inboundOrder'
+import { fetchInboundOrder, receiveInboundLine, bulkReceiveInbound, fetchInboundVariance } from '@/api/inboundOrder'
 import type { InboundOrder, InboundOrderLine } from '@/types/inventory'
+import type { InboundVarianceReport } from '@/api/inboundOrder'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -171,6 +208,7 @@ const toast = useToast()
 const isLoading = ref(false)
 const isReceiving = ref(false)
 const order = ref<InboundOrder | null>(null)
+const varianceReport = ref<InboundVarianceReport | null>(null)
 
 const inspectionMode = ref<'scan' | 'manual' | 'bulk'>('scan')
 const inspectionModes = computed(() => [
@@ -296,11 +334,24 @@ const handleBulkReceive = async () => {
   }
 }
 
+const loadVariance = async () => {
+  if (!order.value) return
+  try {
+    varianceReport.value = await fetchInboundVariance(order.value._id)
+  } catch {
+    varianceReport.value = null
+  }
+}
+
 const loadOrder = async () => {
   isLoading.value = true
   try {
     const id = route.params.id as string
     order.value = await fetchInboundOrder(id)
+    // 検品済み・完了の場合は差異レポートを取得 / 检品完成后获取差异报告
+    if (order.value && (order.value.status === 'received' || order.value.status === 'done')) {
+      await loadVariance()
+    }
   } catch (e: any) {
     toast.showError(e?.message || t('wms.inbound.fetchOrderFailed', '入庫指示の取得に失敗しました'))
   } finally {
@@ -495,4 +546,19 @@ onMounted(() => loadOrder())
 
 .o-status-tag--draft { background: #f4f4f5; color: #909399; }
 .o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
+
+/* 差異レポート / 差异报告 */
+.variance-card { border-left: 4px solid #e6a23c; }
+.variance-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.variance-icon { font-size: 20px; color: #e6a23c; }
+.variance-title { margin: 0; font-size: 15px; font-weight: 600; color: #303133; }
+.variance-summary { display: flex; gap: 20px; margin-bottom: 12px; font-size: 13px; color: #606266; }
+.variance-diff { color: #f56c6c; font-weight: 600; }
+.variance-table { width: 100%; font-size: 13px; }
+.variance-table th { background: #f5f7fa; padding: 6px 10px; font-weight: 600; color: #606266; border-bottom: 1px solid #ebeef5; }
+.variance-table td { padding: 6px 10px; border-bottom: 1px solid #ebeef5; }
+.variance-row--shortage { background: #fef0f0; }
+.variance-row--pending { background: #fdf6ec; }
+.text-danger { color: #f56c6c; }
+.mono { font-family: monospace; }
 </style>

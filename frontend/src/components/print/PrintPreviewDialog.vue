@@ -6,7 +6,7 @@
           <label class="toolbar-label">テンプレート</label>
           <select class="o-input" v-model="selectedTemplateId" style="width: 360px">
             <option value="" disabled>テンプレートを選択</option>
-            <option v-for="t in availableTemplates" :key="t.id" :value="t.id">{{ t.name }}</option>
+            <option v-for="tpl in availableTemplates" :key="tpl.id" :value="tpl.id">{{ tpl.name }}</option>
           </select>
         </div>
 

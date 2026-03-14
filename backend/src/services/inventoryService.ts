@@ -16,6 +16,7 @@ import { generateSequenceNumber } from '@/utils/sequenceGenerator';
 import { ValidationError, NotFoundError, AppError } from '@/lib/errors';
 import { logger } from '@/lib/logger';
 import { checkTransactionSupport } from '@/config/database';
+import { logOperation } from '@/services/operationLogger';
 
 // ─── Types / 型定義 ───────────────────────────────────────────
 
@@ -421,6 +422,19 @@ export async function adjustStock(params: AdjustStockParams): Promise<AdjustStoc
       opts,
     );
 
+    // 操作ログ / 操作日志 (fire-and-forget)
+    logOperation({
+      action: 'adjustment',
+      description: `在庫調整: ${product.sku} ${isIncrease ? '+' : ''}${qty} @ ${location.code}`,
+      productId: productId,
+      productSku: product.sku,
+      productName: product.name,
+      locationCode: location.code,
+      quantity: qty,
+      referenceNumber: moveNumber,
+      referenceType: 'adjustment',
+    }).catch(() => {});
+
     return {
       message: `在庫を調整しました（${isIncrease ? '+' : ''}${qty}）`,
       moveNumber,
@@ -525,6 +539,19 @@ export async function transferStock(params: TransferStockParams): Promise<Transf
       ],
       opts,
     );
+
+    // 操作ログ / 操作日志 (fire-and-forget)
+    logOperation({
+      action: 'transfer',
+      description: `在庫移動: ${product.sku} ${qty}個 ${fromLoc.code} → ${toLoc.code}`,
+      productId: productId,
+      productSku: product.sku,
+      productName: product.name,
+      locationCode: `${fromLoc.code} → ${toLoc.code}`,
+      quantity: qty,
+      referenceNumber: moveNumber,
+      referenceType: 'transfer',
+    }).catch(() => {});
 
     return {
       message: `${qty}個を ${fromLoc.code} → ${toLoc.code} に移動しました`,

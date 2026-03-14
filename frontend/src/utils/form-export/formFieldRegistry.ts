@@ -304,9 +304,354 @@ const shipmentDetailFields: FormFieldDefinition[] = [
 ]
 
 /**
- * フォームタイプ登録表
+ * 入庫リスト用フィールド定義
+ * 入庫指示の明細情報を出力する
+ * 入库单明细信息输出
+ */
+const inboundDetailFields: FormFieldDefinition[] = [
+  {
+    key: 'orderNumber',
+    label: '入庫指示No',
+    description: '入庫指示番号',
+    fieldType: 'string',
+    defaultEnabled: true,
+    supportBarcode: true,
+  },
+  {
+    key: 'status',
+    label: 'ステータス',
+    description: '入庫指示のステータス（draft/confirmed/receiving/received/done/cancelled）',
+    fieldType: 'string',
+    defaultEnabled: true,
+    supportBarcode: false,
+  },
+  {
+    key: 'supplierName',
+    label: '仕入先',
+    description: '仕入先名',
+    fieldType: 'string',
+    defaultEnabled: true,
+    supportBarcode: false,
+  },
+  {
+    key: 'expectedDate',
+    label: '入荷予定日',
+    description: '入荷予定日',
+    fieldType: 'date',
+    defaultEnabled: true,
+    supportBarcode: false,
+  },
+  {
+    key: 'destinationLocation',
+    label: '入庫先ロケーション',
+    description: '入庫先のロケーションコード',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'lineNumber',
+    label: '行番号',
+    description: 'ライン番号',
+    fieldType: 'number',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'productSku',
+    label: 'SKU',
+    description: '商品SKUコード',
+    fieldType: 'string',
+    defaultEnabled: true,
+    supportBarcode: true,
+  },
+  {
+    key: 'productName',
+    label: '商品名',
+    description: '商品名',
+    fieldType: 'string',
+    defaultEnabled: true,
+    supportBarcode: false,
+  },
+  {
+    key: 'expectedQuantity',
+    label: '入荷予定数',
+    description: '予定数量',
+    fieldType: 'number',
+    defaultEnabled: true,
+    supportBarcode: false,
+  },
+  {
+    key: 'receivedQuantity',
+    label: '検品済数',
+    description: '検品済み数量',
+    fieldType: 'number',
+    defaultEnabled: true,
+    supportBarcode: false,
+  },
+  {
+    key: 'putawayQuantity',
+    label: '格納済数',
+    description: '格納済み数量',
+    fieldType: 'number',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'stockCategory',
+    label: '在庫区分',
+    description: '新品/仕損',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'lotNumber',
+    label: 'ロット番号',
+    description: 'ロット/バッチ番号',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: true,
+  },
+  {
+    key: 'expiryDate',
+    label: '賞味期限',
+    description: '賞味期限/有効期限',
+    fieldType: 'date',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'orderReferenceNumber',
+    label: '参照番号',
+    description: '発注書番号等の参照番号',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'putawayLocation',
+    label: '格納先ロケーション',
+    description: '格納先のロケーションコード',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'memo',
+    label: '備考',
+    description: '備考・メモ',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'createdAt',
+    label: '作成日時',
+    description: '入庫指示の作成日時',
+    fieldType: 'date',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'completedAt',
+    label: '完了日時',
+    description: '入庫完了日時',
+    fieldType: 'date',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+]
+
+/**
+ * 入庫検品シート用フィールド定義（商品集計ベース）
+ * 入庫指示の商品を集計してチェックリストとして出力
+ * 入库检品表用字段定义（按商品汇总）
+ */
+const inboundInspectionFields: FormFieldDefinition[] = [
+  {
+    key: 'productSku',
+    label: 'SKU',
+    description: '商品SKUコード',
+    fieldType: 'string',
+    defaultEnabled: true,
+    supportBarcode: true,
+  },
+  {
+    key: 'productName',
+    label: '商品名',
+    description: '商品名',
+    fieldType: 'string',
+    defaultEnabled: true,
+    supportBarcode: false,
+  },
+  {
+    key: 'barcode',
+    label: '検品コード',
+    description: '商品バーコード',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: true,
+  },
+  {
+    key: 'expectedQuantity',
+    label: '入荷予定数',
+    description: '合計予定数量',
+    fieldType: 'number',
+    defaultEnabled: true,
+    supportBarcode: false,
+  },
+  {
+    key: 'receivedQuantity',
+    label: '検品済数',
+    description: '検品済み数量',
+    fieldType: 'number',
+    defaultEnabled: true,
+    supportBarcode: false,
+  },
+  {
+    key: 'stockCategory',
+    label: '在庫区分',
+    description: '新品/仕損',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'lotNumber',
+    label: 'ロット番号',
+    description: 'ロット/バッチ番号',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: true,
+  },
+  {
+    key: 'expiryDate',
+    label: '賞味期限',
+    description: '賞味期限/有効期限',
+    fieldType: 'date',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'supplierName',
+    label: '仕入先',
+    description: '仕入先名',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'orderNumber',
+    label: '入庫指示No',
+    description: '入庫指示番号',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: true,
+  },
+]
+
+/**
+ * 商品ラベル用フィールド定義
+ * 商品小標籤・外箱ラベル等に使用
+ * 产品标签用字段定义（小标签、外箱标签等）
+ */
+const productLabelFields: FormFieldDefinition[] = [
+  {
+    key: 'sku',
+    label: 'SKU管理番号',
+    description: '商品SKUコード',
+    fieldType: 'string',
+    defaultEnabled: true,
+    supportBarcode: true,
+  },
+  {
+    key: 'name',
+    label: '印刷用商品名',
+    description: '商品名（短い表示名）',
+    fieldType: 'string',
+    defaultEnabled: true,
+    supportBarcode: false,
+  },
+  {
+    key: 'nameFull',
+    label: '商品名（フル）',
+    description: '商品名のフルテキスト',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'barcode',
+    label: '検品コード',
+    description: '商品バーコード（JAN等）',
+    fieldType: 'string',
+    defaultEnabled: true,
+    supportBarcode: true,
+  },
+  {
+    key: 'category',
+    label: 'カテゴリ',
+    description: '商品カテゴリ',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'locationCode',
+    label: 'ロケーション',
+    description: '保管ロケーションコード',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: true,
+  },
+  {
+    key: 'lotNumber',
+    label: 'ロット番号',
+    description: 'ロット/バッチ番号',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: true,
+  },
+  {
+    key: 'expiryDate',
+    label: '賞味期限',
+    description: '賞味期限/有効期限',
+    fieldType: 'date',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'quantity',
+    label: '数量',
+    description: '数量（外箱ラベル用）',
+    fieldType: 'number',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'weight',
+    label: '重量',
+    description: '重量（g）',
+    fieldType: 'number',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+  {
+    key: 'supplierName',
+    label: '仕入先',
+    description: '仕入先名',
+    fieldType: 'string',
+    defaultEnabled: false,
+    supportBarcode: false,
+  },
+]
+
+/**
+ * フォームタイプ登録表 / 帳票タイプ登録表
  */
 export const formTypeRegistry: FormTypeDefinition[] = [
+  // 出荷系 / 出库系
   {
     type: 'shipment-list-picking',
     label: 'ピッキングリスト',
@@ -318,6 +663,26 @@ export const formTypeRegistry: FormTypeDefinition[] = [
     label: '出荷明細リスト',
     description: '選択した注文の詳細情報を出力します',
     fields: shipmentDetailFields,
+  },
+  // 入庫系 / 入库系
+  {
+    type: 'inbound-detail-list',
+    label: '入庫リスト',
+    description: '入庫指示のライン明細を出力します',
+    fields: inboundDetailFields,
+  },
+  {
+    type: 'inbound-inspection-sheet',
+    label: '入庫検品シート',
+    description: '入庫検品用のチェックリストを商品集計で出力します',
+    fields: inboundInspectionFields,
+  },
+  // 商品系 / 产品系
+  {
+    type: 'product-label',
+    label: '商品ラベル',
+    description: '商品小標籤・外箱ラベル等を出力します',
+    fields: productLabelFields,
   },
 ]
 

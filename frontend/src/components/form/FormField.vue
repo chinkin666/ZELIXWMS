@@ -112,6 +112,7 @@ import { computed, ref, watch } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
 import type { TableColumn } from '@/types/table'
 import { getNestedValue } from '@/utils/nestedObject'
+import { useEnabledInvoiceTypes } from '@/composables/useEnabledInvoiceTypes'
 import { getMinDeliveryDate } from '@/utils/yamatoDeliveryDays'
 import ODatePicker from '@/components/odoo/ODatePicker.vue'
 
@@ -153,6 +154,8 @@ function isSagawa(): boolean {
   return carrierId === '__builtin_sagawa__' || carrierId.includes('sagawa')
 }
 
+const { filterEnabledOptions } = useEnabledInvoiceTypes()
+
 // 依存フィールドに基づいてオプションをフィルタリング / 依赖字段过滤选项
 const filteredOptions = computed(() => {
   const col = props.column
@@ -160,7 +163,12 @@ const filteredOptions = computed(() => {
     if (dataKey.value === 'invoiceType') return SAGAWA_INVOICE_OPTIONS
     if (dataKey.value === 'deliveryTimeSlot') return SAGAWA_TIME_SLOT_OPTIONS
   }
-  return col.searchOptions || []
+  const options = col.searchOptions || []
+  // ヤマト B2: 無効化された送り状種類をフィルタリング / ヤマト B2: 无效化的送り状種類を过滤
+  if (dataKey.value === 'invoiceType' && !isSagawa()) {
+    return filterEnabledOptions(options)
+  }
+  return options
 })
 
 /** Default text input handler — strips characters not matching column.pattern */

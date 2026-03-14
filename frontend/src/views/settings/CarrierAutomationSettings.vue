@@ -220,9 +220,11 @@ import {
   saveCarrierAutomationConfig,
   testCarrierAutomationConnection,
 } from '@/api/carrierAutomation'
+import { useEnabledInvoiceTypes } from '@/composables/useEnabledInvoiceTypes'
 import { fetchPrintTemplates, type PrintTemplateApiModel } from '@/api/printTemplates'
 
 const { show: showToast } = useToast()
+const { reload: reloadEnabledInvoiceTypes } = useEnabledInvoiceTypes()
 
 // 动态 tab / 動的タブ
 interface CarrierTab {
@@ -428,6 +430,8 @@ const saveConfig = async () => {
       yamatoB2: yamatoB2Form.value,
       autoValidation: autoValidationForm.value,
     })
+    // 送り状種類の有効/無効キャッシュを更新 / 更新送り状種類有效/无效缓存
+    await reloadEnabledInvoiceTypes()
     showToast('設定を保存しました', 'success')
   } catch (error: any) {
     showToast(error?.message || '保存に失敗しました', 'danger')

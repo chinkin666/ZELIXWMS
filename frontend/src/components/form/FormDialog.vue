@@ -295,6 +295,7 @@ import OButton from '@/components/odoo/OButton.vue'
 import type { TableColumn } from '@/types/table'
 import { setNestedValue, getNestedValue } from '@/utils/nestedObject'
 import { getCoolTypeOptionsForInvoiceType } from '@/utils/orderValidation'
+import { useEnabledInvoiceTypes } from '@/composables/useEnabledInvoiceTypes'
 
 // 荷扱いのデフォルトオプション
 const HANDLING_TAG_OPTIONS = [
@@ -435,6 +436,8 @@ const sagawaInvoiceTypeOptions = [
   { label: 'e-コレクト（代引き）', value: '2' },
 ]
 
+const { filterEnabledOptions } = useEnabledInvoiceTypes()
+
 // Get filtered options based on dependsOn field
 const getFilteredOptions = (column: TableColumn) => {
   const dataKey = column.dataKey || column.key
@@ -462,8 +465,14 @@ const getFilteredOptions = (column: TableColumn) => {
       ]
     }
   }
-  // デフォルトは全オプションを返す
-  return column.searchOptions || []
+  const options = column.searchOptions || []
+  // ヤマト B2: 無効化された送り状種類をフィルタリング / ヤマト B2: 无效的送り状種類を过滤
+  if (dataKey === 'invoiceType') {
+    const carrierId = String(getNestedValue(formData.value, 'carrierId') || '')
+    const isSagawa = carrierId === '__builtin_sagawa__' || carrierId.includes('sagawa')
+    if (!isSagawa) return filterEnabledOptions(options)
+  }
+  return options
 }
 
 // Handle select change with dependent field reset

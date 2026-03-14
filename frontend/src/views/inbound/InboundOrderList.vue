@@ -14,13 +14,38 @@
       @search="handleSearch"
     />
 
-    <!-- 一括操作バー -->
+    <!-- 一括操作バー / 批量操作栏 -->
     <div v-if="selectedIds.length > 0" class="bulk-bar">
       <span class="bulk-info">{{ selectedIds.length }} {{ t('wms.inbound.itemsSelected', '件選択') }}</span>
       <OButton variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;" :disabled="isBulkDeleting" @click="handleBulkDelete">
         {{ isBulkDeleting ? t('wms.inbound.deleting', '削除中...') : t('wms.inbound.bulkDelete', '一括削除') }}
       </OButton>
       <OButton variant="secondary" size="sm" @click="handleBulkCancel" :disabled="isBulkProcessing">{{ t('wms.inbound.bulkCancel', '一括キャンセル') }}</OButton>
+      <!-- 帳票印刷ドロップダウン / 帐票打印下拉菜单 -->
+      <div class="form-print-dropdown" ref="formPrintDropdownRef">
+        <OButton variant="secondary" size="sm" :disabled="isFormPrinting" @click="toggleFormPrintMenu">
+          {{ isFormPrinting ? t('wms.inbound.printing', '印刷中...') : t('wms.inbound.formPrint', '帳票印刷') }}
+        </OButton>
+        <div v-if="showFormPrintMenu" class="form-print-menu">
+          <div v-if="formTemplatesLoading" class="form-print-menu-item form-print-menu-loading">
+            {{ t('wms.common.loading', '読み込み中...') }}
+          </div>
+          <template v-else-if="formTemplates.length > 0">
+            <div
+              v-for="tmpl in formTemplates"
+              :key="tmpl._id"
+              class="form-print-menu-item"
+              @click="handleFormPrint(tmpl)"
+            >
+              <span class="form-print-menu-label">{{ tmpl.name }}</span>
+              <span class="form-print-menu-type">{{ getFormTypeLabel(tmpl.targetType) }}</span>
+            </div>
+          </template>
+          <div v-else class="form-print-menu-item form-print-menu-empty">
+            {{ t('wms.inbound.noFormTemplates', '利用可能な帳票テンプレートがありません') }}
+          </div>
+        </div>
+      </div>
       <OButton variant="secondary" size="sm" @click="selectedIds = []">{{ t('wms.inbound.deselectAll', '選択解除') }}</OButton>
     </div>
 
@@ -44,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
+import { computed, h, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
@@ -61,6 +86,9 @@ import {
   deleteInboundOrder,
 } from '@/api/inboundOrder'
 import type { InboundOrder } from '@/types/inventory'
+import { fetchFormTemplates } from '@/api/formTemplate'
+import { generateFormPdf } from '@/utils/form-export/pdfGenerator'
+import type { FormTemplate } from '@/types/formTemplate'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -265,7 +293,7 @@ const tableColumns = computed<TableColumn[]>(() => [
   {
     key: 'actions',
     title: t('wms.common.actions', '操作'),
-    width: 240,
+    width: 280,
     cellRenderer: ({ rowData }: { rowData: InboundOrder }) => {
       const buttons: any[] = []
       if (rowData.status === 'draft') {
@@ -292,6 +320,10 @@ const tableColumns = computed<TableColumn[]>(() => [
       }
       if (rowData.status !== 'cancelled') {
         buttons.push(h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openPrint(rowData._id, 'barcode') }, () => 'BC'))
+      }
+      // 帳票印刷ボタン / 帐票打印按钮
+      if (rowData.status !== 'draft' && rowData.status !== 'cancelled') {
+        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', disabled: isFormPrinting.value, onClick: () => handleSingleFormPrint(rowData) }, () => t('wms.inbound.formPrintShort', '帳票')))
       }
       return h('div', { class: 'action-cell' }, buttons)
     },
@@ -449,7 +481,222 @@ const openPrint = (id: string, type: 'inspection' | 'kanban' | 'barcode') => {
   window.open(`/inbound/print/${type}/${id}`, '_blank')
 }
 
-onMounted(() => loadData())
+// ============================================================
+// 帳票印刷機能 / 帐票打印功能
+// ============================================================
+const formTemplates = ref<FormTemplate[]>([])
+const formTemplatesLoading = ref(false)
+const showFormPrintMenu = ref(false)
+const isFormPrinting = ref(false)
+const formPrintDropdownRef = ref<HTMLElement | null>(null)
+
+/** 帳票タイプラベル取得 / 获取帐票类型标签 */
+const getFormTypeLabel = (targetType: string): string => {
+  const map: Record<string, string> = {
+    'inbound-detail-list': t('wms.inbound.formTypeDetailList', '入庫リスト'),
+    'inbound-inspection-sheet': t('wms.inbound.formTypeInspectionSheet', '入庫検品シート'),
+  }
+  return map[targetType] || targetType
+}
+
+/** ドロップダウンメニューの切り替え / 切换下拉菜单 */
+const toggleFormPrintMenu = async () => {
+  if (showFormPrintMenu.value) {
+    showFormPrintMenu.value = false
+    return
+  }
+  showFormPrintMenu.value = true
+  formTemplatesLoading.value = true
+  try {
+    // 入庫系テンプレートを両方取得 / 获取两种入库类型模板
+    const [detailTemplates, inspectionTemplates] = await Promise.all([
+      fetchFormTemplates('inbound-detail-list'),
+      fetchFormTemplates('inbound-inspection-sheet'),
+    ])
+    formTemplates.value = [...detailTemplates, ...inspectionTemplates]
+  } catch (e: any) {
+    toast.showError(e?.message || t('wms.inbound.fetchTemplateFailed', 'テンプレートの取得に失敗しました'))
+    formTemplates.value = []
+  } finally {
+    formTemplatesLoading.value = false
+  }
+}
+
+/** メニュー外クリックで閉じる / 点击菜单外部关闭 */
+const handleClickOutside = (e: MouseEvent) => {
+  if (formPrintDropdownRef.value && !formPrintDropdownRef.value.contains(e.target as Node)) {
+    showFormPrintMenu.value = false
+  }
+}
+
+/**
+ * 入庫指示データをフラット行に変換（inbound-detail-list用）
+ * 1入庫指示 x N行 → N件のフラットレコード
+ * 将入库指示数据转换为扁平行（入库明细列表用）
+ */
+const transformToDetailRows = (orders: InboundOrder[]): Record<string, any>[] => {
+  const flatRows: Record<string, any>[] = []
+  for (const order of orders) {
+    const orderBase = {
+      orderNumber: order.orderNumber,
+      status: statusLabel(order.status),
+      supplierName: order.supplier?.name || '-',
+      expectedDate: order.expectedDate || '',
+      destinationLocation: getDestCode(order),
+      createdAt: order.createdAt,
+      completedAt: order.completedAt || '',
+    }
+    for (const line of order.lines) {
+      flatRows.push({
+        ...orderBase,
+        lineNumber: line.lineNumber,
+        productSku: line.productSku,
+        productName: line.productName || '-',
+        expectedQuantity: line.expectedQuantity,
+        receivedQuantity: line.receivedQuantity,
+        putawayQuantity: line.putawayQuantity,
+        stockCategory: line.stockCategory === 'new' ? t('wms.inbound.stockNew', '新品') : line.stockCategory === 'damaged' ? t('wms.inbound.stockDamaged', '仕損') : (line.stockCategory || '-'),
+        lotNumber: line.lotNumber || '',
+        expiryDate: line.expiryDate || '',
+        orderReferenceNumber: line.orderReferenceNumber || '',
+        putawayLocation: typeof line.putawayLocationId === 'object' && line.putawayLocationId?.code
+          ? line.putawayLocationId.code
+          : (line.putawayLocationId || ''),
+        memo: line.memo || '',
+      })
+    }
+  }
+  return flatRows
+}
+
+/**
+ * 入庫指示データを商品集計行に変換（inbound-inspection-sheet用）
+ * 複数入庫指示の同一SKUを合算してチェックリスト化
+ * 将入库指示数据转换为按商品汇总行（入库检品表用）
+ */
+const transformToInspectionRows = (orders: InboundOrder[]): Record<string, any>[] => {
+  const skuMap = new Map<string, {
+    productSku: string
+    productName: string
+    expectedQuantity: number
+    receivedQuantity: number
+    stockCategory: string
+    lotNumber: string
+    expiryDate: string
+    supplierName: string
+    orderNumber: string
+  }>()
+
+  for (const order of orders) {
+    for (const line of order.lines) {
+      const key = `${line.productSku}_${line.lotNumber || ''}_${line.stockCategory || ''}`
+      const existing = skuMap.get(key)
+      if (existing) {
+        skuMap.set(key, {
+          ...existing,
+          expectedQuantity: existing.expectedQuantity + line.expectedQuantity,
+          receivedQuantity: existing.receivedQuantity + line.receivedQuantity,
+          // 複数注文がある場合はカンマ区切り / 多个订单用逗号分隔
+          orderNumber: existing.orderNumber.includes(order.orderNumber)
+            ? existing.orderNumber
+            : `${existing.orderNumber}, ${order.orderNumber}`,
+          supplierName: existing.supplierName.includes(order.supplier?.name || '')
+            ? existing.supplierName
+            : `${existing.supplierName}, ${order.supplier?.name || '-'}`,
+        })
+      } else {
+        skuMap.set(key, {
+          productSku: line.productSku,
+          productName: line.productName || '-',
+          expectedQuantity: line.expectedQuantity,
+          receivedQuantity: line.receivedQuantity,
+          stockCategory: line.stockCategory === 'new' ? t('wms.inbound.stockNew', '新品') : line.stockCategory === 'damaged' ? t('wms.inbound.stockDamaged', '仕損') : (line.stockCategory || '-'),
+          lotNumber: line.lotNumber || '',
+          expiryDate: line.expiryDate || '',
+          supplierName: order.supplier?.name || '-',
+          orderNumber: order.orderNumber,
+        })
+      }
+    }
+  }
+
+  return Array.from(skuMap.values())
+}
+
+/** 帳票印刷実行 / 执行帐票打印 */
+const handleFormPrint = async (template: FormTemplate) => {
+  showFormPrintMenu.value = false
+
+  const selectedOrders = rows.value.filter(r => selectedIds.value.includes(r._id))
+  if (selectedOrders.length === 0) {
+    toast.showError(t('wms.inbound.noOrdersSelected', '入庫指示が選択されていません'))
+    return
+  }
+
+  isFormPrinting.value = true
+  try {
+    // テンプレートタイプに応じてデータ変換 / 根据模板类型转换数据
+    const data = template.targetType === 'inbound-inspection-sheet'
+      ? transformToInspectionRows(selectedOrders)
+      : transformToDetailRows(selectedOrders)
+
+    if (data.length === 0) {
+      toast.showError(t('wms.inbound.noDataToPrint', '印刷対象データがありません'))
+      return
+    }
+
+    await generateFormPdf(template, data, { preview: true })
+  } catch (e: any) {
+    toast.showError(e?.message || t('wms.inbound.printFailed', '帳票の生成に失敗しました'))
+  } finally {
+    isFormPrinting.value = false
+  }
+}
+
+/** 単一行帳票印刷 / 单行帐票打印 */
+const handleSingleFormPrint = async (order: InboundOrder) => {
+  isFormPrinting.value = true
+  try {
+    // テンプレート取得 / 获取模板
+    const [detailTemplates, inspectionTemplates] = await Promise.all([
+      fetchFormTemplates('inbound-detail-list'),
+      fetchFormTemplates('inbound-inspection-sheet'),
+    ])
+    const allTemplates = [...detailTemplates, ...inspectionTemplates]
+
+    if (allTemplates.length === 0) {
+      toast.showError(t('wms.inbound.noFormTemplates', '利用可能な帳票テンプレートがありません'))
+      return
+    }
+
+    // テンプレートが1つの場合はそのまま使用、複数の場合は最初のものを使用
+    // 1つしかない場合はダイアログ省略 / 只有一个模板时跳过选择
+    const tmpl = allTemplates[0]
+    const data = tmpl.targetType === 'inbound-inspection-sheet'
+      ? transformToInspectionRows([order])
+      : transformToDetailRows([order])
+
+    if (data.length === 0) {
+      toast.showError(t('wms.inbound.noDataToPrint', '印刷対象データがありません'))
+      return
+    }
+
+    await generateFormPdf(tmpl, data, { preview: true })
+  } catch (e: any) {
+    toast.showError(e?.message || t('wms.inbound.printFailed', '帳票の生成に失敗しました'))
+  } finally {
+    isFormPrinting.value = false
+  }
+}
+
+onMounted(() => {
+  loadData()
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style>
@@ -515,5 +762,62 @@ onMounted(() => loadData())
   display: inline-flex;
   gap: 4px;
   flex-wrap: wrap;
+}
+
+/* 帳票印刷ドロップダウン / 帐票打印下拉菜单 */
+.form-print-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.form-print-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  min-width: 240px;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  padding: 4px 0;
+}
+
+.form-print-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.form-print-menu-item:hover {
+  background: #f5f7fa;
+}
+
+.form-print-menu-label {
+  font-weight: 500;
+  color: #303133;
+}
+
+.form-print-menu-type {
+  font-size: 11px;
+  color: #909399;
+  margin-left: 8px;
+}
+
+.form-print-menu-loading,
+.form-print-menu-empty {
+  color: #909399;
+  cursor: default;
+  justify-content: center;
+}
+
+.form-print-menu-loading:hover,
+.form-print-menu-empty:hover {
+  background: transparent;
 }
 </style>

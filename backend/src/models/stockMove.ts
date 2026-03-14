@@ -123,5 +123,9 @@ stockMoveSchema.index({ referenceType: 1, referenceId: 1 });
 stockMoveSchema.index({ lotId: 1 });
 stockMoveSchema.index({ executedAt: -1 });
 stockMoveSchema.index({ scheduledDate: 1, state: 1 });
+// 単独referenceId検索用 / 单独referenceId查询用索引
+stockMoveSchema.index({ referenceId: 1 });
+// 複合インデックス：referenceId×state / 复合索引：referenceId×state
+stockMoveSchema.index({ referenceId: 1, state: 1 });
 
 export const StockMove = mongoose.model<IStockMove>('StockMove', stockMoveSchema);

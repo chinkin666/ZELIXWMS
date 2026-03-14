@@ -93,14 +93,16 @@ export const listOrders = async (req: Request, res: Response): Promise<void> => 
     const qRaw = req.query?.q;
     let filters: Record<string, { operator: any; value: any }> = {};
     if (typeof qRaw === 'string' && qRaw.trim()) {
+      let parsed;
       try {
-        const parsed = JSON.parse(qRaw);
-        const validated = filterPayloadSchema.safeParse(parsed);
-        if (validated.success) {
-          filters = validated.data as any;
-        }
+        parsed = JSON.parse(qRaw);
       } catch {
-        // ignore bad q
+        res.status(400).json({ message: 'Invalid filter JSON' });
+        return;
+      }
+      const validated = filterPayloadSchema.safeParse(parsed);
+      if (validated.success) {
+        filters = validated.data as any;
       }
     }
 

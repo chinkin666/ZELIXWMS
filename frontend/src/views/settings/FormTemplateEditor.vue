@@ -1069,9 +1069,36 @@ function generateSampleData(type: string): Record<string, any>[] {
     ]
   }
 
+  // 入庫リスト / 入库明细
+  if (type === 'inbound-detail-list') {
+    return [
+      { orderNumber: 'IN-20260315-001', status: '検品中', supplierName: 'サンプル仕入先A', expectedDate: '2026/03/15', destinationLocation: 'RCV-01', lineNumber: 1, productSku: 'SKU-001', productName: 'サンプル商品A', expectedQuantity: 100, receivedQuantity: 80, putawayQuantity: 0, stockCategory: '新品', lotNumber: 'LOT-2026A', expiryDate: '2027/03/15', orderReferenceNumber: 'PO-2026-0123', putawayLocation: '', memo: '', createdAt: '2026/03/14', completedAt: '' },
+      { orderNumber: 'IN-20260315-001', status: '検品中', supplierName: 'サンプル仕入先A', expectedDate: '2026/03/15', destinationLocation: 'RCV-01', lineNumber: 2, productSku: 'SKU-002', productName: 'サンプル商品B', expectedQuantity: 50, receivedQuantity: 50, putawayQuantity: 0, stockCategory: '新品', lotNumber: 'LOT-2026B', expiryDate: '2027/06/30', orderReferenceNumber: 'PO-2026-0123', putawayLocation: '', memo: '要冷蔵', createdAt: '2026/03/14', completedAt: '' },
+      { orderNumber: 'IN-20260315-002', status: '入荷済', supplierName: 'サンプル仕入先B', expectedDate: '2026/03/15', destinationLocation: 'RCV-02', lineNumber: 1, productSku: 'SKU-003', productName: 'サンプル商品C', expectedQuantity: 200, receivedQuantity: 200, putawayQuantity: 200, stockCategory: '新品', lotNumber: '', expiryDate: '', orderReferenceNumber: 'PO-2026-0456', putawayLocation: 'A-01-01', memo: '', createdAt: '2026/03/13', completedAt: '2026/03/15' },
+    ]
+  }
+
+  // 入庫検品シート / 入库检品表
+  if (type === 'inbound-inspection-sheet') {
+    return [
+      { productSku: 'SKU-001', productName: 'サンプル商品A', barcode: '4901234567890', expectedQuantity: 100, receivedQuantity: 0, stockCategory: '新品', lotNumber: 'LOT-2026A', expiryDate: '2027/03/15', supplierName: 'サンプル仕入先A', orderNumber: 'IN-20260315-001' },
+      { productSku: 'SKU-002', productName: 'サンプル商品B', barcode: '4901234567891', expectedQuantity: 50, receivedQuantity: 0, stockCategory: '新品', lotNumber: 'LOT-2026B', expiryDate: '2027/06/30', supplierName: 'サンプル仕入先A', orderNumber: 'IN-20260315-001' },
+      { productSku: 'SKU-003', productName: 'サンプル商品C', barcode: '4901234567892', expectedQuantity: 200, receivedQuantity: 0, stockCategory: '新品', lotNumber: '', expiryDate: '', supplierName: 'サンプル仕入先B', orderNumber: 'IN-20260315-002' },
+    ]
+  }
+
+  // 商品ラベル / 产品标签
+  if (type === 'product-label') {
+    return [
+      { sku: 'SKU-001', name: 'サンプル商品A', nameFull: 'サンプル商品A フルネーム', barcode: '4901234567890', category: '食品', locationCode: 'A-01-01', lotNumber: 'LOT-2026A', expiryDate: '2027/03/15', quantity: 100, weight: 500, supplierName: 'サンプル仕入先A' },
+      { sku: 'SKU-002', name: 'サンプル商品B', nameFull: 'サンプル商品B フルネーム', barcode: '4901234567891', category: '日用品', locationCode: 'B-02-03', lotNumber: '', expiryDate: '', quantity: 50, weight: 1200, supplierName: 'サンプル仕入先B' },
+    ]
+  }
+
+  // 出荷明細リスト（デフォルト）/ 出货明细
   return [
-    { orderNumber: 'ORD-2026-0001', customerManagementNumber: 'CUST-123', ecCompanyName: 'Amazon', carrierName: 'Yamato', invoiceTypeName: 'Takkyubin', shipPlanDate: '2026/01/04', deliveryDatePreference: '2026/01/06', deliveryTimeSlot: '14-16', coolTypeName: 'Normal', products: 'Product A x2, Product B x1', productTotalQuantity: 3, recipientPostalCode: '100-0001', recipientAddress: 'Tokyo Chiyoda-ku', recipientName: 'Tanaka Taro', recipientPhone: '090-1234-5678' },
-    { orderNumber: 'ORD-2026-0002', customerManagementNumber: 'CUST-456', ecCompanyName: 'Rakuten', carrierName: 'Sagawa', invoiceTypeName: 'Express', shipPlanDate: '2026/01/04', deliveryDatePreference: '-', deliveryTimeSlot: '-', coolTypeName: 'Frozen', products: 'Product C x5', productTotalQuantity: 5, recipientPostalCode: '150-0002', recipientAddress: 'Tokyo Shibuya-ku', recipientName: 'Suzuki Hanako', recipientPhone: '080-8765-4321' },
+    { orderNumber: 'ORD-2026-0001', customerManagementNumber: 'CUST-123', ecCompanyName: 'Amazon', carrierName: 'ヤマト運輸', invoiceTypeName: '発払い宅急便', shipPlanDate: '2026/01/04', deliveryDatePreference: '2026/01/06', deliveryTimeSlot: '14-16', coolTypeName: '通常', products: 'サンプル商品A x2, サンプル商品B x1', productTotalQuantity: 3, recipientPostalCode: '100-0001', recipientAddress: '東京都千代田区丸の内1-1-1', recipientName: '田中太郎', recipientPhone: '090-1234-5678', senderPostalCode: '150-0001', senderAddress: '東京都渋谷区神宮前1-1-1', senderName: 'サンプル倉庫', senderPhone: '03-1234-5678', ordererPostalCode: '100-0001', ordererAddress: '東京都千代田区丸の内1-1-1', ordererName: '田中太郎', ordererPhone: '090-1234-5678', honorific: '様', handlingTags: 'ワレモノ', createdAt: '2026/01/03', statusPrintedAt: '2026/01/04', statusCarrierReceiptAt: '2026/01/04' },
+    { orderNumber: 'ORD-2026-0002', customerManagementNumber: 'CUST-456', ecCompanyName: '楽天市場', carrierName: '佐川急便', invoiceTypeName: '元払い', shipPlanDate: '2026/01/04', deliveryDatePreference: '-', deliveryTimeSlot: '-', coolTypeName: 'クール冷凍', products: 'サンプル商品C x5', productTotalQuantity: 5, recipientPostalCode: '150-0002', recipientAddress: '東京都渋谷区道玄坂2-2-2', recipientName: '鈴木花子', recipientPhone: '080-8765-4321', senderPostalCode: '150-0001', senderAddress: '東京都渋谷区神宮前1-1-1', senderName: 'サンプル倉庫', senderPhone: '03-1234-5678', ordererPostalCode: '150-0002', ordererAddress: '東京都渋谷区道玄坂2-2-2', ordererName: '鈴木花子', ordererPhone: '080-8765-4321', honorific: '様', handlingTags: '天地無用', createdAt: '2026/01/03', statusPrintedAt: '', statusCarrierReceiptAt: '' },
   ]
 }
 

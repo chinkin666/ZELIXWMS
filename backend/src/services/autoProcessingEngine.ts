@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import mongoose from 'mongoose';
 import {
   AutoProcessingRule,
@@ -41,7 +42,7 @@ export async function processOrderEvent(
     try {
       await executeRuleForOrder(rule, order, event);
     } catch (err) {
-      console.error(`[AutoProcessing] Rule "${rule.name}" failed for order ${orderId}:`, err);
+      logger.error({ err }, `[AutoProcessing] Rule "${rule.name}" failed for order ${orderId}`);
     }
   }
 }
@@ -73,7 +74,7 @@ export async function processOrderEventBulk(
       try {
         await executeRuleForOrder(rule, order, event);
       } catch (err) {
-        console.error(`[AutoProcessing] Rule "${rule.name}" failed for order ${order._id}:`, err);
+        logger.error({ err }, `[AutoProcessing] Rule "${rule.name}" failed for order ${order._id}`);
       }
     }
   }
@@ -133,7 +134,7 @@ export async function runRuleManually(
         success: false,
         error: err instanceof Error ? err.message : String(err),
         executedAt: new Date(),
-      }).catch(console.error);
+      }).catch((err: unknown) => logger.error({ err }, '[AutoProcessing] Failed to create log'));
     }
   }
 
@@ -186,7 +187,7 @@ async function executeRuleForOrder(
       success: false,
       error: err instanceof Error ? err.message : String(err),
       executedAt: new Date(),
-    }).catch(console.error);
+    }).catch((err: unknown) => logger.error({ err }, '[AutoProcessing] Failed to create log'));
     throw err;
   }
 }

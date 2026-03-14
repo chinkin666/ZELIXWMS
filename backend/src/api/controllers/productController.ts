@@ -7,6 +7,7 @@ import sharp from 'sharp';
 import { Product, computeAllSku } from '@/models/product';
 import { createProductSchema, updateProductSchema, type CreateProductInput } from '@/schemas/productSchema';
 import { loadEnv } from '@/config/env';
+import { logOperation } from '@/services/operationLogger';
 
 type ImportRowError = {
   rowIndex: number; // 0-based index in input array
@@ -184,6 +185,14 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
     }
 
     const created = await Product.create(parsed.data);
+    // 操作ログ / 操作日志 (fire-and-forget)
+    logOperation({
+      action: 'product_update',
+      description: `商品を作成: ${created.sku} (${created.name})`,
+      productId: created._id.toString(),
+      productSku: created.sku,
+      productName: created.name,
+    }).catch(() => {});
     res.status(201).json(created.toObject());
   } catch (error: any) {
     if (error.code === 11000) {
@@ -614,6 +623,15 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
     Object.assign(existingProduct, parsed.data);
     await existingProduct.save();
 
+    // 操作ログ / 操作日志 (fire-and-forget)
+    logOperation({
+      action: 'product_update',
+      description: `商品を更新: ${existingProduct.sku}（${Object.keys(parsed.data).join(', ')}）`,
+      productId: existingProduct._id.toString(),
+      productSku: existingProduct.sku,
+      productName: existingProduct.name,
+    }).catch(() => {});
+
     res.json(existingProduct.toObject());
   } catch (error: any) {
     res.status(500).json({ message: 'Failed to update product', error: error.message });
@@ -627,6 +645,14 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
       res.status(404).json({ message: 'Product not found' });
       return;
     }
+    // 操作ログ / 操作日志 (fire-and-forget)
+    logOperation({
+      action: 'product_update',
+      description: `商品を削除: ${(deleted as any).sku}`,
+      productId: (deleted as any)._id?.toString(),
+      productSku: (deleted as any).sku,
+      productName: (deleted as any).name,
+    }).catch(() => {});
     res.json({ message: 'Deleted', id: deleted._id });
   } catch (error: any) {
     res.status(500).json({ message: 'Failed to delete product', error: error.message });

@@ -7,41 +7,20 @@
     </ControlPanel>
 
     <div class="table-section">
-      <table class="o-list-table">
-        <thead>
-          <tr>
-            <th style="min-width:200px">{{ t('wms.settings.templateName', 'テンプレート名') }}</th>
-            <th style="min-width:180px">{{ t('wms.settings.templateType', '種類') }}</th>
-            <th style="min-width:120px">{{ t('wms.settings.paperSize', '用紙') }}</th>
-            <th style="min-width:100px;text-align:center">{{ t('wms.settings.isDefault') }}</th>
-            <th style="width:100px;text-align:center">{{ t('wms.settings.actions') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in templates" :key="row._id">
-            <td>{{ row.name }}</td>
-            <td>{{ getTypeLabel(row.targetType) }}</td>
-            <td>{{ row.pageSize }} {{ row.pageOrientation === 'portrait' ? t('wms.settings.portrait', '縦') : t('wms.settings.landscape', '横') }}</td>
-            <td style="text-align:center">
-              <span v-if="row.isDefault" class="o-badge o-badge-success">{{ t('wms.settings.yes', 'はい') }}</span>
-              <span v-else>-</span>
-            </td>
-            <td>
-              <div class="action-cell">
-                <OButton variant="primary" size="sm" @click="openEdit(row)">{{ t('wms.common.edit') }}</OButton>
-                <OButton variant="secondary" size="sm" @click="duplicateFormTemplate(row)">{{ t('wms.settings.duplicate', '複製') }}</OButton>
-                <OButton variant="danger" size="sm" @click="handleDelete(row)">{{ t('wms.common.delete') }}</OButton>
-              </div>
-            </td>
-          </tr>
-          <tr v-if="templates.length === 0">
-            <td colspan="5" style="text-align:center;padding:40px;color:#909399">{{ t('wms.settings.noData', 'データがありません') }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <Table
+        :columns="tableColumns"
+        :data="templates"
+        :height="560"
+        row-key="_id"
+        highlight-columns-on-hover
+        pagination-enabled
+        pagination-mode="client"
+        :page-size="20"
+        :page-sizes="[10, 20, 50]"
+      />
     </div>
 
-    <!-- 作成ダイアログ -->
+    <!-- 作成ダイアログ / 新建对话框 -->
     <ODialog :open="createDialogVisible" :title="t('wms.settings.addFormTemplate', '帳票テンプレートを追加')" @close="createDialogVisible = false">
       <div class="o-form-group">
         <label class="form-label">{{ t('wms.settings.templateName', 'テンプレート名') }} <span class="required-badge">必須</span></label>
@@ -52,28 +31,30 @@
         <select class="o-input" v-model="createForm.targetType">
           <option value="">{{ t('wms.settings.selectType', '種類を選択') }}</option>
           <option
-            v-for="t in formTypeRegistry"
-            :key="t.type"
-            :value="t.type"
-          >{{ t.label }}</option>
+            v-for="ft in formTypeRegistry"
+            :key="ft.type"
+            :value="ft.type"
+          >{{ ft.label }}</option>
         </select>
       </div>
       <template #footer>
-        <OButton variant="secondary" @click="createDialogVisible = false">{{ t('wms.common.cancel') }}</OButton>
-        <OButton variant="primary" :disabled="saving" @click="handleCreate">{{ t('wms.common.create') }}</OButton>
+        <OButton variant="secondary" @click="createDialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
+        <OButton variant="primary" :disabled="saving" @click="handleCreate">{{ t('wms.common.create', '新規作成') }}</OButton>
       </template>
     </ODialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn } from '@/types/table'
 import type { FormTemplate } from '@/types/formTemplate'
 import { fetchFormTemplates, fetchFormTemplate, createFormTemplate, deleteFormTemplate } from '@/api/formTemplate'
 import { formTypeRegistry, createDefaultColumns } from '@/utils/form-export/formFieldRegistry'
@@ -92,7 +73,7 @@ const createForm = ref({
 })
 
 function getTypeLabel(type: string): string {
-  const found = formTypeRegistry.find((t) => t.type === type)
+  const found = formTypeRegistry.find((ft) => ft.type === type)
   return found?.label || type
 }
 
@@ -142,7 +123,7 @@ async function handleCreate() {
     showToast(t('wms.settings.templateCreated', 'テンプレートを作成しました'), 'success')
     createDialogVisible.value = false
 
-    // 編集画面へ遷移
+    // 編集画面へ遷移 / 跳转到编辑页面
     router.push(`/settings/form-templates/${created._id}`)
   } catch (e: any) {
     showToast(e?.message || t('wms.settings.createFailed', '作成に失敗しました'), 'danger')
@@ -175,6 +156,64 @@ async function handleDelete(row: FormTemplate) {
   }
 }
 
+// テーブルカラム定義 / 表格列定义
+const tableColumns = computed((): TableColumn[] => [
+  {
+    key: 'name',
+    dataKey: 'name',
+    title: t('wms.settings.templateName', 'テンプレート名'),
+    width: 280,
+    fieldType: 'string',
+  },
+  {
+    key: 'targetType',
+    dataKey: 'targetType',
+    title: t('wms.settings.templateType', '種類'),
+    width: 180,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: FormTemplate }) => getTypeLabel(rowData.targetType),
+  },
+  {
+    key: 'pageSize',
+    dataKey: 'pageSize',
+    title: t('wms.settings.paperSize', '用紙'),
+    width: 120,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: FormTemplate }) =>
+      `${rowData.pageSize} ${rowData.pageOrientation === 'portrait' ? t('wms.settings.portrait', '縦') : t('wms.settings.landscape', '横')}`,
+  },
+  {
+    key: 'columns',
+    title: t('wms.settings.columnCount', '列数'),
+    width: 80,
+    fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: FormTemplate }) =>
+      String(rowData.columns?.length ?? 0),
+  },
+  {
+    key: 'isDefault',
+    dataKey: 'isDefault',
+    title: t('wms.settings.isDefault', 'デフォルト'),
+    width: 100,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: FormTemplate }) =>
+      rowData.isDefault
+        ? h('span', { class: 'o-badge o-badge-success' }, t('wms.settings.yes', 'はい'))
+        : '-',
+  },
+  {
+    key: 'actions',
+    title: t('wms.settings.actions', '操作'),
+    width: 300,
+    cellRenderer: ({ rowData }: { rowData: FormTemplate }) =>
+      h('div', { style: 'display:flex;gap:6px;' }, [
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => t('wms.common.edit', '編集')),
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateFormTemplate(rowData) }, () => t('wms.settings.duplicate', '複製')),
+        h(OButton, { variant: 'danger', size: 'sm', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')),
+      ]),
+  },
+])
+
 onMounted(() => {
   loadTemplates()
 })
@@ -193,18 +232,12 @@ onMounted(() => {
   margin-right: -20px;
 }
 
-
-
-
 .table-section {
   background: #fff;
   border-radius: 8px;
   padding: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
-
-/* .o-list-table base styles are defined globally in style.css */
-
 
 .o-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
 .o-badge-success { background: #f0f9eb; color: #67c23a; }
@@ -223,19 +256,4 @@ onMounted(() => {
 .o-form-group { margin-bottom: 1rem; }
 .form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
 .required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
-
-/* 操作列スタイル - 縦並び / 操作列样式 - 垂直排列 */
-.action-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 4px;
-}
-
-.action-cell .o-btn {
-  margin: 0;
-  min-width: 54px;
-}
 </style>

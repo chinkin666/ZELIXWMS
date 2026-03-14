@@ -61,5 +61,7 @@ stockQuantSchema.index({ locationId: 1 });
 stockQuantSchema.index({ lotId: 1 });
 stockQuantSchema.index({ productSku: 1 });
 stockQuantSchema.index({ quantity: 1 });
+// 在庫有無チェック用複合インデックス / 库存可用性检查用复合索引
+stockQuantSchema.index({ productId: 1, quantity: 1 });
 
 export const StockQuant = mongoose.model<IStockQuant>('StockQuant', stockQuantSchema);

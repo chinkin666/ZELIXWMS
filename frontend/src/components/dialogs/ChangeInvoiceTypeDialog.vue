@@ -60,8 +60,9 @@ import ODialog from '@/components/odoo/ODialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import type { OrderDocument } from '@/types/order'
 import { isBuiltInCarrierId } from '@/utils/carrier'
+import { useEnabledInvoiceTypes } from '@/composables/useEnabledInvoiceTypes'
 
-const invoiceTypeOptions = [
+const allInvoiceTypeOptions = [
   { label: '発払い', value: '0' },
   { label: 'EAZY', value: '1' },
   { label: 'コレクト', value: '2' },
@@ -74,6 +75,10 @@ const invoiceTypeOptions = [
   { label: 'コンパクトコレクト', value: '9' },
   { label: 'ネコポス', value: 'A' },
 ]
+
+const { filterEnabledOptions } = useEnabledInvoiceTypes()
+// 無効化された送り状種類を除外 / 无效化的送り状種類を除外
+const invoiceTypeOptions = computed(() => filterEnabledOptions(allInvoiceTypeOptions))
 
 const coolSupportedInvoiceTypes = new Set(['0', '2', '5'])
 

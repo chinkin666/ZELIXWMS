@@ -7,6 +7,8 @@ export const serviceTypeConfigSchema = z.object({
   b2ServiceType: z.string().min(1),
   printTemplateId: z.string().optional(),
   pdfSource: z.enum(['local', 'b2-webapi']).optional().default('local'),
+  // 有効/無効フラグ / 有效/无效标志
+  enabled: z.boolean().optional().default(true),
 });
 
 /**
