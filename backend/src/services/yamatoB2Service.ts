@@ -170,7 +170,11 @@ function resolveServiceType(order: IShipmentOrder, config: IYamatoB2Config): str
       ? config.serviceTypeMapping.get(invoiceType)
       : (config.serviceTypeMapping as Record<string, any>)[invoiceType];
     if (mapping) {
-      // 新しい形式: { b2ServiceType: string, printTemplateId?: string }
+      // 無効化されている場合はスキップ / 无效化的种类跳过
+      if (typeof mapping === 'object' && mapping.enabled === false) {
+        throw new Error(`送り状種類「${invoiceType}」は無効に設定されています`);
+      }
+      // 新しい形式: { b2ServiceType: string, printTemplateId?: string, enabled?: boolean }
       if (typeof mapping === 'object' && mapping.b2ServiceType) {
         return mapping.b2ServiceType;
       }

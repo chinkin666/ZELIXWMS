@@ -13,6 +13,8 @@ export interface IServiceTypeConfig {
   b2ServiceType: string;
   /** 印刷テンプレートID */
   printTemplateId?: string;
+  /** 有効/無効（falseの場合、この送り状種類は使用不可）/ 有效/无效 */
+  enabled?: boolean;
   /** PDF取得元（'local' = ローカルテンプレート, 'b2-webapi' = B2 Cloudから取得） */
   pdfSource?: PdfSource;
 }
@@ -93,6 +95,10 @@ const serviceTypeConfigSchema = new mongoose.Schema<IServiceTypeConfig>(
       type: String,
       enum: ['local', 'b2-webapi'],
       default: 'local',
+    },
+    enabled: {
+      type: Boolean,
+      default: true,
     },
   },
   { _id: false },
