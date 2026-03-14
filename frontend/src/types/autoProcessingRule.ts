@@ -1,30 +1,24 @@
 export type TriggerEvent =
   | 'order.created'
   | 'order.confirmed'
-  | 'order.carrierReceived'
-  | 'order.printed'
-  | 'order.inspected'
   | 'order.shipped'
-  | 'order.ecExported'
+  // 以下は後端で emit 未実装のため一旦無効化
+  // 実装後にコメント解除して有効化する
+  // | 'order.carrierReceived'  // 配送業者データ取込時
+  // | 'order.printed'          // 印刷完了時
+  // | 'order.inspected'        // 検品完了時
+  // | 'order.ecExported'       // EC連携時
 
 export const TRIGGER_EVENTS: TriggerEvent[] = [
   'order.created',
   'order.confirmed',
-  'order.carrierReceived',
-  'order.printed',
-  'order.inspected',
   'order.shipped',
-  'order.ecExported',
 ]
 
 export const TRIGGER_EVENT_LABELS: Record<TriggerEvent, string> = {
   'order.created': '注文作成時',
   'order.confirmed': '出荷確定時',
-  'order.carrierReceived': '配送業者データ取込時',
-  'order.printed': '印刷完了時',
-  'order.inspected': '検品完了時',
   'order.shipped': '出荷完了時',
-  'order.ecExported': 'EC連携時',
 }
 
 export type ConditionType = 'orderField' | 'orderStatus' | 'orderGroup' | 'carrierRawRow' | 'sourceRawRow'
