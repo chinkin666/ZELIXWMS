@@ -13,6 +13,8 @@ export interface ServiceTypeConfig {
   printTemplateId?: string
   /** PDF取得元（'local' = ローカルテンプレート, 'b2-webapi' = B2 Cloudから取得） */
   pdfSource?: PdfSource
+  /** 有効/無効（falseの場合、この送り状種類は使用不可） */
+  enabled?: boolean
 }
 
 /**

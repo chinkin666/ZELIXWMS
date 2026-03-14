@@ -129,27 +129,31 @@
               <table class="o-list-table service-mapping-table">
                 <thead>
                   <tr>
-                    <th style="width:180px">送り状種類</th>
-                    <th style="width:180px">B2送り状種類</th>
-                    <th style="width:160px">PDF取得元</th>
-                    <th style="min-width:180px">印刷テンプレート</th>
+                    <th style="width:40px;text-align:center">有効</th>
+                    <th style="width:130px">種類</th>
+                    <th style="width:130px">B2種類</th>
+                    <th style="width:90px">PDF元</th>
+                    <th>テンプレート</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="row in serviceTypeMappingList" :key="row.invoiceType">
+                  <tr v-for="row in serviceTypeMappingList" :key="row.invoiceType" :class="{ 'row-disabled': !row.enabled }">
+                    <td style="text-align:center">
+                      <input type="checkbox" :checked="row.enabled" @change="updateMappingRow(row.invoiceType, 'enabled', ($event.target as HTMLInputElement).checked ? 'true' : '')" />
+                    </td>
                     <td>{{ row.label }}</td>
                     <td>
-                      <select class="o-input" :value="row.b2ServiceType" @change="updateMappingRow(row.invoiceType, 'b2ServiceType', ($event.target as HTMLSelectElement).value)">
+                      <select class="o-input" :value="row.b2ServiceType" @change="updateMappingRow(row.invoiceType, 'b2ServiceType', ($event.target as HTMLSelectElement).value)" :disabled="!row.enabled">
                         <option v-for="opt in b2ServiceTypeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                       </select>
                     </td>
                     <td>
-                      <select class="o-input" :value="row.pdfSource" @change="updateMappingRow(row.invoiceType, 'pdfSource', ($event.target as HTMLSelectElement).value)">
+                      <select class="o-input" :value="row.pdfSource" @change="updateMappingRow(row.invoiceType, 'pdfSource', ($event.target as HTMLSelectElement).value)" :disabled="!row.enabled">
                         <option v-for="opt in pdfSourceOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                       </select>
                     </td>
                     <td>
-                      <select class="o-input" :value="row.printTemplateId || ''" @change="updateMappingRow(row.invoiceType, 'printTemplateId', ($event.target as HTMLSelectElement).value || undefined)" :disabled="row.pdfSource === 'b2-webapi'">
+                      <select class="o-input" :value="row.printTemplateId || ''" @change="updateMappingRow(row.invoiceType, 'printTemplateId', ($event.target as HTMLSelectElement).value || undefined)" :disabled="!row.enabled || row.pdfSource === 'b2-webapi'">
                         <option value="">テンプレートを選択</option>
                         <option v-for="tpl in printTemplates" :key="tpl.id" :value="tpl.id">{{ tpl.name }}</option>
                       </select>
@@ -327,7 +331,7 @@ const yamatoB2Form = ref<YamatoB2Config & { enabled?: boolean; serviceTypeMappin
 })
 
 interface ServiceTypeMappingRow {
-  invoiceType: string; label: string; b2ServiceType: string; printTemplateId?: string; pdfSource: PdfSource
+  invoiceType: string; label: string; b2ServiceType: string; printTemplateId?: string; pdfSource: PdfSource; enabled: boolean
 }
 
 const serviceTypeMappingList = computed<ServiceTypeMappingRow[]>({
@@ -338,18 +342,19 @@ const serviceTypeMappingList = computed<ServiceTypeMappingRow[]>({
       b2ServiceType: config.b2ServiceType || opt.value,
       printTemplateId: config.printTemplateId,
       pdfSource: config.pdfSource || 'local',
+      enabled: config.enabled !== false, // 默认有效 / デフォルト有効
     }
   }),
   set: (rows) => {
     const mapping: Record<string, ServiceTypeConfig> = {}
     for (const row of rows) {
-      mapping[row.invoiceType] = { b2ServiceType: row.b2ServiceType, printTemplateId: row.printTemplateId, pdfSource: row.pdfSource }
+      mapping[row.invoiceType] = { b2ServiceType: row.b2ServiceType, printTemplateId: row.printTemplateId, pdfSource: row.pdfSource, enabled: row.enabled }
     }
     yamatoB2Form.value.serviceTypeMapping = mapping
   },
 })
 
-function updateMappingRow(invoiceType: string, field: 'b2ServiceType' | 'printTemplateId' | 'pdfSource', value: string | undefined) {
+function updateMappingRow(invoiceType: string, field: 'b2ServiceType' | 'printTemplateId' | 'pdfSource' | 'enabled', value: string | undefined) {
   if (!yamatoB2Form.value.serviceTypeMapping[invoiceType]) {
     yamatoB2Form.value.serviceTypeMapping[invoiceType] = { b2ServiceType: invoiceType }
   }
@@ -357,6 +362,7 @@ function updateMappingRow(invoiceType: string, field: 'b2ServiceType' | 'printTe
   if (field === 'b2ServiceType') m.b2ServiceType = value || invoiceType
   else if (field === 'printTemplateId') m.printTemplateId = value
   else if (field === 'pdfSource') m.pdfSource = (value as PdfSource) || 'local'
+  else if (field === 'enabled') m.enabled = !!value
 }
 
 const autoValidationForm = ref<AutoValidationConfig>({ enabled: false, intervalMinutes: 5, maxRetries: 5 })
@@ -541,7 +547,11 @@ onMounted(() => {
 .form-hint { font-size: 12px; color: var(--o-gray-500, #909399); }
 .field-hint { margin-top: 4px; font-size: 12px; color: var(--o-gray-500, #909399); }
 
-.service-mapping-wrapper { overflow-x: auto; margin-bottom: 16px; }
+.service-mapping-wrapper { overflow-x: auto; margin-bottom: 16px; max-width: 700px; }
+.service-mapping-table .o-input { padding: 4px 6px; font-size: 12px; height: 28px; }
+.service-mapping-table td { font-size: 12px; }
+.service-mapping-table .row-disabled td { opacity: 0.4; }
+.service-mapping-table .row-disabled td:first-child { opacity: 1; }
 .form-actions { display: flex; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--o-border-color, #ebeef5); }
 
 .test-result { margin-top: 16px; max-width: 600px; padding: 12px 16px; position: relative; }
