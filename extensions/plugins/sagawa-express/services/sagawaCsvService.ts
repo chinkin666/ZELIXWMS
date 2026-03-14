@@ -5,6 +5,8 @@
  * e飛伝II/III フォーマット CSV 出力。
  */
 
+import { formatProductNameSplit, type ProductNameFormatOptions, type ProductNameRule } from '../../../backend/src/utils/productNameFormatter';
+
 /**
  * 导出配置 / エクスポート設定
  */
@@ -12,6 +14,12 @@ export interface SagawaExportConfig {
   billingCode?: string;
   defaultInvoiceType?: string;
   defaultSize?: string;
+  /** 品名印字规则 / 品名印字ルール */
+  productNameRule?: ProductNameRule;
+  /** 多SKU时的模式 / 複数SKU時のモード */
+  multiSkuMode?: 'first' | 'count' | 'concat';
+  /** 数量を含めるか / 数量を含めるか */
+  includeQuantity?: boolean;
 }
 
 /**
@@ -49,7 +57,19 @@ export interface SagawaCsvRow {
 export function orderToCsvRow(order: any, config: SagawaExportConfig): SagawaCsvRow {
   const recipient = order.recipient || {};
   const orderer = order.orderer || order.sender || {};
-  const productName = getProductName(order);
+
+  // 品名印字規則適用 / 品名印字ルール適用
+  const nameOpts: ProductNameFormatOptions = {
+    rule: config.productNameRule,
+    maxChars: 16, // 佐川は16文字制限 / 佐川は16文字制限
+    multiSkuMode: config.multiSkuMode || 'first',
+    includeQuantity: config.includeQuantity ?? false,
+  };
+  const [productName1, productName2] = formatProductNameSplit(
+    order.products || [],
+    nameOpts,
+    16,
+  );
 
   return {
     お客様管理番号: order.orderNumber || '',
@@ -70,8 +90,8 @@ export function orderToCsvRow(order: any, config: SagawaExportConfig): SagawaCsv
     ご依頼主住所2: orderer.street || '',
     ご依頼主名称1: orderer.name || '',
     ご依頼主名称2: '',
-    品名1: productName,
-    品名2: '',
+    品名1: productName1,
+    品名2: productName2,
     荷物個数: String(order._productsMeta?.totalQuantity || 1),
     荷物サイズ: config.defaultSize || '80',
     請求先コード: config.billingCode || '',
@@ -107,15 +127,3 @@ export function generateCsvString(rows: SagawaCsvRow[]): string {
   return lines.join('\r\n');
 }
 
-/**
- * 获取品名 / 品名を取得
- */
-function getProductName(order: any): string {
-  if (order._productsMeta?.skuCount === 1 && order.products?.[0]) {
-    return order.products[0].productName || '商品';
-  }
-  if (order._productsMeta?.skuCount && order._productsMeta.skuCount > 1) {
-    return `商品 ${order._productsMeta.skuCount}点`;
-  }
-  return '商品';
-}

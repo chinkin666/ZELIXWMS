@@ -12,6 +12,7 @@
 import type { IShipmentOrder, IAddress } from '@/models/shipmentOrder';
 import { logger } from '@/lib/logger';
 import { SAGAWA_INVOICE_TYPES } from '@/data/sagawaCarrier';
+import { formatProductNameSplit, type ProductNameRule } from '@/utils/productNameFormatter';
 
 /**
  * 佐川 CSV 导出配置 / 佐川 CSV 出力設定
@@ -23,6 +24,8 @@ export interface ISagawaExportConfig {
   defaultInvoiceType?: string;
   /** 默认荷物サイズ / デフォルト荷物サイズ */
   defaultSize?: string;
+  /** 品名印字规则 / 品名印字ルール */
+  productNameRule?: ProductNameRule;
 }
 
 /**
@@ -76,7 +79,13 @@ export class SagawaService {
   private orderToCsvRow(order: IShipmentOrder): SagawaCsvRow {
     const recipient = order.recipient || {} as Partial<IAddress>;
     const orderer = order.orderer || {} as Partial<IAddress>;
-    const productName = this.getProductName(order);
+
+    // 品名印字規則適用 / 品名印字ルール適用
+    const [productName1, productName2] = formatProductNameSplit(
+      order.products || [],
+      { rule: this.config.productNameRule, maxChars: 16 },
+      16,
+    );
 
     return {
       お客様管理番号: order.orderNumber || '',
@@ -97,25 +106,13 @@ export class SagawaService {
       ご依頼主住所2: orderer.street || '',
       ご依頼主名称1: orderer.name || '',
       ご依頼主名称2: '',
-      品名1: productName,
-      品名2: '',
+      品名1: productName1,
+      品名2: productName2,
       荷物個数: String(order._productsMeta?.totalQuantity || 1),
       荷物サイズ: this.config.defaultSize || '80',
     };
   }
 
-  /**
-   * 获取品名（取第一个商品名或汇总）/ 品名を取得（最初の商品名またはサマリー）
-   */
-  private getProductName(order: IShipmentOrder): string {
-    if (order._productsMeta?.skuCount === 1 && order.products?.[0]) {
-      return order.products[0].productName || '商品';
-    }
-    if (order._productsMeta?.skuCount && order._productsMeta.skuCount > 1) {
-      return `商品 ${order._productsMeta.skuCount}点`;
-    }
-    return '商品';
-  }
 
   /**
    * CSV 文件生成（Shift_JIS BOM 付き）/ CSV ファイル生成（Shift_JIS BOM 付き）

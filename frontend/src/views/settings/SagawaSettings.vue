@@ -50,6 +50,35 @@
         </div>
       </div>
 
+      <!-- 品名印字規則 / 品名印字ルール -->
+      <div class="form-row">
+        <div class="o-form-group">
+          <label class="form-label">品名印字ルール</label>
+          <select class="o-input" v-model="exportConfig.productNameRuleType">
+            <option value="">デフォルト（商品名そのまま）</option>
+            <option value="front">前からN文字</option>
+            <option value="back">後ろからN文字</option>
+            <option value="fixed">固定文字</option>
+          </select>
+        </div>
+        <div class="o-form-group" v-if="exportConfig.productNameRuleType === 'front' || exportConfig.productNameRuleType === 'back'">
+          <label class="form-label">文字数（最大16）</label>
+          <input class="o-input" type="number" v-model.number="exportConfig.productNameMaxChars" min="1" max="16" placeholder="16" />
+        </div>
+        <div class="o-form-group" v-if="exportConfig.productNameRuleType === 'fixed'">
+          <label class="form-label">固定文字</label>
+          <input class="o-input" v-model="exportConfig.productNameFixedText" placeholder="例: 食品" maxlength="16" />
+        </div>
+        <div class="o-form-group">
+          <label class="form-label">複数商品時</label>
+          <select class="o-input" v-model="exportConfig.multiSkuMode">
+            <option value="first">最初の商品名 + 他N点</option>
+            <option value="count">「商品 N点」</option>
+            <option value="concat">全商品名を連結</option>
+          </select>
+        </div>
+      </div>
+
       <div class="action-row">
         <OButton variant="secondary" :disabled="searchingOrders" @click="searchOrders">
           {{ searchingOrders ? t('wms.settings.sagawa.searching', '検索中...') : t('wms.common.search') }}
@@ -208,6 +237,10 @@ const exportFilters = reactive({
 const exportConfig = reactive({
   billingCode: '',
   defaultInvoiceType: '',
+  productNameRuleType: '' as '' | 'front' | 'back' | 'fixed',
+  productNameMaxChars: 16,
+  productNameFixedText: '',
+  multiSkuMode: 'first' as 'first' | 'count' | 'concat',
   defaultSize: '',
 })
 
@@ -305,10 +338,20 @@ const handleExport = async () => {
   exporting.value = true
 
   try {
-    const config: Record<string, string> = {}
+    const config: Record<string, any> = {}
     if (exportConfig.billingCode) config.billingCode = exportConfig.billingCode
     if (exportConfig.defaultInvoiceType) config.defaultInvoiceType = exportConfig.defaultInvoiceType
     if (exportConfig.defaultSize) config.defaultSize = exportConfig.defaultSize
+    if (exportConfig.multiSkuMode) config.multiSkuMode = exportConfig.multiSkuMode
+
+    // 品名印字規則 / 品名印字ルール
+    if (exportConfig.productNameRuleType === 'front') {
+      config.productNameRule = { type: 'front', maxChars: exportConfig.productNameMaxChars || 16 }
+    } else if (exportConfig.productNameRuleType === 'back') {
+      config.productNameRule = { type: 'back', maxChars: exportConfig.productNameMaxChars || 16 }
+    } else if (exportConfig.productNameRuleType === 'fixed' && exportConfig.productNameFixedText) {
+      config.productNameRule = { type: 'fixed', text: exportConfig.productNameFixedText }
+    }
 
     const blob = await exportSagawaCsv({
       orderIds: Array.from(selectedIds.value),
