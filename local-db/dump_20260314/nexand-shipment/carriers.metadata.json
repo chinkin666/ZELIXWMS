@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"code":{"$numberInt":"1"}},"name":"code_1","background":true,"unique":true},{"v":{"$numberInt":"2"},"key":{"enabled":{"$numberInt":"1"}},"name":"enabled_1","background":true}],"uuid":"64e74eb76e8948a4a08ba922ad7a6aba","collectionName":"carriers","type":"collection"}
