@@ -241,7 +241,7 @@ shipmentOrderRouter.get('/group-counts', async (_req, res) => {
   try {
     const { ShipmentOrder } = await import('@/models/shipmentOrder');
     const result = await ShipmentOrder.aggregate([
-      { $match: { orderGroupId: { $exists: true, $ne: null, $ne: '' } } },
+      { $match: { orderGroupId: { $exists: true, $nin: [null, ''] } } },
       { $group: { _id: '$orderGroupId', count: { $sum: 1 } } },
     ]);
     res.json(result);
