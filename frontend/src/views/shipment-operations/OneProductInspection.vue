@@ -1,6 +1,6 @@
 <template>
-  <div class="inspection-page">
-    <!-- 検品進捗バー / 検品進捗バー -->
+  <div>
+    <!-- 検品進捗バー / 检品进度条 -->
     <div class="inspection-progress-bar">
       <div class="progress-info">
         <span>検品進捗: {{ inspectionProgress.done }} / {{ inspectionProgress.total }}</span>
@@ -10,7 +10,7 @@
         <div class="progress-fill" :style="{ width: inspectionProgress.percent + '%' }"></div>
       </div>
     </div>
-
+  <div class="inspection-page">
     <!-- 左侧面板 -->
     <ProductInspectionLeftPanel
       ref="leftPanelRef"
@@ -131,6 +131,7 @@
       </div>
       <template #footer><span></span></template>
     </ODialog>
+  </div>
   </div>
 </template>
 
@@ -759,7 +760,6 @@ onBeforeUnmount(() => {
 <style scoped>
 .inspection-page {
   display: flex;
-  flex-wrap: wrap;
   height: 100%;
   gap: 0;
   position: relative;

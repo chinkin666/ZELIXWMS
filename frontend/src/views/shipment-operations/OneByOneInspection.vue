@@ -1,4 +1,15 @@
 <template>
+  <div>
+    <!-- 検品進捗バー / 检品进度条 -->
+    <div v-if="totalOrderCount > 0" class="inspection-progress-bar">
+      <div class="progress-info">
+        <span>検品進捗: {{ inspectionProgress.done }} / {{ inspectionProgress.total }}</span>
+        <span>{{ inspectionProgress.percent }}%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" :style="{ width: inspectionProgress.percent + '%' }"></div>
+      </div>
+    </div>
   <div class="inspection-page">
     <!-- 左侧面板 -->
     <InspectionLeftPanel
@@ -18,17 +29,6 @@
       @submit="handleInput"
       @toggle-auto-print="toggleAutoPrint"
     />
-
-    <!-- 検品進捗バー / 検品進捗バー -->
-    <div v-if="totalOrderCount > 0" class="inspection-progress-bar">
-      <div class="progress-info">
-        <span>検品進捗: {{ inspectionProgress.done }} / {{ inspectionProgress.total }}</span>
-        <span>{{ inspectionProgress.percent }}%</span>
-      </div>
-      <div class="progress-track">
-        <div class="progress-fill" :style="{ width: inspectionProgress.percent + '%' }"></div>
-      </div>
-    </div>
 
     <!-- 右侧面板 -->
     <InspectionRightPanel
@@ -246,6 +246,7 @@
         </div>
       </template>
     </ODialog>
+  </div>
   </div>
 </template>
 
