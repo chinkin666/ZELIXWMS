@@ -208,6 +208,9 @@ export function getOrderFieldDefinitions(opts?: {
     { label: 'クール冷蔵', value: '2' as CoolType },
   ]
 
+  // 送り状種類（全配送業者共通コード）/ 送り状種類
+  // ヤマト: 0-9,A / 佐川: 0=元払い,1=着払い,2=e-コレクト
+  // 同じコード値でも配送業者によって名称が異なる（carrierId で区別）
   const invoiceTypeOptions = [
     { label: '発払い', value: '0' },
     { label: 'EAZY', value: '1' },
@@ -221,6 +224,14 @@ export function getOrderFieldDefinitions(opts?: {
     { label: 'コンパクトコレクト', value: '9' },
     { label: 'ネコポス', value: 'A' },
   ]
+
+  // 佐川急便用の送り状種類ラベル（コード → 表示名）
+  // 佐川急便用送り状種類标签
+  const sagawaInvoiceLabels: Record<string, string> = {
+    '0': '元払い',
+    '1': '着払い',
+    '2': 'e-コレクト（代引き）',
+  }
 
   const carrierOptions: SelectOption[] = Array.isArray(opts?.carrierOptions) ? opts!.carrierOptions! : []
   const carrierLabelMap = new Map<string, string>(
@@ -284,16 +295,25 @@ export function getOrderFieldDefinitions(opts?: {
       key: 'invoiceType',
       dataKey: 'invoiceType',
       title: '送り状種類',
-      description: '0:発払い、1:EAZY、2:コレクト、3:クロネコゆうメール、4:タイム、5:着払い、6:発払い複数口、7:クロネコゆうパケット、8:宅急便コンパクト、9:コンパクトコレクト、A:ネコポス。必須項目です。',
+      description: 'ヤマト: 0:発払い〜A:ネコポス / 佐川: 0:元払い, 1:着払い, 2:e-コレクト。配送業者により表示が変わります。',
       width: 170,
       fieldType: 'string',
       required: true,
       searchType: 'select',
       searchOptions: invoiceTypeOptions,
       formEditable: true,
+      // carrierId に依存して選択肢をフィルタリング / carrierId に基づいて選択肢をフィルタリング
+      dependsOn: 'carrierId',
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
-        const hit = invoiceTypeOptions.find((opt) => opt.value === rowData.invoiceType)
-        return hit ? hit.label : rowData.invoiceType || '-'
+        const val = rowData.invoiceType
+        if (!val && val !== '0') return '-'
+        // 佐川の場合は佐川用ラベルを表示 / 佐川の場合は佐川用ラベル
+        const cid = (rowData as any).carrierId || ''
+        if (cid === '__builtin_sagawa__' || String(cid).includes('sagawa')) {
+          return sagawaInvoiceLabels[val] || val
+        }
+        const hit = invoiceTypeOptions.find((opt) => opt.value === val)
+        return hit ? hit.label : val
       },
     },
     {

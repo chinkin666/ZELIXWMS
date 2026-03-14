@@ -427,6 +427,13 @@ const isFieldRequired = (column: TableColumn): boolean => {
   return column.required === true
 }
 
+// 佐川急便の送り状種類オプション / 佐川急便の送り状種類オプション
+const sagawaInvoiceTypeOptions = [
+  { label: '元払い', value: '0' },
+  { label: '着払い', value: '1' },
+  { label: 'e-コレクト（代引き）', value: '2' },
+]
+
 // Get filtered options based on dependsOn field
 const getFilteredOptions = (column: TableColumn) => {
   const dataKey = column.dataKey || column.key
@@ -434,6 +441,15 @@ const getFilteredOptions = (column: TableColumn) => {
   if (dataKey === 'coolType' && column.dependsOn === 'invoiceType') {
     const invoiceType = getNestedValue(formData.value, 'invoiceType') || '0'
     return getCoolTypeOptionsForInvoiceType(String(invoiceType))
+  }
+  // 送り状種類の場合、carrierId に依存してオプションをフィルタリング
+  // 送り状種類の場合、carrierId に基づいてフィルタリング
+  if (dataKey === 'invoiceType' && column.dependsOn === 'carrierId') {
+    const carrierId = String(getNestedValue(formData.value, 'carrierId') || '')
+    if (carrierId === '__builtin_sagawa__' || carrierId.includes('sagawa')) {
+      return sagawaInvoiceTypeOptions
+    }
+    // ヤマト or その他はデフォルト全オプション
   }
   // デフォルトは全オプションを返す
   return column.searchOptions || []
@@ -443,6 +459,19 @@ const getFilteredOptions = (column: TableColumn) => {
 const handleSelectChange = (column: TableColumn, val: string | number | boolean | null) => {
   const dataKey = column.dataKey || column.key
   setNestedValue(formData.value, dataKey, val)
+
+  // carrierId が変更された場合、invoiceType をリセット（佐川は0-2のみ）
+  // carrierId 变更时，重置 invoiceType
+  if (dataKey === 'carrierId') {
+    const currentInvoiceType = getNestedValue(formData.value, 'invoiceType')
+    const cid = String(val || '')
+    if (cid === '__builtin_sagawa__' || cid.includes('sagawa')) {
+      // 佐川は 0/1/2 のみ有効
+      if (currentInvoiceType && !['0', '1', '2'].includes(String(currentInvoiceType))) {
+        setNestedValue(formData.value, 'invoiceType', '0')
+      }
+    }
+  }
 
   // invoiceType が変更された場合、coolType の値を検証してリセット
   if (dataKey === 'invoiceType') {
