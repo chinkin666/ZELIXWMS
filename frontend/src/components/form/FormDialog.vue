@@ -106,6 +106,7 @@
               <select
                 v-else-if="column.searchOptions && column.searchOptions.length > 0"
                 class="o-input"
+                :key="`${getNestedKey(column)}-${column.dependsOn ? getNestedValueInTemplate(formData, column.dependsOn) : ''}`"
                 :value="getNestedValueInTemplate(formData, getNestedKey(column))"
                 @change="(e: Event) => handleSelectChange(column, (e.target as HTMLSelectElement).value)"
                 style="width: 100%"
