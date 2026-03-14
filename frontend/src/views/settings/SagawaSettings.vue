@@ -47,42 +47,6 @@
         </div>
       </div>
 
-      <!-- 品名印字規則 / 品名印字规则 -->
-      <div class="o-card settings-card">
-        <div class="card-header">
-          <span class="card-title">品名印字ルール</span>
-          <span class="card-description">送り状の品名欄に印字する内容を設定します（最大16文字）</span>
-        </div>
-        <div class="card-body">
-          <div class="o-form-group">
-            <label class="form-label">印字ルール</label>
-            <select class="o-input" v-model="form.productNameRuleType" style="max-width:300px">
-              <option value="">デフォルト（商品名そのまま）</option>
-              <option value="front">前からN文字</option>
-              <option value="back">後ろからN文字</option>
-              <option value="fixed">固定文字</option>
-            </select>
-          </div>
-          <div class="o-form-group" v-if="form.productNameRuleType === 'front' || form.productNameRuleType === 'back'">
-            <label class="form-label">文字数</label>
-            <input class="o-input" type="number" v-model.number="form.productNameMaxChars" min="1" max="16" style="max-width:120px" />
-            <div class="field-hint">最大16文字（e飛伝Ⅲの制限）</div>
-          </div>
-          <div class="o-form-group" v-if="form.productNameRuleType === 'fixed'">
-            <label class="form-label">固定文字</label>
-            <input class="o-input" v-model="form.productNameFixedText" placeholder="例: 食品" maxlength="16" style="max-width:250px" />
-          </div>
-          <div class="o-form-group">
-            <label class="form-label">複数商品時の表示</label>
-            <select class="o-input" v-model="form.multiSkuMode" style="max-width:300px">
-              <option value="first">最初の商品名 + 他N点</option>
-              <option value="count">「商品 N点」</option>
-              <option value="concat">全商品名を連結</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
       <!-- 使い方ガイド / 使用说明 -->
       <div class="o-card settings-card guide-card">
         <div class="card-header">
@@ -138,10 +102,6 @@ const form = ref({
   billingCode: '',
   defaultInvoiceType: '0',
   defaultSize: '80',
-  productNameRuleType: '' as '' | 'front' | 'back' | 'fixed',
-  productNameMaxChars: 16,
-  productNameFixedText: '',
-  multiSkuMode: 'first' as 'first' | 'count' | 'concat',
 })
 
 async function checkPlugin() {
@@ -177,10 +137,6 @@ async function handleSave() {
         billingCode: form.value.billingCode,
         defaultInvoiceType: form.value.defaultInvoiceType,
         defaultSize: form.value.defaultSize,
-        productNameRuleType: form.value.productNameRuleType,
-        productNameMaxChars: form.value.productNameMaxChars,
-        productNameFixedText: form.value.productNameFixedText,
-        multiSkuMode: form.value.multiSkuMode,
       }),
     })
     if (!res.ok) throw new Error('保存に失敗しました')
