@@ -50,6 +50,45 @@
       </div>
     </template>
 
+    <!-- 共通印刷パラメータ / 共通印刷参数 -->
+    <div class="o-card params-card">
+      <div class="params-title">印刷パラメータ</div>
+      <div class="params-grid">
+        <div class="params-group">
+          <label class="params-label">左余白 (mm)</label>
+          <input class="o-input" type="number" v-model.number="printParams.marginLeftMm" min="0" max="50" step="0.5" style="width:100px" />
+        </div>
+        <div class="params-group">
+          <label class="params-label">上余白 (mm)</label>
+          <input class="o-input" type="number" v-model.number="printParams.marginTopMm" min="0" max="50" step="0.5" style="width:100px" />
+        </div>
+        <div class="params-group">
+          <label class="params-label">印刷比率</label>
+          <div class="scale-buttons">
+            <button
+              v-for="pct in SCALE_PRESETS"
+              :key="pct"
+              class="scale-btn"
+              :class="{ active: printParams.scalePercent === pct }"
+              @click="setScale(pct)"
+            >{{ pct }}%</button>
+          </div>
+        </div>
+        <div class="params-group">
+          <label class="params-label">カスタム比率 (%)</label>
+          <input class="o-input" type="number" v-model.number="printParams.scalePercent" min="10" max="400" step="1" style="width:100px" />
+        </div>
+        <div class="params-group">
+          <label class="params-label">印刷部数</label>
+          <input class="o-input" type="number" v-model.number="printParams.copies" min="1" max="50" style="width:80px" />
+        </div>
+      </div>
+      <div class="params-actions">
+        <OButton variant="primary" size="sm" @click="saveParams">設定を保存</OButton>
+        <span v-if="paramsSaved" class="params-saved">保存しました</span>
+      </div>
+    </div>
+
     <!-- Local Bridge Mode: 4 Tabs -->
     <template v-if="config.method === 'local-bridge'">
       <div class="o-card tabs-card">
@@ -116,6 +155,47 @@ const { t } = useI18n()
 const config = reactive<PrintConfig>(getPrintConfig())
 const activeTab = ref('connection')
 
+// 共通印刷パラメータ / 共通印刷参数
+const SCALE_PRESETS = [25, 50, 73, 100, 150] as const
+
+const printParams = reactive({
+  marginLeftMm: 0,
+  marginTopMm: 0,
+  scalePercent: 100,
+  copies: 1,
+})
+const paramsSaved = ref(false)
+
+// localStorage から読み込み / localStorage から読み込み
+function loadParams() {
+  try {
+    const raw = localStorage.getItem('printParams')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      printParams.marginLeftMm = parsed.marginLeftMm ?? 0
+      printParams.marginTopMm = parsed.marginTopMm ?? 0
+      printParams.scalePercent = parsed.scalePercent ?? 100
+      printParams.copies = parsed.copies ?? 1
+    }
+  } catch { /* ignore */ }
+}
+
+function saveParams() {
+  localStorage.setItem('printParams', JSON.stringify({
+    marginLeftMm: printParams.marginLeftMm,
+    marginTopMm: printParams.marginTopMm,
+    scalePercent: printParams.scalePercent,
+    copies: printParams.copies,
+  }))
+  paramsSaved.value = true
+  setTimeout(() => { paramsSaved.value = false }, 2000)
+  showToast('印刷パラメータを保存しました', 'success')
+}
+
+function setScale(pct: number) {
+  printParams.scalePercent = pct
+}
+
 const cachedPrinters = ref<PrinterInfo[]>([])
 const defaultPrinterOs = ref<string | null>(null)
 const lastCacheUpdate = ref<string | null>(null)
@@ -143,6 +223,7 @@ async function handleReset() {
 
 onMounted(() => {
   refreshCachedData()
+  loadParams()
 })
 </script>
 
@@ -222,6 +303,27 @@ onMounted(() => {
 .tab-content {
   padding: 20px;
 }
+
+/* 印刷パラメータ / 印刷参数 */
+.params-card { padding: 16px 20px; }
+.params-title { font-size: 14px; font-weight: 600; color: var(--o-gray-800); margin-bottom: 14px; }
+.params-grid { display: flex; flex-wrap: wrap; gap: 16px 24px; }
+.params-group { display: flex; flex-direction: column; gap: 4px; }
+.params-label { font-size: 12px; font-weight: 500; color: var(--o-gray-600); }
+.scale-buttons { display: flex; gap: 4px; }
+.scale-btn {
+  padding: 4px 12px;
+  font-size: 13px;
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-600);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.scale-btn:hover { border-color: var(--o-brand-primary, #D97756); color: var(--o-brand-primary); }
+.scale-btn.active { background: var(--o-brand-primary, #D97756); color: #fff; border-color: var(--o-brand-primary); }
+.params-actions { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+.params-saved { font-size: 12px; color: var(--o-success, #3D8B37); }
 
 .browser-info-content {
   display: flex;

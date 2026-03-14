@@ -21,8 +21,14 @@ export interface TemplatePrintParams {
   /** 向き / 方向 */
   orientation?: 'portrait' | 'landscape'
   /** スケールモード / 缩放模式 */
-  scale?: 'fit' | 'fill' | 'actual'
-  /** 余白（mm）、0-50 / 边距（毫米），0-50 */
+  scale?: 'fit' | 'fill' | 'actual' | 'percent'
+  /** スケール比率（%）— scale='percent' 时使用 / 缩放比例（%）*/
+  scalePercent?: number
+  /** 左余白（mm）/ 左余白（mm） */
+  marginLeftMm?: number
+  /** 上余白（mm）/ 上余白（mm） */
+  marginTopMm?: number
+  /** 余白（mm）、0-50 — 旧互換用 / 边距（毫米），0-50 — 旧互换用 */
   margin_mm?: number
   /** 印刷部数、1-50 / 打印份数，1-50 */
   copies?: number
