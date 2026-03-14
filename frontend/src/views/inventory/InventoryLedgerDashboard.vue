@@ -6,6 +6,46 @@
       </template>
     </ControlPanel>
 
+    <!-- KPI 概況カード / KPI概览卡片 -->
+    <div v-if="overview" class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-value">{{ overview.productCount }}</div>
+        <div class="kpi-label">商品数</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ overview.totalQuantity.toLocaleString() }}</div>
+        <div class="kpi-label">総在庫数</div>
+        <div class="kpi-sub">引当: {{ overview.totalReserved }} / 有効: {{ overview.availableQuantity }}</div>
+      </div>
+      <div class="kpi-card" :class="{ 'kpi-card--warning': overview.lowStockCount > 0 }">
+        <div class="kpi-value">{{ overview.lowStockCount }}</div>
+        <div class="kpi-label">低在庫警告</div>
+      </div>
+      <div class="kpi-card" :class="{ 'kpi-card--danger': overview.expiredCount > 0, 'kpi-card--warning': overview.expiredCount === 0 && overview.expiringCount > 0 }">
+        <div class="kpi-value">{{ overview.expiringCount }}</div>
+        <div class="kpi-label">期限切れ近い</div>
+        <div v-if="overview.expiredCount > 0" class="kpi-sub kpi-sub--danger">期限切れ: {{ overview.expiredCount }}件</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ overview.locationUsage.percent }}%</div>
+        <div class="kpi-label">ロケーション使用率</div>
+        <div class="kpi-sub">{{ overview.locationUsage.used }} / {{ overview.locationUsage.total }}</div>
+      </div>
+    </div>
+
+    <!-- 期限切れ近い商品 / 即将过期商品 -->
+    <div v-if="overview && overview.expiringDetails.length > 0" class="expiry-alert-section">
+      <h4 class="expiry-alert-title">&#x26A0; 期限切れ近い商品（30日以内）</h4>
+      <div class="expiry-alert-list">
+        <div v-for="item in overview.expiringDetails" :key="item.lotNumber" class="expiry-alert-item">
+          <span class="expiry-sku">{{ item.productSku }}</span>
+          <span class="expiry-name">{{ item.productName }}</span>
+          <span class="expiry-lot">LOT: {{ item.lotNumber }}</span>
+          <span class="expiry-days" :class="{ 'expiry-days--critical': item.daysRemaining <= 7 }">残り{{ item.daysRemaining }}日</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Tab header -->
     <div class="tab-header">
       <button :class="['tab-btn', { active: activeTab === 'stock' }]" @click="activeTab = 'stock'">{{ t('wms.inventory.stockLevels', '在庫水位') }}</button>
@@ -243,9 +283,21 @@ import {
   type LedgerEntry,
   type Reservation,
 } from '@/api/inventoryLedger'
+import { fetchInventoryOverview, type InventoryOverview } from '@/api/inventory'
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
+
+// 概況データ / 概览数据
+const overview = ref<InventoryOverview | null>(null)
+
+async function loadOverview() {
+  try {
+    overview.value = await fetchInventoryOverview()
+  } catch {
+    // 概況取得失敗は無視 / 概览获取失败忽略
+  }
+}
 
 // Active tab
 const activeTab = ref<'stock' | 'ledger' | 'reservations'>('stock')
@@ -483,6 +535,7 @@ watch(activeTab, (tab) => {
 })
 
 onMounted(() => {
+  loadOverview()
   loadStockLevels()
 })
 </script>
@@ -498,6 +551,27 @@ onMounted(() => {
   flex-direction: column;
   gap: 16px;
 }
+
+/* KPI 概況カード / KPI概览卡片 */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.kpi-card { background: #fff; border: 1px solid var(--o-border-color, #e4e7ed); border-radius: 8px; padding: 16px; text-align: center; }
+.kpi-card--warning { border-left: 4px solid #e6a23c; }
+.kpi-card--danger { border-left: 4px solid #f56c6c; }
+.kpi-value { font-size: 28px; font-weight: 700; color: var(--o-gray-800, #303133); }
+.kpi-label { font-size: 12px; color: var(--o-gray-500, #909399); margin-top: 2px; }
+.kpi-sub { font-size: 11px; color: var(--o-gray-400, #c0c4cc); margin-top: 2px; }
+.kpi-sub--danger { color: #f56c6c; font-weight: 600; }
+
+/* 期限切れ警告 / 过期警告 */
+.expiry-alert-section { background: #fdf6ec; border: 1px solid #faecd8; border-radius: 8px; padding: 12px 16px; }
+.expiry-alert-title { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #e6a23c; }
+.expiry-alert-list { display: flex; flex-direction: column; gap: 6px; }
+.expiry-alert-item { display: flex; gap: 12px; align-items: center; font-size: 13px; color: #606266; }
+.expiry-sku { font-family: monospace; font-weight: 600; min-width: 100px; }
+.expiry-name { flex: 1; }
+.expiry-lot { font-size: 12px; color: #909399; }
+.expiry-days { font-weight: 600; color: #e6a23c; }
+.expiry-days--critical { color: #f56c6c; }
 
 :deep(.o-control-panel) {
   margin-left: -20px;

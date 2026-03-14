@@ -10,6 +10,7 @@ import {
   transferStock,
   bulkAdjustStock,
   cleanupZeroStock,
+  getInventoryOverview,
 } from '@/api/controllers/inventoryController';
 
 export const inventoryRouter = Router();
@@ -44,6 +45,7 @@ export const inventoryRouter = Router();
  *       200:
  *         description: Paginated stock list / ページネーション付き在庫一覧
  */
+inventoryRouter.get('/overview', getInventoryOverview);
 inventoryRouter.get('/stock', listStock);
 
 /**

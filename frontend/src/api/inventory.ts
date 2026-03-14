@@ -131,6 +131,25 @@ export async function bulkAdjustStock(adjustments: Array<{
   return res.json()
 }
 
+/** 在庫概況 / 库存概览 */
+export interface InventoryOverview {
+  productCount: number
+  totalQuantity: number
+  totalReserved: number
+  availableQuantity: number
+  lowStockCount: number
+  expiringCount: number
+  expiredCount: number
+  locationUsage: { total: number; used: number; percent: number }
+  expiringDetails: { lotNumber: string; productSku: string; productName: string; expiryDate: string; daysRemaining: number }[]
+}
+
+export async function fetchInventoryOverview(): Promise<InventoryOverview> {
+  const res = await fetch(`${API_BASE_URL}/inventory/overview`)
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch overview')
+  return res.json()
+}
+
 export async function cleanupZeroStock(): Promise<{ message: string; deletedCount: number }> {
   const res = await fetch(`${API_BASE_URL}/inventory/cleanup-zero`, {
     method: 'POST',

@@ -202,6 +202,104 @@ export const bulkAdjustStock = async (req: Request, res: Response): Promise<void
   }
 };
 
+/**
+ * 在庫概況ダッシュボード / 库存概览仪表板
+ * KPI: 商品数、総在庫数、低在庫警告数、期限切れ近い商品数、ロケーション使用率
+ */
+export const getInventoryOverview = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const { StockQuant } = await import('@/models/stockQuant');
+    const { Lot } = await import('@/models/lot');
+    const { Location } = await import('@/models/location');
+
+    // 1. 在庫がある商品数 + 総在庫数 / 有库存的商品数 + 总库存数
+    const stockAgg = await StockQuant.aggregate([
+      { $match: { quantity: { $gt: 0 } } },
+      {
+        $group: {
+          _id: null,
+          distinctProducts: { $addToSet: '$productId' },
+          totalQuantity: { $sum: '$quantity' },
+          totalReserved: { $sum: '$reservedQuantity' },
+        },
+      },
+    ]);
+    const stockData = stockAgg[0] || { distinctProducts: [], totalQuantity: 0, totalReserved: 0 };
+
+    // 2. 低在庫（在庫5以下の商品）/ 低库存（库存5以下）
+    const lowStockAgg = await StockQuant.aggregate([
+      { $match: { quantity: { $gt: 0 } } },
+      { $group: { _id: '$productId', totalQty: { $sum: '$quantity' } } },
+      { $match: { totalQty: { $lte: 5 } } },
+      { $count: 'count' },
+    ]);
+    const lowStockCount = lowStockAgg[0]?.count || 0;
+
+    // 3. 期限切れ近い商品（30日以内）/ 即将过期（30天内）
+    const now = new Date();
+    const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const expiringLots = await Lot.find({
+      status: 'active',
+      expiryDate: { $lte: thirtyDaysLater, $gte: now },
+    }).lean();
+
+    // 既に期限切れ / 已过期
+    const expiredLots = await Lot.countDocuments({
+      status: 'active',
+      expiryDate: { $lt: now },
+    });
+
+    // 4. ロケーション使用率 / 位置使用率
+    const physicalLocations = await Location.countDocuments({
+      type: { $not: /^virtual\// },
+      isActive: true,
+    });
+    const usedLocations = await StockQuant.aggregate([
+      { $match: { quantity: { $gt: 0 } } },
+      { $group: { _id: '$locationId' } },
+      {
+        $lookup: {
+          from: 'locations',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'loc',
+        },
+      },
+      { $unwind: '$loc' },
+      { $match: { 'loc.type': { $not: /^virtual\// } } },
+      { $count: 'count' },
+    ]);
+    const usedLocationCount = usedLocations[0]?.count || 0;
+
+    // 5. 期限切れ近い商品の詳細（上位10件）/ 即将过期详情（前10件）
+    const expiringDetails = expiringLots.slice(0, 10).map((lot: any) => ({
+      lotNumber: lot.lotNumber,
+      productSku: lot.productSku,
+      productName: lot.productName,
+      expiryDate: lot.expiryDate,
+      daysRemaining: Math.ceil((new Date(lot.expiryDate).getTime() - now.getTime()) / (24 * 60 * 60 * 1000)),
+    }));
+
+    res.json({
+      productCount: stockData.distinctProducts?.length || 0,
+      totalQuantity: stockData.totalQuantity || 0,
+      totalReserved: stockData.totalReserved || 0,
+      availableQuantity: (stockData.totalQuantity || 0) - (stockData.totalReserved || 0),
+      lowStockCount,
+      expiringCount: expiringLots.length,
+      expiredCount: expiredLots,
+      locationUsage: {
+        total: physicalLocations,
+        used: usedLocationCount,
+        percent: physicalLocations > 0 ? Math.round((usedLocationCount / physicalLocations) * 100) : 0,
+      },
+      expiringDetails,
+    });
+  } catch (error) {
+    handleError(res, error, '在庫概況の取得に失敗しました');
+  }
+};
+
 /** 0在庫レコードのクリーンアップ / Cleanup zero-stock records */
 export const cleanupZeroStock = async (_req: Request, res: Response): Promise<void> => {
   try {
