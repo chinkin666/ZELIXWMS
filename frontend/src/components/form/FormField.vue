@@ -3,13 +3,14 @@
   <select
     v-if="column.searchOptions && column.searchOptions.length > 0"
     class="o-input"
+    :key="`${dataKey}-${column.dependsOn ? getNestedValue(formData, column.dependsOn) : ''}`"
     :value="currentValue"
     :disabled="isDisabled"
     @change="(e: Event) => emit('update', dataKey, (e.target as HTMLSelectElement).value)"
   >
     <option value="">{{ `${column.title}を選択` }}</option>
     <option
-      v-for="option in column.searchOptions"
+      v-for="option in filteredOptions"
       :key="String(option.value)"
       :value="option.value"
     >{{ option.label }}</option>
@@ -126,6 +127,25 @@ const emit = defineEmits<{
 
 const dataKey = computed(() => (props.column.dataKey || props.column.key) as string)
 const currentValue = computed(() => getNestedValue(props.formData, dataKey.value))
+
+// 佐川急便用 送り状種類 / 佐川急便用送り状種類
+const SAGAWA_INVOICE_OPTIONS = [
+  { label: '元払い', value: '0' },
+  { label: '着払い', value: '1' },
+  { label: 'e-コレクト（代引き）', value: '2' },
+]
+
+// 依存フィールドに基づいてオプションをフィルタリング / 依赖字段过滤选项
+const filteredOptions = computed(() => {
+  const col = props.column
+  if (dataKey.value === 'invoiceType' && col.dependsOn === 'carrierId') {
+    const carrierId = String(getNestedValue(props.formData, 'carrierId') || '')
+    if (carrierId === '__builtin_sagawa__' || carrierId.includes('sagawa')) {
+      return SAGAWA_INVOICE_OPTIONS
+    }
+  }
+  return col.searchOptions || []
+})
 
 /** Default text input handler — strips characters not matching column.pattern */
 const onTextInput = (e: Event) => {
