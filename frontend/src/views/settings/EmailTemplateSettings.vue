@@ -195,12 +195,17 @@ const tableColumns: TableColumn[] = [
   {
     key: 'actions',
     title: t('wms.settings.actions'),
-    width: 220,
+    width: 200,
     cellRenderer: ({ rowData }: { rowData: EmailTemplate }) =>
-      h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => handlePreview(rowData) }, () => t('wms.settings.email.preview', 'プレビュー')),
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => t('wms.common.edit')),
-        h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => t('wms.common.delete')),
+      h('div', { style: 'display:flex;gap:6px;' }, [
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => handlePreview(rowData) }, () => 'プレビュー'),
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h('button', {
+          class: 'delete-icon-btn',
+          onClick: () => confirmDelete(rowData),
+          title: '削除',
+          innerHTML: '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H5.5l1-1h3l1 1H14a1 1 0 0 1 1 1v1z"/></svg>',
+        }),
       ]),
   },
 ]
@@ -384,7 +389,7 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
   <div class="email-template-settings">
     <ControlPanel :title="t('wms.settings.email.title', '出荷メール設定')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">{{ t('wms.settings.email.addTemplate', 'テンプレートを追加') }}</OButton>
+        <OButton variant="primary" @click="openCreate">テンプレートを作成</OButton>
       </template>
     </ControlPanel>
 
@@ -400,11 +405,11 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
       <Table
         :columns="tableColumns"
         :data="templates"
-        :height="520"
+        :height="560"
         row-key="_id"
         pagination-enabled
         pagination-mode="client"
-        :page-size="10"
+        :page-size="20"
         :page-sizes="[10, 20, 50]"
         :global-search-text="globalSearchText"
       />
@@ -544,229 +549,69 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
   gap: 16px;
   padding: 0 20px 20px;
 }
+:deep(.o-control-panel) { margin-left: -20px; margin-right: -20px; }
 
-:deep(.o-control-panel) {
-  margin-left: -20px;
-  margin-right: -20px;
-}
-
-.loading-state,
-.empty-state {
-  padding: 2rem;
-  text-align: center;
-  color: var(--o-gray-500);
-}
-
-.o-list-view {
-  padding: 0 1rem 1rem;
-}
-
-/* .o-list-table base styles are defined globally in style.css */
-
-.subject-cell {
-  max-width: 250px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.actions-cell {
-  white-space: nowrap;
-  display: flex;
-  gap: 0.25rem;
-}
-
-/* Badge */
-.o-badge {
-  display: inline-block;
-  padding: 0.15em 0.5em;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 3px;
-}
-.o-badge-primary {
-  background: var(--o-brand-primary, #714b67);
-  color: #fff;
-}
-.o-badge-success { background: #f0f9eb; color: #67c23a; }
-.o-badge-info { background: #f4f4f5; color: #909399; }
-
-.search-section {
-  margin-bottom: 12px;
-}
-.table-section {
-  width: 100%;
-}
+.table-section { width: 100%; }
 
 .subject-cell-text {
-  display: block;
-  max-width: 250px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: block; max-width: 250px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-:deep(.action-cell) {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 4px;
+.delete-icon-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border: none; background: none;
+  color: var(--o-gray-400); cursor: pointer; transition: color 0.15s;
 }
-
-/* Toggle */
-.o-toggle {
-  position: relative;
-  display: inline-block;
-  width: 36px;
-  height: 20px;
-}
-.o-toggle input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-.o-toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--o-gray-300, #ccc);
-  border-radius: 20px;
-  transition: 0.2s;
-}
-.o-toggle-slider::before {
-  content: '';
-  position: absolute;
-  height: 14px;
-  width: 14px;
-  left: 3px;
-  bottom: 3px;
-  background: #fff;
-  border-radius: 50%;
-  transition: 0.2s;
-}
-.o-toggle input:checked + .o-toggle-slider {
-  background: var(--o-brand-primary, #714b67);
-}
-.o-toggle input:checked + .o-toggle-slider::before {
-  transform: translateX(16px);
-}
+.delete-icon-btn:hover { color: var(--o-danger, #C0392B); }
 
 /* Form */
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-group { display: flex; flex-direction: column; gap: 0.25rem; }
+.form-group.full-width { grid-column: 1 / -1; }
+.form-group.checkbox-group { flex-direction: row; align-items: center; }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.form-group.full-width {
-  grid-column: 1 / -1;
-}
-
-.form-group.checkbox-group {
-  flex-direction: row;
-  align-items: center;
-}
-
-.form-label {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--o-gray-700, #495057);
-}
-
-.required {
-  color: var(--o-danger, #dc3545);
-}
-
+.form-label { font-size: 13px; font-weight: 600; color: var(--o-gray-700); }
 .form-input {
-  padding: 0.375rem 0.5rem;
+  padding: 6px 8px;
   border: 1px solid var(--o-border-color, #dee2e6);
-  border-radius: var(--o-border-radius, 4px);
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  color: var(--o-gray-800, #212529);
-  background: #fff;
+  font-size: 13px; line-height: 1.5;
+  color: var(--o-gray-800);
+  background: var(--o-view-background, #fff);
 }
-
 .form-input:focus {
   outline: none;
-  border-color: var(--o-brand-primary, #714b67);
-  box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.15);
+  border-color: var(--o-brand-primary, #D97756);
+  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.15);
 }
+.form-textarea { resize: vertical; font-family: monospace; line-height: 1.6; }
+.form-textarea-sm { resize: vertical; }
 
-.form-textarea {
-  resize: vertical;
-  font-family: monospace;
-  line-height: 1.6;
-}
+.o-checkbox-label { display: flex; align-items: center; gap: 0.5rem; font-size: 13px; cursor: pointer; }
 
-.form-textarea-sm {
-  resize: vertical;
-}
-
-.o-checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8125rem;
-  cursor: pointer;
-}
-
-/* Body section with placeholders sidebar */
-.body-layout {
-  display: flex;
-  gap: 1rem;
-}
-
-.body-editor {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.placeholder-list {
-  width: 220px;
-  flex-shrink: 0;
-}
-
-.placeholder-items {
-  list-style: none;
-  padding: 0;
-  margin: 0.25rem 0 0;
-}
-
-.placeholder-item {
-  padding: 0.25rem 0;
-  font-size: 0.8rem;
-}
-
+/* Body + placeholder sidebar */
+.body-layout { display: flex; gap: 1rem; }
+.body-editor { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; }
+.placeholder-list { width: 220px; flex-shrink: 0; }
+.placeholder-items { list-style: none; padding: 0; margin: 0.25rem 0 0; }
+.placeholder-item { padding: 0.25rem 0; font-size: 12px; }
 .placeholder-item code {
   background: var(--o-gray-100, #f1f3f5);
-  padding: 0.125rem 0.375rem;
-  border-radius: 3px;
-  font-size: 0.75rem;
-  color: var(--o-brand-primary, #714b67);
+  padding: 2px 6px;
+  font-size: 11px;
+  color: var(--o-brand-primary, #D97756);
+  cursor: pointer;
   user-select: all;
 }
+.placeholder-item code:hover { background: var(--o-brand-lighter, #FAF0EA); }
 
 /* Preview */
 .preview-content {
   padding: 0.5rem;
-  border: 1px solid var(--o-border-color, #dee2e6);
-  border-radius: var(--o-border-radius, 4px);
-  background: #fff;
-  min-height: 200px;
-  max-height: 60vh;
-  overflow-y: auto;
+  border: 1px solid var(--o-border-color);
+  background: var(--o-view-background, #fff);
+  min-height: 200px; max-height: 60vh; overflow-y: auto;
 }
+
+.loading-state { padding: 2rem; text-align: center; color: var(--o-gray-500); }
 </style>
