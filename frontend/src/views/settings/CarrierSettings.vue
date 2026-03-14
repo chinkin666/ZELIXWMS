@@ -186,20 +186,56 @@ import type { PrintTemplate } from '@/types/printTemplate'
 const { t } = useI18n()
 const { show: showToast } = useToast()
 
-/** 固定の送り状種類（11種） */
-const INVOICE_TYPES = [
-  { invoiceType: '0', name: '発払い' },
-  { invoiceType: '1', name: 'EAZY' },
-  { invoiceType: '2', name: 'コレクト' },
-  { invoiceType: '3', name: 'クロネコゆうメール（DM便）' },
-  { invoiceType: '4', name: 'タイム' },
-  { invoiceType: '5', name: '着払い' },
-  { invoiceType: '6', name: '発払い複数口' },
-  { invoiceType: '7', name: 'クロネコゆうパケット' },
-  { invoiceType: '8', name: '宅急便コンパクト' },
-  { invoiceType: '9', name: 'コンパクトコレクト' },
-  { invoiceType: 'A', name: 'ネコポス' },
-] as const
+/** 配送業者別 送り状種類 / 配送業者別送り状種類 */
+const CARRIER_INVOICE_TYPES: Record<string, ReadonlyArray<{ invoiceType: string; name: string }>> = {
+  // ヤマト運輸 B2 Cloud
+  yamato_b2: [
+    { invoiceType: '0', name: '発払い' },
+    { invoiceType: '1', name: 'EAZY' },
+    { invoiceType: '2', name: 'コレクト' },
+    { invoiceType: '3', name: 'クロネコゆうメール（DM便）' },
+    { invoiceType: '4', name: 'タイム' },
+    { invoiceType: '5', name: '着払い' },
+    { invoiceType: '6', name: '発払い複数口' },
+    { invoiceType: '7', name: 'クロネコゆうパケット' },
+    { invoiceType: '8', name: '宅急便コンパクト' },
+    { invoiceType: '9', name: 'コンパクトコレクト' },
+    { invoiceType: 'A', name: 'ネコポス' },
+  ],
+  // 佐川急便 e飛伝
+  sagawa: [
+    { invoiceType: '0', name: '元払い' },
+    { invoiceType: '1', name: '着払い' },
+    { invoiceType: '2', name: 'e-コレクト（代引き）' },
+  ],
+  // 日本郵便 ゆうパック（将来用）
+  japanpost: [
+    { invoiceType: '0', name: 'ゆうパック' },
+    { invoiceType: '1', name: 'ゆうパケット' },
+    { invoiceType: '2', name: 'ゆうメール' },
+  ],
+}
+
+/**
+ * 配送業者コードから送り状種類を取得 / 配送業者コードから送り状種類を取得
+ */
+function getInvoiceTypesForCarrier(carrier: Carrier): ReadonlyArray<{ invoiceType: string; name: string }> {
+  const code = carrier.code || ''
+  // 完全一致 / 完全一致
+  if (CARRIER_INVOICE_TYPES[code]) return CARRIER_INVOICE_TYPES[code]
+  // 部分一致（sagawa_xxx → sagawa）/ 部分一致
+  for (const key of Object.keys(CARRIER_INVOICE_TYPES)) {
+    if (code.includes(key)) return CARRIER_INVOICE_TYPES[key]
+  }
+  // automationType で判定 / automationType で判定
+  if (carrier.automationType) {
+    if (carrier.automationType.includes('yamato')) return CARRIER_INVOICE_TYPES.yamato_b2
+    if (carrier.automationType.includes('sagawa')) return CARRIER_INVOICE_TYPES.sagawa
+    if (carrier.automationType.includes('japanpost')) return CARRIER_INVOICE_TYPES.japanpost
+  }
+  // フォールバック: ヤマト（最も利用が多い）/ フォールバック
+  return CARRIER_INVOICE_TYPES.yamato_b2
+}
 
 type EditableColumn = CarrierColumnConfig & { __key?: string }
 type EditableCarrier = Omit<Carrier, 'formatDefinition'> & { formatDefinition: { columns: EditableColumn[] } }
@@ -524,7 +560,8 @@ const openTemplateSettings = async (row: Carrier) => {
   }
 
   const existingServices = row.services || []
-  templateMappingList.value = INVOICE_TYPES.map((type) => {
+  const invoiceTypes = getInvoiceTypesForCarrier(row)
+  templateMappingList.value = invoiceTypes.map((type) => {
     const existing = existingServices.find((s) => s.invoiceType === type.invoiceType)
     return {
       invoiceType: type.invoiceType,
