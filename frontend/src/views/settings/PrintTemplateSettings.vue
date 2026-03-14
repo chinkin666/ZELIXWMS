@@ -191,12 +191,7 @@ const tableColumns = computed((): TableColumn[] => [
         h(OButton, { variant: 'primary', size: 'sm', onClick: () => openVisualEditor(rowData) }, () => 'レイアウト編集'),
         h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openEdit(rowData) }, () => 'JSON編集'),
         h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicatePrintTemplate(rowData) }, () => '複製'),
-        h('button', {
-          class: 'delete-icon-btn',
-          onClick: () => removeTemplate(rowData),
-          title: '削除',
-          innerHTML: '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H5.5l1-1h3l1 1H14a1 1 0 0 1 1 1v1z"/></svg>',
-        }),
+        h(OButton, { variant: 'danger', size: 'sm', onClick: () => removeTemplate(rowData) }, () => '削除'),
       ]),
   },
 ])
@@ -227,10 +222,4 @@ onMounted(() => reload())
 .field-hint { font-size: 11px; color: var(--o-gray-400); margin-top: 4px; }
 .code-textarea { resize: vertical; font-family: var(--o-font-family-mono); font-size: 12px; line-height: 1.5; }
 
-.delete-icon-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; border: none; background: none;
-  color: var(--o-gray-400); cursor: pointer; transition: color 0.15s;
-}
-.delete-icon-btn:hover { color: var(--o-danger, #C0392B); }
 </style>
