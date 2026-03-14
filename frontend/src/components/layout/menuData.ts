@@ -30,7 +30,7 @@ export const settingsGroups: SubMenuGroup[] = [
       { label: '配送業者設定', to: '/settings/carrier' },
       { label: '配送業者自動化', to: '/settings/carrier-automation' },
       { label: '佐川急便設定', to: '/settings/sagawa' },
-      { label: '検品グループ', to: '/settings/order-groups' },
+      { label: '出荷グループ', to: '/settings/order-groups' },
       { label: '自動処理', to: '/settings/auto-processing' },
       { label: '出荷メール設定', to: '/settings/email-templates' },
     ],

@@ -76,7 +76,7 @@ const loadGroups = async () => {
     emits('groups-loaded', groups.value)
   } catch (e) {
     console.error(e)
-    console.warn('検品グループの取得に失敗しました')
+    console.warn('出荷グループの取得に失敗しました')
   }
 }
 

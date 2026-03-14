@@ -4,30 +4,30 @@ import { getApiBaseUrl } from '@/api/base'
 const API_BASE_URL = getApiBaseUrl()
 
 /**
- * 全検品グループ取得（優先度順） / 获取所有检品グループ（按优先级排序）
+ * 全出荷グループ取得（優先度順） / 获取所有检品グループ（按优先级排序）
  */
 export async function fetchOrderGroups(): Promise<OrderGroup[]> {
   const response = await fetch(`${API_BASE_URL}/order-groups`)
   if (!response.ok) {
-    throw new Error(`検品グループの取得に失敗しました: ${response.statusText}`)
+    throw new Error(`出荷グループの取得に失敗しました: ${response.statusText}`)
   }
   return response.json()
 }
 
 /**
- * 単一検品グループ取得 / 获取单个检品グループ
+ * 単一出荷グループ取得 / 获取单个检品グループ
  */
 export async function fetchOrderGroup(id: string): Promise<OrderGroup> {
   const response = await fetch(`${API_BASE_URL}/order-groups/${id}`)
   if (!response.ok) {
     const json = await response.json().catch(() => ({}))
-    throw new Error(json?.message || '検品グループの取得に失敗しました')
+    throw new Error(json?.message || '出荷グループの取得に失敗しました')
   }
   return response.json()
 }
 
 /**
- * 検品グループ作成 / 创建检品グループ
+ * 出荷グループ作成 / 创建检品グループ
  */
 export async function createOrderGroup(data: OrderGroupFormData): Promise<OrderGroup> {
   const response = await fetch(`${API_BASE_URL}/order-groups`, {
@@ -37,13 +37,13 @@ export async function createOrderGroup(data: OrderGroupFormData): Promise<OrderG
   })
   if (!response.ok) {
     const json = await response.json().catch(() => ({}))
-    throw new Error(json?.message || '検品グループの作成に失敗しました')
+    throw new Error(json?.message || '出荷グループの作成に失敗しました')
   }
   return response.json()
 }
 
 /**
- * 検品グループ更新 / 更新检品グループ
+ * 出荷グループ更新 / 更新检品グループ
  */
 export async function updateOrderGroup(id: string, data: Partial<OrderGroupFormData>): Promise<OrderGroup> {
   const response = await fetch(`${API_BASE_URL}/order-groups/${id}`, {
@@ -53,13 +53,13 @@ export async function updateOrderGroup(id: string, data: Partial<OrderGroupFormD
   })
   if (!response.ok) {
     const json = await response.json().catch(() => ({}))
-    throw new Error(json?.message || '検品グループの更新に失敗しました')
+    throw new Error(json?.message || '出荷グループの更新に失敗しました')
   }
   return response.json()
 }
 
 /**
- * 検品グループ削除 / 删除检品グループ
+ * 出荷グループ削除 / 删除检品グループ
  */
 export async function deleteOrderGroup(id: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/order-groups/${id}`, {
@@ -67,7 +67,7 @@ export async function deleteOrderGroup(id: string): Promise<void> {
   })
   if (!response.ok) {
     const json = await response.json().catch(() => ({}))
-    throw new Error(json?.message || '検品グループの削除に失敗しました')
+    throw new Error(json?.message || '出荷グループの削除に失敗しました')
   }
 }
 
@@ -89,7 +89,7 @@ export async function fetchOrderGroupCounts(): Promise<OrderGroupCounts> {
 }
 
 /**
- * 検品グループの優先順位更新 / 更新检品グループの优先级顺序
+ * 出荷グループの優先順位更新 / 更新检品グループの优先级顺序
  */
 export async function reorderOrderGroups(orderedIds: string[]): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/order-groups/reorder`, {

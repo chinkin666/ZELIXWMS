@@ -110,7 +110,7 @@
         <router-link to="/settings/orderSourceCompany" class="dropdown-item">ご依頼主設定</router-link>
         <router-link to="/settings/carrier" class="dropdown-item">配送業者設定</router-link>
         <router-link to="/settings/carrier-automation" class="dropdown-item">配送業者自動化設定</router-link>
-        <router-link to="/settings/order-groups" class="dropdown-item">検品グループ設定</router-link>
+        <router-link to="/settings/order-groups" class="dropdown-item">出荷グループ設定</router-link>
         <router-link to="/settings/auto-processing" class="dropdown-item">自動処理設定</router-link>
         <router-link to="/settings/mapping-patterns" class="dropdown-item">ファイルレイアウト</router-link>
         <router-link to="/settings/print-templates" class="dropdown-item">印刷テンプレート</router-link>

@@ -100,7 +100,7 @@ const getMaxOrderGroupSequenceForDate = async (dateStr: string): Promise<number>
 };
 
 /**
- * 生成唯一的検品グループID
+ * 生成唯一的出荷グループID
  * 格式: PK-yyyymmdd-00001 ~ PK-yyyymmdd-99999（超过五位数自动扩展位数）
  *
  * @param date 用于生成ID的日期（可选，默认为当前日期）
@@ -122,7 +122,7 @@ export const generateOrderGroupId = async (date?: Date): Promise<string> => {
     if (!exists) return candidate;
   }
 
-  throw new Error('検品グループIDの生成に失敗しました（リトライ回数上限に達しました）');
+  throw new Error('出荷グループIDの生成に失敗しました（リトライ回数上限に達しました）');
 };
 
 /**

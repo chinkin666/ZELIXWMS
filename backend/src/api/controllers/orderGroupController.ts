@@ -17,7 +17,7 @@ export const listOrderGroups = async (req: Request, res: Response): Promise<void
     res.json(groups);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    res.status(500).json({ message: '検品グループの取得に失敗しました', error: message });
+    res.status(500).json({ message: '出荷グループの取得に失敗しました', error: message });
   }
 };
 
@@ -79,13 +79,13 @@ export const getOrderGroup = async (req: Request, res: Response): Promise<void> 
   try {
     const group = await OrderGroup.findById(req.params.id).lean();
     if (!group) {
-      res.status(404).json({ message: '検品グループが見つかりません' });
+      res.status(404).json({ message: '出荷グループが見つかりません' });
       return;
     }
     res.json(group);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    res.status(500).json({ message: '検品グループの取得に失敗しました', error: message });
+    res.status(500).json({ message: '出荷グループの取得に失敗しました', error: message });
   }
 };
 
@@ -123,7 +123,7 @@ export const createOrderGroup = async (req: Request, res: Response): Promise<voi
     res.status(201).json(group.toObject());
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    res.status(500).json({ message: '検品グループの作成に失敗しました', error: message });
+    res.status(500).json({ message: '出荷グループの作成に失敗しました', error: message });
   }
 };
 
@@ -172,14 +172,14 @@ export const updateOrderGroup = async (req: Request, res: Response): Promise<voi
     }).lean();
 
     if (!updated) {
-      res.status(404).json({ message: '検品グループが見つかりません' });
+      res.status(404).json({ message: '出荷グループが見つかりません' });
       return;
     }
 
     res.json(updated);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    res.status(500).json({ message: '検品グループの更新に失敗しました', error: message });
+    res.status(500).json({ message: '出荷グループの更新に失敗しました', error: message });
   }
 };
 
@@ -191,7 +191,7 @@ export const deleteOrderGroup = async (req: Request, res: Response): Promise<voi
   try {
     const deleted = await OrderGroup.findByIdAndDelete(req.params.id).lean();
     if (!deleted) {
-      res.status(404).json({ message: '検品グループが見つかりません' });
+      res.status(404).json({ message: '出荷グループが見つかりません' });
       return;
     }
 
@@ -201,10 +201,10 @@ export const deleteOrderGroup = async (req: Request, res: Response): Promise<voi
       { $unset: { orderGroupId: '' } },
     );
 
-    res.json({ message: '検品グループを削除しました', id: deleted._id });
+    res.json({ message: '出荷グループを削除しました', id: deleted._id });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    res.status(500).json({ message: '検品グループの削除に失敗しました', error: message });
+    res.status(500).json({ message: '出荷グループの削除に失敗しました', error: message });
   }
 };
 

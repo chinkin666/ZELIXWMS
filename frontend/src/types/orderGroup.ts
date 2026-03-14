@@ -4,7 +4,7 @@
 export const UNCATEGORIZED_VALUE = '__uncategorized__'
 
 /**
- * 検品グループ
+ * 出荷グループ
  */
 export interface OrderGroup {
   _id: string
@@ -18,7 +18,7 @@ export interface OrderGroup {
 }
 
 /**
- * 検品グループの作成/更新フォームデータ / 创建/更新検品グループ的表单数据
+ * 出荷グループの作成/更新フォームデータ / 创建/更新出荷グループ的表单数据
  */
 export interface OrderGroupFormData {
   name: string

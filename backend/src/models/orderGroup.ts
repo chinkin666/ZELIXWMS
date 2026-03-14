@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 /**
- * 検品グループインターフェース
+ * 出荷グループインターフェース
  */
 export interface IOrderGroup {
   _id: mongoose.Types.ObjectId;

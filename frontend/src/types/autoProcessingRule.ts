@@ -72,7 +72,7 @@ export type ActionType = 'addProduct' | 'setOrderGroup'
 
 export const ACTION_TYPE_LABELS: Record<ActionType, string> = {
   addProduct: '商品を追加',
-  setOrderGroup: '検品グループを変更',
+  setOrderGroup: '出荷グループを変更',
 }
 
 export interface AutoProcessingCondition {

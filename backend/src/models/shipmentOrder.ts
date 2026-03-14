@@ -205,7 +205,7 @@ export interface IShipmentOrder {
   }>;
 
   /**
-   * 検品グループID（OrderGroup.orderGroupId を参照）
+   * 出荷グループID（OrderGroup.orderGroupId を参照）
    */
   orderGroupId?: string;
 

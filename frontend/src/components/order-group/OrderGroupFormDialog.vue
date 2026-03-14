@@ -1,7 +1,7 @@
 <template>
   <ODialog
     :open="modelValue"
-    :title="isEditing ? '検品グループを編集' : '検品グループを追加'"
+    :title="isEditing ? '出荷グループを編集' : '出荷グループを追加'"
     @close="$emit('update:modelValue', false)"
     width="500px"
   >

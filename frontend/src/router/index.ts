@@ -434,7 +434,7 @@ const router = createRouter({
               path: 'order-groups',
               name: 'OrderGroupSettings',
               component: () => import('@/views/settings/OrderGroupSettings.vue'),
-              meta: { title: '検品グループ設定', requiresAuth: true },
+              meta: { title: '出荷グループ設定', requiresAuth: true },
             },
             {
               path: 'auto-processing',

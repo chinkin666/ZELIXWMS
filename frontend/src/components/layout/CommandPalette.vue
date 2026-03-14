@@ -42,7 +42,7 @@ const navItems = [
   { label: '基本設定', sublabel: '出荷設定', path: '/settings/basic', keywords: 'settings basic 基本 設定' },
   { label: 'ご依頼主設定', sublabel: '', path: '/settings/orderSourceCompany', keywords: 'sender 依頼主 发货人' },
   { label: '配送業者設定', sublabel: '', path: '/settings/carrier', keywords: 'carrier 配送 業者 运营商' },
-  { label: '検品グループ', sublabel: '', path: '/settings/order-groups', keywords: 'group 検品 グループ' },
+  { label: '出荷グループ', sublabel: '', path: '/settings/order-groups', keywords: 'group 検品 グループ' },
   { label: '自動処理', sublabel: '', path: '/settings/auto-processing', keywords: 'auto processing 自動 処理' },
   { label: 'ファイルレイアウト', sublabel: 'マッピング', path: '/settings/mapping-patterns', keywords: 'mapping layout ファイル マッピング' },
   { label: '印刷テンプレート', sublabel: '', path: '/settings/print-templates', keywords: 'print template 印刷 テンプレート' },

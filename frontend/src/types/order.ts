@@ -174,7 +174,7 @@ export interface OrderDocument {
     content: string   // 内容（純文本）
   }>
   /**
-   * 検品グループID（OrderGroup.orderGroupId を参照）
+   * 出荷グループID（OrderGroup.orderGroupId を参照）
    */
   orderGroupId?: string
   createdAt?: string
