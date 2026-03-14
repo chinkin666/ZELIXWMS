@@ -160,7 +160,7 @@
       </div>
     </div>
 
-    <!-- 底部操作按钮 -->
+    <!-- 下部アクションボタン / 底部操作按钮 -->
     <div class="search-actions" v-show="!isCollapsed">
       <OButton variant="primary" size="sm" @click="handleSearch">検索</OButton>
       <OButton variant="secondary" size="sm" @click="handleClear">入力項目をクリア</OButton>

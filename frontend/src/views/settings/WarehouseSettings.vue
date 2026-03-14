@@ -7,78 +7,29 @@
       </template>
     </ControlPanel>
 
-    <!-- Search bar -->
-    <div class="search-section">
-      <input
-        v-model="searchText"
-        type="text"
-        class="o-input"
-        style="flex: 1; max-width: 400px;"
-        placeholder="倉庫コード・名称で検索..."
-        @keydown.enter="handleSearch"
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="warehouseSettingsSearch"
+      @search="handleSearch"
+    />
+
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="warehouses"
+        :height="520"
+        row-key="_id"
+        pagination-enabled
+        pagination-mode="server"
+        :page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        :current-page="currentPage"
+        :global-search-text="globalSearchText"
+        @page-change="handlePageChangeEvent"
       />
-      <OButton variant="primary" @click="handleSearch">検索</OButton>
-      <label class="search-section__filter">
-        <input v-model="showActiveOnly" type="checkbox" @change="handleSearch" />
-        有効のみ
-      </label>
-    </div>
-
-    <!-- Table -->
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width: 130px">倉庫コード</th>
-            <th class="o-table-th" style="width: 200px">倉庫名</th>
-            <th class="o-table-th" style="width: 140px">電話番号</th>
-            <th class="o-table-th" style="width: 180px">対応温度帯</th>
-            <th class="o-table-th" style="width: 120px">キャパシティ</th>
-            <th class="o-table-th" style="width: 80px">有効</th>
-            <th class="o-table-th" style="width: 140px">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td class="o-table-td o-table-empty" colspan="7">読み込み中...</td>
-          </tr>
-          <tr v-else-if="warehouses.length === 0">
-            <td class="o-table-td o-table-empty" colspan="7">データがありません</td>
-          </tr>
-          <tr v-for="w in warehouses" :key="w._id" class="o-table-row">
-            <td class="o-table-td">{{ w.code }}</td>
-            <td class="o-table-td">{{ w.name }}</td>
-            <td class="o-table-td">{{ w.phone || '-' }}</td>
-            <td class="o-table-td">{{ formatCoolTypes(w.coolTypes) }}</td>
-            <td class="o-table-td">{{ w.capacity ?? '-' }}</td>
-            <td class="o-table-td" style="text-align: center">
-              <span :class="w.isActive ? 'o-status-tag o-status-tag--confirmed' : 'o-status-tag o-status-tag--cancelled'">
-                {{ w.isActive ? '有効' : '無効' }}
-              </span>
-            </td>
-            <td class="o-table-td o-table-td--actions">
-              <OButton variant="primary" size="sm" @click="openEdit(w)">編集</OButton>
-              <OButton variant="icon-danger" size="sm" @click="confirmDelete(w)">削除</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagination -->
-    <div class="o-table-pagination">
-      <span class="o-table-pagination__info">全{{ total }}件中 {{ paginationStart }}-{{ paginationEnd }}件</span>
-      <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-        </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">&lsaquo;</OButton>
-        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">&rsaquo;</OButton>
-      </div>
     </div>
 
     <!-- Create/Edit Dialog -->
@@ -150,11 +101,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchWarehouses,
   createWarehouse,
@@ -165,6 +120,7 @@ import {
 } from '@/api/warehouse'
 
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const coolTypeLabels: Record<string, string> = {
   '0': '常温',
@@ -183,7 +139,8 @@ const total = ref(0)
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(20)
-const searchText = ref('')
+const globalSearchText = ref('')
+const currentSearchText = ref('')
 const showActiveOnly = ref(true)
 
 // Dialog
@@ -210,17 +167,133 @@ const emptyForm = () => ({
 
 const form = ref(emptyForm())
 
-// Computed
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
-const paginationStart = computed(() => (total.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1))
-const paginationEnd = computed(() => Math.min(currentPage.value * pageSize.value, total.value))
+// ---------------------------------------------------------------------------
+// Search & Table columns
+// ---------------------------------------------------------------------------
+const baseColumns: TableColumn[] = [
+  {
+    key: 'code',
+    dataKey: 'code',
+    title: '倉庫コード',
+    width: 130,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'name',
+    dataKey: 'name',
+    title: '倉庫名',
+    width: 200,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'phone',
+    dataKey: 'phone',
+    title: '電話番号',
+    width: 140,
+    fieldType: 'string',
+  },
+  {
+    key: 'coolTypes',
+    dataKey: 'coolTypes',
+    title: '対応温度帯',
+    width: 180,
+    fieldType: 'string',
+  },
+  {
+    key: 'capacity',
+    dataKey: 'capacity',
+    title: 'キャパシティ',
+    width: 120,
+    fieldType: 'number',
+  },
+  {
+    key: 'isActive',
+    dataKey: 'isActive',
+    title: '有効',
+    width: 80,
+    fieldType: 'boolean',
+    searchable: true,
+    searchType: 'boolean',
+  },
+]
+
+const searchColumns: TableColumn[] = baseColumns.filter((c) => c.searchable)
+
+const tableColumns: TableColumn[] = [
+  ...baseColumns.map((col) => {
+    if (col.key === 'isActive') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Warehouse }) =>
+          h(
+            'span',
+            { class: rowData.isActive ? 'o-status-tag o-status-tag--confirmed' : 'o-status-tag o-status-tag--cancelled' },
+            rowData.isActive ? '有効' : '無効',
+          ),
+      }
+    }
+    if (col.key === 'coolTypes') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Warehouse }) => formatCoolTypes(rowData.coolTypes),
+      }
+    }
+    if (col.key === 'phone' || col.key === 'capacity') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Warehouse }) => (rowData as any)[col.dataKey || col.key] ?? '-',
+      }
+    }
+    return col
+  }),
+  {
+    key: 'actions',
+    title: t('wms.common.actions', '操作'),
+    width: 140,
+    cellRenderer: ({ rowData }: { rowData: Warehouse }) =>
+      h('div', { class: 'action-cell' }, [
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+      ]),
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Search handler
+// ---------------------------------------------------------------------------
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+    delete payload.__global
+  } else {
+    globalSearchText.value = ''
+  }
+
+  const parts: string[] = []
+  if (payload.code?.value) parts.push(String(payload.code.value).trim())
+  if (payload.name?.value) parts.push(String(payload.name.value).trim())
+
+  if (typeof payload.isActive?.value === 'boolean') {
+    showActiveOnly.value = payload.isActive.value
+  } else {
+    showActiveOnly.value = true
+  }
+
+  currentSearchText.value = parts.join(' ')
+  currentPage.value = 1
+  loadList()
+}
 
 // Load
 const loadList = async () => {
   loading.value = true
   try {
     const result = await fetchWarehouses({
-      search: searchText.value || undefined,
+      search: currentSearchText.value || undefined,
       page: currentPage.value,
       limit: pageSize.value,
       isActive: showActiveOnly.value ? 'true' : undefined,
@@ -234,18 +307,12 @@ const loadList = async () => {
   }
 }
 
-const handleSearch = () => {
-  currentPage.value = 1
-  loadList()
-}
-
-const handlePageSizeChange = () => {
-  currentPage.value = 1
-  loadList()
-}
-
-const goToPage = (page: number) => {
-  currentPage.value = page
+// ---------------------------------------------------------------------------
+// Pagination
+// ---------------------------------------------------------------------------
+const handlePageChangeEvent = (payload: { page: number; pageSize: number }) => {
+  currentPage.value = payload.page
+  pageSize.value = payload.pageSize
   loadList()
 }
 
@@ -351,8 +418,6 @@ onMounted(() => {
 </script>
 
 <style>
-@import '@/styles/order-table.css';
-
 .o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 </style>
 
@@ -369,20 +434,14 @@ onMounted(() => {
   margin-right: -20px;
 }
 
-/* Search section */
-.search-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.table-section {
+  width: 100%;
 }
 
-.search-section__filter {
+:deep(.action-cell) {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
+  gap: 6px;
 }
 
 /* Form */

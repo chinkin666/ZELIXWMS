@@ -1,5 +1,5 @@
 /**
- * 映射配置 API 服务
+ * マッピング設定 APIサービス / 映射配置 API 服务
  */
 
 import { getApiBaseUrl } from '@/api/base'
@@ -46,7 +46,7 @@ export interface MappingConfig {
   _id: string
   schemaVersion?: number
   tenantId: string
-  configType: 'ec-company-to-order' | 'order-to-carrier' | 'order-to-sheet' | 'product' | string
+  configType: 'ec-company-to-order' | 'order-to-carrier' | 'order-to-sheet' | 'carrier-receipt-to-order' | 'product' | string
   name: string
   description?: string
   isDefault?: boolean
@@ -64,7 +64,7 @@ export interface MappingConfig {
 
 export interface CreateMappingConfigDto {
   schemaVersion?: number
-  configType: 'ec-company-to-order' | 'order-to-carrier' | 'order-to-sheet' | 'product' | string
+  configType: 'ec-company-to-order' | 'order-to-carrier' | 'order-to-sheet' | 'carrier-receipt-to-order' | 'product' | string
   name: string
   description?: string
   isDefault?: boolean
@@ -76,20 +76,20 @@ export interface CreateMappingConfigDto {
 
 export interface TransformPluginInfo {
   name: string
-  nameJa?: string // 日文名称
+  nameJa?: string // 日本語名 / 日文名称
   summary?: string
-  descriptionJa?: string // 日文描述
+  descriptionJa?: string // 日本語説明 / 日文描述
   inputKinds?: string[]
   outputKind?: string
   sideEffects?: 'none' | 'network'
-  paramsSchema?: any // JSON Schema
+  paramsSchema?: any // JSONスキーマ / JSON Schema
 }
 
 export interface CombinePluginInfo {
   name: string
-  nameJa?: string // 日文名称
+  nameJa?: string // 日本語名 / 日文名称
   summary?: string
-  paramsSchema?: any // JSON Schema
+  paramsSchema?: any // JSONスキーマ / JSON Schema
 }
 
 export interface TransformPluginsResponse {
@@ -100,7 +100,7 @@ export interface TransformPluginsResponse {
 const API_BASE_URL = getApiBaseUrl()
 
 /**
- * 获取所有映射配置
+ * すべてのマッピング設定を取得 / 获取所有映射配置
  */
 export async function getAllMappingConfigs(
   configType?: string,
@@ -138,7 +138,7 @@ export async function getAllMappingConfigs(
 }
 
 /**
- * 根据ID获取映射配置
+ * IDでマッピング設定を取得 / 根据ID获取映射配置
  */
 export async function getMappingConfigById(id: string): Promise<MappingConfig> {
   const response = await fetch(`${API_BASE_URL}/mapping-configs/${id}`)
@@ -149,7 +149,7 @@ export async function getMappingConfigById(id: string): Promise<MappingConfig> {
 }
 
 /**
- * 创建映射配置
+ * マッピング設定を作成 / 创建映射配置
  */
 export async function createMappingConfig(dto: CreateMappingConfigDto): Promise<MappingConfig> {
   const response = await fetch(`${API_BASE_URL}/mapping-configs`, {
@@ -166,7 +166,7 @@ export async function createMappingConfig(dto: CreateMappingConfigDto): Promise<
 }
 
 /**
- * 更新映射配置
+ * マッピング設定を更新 / 更新映射配置
  */
 export async function updateMappingConfig(
   id: string,
@@ -186,7 +186,7 @@ export async function updateMappingConfig(
 }
 
 /**
- * 删除映射配置
+ * マッピング設定削除 / 删除映射配置
  */
 export async function deleteMappingConfig(id: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/mapping-configs/${id}`, {
@@ -198,7 +198,7 @@ export async function deleteMappingConfig(id: string): Promise<void> {
 }
 
 /**
- * 获取 transform plugins 列表
+ * 変換プラグイン一覧を取得 / 获取 transform plugins 列表
  */
 export async function getTransformPlugins(): Promise<TransformPluginsResponse> {
   const response = await fetch(`${API_BASE_URL}/mapping-configs/transform-plugins`)

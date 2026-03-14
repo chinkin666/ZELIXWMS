@@ -2,8 +2,8 @@
   <div class="printer-list-tab">
     <template v-if="printers.length > 0">
       <div class="printer-count">
-        {{ printers.length }} 台のプリンターが見つかりました
-        <span v-if="lastUpdate" class="last-update">（最終更新: {{ lastUpdate }}）</span>
+        {{ printers.length }} {{ t('wms.printer.printersFound', '台のプリンターが見つかりました') }}
+        <span v-if="lastUpdate" class="last-update">{{ t('wms.printer.lastUpdateParen', '（最終更新:') }} {{ lastUpdate }}{{ t('wms.printer.closeParen', '）') }}</span>
       </div>
 
       <details
@@ -18,19 +18,19 @@
             v-if="printer.name === defaultPrinterOs"
             class="o-badge o-badge-primary"
             style="margin-left: 8px"
-          >OSデフォルト</span>
+          >{{ t('wms.printer.osDefault', 'OSデフォルト') }}</span>
           <span class="o-badge o-badge-info" style="margin-left: 8px">
-            {{ printer.paper_sizes.length }} 用紙サイズ
+            {{ printer.paper_sizes.length }} {{ t('wms.printer.paperSizes', '用紙サイズ') }}
           </span>
         </summary>
         <div class="printer-content">
           <table class="o-table">
             <thead>
               <tr>
-                <th>用紙名</th>
-                <th style="text-align: right">幅 (mm)</th>
-                <th style="text-align: right">高さ (mm)</th>
-                <th>サイズ</th>
+                <th>{{ t('wms.printer.paperName', '用紙名') }}</th>
+                <th style="text-align: right">{{ t('wms.printer.widthMm', '幅 (mm)') }}</th>
+                <th style="text-align: right">{{ t('wms.printer.heightMm', '高さ (mm)') }}</th>
+                <th>{{ t('wms.printer.size', 'サイズ') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -48,8 +48,8 @@
 
     <template v-else>
       <div class="o-empty-state">
-        <p>プリンター情報がありません</p>
-        <p class="o-empty-state__hint">「接続」タブでサービスに接続してプリンター情報を取得してください。</p>
+        <p>{{ t('wms.printer.noPrinters', 'プリンター情報がありません') }}</p>
+        <p class="o-empty-state__hint">{{ t('wms.printer.connectHint', '「接続」タブでサービスに接続してプリンター情報を取得してください。') }}</p>
       </div>
     </template>
   </div>
@@ -57,6 +57,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 import type { PrinterInfo } from '@/utils/print/printConfig'
 
 const props = defineProps<{
@@ -64,6 +65,8 @@ const props = defineProps<{
   defaultPrinterOs: string | null
   lastCacheUpdate: string | null
 }>()
+
+const { t } = useI18n()
 
 const expandedPrinters = ref<string[]>([])
 

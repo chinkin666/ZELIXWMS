@@ -772,7 +772,7 @@ function closeWizard() {
   border-color: var(--o-brand-primary, #714B67);
   background: var(--o-brand-primary, #714B67);
   color: #fff;
-  box-shadow: 0 0 0 4px rgba(113, 75, 103, 0.15);
+  box-shadow: 0 0 0 4px rgba(217, 119, 86, 0.15);
 }
 .o-step.completed .o-step-circle {
   border-color: var(--o-success, #28a745);
@@ -823,7 +823,7 @@ function closeWizard() {
 }
 .o-upload-area.dragover {
   border-color: var(--o-brand-primary, #714B67);
-  background: rgba(113, 75, 103, 0.04);
+  background: rgba(217, 119, 86, 0.04);
 }
 .o-upload-icon {
   color: var(--o-gray-400, #ced4da);

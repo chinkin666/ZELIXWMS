@@ -1,16 +1,16 @@
 <template>
   <div class="auto-processing-settings">
-    <ControlPanel title="自動処理設定" :show-search="false">
+    <ControlPanel :title="t('wms.settings.autoProcessing', '自動処理設定')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">ルールを追加</OButton>
+        <OButton variant="primary" @click="openCreate">{{ t('wms.settings.addRule', 'ルールを追加') }}</OButton>
       </template>
     </ControlPanel>
 
     <div class="rules-list">
-      <div v-if="isLoading" class="loading-state">読み込み中...</div>
+      <div v-if="isLoading" class="loading-state">{{ t('wms.settings.loading', '読み込み中...') }}</div>
 
       <div v-else-if="rules.length === 0" class="empty-state">
-        <p>自動処理ルールがありません</p>
+        <p>{{ t('wms.settings.noAutoProcessingRules', '自動処理ルールがありません') }}</p>
       </div>
 
       <draggable
@@ -34,19 +34,19 @@
                   class="o-badge"
                   :class="rule.enabled ? 'o-badge-success' : 'o-badge-info'"
                 >
-                  {{ rule.enabled ? '有効' : '無効' }}
+                  {{ rule.enabled ? t('wms.settings.enabled', '有効') : t('wms.settings.disabled', '無効') }}
                 </span>
                 <span
                   class="o-badge"
                   :class="rule.triggerMode === 'auto' ? 'o-badge-primary' : 'o-badge-warning'"
                 >
-                  {{ rule.triggerMode === 'auto' ? '自動' : '手動' }}
+                  {{ rule.triggerMode === 'auto' ? t('wms.settings.auto', '自動') : t('wms.settings.manual', '手動') }}
                 </span>
                 <span
                   v-if="rule.allowRerun"
                   class="o-badge o-badge-info"
                 >
-                  再実行可
+                  {{ t('wms.settings.rerunnable', '再実行可') }}
                 </span>
               </div>
               <div class="rule-details">
@@ -58,7 +58,7 @@
                   {{ TRIGGER_EVENT_LABELS[ev as TriggerEvent] || ev }}
                 </span>
                 <span v-if="rule.triggerEvents.length === 0" class="no-events">
-                  トリガーなし
+                  {{ t('wms.settings.noTrigger', 'トリガーなし') }}
                 </span>
               </div>
               <div v-if="rule.memo" class="rule-memo">{{ rule.memo }}</div>
@@ -73,17 +73,17 @@
                 />
                 <span class="o-toggle-slider"></span>
               </label>
-              <OButton variant="primary" size="sm" @click="openEdit(rule)">編集</OButton>
+              <OButton variant="primary" size="sm" @click="openEdit(rule)">{{ t('wms.common.edit', '編集') }}</OButton>
               <OButton
                 variant="success"
                 size="sm"
                 @click="handleManualRun(rule)"
                 :disabled="runningRuleId === rule._id"
               >
-                {{ runningRuleId === rule._id ? '実行中...' : '手動で実行する' }}
+                {{ runningRuleId === rule._id ? t('wms.settings.running', '実行中...') : t('wms.settings.manualRun', '手動で実行する') }}
               </OButton>
-              <OButton variant="secondary" size="sm" @click="duplicateRule(rule)">複製</OButton>
-              <OButton variant="danger" size="sm" @click="confirmDelete(rule)">削除</OButton>
+              <OButton variant="secondary" size="sm" @click="duplicateRule(rule)">{{ t('wms.settings.duplicate', '複製') }}</OButton>
+              <OButton variant="danger" size="sm" @click="confirmDelete(rule)">{{ t('wms.common.delete', '削除') }}</OButton>
             </div>
           </div>
         </template>
@@ -102,6 +102,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import draggable from 'vuedraggable'
@@ -118,6 +119,7 @@ import { TRIGGER_EVENT_LABELS, type TriggerEvent } from '@/types/autoProcessingR
 import AutoProcessingRuleFormDialog from '@/components/auto-processing/AutoProcessingRuleFormDialog.vue'
 
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const rules = ref<AutoProcessingRule[]>([])
 const isLoading = ref(false)
@@ -131,7 +133,7 @@ const loadRules = async () => {
   try {
     rules.value = await fetchAutoProcessingRules()
   } catch (e: any) {
-    showToast(e.message || 'ルールの取得に失敗しました', 'danger')
+    showToast(e.message || t('wms.settings.fetchRulesFailed', 'ルールの取得に失敗しました'), 'danger')
   } finally {
     isLoading.value = false
   }
@@ -153,15 +155,15 @@ const handleSubmit = async (data: AutoProcessingRuleFormData) => {
   try {
     if (isEditing.value && editingRule.value) {
       await updateAutoProcessingRule(editingRule.value._id, data)
-      showToast('ルールを更新しました', 'success')
+      showToast(t('wms.settings.ruleUpdated', 'ルールを更新しました'), 'success')
     } else {
       await createAutoProcessingRule(data)
-      showToast('ルールを作成しました', 'success')
+      showToast(t('wms.settings.ruleCreated', 'ルールを作成しました'), 'success')
     }
     dialogVisible.value = false
     await loadRules()
   } catch (e: any) {
-    showToast(e.message || '保存に失敗しました', 'danger')
+    showToast(e.message || t('wms.settings.saveFailed', '保存に失敗しました'), 'danger')
   }
 }
 
@@ -169,35 +171,35 @@ const handleEnableChange = async (rule: AutoProcessingRule, enabled: boolean) =>
   try {
     await updateAutoProcessingRule(rule._id, { enabled })
     rule.enabled = enabled
-    showToast(enabled ? 'ルールを有効にしました' : 'ルールを無効にしました', 'success')
+    showToast(enabled ? t('wms.settings.ruleEnabled', 'ルールを有効にしました') : t('wms.settings.ruleDisabled', 'ルールを無効にしました'), 'success')
   } catch (e: any) {
-    showToast(e.message || '更新に失敗しました', 'danger')
+    showToast(e.message || t('wms.settings.updateFailed', '更新に失敗しました'), 'danger')
   }
 }
 
 const confirmDelete = async (rule: AutoProcessingRule) => {
-  if (!confirm(`ルール「${rule.name}」を削除しますか？`)) return
+  if (!confirm(t('wms.settings.confirmDeleteRule', `ルール「${rule.name}」を削除しますか？`))) return
   try {
     await deleteAutoProcessingRule(rule._id)
-    showToast('ルールを削除しました', 'success')
+    showToast(t('wms.settings.ruleDeleted', 'ルールを削除しました'), 'success')
     await loadRules()
   } catch (e: any) {
-    showToast(e.message || '削除に失敗しました', 'danger')
+    showToast(e.message || t('wms.settings.deleteFailed', '削除に失敗しました'), 'danger')
   }
 }
 
 const handleManualRun = async (rule: AutoProcessingRule) => {
-  if (!confirm(`ルール「${rule.name}」を手動で実行しますか？条件に合致するすべての注文に対して動作が実行されます。`)) return
+  if (!confirm(t('wms.settings.confirmManualRun', `ルール「${rule.name}」を手動で実行しますか？条件に合致するすべての注文に対して動作が実行されます。`))) return
   try {
     runningRuleId.value = rule._id
     const result = await runAutoProcessingRule(rule._id)
     showToast(
-      `実行完了: ${result.data.matched}件一致 / ${result.data.executed}件実行` +
-      (result.data.errors > 0 ? ` / ${result.data.errors}件エラー` : ''),
+      t('wms.settings.runComplete', `実行完了: ${result.data.matched}件一致 / ${result.data.executed}件実行`) +
+      (result.data.errors > 0 ? ` / ${result.data.errors}${t('wms.settings.errorsUnit', '件エラー')}` : ''),
       'success',
     )
   } catch (e: any) {
-    showToast(e.message || '手動実行に失敗しました', 'danger')
+    showToast(e.message || t('wms.settings.manualRunFailed', '手動実行に失敗しました'), 'danger')
   } finally {
     runningRuleId.value = null
   }
@@ -211,10 +213,10 @@ const duplicateRule = async (rule: AutoProcessingRule) => {
       name: `${rule.name}_copy`,
       enabled: false,
     })
-    showToast('ルールを複製しました', 'success')
+    showToast(t('wms.settings.ruleDuplicated', 'ルールを複製しました'), 'success')
     await loadRules()
   } catch (e: any) {
-    showToast(e.message || 'ルールの複製に失敗しました', 'danger')
+    showToast(e.message || t('wms.settings.duplicateFailed', 'ルールの複製に失敗しました'), 'danger')
   }
 }
 
@@ -223,7 +225,7 @@ const onDragEnd = async () => {
     const orderedIds = rules.value.map((r) => r._id)
     await reorderAutoProcessingRules(orderedIds)
   } catch (e: any) {
-    showToast(e.message || '優先順位の更新に失敗しました', 'danger')
+    showToast(e.message || t('wms.settings.reorderFailed', '優先順位の更新に失敗しました'), 'danger')
     await loadRules()
   }
 }
@@ -235,6 +237,9 @@ onMounted(() => {
 
 <style scoped>
 .auto-processing-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   padding: 0 20px 20px;
 }
 :deep(.o-control-panel) {
@@ -243,30 +248,6 @@ onMounted(() => {
 }
 
 
-
-
-
-.o-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--o-border-color, #dcdfe6);
-  border-radius: var(--o-border-radius, 4px);
-  font-size: var(--o-font-size-base, 14px);
-  cursor: pointer;
-  background: var(--o-view-background, #fff);
-  color: var(--o-gray-700, #303133);
-  transition: 0.2s;
-  white-space: nowrap;
-}
-.o-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.o-btn-primary { background: var(--o-brand-primary, #714b67); color: #fff; border-color: var(--o-brand-primary, #714b67); }
-.o-btn-sm { padding: 4px 10px; font-size: 13px; }
-.o-btn-outline-primary { background: transparent; color: var(--o-brand-primary, #714b67); border-color: var(--o-brand-primary, #714b67); }
-.o-btn-outline-secondary { background: transparent; color: var(--o-gray-600, #909399); border-color: var(--o-gray-600, #909399); }
-.o-btn-outline-success { background: transparent; color: #67c23a; border-color: #67c23a; }
-.o-btn-outline-danger { background: transparent; color: #f56c6c; border-color: #f56c6c; }
 
 .o-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
 .o-badge-success { background: #f0f9eb; color: #67c23a; }

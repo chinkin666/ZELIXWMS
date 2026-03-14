@@ -1,122 +1,48 @@
 <template>
   <div class="stocktaking-list">
-    <ControlPanel title="棚卸一覧" :show-search="false">
+    <ControlPanel :title="t('wms.stocktaking.listTitle', '棚卸一覧')" :show-search="false">
       <template #actions>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <select v-model="filterStatus" class="o-input o-input-sm" style="width:120px;" @change="currentPage = 1; loadData()">
-            <option value="">全状態</option>
-            <option value="draft">下書き</option>
-            <option value="in_progress">進行中</option>
-            <option value="completed">完了</option>
-            <option value="adjusted">調整済</option>
-            <option value="cancelled">キャンセル</option>
-          </select>
-          <select v-model="filterType" class="o-input o-input-sm" style="width:130px;" @change="currentPage = 1; loadData()">
-            <option value="">全タイプ</option>
-            <option value="full">全棚卸</option>
-            <option value="cycle">循環棚卸</option>
-            <option value="spot">スポット</option>
-          </select>
-          <OButton variant="primary" size="sm" @click="$router.push('/stocktaking/create')">新規作成</OButton>
-        </div>
+        <OButton variant="primary" size="sm" @click="$router.push('/stocktaking/create')">{{ t('wms.common.create', '新規作成') }}</OButton>
       </template>
     </ControlPanel>
 
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width:170px;">棚卸番号</th>
-            <th class="o-table-th" style="width:90px;">タイプ</th>
-            <th class="o-table-th" style="width:90px;">状態</th>
-            <th class="o-table-th o-table-th--right" style="width:80px;">明細数</th>
-            <th class="o-table-th o-table-th--right" style="width:90px;">カウント済</th>
-            <th class="o-table-th o-table-th--right" style="width:80px;">差異あり</th>
-            <th class="o-table-th" style="width:110px;">予定日</th>
-            <th class="o-table-th" style="width:110px;">作成日時</th>
-            <th class="o-table-th" style="width:260px;">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoading">
-            <td colspan="9" class="o-table-empty">読み込み中...</td>
-          </tr>
-          <tr v-else-if="rows.length === 0">
-            <td colspan="9" class="o-table-empty">データがありません</td>
-          </tr>
-          <tr v-for="row in rows" :key="row._id" class="o-table-row">
-            <td class="o-table-td">
-              <span class="order-number clickable" @click="$router.push(`/stocktaking/${row._id}`)">{{ row.orderNumber }}</span>
-            </td>
-            <td class="o-table-td">{{ typeLabel(row.type) }}</td>
-            <td class="o-table-td">
-              <span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span>
-            </td>
-            <td class="o-table-td o-table-td--right">{{ row.lines.length }}</td>
-            <td class="o-table-td o-table-td--right">{{ countedLines(row) }} / {{ row.lines.length }}</td>
-            <td class="o-table-td o-table-td--right">
-              <span :class="{ 'text-warning': varianceLines(row) > 0 }">{{ varianceLines(row) }}</span>
-            </td>
-            <td class="o-table-td">{{ row.scheduledDate ? formatDate(row.scheduledDate) : '-' }}</td>
-            <td class="o-table-td">{{ formatDateTime(row.createdAt) }}</td>
-            <td class="o-table-td o-table-td--actions">
-              <div style="display:inline-flex;gap:4px;flex-wrap:wrap;">
-                <OButton size="sm" variant="secondary" @click="$router.push(`/stocktaking/${row._id}`)">詳細</OButton>
-                <OButton
-                  v-if="row.status === 'draft'"
-                  variant="primary" size="sm"
-                  @click="handleStart(row)"
-                >開始</OButton>
-                <OButton
-                  v-if="row.status === 'in_progress'"
-                  variant="success" size="sm"
-                  @click="handleComplete(row)"
-                >完了</OButton>
-                <OButton
-                  v-if="row.status === 'completed'"
-                  variant="primary" size="sm"
-                  @click="handleAdjust(row)"
-                >調整反映</OButton>
-                <OButton
-                  v-if="row.status !== 'adjusted' && row.status !== 'cancelled'"
-                  variant="secondary" size="sm"
-                  style="border-color:#f56c6c;color:#f56c6c;"
-                  @click="handleCancel(row)"
-                >取消</OButton>
-                <OButton
-                  v-if="row.status === 'draft' || row.status === 'cancelled'"
-                  variant="secondary" size="sm"
-                  style="border-color:#f56c6c;color:#f56c6c;"
-                  @click="handleDelete(row)"
-                >削除</OButton>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="stocktakingListSearch"
+      @search="handleSearch"
+    />
 
-    <div class="o-table-pagination">
-      <span class="o-table-pagination__info">{{ total }} 件</span>
-      <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;" @change="currentPage = 1; loadData()">
-          <option :value="25">25</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-        </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--; loadData()">&lsaquo;</OButton>
-        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++; loadData()">&rsaquo;</OButton>
-      </div>
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="rows"
+        :height="520"
+        row-key="_id"
+        pagination-enabled
+        pagination-mode="server"
+        :total="total"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        :page-sizes="[25, 50, 100]"
+        :global-search-text="globalSearchText"
+        @page-change="handlePageChange"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchStocktakingOrders,
   startStocktakingOrder,
@@ -127,18 +53,21 @@ import {
 } from '@/api/stocktakingOrder'
 import type { StocktakingOrder } from '@/api/stocktakingOrder'
 
+const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
 const isLoading = ref(false)
 const rows = ref<StocktakingOrder[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(25)
-const filterStatus = ref('')
-const filterType = ref('')
+const globalSearchText = ref('')
 
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+// Current search filters
+const currentFilterStatus = ref('')
+const currentFilterType = ref('')
 
-const typeLabel = (t: string) => ({ full: '全棚卸', cycle: '循環棚卸', spot: 'スポット' }[t] || t)
+const typeLabel = (tp: string) => ({ full: '全棚卸', cycle: '循環棚卸', spot: 'スポット' }[tp] || tp)
 const statusLabel = (s: string) => ({ draft: '下書き', in_progress: '進行中', completed: '完了', adjusted: '調整済', cancelled: 'キャンセル' }[s] || s)
 const statusClass = (s: string) => ({
   draft: 'o-status-tag--draft',
@@ -154,12 +83,164 @@ const varianceLines = (row: StocktakingOrder) => row.lines.filter(l => l.varianc
 const formatDate = (d: string) => new Date(d).toLocaleDateString('ja-JP')
 const formatDateTime = (d: string) => new Date(d).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 
+// Column definitions
+const baseColumns = computed<TableColumn[]>(() => [
+  {
+    key: 'orderNumber',
+    dataKey: 'orderNumber',
+    title: t('wms.stocktaking.orderNumber', '棚卸番号'),
+    width: 170,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) =>
+      h('span', { class: 'order-number clickable', onClick: () => router.push(`/stocktaking/${rowData._id}`) }, rowData.orderNumber),
+  },
+  {
+    key: 'type',
+    dataKey: 'type',
+    title: t('wms.stocktaking.type', 'タイプ'),
+    width: 90,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: t('wms.stocktaking.typeFull', '全棚卸'), value: 'full' },
+      { label: t('wms.stocktaking.typeCycle', '循環棚卸'), value: 'cycle' },
+      { label: t('wms.stocktaking.typeSpot', 'スポット'), value: 'spot' },
+    ],
+    cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) => typeLabel(rowData.type),
+  },
+  {
+    key: 'status',
+    dataKey: 'status',
+    title: t('wms.stocktaking.status', '状態'),
+    width: 90,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: t('wms.stocktaking.statusDraft', '下書き'), value: 'draft' },
+      { label: t('wms.stocktaking.statusInProgress', '進行中'), value: 'in_progress' },
+      { label: t('wms.stocktaking.statusCompleted', '完了'), value: 'completed' },
+      { label: t('wms.stocktaking.statusAdjusted', '調整済'), value: 'adjusted' },
+      { label: t('wms.stocktaking.statusCancelled', 'キャンセル'), value: 'cancelled' },
+    ],
+    cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) =>
+      h('span', { class: `o-status-tag ${statusClass(rowData.status)}` }, statusLabel(rowData.status)),
+  },
+  {
+    key: 'lineCount',
+    title: t('wms.stocktaking.lineCount', '明細数'),
+    width: 80,
+    fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) =>
+      h('span', { style: 'text-align:right;display:block;' }, String(rowData.lines.length)),
+  },
+  {
+    key: 'countedLines',
+    title: t('wms.stocktaking.countedLines', 'カウント済'),
+    width: 90,
+    fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) =>
+      h('span', { style: 'text-align:right;display:block;' }, `${countedLines(rowData)} / ${rowData.lines.length}`),
+  },
+  {
+    key: 'varianceLines',
+    title: t('wms.stocktaking.varianceLines', '差異あり'),
+    width: 80,
+    fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) => {
+      const v = varianceLines(rowData)
+      return h('span', { style: 'text-align:right;display:block;', class: v > 0 ? 'text-warning' : '' }, String(v))
+    },
+  },
+  {
+    key: 'scheduledDate',
+    dataKey: 'scheduledDate',
+    title: t('wms.stocktaking.scheduledDate', '予定日'),
+    width: 110,
+    fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) =>
+      rowData.scheduledDate ? formatDate(rowData.scheduledDate) : '-',
+  },
+  {
+    key: 'createdAt',
+    dataKey: 'createdAt',
+    title: t('wms.stocktaking.createdAt', '作成日時'),
+    width: 110,
+    fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) => formatDateTime(rowData.createdAt),
+  },
+])
+
+const searchColumns = computed<TableColumn[]>(() => baseColumns.value.filter((c) => c.searchable))
+
+const tableColumns = computed<TableColumn[]>(() => [
+  ...baseColumns.value,
+  {
+    key: 'actions',
+    title: t('wms.common.actions', '操作'),
+    width: 260,
+    cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) => {
+      const buttons: any[] = []
+      buttons.push(h(OButton, { size: 'sm', variant: 'secondary', onClick: () => router.push(`/stocktaking/${rowData._id}`) }, () => t('wms.stocktaking.detail', '詳細')))
+      if (rowData.status === 'draft') {
+        buttons.push(h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleStart(rowData) }, () => t('wms.stocktaking.start', '開始')))
+      }
+      if (rowData.status === 'in_progress') {
+        buttons.push(h(OButton, { variant: 'success', size: 'sm', onClick: () => handleComplete(rowData) }, () => t('wms.stocktaking.complete', '完了')))
+      }
+      if (rowData.status === 'completed') {
+        buttons.push(h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleAdjust(rowData) }, () => t('wms.stocktaking.adjust', '調整反映')))
+      }
+      if (rowData.status !== 'adjusted' && rowData.status !== 'cancelled') {
+        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', style: 'border-color:#f56c6c;color:#f56c6c;', onClick: () => handleCancel(rowData) }, () => t('wms.stocktaking.cancel', '取消')))
+      }
+      if (rowData.status === 'draft' || rowData.status === 'cancelled') {
+        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', style: 'border-color:#f56c6c;color:#f56c6c;', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')))
+      }
+      return h('div', { class: 'action-cell' }, buttons)
+    },
+  },
+])
+
+// Search handler
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+  } else {
+    globalSearchText.value = ''
+  }
+
+  if (payload.status?.value) {
+    currentFilterStatus.value = String(payload.status.value)
+  } else {
+    currentFilterStatus.value = ''
+  }
+
+  if (payload.type?.value) {
+    currentFilterType.value = String(payload.type.value)
+  } else {
+    currentFilterType.value = ''
+  }
+
+  currentPage.value = 1
+  loadData()
+}
+
+const handlePageChange = (payload: { page: number; pageSize: number }) => {
+  currentPage.value = payload.page
+  pageSize.value = payload.pageSize
+  loadData()
+}
+
 const loadData = async () => {
   isLoading.value = true
   try {
     const res = await fetchStocktakingOrders({
-      status: filterStatus.value || undefined,
-      type: filterType.value || undefined,
+      status: currentFilterStatus.value || undefined,
+      type: currentFilterType.value || undefined,
       page: currentPage.value,
       limit: pageSize.value,
     })
@@ -223,17 +304,35 @@ onMounted(() => loadData())
 </script>
 
 <style>
-@import '@/styles/order-table.css';
+.o-status-tag--draft { background: #f4f4f5; color: #909399; }
+.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 </style>
 
 <style scoped>
-.stocktaking-list { display: flex; flex-direction: column; padding: 1rem; }
-.order-number { font-family: monospace; font-weight: 600; color: var(--o-brand-primary, #714b67); }
-.clickable { cursor: pointer; }
-.clickable:hover { text-decoration: underline; }
-.text-warning { color: #e6a23c; font-weight: 600; }
-.o-table-td--right { text-align: right; }
-.o-table-th--right { text-align: right; }
-.o-status-tag--draft { background: #f4f4f5; color: #909399; }
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
+.stocktaking-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0 20px 20px;
+  gap: 16px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
+}
+
+.table-section {
+  width: 100%;
+}
+
+:deep(.order-number) { font-family: monospace; font-weight: 600; color: var(--o-brand-primary, #714b67); }
+:deep(.clickable) { cursor: pointer; }
+:deep(.clickable:hover) { text-decoration: underline; }
+:deep(.text-warning) { color: #e6a23c; font-weight: 600; }
+
+:deep(.action-cell) {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
 </style>

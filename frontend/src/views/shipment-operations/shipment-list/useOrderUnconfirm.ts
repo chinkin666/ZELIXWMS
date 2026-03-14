@@ -3,12 +3,15 @@ import { yamatoB2Unconfirm, changeInvoiceType, splitOrder as splitOrderApi, isCa
 import { isBuiltInCarrierId } from '@/utils/carrier'
 import type { OrderDocument } from '@/types/order'
 import type { SplitOrderRequest } from '@/types/carrierAutomation'
+import { useToast } from '@/composables/useToast'
 
 export function useOrderUnconfirm(
   rows: () => Record<string, any>[],
   tableSelectedKeys: () => Array<string | number>,
   loadOrders: () => Promise<void>,
 ) {
+  const { show: showToast } = useToast()
+
   // Unconfirm dialog state
   const isUnconfirming = ref(false)
   const unconfirmDialogVisible = ref(false)
@@ -90,7 +93,7 @@ export function useOrderUnconfirm(
             message += `（B2 Cloud削除失敗: ${result.b2DeleteResult.error}）`
           }
         }
-        alert(message)
+        showToast(message, 'success')
       }
       await loadOrders()
       unconfirmDialogVisible.value = false
@@ -101,7 +104,7 @@ export function useOrderUnconfirm(
         () => handleUnconfirmConfirm(reason, true),
       )
       if (!handled) {
-        alert(e?.message || '確認取消に失敗しました')
+        showToast(e?.message || '確認取消に失敗しました', 'danger')
         unconfirmDialogVisible.value = false
       }
     } finally {
@@ -136,13 +139,13 @@ export function useOrderUnconfirm(
         }
         if (result.requiresManualUpload) {
           message += '。手動連携の注文は運送会社への再登録が必要です。'
-          alert(message)
+          showToast(message, 'warning')
         } else {
-          alert(message)
+          showToast(message, 'success')
         }
       } else {
         const errorMsg = result.errors?.join(', ') || '送り状種類変更に失敗しました'
-        alert(errorMsg)
+        showToast(errorMsg, 'danger')
       }
       await loadOrders()
       changeInvoiceTypeDialogVisible.value = false
@@ -153,7 +156,7 @@ export function useOrderUnconfirm(
         () => handleChangeInvoiceTypeConfirm(newInvoiceType, true),
       )
       if (!handled) {
-        alert(e?.message || '送り状種類変更に失敗しました')
+        showToast(e?.message || '送り状種類変更に失敗しました', 'danger')
         changeInvoiceTypeDialogVisible.value = false
       }
     } finally {
@@ -170,7 +173,7 @@ export function useOrderUnconfirm(
       0,
     )
     if (totalQty <= 1) {
-      alert('商品が1つの注文は分割できません')
+      showToast('商品が1つの注文は分割できません', 'warning')
       return
     }
     splitOrderTarget.value = row as OrderDocument
@@ -193,10 +196,10 @@ export function useOrderUnconfirm(
         if (result.carrierDeleteSkipped) {
           message += '（B2 Cloud削除スキップ）'
         }
-        alert(message)
+        showToast(message, 'success')
       } else {
         const errorMsg = result.errors?.join(', ') || '注文分割に失敗しました'
-        alert(errorMsg)
+        showToast(errorMsg, 'danger')
       }
       await loadOrders()
       splitOrderDialogVisible.value = false
@@ -207,7 +210,7 @@ export function useOrderUnconfirm(
         () => handleSplitOrderConfirm(splitGroups, true),
       )
       if (!handled) {
-        alert(e?.message || '注文分割に失敗しました')
+        showToast(e?.message || '注文分割に失敗しました', 'danger')
         splitOrderDialogVisible.value = false
       }
     } finally {

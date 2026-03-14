@@ -45,7 +45,7 @@
               v-if="hasActionColumn"
               :style="{ width: (actionColumn?.width || 110) + 'px', textAlign: actionColumn?.align || 'center' }"
             >
-              {{ actionColumn?.title || '操作' }}
+              {{ actionColumn?.title || t('wms.common.actions', '操作') }}
             </th>
           </tr>
         </thead>
@@ -177,6 +177,9 @@ import BulkEditDialog from './BulkEditDialog.vue'
 import OPager from '@/components/odoo/OPager.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import { LINK_COLOR } from '@/theme/config'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 // 普通单元格渲染组件
 const TableCell = defineComponent({
@@ -641,8 +644,6 @@ const applyBulkEdit = (payload: {
     selectedKeys: [...innerSelectedKeys.value],
     selectedRows,
   })
-
-  console.log(`一括編集：${changed}件更新しました`)
 }
 
 const handleBatchDeleteClick = () => {
@@ -814,57 +815,19 @@ watch(
 }
 
 .nex-table__wrapper {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
   overflow: auto;
+  border: 1px solid var(--o-border-color, #d6d6d6);
+  background: var(--o-view-background, #fff);
 }
 
-.o-list-table {
-  width: 100%;
-  border-collapse: collapse;
-  border: 1px solid #ebeef5;
-  table-layout: auto;
-}
-
-.o-list-table thead th {
-  background-color: #fafafa;
-  color: v-bind('LINK_COLOR');
-  font-size: 13px;
-  font-weight: normal;
-  vertical-align: top;
-  text-align: left;
-  padding: 10px;
-  border-bottom: 1px solid #ebeef5;
-  border-right: 1px solid #ebeef5;
-  white-space: nowrap;
-}
-
-.o-list-table thead th:last-child {
-  border-right: none;
-}
-
-.o-list-table tbody td {
-  font-size: 12px;
-  vertical-align: top;
-  padding: 10px;
-  border-bottom: 1px solid #ebeef5;
-  border-right: 1px solid #ebeef5;
-}
-
-.o-list-table tbody td:last-child {
-  border-right: none;
-}
-
-.o-list-table tbody tr:hover {
-  background-color: #f5f7fa;
-}
+/* .o-list-table base styles are defined globally in style.css */
 
 .nex-table__pagination {
-  margin-top: 16px;
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  padding: 0.5rem 0.25rem;
+  font-size: var(--o-font-size-small, 13px);
 }
 
 .nex-table__pagination--with-left {
@@ -885,7 +848,7 @@ watch(
 
 .pagination-total {
   font-size: 13px;
-  color: #606266;
+  color: var(--o-gray-600, #606266);
   white-space: nowrap;
 }
 
@@ -898,103 +861,35 @@ watch(
 
 /* Selection column */
 .selection-column {
-  width: 50px;
+  width: 40px;
 }
 
 .selection-column input[type="checkbox"] {
   cursor: pointer;
 }
 
-/* 操作列包装器 */
+/* Action cell */
 .action-cell-wrapper {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
+  gap: 6px;
 }
 
-/* 操作按钮容器 */
 .action-buttons {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 4px;
-}
-
-/* 错误单元格样式 */
-.error-cell {
-  background-color: #ffebee !important;
-}
-
-/* Button styles */
-.o-btn {
-  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 8px 16px;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  background: #fff;
-  color: #303133;
-  white-space: nowrap;
-  transition: background-color 0.2s, border-color 0.2s;
+  gap: 6px;
 }
 
-.o-btn:hover {
-  background-color: #f5f7fa;
+/* Error cell */
+.error-cell {
+  background-color: #fff0f0 !important;
 }
 
-.o-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.o-btn-primary {
-  background-color: #00798F;
-  border-color: #00798F;
-  color: #fff;
-}
-
-.o-btn-primary:hover {
-  background-color: #006577;
-}
-
-.o-btn-danger {
-  background-color: #f56c6c;
-  border-color: #f56c6c;
-  color: #fff;
-}
-
-.o-btn-danger:hover {
-  background-color: #e04848;
-}
-
-.o-btn-secondary {
-  background-color: #fff;
-  border-color: #dee2e6;
-  color: #303133;
-}
-
-.o-btn-sm {
-  padding: 4px 10px;
-  font-size: 13px;
-}
-
-.o-input {
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.o-input:focus {
-  border-color: #00798F;
+/* Empty row */
+.o-list-table tbody td[colspan] {
+  text-align: center;
+  padding: 2rem;
+  color: var(--o-gray-500, #909399);
 }
 </style>

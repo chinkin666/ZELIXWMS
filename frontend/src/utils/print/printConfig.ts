@@ -1,55 +1,55 @@
 /**
- * 打印配置管理工具
- * 使用 localStorage 存储打印配置，全局生效
- * 支持按模板（印刷テンプレート / 帳票テンプレート）指定打印机和打印参数
+ * 印刷設定管理ツール / 打印配置管理工具
+ * localStorageで印刷設定を保存、グローバルに適用 / 使用 localStorage 存储打印配置，全局生效
+ * テンプレート別にプリンターと印刷パラメータを指定可能 / 支持按模板（印刷テンプレート / 帳票テンプレート）指定打印机和打印参数
  */
 
 export type PrintMethod = 'browser' | 'local-bridge'
 
-/** 打印机信息（从 Local Print Bridge API 缓存） */
+/** プリンター情報（Local Print Bridge APIからキャッシュ） / 打印机信息（从 Local Print Bridge API 缓存） */
 export interface PrinterInfo {
   name: string
   paper_sizes: Array<{ name: string; width_mm: number; height_mm: number }>
 }
 
-/** 每个模板的打印参数 */
+/** テンプレート別印刷パラメータ / 每个模板的打印参数 */
 export interface TemplatePrintParams {
-  /** 打印机名称（空 = 使用 bridge 默认打印机） */
+  /** プリンター名（空 = bridgeデフォルトプリンター使用） / 打印机名称（空 = 使用 bridge 默认打印机） */
   printer?: string
-  /** 纸张名称（'AUTO' = 打印机默认） */
+  /** 用紙名（'AUTO' = プリンターデフォルト） / 纸张名称（'AUTO' = 打印机默认） */
   paper?: string
-  /** 方向 */
+  /** 向き / 方向 */
   orientation?: 'portrait' | 'landscape'
-  /** 缩放模式 */
+  /** スケールモード / 缩放模式 */
   scale?: 'fit' | 'fill' | 'actual'
-  /** 边距（毫米），0-50 */
+  /** 余白（mm）、0-50 / 边距（毫米），0-50 */
   margin_mm?: number
-  /** 打印份数，1-50 */
+  /** 印刷部数、1-50 / 打印份数，1-50 */
   copies?: number
 }
 
-/** 本地打印桥接配置 */
+/** ローカル印刷ブリッジ設定 / 本地打印桥接配置 */
 export interface LocalBridgeConfig {
-  /** 服务地址，默认 http://127.0.0.1:8765 */
+  /** サービスアドレス、デフォルト http://127.0.0.1:8765 / 服务地址，默认 http://127.0.0.1:8765 */
   serviceUrl: string
-  /** 缓存的打印机列表 */
+  /** キャッシュ済みプリンター一覧 / 缓存的打印机列表 */
   printersCache: PrinterInfo[]
-  /** 系统默认打印机名称 */
+  /** システムデフォルトプリンター名 / 系统默认打印机名称 */
   defaultPrinterOs: string | null
-  /** 上次缓存更新时间（ISO string） */
+  /** 最終キャッシュ更新日時（ISO string） / 上次缓存更新时间（ISO string） */
   lastCacheUpdate: string | null
-  /** 印刷テンプレート 打印设置 (key = template id) */
+  /** 印刷テンプレート印刷設定 / 印刷テンプレート 打印设置 (key = template id) */
   printTemplateSettings: Record<string, TemplatePrintParams>
-  /** 帳票テンプレート 打印设置 (key = template id) */
+  /** 帳票テンプレート印刷設定 / 帳票テンプレート 打印设置 (key = template id) */
   formTemplateSettings: Record<string, TemplatePrintParams>
-  /** B2 Cloud PDF 打印设置（按送り状種類, key = invoiceType '0'-'9','A'） */
+  /** B2 Cloud PDF印刷設定（送り状種類別） / B2 Cloud PDF 打印设置（按送り状種類, key = invoiceType '0'-'9','A'） */
   b2CloudPrintParams: Record<string, TemplatePrintParams>
 }
 
 export interface PrintConfig {
-  /** 打印方式：浏览器打印 或 本地打印桥接 */
+  /** 印刷方式：ブラウザ印刷またはローカル印刷ブリッジ / 打印方式：浏览器打印 或 本地打印桥接 */
   method: PrintMethod
-  /** 本地打印桥接配置 */
+  /** ローカル印刷ブリッジ設定 / 本地打印桥接配置 */
   localBridge: LocalBridgeConfig
 }
 
@@ -80,7 +80,7 @@ const DEFAULT_PRINT_PARAMS: Required<TemplatePrintParams> = {
 }
 
 /**
- * 获取打印配置
+ * 印刷設定取得 / 获取打印配置
  */
 export function getPrintConfig(): PrintConfig {
   try {
@@ -102,7 +102,7 @@ export function getPrintConfig(): PrintConfig {
 }
 
 /**
- * 保存打印配置
+ * 印刷設定保存 / 保存打印配置
  */
 export function savePrintConfig(config: PrintConfig): void {
   try {
@@ -114,7 +114,7 @@ export function savePrintConfig(config: PrintConfig): void {
 }
 
 /**
- * 重置为默认配置
+ * デフォルト設定にリセット / 重置为默认配置
  */
 export function resetPrintConfig(): void {
   try {
@@ -127,7 +127,7 @@ export function resetPrintConfig(): void {
 // ─── Per-Template Settings Helpers ───
 
 /**
- * 获取印刷テンプレートの打印参数（合并默认值）
+ * 印刷テンプレートの印刷パラメータ取得（デフォルト値マージ） / 获取印刷テンプレートの打印参数（合并默认值）
  */
 export function getPrintParamsForPrintTemplate(templateId: string): Required<TemplatePrintParams> {
   const config = getPrintConfig()
@@ -136,7 +136,7 @@ export function getPrintParamsForPrintTemplate(templateId: string): Required<Tem
 }
 
 /**
- * 获取帳票テンプレートの打印参数（合并默认值）
+ * 帳票テンプレートの印刷パラメータ取得（デフォルト値マージ） / 获取帳票テンプレートの打印参数（合并默认值）
  */
 export function getPrintParamsForFormTemplate(templateId: string): Required<TemplatePrintParams> {
   const config = getPrintConfig()
@@ -145,7 +145,7 @@ export function getPrintParamsForFormTemplate(templateId: string): Required<Temp
 }
 
 /**
- * 保存印刷テンプレートの打印参数
+ * 印刷テンプレートの印刷パラメータ保存 / 保存印刷テンプレートの打印参数
  */
 export function savePrintTemplateParams(templateId: string, params: TemplatePrintParams): void {
   const config = getPrintConfig()
@@ -154,7 +154,7 @@ export function savePrintTemplateParams(templateId: string, params: TemplatePrin
 }
 
 /**
- * 保存帳票テンプレートの打印参数
+ * 帳票テンプレートの印刷パラメータ保存 / 保存帳票テンプレートの打印参数
  */
 export function saveFormTemplateParams(templateId: string, params: TemplatePrintParams): void {
   const config = getPrintConfig()
@@ -163,7 +163,7 @@ export function saveFormTemplateParams(templateId: string, params: TemplatePrint
 }
 
 /**
- * 获取 B2 Cloud PDF の打印参数（按送り状種類，合并默认值）
+ * B2 Cloud PDFの印刷パラメータ取得（送り状種類別、デフォルト値マージ） / 获取 B2 Cloud PDF の打印参数（按送り状種類，合并默认值）
  */
 export function getPrintParamsForB2Cloud(invoiceType: string): Required<TemplatePrintParams> {
   const config = getPrintConfig()
@@ -172,7 +172,7 @@ export function getPrintParamsForB2Cloud(invoiceType: string): Required<Template
 }
 
 /**
- * 保存 B2 Cloud PDF の打印参数（按送り状種類）
+ * B2 Cloud PDFの印刷パラメータ保存（送り状種類別） / 保存 B2 Cloud PDF の打印参数（按送り状種類）
  */
 export function saveB2CloudPrintParams(invoiceType: string, params: TemplatePrintParams): void {
   const config = getPrintConfig()
@@ -183,14 +183,14 @@ export function saveB2CloudPrintParams(invoiceType: string, params: TemplatePrin
 // ─── Printer Cache Helpers ───
 
 /**
- * 获取缓存的打印机列表
+ * キャッシュ済みプリンター一覧取得 / 获取缓存的打印机列表
  */
 export function getCachedPrinters(): PrinterInfo[] {
   return getPrintConfig().localBridge.printersCache
 }
 
 /**
- * 更新打印机缓存
+ * プリンターキャッシュ更新 / 更新打印机缓存
  */
 export function updatePrintersCache(printers: PrinterInfo[], defaultPrinterOs: string | null): void {
   const config = getPrintConfig()
@@ -201,7 +201,7 @@ export function updatePrintersCache(printers: PrinterInfo[], defaultPrinterOs: s
 }
 
 /**
- * 获取默认打印参数
+ * デフォルト印刷パラメータ取得 / 获取默认打印参数
  */
 export function getDefaultPrintParams(): Required<TemplatePrintParams> {
   return { ...DEFAULT_PRINT_PARAMS }

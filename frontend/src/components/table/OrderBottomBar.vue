@@ -1,11 +1,11 @@
 <template>
   <div class="order-bottom-bar">
-    <!-- 左侧：操作按钮区域 -->
+    <!-- 左側：操作ボタンエリア / 左侧：操作按钮区域 -->
     <div class="order-bottom-bar__left">
       <slot name="left" />
     </div>
 
-    <!-- 中间：统计信息区域 -->
+    <!-- 中央：統計情報エリア / 中间：统计信息区域 -->
     <div class="order-bottom-bar__center">
       <slot name="center">
         <div class="order-bottom-bar__meta">
@@ -23,7 +23,7 @@
       <slot name="alert" />
     </div>
 
-    <!-- 右侧：主操作按钮区域 -->
+    <!-- 右側：メイン操作ボタンエリア / 右侧：主操作按钮区域 -->
     <div class="order-bottom-bar__right">
       <slot name="right" />
     </div>

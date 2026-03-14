@@ -5,6 +5,62 @@
 
 ---
 
+## [2026-03-14] Extension Architecture Phase 5 完成 / 拡張アーキテクチャ Phase 5 完了
+
+**变更类型 / 変更種別**: feat
+**影响范围 / 影響範囲**: `backend/src/core/extensions/customFieldService.ts`、`backend/src/core/extensions/featureFlagService.ts`、`backend/src/models/customFieldDefinition.ts`、`backend/src/models/featureFlag.ts`
+**关联文档 / 関連ドキュメント**: `docs/extension/05-plan.md`
+
+### 内容 / 内容
+
+实现了 Extension Architecture Phase 5（CustomFields + FeatureFlags）：
+
+#### 新增文件 / 新規ファイル
+- `backend/src/models/customFieldDefinition.ts` — 自定义字段定义模型（支持 text/number/boolean/date/select 类型）
+- `backend/src/models/featureFlag.ts` — 功能开关模型（支持按租户覆盖）
+- `backend/src/core/extensions/customFieldService.ts` — 自定义字段服务（CRUD + 值校验 + 默认值）
+- `backend/src/core/extensions/featureFlagService.ts` — 功能开关服务（含1分钟内存缓存 + 租户覆盖）
+- `backend/src/api/controllers/customFieldController.ts` — 自定义字段管理 API
+- `backend/src/api/controllers/featureFlagController.ts` — 功能开关管理 API
+- `frontend/src/api/customField.ts` — 前端自定义字段 API 客户端
+- `frontend/src/api/featureFlag.ts` — 前端功能开关 API 客户端
+- `frontend/src/views/settings/CustomFieldSettings.vue` — 自定义字段管理页面
+- `frontend/src/views/settings/FeatureFlagSettings.vue` — 功能开关管理页面
+- `frontend/src/composables/useFeatureFlag.ts` — 功能开关 composable
+
+#### 修改文件 / 変更ファイル
+- `backend/src/core/extensions/extensionManager.ts` — 集成 CustomFieldService + FeatureFlagService
+- `backend/src/core/extensions/index.ts` — 导出新服务
+- `backend/src/api/routes/extensions.ts` — 注册 custom-fields 和 feature-flags 路由
+- `backend/src/models/shipmentOrder.ts` — 添加 customFields 字段
+- `backend/src/models/product.ts` — 添加 customFields 字段
+- `backend/src/models/inboundOrder.ts` — 添加 customFields 字段
+- `backend/src/models/returnOrder.ts` — 添加 customFields 字段
+- `frontend/src/router/index.ts` — 注册 CustomFieldSettings 和 FeatureFlagSettings 路由
+- `frontend/src/layouts/WmsLayout.vue` — 侧边栏添加「カスタムフィールド」和「フィーチャーフラグ」菜单
+- `frontend/src/views/settings/product-settings/ProductFormDialog.vue` — 集成 OCustomFields 到商品独自フィールド tab
+- `frontend/src/components/form/ShipmentOrderEditDialog.vue` — 集成 OCustomFields 到订单编辑「カスタムフィールド」tab
+- `backend/src/api/middleware/featureFlagGuard.ts` — 功能开关路由中间件（NEW）
+- `backend/src/api/routes/extensions.ts` — Webhook/Plugin/Script 路由添加功能开关守卫
+
+#### API 新增 / API 追加
+- `GET /api/extensions/custom-fields` — 列出所有字段定义
+- `POST /api/extensions/custom-fields` — 创建字段定义
+- `GET /api/extensions/custom-fields/:entityType/active` — 获取指定实体启用的字段定义
+- `POST /api/extensions/custom-fields/:entityType/validate` — 校验字段值
+- `PUT /api/extensions/custom-fields/:id` — 更新字段定义
+- `DELETE /api/extensions/custom-fields/:id` — 删除字段定义
+- `GET /api/extensions/feature-flags` — 列出所有功能开关
+- `GET /api/extensions/feature-flags/status` — 获取租户功能状态映射
+- `POST /api/extensions/feature-flags` — 创建功能开关
+- `PUT /api/extensions/feature-flags/:id` — 更新功能开关
+- `DELETE /api/extensions/feature-flags/:id` — 删除功能开关
+- `POST /api/extensions/feature-flags/:id/toggle` — 切换功能开关
+- `POST /api/extensions/feature-flags/:id/tenant-override` — 设置租户覆盖
+- `DELETE /api/extensions/feature-flags/:id/tenant-override/:tenantId` — 删除租户覆盖
+
+---
+
 ## [2026-03-14] Extension Architecture Phase 4 完成 / 拡張アーキテクチャ Phase 4 完了
 
 **变更类型 / 変更種別**: feat

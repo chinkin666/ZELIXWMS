@@ -1,30 +1,30 @@
 <template>
   <div v-show="visible" class="settings-section">
-    <h3 class="section-title">基本設定</h3>
+    <h3 class="section-title">{{ t('wms.formEditor.basicSettings', '基本設定') }}</h3>
     <div class="o-form">
       <div class="o-form-group">
-        <label>テンプレート名</label>
-        <input :value="template.name" class="o-input" placeholder="例：ピッキングリスト" @input="$emit('update-field', 'name', ($event.target as HTMLInputElement).value)" />
+        <label>{{ t('wms.formEditor.templateName', 'テンプレート名') }}</label>
+        <input :value="template.name" class="o-input" :placeholder="t('wms.formEditor.templateNamePlaceholder', '例：ピッキングリスト')" @input="$emit('update-field', 'name', ($event.target as HTMLInputElement).value)" />
       </div>
       <div class="o-form-group">
-        <label>種類</label>
+        <label>{{ t('wms.formEditor.type', '種類') }}</label>
         <select :value="template.targetType" class="o-input" disabled style="width: 100%">
           <option
-            v-for="t in formTypeRegistry"
-            :key="t.type"
-            :value="t.type"
-          >{{ t.label }}</option>
+            v-for="ft in formTypeRegistry"
+            :key="ft.type"
+            :value="ft.type"
+          >{{ ft.label }}</option>
         </select>
-        <div class="hint">種類は作成時に設定され、変更できません</div>
+        <div class="hint">{{ t('wms.formEditor.typeHint', '種類は作成時に設定され、変更できません') }}</div>
       </div>
       <div class="o-form-group">
-        <label>デフォルト</label>
+        <label>{{ t('wms.formEditor.default', 'デフォルト') }}</label>
         <div>
           <label class="o-toggle">
             <input type="checkbox" :checked="template.isDefault" @change="$emit('update-field', 'isDefault', ($event.target as HTMLInputElement).checked)" />
             <span class="o-toggle-slider"></span>
           </label>
-          <div class="hint">この種類のデフォルトテンプレートとして使用</div>
+          <div class="hint">{{ t('wms.formEditor.defaultHint', 'この種類のデフォルトテンプレートとして使用') }}</div>
         </div>
       </div>
     </div>
@@ -34,6 +34,9 @@
 <script setup lang="ts">
 import type { FormTemplate } from '@/types/formTemplate'
 import { formTypeRegistry } from '@/utils/form-export/formFieldRegistry'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 defineProps<{
   visible: boolean

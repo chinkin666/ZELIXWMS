@@ -1,14 +1,14 @@
 <template>
   <div class="panel center">
-    <div class="panel-title">画布（Konva）</div>
+    <div class="panel-title">{{ t('wms.printTemplate.canvas') }}（Konva）</div>
     <div class="canvas-toolbar">
       <div class="toolbar-form">
         <div class="form-group-inline">
-          <label>宽(mm)</label>
+          <label>{{ t('wms.printTemplate.width') }}(mm)</label>
           <input :value="canvas.widthMm" type="number" min="1" class="o-input" style="width: 110px" @input="$emit('update-canvas', 'widthMm', Number(($event.target as HTMLInputElement).value))" />
         </div>
         <div class="form-group-inline">
-          <label>高(mm)</label>
+          <label>{{ t('wms.printTemplate.height') }}(mm)</label>
           <input :value="canvas.heightMm" type="number" min="1" class="o-input" style="width: 110px" @input="$emit('update-canvas', 'heightMm', Number(($event.target as HTMLInputElement).value))" />
         </div>
         <div class="form-group-inline">
@@ -26,11 +26,11 @@
     <div class="canvas-toolbar" style="margin-top: 8px">
       <div class="row">
         <input ref="bgFileInput" type="file" accept="image/*" class="hidden-input" @change="onBgFileChange" />
-        <OButton variant="secondary" @click="triggerBgUpload">上传参考图</OButton>
-        <OButton variant="secondary" :disabled="!bgImageUrl" @click="$emit('clear-bg-image')">清除参考图</OButton>
+        <OButton variant="secondary" @click="triggerBgUpload">{{ t('wms.printTemplate.uploadRefImage') }}</OButton>
+        <OButton variant="secondary" :disabled="!bgImageUrl" @click="$emit('clear-bg-image')">{{ t('wms.printTemplate.clearRefImage') }}</OButton>
       </div>
       <div class="row" style="align-items: center">
-        <div class="opacity-label">透明度</div>
+        <div class="opacity-label">{{ t('wms.printTemplate.opacity') }}</div>
         <input type="range" :value="bgOpacity" min="0" max="1" step="0.05" style="width: 220px" @input="$emit('update:bgOpacity', Number(($event.target as HTMLInputElement).value))" />
         <span style="font-size: 12px; color: #6b7280; margin-left: 4px">{{ bgOpacity.toFixed(2) }}</span>
       </div>
@@ -45,6 +45,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 defineProps<{
   canvas: { widthMm: number; heightMm: number; pxPerMm: number }

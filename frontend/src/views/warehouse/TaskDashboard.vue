@@ -1,59 +1,59 @@
 <template>
   <div class="task-dashboard">
-    <ControlPanel title="タスクダッシュボード" :show-search="false">
+    <ControlPanel :title="t('wms.warehouse.taskDashboard', 'タスクダッシュボード')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreateDialog">新規タスク</OButton>
+        <OButton variant="primary" @click="openCreateDialog">{{ t('wms.warehouse.newTask', '新規タスク') }}</OButton>
       </template>
     </ControlPanel>
 
     <!-- Filter bar -->
     <div class="filter-bar">
       <select v-model="filterType" class="o-input o-input-sm" style="width: 140px;">
-        <option value="">全タイプ</option>
-        <option value="picking">ピッキング</option>
-        <option value="putaway">棚入れ</option>
-        <option value="replenishment">補充</option>
-        <option value="counting">棚卸</option>
-        <option value="sorting">仕分け</option>
-        <option value="packing">梱包</option>
-        <option value="receiving">入荷</option>
-        <option value="shipping">出荷</option>
+        <option value="">{{ t('wms.warehouse.allTypes', '全タイプ') }}</option>
+        <option value="picking">{{ t('wms.warehouse.typePicking', 'ピッキング') }}</option>
+        <option value="putaway">{{ t('wms.warehouse.typePutaway', '棚入れ') }}</option>
+        <option value="replenishment">{{ t('wms.warehouse.typeReplenishment', '補充') }}</option>
+        <option value="counting">{{ t('wms.warehouse.typeCounting', '棚卸') }}</option>
+        <option value="sorting">{{ t('wms.warehouse.typeSorting', '仕分け') }}</option>
+        <option value="packing">{{ t('wms.warehouse.typePacking', '梱包') }}</option>
+        <option value="receiving">{{ t('wms.warehouse.typeReceiving', '入荷') }}</option>
+        <option value="shipping">{{ t('wms.warehouse.typeShipping', '出荷') }}</option>
       </select>
       <select v-model="filterStatus" class="o-input o-input-sm" style="width: 140px;">
-        <option value="">全ステータス</option>
-        <option value="pending">未着手</option>
-        <option value="assigned">割当済</option>
-        <option value="in_progress">作業中</option>
-        <option value="completed">完了</option>
-        <option value="cancelled">キャンセル</option>
-        <option value="on_hold">保留</option>
+        <option value="">{{ t('wms.warehouse.allStatuses', '全ステータス') }}</option>
+        <option value="pending">{{ t('wms.warehouse.statusPending', '未着手') }}</option>
+        <option value="assigned">{{ t('wms.warehouse.statusAssigned', '割当済') }}</option>
+        <option value="in_progress">{{ t('wms.warehouse.statusInProgress', '作業中') }}</option>
+        <option value="completed">{{ t('wms.warehouse.statusCompleted', '完了') }}</option>
+        <option value="cancelled">{{ t('wms.warehouse.statusCancelled', 'キャンセル') }}</option>
+        <option value="on_hold">{{ t('wms.warehouse.statusOnHold', '保留') }}</option>
       </select>
       <select v-model="filterPriority" class="o-input o-input-sm" style="width: 130px;">
-        <option value="">全優先度</option>
-        <option value="urgent">緊急</option>
-        <option value="high">高</option>
-        <option value="normal">通常</option>
-        <option value="low">低</option>
+        <option value="">{{ t('wms.warehouse.allPriorities', '全優先度') }}</option>
+        <option value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</option>
+        <option value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</option>
+        <option value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</option>
+        <option value="low">{{ t('wms.warehouse.priorityLow', '低') }}</option>
       </select>
-      <OButton variant="primary" @click="handleSearch">検索</OButton>
+      <OButton variant="primary" @click="handleSearch">{{ t('wms.common.search', '検索') }}</OButton>
     </div>
 
     <!-- Summary cards -->
     <div class="summary-cards">
       <div class="summary-card summary-card--pending">
-        <div class="summary-card__label">未着手</div>
+        <div class="summary-card__label">{{ t('wms.warehouse.statusPending', '未着手') }}</div>
         <div class="summary-card__count">{{ pendingCount }}</div>
       </div>
       <div class="summary-card summary-card--in-progress">
-        <div class="summary-card__label">作業中</div>
+        <div class="summary-card__label">{{ t('wms.warehouse.statusInProgress', '作業中') }}</div>
         <div class="summary-card__count">{{ inProgressCount }}</div>
       </div>
       <div class="summary-card summary-card--completed">
-        <div class="summary-card__label">完了</div>
+        <div class="summary-card__label">{{ t('wms.warehouse.statusCompleted', '完了') }}</div>
         <div class="summary-card__count">{{ completedCount }}</div>
       </div>
       <div class="summary-card summary-card--on-hold">
-        <div class="summary-card__label">保留</div>
+        <div class="summary-card__label">{{ t('wms.warehouse.statusOnHold', '保留') }}</div>
         <div class="summary-card__count">{{ onHoldCount }}</div>
       </div>
     </div>
@@ -63,56 +63,56 @@
       <table class="o-table">
         <thead>
           <tr>
-            <th class="o-table-th" style="width: 130px">タスク番号</th>
-            <th class="o-table-th" style="width: 110px">タイプ</th>
-            <th class="o-table-th" style="width: 80px">優先度</th>
-            <th class="o-table-th" style="width: 100px">ステータス</th>
-            <th class="o-table-th" style="width: 120px">担当者</th>
-            <th class="o-table-th" style="width: 100px">数量</th>
-            <th class="o-table-th" style="width: 150px">開始日時</th>
-            <th class="o-table-th" style="width: 200px">操作</th>
+            <th class="o-table-th" style="width: 130px">{{ t('wms.warehouse.taskNumber', 'タスク番号') }}</th>
+            <th class="o-table-th" style="width: 110px">{{ t('wms.warehouse.type', 'タイプ') }}</th>
+            <th class="o-table-th" style="width: 80px">{{ t('wms.warehouse.priority', '優先度') }}</th>
+            <th class="o-table-th" style="width: 100px">{{ t('wms.warehouse.status', 'ステータス') }}</th>
+            <th class="o-table-th" style="width: 120px">{{ t('wms.warehouse.assignee', '担当者') }}</th>
+            <th class="o-table-th" style="width: 100px">{{ t('wms.warehouse.quantity', '数量') }}</th>
+            <th class="o-table-th" style="width: 150px">{{ t('wms.warehouse.startDateTime', '開始日時') }}</th>
+            <th class="o-table-th" style="width: 200px">{{ t('wms.common.actions', '操作') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="loading">
-            <td class="o-table-td o-table-empty" colspan="8">読み込み中...</td>
+            <td class="o-table-td o-table-empty" colspan="8">{{ t('wms.common.loading', '読み込み中...') }}</td>
           </tr>
           <tr v-else-if="tasks.length === 0">
-            <td class="o-table-td o-table-empty" colspan="8">データがありません</td>
+            <td class="o-table-td o-table-empty" colspan="8">{{ t('wms.common.noData', 'データがありません') }}</td>
           </tr>
-          <tr v-for="t in tasks" :key="t._id" class="o-table-row">
-            <td class="o-table-td">{{ t.taskNumber }}</td>
-            <td class="o-table-td">{{ typeLabels[t.type] || t.type }}</td>
+          <tr v-for="task in tasks" :key="task._id" class="o-table-row">
+            <td class="o-table-td">{{ task.taskNumber }}</td>
+            <td class="o-table-td">{{ typeLabels[task.type] || task.type }}</td>
             <td class="o-table-td">
-              <span :class="['priority-tag', `priority-tag--${t.priority}`]">
-                {{ priorityLabels[t.priority] || t.priority }}
+              <span :class="['priority-tag', `priority-tag--${task.priority}`]">
+                {{ priorityLabels[task.priority] || task.priority }}
               </span>
             </td>
             <td class="o-table-td">
-              <span :class="['status-tag', `status-tag--${t.status}`]">
-                {{ statusLabels[t.status] || t.status }}
+              <span :class="['status-tag', `status-tag--${task.status}`]">
+                {{ statusLabels[task.status] || task.status }}
               </span>
             </td>
-            <td class="o-table-td">{{ t.assignedName || t.assignedTo || '-' }}</td>
+            <td class="o-table-td">{{ task.assignedName || task.assignedTo || '-' }}</td>
             <td class="o-table-td">
-              <template v-if="t.quantity != null">
-                {{ t.completedQuantity != null ? t.completedQuantity : 0 }} / {{ t.quantity }}
+              <template v-if="task.quantity != null">
+                {{ task.completedQuantity != null ? task.completedQuantity : 0 }} / {{ task.quantity }}
               </template>
               <template v-else>-</template>
             </td>
-            <td class="o-table-td">{{ t.startedAt ? formatDate(t.startedAt) : '-' }}</td>
+            <td class="o-table-td">{{ task.startedAt ? formatDate(task.startedAt) : '-' }}</td>
             <td class="o-table-td o-table-td--actions">
-              <OButton v-if="t.status === 'pending'" variant="primary" size="sm" @click="openAssignDialog(t)">割当</OButton>
-              <OButton v-if="t.status === 'assigned'" variant="primary" size="sm" @click="handleStart(t)">開始</OButton>
-              <OButton v-if="t.status === 'in_progress'" variant="success" size="sm" @click="openCompleteDialog(t)">完了</OButton>
-              <OButton v-if="t.status === 'in_progress'" variant="secondary" size="sm" @click="handleHold(t)">保留</OButton>
-              <OButton v-if="t.status === 'on_hold'" variant="primary" size="sm" @click="handleStart(t)">再開</OButton>
+              <OButton v-if="task.status === 'pending'" variant="primary" size="sm" @click="openAssignDialog(task)">{{ t('wms.warehouse.assign', '割当') }}</OButton>
+              <OButton v-if="task.status === 'assigned'" variant="primary" size="sm" @click="handleStart(task)">{{ t('wms.warehouse.start', '開始') }}</OButton>
+              <OButton v-if="task.status === 'in_progress'" variant="success" size="sm" @click="openCompleteDialog(task)">{{ t('wms.warehouse.complete', '完了') }}</OButton>
+              <OButton v-if="task.status === 'in_progress'" variant="secondary" size="sm" @click="handleHold(task)">{{ t('wms.warehouse.hold', '保留') }}</OButton>
+              <OButton v-if="task.status === 'on_hold'" variant="primary" size="sm" @click="handleStart(task)">{{ t('wms.warehouse.resume', '再開') }}</OButton>
               <OButton
-                v-if="t.status !== 'completed' && t.status !== 'cancelled'"
+                v-if="task.status !== 'completed' && task.status !== 'cancelled'"
                 variant="icon-danger"
                 size="sm"
-                @click="handleCancel(t)"
-              >キャンセル</OButton>
+                @click="handleCancel(task)"
+              >{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
             </td>
           </tr>
         </tbody>
@@ -121,7 +121,7 @@
 
     <!-- Pagination -->
     <div class="o-table-pagination">
-      <span class="o-table-pagination__info">全{{ total }}件中 {{ paginationStart }}-{{ paginationEnd }}件</span>
+      <span class="o-table-pagination__info">{{ t('wms.common.totalOf', '全') }}{{ total }}{{ t('wms.common.items', '件') }}{{ t('wms.common.of', '中') }} {{ paginationStart }}-{{ paginationEnd }}{{ t('wms.common.items', '件') }}</span>
       <div class="o-table-pagination__controls">
         <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
           <option :value="10">10</option>
@@ -136,69 +136,69 @@
     </div>
 
     <!-- Create Task Dialog -->
-    <ODialog v-model="createDialogOpen" title="新規タスク" size="lg" @confirm="handleCreate">
+    <ODialog v-model="createDialogOpen" :title="t('wms.warehouse.newTask', '新規タスク')" size="lg" @confirm="handleCreate">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">タイプ <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.type', 'タイプ') }} <span class="required">*</span></label>
           <select v-model="createForm.type" class="o-input">
-            <option value="">選択してください</option>
-            <option value="picking">ピッキング</option>
-            <option value="putaway">棚入れ</option>
-            <option value="replenishment">補充</option>
-            <option value="counting">棚卸</option>
-            <option value="sorting">仕分け</option>
-            <option value="packing">梱包</option>
-            <option value="receiving">入荷</option>
-            <option value="shipping">出荷</option>
+            <option value="">{{ t('wms.common.pleaseSelect', '選択してください') }}</option>
+            <option value="picking">{{ t('wms.warehouse.typePicking', 'ピッキング') }}</option>
+            <option value="putaway">{{ t('wms.warehouse.typePutaway', '棚入れ') }}</option>
+            <option value="replenishment">{{ t('wms.warehouse.typeReplenishment', '補充') }}</option>
+            <option value="counting">{{ t('wms.warehouse.typeCounting', '棚卸') }}</option>
+            <option value="sorting">{{ t('wms.warehouse.typeSorting', '仕分け') }}</option>
+            <option value="packing">{{ t('wms.warehouse.typePacking', '梱包') }}</option>
+            <option value="receiving">{{ t('wms.warehouse.typeReceiving', '入荷') }}</option>
+            <option value="shipping">{{ t('wms.warehouse.typeShipping', '出荷') }}</option>
           </select>
         </div>
         <div class="form-field">
-          <label class="form-label">優先度 <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.priority', '優先度') }} <span class="required">*</span></label>
           <select v-model="createForm.priority" class="o-input">
-            <option value="normal">通常</option>
-            <option value="urgent">緊急</option>
-            <option value="high">高</option>
-            <option value="low">低</option>
+            <option value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</option>
+            <option value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</option>
+            <option value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</option>
+            <option value="low">{{ t('wms.warehouse.priorityLow', '低') }}</option>
           </select>
         </div>
         <div class="form-field">
-          <label class="form-label">倉庫ID</label>
+          <label class="form-label">{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
           <input v-model="createForm.warehouseId" type="text" class="o-input" />
         </div>
         <div class="form-field">
-          <label class="form-label">数量</label>
+          <label class="form-label">{{ t('wms.warehouse.quantity', '数量') }}</label>
           <input v-model.number="createForm.quantity" type="number" class="o-input" min="0" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">備考</label>
+          <label class="form-label">{{ t('wms.warehouse.memo', '備考') }}</label>
           <textarea v-model="createForm.memo" class="o-input form-textarea" rows="3" />
         </div>
       </div>
     </ODialog>
 
     <!-- Assign Dialog -->
-    <ODialog v-model="assignDialogOpen" title="タスク割当" size="sm" @confirm="handleAssign">
+    <ODialog v-model="assignDialogOpen" :title="t('wms.warehouse.taskAssign', 'タスク割当')" size="sm" @confirm="handleAssign">
       <div class="form-grid">
         <div class="form-field form-field--full">
-          <label class="form-label">担当者ID <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.assigneeId', '担当者ID') }} <span class="required">*</span></label>
           <input v-model="assignForm.assignedTo" type="text" class="o-input" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">担当者名</label>
+          <label class="form-label">{{ t('wms.warehouse.assigneeName', '担当者名') }}</label>
           <input v-model="assignForm.assignedName" type="text" class="o-input" />
         </div>
       </div>
     </ODialog>
 
     <!-- Complete Dialog -->
-    <ODialog v-model="completeDialogOpen" title="タスク完了" size="sm" @confirm="handleComplete">
+    <ODialog v-model="completeDialogOpen" :title="t('wms.warehouse.taskComplete', 'タスク完了')" size="sm" @confirm="handleComplete">
       <div class="form-grid">
         <div class="form-field form-field--full">
-          <label class="form-label">完了数量 <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.warehouse.completedQuantity', '完了数量') }} <span class="required">*</span></label>
           <input v-model.number="completeForm.completedQuantity" type="number" class="o-input" min="0" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">実行者</label>
+          <label class="form-label">{{ t('wms.warehouse.executor', '実行者') }}</label>
           <input v-model="completeForm.executedBy" type="text" class="o-input" />
         </div>
       </div>
@@ -209,6 +209,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
@@ -224,34 +225,35 @@ import {
 } from '@/api/task'
 
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 // Label maps
-const typeLabels: Record<string, string> = {
-  picking: 'ピッキング',
-  putaway: '棚入れ',
-  replenishment: '補充',
-  counting: '棚卸',
-  sorting: '仕分け',
-  packing: '梱包',
-  receiving: '入荷',
-  shipping: '出荷',
-}
+const typeLabels = computed<Record<string, string>>(() => ({
+  picking: t('wms.warehouse.typePicking', 'ピッキング'),
+  putaway: t('wms.warehouse.typePutaway', '棚入れ'),
+  replenishment: t('wms.warehouse.typeReplenishment', '補充'),
+  counting: t('wms.warehouse.typeCounting', '棚卸'),
+  sorting: t('wms.warehouse.typeSorting', '仕分け'),
+  packing: t('wms.warehouse.typePacking', '梱包'),
+  receiving: t('wms.warehouse.typeReceiving', '入荷'),
+  shipping: t('wms.warehouse.typeShipping', '出荷'),
+}))
 
-const priorityLabels: Record<string, string> = {
-  urgent: '緊急',
-  high: '高',
-  normal: '通常',
-  low: '低',
-}
+const priorityLabels = computed<Record<string, string>>(() => ({
+  urgent: t('wms.warehouse.priorityUrgent', '緊急'),
+  high: t('wms.warehouse.priorityHigh', '高'),
+  normal: t('wms.warehouse.priorityNormal', '通常'),
+  low: t('wms.warehouse.priorityLow', '低'),
+}))
 
-const statusLabels: Record<string, string> = {
-  pending: '未着手',
-  assigned: '割当済',
-  in_progress: '作業中',
-  completed: '完了',
-  cancelled: 'キャンセル',
-  on_hold: '保留',
-}
+const statusLabels = computed<Record<string, string>>(() => ({
+  pending: t('wms.warehouse.statusPending', '未着手'),
+  assigned: t('wms.warehouse.statusAssigned', '割当済'),
+  in_progress: t('wms.warehouse.statusInProgress', '作業中'),
+  completed: t('wms.warehouse.statusCompleted', '完了'),
+  cancelled: t('wms.warehouse.statusCancelled', 'キャンセル'),
+  on_hold: t('wms.warehouse.statusOnHold', '保留'),
+}))
 
 // State
 const tasks = ref<WarehouseTask[]>([])
@@ -318,7 +320,7 @@ const loadList = async () => {
     tasks.value = result.data
     total.value = result.total
   } catch (error: any) {
-    showToast(error?.message || 'タスクの取得に失敗しました', 'danger')
+    showToast(error?.message || t('wms.warehouse.fetchTasksFailed', 'タスクの取得に失敗しました'), 'danger')
   } finally {
     loading.value = false
   }
@@ -347,7 +349,7 @@ const openCreateDialog = () => {
 
 const handleCreate = async () => {
   if (!createForm.value.type) {
-    showToast('タイプは必須です', 'danger')
+    showToast(t('wms.warehouse.typeRequired', 'タイプは必須です'), 'danger')
     return
   }
   try {
@@ -358,24 +360,24 @@ const handleCreate = async () => {
       quantity: createForm.value.quantity,
       memo: createForm.value.memo || undefined,
     })
-    showToast('タスクを作成しました', 'success')
+    showToast(t('wms.warehouse.taskCreated', 'タスクを作成しました'), 'success')
     createDialogOpen.value = false
     await loadList()
   } catch (error: any) {
-    showToast(error?.message || 'タスクの作成に失敗しました', 'danger')
+    showToast(error?.message || t('wms.warehouse.createTaskFailed', 'タスクの作成に失敗しました'), 'danger')
   }
 }
 
 // Assign
-const openAssignDialog = (t: WarehouseTask) => {
-  assignTargetId.value = t._id
+const openAssignDialog = (task: WarehouseTask) => {
+  assignTargetId.value = task._id
   assignForm.value = { assignedTo: '', assignedName: '' }
   assignDialogOpen.value = true
 }
 
 const handleAssign = async () => {
   if (!assignForm.value.assignedTo.trim()) {
-    showToast('担当者IDは必須です', 'danger')
+    showToast(t('wms.warehouse.assigneeIdRequired', '担当者IDは必須です'), 'danger')
     return
   }
   try {
@@ -383,30 +385,30 @@ const handleAssign = async () => {
       assignedTo: assignForm.value.assignedTo,
       assignedName: assignForm.value.assignedName || undefined,
     })
-    showToast('タスクを割当しました', 'success')
+    showToast(t('wms.warehouse.taskAssigned', 'タスクを割当しました'), 'success')
     assignDialogOpen.value = false
     await loadList()
   } catch (error: any) {
-    showToast(error?.message || 'タスクの割当に失敗しました', 'danger')
+    showToast(error?.message || t('wms.warehouse.assignTaskFailed', 'タスクの割当に失敗しました'), 'danger')
   }
 }
 
 // Start / Resume
-const handleStart = async (t: WarehouseTask) => {
+const handleStart = async (task: WarehouseTask) => {
   try {
-    await startTask(t._id)
-    showToast('タスクを開始しました', 'success')
+    await startTask(task._id)
+    showToast(t('wms.warehouse.taskStarted', 'タスクを開始しました'), 'success')
     await loadList()
   } catch (error: any) {
-    showToast(error?.message || 'タスクの開始に失敗しました', 'danger')
+    showToast(error?.message || t('wms.warehouse.startTaskFailed', 'タスクの開始に失敗しました'), 'danger')
   }
 }
 
 // Complete
-const openCompleteDialog = (t: WarehouseTask) => {
-  completeTargetId.value = t._id
+const openCompleteDialog = (task: WarehouseTask) => {
+  completeTargetId.value = task._id
   completeForm.value = {
-    completedQuantity: t.quantity ?? 0,
+    completedQuantity: task.quantity ?? 0,
     executedBy: '',
   }
   completeDialogOpen.value = true
@@ -418,34 +420,34 @@ const handleComplete = async () => {
       completedQuantity: completeForm.value.completedQuantity,
       executedBy: completeForm.value.executedBy || undefined,
     })
-    showToast('タスクを完了しました', 'success')
+    showToast(t('wms.warehouse.taskCompleted', 'タスクを完了しました'), 'success')
     completeDialogOpen.value = false
     await loadList()
   } catch (error: any) {
-    showToast(error?.message || 'タスクの完了に失敗しました', 'danger')
+    showToast(error?.message || t('wms.warehouse.completeTaskFailed', 'タスクの完了に失敗しました'), 'danger')
   }
 }
 
 // Hold
-const handleHold = async (t: WarehouseTask) => {
+const handleHold = async (task: WarehouseTask) => {
   try {
-    await holdTask(t._id, {})
-    showToast('タスクを保留にしました', 'success')
+    await holdTask(task._id, {})
+    showToast(t('wms.warehouse.taskOnHold', 'タスクを保留にしました'), 'success')
     await loadList()
   } catch (error: any) {
-    showToast(error?.message || 'タスクの保留に失敗しました', 'danger')
+    showToast(error?.message || t('wms.warehouse.holdTaskFailed', 'タスクの保留に失敗しました'), 'danger')
   }
 }
 
 // Cancel
-const handleCancel = async (t: WarehouseTask) => {
-  if (!confirm(`タスク「${t.taskNumber}」をキャンセルしますか？`)) return
+const handleCancel = async (task: WarehouseTask) => {
+  if (!confirm(t('wms.warehouse.cancelTaskConfirm', 'タスクをキャンセルしますか？') + `（${task.taskNumber}）`)) return
   try {
-    await cancelTask(t._id, {})
-    showToast('タスクをキャンセルしました', 'success')
+    await cancelTask(task._id, {})
+    showToast(t('wms.warehouse.taskCancelled', 'タスクをキャンセルしました'), 'success')
     await loadList()
   } catch (error: any) {
-    showToast(error?.message || 'タスクのキャンセルに失敗しました', 'danger')
+    showToast(error?.message || t('wms.warehouse.cancelTaskFailed', 'タスクのキャンセルに失敗しました'), 'danger')
   }
 }
 

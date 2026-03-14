@@ -1,14 +1,14 @@
 <template>
   <div class="basic-settings">
-    <ControlPanel title="基本設定" :show-search="false" />
+    <ControlPanel :title="t('wms.settings.basicSettings', '基本設定')" :show-search="false" />
 
     <div class="o-card settings-card">
       <div class="card-header">
-        <span class="card-title">表示設定</span>
+        <span class="card-title">{{ t('wms.settings.displaySettings', '表示設定') }}</span>
       </div>
 
       <div class="o-form-group">
-        <label class="o-form-label">受注一覧の検索パネル</label>
+        <label class="form-label">{{ t('wms.settings.orderSearchPanel', '受注一覧の検索パネル') }}</label>
         <div class="radio-group">
           <label class="radio-option">
             <input
@@ -18,7 +18,7 @@
               :checked="orderSearchStyle === 'classic'"
               @change="handleSearchStyleChange('classic')"
             />
-            <span>伝統スタイル（フィールド固定）</span>
+            <span>{{ t('wms.settings.classicStyle', '伝統スタイル（フィールド固定）') }}</span>
           </label>
           <label class="radio-option">
             <input
@@ -28,7 +28,7 @@
               :checked="orderSearchStyle === 'modern'"
               @change="handleSearchStyleChange('modern')"
             />
-            <span>新式スタイル（フィルター選択式）</span>
+            <span>{{ t('wms.settings.modernStyle', '新式スタイル（フィルター選択式）') }}</span>
           </label>
         </div>
       </div>
@@ -41,9 +41,11 @@ import { ref, onMounted } from 'vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useSettingsStore, type OrderSearchStyle } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 
 const settingsStore = useSettingsStore()
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const orderSearchStyle = ref<OrderSearchStyle>('classic')
 
@@ -54,13 +56,21 @@ onMounted(() => {
 const handleSearchStyleChange = (value: OrderSearchStyle) => {
   orderSearchStyle.value = value
   settingsStore.setOrderSearchStyle(value)
-  showToast('設定を保存しました', 'success')
+  showToast(t('wms.settings.settingsSaved', '設定を保存しました'), 'success')
 }
 </script>
 
 <style scoped>
 .basic-settings {
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 
@@ -90,7 +100,7 @@ const handleSearchStyleChange = (value: OrderSearchStyle) => {
   margin-bottom: 1rem;
 }
 
-.o-form-label {
+.form-label {
   display: block;
   font-size: var(--o-font-size-small, 13px);
   font-weight: 500;

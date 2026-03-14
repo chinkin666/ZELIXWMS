@@ -1,132 +1,94 @@
 <template>
   <div class="location-settings">
-    <ControlPanel title="ロケーション管理" :show-search="false">
+    <ControlPanel :title="t('wms.inventory.locationManagement', 'ロケーション管理')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
           <OButton variant="secondary" size="sm" :disabled="isSeeding" @click="handleSeed">
-            {{ isSeeding ? '作成中...' : '初期データ作成' }}
+            {{ isSeeding ? t('wms.inventory.creating', '作成中...') : t('wms.inventory.seedData', '初期データ作成') }}
           </OButton>
           <OButton variant="primary" size="sm" @click="openCreateDialog">
-            新規作成
+            {{ t('wms.common.create', '新規作成') }}
           </OButton>
         </div>
       </template>
     </ControlPanel>
 
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width:160px;">コード</th>
-            <th class="o-table-th" style="width:160px;">名称</th>
-            <th class="o-table-th" style="width:100px;">タイプ</th>
-            <th class="o-table-th" style="width:250px;">フルパス</th>
-            <th class="o-table-th" style="width:80px;">温度帯</th>
-            <th class="o-table-th" style="width:60px;">有効</th>
-            <th class="o-table-th" style="width:60px;">順序</th>
-            <th class="o-table-th" style="width:200px;">メモ</th>
-            <th class="o-table-th" style="width:120px;">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoading">
-            <td colspan="9" class="o-table-empty">読み込み中...</td>
-          </tr>
-          <tr v-else-if="locations.length === 0">
-            <td colspan="9" class="o-table-empty">ロケーションがありません。「初期データ作成」を実行してください。</td>
-          </tr>
-          <tr v-for="loc in locations" :key="loc._id" class="o-table-row">
-            <td class="o-table-td">
-              <span class="location-code" :style="{ paddingLeft: getIndent(loc) + 'px' }">
-                {{ loc.code }}
-              </span>
-            </td>
-            <td class="o-table-td">{{ loc.name }}</td>
-            <td class="o-table-td">
-              <span class="type-badge" :class="'type--' + loc.type.replace('/', '-')">{{ typeLabel(loc.type) }}</span>
-            </td>
-            <td class="o-table-td text-muted">{{ loc.fullPath }}</td>
-            <td class="o-table-td">
-              <span v-if="loc.coolType === '1'" style="color:#409eff;">冷凍</span>
-              <span v-else-if="loc.coolType === '2'" style="color:#67c23a;">冷蔵</span>
-              <span v-else>-</span>
-            </td>
-            <td class="o-table-td">
-              <span :style="{ color: loc.isActive ? '#67c23a' : '#f56c6c' }">{{ loc.isActive ? '有効' : '無効' }}</span>
-            </td>
-            <td class="o-table-td" style="text-align:right;">{{ loc.sortOrder }}</td>
-            <td class="o-table-td">{{ loc.memo || '-' }}</td>
-            <td class="o-table-td o-table-td--actions">
-              <div style="display:inline-flex;gap:4px;">
-                <OButton variant="primary" size="sm" @click="openEditDialog(loc)">編集</OButton>
-                <OButton
-                  variant="secondary" size="sm"
-                  style="border-color:#f56c6c;color:#f56c6c;"
-                  :disabled="loc.type.startsWith('virtual/')"
-                  @click="handleDelete(loc)"
-                >
-                  削除
-                </OButton>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="locationSettingsSearch"
+      @search="handleSearch"
+    />
+
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="locations"
+        :height="520"
+        row-key="_id"
+        highlight-columns-on-hover
+        pagination-enabled
+        pagination-mode="client"
+        :page-size="20"
+        :page-sizes="[20, 50, 100]"
+        :global-search-text="globalSearchText"
+      />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogVisible" :title="editingId ? 'ロケーション編集' : 'ロケーション新規作成'" size="md">
+    <ODialog v-model="dialogVisible" :title="editingId ? t('wms.inventory.editLocation', 'ロケーション編集') : t('wms.inventory.createLocation', 'ロケーション新規作成')" size="md">
       <div class="dialog-form">
         <div class="form-field">
-          <label class="form-label">コード <span class="required">*</span></label>
-          <input v-model="dialogForm.code" type="text" class="o-input" placeholder="例: WH-MAIN/A-01" />
+          <label class="form-label">{{ t('wms.inventory.code', 'コード') }} <span class="required">*</span></label>
+          <input v-model="dialogForm.code" type="text" class="o-input" :placeholder="t('wms.inventory.codePlaceholder', '例: WH-MAIN/A-01')" />
         </div>
         <div class="form-field">
-          <label class="form-label">名称 <span class="required">*</span></label>
-          <input v-model="dialogForm.name" type="text" class="o-input" placeholder="例: A棟 1列" />
+          <label class="form-label">{{ t('wms.inventory.locationName', '名称') }} <span class="required">*</span></label>
+          <input v-model="dialogForm.name" type="text" class="o-input" :placeholder="t('wms.inventory.locationNamePlaceholder', '例: A棟 1列')" />
         </div>
         <div class="form-field">
-          <label class="form-label">タイプ <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inventory.locationType', 'タイプ') }} <span class="required">*</span></label>
           <select v-model="dialogForm.type" class="o-input">
-            <option value="warehouse">倉庫</option>
-            <option value="zone">ゾーン</option>
-            <option value="shelf">棚</option>
-            <option value="bin">区画</option>
-            <option value="staging">出荷準備</option>
-            <option value="receiving">入庫検品</option>
+            <option value="warehouse">{{ t('wms.inventory.typeWarehouse', '倉庫') }}</option>
+            <option value="zone">{{ t('wms.inventory.typeZone', 'ゾーン') }}</option>
+            <option value="shelf">{{ t('wms.inventory.typeShelf', '棚') }}</option>
+            <option value="bin">{{ t('wms.inventory.typeBin', '区画') }}</option>
+            <option value="staging">{{ t('wms.inventory.typeStaging', '出荷準備') }}</option>
+            <option value="receiving">{{ t('wms.inventory.typeReceiving', '入庫検品') }}</option>
           </select>
         </div>
         <div class="form-field">
-          <label class="form-label">親ロケーション</label>
+          <label class="form-label">{{ t('wms.inventory.parentLocation', '親ロケーション') }}</label>
           <select v-model="dialogForm.parentId" class="o-input">
-            <option value="">なし（最上位）</option>
+            <option value="">{{ t('wms.inventory.noParent', 'なし（最上位）') }}</option>
             <option v-for="loc in parentCandidates" :key="loc._id" :value="loc._id">
               {{ loc.code }} ({{ loc.name }})
             </option>
           </select>
         </div>
         <div class="form-field">
-          <label class="form-label">温度帯</label>
+          <label class="form-label">{{ t('wms.inventory.temperatureZone', '温度帯') }}</label>
           <select v-model="dialogForm.coolType" class="o-input">
-            <option value="">指定なし</option>
-            <option value="0">常温</option>
-            <option value="1">冷凍</option>
-            <option value="2">冷蔵</option>
+            <option value="">{{ t('wms.inventory.notSpecified', '指定なし') }}</option>
+            <option value="0">{{ t('wms.inventory.tempNormal', '常温') }}</option>
+            <option value="1">{{ t('wms.inventory.tempFrozen', '冷凍') }}</option>
+            <option value="2">{{ t('wms.inventory.tempChilled', '冷蔵') }}</option>
           </select>
         </div>
         <div class="form-field">
-          <label class="form-label">表示順</label>
+          <label class="form-label">{{ t('wms.inventory.sortOrder', '表示順') }}</label>
           <input v-model.number="dialogForm.sortOrder" type="number" class="o-input" />
         </div>
         <div class="form-field" style="grid-column:1/-1;">
-          <label class="form-label">メモ</label>
+          <label class="form-label">{{ t('wms.inventory.memo', 'メモ') }}</label>
           <input v-model="dialogForm.memo" type="text" class="o-input" />
         </div>
       </div>
       <template #footer>
-        <OButton variant="secondary" @click="dialogVisible = false">キャンセル</OButton>
+        <OButton variant="secondary" @click="dialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
         <OButton variant="primary" :disabled="!canSaveDialog || isSaving" @click="handleSaveDialog">
-          {{ isSaving ? '保存中...' : '保存' }}
+          {{ isSaving ? t('wms.inventory.saving', '保存中...') : t('wms.common.save', '保存') }}
         </OButton>
       </template>
     </ODialog>
@@ -134,11 +96,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
 import {
   fetchLocations,
   createLocation,
@@ -147,12 +112,15 @@ import {
   seedLocations,
 } from '@/api/location'
 import type { Location } from '@/types/inventory'
+import type { TableColumn, Operator } from '@/types/table'
 
 const toast = useToast()
+const { t } = useI18n()
 const isLoading = ref(false)
 const isSeeding = ref(false)
 const isSaving = ref(false)
 const locations = ref<Location[]>([])
+const globalSearchText = ref('')
 
 const dialogVisible = ref(false)
 const editingId = ref<string | null>(null)
@@ -176,22 +144,106 @@ const canSaveDialog = computed(() =>
   dialogForm.value.code.trim() && dialogForm.value.name.trim() && dialogForm.value.type,
 )
 
-const typeLabel = (t: string) => {
+const typeLabel = (val: string) => {
   const map: Record<string, string> = {
-    warehouse: '倉庫',
-    zone: 'ゾーン',
-    shelf: '棚',
-    bin: '区画',
-    staging: '出荷準備',
-    receiving: '入庫検品',
-    'virtual/supplier': '仮想:仕入先',
-    'virtual/customer': '仮想:顧客',
+    warehouse: t('wms.inventory.typeWarehouse', '倉庫'),
+    zone: t('wms.inventory.typeZone', 'ゾーン'),
+    shelf: t('wms.inventory.typeShelf', '棚'),
+    bin: t('wms.inventory.typeBin', '区画'),
+    staging: t('wms.inventory.typeStaging', '出荷準備'),
+    receiving: t('wms.inventory.typeReceiving', '入庫検品'),
+    'virtual/supplier': t('wms.inventory.typeVirtualSupplier', '仮想:仕入先'),
+    'virtual/customer': t('wms.inventory.typeVirtualCustomer', '仮想:顧客'),
   }
-  return map[t] || t
+  return map[val] || val
 }
 
 const getIndent = (loc: Location) => {
   return loc.parentId ? 20 : 0
+}
+
+const searchColumns = computed<TableColumn[]>(() => [
+  { key: 'code', dataKey: 'code', title: t('wms.inventory.code', 'コード'), width: 160, fieldType: 'string', searchable: true, searchType: 'string' },
+  { key: 'name', dataKey: 'name', title: t('wms.inventory.locationName', '名称'), width: 160, fieldType: 'string', searchable: true, searchType: 'string' },
+  {
+    key: 'type', dataKey: 'type', title: t('wms.inventory.locationType', 'タイプ'), width: 100, fieldType: 'string',
+    searchable: true, searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inventory.typeWarehouse', '倉庫'), value: 'warehouse' },
+      { label: t('wms.inventory.typeZone', 'ゾーン'), value: 'zone' },
+      { label: t('wms.inventory.typeShelf', '棚'), value: 'shelf' },
+      { label: t('wms.inventory.typeBin', '区画'), value: 'bin' },
+      { label: t('wms.inventory.typeStaging', '出荷準備'), value: 'staging' },
+      { label: t('wms.inventory.typeReceiving', '入庫検品'), value: 'receiving' },
+    ],
+  },
+  { key: 'isActive', dataKey: 'isActive', title: t('wms.inventory.active', '有効'), width: 60, fieldType: 'boolean', searchable: true, searchType: 'boolean' },
+])
+
+const tableColumns = computed<TableColumn[]>(() => [
+  {
+    key: 'code', dataKey: 'code', title: t('wms.inventory.code', 'コード'), width: 160, fieldType: 'string', searchable: true, searchType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Location }) =>
+      h('span', { class: 'location-code', style: { paddingLeft: `${getIndent(rowData)}px` } }, rowData.code),
+  },
+  { key: 'name', dataKey: 'name', title: t('wms.inventory.locationName', '名称'), width: 160, fieldType: 'string', searchable: true, searchType: 'string' },
+  {
+    key: 'type', dataKey: 'type', title: t('wms.inventory.locationType', 'タイプ'), width: 100, fieldType: 'string',
+    searchable: true, searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inventory.typeWarehouse', '倉庫'), value: 'warehouse' },
+      { label: t('wms.inventory.typeZone', 'ゾーン'), value: 'zone' },
+      { label: t('wms.inventory.typeShelf', '棚'), value: 'shelf' },
+      { label: t('wms.inventory.typeBin', '区画'), value: 'bin' },
+      { label: t('wms.inventory.typeStaging', '出荷準備'), value: 'staging' },
+      { label: t('wms.inventory.typeReceiving', '入庫検品'), value: 'receiving' },
+    ],
+    cellRenderer: ({ rowData }: { rowData: Location }) =>
+      h('span', { class: `type-badge type--${rowData.type.replace('/', '-')}` }, typeLabel(rowData.type)),
+  },
+  {
+    key: 'fullPath', dataKey: 'fullPath', title: t('wms.inventory.fullPath', 'フルパス'), width: 250, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Location }) => h('span', { class: 'text-muted' }, rowData.fullPath),
+  },
+  {
+    key: 'coolType', dataKey: 'coolType', title: t('wms.inventory.temperatureZone', '温度帯'), width: 80, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Location }) => {
+      if (rowData.coolType === '1') return h('span', { style: 'color:#409eff;' }, t('wms.inventory.tempFrozen', '冷凍'))
+      if (rowData.coolType === '2') return h('span', { style: 'color:#67c23a;' }, t('wms.inventory.tempChilled', '冷蔵'))
+      return '-'
+    },
+  },
+  {
+    key: 'isActive', dataKey: 'isActive', title: t('wms.inventory.active', '有効'), width: 60, fieldType: 'boolean', searchable: true, searchType: 'boolean',
+    cellRenderer: ({ rowData }: { rowData: Location }) =>
+      h('span', { style: { color: rowData.isActive ? '#67c23a' : '#f56c6c' } }, rowData.isActive ? t('wms.inventory.activeYes', '有効') : t('wms.inventory.activeNo', '無効')),
+  },
+  { key: 'sortOrder', dataKey: 'sortOrder', title: t('wms.inventory.sortOrder', '順序'), width: 60, fieldType: 'number', align: 'right' as const },
+  {
+    key: 'memo', dataKey: 'memo', title: t('wms.inventory.memo', 'メモ'), width: 200, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Location }) => rowData.memo || '-',
+  },
+  {
+    key: 'actions', title: t('wms.common.actions', '操作'), width: 120, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Location }) =>
+      h('div', { style: 'display:inline-flex;gap:4px;' }, [
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEditDialog(rowData) }, () => t('wms.common.edit', '編集')),
+        h(OButton, {
+          variant: 'danger', size: 'sm',
+          disabled: rowData.type.startsWith('virtual/'),
+          onClick: () => handleDelete(rowData),
+        }, () => t('wms.common.delete', '削除')),
+      ]),
+  },
+])
+
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+    delete payload.__global
+  } else {
+    globalSearchText.value = ''
+  }
 }
 
 const loadLocations = async () => {
@@ -199,7 +251,7 @@ const loadLocations = async () => {
   try {
     locations.value = await fetchLocations()
   } catch (e: any) {
-    toast.showError(e?.message || 'ロケーションの取得に失敗しました')
+    toast.showError(e?.message || t('wms.inventory.locationFetchFailed', 'ロケーションの取得に失敗しました'))
   } finally {
     isLoading.value = false
   }
@@ -212,7 +264,7 @@ const handleSeed = async () => {
     toast.showSuccess(result.message)
     await loadLocations()
   } catch (e: any) {
-    toast.showError(e?.message || '初期データ作成に失敗しました')
+    toast.showError(e?.message || t('wms.inventory.seedFailed', '初期データ作成に失敗しました'))
   } finally {
     isSeeding.value = false
   }
@@ -254,44 +306,50 @@ const handleSaveDialog = async () => {
 
     if (editingId.value) {
       await updateLocation(editingId.value, data as any)
-      toast.showSuccess('ロケーションを更新しました')
+      toast.showSuccess(t('wms.inventory.locationUpdated', 'ロケーションを更新しました'))
     } else {
       await createLocation(data as any)
-      toast.showSuccess('ロケーションを作成しました')
+      toast.showSuccess(t('wms.inventory.locationCreated', 'ロケーションを作成しました'))
     }
 
     dialogVisible.value = false
     await loadLocations()
   } catch (e: any) {
-    toast.showError(e?.message || '保存に失敗しました')
+    toast.showError(e?.message || t('wms.inventory.saveFailed', '保存に失敗しました'))
   } finally {
     isSaving.value = false
   }
 }
 
 const handleDelete = async (loc: Location) => {
-  if (!confirm(`ロケーション "${loc.code}" を削除しますか？`)) return
+  if (!confirm(t('wms.inventory.confirmDeleteLocation', `ロケーション "${loc.code}" を削除しますか？`))) return
   try {
     await apiDeleteLocation(loc._id)
-    toast.showSuccess('ロケーションを削除しました')
+    toast.showSuccess(t('wms.inventory.locationDeleted', 'ロケーションを削除しました'))
     await loadLocations()
   } catch (e: any) {
-    toast.showError(e?.message || '削除に失敗しました')
+    toast.showError(e?.message || t('wms.inventory.deleteFailed', '削除に失敗しました'))
   }
 }
 
 onMounted(() => loadLocations())
 </script>
 
-<style>
-@import '@/styles/order-table.css';
-</style>
-
 <style scoped>
 .location-settings {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  padding: 0 20px 20px;
+  gap: 16px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
+}
+
+.table-section {
+  width: 100%;
 }
 
 .location-code {
@@ -350,5 +408,10 @@ onMounted(() => loadLocations())
   color: var(--o-gray-700, #303133);
   background: var(--o-view-background, #fff);
   width: 100%;
+}
+
+:deep(.action-cell) {
+  display: flex;
+  gap: 4px;
 }
 </style>

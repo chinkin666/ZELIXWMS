@@ -130,7 +130,7 @@
                       v-if="step.plugin && inputStepFields[idx]?.[stepIdx]"
                       class="step-params"
                     >
-                      <!-- lookup.map 特殊处理：键値対編集器 -->
+                      <!-- lookup.map：キー値対エディタ -->
                       <template v-if="step.plugin === 'lookup.map'">
                         <div class="o-form-group" style="margin-bottom: 8px">
                           <label class="o-form-label">レイアウトテーブル</label>
@@ -190,7 +190,7 @@
                           </label>
                         </div>
                       </template>
-                      <!-- lookup.contains 特殊処理：部分一致ルール編集器 -->
+                      <!-- lookup.contains：部分一致ルールエディタ -->
                       <template v-else-if="step.plugin === 'lookup.contains'">
                         <div class="o-form-group" style="margin-bottom: 8px">
                           <label class="o-form-label">部分一致ルール</label>
@@ -248,7 +248,7 @@
                           </label>
                         </div>
                       </template>
-                      <!-- string.replace 特殊処理：置換ルール編集器 -->
+                      <!-- string.replace：置換ルールエディタ -->
                       <template v-else-if="step.plugin === 'string.replace'">
                         <div class="o-form-group" style="margin-bottom: 8px">
                           <label class="o-form-label">置換ルール</label>
@@ -296,7 +296,7 @@
                           </div>
                         </div>
                       </template>
-                      <!-- date.parse / date.format 特殊処理 -->
+                      <!-- date.parse / date.format -->
                       <template v-else-if="step.plugin === 'date.parse' || step.plugin === 'date.format'">
                         <div
                           v-for="field in inputStepFields[idx][stepIdx]"
@@ -305,7 +305,7 @@
                           style="margin-bottom: 4px"
                         >
                           <label class="o-form-label">{{ field.label }}</label>
-                          <!-- formats 配列（date.parse） -->
+                          <!-- formats 配列 -->
                           <template v-if="field.key === 'formats' && step.plugin === 'date.parse'">
                             <div class="date-formats-editor">
                               <div
@@ -400,7 +400,7 @@
                           </label>
                         </div>
                       </template>
-                      <!-- http.fetchJson 特殊処理：bodyParams 編集器 -->
+                      <!-- http.fetchJson：bodyParams エディタ -->
                       <template v-else-if="step.plugin === 'http.fetchJson'">
                         <div
                           v-for="field in inputStepFields[idx][stepIdx].filter((f) => f.key !== 'bodyParams')"
@@ -501,7 +501,7 @@
                           </div>
                         </div>
                       </template>
-                      <!-- string.insertSymbol 特殊処理：positions 編集器 -->
+                      <!-- string.insertSymbol：挿入位置エディタ -->
                       <template v-else-if="step.plugin === 'string.insertSymbol'">
                         <div class="o-form-group" style="margin-bottom: 8px">
                           <label class="o-form-label">挿入位置</label>
@@ -647,7 +647,7 @@
                   >削除</OButton>
                 </div>
                 <div v-if="step.plugin && outputStepFields[stepIdx]" class="step-params">
-                  <!-- lookup.map 特殊処理：キー値対編集器 -->
+                  <!-- lookup.map：キー値対エディタ -->
                   <template v-if="step.plugin === 'lookup.map'">
                     <div class="o-form-group" style="margin-bottom: 8px">
                       <label class="o-form-label">レイアウトテーブル</label>
@@ -707,7 +707,7 @@
                       </label>
                     </div>
                   </template>
-                  <!-- lookup.contains 特殊処理：部分一致ルール編集器 -->
+                  <!-- lookup.contains：部分一致ルールエディタ -->
                   <template v-else-if="step.plugin === 'lookup.contains'">
                     <div class="o-form-group" style="margin-bottom: 8px">
                       <label class="o-form-label">部分一致ルール</label>
@@ -765,7 +765,7 @@
                       </label>
                     </div>
                   </template>
-                  <!-- string.replace 特殊処理：置換ルール編集器 -->
+                  <!-- string.replace：置換ルールエディタ -->
                   <template v-else-if="step.plugin === 'string.replace'">
                     <div class="o-form-group" style="margin-bottom: 8px">
                       <label class="o-form-label">置換ルール</label>
@@ -813,7 +813,7 @@
                       </div>
                     </div>
                   </template>
-                  <!-- http.fetchJson 特殊処理：bodyParams 編集器 -->
+                  <!-- http.fetchJson：bodyParams エディタ -->
                   <template v-else-if="step.plugin === 'http.fetchJson'">
                     <div
                       v-for="field in outputStepFields[stepIdx].filter((f) => f.key !== 'bodyParams')"
@@ -914,7 +914,7 @@
                       </div>
                     </div>
                   </template>
-                  <!-- date.parse / date.format 特殊処理 -->
+                  <!-- date.parse / date.format -->
                   <template v-else-if="step.plugin === 'date.parse' || step.plugin === 'date.format'">
                     <div
                       v-for="field in outputStepFields[stepIdx]"
@@ -923,7 +923,7 @@
                       style="margin-bottom: 4px"
                     >
                       <label class="o-form-label">{{ field.label }}</label>
-                      <!-- formats 配列（date.parse） -->
+                      <!-- formats 配列 -->
                       <template v-if="field.key === 'formats' && step.plugin === 'date.parse'">
                         <div class="date-formats-editor">
                           <div
@@ -1018,7 +1018,7 @@
                       </label>
                     </div>
                   </template>
-                  <!-- string.insertSymbol 特殊処理：positions 編集器 -->
+                  <!-- string.insertSymbol：挿入位置エディタ -->
                   <template v-else-if="step.plugin === 'string.insertSymbol'">
                     <div class="o-form-group" style="margin-bottom: 8px">
                       <label class="o-form-label">挿入位置</label>
@@ -1126,14 +1126,14 @@
       <div class="right">
         <div class="preview-title">プレビュー</div>
         <div class="preview-block">
-          <div class="preview-label">引用 入力元（Source）列</div>
+          <div class="preview-label">参照中の入力元列</div>
           <ul class="list">
             <li v-for="col in referencedSources" :key="col">{{ getSourceDisplayName(col) }}</li>
             <li v-if="!referencedSources.length" class="empty">なし</li>
           </ul>
         </div>
         <div class="preview-block">
-          <div class="preview-label">出力先（Target）プレビュー</div>
+          <div class="preview-label">出力先プレビュー</div>
           <div class="preview-value">{{ previewValue }}</div>
         </div>
       </div>
@@ -1187,14 +1187,14 @@ const visibleProxy = computed({
 
 const transformPlugins = ref<TransformPluginInfo[]>([])
 
-// 获取 order 字段定义
+// 注文フィールド定義を取得
 const orderFieldDefinitions = getOrderFieldDefinitions()
 
-// 获取 target 字段的详细说明
+// 対象フィールドの説明を取得
 const targetDescription = computed<string | null>(() => {
   if (!props.target?.field) return null
 
-  // 如果是 order-to-carrier，从 carrier 的 formatDefinition 获取
+  // order-to-carrier の場合、配送業者の formatDefinition から取得
   if (props.configType === 'order-to-carrier' && props.carrierId && props.carrierOptions) {
     const carrier = props.carrierOptions.find((c) => c._id === props.carrierId)
     if (carrier?.formatDefinition?.columns) {
@@ -1203,7 +1203,7 @@ const targetDescription = computed<string | null>(() => {
     }
   }
 
-  // 如果是 ec-company-to-order，从 order 字段定义获取
+  // ec-company-to-order の場合、注文フィールド定義から取得
   if (props.configType === 'ec-company-to-order') {
     const def = orderFieldDefinitions.find((d) => d.dataKey === props.target?.field)
     return def?.description || null
@@ -1247,11 +1247,10 @@ onMounted(async () => {
   }
 })
 
-// 获取插件描述（用于 hover 提示）
+// プラグイン説明を取得（ホバーツールチップ用）
 const getPluginDescription = (pluginName: string): string | null => {
   const plugin = transformPlugins.value.find((p) => p.name === pluginName)
   if (!plugin?.descriptionJa) return null
-  // 将换行符转换为 HTML <br> 标签
   return plugin.descriptionJa.replace(/\n/g, '<br>')
 }
 
@@ -1260,7 +1259,7 @@ watch(
   ([m, visible, preSelected]) => {
     if (visible) {
       if (m) {
-        // 已有 mapping，加载它
+        // 既存の mapping を読み込む
         form.defaultValue = m.defaultValue
         form.inputs = m.inputs
           .filter((inp) => inp.type === 'column' || inp.type === 'literal')
@@ -1281,13 +1280,13 @@ watch(
           params: s.params || {},
         })) || []
 
-        // 初始化字段配置
+        // フィールド設定を初期化
         inputStepFields.value = form.inputs.map((inp) =>
           inp.pipelineSteps.map(() => [] as FormField[]),
         )
         outputStepFields.value = form.outputPipelineSteps.map(() => [] as FormField[])
 
-        // 加载每个步骤的字段配置
+        // 各ステップのフィールド設定を読み込む
         form.inputs.forEach((inp, inpIdx) => {
           inp.pipelineSteps.forEach((step, stepIdx) => {
             if (step.plugin) {
@@ -1301,19 +1300,19 @@ watch(
           }
         })
       } else if (preSelected && preSelected.length > 0) {
-        // 没有 mapping 但有预选的 sources，自动添加它们
+        // mapping なし、事前選択の入力元を自動追加
         form.defaultValue = undefined
         form.inputs = preSelected.map((src, idx) => ({
           id: `input-${Date.now()}-${idx}`,
           type: 'column' as const,
           column: src.name,
-          pipelineSteps: [], // 不添加 step
+          pipelineSteps: [],
         }))
         form.outputPipelineSteps = []
         inputStepFields.value = form.inputs.map(() => [])
         outputStepFields.value = []
       } else {
-        // 全新开始
+        // 新規作成
         form.defaultValue = undefined
         form.inputs = []
         form.outputPipelineSteps = []
@@ -1325,15 +1324,14 @@ watch(
   { immediate: true },
 )
 
-// 获取字段显示名称
+// フィールド表示名を取得
 const getFieldDisplayName = (fieldKey: string): string => {
   if (!fieldKey) return ''
 
-  // 从 orderFieldDefinitions 中查找
   const fieldDef = orderFieldDefinitions.find((f) => f.key === fieldKey || f.dataKey === fieldKey)
   if (fieldDef?.title) return fieldDef.title
 
-  // 尝试匹配基础字段名（处理嵌套路径）
+  // ネストされたパスのベースフィールド名で照合
   const baseField = fieldKey.split('.')[0]
   if (baseField) {
     const baseDef = orderFieldDefinitions.find((f) => f.key === baseField || f.dataKey === baseField)
@@ -1343,30 +1341,28 @@ const getFieldDisplayName = (fieldKey: string): string => {
   return fieldKey
 }
 
-// 获取 Source 显示名称
+// 入力元の表示名を取得
 const getSourceDisplayName = (sourceKey: string): string => {
   if (!sourceKey) return ''
 
-  // 如果 preSelectedSources 中有对应的 source，使用其 label
   if (props.preSelectedSources) {
     const source = props.preSelectedSources.find((s) => s.name === sourceKey)
     if (source?.label) return source.label
   }
 
-  // 否则从 orderFieldDefinitions 中查找
+  // フィールド定義から取得
   return getFieldDisplayName(sourceKey)
 }
 
-// 获取 Target 显示名称
+// 出力先の表示名を取得
 const getTargetDisplayName = (targetKey: string): string => {
   if (!targetKey) return ''
 
-  // 如果 target 有 label，使用它
   if (props.target && 'label' in props.target && (props.target as any).label) {
     return (props.target as any).label
   }
 
-  // 否则从 orderFieldDefinitions 中查找
+  // フィールド定義から取得
   return getFieldDisplayName(targetKey)
 }
 
@@ -1382,16 +1378,16 @@ const referencedSources = computed(() => {
   return form.inputs.filter((i) => i.type === 'column').map((i) => i.column || '')
 })
 
-// 预览值（使用 transformRunner 确保与实際導入一致）
+// プレビュー値（transformRunner で実際のインポートと一致させる）
 const previewValue = ref<string>('（計算中...）')
 
-// 构建当前的 TransformMapping 对象（用于预览）
+// 現在の TransformMapping オブジェクトを構築（プレビュー用）
 const buildCurrentMapping = (): TransformMapping | null => {
   if (form.inputs.length === 0) return null
 
   const inputs: InputSource[] = form.inputs.map((inp): InputSource | null => {
     const pipelineSteps: TransformStep[] = inp.pipelineSteps
-      .filter((s) => s.plugin) // 只包含已选择插件的步骤
+      .filter((s) => s.plugin)
       .map((s) => ({
         id: s.id,
         plugin: s.plugin,
@@ -1417,7 +1413,6 @@ const buildCurrentMapping = (): TransformMapping | null => {
         pipeline,
       }
     }
-    // generated 类型已移除
     return null
   })
   .filter((inp): inp is InputSource => inp !== null)
@@ -1445,7 +1440,7 @@ const buildCurrentMapping = (): TransformMapping | null => {
   }
 }
 
-// 监听 form 变化，异步更新预览
+// フォーム変更を監視し、プレビューを非同期更新
 watch(
   () => [form.inputs, form.outputPipelineSteps, form.defaultValue, props.sampleRow],
   async () => {
@@ -1462,7 +1457,6 @@ watch(
 
     try {
       const result = await runTransformMapping(mapping, props.sampleRow)
-      // 格式化显示结果
       if (result === null || result === undefined) {
         previewValue.value = '（空）'
       } else if (typeof result === 'object') {
@@ -1472,7 +1466,7 @@ watch(
       }
     } catch (error) {
       console.error('Preview error:', error)
-      previewValue.value = `（エラー: ${error instanceof Error ? error.message : 'Unknown error'}）`
+      previewValue.value = `（エラー: ${error instanceof Error ? error.message : '不明なエラー'}）`
     }
   },
   { deep: true, immediate: true }
@@ -1496,13 +1490,13 @@ const removeInput = (idx: number) => {
 
 const moveInputUp = (idx: number) => {
   if (idx === 0) return
-  // 交换 inputs
+  // 入力を入れ替え
   const temp = form.inputs[idx]
   const prev = form.inputs[idx - 1]
   if (temp && prev) {
     form.inputs[idx] = prev
     form.inputs[idx - 1] = temp
-    // 交换对应的字段配置
+    // フィールド設定も入れ替え
     const tempFields = inputStepFields.value[idx]
     const prevFields = inputStepFields.value[idx - 1]
     inputStepFields.value[idx] = prevFields || []
@@ -1512,13 +1506,13 @@ const moveInputUp = (idx: number) => {
 
 const moveInputDown = (idx: number) => {
   if (idx === form.inputs.length - 1) return
-  // 交换 inputs
+  // 入力を入れ替え
   const temp = form.inputs[idx]
   const next = form.inputs[idx + 1]
   if (temp && next) {
     form.inputs[idx] = next
     form.inputs[idx + 1] = temp
-    // 交换对应的字段配置
+    // フィールド設定も入れ替え
     const tempFields = inputStepFields.value[idx]
     const nextFields = inputStepFields.value[idx + 1]
     inputStepFields.value[idx] = nextFields || []
@@ -1565,10 +1559,10 @@ const onInputStepPluginChange = (inputIdx: number, stepIdx: number) => {
     if (!inputStepFields.value[inputIdx]) inputStepFields.value[inputIdx] = []
     let fields = jsonSchemaToFormFields(pluginInfo.paramsSchema)
 
-    // 特殊处理：date.parse、date.format 和 date.addDays 的格式字段
+    // date.parse / date.format / date.addDays のフォーマットフィールド
     if (step.plugin === 'date.parse' || step.plugin === 'date.format' || step.plugin === 'date.addDays') {
       fields = fields.map((field) => {
-        // 将 formats 或 format 字段改为下拉选择，并自定义标签
+        // formats / format フィールドをドロップダウンに変更
         if (field.key === 'formats') {
           return {
             ...field,
@@ -1583,7 +1577,7 @@ const onInputStepPluginChange = (inputIdx: number, stepIdx: number) => {
             options: getDateFormatOptions(step.plugin, field.key),
           }
         } else if (field.key === 'precision') {
-          // 自定义 precision 标签
+          // precision ラベルをカスタマイズ
           return {
             ...field,
             label: step.plugin === 'date.parse' ? 'データベース保存精度（日/秒）' : '出力精度（日/秒）',
@@ -1593,8 +1587,7 @@ const onInputStepPluginChange = (inputIdx: number, stepIdx: number) => {
       })
     }
 
-    // date.format: UI should be "convert to what format" (single dropdown),
-    // and must NOT depend on carrier column type/format (which may be missing).
+    // date.format: 出力フォーマット選択（単一ドロップダウン）
     if (step.plugin === 'date.format') {
       fields = [
         {
@@ -1608,18 +1601,18 @@ const onInputStepPluginChange = (inputIdx: number, stepIdx: number) => {
     }
 
     inputStepFields.value[inputIdx][stepIdx] = fields
-    // 保存现有的参数值（从数据库加载时保留已保存的值）
+    // 既存のパラメータ値を保持（DB読み込み時）
     const existingParams = { ...step.params }
     step.params = {}
     for (const field of fields) {
-      // 如果字段已有值（从数据库加载），保留它；否则使用默认值
+      // DB から読み込んだ値があればそれを使用、なければデフォルト値
       if (existingParams[field.key] !== undefined) {
         step.params[field.key] = existingParams[field.key]
       } else if (field.default !== undefined) {
         step.params[field.key] = field.default
       }
     }
-    // 特殊处理：lookup.map 恢复 cases
+    // lookup.map: cases を復元
     if (step.plugin === 'lookup.map') {
       if (existingParams.cases && typeof existingParams.cases === 'object') {
         step.params.cases = existingParams.cases
@@ -1627,7 +1620,7 @@ const onInputStepPluginChange = (inputIdx: number, stepIdx: number) => {
         step.params.cases = {}
       }
     }
-    // 特殊处理：lookup.contains 初始化 rules
+    // lookup.contains: rules を初期化
     if (step.plugin === 'lookup.contains') {
       if (Array.isArray(existingParams.rules)) {
         step.params.rules = existingParams.rules
@@ -1635,7 +1628,7 @@ const onInputStepPluginChange = (inputIdx: number, stepIdx: number) => {
         step.params.rules = []
       }
     }
-    // 特殊处理：string.replace 初始化 rules
+    // string.replace: rules を初期化
     if (step.plugin === 'string.replace') {
       if (Array.isArray(existingParams.rules)) {
         step.params.rules = existingParams.rules
@@ -1643,11 +1636,11 @@ const onInputStepPluginChange = (inputIdx: number, stepIdx: number) => {
         step.params.rules = []
       }
     }
-    // 特殊处理：http.fetchJson 初始化 bodyParams
+    // http.fetchJson: bodyParams を初期化
     if (step.plugin === 'http.fetchJson' && !step.params.bodyParams) {
       step.params.bodyParams = []
     }
-    // 特殊处理：date.parse 初始化 formats 数组和 precision（DB保存精度）
+    // date.parse: formats 配列と precision（DB保存精度）を初期化
     if (step.plugin === 'date.parse') {
       if (!step.params.formats) {
         step.params.formats = ['YYYY-MM-DD']
@@ -1656,23 +1649,23 @@ const onInputStepPluginChange = (inputIdx: number, stepIdx: number) => {
         step.params.precision = inferDateParsePrecision(step.params.formats)
       }
     }
-    // 特殊处理：date.format 初始化 precision
+    // date.format: precision を初期化
     if (step.plugin === 'date.format' && !step.params.precision) {
       step.params.precision = 'datetime'
     }
-    // 特殊处理：jp.sliceByWidth 初始化 boundary 默认值为 keepLeft
+    // jp.sliceByWidth: boundary のデフォルトを keepLeft に設定
     if (step.plugin === 'jp.sliceByWidth' && !step.params.boundary) {
       step.params.boundary = 'keepLeft'
     }
-    // 特殊处理：string.insertSymbol 初始化 positions 数组
+    // string.insertSymbol: positions 配列を初期化
     if (step.plugin === 'string.insertSymbol') {
       if (!Array.isArray(step.params.positions)) {
         step.params.positions = [0]
       } else {
-        // 确保所有位置都是数字，过滤掉无效值
+        // 全て数値であることを保証、無効値を除外
         step.params.positions = step.params.positions
           .map((p: any) => (typeof p === 'number' && p >= 0 ? p : 0))
-          .filter((p: number, idx: number, arr: number[]) => arr.indexOf(p) === idx) // 去重
+          .filter((p: number, idx: number, arr: number[]) => arr.indexOf(p) === idx)
         if (step.params.positions.length === 0) {
           step.params.positions = [0]
         }
@@ -1684,8 +1677,7 @@ const onInputStepPluginChange = (inputIdx: number, stepIdx: number) => {
   } else {
     if (!inputStepFields.value[inputIdx]) inputStepFields.value[inputIdx] = []
     inputStepFields.value[inputIdx][stepIdx] = []
-    // 即使没有 paramsSchema，也保留现有参数（可能插件定义已更新）
-    // step.params = {} // 注释掉，保留现有参数
+    // paramsSchema がなくても既存パラメータを保持
   }
 }
 
@@ -1708,10 +1700,10 @@ const onOutputStepPluginChange = (stepIdx: number) => {
   if (pluginInfo?.paramsSchema) {
     let fields = jsonSchemaToFormFields(pluginInfo.paramsSchema)
 
-    // 特殊处理：date.parse、date.format 和 date.addDays 的格式字段
+    // date.parse / date.format / date.addDays のフォーマットフィールド
     if (step.plugin === 'date.parse' || step.plugin === 'date.format' || step.plugin === 'date.addDays') {
       fields = fields.map((field) => {
-        // 将 formats 或 format 字段改为下拉选择，并自定义标签
+        // formats / format フィールドをドロップダウンに変更
         if (field.key === 'formats') {
           return {
             ...field,
@@ -1726,7 +1718,7 @@ const onOutputStepPluginChange = (stepIdx: number) => {
             options: getDateFormatOptions(step.plugin, field.key),
           }
         } else if (field.key === 'precision') {
-          // 自定义 precision 标签
+          // precision ラベルをカスタマイズ
           return {
             ...field,
             label: step.plugin === 'date.parse' ? 'データベース保存精度（日/秒）' : '出力精度（日/秒）',
@@ -1736,7 +1728,7 @@ const onOutputStepPluginChange = (stepIdx: number) => {
       })
     }
 
-    // date.format: show a single "output format" dropdown (params.format)
+    // date.format: 出力フォーマット選択（単一ドロップダウン）
     if (step.plugin === 'date.format') {
       fields = [
         {
@@ -1750,18 +1742,18 @@ const onOutputStepPluginChange = (stepIdx: number) => {
     }
 
     outputStepFields.value[stepIdx] = fields
-    // 保存现有的参数值（从数据库加载时保留已保存的值）
+    // 既存のパラメータ値を保持（DB読み込み時）
     const existingParams = { ...step.params }
     step.params = {}
     for (const field of outputStepFields.value[stepIdx]) {
-      // 如果字段已有值（从数据库加载），保留它；否则使用默认值
+      // DB から読み込んだ値があればそれを使用、なければデフォルト値
       if (existingParams[field.key] !== undefined) {
         step.params[field.key] = existingParams[field.key]
       } else if (field.default !== undefined) {
         step.params[field.key] = field.default
       }
     }
-    // 特殊处理：lookup.map 恢复 cases
+    // lookup.map: cases を復元
     if (step.plugin === 'lookup.map') {
       if (existingParams.cases && typeof existingParams.cases === 'object') {
         step.params.cases = existingParams.cases
@@ -1769,7 +1761,7 @@ const onOutputStepPluginChange = (stepIdx: number) => {
         step.params.cases = {}
       }
     }
-    // 特殊处理：lookup.contains 初始化 rules
+    // lookup.contains: rules を初期化
     if (step.plugin === 'lookup.contains') {
       if (Array.isArray(existingParams.rules)) {
         step.params.rules = existingParams.rules
@@ -1777,7 +1769,7 @@ const onOutputStepPluginChange = (stepIdx: number) => {
         step.params.rules = []
       }
     }
-    // 特殊处理：string.replace 初始化 rules
+    // string.replace: rules を初期化
     if (step.plugin === 'string.replace') {
       if (Array.isArray(existingParams.rules)) {
         step.params.rules = existingParams.rules
@@ -1785,11 +1777,11 @@ const onOutputStepPluginChange = (stepIdx: number) => {
         step.params.rules = []
       }
     }
-    // 特殊处理：http.fetchJson 初始化 bodyParams
+    // http.fetchJson: bodyParams を初期化
     if (step.plugin === 'http.fetchJson' && !step.params.bodyParams) {
       step.params.bodyParams = []
     }
-    // 特殊处理：date.parse 初始化 formats 数组和 precision（DB保存精度）
+    // date.parse: formats 配列と precision（DB保存精度）を初期化
     if (step.plugin === 'date.parse') {
       if (!step.params.formats) {
         step.params.formats = ['YYYY-MM-DD']
@@ -1798,29 +1790,29 @@ const onOutputStepPluginChange = (stepIdx: number) => {
         step.params.precision = inferDateParsePrecision(step.params.formats)
       }
     }
-    // 特殊处理：date.format 初始化 precision
+    // date.format: precision を初期化
     if (step.plugin === 'date.format' && !step.params.precision) {
       step.params.precision = 'datetime'
     }
-    // 特殊处理：date.addDays 初始化 days（默认30）
+    // date.addDays: days を初期化（デフォルト30）
     if (step.plugin === 'date.addDays') {
       if (step.params.days === undefined || step.params.days === null) {
         step.params.days = 30
       }
     }
-    // 特殊处理：jp.sliceByWidth 初始化 boundary 默认值为 keepLeft
+    // jp.sliceByWidth: boundary のデフォルトを keepLeft に設定
     if (step.plugin === 'jp.sliceByWidth' && !step.params.boundary) {
       step.params.boundary = 'keepLeft'
     }
-    // 特殊处理：string.insertSymbol 初始化 positions 数组
+    // string.insertSymbol: positions 配列を初期化
     if (step.plugin === 'string.insertSymbol') {
       if (!Array.isArray(step.params.positions)) {
         step.params.positions = [0]
       } else {
-        // 确保所有位置都是数字，过滤掉无效值
+        // 全て数値であることを保証、無効値を除外
         step.params.positions = step.params.positions
           .map((p: any) => (typeof p === 'number' && p >= 0 ? p : 0))
-          .filter((p: number, idx: number, arr: number[]) => arr.indexOf(p) === idx) // 去重
+          .filter((p: number, idx: number, arr: number[]) => arr.indexOf(p) === idx)
         if (step.params.positions.length === 0) {
           step.params.positions = [0]
         }
@@ -1831,12 +1823,11 @@ const onOutputStepPluginChange = (stepIdx: number) => {
     }
   } else {
     outputStepFields.value[stepIdx] = []
-    // 即使没有 paramsSchema，也保留现有参数（可能插件定义已更新）
-    // step.params = {} // 注释掉，保留现有参数
+    // paramsSchema がなくても既存パラメータを保持
   }
 }
 
-// 获取日期格式选项
+// 日付フォーマット選択肢を取得
 const getDateFormatOptions = (plugin: string, fieldKey: string): Array<{ label: string; value: any }> => {
   const dateFormats = [
     { label: 'YYYY-MM-DD (日まで)', value: 'YYYY-MM-DD', precision: 'date' },
@@ -1851,12 +1842,12 @@ const getDateFormatOptions = (plugin: string, fieldKey: string): Array<{ label: 
 
   if (plugin === 'date.parse') {
     if (fieldKey === 'formats') {
-      // formats 是数组，需要特殊处理
+      // formats は配列のため個別処理
       return dateFormats.map((f) => ({ label: f.label, value: f.value }))
     }
   } else if (plugin === 'date.format') {
     if (fieldKey === 'format' || fieldKey === 'dateFormat') {
-      // 添加新的格式选项
+      // 追加のフォーマット選択肢
       const formatOptions = [
         ...dateFormats.map((f) => ({ label: f.label, value: f.value })),
         { label: 'YYYY (年のみ)', value: 'YYYY' },
@@ -1879,7 +1870,7 @@ const getDateFormatOptions = (plugin: string, fieldKey: string): Array<{ label: 
   return []
 }
 
-// lookup.map 辅助函数（简化版：使用 key 作为 ID）
+// lookup.map ヘルパー関数
 const getLookupMapEntries = (params: Record<string, any>): Array<{ id: string; key: string; value: any }> => {
   if (!params?.cases || typeof params.cases !== 'object') {
     return []
@@ -1893,7 +1884,7 @@ const getLookupMapEntries = (params: Record<string, any>): Array<{ id: string; k
 
 const addLookupMapEntry = (params: Record<string, any>) => {
   if (!params.cases) params.cases = {}
-  // 生成唯一的新键
+  // 一意の新規キーを生成
   let newKey = ''
   let i = 1
   while (Object.prototype.hasOwnProperty.call(params.cases, newKey) || newKey === '') {
@@ -1921,7 +1912,7 @@ const updateLookupMapEntryValue = (params: Record<string, any>, key: string, new
   }
 }
 
-// lookup.contains rules 辅助函数
+// lookup.contains rules ヘルパー関数
 const addLookupContainsRule = (params: Record<string, any>) => {
   if (!params.rules) params.rules = []
   params.rules.push({ search: '', value: '' })
@@ -1933,7 +1924,7 @@ const removeLookupContainsRule = (params: Record<string, any>, idx: number) => {
   }
 }
 
-// string.replace rules 辅助函数
+// string.replace rules ヘルパー関数
 const addStringReplaceRule = (params: Record<string, any>) => {
   if (!params.rules) params.rules = []
   params.rules.push({ search: '', replace: '', count: 0 })
@@ -1945,7 +1936,7 @@ const removeStringReplaceRule = (params: Record<string, any>, idx: number) => {
   }
 }
 
-// http.fetchJson bodyParams 辅助函数
+// http.fetchJson bodyParams ヘルパー関数
 const addBodyParam = (params: Record<string, any>) => {
   if (!params.bodyParams) {
     params.bodyParams = []
@@ -1972,7 +1963,7 @@ const onBodyParamSourceChange = (param: any) => {
   }
 }
 
-// string.insertSymbol positions 辅助函数
+// string.insertSymbol positions ヘルパー関数
 const addInsertSymbolPosition = (params: Record<string, any>) => {
   if (!Array.isArray(params.positions)) {
     params.positions = []
@@ -1983,7 +1974,7 @@ const addInsertSymbolPosition = (params: Record<string, any>) => {
 const removeInsertSymbolPosition = (params: Record<string, any>, idx: number) => {
   if (Array.isArray(params.positions)) {
     params.positions.splice(idx, 1)
-    // 如果删除后数组为空，至少保留一个
+    // 配列が空になった場合、最低1つは保持
     if (params.positions.length === 0) {
       params.positions.push(0)
     }
@@ -1992,7 +1983,7 @@ const removeInsertSymbolPosition = (params: Record<string, any>, idx: number) =>
 
 const inferDateParsePrecision = (formats: any): 'date' | 'datetime' => {
   const list = Array.isArray(formats) ? formats : []
-  // 如果任意输入格式包含时间，则默认秒精度；否则默认日精度
+  // 入力フォーマットに時刻が含まれる場合は秒精度、そうでなければ日精度
   const hasTime = list.some((f) => typeof f === 'string' && (f.includes('HH') || f.includes(':')))
   return hasTime ? 'datetime' : 'date'
 }
@@ -2004,13 +1995,13 @@ const onDateParseFormatsChanged = (step: any) => {
   step.params.precision = inferred
 }
 
-// date.parse formats 辅助函数
+// date.parse formats ヘルパー関数
 const addDateFormat = (params: Record<string, any>) => {
   if (!params.formats) {
     params.formats = []
   }
   params.formats.push('YYYY-MM-DD')
-  // 新增格式后也同步默认精度（避免默认落到 ISO 秒精度）
+  // 新規フォーマット追加後にデフォルト精度を同期
   if (!params.precision) {
     params.precision = inferDateParsePrecision(params.formats)
   }
@@ -2020,7 +2011,7 @@ const addDateFormat = (params: Record<string, any>) => {
 const handleSubmit = () => {
   if (!props.target) return
 
-  // 清理 lookup.map 步骤的临时数据（以 _ 开头的字段）
+  // lookup.map ステップの一時データを除去（_ 始まりのフィールド）
   const cleanupLookupMapParams = (params: Record<string, any>) => {
     for (const key of Object.keys(params)) {
       if (key.startsWith('_')) {
@@ -2037,7 +2028,7 @@ const handleSubmit = () => {
           inputStepFields.value[inpIdx]?.[stepIdx] || [],
           s.params,
         )
-        // 再次清理（确保 buildParamsFromForm 不会保留临时数据）
+        // 一時データの最終除去
         if (s.plugin === 'lookup.map') {
           cleanupLookupMapParams(params)
         }
@@ -2066,7 +2057,6 @@ const handleSubmit = () => {
         pipeline,
       }
     }
-    // generated 类型已移除
     return null
   })
   .filter((inp): inp is InputSource => inp !== null)
@@ -2075,7 +2065,7 @@ const handleSubmit = () => {
     .filter((s) => s.plugin)
     .map((s, stepIdx) => {
       const params = buildParamsFromForm(outputStepFields.value[stepIdx] || [], s.params)
-      // 再次清理（确保 buildParamsFromForm 不会保留临时数据）
+      // 一時データの最終除去
       if (s.plugin === 'lookup.map') {
         cleanupLookupMapParams(params)
       }
@@ -2087,10 +2077,10 @@ const handleSubmit = () => {
       }
     })
 
-  // 如果有多个 inputs，自动使用 concat 连接；否则使用 first
+  // 複数入力の場合は concat、単一入力の場合は first
   const combinePlugin = inputs.length > 1 ? 'combine.concat' : 'combine.first'
 
-  // 最终清理：确保所有 lookup.map 步骤的参数都是简洁的（只包含 cases、normalize、default）
+  // 最終クリーンアップ：全 lookup.map ステップの一時データを除去
   const finalCleanup = (steps: TransformStep[]) => {
     steps.forEach((step) => {
       if (step.plugin === 'lookup.map' && step.params) {

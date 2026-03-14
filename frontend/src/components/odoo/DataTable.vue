@@ -583,26 +583,8 @@ function getEditType(col: Column): string {
 /* Table scroll wrapper */
 .o-table-scroll { overflow-x: auto; }
 
-/* Table */
-.o-list-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
+/* .o-list-table base styles are defined globally in style.css */
 .o-list-table.o-resizing { cursor: col-resize; }
-.o-list-table th {
-  padding: 0.5rem 0.75rem;
-  font-size: var(--o-font-size-smaller);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--o-gray-600);
-  background: var(--o-gray-100);
-  border-bottom: 2px solid var(--o-border-color);
-  user-select: none;
-  white-space: nowrap;
-  position: relative;
-}
 .o-list-table th.o-sortable { cursor: pointer; }
 .o-list-table th.o-sortable:hover { color: var(--o-gray-900); }
 .o-list-table th.o-sorted { color: var(--o-brand-primary); }
@@ -626,24 +608,8 @@ function getEditType(col: Column): string {
   opacity: 0.4;
 }
 
-.o-list-table td {
-  padding: 0.5rem 0.75rem;
-  font-size: var(--o-font-size-base);
-  border-bottom: 1px solid var(--o-gray-200);
-  color: var(--o-gray-900);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .o-list-table.o-striped tbody tr:nth-child(even) {
   background: var(--o-gray-100);
-}
-.o-list-table tbody tr:hover {
-  background: var(--o-list-hover);
-}
-.o-list-table tbody tr.o-selected {
-  background: var(--o-list-selected);
 }
 
 /* Group header row */

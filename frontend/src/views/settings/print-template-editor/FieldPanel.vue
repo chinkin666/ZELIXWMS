@@ -1,8 +1,8 @@
 <template>
   <div class="panel left">
-    <div class="panel-title">carrierRawRow 字段</div>
+    <div class="panel-title">carrierRawRow {{ t('wms.printTemplate.fields') }}</div>
 
-    <input v-model="localFieldFilter" class="o-input" placeholder="搜索 key" style="width: 100%" />
+    <input v-model="localFieldFilter" class="o-input" :placeholder="t('wms.printTemplate.searchKey')" style="width: 100%" />
     <div class="fields">
       <div
         v-for="k in filteredFieldKeys"
@@ -16,21 +16,21 @@
       </div>
     </div>
 
-    <div class="panel-title" style="margin-top: 12px">上传表格</div>
+    <div class="panel-title" style="margin-top: 12px">{{ t('wms.printTemplate.uploadTable') }}</div>
     <input ref="tableFileInput" type="file" accept=".csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" class="hidden-input" @change="onTableFileChange" />
     <div class="row">
-      <OButton variant="secondary" @click="triggerTableUpload">选择文件</OButton>
-      <OButton variant="secondary" :disabled="!uploadedTableData.length" @click="$emit('clear-table-data')">清空</OButton>
+      <OButton variant="secondary" @click="triggerTableUpload">{{ t('wms.printTemplate.selectFile') }}</OButton>
+      <OButton variant="secondary" :disabled="!uploadedTableData.length" @click="$emit('clear-table-data')">{{ t('wms.search.clear') }}</OButton>
     </div>
     <div v-if="uploadedTableData && uploadedTableData.length > 0" class="meta" style="margin-top: 8px">
-      <div>已加载 {{ uploadedTableData.length }} 行数据（第1行为表头）</div>
+      <div>{{ t('wms.printTemplate.rowsLoaded', { count: uploadedTableData.length }) }}</div>
       <div style="margin-top: 8px">
         <select :value="selectedRowIndex" class="o-input" style="width: 100%" @change="$emit('update:selectedRowIndex', Number(($event.target as HTMLSelectElement).value))">
           <option
             v-for="(row, idx) in uploadedTableData"
             :key="idx"
             :value="idx"
-          >第 {{ idx + 2 }} 行</option>
+          >{{ t('wms.printTemplate.rowN', { n: idx + 2 }) }}</option>
         </select>
       </div>
     </div>
@@ -47,6 +47,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   uploadedTableData: Record<string, any>[]

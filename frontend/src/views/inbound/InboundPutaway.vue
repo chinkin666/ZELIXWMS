@@ -1,42 +1,42 @@
 <template>
   <div class="inbound-putaway">
-    <ControlPanel :title="`棚入れ - ${order?.orderNumber || ''}`" :show-search="false">
+    <ControlPanel :title="`${t('wms.inbound.putaway', '棚入れ')} - ${order?.orderNumber || ''}`" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" @click="$router.push('/inbound/orders')">戻る</OButton>
+          <OButton variant="secondary" size="sm" @click="$router.push('/inbound/orders')">{{ t('wms.inbound.back', '戻る') }}</OButton>
           <OButton
             v-if="order?.status === 'received'"
             variant="primary" size="sm"
             :disabled="!allPutaway"
             @click="handleComplete"
-          >入庫完了</OButton>
+          >{{ t('wms.inbound.inboundComplete', '入庫完了') }}</OButton>
         </div>
       </template>
     </ControlPanel>
 
-    <div v-if="isLoading" class="loading-state">読み込み中...</div>
+    <div v-if="isLoading" class="loading-state">{{ t('wms.ui.loading', '読み込み中...') }}</div>
 
     <template v-else-if="order">
       <!-- ヘッダー情報 -->
       <div class="o-card info-card">
         <div class="info-grid">
           <div class="info-item">
-            <span class="info-label">入庫指示番号</span>
+            <span class="info-label">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</span>
             <span class="info-value order-number">{{ order.orderNumber }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">状態</span>
+            <span class="info-label">{{ t('wms.common.status', '状態') }}</span>
             <span class="o-status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">デフォルト入庫先</span>
+            <span class="info-label">{{ t('wms.inbound.defaultDestination', 'デフォルト入庫先') }}</span>
             <span class="info-value">{{ getDestCode(order) }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">棚入れ進捗</span>
+            <span class="info-label">{{ t('wms.inbound.putawayProgress', '棚入れ進捗') }}</span>
             <span class="info-value">
               <span :class="{ 'text-success': putawayCount >= order.lines.length }">
-                {{ putawayCount }} / {{ order.lines.length }} 行
+                {{ putawayCount }} / {{ order.lines.length }} {{ t('wms.inbound.lines', '行') }}
               </span>
             </span>
           </div>
@@ -50,12 +50,12 @@
             <tr>
               <th class="o-table-th" style="width:40px;">#</th>
               <th class="o-table-th" style="width:140px;">SKU</th>
-              <th class="o-table-th" style="width:200px;">商品名</th>
-              <th class="o-table-th o-table-th--right" style="width:80px;">入庫数</th>
-              <th class="o-table-th" style="width:200px;">棚入れ先</th>
-              <th class="o-table-th o-table-th--right" style="width:100px;">棚入れ数</th>
-              <th class="o-table-th" style="width:120px;">状態</th>
-              <th class="o-table-th" style="width:120px;">操作</th>
+              <th class="o-table-th" style="width:200px;">{{ t('wms.inbound.productName', '商品名') }}</th>
+              <th class="o-table-th o-table-th--right" style="width:80px;">{{ t('wms.inbound.receivedQty', '入庫数') }}</th>
+              <th class="o-table-th" style="width:200px;">{{ t('wms.inbound.putawayLocation', '棚入れ先') }}</th>
+              <th class="o-table-th o-table-th--right" style="width:100px;">{{ t('wms.inbound.putawayQty', '棚入れ数') }}</th>
+              <th class="o-table-th" style="width:120px;">{{ t('wms.common.status', '状態') }}</th>
+              <th class="o-table-th" style="width:120px;">{{ t('wms.common.actions', '操作') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -74,7 +74,7 @@
                     class="o-input o-input-sm"
                     style="width:180px;"
                   >
-                    <option value="">ロケーション選択</option>
+                    <option value="">{{ t('wms.inbound.selectLocation', 'ロケーション選択') }}</option>
                     <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
                       {{ loc.code }} ({{ loc.name }})
                     </option>
@@ -85,8 +85,8 @@
                 {{ line.putawayQuantity || 0 }} / {{ line.receivedQuantity }}
               </td>
               <td class="o-table-td">
-                <span v-if="line.putawayQuantity >= line.receivedQuantity" class="text-success">完了</span>
-                <span v-else class="text-warning">未処理</span>
+                <span v-if="line.putawayQuantity >= line.receivedQuantity" class="text-success">{{ t('wms.inbound.complete', '完了') }}</span>
+                <span v-else class="text-warning">{{ t('wms.inbound.unprocessed', '未処理') }}</span>
               </td>
               <td class="o-table-td">
                 <OButton
@@ -94,7 +94,7 @@
                   variant="primary" size="sm"
                   :disabled="!putawaySelections[line.lineNumber] || isPutaway"
                   @click="handlePutaway(line.lineNumber)"
-                >棚入れ</OButton>
+                >{{ t('wms.inbound.putaway', '棚入れ') }}</OButton>
               </td>
             </tr>
           </tbody>
@@ -103,11 +103,11 @@
 
       <!-- 一括棚入れ -->
       <div v-if="order.status === 'received' && !allPutaway" class="o-card bulk-putaway-card">
-        <h3 style="margin:0 0 12px 0;font-size:15px;font-weight:600;">一括棚入れ</h3>
+        <h3 style="margin:0 0 12px 0;font-size:15px;font-weight:600;">{{ t('wms.inbound.bulkPutaway', '一括棚入れ') }}</h3>
         <div style="display:flex;gap:8px;align-items:center;">
-          <span style="font-size:13px;color:var(--o-gray-600);">全行を同一ロケーションに棚入れ:</span>
+          <span style="font-size:13px;color:var(--o-gray-600);">{{ t('wms.inbound.bulkPutawayDesc', '全行を同一ロケーションに棚入れ') }}:</span>
           <select v-model="bulkLocationId" class="o-input o-input-sm" style="width:200px;">
-            <option value="">ロケーション選択</option>
+            <option value="">{{ t('wms.inbound.selectLocation', 'ロケーション選択') }}</option>
             <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
               {{ loc.code }} ({{ loc.name }})
             </option>
@@ -116,7 +116,7 @@
             variant="primary" size="sm"
             :disabled="!bulkLocationId || isPutaway"
             @click="handleBulkPutaway"
-          >全行棚入れ</OButton>
+          >{{ t('wms.inbound.putawayAll', '全行棚入れ') }}</OButton>
         </div>
       </div>
     </template>
@@ -126,6 +126,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
@@ -133,6 +134,7 @@ import { fetchInboundOrder, putawayInboundLine, completeInboundOrder } from '@/a
 import { fetchLocations } from '@/api/location'
 import type { InboundOrder, InboundOrderLine, Location } from '@/types/inventory'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
@@ -152,7 +154,14 @@ const allPutaway = computed(() =>
 )
 
 const statusLabel = (s: string) => {
-  const map: Record<string, string> = { draft: '下書き', confirmed: '確認済', receiving: '入庫中', received: '検品済', done: '完了', cancelled: 'キャンセル' }
+  const map: Record<string, string> = {
+    draft: t('wms.inbound.statusDraft', '下書き'),
+    confirmed: t('wms.inbound.statusConfirmed', '確認済'),
+    receiving: t('wms.inbound.statusReceiving', '入庫中'),
+    received: t('wms.inbound.statusReceived', '検品済'),
+    done: t('wms.inbound.statusDone', '完了'),
+    cancelled: t('wms.inbound.statusCancelled', 'キャンセル'),
+  }
   return map[s] || s
 }
 
@@ -190,7 +199,7 @@ const handlePutaway = async (lineNumber: number) => {
     // Reload to get updated data with populated locations
     await loadOrder()
   } catch (e: any) {
-    toast.showError(e?.message || '棚入れに失敗しました')
+    toast.showError(e?.message || t('wms.inbound.putawayFailed', '棚入れに失敗しました'))
   } finally {
     isPutaway.value = false
   }
@@ -207,10 +216,10 @@ const handleBulkPutaway = async () => {
         locationId: bulkLocationId.value,
       })
     }
-    toast.showSuccess('全行の棚入れが完了しました')
+    toast.showSuccess(t('wms.inbound.allPutawayComplete', '全行の棚入れが完了しました'))
     await loadOrder()
   } catch (e: any) {
-    toast.showError(e?.message || '一括棚入れに失敗しました')
+    toast.showError(e?.message || t('wms.inbound.bulkPutawayFailed', '一括棚入れに失敗しました'))
   } finally {
     isPutaway.value = false
   }
@@ -218,13 +227,13 @@ const handleBulkPutaway = async () => {
 
 const handleComplete = async () => {
   if (!order.value) return
-  if (!confirm('入庫を完了にしますか？')) return
+  if (!confirm(t('wms.inbound.confirmComplete', '入庫を完了にしますか？'))) return
   try {
     await completeInboundOrder(order.value._id)
-    toast.showSuccess('入庫指示を完了にしました')
+    toast.showSuccess(t('wms.inbound.orderCompleted', '入庫指示を完了にしました'))
     router.push('/inbound/orders')
   } catch (e: any) {
-    toast.showError(e?.message || '完了に失敗しました')
+    toast.showError(e?.message || t('wms.inbound.completeFailed', '完了に失敗しました'))
   }
 }
 
@@ -240,7 +249,7 @@ const loadOrder = async () => {
       }
     }
   } catch (e: any) {
-    toast.showError(e?.message || '入庫指示の取得に失敗しました')
+    toast.showError(e?.message || t('wms.inbound.fetchOrderFailed', '入庫指示の取得に失敗しました'))
   } finally {
     isLoading.value = false
   }
@@ -269,7 +278,13 @@ onMounted(() => {
 .inbound-putaway {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 .loading-state {

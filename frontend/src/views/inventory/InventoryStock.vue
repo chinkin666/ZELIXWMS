@@ -1,31 +1,21 @@
 <template>
   <div class="inventory-stock">
-    <ControlPanel title="在庫一覧" :show-search="false">
-      <template #center>
-        <input
-          v-model="searchText"
-          type="text"
-          class="o-input"
-          placeholder="SKU・商品名で検索..."
-          style="width: 280px;"
-          @input="handleSearchDebounced"
-        />
-      </template>
+    <ControlPanel :title="t('wms.inventory.stockList', '在庫一覧')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;align-items:center;">
           <label class="switch-label">
-            在庫0を表示
+            {{ t('wms.inventory.showZero', '在庫0を表示') }}
             <label class="o-toggle">
               <input type="checkbox" v-model="showZero" />
               <span class="o-toggle-slider"></span>
             </label>
           </label>
           <OButton variant="secondary" size="sm" @click="viewMode = viewMode === 'summary' ? 'detail' : 'summary'">
-            {{ viewMode === 'summary' ? '詳細表示' : '集計表示' }}
+            {{ viewMode === 'summary' ? t('wms.inventory.detailView', '詳細表示') : t('wms.inventory.summaryView', '集計表示') }}
           </OButton>
-          <OButton variant="secondary" size="sm" @click="exportCsv">CSV出力</OButton>
-          <OButton variant="secondary" size="sm" @click="showImportPanel = !showImportPanel">CSV取込</OButton>
-          <OButton variant="primary" size="sm" @click="openTransferDialog">在庫移動</OButton>
+          <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</OButton>
+          <OButton variant="secondary" size="sm" @click="showImportPanel = !showImportPanel">{{ t('wms.inventory.csvImport', 'CSV取込') }}</OButton>
+          <OButton variant="primary" size="sm" @click="openTransferDialog">{{ t('wms.inventory.stockTransfer', '在庫移動') }}</OButton>
         </div>
       </template>
     </ControlPanel>
@@ -33,157 +23,74 @@
     <!-- CSV Import Panel -->
     <div v-if="showImportPanel" class="import-panel">
       <div class="import-panel-header">
-        <strong>在庫一括CSV取込</strong>
-        <span class="import-hint">CSVフォーマット: ロケーション,品番,数量,ロット,メモ</span>
+        <strong>{{ t('wms.inventory.bulkCsvImport', '在庫一括CSV取込') }}</strong>
+        <span class="import-hint">{{ t('wms.inventory.csvFormat', 'CSVフォーマット: ロケーション,品番,数量,ロット,メモ') }}</span>
       </div>
       <div class="import-panel-body">
         <input ref="fileInputRef" type="file" accept=".csv,.txt" @change="handleFileSelect" />
         <div v-if="importPreview.length > 0" class="import-preview">
-          <p>{{ importPreview.length }}件の調整データを検出</p>
-          <table class="o-table" style="margin-top:8px;">
-            <thead>
-              <tr>
-                <th class="o-table-th">ロケーション</th>
-                <th class="o-table-th">品番</th>
-                <th class="o-table-th">数量</th>
-                <th class="o-table-th">ロット</th>
-                <th class="o-table-th">メモ</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, i) in importPreview.slice(0, 10)" :key="i" class="o-table-row">
-                <td class="o-table-td">{{ row.locationCode }}</td>
-                <td class="o-table-td">{{ row.productSku }}</td>
-                <td class="o-table-td" :class="{ 'text-success': row.quantity > 0, 'text-danger': row.quantity < 0 }">
-                  {{ row.quantity > 0 ? '+' : '' }}{{ row.quantity }}
-                </td>
-                <td class="o-table-td">{{ row.lotNumber || '-' }}</td>
-                <td class="o-table-td">{{ row.memo || '-' }}</td>
-              </tr>
-              <tr v-if="importPreview.length > 10">
-                <td colspan="5" class="o-table-td" style="text-align:center;color:#909399;">
-                  ... 他{{ importPreview.length - 10 }}件
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <p>{{ t('wms.inventory.adjustmentDataDetected', '{count}件の調整データを検出').replace('{count}', String(importPreview.length)) }}</p>
+          <Table
+            :columns="importTableColumns"
+            :data="importPreview.slice(0, 10)"
+            :height="300"
+            row-key="productSku"
+            pagination-enabled
+            pagination-mode="client"
+            :page-size="10"
+          />
+          <div v-if="importPreview.length > 10" style="text-align:center;color:#909399;font-size:12px;margin-top:4px;">
+            ... {{ t('wms.inventory.moreItems', '他{count}件').replace('{count}', String(importPreview.length - 10)) }}
+          </div>
           <div style="margin-top:8px;display:flex;gap:6px;">
             <OButton variant="primary" size="sm" :disabled="importing" @click="executeImport">
-              {{ importing ? '取込中...' : '取込実行' }}
+              {{ importing ? t('wms.inventory.importing', '取込中...') : t('wms.inventory.executeImport', '取込実行') }}
             </OButton>
-            <OButton variant="secondary" size="sm" @click="clearImport">キャンセル</OButton>
+            <OButton variant="secondary" size="sm" @click="clearImport">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
           </div>
         </div>
       </div>
     </div>
 
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="inventoryStockSearch"
+      @search="handleSearch"
+    />
+
     <!-- 集計表示 -->
-    <div v-if="viewMode === 'summary'" class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width:60px;">画像</th>
-            <th class="o-table-th" style="width:140px;">SKU</th>
-            <th class="o-table-th" style="width:200px;">商品名</th>
-            <th class="o-table-th" style="width:100px;">温度帯</th>
-            <th class="o-table-th o-table-th--right" style="width:100px;">実在庫</th>
-            <th class="o-table-th o-table-th--right" style="width:100px;">引当済</th>
-            <th class="o-table-th o-table-th--right" style="width:100px;">有効在庫</th>
-            <th class="o-table-th o-table-th--right" style="width:100px;">安全在庫</th>
-            <th class="o-table-th" style="width:80px;">保管場所</th>
-            <th class="o-table-th" style="width:80px;">状態</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoading">
-            <td colspan="10" class="o-table-empty">読み込み中...</td>
-          </tr>
-          <tr v-else-if="summaryRows.length === 0">
-            <td colspan="10" class="o-table-empty">在庫データがありません</td>
-          </tr>
-          <tr v-for="row in summaryRows" :key="row.productId" class="o-table-row">
-            <td class="o-table-td">
-              <img
-                v-if="row.product?.imageUrl"
-                :src="resolveImageUrl(row.product.imageUrl)"
-                class="product-thumb"
-                alt=""
-                @error="(e: Event) => { (e.target as HTMLImageElement).style.display = 'none' }"
-              />
-              <span v-else class="product-thumb product-thumb--empty">-</span>
-            </td>
-            <td class="o-table-td"><span class="sku-link">{{ row.productSku }}</span></td>
-            <td class="o-table-td">{{ row.product?.name || '-' }}</td>
-            <td class="o-table-td">
-              <span v-if="row.product?.coolType === '1'" style="color:#409eff;">冷凍</span>
-              <span v-else-if="row.product?.coolType === '2'" style="color:#67c23a;">冷蔵</span>
-              <span v-else>常温</span>
-            </td>
-            <td class="o-table-td o-table-td--right">{{ row.totalQuantity }}</td>
-            <td class="o-table-td o-table-td--right">{{ row.totalReserved }}</td>
-            <td class="o-table-td o-table-td--right" :class="{ 'text-danger': row.totalAvailable < 0 }">
-              {{ row.totalAvailable }}
-            </td>
-            <td class="o-table-td o-table-td--right">{{ row.product?.safetyStock || '-' }}</td>
-            <td class="o-table-td o-table-td--right">{{ row.locationCount }}箇所</td>
-            <td class="o-table-td">
-              <span v-if="row.isBelowSafety" class="o-status-tag o-status-tag--danger">在庫不足</span>
-              <span v-else class="o-status-tag o-status-tag--confirmed">正常</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-if="viewMode === 'summary'" class="table-section">
+      <Table
+        :columns="summaryTableColumns"
+        :data="summaryRows"
+        :height="520"
+        row-key="productId"
+        highlight-columns-on-hover
+        pagination-enabled
+        pagination-mode="client"
+        :page-size="20"
+        :page-sizes="[20, 50, 100]"
+        :global-search-text="globalSearchText"
+      />
     </div>
 
     <!-- 詳細表示 -->
-    <div v-else class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width:140px;">SKU</th>
-            <th class="o-table-th" style="width:180px;">商品名</th>
-            <th class="o-table-th" style="width:180px;">ロケーション</th>
-            <th class="o-table-th" style="width:140px;">ロット</th>
-            <th class="o-table-th" style="width:120px;">賞味期限</th>
-            <th class="o-table-th o-table-th--right" style="width:100px;">実在庫</th>
-            <th class="o-table-th o-table-th--right" style="width:100px;">引当済</th>
-            <th class="o-table-th o-table-th--right" style="width:100px;">有効在庫</th>
-            <th class="o-table-th" style="width:140px;">最終移動</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoading">
-            <td colspan="9" class="o-table-empty">読み込み中...</td>
-          </tr>
-          <tr v-else-if="detailRows.length === 0">
-            <td colspan="9" class="o-table-empty">在庫データがありません</td>
-          </tr>
-          <tr v-for="row in detailRows" :key="row._id" class="o-table-row">
-            <td class="o-table-td">{{ row.productSku }}</td>
-            <td class="o-table-td">{{ row.product?.name || '-' }}</td>
-            <td class="o-table-td">
-              <span class="location-badge">{{ row.location?.code || '-' }}</span>
-              <span v-if="row.location?.name" class="text-muted"> {{ row.location.name }}</span>
-            </td>
-            <td class="o-table-td">{{ row.lot?.lotNumber || '-' }}</td>
-            <td class="o-table-td">{{ row.lot?.expiryDate ? formatDate(row.lot.expiryDate) : '-' }}</td>
-            <td class="o-table-td o-table-td--right">{{ row.quantity }}</td>
-            <td class="o-table-td o-table-td--right">{{ row.reservedQuantity }}</td>
-            <td class="o-table-td o-table-td--right" :class="{ 'text-danger': row.availableQuantity < 0 }">
-              {{ row.availableQuantity }}
-            </td>
-            <td class="o-table-td">{{ row.lastMovedAt ? formatDateTime(row.lastMovedAt) : '-' }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <div v-else class="table-section">
+      <Table
+        :columns="detailTableColumns"
+        :data="detailRows"
+        :height="520"
+        row-key="_id"
+        highlight-columns-on-hover
+        pagination-enabled
+        pagination-mode="client"
+        :page-size="20"
+        :page-sizes="[20, 50, 100]"
+        :global-search-text="globalSearchText"
+      />
     </div>
-
-    <!-- Bottom bar -->
-    <OrderBottomBar
-      :total-count="viewMode === 'summary' ? summaryRows.length : detailRows.length"
-      :selected-count="0"
-      total-label="件数"
-    />
 
     <!-- Transfer Dialog -->
     <StockTransferDialog
@@ -197,24 +104,28 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
 import StockTransferDialog from '@/components/inventory/StockTransferDialog.vue'
 import { fetchStock, fetchStockSummary, bulkAdjustStock } from '@/api/inventory'
 import { fetchProducts } from '@/api/product'
 import { fetchLocations } from '@/api/location'
-import { getApiBaseUrl } from '@/api/base'
+import { resolveImageUrl } from '@/utils/imageUrl'
 import type { StockQuant, StockSummary, Location } from '@/types/inventory'
 import type { Product } from '@/types/product'
+import type { TableColumn, Operator } from '@/types/table'
 
 const toast = useToast()
+const { t } = useI18n()
 const isLoading = ref(false)
-const searchText = ref('')
 const showZero = ref(false)
 const viewMode = ref<'summary' | 'detail'>('summary')
+const globalSearchText = ref('')
 
 const summaryRows = ref<StockSummary[]>([])
 const detailRows = ref<StockQuant[]>([])
@@ -224,14 +135,6 @@ const allProducts = ref<Product[]>([])
 const allLocations = ref<Location[]>([])
 const transferDialogVisible = ref(false)
 
-const API_BASE_URL = getApiBaseUrl()
-
-const resolveImageUrl = (url?: string) => {
-  if (!url) return ''
-  if (url.startsWith('http')) return url
-  return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`
-}
-
 const formatDate = (d: string) => {
   if (!d) return '-'
   return new Date(d).toLocaleDateString('ja-JP')
@@ -240,6 +143,118 @@ const formatDate = (d: string) => {
 const formatDateTime = (d: string) => {
   if (!d) return '-'
   return new Date(d).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
+// --- Search columns ---
+const baseSummaryColumns: TableColumn[] = [
+  { key: 'productSku', dataKey: 'productSku', title: 'SKU', width: 140, fieldType: 'string', searchable: true, searchType: 'string' },
+  { key: 'productName', title: '商品名', width: 200, fieldType: 'string', searchable: true, searchType: 'string' },
+]
+
+const searchColumns: TableColumn[] = baseSummaryColumns.filter((c) => c.searchable)
+
+// --- Import table columns ---
+const importTableColumns: TableColumn[] = [
+  { key: 'locationCode', dataKey: 'locationCode', title: 'ロケーション', width: 140, fieldType: 'string' },
+  { key: 'productSku', dataKey: 'productSku', title: '品番', width: 140, fieldType: 'string' },
+  {
+    key: 'quantity', dataKey: 'quantity', title: '数量', width: 100, fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: any }) =>
+      h('span', { class: rowData.quantity > 0 ? 'text-success' : 'text-danger' },
+        `${rowData.quantity > 0 ? '+' : ''}${rowData.quantity}`),
+  },
+  { key: 'lotNumber', dataKey: 'lotNumber', title: 'ロット', width: 120, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: any }) => rowData.lotNumber || '-' },
+  { key: 'memo', dataKey: 'memo', title: 'メモ', width: 140, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: any }) => rowData.memo || '-' },
+]
+
+// --- Summary table columns ---
+const summaryTableColumns: TableColumn[] = [
+  {
+    key: 'image', title: '画像', width: 60, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => {
+      if (rowData.product?.imageUrl) {
+        return h('img', {
+          src: resolveImageUrl(rowData.product.imageUrl),
+          class: 'product-thumb',
+          alt: '',
+          onError: (e: Event) => { (e.target as HTMLImageElement).style.display = 'none' },
+        })
+      }
+      return h('span', { class: 'product-thumb product-thumb--empty' }, '-')
+    },
+  },
+  { key: 'productSku', dataKey: 'productSku', title: 'SKU', width: 140, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => h('span', { class: 'sku-link' }, rowData.productSku) },
+  { key: 'productName', title: '商品名', width: 200, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => rowData.product?.name || '-' },
+  {
+    key: 'coolType', title: '温度帯', width: 100, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => {
+      if (rowData.product?.coolType === '1') return h('span', { style: 'color:#409eff;' }, '冷凍')
+      if (rowData.product?.coolType === '2') return h('span', { style: 'color:#67c23a;' }, '冷蔵')
+      return '常温'
+    },
+  },
+  { key: 'totalQuantity', dataKey: 'totalQuantity', title: '実在庫', width: 100, fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => rowData.totalQuantity },
+  { key: 'totalReserved', dataKey: 'totalReserved', title: '引当済', width: 100, fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => rowData.totalReserved },
+  {
+    key: 'totalAvailable', dataKey: 'totalAvailable', title: '有効在庫', width: 100, fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) =>
+      h('span', { class: rowData.totalAvailable < 0 ? 'text-danger' : '' }, String(rowData.totalAvailable)),
+  },
+  { key: 'safetyStock', title: '安全在庫', width: 100, fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => rowData.product?.safetyStock || '-' },
+  { key: 'locationCount', dataKey: 'locationCount', title: '保管場所', width: 80, fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => `${rowData.locationCount}箇所` },
+  {
+    key: 'status', title: '状態', width: 80, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => {
+      if (rowData.isBelowSafety) return h('span', { class: 'o-status-tag o-status-tag--danger' }, '在庫不足')
+      return h('span', { class: 'o-status-tag o-status-tag--confirmed' }, '正常')
+    },
+  },
+]
+
+// --- Detail table columns ---
+const detailTableColumns: TableColumn[] = [
+  { key: 'productSku', dataKey: 'productSku', title: 'SKU', width: 140, fieldType: 'string' },
+  { key: 'productName', title: '商品名', width: 180, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockQuant }) => rowData.product?.name || '-' },
+  {
+    key: 'location', title: 'ロケーション', width: 180, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockQuant }) => {
+      const children = [h('span', { class: 'location-badge' }, rowData.location?.code || '-')]
+      if (rowData.location?.name) children.push(h('span', { class: 'text-muted' }, ` ${rowData.location.name}`))
+      return h('span', null, children)
+    },
+  },
+  { key: 'lotNumber', title: 'ロット', width: 140, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockQuant }) => rowData.lot?.lotNumber || '-' },
+  { key: 'expiryDate', title: '賞味期限', width: 120, fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: StockQuant }) => rowData.lot?.expiryDate ? formatDate(rowData.lot.expiryDate) : '-' },
+  { key: 'quantity', dataKey: 'quantity', title: '実在庫', width: 100, fieldType: 'number' },
+  { key: 'reservedQuantity', dataKey: 'reservedQuantity', title: '引当済', width: 100, fieldType: 'number' },
+  {
+    key: 'availableQuantity', dataKey: 'availableQuantity', title: '有効在庫', width: 100, fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: StockQuant }) =>
+      h('span', { class: rowData.availableQuantity < 0 ? 'text-danger' : '' }, String(rowData.availableQuantity)),
+  },
+  { key: 'lastMovedAt', dataKey: 'lastMovedAt', title: '最終移動', width: 140, fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: StockQuant }) => rowData.lastMovedAt ? formatDateTime(rowData.lastMovedAt) : '-' },
+]
+
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+    delete payload.__global
+  } else {
+    globalSearchText.value = ''
+  }
+  loadData()
 }
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -386,10 +401,10 @@ const loadData = async () => {
   isLoading.value = true
   try {
     if (viewMode.value === 'summary') {
-      summaryRows.value = await fetchStockSummary({ search: searchText.value || undefined })
+      summaryRows.value = await fetchStockSummary({ search: globalSearchText.value || undefined })
     } else {
       detailRows.value = await fetchStock({
-        productSku: searchText.value || undefined,
+        productSku: globalSearchText.value || undefined,
         showZero: showZero.value,
       })
     }
@@ -403,15 +418,21 @@ const loadData = async () => {
 onMounted(() => loadData())
 </script>
 
-<style>
-@import '@/styles/order-table.css';
-</style>
-
 <style scoped>
 .inventory-stock {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  padding: 0 20px 20px;
+  gap: 16px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
+}
+
+.table-section {
+  width: 100%;
 }
 
 .product-thumb {
@@ -448,9 +469,6 @@ onMounted(() => loadData())
 .text-danger { color: #f56c6c; font-weight: 600; }
 .text-success { color: #67c23a; font-weight: 600; }
 
-.o-table-td--right { text-align: right; }
-.o-table-th--right { text-align: right; }
-
 .o-status-tag--danger {
   background: #fef0f0;
   color: #f56c6c;
@@ -475,7 +493,6 @@ onMounted(() => loadData())
 
 /* Import Panel */
 .import-panel {
-  margin-top: 8px;
   border: 1px solid var(--o-border-color, #e4e7ed);
   border-radius: 8px;
   background: var(--o-view-background, #fff);

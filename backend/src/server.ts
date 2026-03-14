@@ -4,6 +4,7 @@ import { loadEnv } from '@/config/env';
 import { connectDatabase, checkTransactionSupport } from '@/config/database';
 import { logger } from '@/lib/logger';
 import { extensionManager } from '@/core/extensions';
+import { queueManager, registerWorkers } from '@/core/queue';
 
 const env = loadEnv();
 const app = createApp();
@@ -21,6 +22,12 @@ async function startServer() {
 
     // 初始化扩展系统 / 拡張システムを初期化
     await extensionManager.initialize();
+
+    // 初始化队列系统（Redis 不可用时不阻塞）/ キューシステム初期化（Redis 不可用時はブロックしない）
+    await queueManager.initialize().catch((err) => {
+      logger.warn({ err }, 'QueueManager initialization skipped / キューマネージャー初期化をスキップ');
+    });
+    registerWorkers();
 
     server.listen(env.port, env.host, () => {
       logger.info(`API server listening on http://${env.host}:${env.port}`);

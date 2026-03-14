@@ -7,12 +7,12 @@
             :variant="mode === 'assembly' ? 'primary' : 'secondary'"
             size="sm"
             @click="mode = 'assembly'"
-          >セット組制作</OButton>
+          >{{ t('wms.setProduct.assembly', 'セット組制作') }}</OButton>
           <OButton
             :variant="mode === 'disassembly' ? 'primary' : 'secondary'"
             size="sm"
             @click="mode = 'disassembly'"
-          >バラシ</OButton>
+          >{{ t('wms.setProduct.disassembly', 'バラシ') }}</OButton>
         </div>
       </template>
     </ControlPanel>
@@ -20,9 +20,9 @@
     <div class="assembly-content">
       <!-- Step 1: Select set product -->
       <div class="section">
-        <h3 class="section-title">1. セット組を選択</h3>
+        <h3 class="section-title">{{ t('wms.setProduct.step1SelectSet', '1. セット組を選択') }}</h3>
         <select v-model="selectedSetProductId" class="o-input" style="width:400px;" @change="onSetProductChange">
-          <option value="">セット組を選択...</option>
+          <option value="">{{ t('wms.setProduct.selectSetPlaceholder', 'セット組を選択...') }}</option>
           <option v-for="sp in setProducts" :key="sp._id" :value="sp._id">
             {{ sp.sku }} - {{ sp.name }}
           </option>
@@ -31,14 +31,14 @@
 
       <!-- Components preview -->
       <div v-if="selectedSetProduct" class="section">
-        <h3 class="section-title">2. 構成品明細</h3>
+        <h3 class="section-title">{{ t('wms.setProduct.step2Components', '2. 構成品明細') }}</h3>
         <table class="o-table">
           <thead>
             <tr>
               <th class="o-table-th">SKU</th>
-              <th class="o-table-th">商品名</th>
-              <th class="o-table-th" style="width:100px;">1セットあたり</th>
-              <th class="o-table-th" style="width:100px;">合計必要数</th>
+              <th class="o-table-th">{{ t('wms.setProduct.productName', '商品名') }}</th>
+              <th class="o-table-th" style="width:100px;">{{ t('wms.setProduct.perSet', '1セットあたり') }}</th>
+              <th class="o-table-th" style="width:100px;">{{ t('wms.setProduct.totalRequired', '合計必要数') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -54,68 +54,68 @@
 
       <!-- Step 3: Order details -->
       <div v-if="selectedSetProduct" class="section">
-        <h3 class="section-title">3. 指示内容</h3>
+        <h3 class="section-title">{{ t('wms.setProduct.step3OrderDetails', '3. 指示内容') }}</h3>
         <div class="order-form">
           <div class="form-row">
-            <label class="form-label">数量 <span class="req">必須</span></label>
+            <label class="form-label">{{ t('wms.setProduct.quantity', '数量') }} <span class="req">{{ t('wms.setProduct.required', '必須') }}</span></label>
             <input v-model.number="orderQuantity" type="number" class="o-input" min="1" style="width:120px;" />
           </div>
           <div class="form-row">
-            <label class="form-label">在庫区分</label>
-            <input v-model="orderStockCategory" type="text" class="o-input" placeholder="例: 良品、不良品" style="width:200px;" />
+            <label class="form-label">{{ t('wms.setProduct.stockCategory', '在庫区分') }}</label>
+            <input v-model="orderStockCategory" type="text" class="o-input" :placeholder="t('wms.setProduct.stockCategoryPlaceholder', '例: 良品、不良品')" style="width:200px;" />
           </div>
           <div class="form-row">
-            <label class="form-label">完成希望日</label>
+            <label class="form-label">{{ t('wms.setProduct.desiredDate', '完成希望日') }}</label>
             <input v-model="orderDesiredDate" type="date" class="o-input" style="width:180px;" />
           </div>
           <div class="form-row">
-            <label class="form-label">ロット</label>
-            <input v-model="orderLotNumber" type="text" class="o-input" placeholder="任意" style="width:200px;" />
+            <label class="form-label">{{ t('wms.setProduct.lot', 'ロット') }}</label>
+            <input v-model="orderLotNumber" type="text" class="o-input" :placeholder="t('wms.setProduct.optional', '任意')" style="width:200px;" />
           </div>
           <div class="form-row">
-            <label class="form-label">消費期限</label>
+            <label class="form-label">{{ t('wms.setProduct.expiryDate', '消費期限') }}</label>
             <input v-model="orderExpiryDate" type="date" class="o-input" style="width:180px;" />
           </div>
           <div class="form-row">
-            <label class="form-label">メモ</label>
-            <input v-model="orderMemo" type="text" class="o-input" placeholder="任意" style="width:300px;" />
+            <label class="form-label">{{ t('wms.setProduct.memo', 'メモ') }}</label>
+            <input v-model="orderMemo" type="text" class="o-input" :placeholder="t('wms.setProduct.optional', '任意')" style="width:300px;" />
           </div>
         </div>
         <div style="margin-top:16px;">
           <OButton variant="primary" :disabled="isSubmitting || orderQuantity < 1" @click="handleSubmit">
-            {{ isSubmitting ? '作成中...' : (mode === 'assembly' ? 'セット組制作指示を作成' : 'バラシ指示を作成') }}
+            {{ isSubmitting ? t('wms.setProduct.creating', '作成中...') : (mode === 'assembly' ? t('wms.setProduct.createAssemblyOrder', 'セット組制作指示を作成') : t('wms.setProduct.createDisassemblyOrder', 'バラシ指示を作成')) }}
           </OButton>
         </div>
       </div>
 
       <!-- Recent orders -->
       <div class="section" style="margin-top:32px;">
-        <h3 class="section-title">最近の指示</h3>
+        <h3 class="section-title">{{ t('wms.setProduct.recentOrders', '最近の指示') }}</h3>
         <table class="o-table">
           <thead>
             <tr>
-              <th class="o-table-th" style="width:160px;">指示番号</th>
-              <th class="o-table-th" style="width:80px;">種別</th>
-              <th class="o-table-th" style="width:120px;">品番</th>
-              <th class="o-table-th" style="width:150px;">名称</th>
-              <th class="o-table-th" style="width:80px;">指示数</th>
-              <th class="o-table-th" style="width:80px;">完成数</th>
-              <th class="o-table-th" style="width:90px;">ステータス</th>
-              <th class="o-table-th" style="width:120px;">操作</th>
+              <th class="o-table-th" style="width:160px;">{{ t('wms.setProduct.orderNumber', '指示番号') }}</th>
+              <th class="o-table-th" style="width:80px;">{{ t('wms.setProduct.type', '種別') }}</th>
+              <th class="o-table-th" style="width:120px;">{{ t('wms.setProduct.sku', '品番') }}</th>
+              <th class="o-table-th" style="width:150px;">{{ t('wms.setProduct.name', '名称') }}</th>
+              <th class="o-table-th" style="width:80px;">{{ t('wms.setProduct.orderQuantity', '指示数') }}</th>
+              <th class="o-table-th" style="width:80px;">{{ t('wms.setProduct.completedQuantity', '完成数') }}</th>
+              <th class="o-table-th" style="width:90px;">{{ t('wms.setProduct.status', 'ステータス') }}</th>
+              <th class="o-table-th" style="width:120px;">{{ t('wms.common.actions', '操作') }}</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="ordersLoading">
-              <td colspan="8" class="o-table-empty">読み込み中...</td>
+              <td colspan="8" class="o-table-empty">{{ t('wms.common.loading', '読み込み中...') }}</td>
             </tr>
             <tr v-else-if="recentOrders.length === 0">
-              <td colspan="8" class="o-table-empty">指示がありません</td>
+              <td colspan="8" class="o-table-empty">{{ t('wms.setProduct.noOrders', '指示がありません') }}</td>
             </tr>
             <tr v-for="order in recentOrders" :key="order._id" class="o-table-row">
               <td class="o-table-td"><strong>{{ order.orderNumber }}</strong></td>
               <td class="o-table-td">
                 <span class="type-tag" :class="'type--' + order.type">
-                  {{ order.type === 'assembly' ? '組立' : 'バラシ' }}
+                  {{ order.type === 'assembly' ? t('wms.setProduct.assemblyType', '組立') : t('wms.setProduct.disassemblyType', 'バラシ') }}
                 </span>
               </td>
               <td class="o-table-td">{{ order.setSku }}</td>
@@ -131,13 +131,13 @@
                     v-if="order.status === 'pending' || order.status === 'in_progress'"
                     variant="primary" size="sm"
                     @click="openCompleteDialog(order)"
-                  >完了</OButton>
+                  >{{ t('wms.setProduct.complete', '完了') }}</OButton>
                   <OButton
                     v-if="order.status !== 'completed' && order.status !== 'cancelled'"
                     variant="secondary" size="sm"
-                    style="border-color:#f56c6c;color:#f56c6c;"
+                    style="border-color:var(--o-danger, #C0392B);color:var(--o-danger, #C0392B);"
                     @click="handleCancel(order)"
-                  >取消</OButton>
+                  >{{ t('wms.setProduct.cancelOrder', '取消') }}</OButton>
                 </div>
               </td>
             </tr>
@@ -147,19 +147,19 @@
     </div>
 
     <!-- Complete Dialog -->
-    <ODialog v-model="completeDialogVisible" title="セット組指示完了" size="sm">
+    <ODialog v-model="completeDialogVisible" :title="t('wms.setProduct.completeOrderTitle', 'セット組指示完了')" size="sm">
       <div class="dialog-form">
-        <p>指示番号: <strong>{{ completingOrder?.orderNumber }}</strong></p>
-        <p>指示数: {{ completingOrder?.quantity }}</p>
+        <p>{{ t('wms.setProduct.orderNumber', '指示番号') }}: <strong>{{ completingOrder?.orderNumber }}</strong></p>
+        <p>{{ t('wms.setProduct.orderQuantity', '指示数') }}: {{ completingOrder?.quantity }}</p>
         <div class="form-field">
-          <label class="form-label">完成数</label>
+          <label class="form-label">{{ t('wms.setProduct.completedQuantity', '完成数') }}</label>
           <input v-model.number="completeQuantity" type="number" class="o-input" min="1" />
         </div>
       </div>
       <template #footer>
-        <OButton variant="secondary" @click="completeDialogVisible = false">キャンセル</OButton>
+        <OButton variant="secondary" @click="completeDialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
         <OButton variant="primary" :disabled="completingSaving" @click="handleComplete">
-          {{ completingSaving ? '処理中...' : '完了' }}
+          {{ completingSaving ? t('wms.setProduct.processing', '処理中...') : t('wms.setProduct.complete', '完了') }}
         </OButton>
       </template>
     </ODialog>
@@ -180,11 +180,13 @@ import {
 } from '@/api/setProduct'
 import type { SetProduct, SetOrder, SetOrderStatus } from '@/types/setProduct'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 
+const { t } = useI18n()
 const toast = useToast()
 
 const mode = ref<'assembly' | 'disassembly'>('assembly')
-const pageTitle = computed(() => mode.value === 'assembly' ? 'セット組制作指示' : 'バラシ指示')
+const pageTitle = computed(() => mode.value === 'assembly' ? t('wms.setProduct.assemblyOrderTitle', 'セット組制作指示') : t('wms.setProduct.disassemblyOrderTitle', 'バラシ指示'))
 
 // Set products
 const setProducts = ref<SetProduct[]>([])
@@ -208,11 +210,11 @@ function onSetProductChange() {
 
 async function handleSubmit() {
   if (!selectedSetProductId.value) {
-    toast.showWarning('セット組を選択してください')
+    toast.showWarning(t('wms.setProduct.selectSetWarning', 'セット組を選択してください'))
     return
   }
   if (orderQuantity.value < 1) {
-    toast.showWarning('数量は1以上を指定してください')
+    toast.showWarning(t('wms.setProduct.quantityWarning', '数量は1以上を指定してください'))
     return
   }
 
@@ -228,7 +230,7 @@ async function handleSubmit() {
       expiryDate: orderExpiryDate.value || undefined,
       memo: orderMemo.value.trim() || undefined,
     })
-    toast.showSuccess(`${mode.value === 'assembly' ? 'セット組制作' : 'バラシ'}指示を作成しました`)
+    toast.showSuccess(t('wms.setProduct.orderCreated', `${mode.value === 'assembly' ? 'セット組制作' : 'バラシ'}指示を作成しました`))
     // Reset form
     orderQuantity.value = 1
     orderStockCategory.value = ''
@@ -238,7 +240,7 @@ async function handleSubmit() {
     orderMemo.value = ''
     await loadOrders()
   } catch (e: any) {
-    toast.showError(e.message || '指示の作成に失敗しました')
+    toast.showError(e.message || t('wms.setProduct.orderCreateFailed', '指示の作成に失敗しました'))
   } finally {
     isSubmitting.value = false
   }
@@ -281,33 +283,33 @@ async function handleComplete() {
   completingSaving.value = true
   try {
     await completeSetOrder(completingOrder.value._id, completeQuantity.value)
-    toast.showSuccess('指示を完了しました')
+    toast.showSuccess(t('wms.setProduct.orderCompleted', '指示を完了しました'))
     completeDialogVisible.value = false
     await loadOrders()
   } catch (e: any) {
-    toast.showError(e.message || '完了処理に失敗しました')
+    toast.showError(e.message || t('wms.setProduct.completeFailed', '完了処理に失敗しました'))
   } finally {
     completingSaving.value = false
   }
 }
 
 async function handleCancel(order: SetOrder) {
-  if (!confirm(`指示「${order.orderNumber}」をキャンセルしますか？`)) return
+  if (!confirm(t('wms.setProduct.cancelConfirm', `指示「${order.orderNumber}」をキャンセルしますか？`))) return
   try {
     await cancelSetOrder(order._id)
-    toast.showSuccess('指示をキャンセルしました')
+    toast.showSuccess(t('wms.setProduct.orderCancelled', '指示をキャンセルしました'))
     await loadOrders()
   } catch (e: any) {
-    toast.showError(e.message || 'キャンセルに失敗しました')
+    toast.showError(e.message || t('wms.setProduct.cancelFailed', 'キャンセルに失敗しました'))
   }
 }
 
 function statusLabel(s: SetOrderStatus): string {
   const map: Record<SetOrderStatus, string> = {
-    pending: '未着手',
-    in_progress: '作業中',
-    completed: '完了',
-    cancelled: 'キャンセル',
+    pending: t('wms.setProduct.statusPending', '未着手'),
+    in_progress: t('wms.setProduct.statusInProgress', '作業中'),
+    completed: t('wms.setProduct.statusCompleted', '完了'),
+    cancelled: t('wms.setProduct.statusCancelled', 'キャンセル'),
   }
   return map[s] || s
 }
@@ -323,7 +325,17 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.set-assembly { max-width: 1200px; margin: 0 auto; }
+.set-assembly {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
+}
 
 .assembly-content { padding: 0 4px; }
 
@@ -339,20 +351,20 @@ onMounted(async () => {
 .order-form { display: flex; flex-direction: column; gap: 10px; }
 .form-row { display: flex; align-items: center; gap: 10px; }
 .form-label { font-size: 13px; font-weight: 500; color: var(--o-gray-600, #606266); width: 100px; min-width: 100px; }
-.req { color: #dc3545; font-size: 11px; }
+.req { color: var(--o-danger, #C0392B); font-size: 11px; }
 
 .o-input { padding: 6px 10px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: 4px; font-size: 14px; outline: none; }
 .o-input:focus { border-color: var(--o-brand-primary, #714b67); }
 
 .type-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
-.type--assembly { background: #ecf5ff; color: #409eff; }
-.type--disassembly { background: #fdf6ec; color: #e6a23c; }
+.type--assembly { background: var(--o-info-bg, #ecf5ff); color: var(--o-info, #409eff); }
+.type--disassembly { background: var(--o-warning-bg, #fdf6ec); color: var(--o-warning, #e6a23c); }
 
 .status-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
-.status--pending { background: #f5f5f5; color: #909399; }
-.status--in_progress { background: #ecf5ff; color: #409eff; }
-.status--completed { background: #e1f3d8; color: #67c23a; }
-.status--cancelled { background: #fde2e2; color: #f56c6c; }
+.status--pending { background: var(--o-gray-200, #f5f5f5); color: var(--o-gray-500, #909399); }
+.status--in_progress { background: var(--o-info-bg, #ecf5ff); color: var(--o-info, #409eff); }
+.status--completed { background: var(--o-success-bg, #e1f3d8); color: var(--o-success, #67c23a); }
+.status--cancelled { background: var(--o-danger-bg, #fde2e2); color: var(--o-danger, #f56c6c); }
 
 .dialog-form { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
 .form-field { display: flex; flex-direction: column; gap: 4px; }

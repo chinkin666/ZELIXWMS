@@ -263,18 +263,15 @@ async function handlePrint() {
         }))
 
         // Render on backend
-        console.log(`[BatchPrint] Requesting backend render for ${renderItems.length} items...`)
         const pdfBlob = await renderKonvaOnBackend(renderItems, {
           exportDpi: exportDpi.value,
           background: 'white',
         })
 
-        console.log(`[BatchPrint] Received PDF blob: ${(pdfBlob.size / 1024 / 1024).toFixed(2)}MB`)
         progressPercent.value = 60
         progressText.value = '印刷中...'
 
         // Print (use first template's printer settings)
-        console.log('[BatchPrint] Sending PDF to printer...')
         const firstTemplateId = localItems.value[0]?.templateId ?? undefined
         await printPdfBlob(pdfBlob, {
           title: 'Print Labels',
@@ -282,7 +279,6 @@ async function handlePrint() {
           templateType: 'print',
         })
 
-        console.log('[BatchPrint] Print completed successfully')
         successCount += localItems.value.length
         printedOrderIds.push(...localItems.value.map((i) => String(i.order._id)))
       } catch (e: any) {
@@ -400,13 +396,11 @@ async function handleSavePdf() {
         orderSourceCompanyId: item.order.orderSourceCompanyId,
       }))
 
-      console.log(`[BatchPrint] Requesting backend render for ${renderItems.length} items...`)
       const pdfBlob = await renderKonvaOnBackend(renderItems, {
         exportDpi: exportDpi.value,
         background: 'white',
       })
 
-      console.log(`[BatchPrint] Received PDF blob: ${(pdfBlob.size / 1024 / 1024).toFixed(2)}MB`)
       progressPercent.value = 80
       progressText.value = 'ダウンロード中...'
 

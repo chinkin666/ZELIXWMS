@@ -40,7 +40,7 @@
       </button>
     </div>
 
-    <!-- 確認取消ダイアログ -->
+    <!-- Unconfirm dialog -->
     <UnconfirmReasonDialog
       v-model="unconfirmDialogVisible"
       :order-number="currentMatchedOrder?.orderNumber || ''"
@@ -49,45 +49,45 @@
       @confirm="handleUnconfirmConfirm"
     />
 
-    <!-- 手動印刷確認ダイアログ -->
+    <!-- Completion dialog -->
     <ODialog
       :open="completionDialogVisible"
-      title="検品完了"
+      :title="t('wms.inspection.completionTitle', '検品完了')"
       size="lg"
       @close="handleCompletionClose"
     >
       <div class="completion-message">
-        <p>検品が完了しました。</p>
-        <p>出荷管理No: {{ currentMatchedOrder?.orderNumber }}</p>
+        <p>{{ t('wms.inspection.completionMessage', '検品が完了しました。') }}</p>
+        <p>{{ t('wms.inspection.orderNo', '出荷管理No') }}: {{ currentMatchedOrder?.orderNumber }}</p>
       </div>
 
       <div class="print-preview-section">
-        <div v-if="inspPrint.printRendering.value" class="rendering">レンダリング中...</div>
+        <div v-if="inspPrint.printRendering.value" class="rendering">{{ t('wms.inspection.rendering', 'レンダリング中...') }}</div>
         <div v-else-if="inspPrint.printError.value" class="error">{{ inspPrint.printError.value }}</div>
         <div v-else-if="inspPrint.currentPdfSource.value === 'b2-webapi'" class="preview-b2-cloud">
           <div class="b2-cloud-icon">PDF</div>
-          <div class="b2-cloud-text">B2 Cloudから取得</div>
+          <div class="b2-cloud-text">{{ t('wms.inspection.b2CloudFetch', 'B2 Cloudから取得') }}</div>
           <div class="b2-cloud-tracking">{{ currentMatchedOrder?.trackingId }}</div>
         </div>
-        <div v-else-if="!inspPrint.printImageUrl.value" class="placeholder">印刷プレビューを生成中...</div>
+        <div v-else-if="!inspPrint.printImageUrl.value" class="placeholder">{{ t('wms.inspection.generatingPreview', '印刷プレビューを生成中...') }}</div>
         <div v-else class="preview">
           <img :src="inspPrint.printImageUrl.value" class="preview-img" />
         </div>
       </div>
 
       <template #footer>
-        <OButton variant="secondary" @click="handleCompletionConfirmNoPrint">確認（印刷なし）</OButton>
+        <OButton variant="secondary" @click="handleCompletionConfirmNoPrint">{{ t('wms.inspection.confirmNoPrint', '確認（印刷なし）') }}</OButton>
         <OButton
           variant="primary"
           :disabled="(inspPrint.currentPdfSource.value === 'local' && (!inspPrint.printImageUrl.value || inspPrint.printRendering.value)) || (inspPrint.currentPdfSource.value === 'b2-webapi' && !currentMatchedOrder?.trackingId)"
           @click="handlePrint"
         >
-          印刷
+          {{ t('wms.inspection.print', '印刷') }}
         </OButton>
       </template>
     </ODialog>
 
-    <!-- 誤スキャン警告ダイアログ -->
+    <!-- Wrong scan warning dialog -->
     <ODialog
       :open="wrongScanDialogVisible"
       size="sm"
@@ -95,19 +95,19 @@
     >
       <div class="wrong-scan-content">
         <div class="wrong-scan-icon">!</div>
-        <div class="wrong-scan-title">該当する注文が見つかりません</div>
+        <div class="wrong-scan-title">{{ t('wms.inspection.noMatchingOrder', '該当する注文が見つかりません') }}</div>
         <div class="wrong-scan-detail">
-          スキャン値: <strong>{{ wrongScanValue }}</strong>
+          {{ t('wms.inspection.scanValue', 'スキャン値') }}: <strong>{{ wrongScanValue }}</strong>
         </div>
         <div class="wrong-scan-hint">
-          未検品の注文の中に、このバーコード/SKUに一致する商品が見つかりませんでした。
+          {{ t('wms.inspection.noMatchHint', '未検品の注文の中に、このバーコード/SKUに一致する商品が見つかりませんでした。') }}
         </div>
         <OButton
           variant="danger"
           class="wrong-scan-close-btn"
           @click="closeWrongScanDialog"
         >
-          確認して閉じる（F1）
+          {{ t('wms.inspection.confirmAndClose', '確認して閉じる（F1）') }}
         </OButton>
       </div>
       <template #footer><span></span></template>
@@ -121,6 +121,7 @@ import OButton from '@/components/odoo/OButton.vue'
 import { useRouter, useRoute } from 'vue-router'
 import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import { useI18n } from '@/composables/useI18n'
 import ProductInspectionLeftPanel from './one-product/ProductInspectionLeftPanel.vue'
 import ProductInspectionRightPanel from './one-product/ProductInspectionRightPanel.vue'
 import type { OrderDocument } from '@/types/order'
@@ -135,12 +136,13 @@ import { yamatoB2Unconfirm, isCarrierDeleteError, fetchCarrierAutomationConfig }
 import { isBuiltInCarrierId } from '@/utils/carrier'
 import { resolvePdfSource } from '@/utils/print/resolvePrintTemplate'
 import type { CarrierAutomationConfig } from '@/types/carrierAutomation'
-import noImageSrc from '@/assets/images/no_image.png'
-import { getApiBaseUrl } from '@/api/base'
+import { resolveImageUrl } from '@/utils/imageUrl'
 import { useAutoPrint } from '@/composables/useAutoPrint'
 import { useInspectionPrint } from '@/composables/useInspectionPrint'
+import { useToast } from '@/composables/useToast'
 
-const IMAGE_BASE = getApiBaseUrl().replace(/\/api$/, '')
+const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const router = useRouter()
 const route = useRoute()
@@ -239,12 +241,6 @@ const currentProductImageSrc = computed(() => {
 })
 
 // ─── Helper Functions ─────────────────────────────────────────────────
-
-function resolveImageUrl(url?: string): string {
-  if (!url) return noImageSrc
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-  return `${IMAGE_BASE}${url}`
-}
 
 function focusScanInput() {
   nextTick(() => {
@@ -379,7 +375,7 @@ async function triggerAutoPrint(order: OrderDocument) {
   try {
     if (pdfSource === 'b2-webapi') {
       if (!order.trackingId) {
-        alert('追跡番号がありません（B2 CloudからPDFを取得できません）')
+        showToast('追跡番号がありません（B2 CloudからPDFを取得できません）', 'danger')
         completionDialogVisible.value = true
         return
       }
@@ -398,7 +394,7 @@ async function triggerAutoPrint(order: OrderDocument) {
     }
   } catch (e: any) {
     console.error('Auto print failed:', e)
-    alert(`自動印刷に失敗しました: ${e?.message || String(e)}`)
+    showToast(`自動印刷に失敗しました: ${e?.message || String(e)}`, 'danger')
     completionDialogVisible.value = true
   }
 }
@@ -423,7 +419,7 @@ async function handlePrint() {
     completionDialogVisible.value = false
   } catch (e: any) {
     console.error('Print error:', e)
-    alert(`印刷に失敗しました: ${e?.message || String(e)}`)
+    showToast(`印刷に失敗しました: ${e?.message || String(e)}`, 'danger')
   }
 }
 
@@ -477,11 +473,11 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
             ? `（B2 Cloudから${result.b2DeleteResult.deleted}件削除）`
             : `（B2 Cloud削除失敗: ${result.b2DeleteResult.error}）`
         }
-        alert(message)
+        showToast(message, 'success')
       }
     } else {
       await updateShipmentOrderStatus(orderId, 'unconfirm', 'confirm')
-      alert('確認を取り消しました')
+      showToast('確認を取り消しました', 'success')
     }
 
     removeOrderAndReset(orderId)
@@ -495,7 +491,7 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
       }
       return
     }
-    alert(e?.message || '確認取消に失敗しました')
+    showToast(e?.message || '確認取消に失敗しました', 'danger')
     unconfirmDialogVisible.value = false
   } finally {
     isUnconfirming.value = false
@@ -524,7 +520,7 @@ function fkeyUndoLastScan() {
     next.delete(orderId)
     inspectedOrderIds.value = next
     saveProcessedToStorage()
-    alert('直前の検品を取り消しました')
+    showToast('直前の検品を取り消しました', 'info')
   }
   currentMatchedOrder.value = null
   currentMatchedRowNo.value = null
@@ -536,7 +532,7 @@ async function fkeyReprint() {
   if (!currentMatchedOrder.value) return
   const orderId = String(currentMatchedOrder.value._id)
   if (!inspectedOrderIds.value.has(orderId)) {
-    alert('検品済みの注文を選択してください')
+    showToast('検品済みの注文を選択してください', 'warning')
     return
   }
 
@@ -553,11 +549,11 @@ async function fkeyReprint() {
       if (inspPrint.printImageUrl.value && inspPrint.printTemplate.value) {
         await inspPrint.executePrint(currentMatchedOrder.value)
       } else {
-        alert('印刷プレビューの生成に失敗しました')
+        showToast('印刷プレビューの生成に失敗しました', 'danger')
       }
     }
   } catch (e: any) {
-    alert(`再出力に失敗しました: ${e?.message || String(e)}`)
+    showToast(`再出力に失敗しました: ${e?.message || String(e)}`, 'danger')
   }
 }
 
@@ -613,21 +609,21 @@ interface FKeyDef {
   action?: () => void
 }
 
-const fKeyDefs: FKeyDef[] = [
-  { key: 'ESC', code: 'Escape', label: '戻る', action: handleGoBack },
-  { key: 'F1', code: 'F1', label: '直前取消', action: fkeyUndoLastScan },
+const fKeyDefs = computed<FKeyDef[]>(() => [
+  { key: 'ESC', code: 'Escape', label: t('wms.inspection.goBack', '戻る'), action: handleGoBack },
+  { key: 'F1', code: 'F1', label: t('wms.inspection.undoLast', '直前取消'), action: fkeyUndoLastScan },
   { key: 'F2', code: 'F2', label: '' },
   { key: 'F3', code: 'F3', label: '' },
   { key: 'F4', code: 'F4', label: '' },
   { key: 'F5', code: 'F5', label: '' },
   { key: 'F6', code: 'F6', label: '' },
-  { key: 'F7', code: 'F7', label: '再出力', action: fkeyReprint },
+  { key: 'F7', code: 'F7', label: t('wms.inspection.reprint', '再出力'), action: fkeyReprint },
   { key: 'F8', code: 'F8', label: '' },
-  { key: 'F9', code: 'F9', label: '送り状取消', action: fkeyUnconfirm },
+  { key: 'F9', code: 'F9', label: t('wms.inspection.cancelInvoice', '送り状取消'), action: fkeyUnconfirm },
   { key: 'F10', code: 'F10', label: '' },
   { key: 'F11', code: 'F11', label: '' },
-  { key: 'F12', code: 'F12', label: '終了', action: handleGoBack },
-]
+  { key: 'F12', code: 'F12', label: t('wms.inspection.exit', '終了'), action: handleGoBack },
+])
 
 function handleFKeyDown(e: KeyboardEvent) {
   if (wrongScanDialogVisible.value) {
@@ -646,7 +642,7 @@ function handleFKeyDown(e: KeyboardEvent) {
 
   if (completionDialogVisible.value) return
 
-  const def = fKeyDefs.find(fk => fk.code === e.key)
+  const def = fKeyDefs.value.find(fk => fk.code === e.key)
   if (!def || !def.action) return
   e.preventDefault()
   def.action()
@@ -685,7 +681,7 @@ onMounted(async () => {
   }
 
   if (orderIds.length === 0) {
-    alert('検品対象の注文がありません。一覧ページに戻ります。')
+    showToast('検品対象の注文がありません。一覧ページに戻ります。', 'warning')
     router.push('/shipment-operations/tasks')
     return
   }
@@ -694,7 +690,7 @@ onMounted(async () => {
     allOrders.value = await fetchShipmentOrdersByIds<OrderDocument>(orderIds)
   } catch (e) {
     console.error('Failed to load orders:', e)
-    alert('注文の読み込みに失敗しました')
+    showToast('注文の読み込みに失敗しました', 'danger')
     return
   }
 
@@ -785,7 +781,7 @@ onBeforeUnmount(() => {
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: #f56c6c;
+  background: var(--o-danger);
   color: #fff;
   font-size: 40px;
   font-weight: 900;
@@ -794,9 +790,9 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 
-.wrong-scan-title { font-size: 22px; font-weight: 700; color: #f56c6c; }
-.wrong-scan-detail { font-size: 16px; color: #303133; }
-.wrong-scan-hint { font-size: 13px; color: #909399; text-align: center; max-width: 360px; }
+.wrong-scan-title { font-size: 22px; font-weight: 700; color: var(--o-danger); }
+.wrong-scan-detail { font-size: 16px; color: var(--o-gray-900); }
+.wrong-scan-hint { font-size: 13px; color: var(--o-gray-500); text-align: center; max-width: 360px; }
 
 .wrong-scan-close-btn {
   width: 240px;
@@ -810,16 +806,16 @@ onBeforeUnmount(() => {
 .completion-message {
   text-align: center;
   padding: 12px;
-  background: #f5f7fa;
+  background: var(--o-gray-100);
   border-radius: 4px;
   margin-bottom: 16px;
 }
 
-.completion-message p { margin: 6px 0; font-size: 14px; color: #303133; }
+.completion-message p { margin: 6px 0; font-size: 14px; color: var(--o-gray-900); }
 
 .print-preview-section {
   border: 1px solid #e5e7eb;
-  background: #f9fafb;
+  background: var(--o-gray-100);
   height: 520px;
   overflow: auto;
   display: flex;
@@ -846,7 +842,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   gap: 12px;
   padding: 24px;
-  background: #fef9c3;
+  background: var(--o-warning-bg);
   border: 2px dashed #ca8a04;
   border-radius: 12px;
 }

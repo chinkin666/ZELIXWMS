@@ -1,6 +1,6 @@
 <template>
   <div class="panel right-bottom">
-    <div class="panel-title">图层</div>
+    <div class="panel-title">{{ t('wms.printTemplate.layer') }}</div>
     <div class="layers">
       <div
         v-for="(e, idx) in elements"
@@ -11,12 +11,12 @@
       >
         <div class="name">{{ idx + 1 }}. {{ e.name }} <span class="type">({{ e.type }})</span></div>
         <div class="ops">
-          <button class="o-btn-text" @click.stop="$emit('toggle-visible', e)">{{ e.visible === false ? '显示' : '隐藏' }}</button>
-          <button class="o-btn-text" @click.stop="$emit('toggle-locked', e)">{{ e.locked ? '解锁' : '锁定' }}</button>
-          <button class="o-btn-text" @click.stop="$emit('duplicate-layer', idx)">复制</button>
-          <button class="o-btn-text" :disabled="idx === 0" @click.stop="$emit('move-layer', idx, -1)">上移</button>
+          <button class="o-btn-text" @click.stop="$emit('toggle-visible', e)">{{ e.visible === false ? t('wms.printTemplate.show') : t('wms.printTemplate.hide') }}</button>
+          <button class="o-btn-text" @click.stop="$emit('toggle-locked', e)">{{ e.locked ? t('wms.printTemplate.unlock') : t('wms.printTemplate.lock') }}</button>
+          <button class="o-btn-text" @click.stop="$emit('duplicate-layer', idx)">{{ t('wms.printTemplate.duplicate') }}</button>
+          <button class="o-btn-text" :disabled="idx === 0" @click.stop="$emit('move-layer', idx, -1)">{{ t('wms.printTemplate.moveUp') }}</button>
           <button class="o-btn-text" :disabled="idx === elements.length - 1" @click.stop="$emit('move-layer', idx, 1)">
-            下移
+            {{ t('wms.printTemplate.moveDown') }}
           </button>
         </div>
       </div>
@@ -25,7 +25,10 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n'
 import type { PrintElement } from '@/types/printTemplate'
+
+const { t } = useI18n()
 
 defineProps<{
   elements: PrintElement[]
@@ -43,9 +46,9 @@ defineEmits<{
 
 <style scoped>
 .panel {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--o-border-color);
   border-radius: 8px;
-  background: #fff;
+  background: var(--o-view-background);
   padding: 10px;
 }
 .panel-title {
@@ -59,7 +62,7 @@ defineEmits<{
 .layers {
   max-height: 320px;
   overflow: auto;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--o-gray-200);
   border-radius: 6px;
   padding: 6px;
 }
@@ -69,14 +72,14 @@ defineEmits<{
   cursor: pointer;
 }
 .layer.active {
-  background: #eef2ff;
+  background: var(--o-info-bg);
 }
 .layer .name {
   font-size: 12px;
   font-weight: 600;
 }
 .layer .type {
-  color: #6b7280;
+  color: var(--o-gray-500);
   font-weight: 400;
 }
 .layer .ops {

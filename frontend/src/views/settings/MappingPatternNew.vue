@@ -1,6 +1,6 @@
 <template>
   <div class="mapping-pattern-new">
-    <ControlPanel :title="route.params.id ? 'レイアウト編集' : 'レイアウト新規作成'" :show-search="false" />
+    <ControlPanel :title="route.params.id ? t('wms.mapping.editLayout', 'レイアウト編集') : t('wms.mapping.newLayout', 'レイアウト新規作成')" :show-search="false" />
 
     <MappingTopBar
       :config-type="configType"
@@ -63,11 +63,11 @@
       />
     </div>
 
-    <!-- Target 字段说明（左下角） -->
+    <!-- フィールド説明 -->
     <div v-if="selectedTarget" class="target-description-box">
-      <div class="target-description-title">フィールド説明</div>
+      <div class="target-description-title">{{ t('wms.mapping.fieldDescription', 'フィールド説明') }}</div>
       <div class="target-description-content">
-        {{ getTargetDescription(selectedTarget.field) || '（説明なし）' }}
+        {{ getTargetDescription(selectedTarget.field) || t('wms.mapping.noDescription', '（説明なし）') }}
       </div>
     </div>
 
@@ -113,6 +113,11 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useRoute } from 'vue-router'
+import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
+
+const { show: showToast } = useToast()
+const { t } = useI18n()
 import { fetchShipmentOrders } from '@/api/shipmentOrders'
 import { getOrderFieldDefinitions } from '@/types/order'
 import { getProductFieldDefinitions } from '@/types/product'
@@ -191,7 +196,7 @@ const currentConfigId = ref<string | null>(null)
 // Locked mode - when navigating from carrier automation settings
 const isLocked = ref(false)
 
-// 从 order.ts 获取字段定义
+// 注文フィールド定義
 const orderFieldDefinitions = getOrderFieldDefinitions()
 const orderFieldLabels: Record<string, string> = {}
 orderFieldDefinitions.forEach((def) => {
@@ -200,7 +205,7 @@ orderFieldDefinitions.forEach((def) => {
   }
 })
 
-// product 字段定义
+// 商品フィールド定義
 const productFieldDefinitions = getProductFieldDefinitions()
 const productFieldLabels: Record<string, string> = {}
 productFieldDefinitions.forEach((def) => {
@@ -281,26 +286,34 @@ const getUploadableProductFields = (): TargetRow[] => {
 
 const targetProductFields: TargetRow[] = getUploadableProductFields()
 
+const targetCarrierReceiptFields: TargetRow[] = [
+  { field: 'matchValue', required: true, label: t('wms.mapping.matchValue', '照合値（注文番号等）') },
+  { field: 'trackingId', required: false, label: t('wms.mapping.trackingId', '送り状番号') },
+  { field: 'deliveryDatePreference', required: false, label: t('wms.mapping.deliveryDate', 'お届け日') },
+  { field: 'deliveryTimeSlot', required: false, label: t('wms.mapping.deliveryTimeSlot', '時間帯指定') },
+  { field: 'carrierData.yamato.sortingCode', required: false, label: t('wms.mapping.sortingCode', '仕分けコード') },
+]
+
 const sourceUploadRows = ref<SourceRow[]>([])
 const sourceOrderRows = ref<SourceRow[]>([])
 
-// order-to-sheet 自定义 Target 字段
+// order-to-sheet カスタム出力項目
 const customTargetFields = ref<string[]>([])
 
 const addCustomTargetField = (fieldName: string) => {
   if (customTargetFields.value.includes(fieldName)) {
-    alert('この項目名は既に存在します')
+    showToast(t('wms.mapping.fieldAlreadyExists', 'この項目名は既に存在します'), 'warning')
     return
   }
   customTargetFields.value = [...customTargetFields.value, fieldName]
-  alert('項目を追加しました')
+  showToast(t('wms.mapping.fieldAdded', '項目を追加しました'), 'success')
 }
 
 const removeSelectedCustomTargetField = () => {
   if (!selectedTarget.value) return
   const fieldToRemove = selectedTarget.value.field
   if (!customTargetFields.value.includes(fieldToRemove)) {
-    alert('この項目は削除できません')
+    showToast(t('wms.mapping.cannotDeleteField', 'この項目は削除できません'), 'warning')
     return
   }
   customTargetFields.value = customTargetFields.value.filter((f) => f !== fieldToRemove)
@@ -308,7 +321,7 @@ const removeSelectedCustomTargetField = () => {
   delete next[fieldToRemove]
   mappings.value = next
   selectedTarget.value = null
-  alert('項目を削除しました')
+  showToast(t('wms.mapping.fieldDeleted', '項目を削除しました'), 'success')
 }
 
 const handleQuickAddFromSource = () => {
@@ -321,7 +334,7 @@ const handleQuickAddFromSource = () => {
   const fieldName = source.label || source.name
 
   if (customTargetFields.value.includes(fieldName)) {
-    alert(`「${fieldName}」は既に存在します`)
+    showToast(t('wms.mapping.fieldAlreadyExistsNamed', `「${fieldName}」は既に存在します`), 'warning')
     return
   }
 
@@ -342,7 +355,7 @@ const handleQuickAddFromSource = () => {
   mappings.value = { ...mappings.value, [fieldName]: mapping }
 
   selectedSources.value = []
-  alert(`「${fieldName}」を追加しました`)
+  showToast(t('wms.mapping.fieldAddedNamed', `「${fieldName}」を追加しました`), 'success')
 }
 
 const sampleRows = ref<Record<string, any>[]>([])
@@ -380,15 +393,15 @@ const availableSourceColumns = computed<string[]>(() => {
 
 const getFieldHint = (field: string): string | null => {
   const hints: Record<string, string> = {
-    carrierId: 'この項目はCSVから取得する必要はありません。システム設定やデフォルト値から自動的に設定されます。',
-    coolType: 'この項目はCSVから取得する必要はありません。システム設定やデフォルト値から自動的に設定されます。',
-    'sender.postalCode': 'この項目はCSVから取得する必要はありません。システム設定（依頼主情報）から自動的に設定されます。',
-    'sender.prefecture': 'この項目はCSVから取得する必要はありません。システム設定（依頼主情報）から自動的に設定されます。',
-    'sender.city': 'この項目はCSVから取得する必要はありません。システム設定（依頼主情報）から自動的に設定されます。',
-    'sender.street': 'この項目はCSVから取得する必要はありません。システム設定（依頼主情報）から自動的に設定されます。',
-    'sender.name': 'この項目はCSVから取得する必要はありません。システム設定（依頼主情報）から自動的に設定されます。',
-    'sender.phone': 'この項目はCSVから取得する必要はありません。システム設定（依頼主情報）から自動的に設定されます。',
-    handlingTags: 'この項目はCSVから取得する必要はありません。システム設定やデフォルト値から自動的に設定されます。',
+    carrierId: t('wms.mapping.hintAutoFromSettings', 'この項目はCSVから取得する必要はありません。システム設定やデフォルト値から自動的に設定されます。'),
+    coolType: t('wms.mapping.hintAutoFromSettings', 'この項目はCSVから取得する必要はありません。システム設定やデフォルト値から自動的に設定されます。'),
+    'sender.postalCode': t('wms.mapping.hintAutoFromSender', 'この項目はCSVから取得する必要はありません。システム設定（依頼主情報）から自動的に設定されます。'),
+    'sender.prefecture': t('wms.mapping.hintAutoFromSender', 'この項目はCSVから取得する必要はありません。システム設定（依頼主情報）から自動的に設定されます。'),
+    'sender.city': t('wms.mapping.hintAutoFromSender', 'この項目はCSVから取得する必要はありません。システム設定（依頼主情報）から自動的に設定されます。'),
+    'sender.street': t('wms.mapping.hintAutoFromSender', 'この項目はCSVから取得する必要はありません。システム設定（依頼主情報）から自動的に設定されます。'),
+    'sender.name': t('wms.mapping.hintAutoFromSender', 'この項目はCSVから取得する必要はありません。システム設定（依頼主情報）から自動的に設定されます。'),
+    'sender.phone': t('wms.mapping.hintAutoFromSender', 'この項目はCSVから取得する必要はありません。システム設定（依頼主情報）から自動的に設定されます。'),
+    handlingTags: t('wms.mapping.hintAutoFromSettings', 'この項目はCSVから取得する必要はありません。システム設定やデフォルト値から自動的に設定されます。'),
   }
   return hints[field] || null
 }
@@ -411,6 +424,17 @@ const getTargetDescription = (field: string): string | null => {
     return (def as any)?.description || null
   }
 
+  if (configType.value === 'carrier-receipt-to-order') {
+    const descriptions: Record<string, string> = {
+      matchValue: t('wms.mapping.descMatchValue', '注文の照合に使用する値（注文番号、お客様管理番号、電話番号、郵便番号など）'),
+      trackingId: t('wms.mapping.descTrackingId', '配送業者が発行した送り状番号'),
+      deliveryDatePreference: t('wms.mapping.descDeliveryDate', 'お届け希望日'),
+      deliveryTimeSlot: t('wms.mapping.descDeliveryTimeSlot', '時間帯指定コード'),
+      'carrierData.yamato.sortingCode': t('wms.mapping.descSortingCode', 'ヤマト仕分けコード'),
+    }
+    return descriptions[field] || null
+  }
+
   return null
 }
 
@@ -425,13 +449,13 @@ const targetRowsComputed = computed<TargetRow[]>(() => {
       const productsIndex = rows.findIndex((r) => r.field === 'products')
       if (productsIndex !== -1) {
         const productsRow: TargetRow = rows[productsIndex] as TargetRow
-        productsRow.label = '商品'
+        productsRow.label = t('wms.mapping.products', '商品')
         productsRow.isExpandable = true
         productsRow.children = [
-          { field: 'products.0.sku', required: true, label: '商品SKU管理番号（1件目）' },
-          { field: 'products.0.quantity', required: true, label: '数量（1件目）' },
-          { field: 'products.0.name', required: false, label: '商品名（1件目）' },
-          { field: 'products.0.barcode', required: false, label: '商品バーコード（1件目）' },
+          { field: 'products.0.sku', required: true, label: t('wms.mapping.productSku', '商品SKU管理番号（1件目）') },
+          { field: 'products.0.quantity', required: true, label: t('wms.mapping.productQuantity', '数量（1件目）') },
+          { field: 'products.0.name', required: false, label: t('wms.mapping.productName', '商品名（1件目）') },
+          { field: 'products.0.barcode', required: false, label: t('wms.mapping.productBarcode', '商品バーコード（1件目）') },
         ]
         rows.splice(productsIndex, 1)
         rows.push(productsRow)
@@ -453,26 +477,29 @@ const targetRowsComputed = computed<TargetRow[]>(() => {
   }
   if (configType.value === 'order-source-company') {
     return [
-      { field: 'senderName', required: true, label: '名' },
-      { field: 'senderPostalCode', required: true, label: '郵便番号' },
-      { field: 'senderAddressPrefecture', required: false, label: '住所（都道府県）' },
-      { field: 'senderAddressCity', required: false, label: '住所（郡市区）' },
-      { field: 'senderAddressStreet', required: false, label: '住所（それ以降）' },
-      { field: 'senderPhone', required: true, label: '電話' },
+      { field: 'senderName', required: true, label: t('wms.mapping.senderName', '名') },
+      { field: 'senderPostalCode', required: true, label: t('wms.mapping.senderPostalCode', '郵便番号') },
+      { field: 'senderAddressPrefecture', required: false, label: t('wms.mapping.senderPrefecture', '住所（都道府県）') },
+      { field: 'senderAddressCity', required: false, label: t('wms.mapping.senderCity', '住所（郡市区）') },
+      { field: 'senderAddressStreet', required: false, label: t('wms.mapping.senderStreet', '住所（それ以降）') },
+      { field: 'senderPhone', required: true, label: t('wms.mapping.senderPhone', '電話') },
     ]
+  }
+  if (configType.value === 'carrier-receipt-to-order') {
+    return targetCarrierReceiptFields
   }
 
   const rows: TargetRow[] = [...targetOrderFields]
   const productsIndex = rows.findIndex((r) => r.field === 'products')
   if (productsIndex !== -1 && rows[productsIndex]) {
     const productsRow = rows[productsIndex]!
-    productsRow.label = '商品'
+    productsRow.label = t('wms.mapping.products', '商品')
     productsRow.isExpandable = true
     productsRow.children = [
-      { field: 'products.0.sku', required: true, label: '商品SKU管理番号（1件目）' },
-      { field: 'products.0.quantity', required: true, label: '数量（1件目）' },
-      { field: 'products.0.name', required: false, label: '商品名（1件目）' },
-      { field: 'products.0.barcode', required: false, label: '商品バーコード（1件目）' },
+      { field: 'products.0.sku', required: true, label: t('wms.mapping.productSku', '商品SKU管理番号（1件目）') },
+      { field: 'products.0.quantity', required: true, label: t('wms.mapping.productQuantity', '数量（1件目）') },
+      { field: 'products.0.name', required: false, label: t('wms.mapping.productName', '商品名（1件目）') },
+      { field: 'products.0.barcode', required: false, label: t('wms.mapping.productBarcode', '商品バーコード（1件目）') },
     ]
     rows.splice(productsIndex, 1)
     rows.push(productsRow)
@@ -499,12 +526,13 @@ const sourceRowsComputed = computed<SourceRow[]>(() => {
 const sourceTableEmptyText = computed(() => {
   if (
     configType.value === 'ec-company-to-order' ||
+    configType.value === 'carrier-receipt-to-order' ||
     configType.value === 'product' ||
     configType.value === 'order-source-company'
   ) {
-    return 'ファイルをアップロードしてください'
+    return t('wms.mapping.uploadFile', 'ファイルをアップロードしてください')
   }
-  return 'データがありません'
+  return t('wms.mapping.noData', 'データがありません')
 })
 
 // Handle config type update from top bar
@@ -525,10 +553,10 @@ async function onFileSelect(file: File) {
     const headers = rows.length && rows[0] ? Object.keys(rows[0]) : []
     sourceUploadRows.value = headers.map((h) => ({ name: h }))
     sampleRows.value = rows.slice(0, 5)
-    alert('アップロード済みのヘッダーを読み込みました')
+    showToast(t('wms.mapping.headersLoaded', 'アップロード済みのヘッダーを読み込みました'), 'success')
   } catch (e: any) {
     console.error(e)
-    alert(e?.message || 'ファイルの解析に失敗しました')
+    showToast(e?.message || t('wms.mapping.fileParseError', 'ファイルの解析に失敗しました'), 'danger')
   }
 }
 
@@ -536,7 +564,7 @@ const loadConfigForEdit = async (configId: string) => {
   try {
     const config = await getMappingConfigById(configId)
     if (!config) {
-      alert('設定が見つかりませんでした')
+      showToast(t('wms.mapping.configNotFound', '設定が見つかりませんでした'), 'danger')
       return
     }
 
@@ -571,25 +599,22 @@ const loadConfigForEdit = async (configId: string) => {
     configName.value = config.name || ''
     configDescription.value = config.description || ''
 
-    if (config.configType === 'order-to-carrier' && config.carrierId) {
+    if ((config.configType === 'order-to-carrier' || config.configType === 'carrier-receipt-to-order') && config.carrierId) {
       carrierId.value = config.carrierId
     }
 
-    console.log('[loadConfigForEdit] Setting configType to:', config.configType, 'current:', configType.value)
     configType.value = config.configType || 'ec-company-to-order'
     await nextTick()
-    console.log('[loadConfigForEdit] Restoring mappings, keys:', Object.keys(mappingsObj))
     mappings.value = mappingsObj
-    console.log('[loadConfigForEdit] After restore, mappings keys:', Object.keys(mappings.value))
 
     if (config.configType === 'order-to-carrier' || config.configType === 'order-to-sheet') {
       await loadSampleOrders()
     }
 
-    alert('設定を読み込みました')
+    showToast(t('wms.mapping.configLoaded', '設定を読み込みました'), 'success')
   } catch (e: any) {
     console.error(e)
-    alert(e?.message || '設定の読み込みに失敗しました')
+    showToast(e?.message || t('wms.mapping.configLoadError', '設定の読み込みに失敗しました'), 'danger')
   }
 }
 
@@ -612,15 +637,11 @@ onMounted(async () => {
 
       if (carrierIdParam.startsWith('__builtin_')) {
         const carrierCode = carrierIdParam.replace('__builtin_', '').replace(/__$/, '')
-        console.log('[MappingPatternNew] Looking for carrier with code:', carrierCode)
         const realCarrier = carrierOptions.value.find((c: any) => c.code === carrierCode && !c._id.startsWith('__builtin_'))
         const builtinCarrier = carrierOptions.value.find((c: any) => c.code === carrierCode && c._id.startsWith('__builtin_'))
         const carrier = realCarrier || builtinCarrier
         if (carrier) {
           actualCarrierId = carrier._id
-          console.log('[MappingPatternNew] Found carrier:', carrier._id, carrier.name, realCarrier ? '(real)' : '(builtin)')
-        } else {
-          console.warn('[MappingPatternNew] Carrier not found for code:', carrierCode)
         }
       }
 
@@ -655,7 +676,7 @@ const loadCarriers = async () => {
     carrierOptions.value = await fetchCarriers()
   } catch (e: any) {
     console.error(e)
-    alert(e?.message || '配送業者一覧の取得に失敗しました')
+    showToast(e?.message || t('wms.mapping.carrierLoadError', '配送業者一覧の取得に失敗しました'), 'danger')
   }
 }
 
@@ -763,14 +784,14 @@ const loadSampleOrders = async () => {
     const orders = await fetchShipmentOrders({ limit: 5 })
     const first = orders[0]
     if (!first) {
-      alert('サンプル注文が取得できませんでした')
+      showToast(t('wms.mapping.noSampleOrders', 'サンプル注文が取得できませんでした'), 'warning')
       return
     }
     sampleRows.value = orders.slice(0, 5).map((o: any) => o)
-    alert('注文サンプルを読み込みました')
+    showToast(t('wms.mapping.sampleOrdersLoaded', '注文サンプルを読み込みました'), 'success')
   } catch (e: any) {
     console.error(e)
-    alert(e?.message || 'サンプル取得に失敗しました')
+    showToast(e?.message || t('wms.mapping.sampleLoadError', 'サンプル取得に失敗しました'), 'danger')
   }
 }
 
@@ -816,7 +837,7 @@ const handleDirectLink = () => {
     required: selectedTarget.value.required,
   }
   mappings.value = { ...mappings.value, [selectedTarget.value.field]: mapping }
-  alert('紐付けました')
+  showToast(t('wms.mapping.linked', '紐付けました'), 'success')
 }
 
 const handleAddLiteral = async () => {
@@ -831,12 +852,12 @@ const handleAddLiteral = async () => {
     required: selectedTarget.value.required,
   }
   mappings.value = { ...mappings.value, [selectedTarget.value.field]: mapping }
-  alert('固定値を設定しました')
+  showToast(t('wms.mapping.literalSet', '固定値を設定しました'), 'success')
 }
 
 const promptLiteral = (): Promise<string | null> => {
   return new Promise((resolve) => {
-    const value = prompt('固定値を入力してください')
+    const value = prompt(t('wms.mapping.enterLiteralValue', '固定値を入力してください'))
     resolve(value)
   })
 }
@@ -857,7 +878,7 @@ const applyDetailMapping = (mapping: TransformMapping) => {
   mappings.value = { ...mappings.value, [mapping.targetField]: mapping }
   detailDialogVisible.value = false
   preSelectedSources.value = []
-  alert('詳細設定を更新しました')
+  showToast(t('wms.mapping.detailUpdated', '詳細設定を更新しました'), 'success')
 }
 
 const openHandlingTagsMappingDialog = () => {
@@ -868,7 +889,7 @@ const openHandlingTagsMappingDialog = () => {
 const applyHandlingTagsMapping = (mapping: TransformMapping) => {
   mappings.value = { ...mappings.value, [mapping.targetField]: mapping }
   handlingTagsMappingDialogVisible.value = false
-  alert('荷扱いタグレイアウトを設定しました')
+  showToast(t('wms.mapping.handlingTagsMappingSet', '荷扱いタグレイアウトを設定しました'), 'success')
 }
 
 const openProductToStringTransform = () => {
@@ -907,7 +928,7 @@ const openProductToStringTransform = () => {
   }
 
   mappings.value = { ...mappings.value, [selectedTarget.value.field]: mapping }
-  alert('商品を文字列に変換するレイアウトを設定しました')
+  showToast(t('wms.mapping.productToStringSet', '商品を文字列に変換するレイアウトを設定しました'), 'success')
 }
 
 const openHandlingTagsIndexDialog = () => {
@@ -920,7 +941,7 @@ const openHandlingTagsIndexDialog = () => {
 const applyHandlingTagsIndex = (mapping: TransformMapping) => {
   mappings.value = { ...mappings.value, [mapping.targetField]: mapping }
   handlingTagsIndexDialogVisible.value = false
-  alert('配列要素を取得するレイアウトを設定しました')
+  showToast(t('wms.mapping.arrayIndexSet', '配列要素を取得するレイアウトを設定しました'), 'success')
 }
 
 const openBarcodeMappingDialog = () => {
@@ -932,7 +953,7 @@ const openBarcodeMappingDialog = () => {
 const applyBarcodeMapping = (mapping: TransformMapping) => {
   mappings.value = { ...mappings.value, [mapping.targetField]: mapping }
   barcodeMappingDialogVisible.value = false
-  alert('バーコードレイアウトを設定しました')
+  showToast(t('wms.mapping.barcodeMappingSet', 'バーコードレイアウトを設定しました'), 'success')
 }
 
 const onCarrierChange = () => {
@@ -946,17 +967,17 @@ const clearSelected = () => {
   const next = { ...mappings.value }
   delete next[selectedTarget.value.field]
   mappings.value = next
-  alert('クリアしました')
+  showToast(t('wms.mapping.cleared', 'クリアしました'), 'info')
 }
 
 const clearAll = () => {
   mappings.value = {}
-  alert('全てクリアしました')
+  showToast(t('wms.mapping.allCleared', '全てクリアしました'), 'info')
 }
 
 const summaryForMapping = (mapping?: TransformMapping) => {
-  if (!mapping) return '未設定'
-  if (!mapping.inputs || mapping.inputs.length === 0) return '未設定'
+  if (!mapping) return t('wms.mapping.notSet', '未設定')
+  if (!mapping.inputs || mapping.inputs.length === 0) return t('wms.mapping.notSet', '未設定')
 
   const parts: string[] = []
 
@@ -965,9 +986,9 @@ const summaryForMapping = (mapping?: TransformMapping) => {
     if (input.type === 'column') {
       inputLabel = getDisplayName(input.column || '')
     } else if (input.type === 'literal') {
-      inputLabel = '固定値'
+      inputLabel = t('wms.mapping.literalValue', '固定値')
     } else if (input.type === 'generated') {
-      inputLabel = `生成(${input.generator || ''})`
+      inputLabel = `${t('wms.mapping.generated', '生成')}(${input.generator || ''})`
     }
 
     const inputSteps = input.pipeline?.steps?.length || 0
@@ -989,7 +1010,7 @@ const summaryForMapping = (mapping?: TransformMapping) => {
 
   const outputSteps = mapping.outputPipeline?.steps?.length || 0
   if (outputSteps > 0) {
-    parts.push(`→出力[${outputSteps}]`)
+    parts.push(`→${t('wms.mapping.output', '出力')}[${outputSteps}]`)
   }
 
   return parts.join(' ')
@@ -1035,7 +1056,7 @@ const canSave = computed(() => {
 
 const handleSave = async () => {
   if (!canSave.value) {
-    alert('レイアウト名を入力し、少なくとも1つのマッピングを設定してください')
+    showToast(t('wms.mapping.saveValidation', 'レイアウト名を入力し、少なくとも1つのマッピングを設定してください'), 'warning')
     return
   }
 
@@ -1047,21 +1068,21 @@ const handleSave = async () => {
       configType: configType.value,
       name: configName.value.trim(),
       description: configDescription.value.trim() || undefined,
-      carrierId: configType.value === 'order-to-carrier' && carrierId.value ? carrierId.value : undefined,
+      carrierId: (configType.value === 'order-to-carrier' || configType.value === 'carrier-receipt-to-order') && carrierId.value ? carrierId.value : undefined,
       mappings: mappingList,
     }
 
     if (currentConfigId.value) {
       await updateMappingConfig(currentConfigId.value, dto)
-      alert('設定を更新しました')
+      showToast(t('wms.mapping.configUpdated', '設定を更新しました'), 'success')
     } else {
       const result = await createMappingConfig(dto)
       currentConfigId.value = result._id
-      alert('設定を保存しました')
+      showToast(t('wms.mapping.configSaved', '設定を保存しました'), 'success')
     }
   } catch (e: any) {
     console.error(e)
-    alert(e?.message || '保存に失敗しました')
+    showToast(e?.message || t('wms.mapping.saveError', '保存に失敗しました'), 'danger')
   }
 }
 
@@ -1069,7 +1090,7 @@ const handleLoad = async () => {
   try {
     const configs = await getAllMappingConfigs(configType.value)
     if (configs.length === 0) {
-      alert('読み込める設定がありません')
+      showToast(t('wms.mapping.noConfigsToLoad', '読み込める設定がありません'), 'warning')
       return
     }
 
@@ -1081,14 +1102,14 @@ const handleLoad = async () => {
 
     const labels = options.map((o) => o.label)
     const selectedIndexStr = prompt(
-      '設定を選択してください\n\n' + labels.map((l, i) => `${i}: ${l}`).join('\n') + '\n\n番号を入力:'
+      t('wms.mapping.selectConfig', '設定を選択してください') + '\n\n' + labels.map((l, i) => `${i}: ${l}`).join('\n') + '\n\n' + t('wms.mapping.enterNumber', '番号を入力:')
     )
 
     if (selectedIndexStr === null) return
 
     const selectedIndex = parseInt(selectedIndexStr || '0', 10)
     if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= options.length) {
-      alert('無効な選択です')
+      showToast(t('wms.mapping.invalidSelection', '無効な選択です'), 'warning')
       return
     }
 
@@ -1097,7 +1118,7 @@ const handleLoad = async () => {
 
     const config = selected.config
     if (config.schemaVersion !== 2) {
-      alert('この設定は v2 形式ではありません。v2 形式の設定を選択してください。')
+      showToast(t('wms.mapping.notV2Format', 'この設定は v2 形式ではありません。v2 形式の設定を選択してください。'), 'warning')
       return
     }
 
@@ -1132,11 +1153,11 @@ const handleLoad = async () => {
       }))
     }
 
-    alert('設定を読み込みました')
+    showToast(t('wms.mapping.configLoaded', '設定を読み込みました'), 'success')
   } catch (e: any) {
     if (e !== 'cancel') {
       console.error(e)
-      alert(e?.message || '読み込みに失敗しました')
+      showToast(e?.message || t('wms.mapping.loadError', '読み込みに失敗しました'), 'danger')
     }
   }
 }
@@ -1147,7 +1168,12 @@ const handleLoad = async () => {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 0 16px 16px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 .tables-row {

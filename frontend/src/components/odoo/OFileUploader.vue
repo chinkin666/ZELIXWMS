@@ -61,7 +61,7 @@ function fileIcon(file: File): string {
 
 function validateFile(file: File): string | undefined {
   if (props.maxSize && file.size > props.maxSize * 1024 * 1024) {
-    return `File exceeds ${props.maxSize} MB limit`
+    return t('fileUploader.fileTooLarge', `File exceeds ${props.maxSize} MB limit`)
   }
   if (props.accept) {
     const accepted = props.accept.split(',').map(a => a.trim())
@@ -71,7 +71,7 @@ function validateFile(file: File): string | undefined {
       if (a.endsWith('/*')) return file.type.startsWith(a.replace('/*', '/'))
       return file.type === a
     })
-    if (!matches) return `File type not accepted`
+    if (!matches) return t('fileUploader.fileTypeNotAccepted', 'File type not accepted')
   }
   return undefined
 }
@@ -198,11 +198,11 @@ function onFileChange(event: Event) {
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
         <p class="o-file-dropzone-text">
-          {{ t('common.dropFiles') || 'Drop files here or click to browse' }}
+          {{ t('documents.dropFilesHere') }}
         </p>
         <p class="o-file-dropzone-hint">
-          {{ accept ? `Accepted: ${accept}` : '' }}
-          {{ maxSize ? ` Max ${maxSize} MB` : '' }}
+          {{ accept ? `${t('fileUploader.accepted', 'Accepted')}: ${accept}` : '' }}
+          {{ maxSize ? ` ${t('fileUploader.maxSize', 'Max')} ${maxSize} MB` : '' }}
         </p>
       </div>
     </div>
@@ -224,7 +224,7 @@ function onFileChange(event: Event) {
         <button
           class="o-file-remove"
           type="button"
-          :aria-label="t('common.remove') || 'Remove'"
+          :aria-label="t('common.delete')"
           @click.stop="removeFile(entry)"
         >
           &times;

@@ -37,10 +37,13 @@ import { clientRouter } from './clients';
 import { warehouseRouter } from './warehouses';
 import { workflowRouter } from './workflows';
 import { extensionRouter } from './extensions';
+import { dashboardRouter } from './dashboard';
+import { sagawaRouter } from './sagawa';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
 
+  api.use('/dashboard', dashboardRouter);
   api.use('/shipment-orders', shipmentOrderRouter);
   api.use('/mapping-configs', mappingConfigRouter);
   api.use('/order-source-companies', orderSourceCompanyRouter);
@@ -77,6 +80,9 @@ export const registerCoreRoutes = (app: Application): void => {
   api.use('/clients', clientRouter);
   api.use('/warehouses', warehouseRouter);
   api.use('/workflows', workflowRouter);
+
+  // 佐川急便 / 佐川急便
+  api.use('/carriers/sagawa', sagawaRouter);
 
   // 扩展系统 / 拡張システム
   api.use('/extensions', extensionRouter);

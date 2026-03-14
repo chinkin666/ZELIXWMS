@@ -1,26 +1,26 @@
 <template>
   <div class="table-card">
     <div class="table-title">
-      出力先（Target）
-      <!-- order-to-sheet 自定义字段管理 -->
+      {{ t('wms.mapping.target', '出力先') }}
+      <!-- order-to-sheet カスタム項目管理 -->
       <template v-if="configType === 'order-to-sheet'">
         <div class="custom-target-controls">
           <input
             v-model="localNewField"
             class="o-input"
-            placeholder="新しい出力項目名"
+            :placeholder="t('wms.mapping.newTargetFieldName', '新しい出力項目名')"
             style="width: 160px; margin-left: 16px"
             @keyup.enter="handleAddCustomField"
           />
           <OButton variant="primary" @click="handleAddCustomField" :disabled="!localNewField.trim()">
-            追加
+            {{ t('wms.mapping.add', '追加') }}
           </OButton>
           <OButton
             variant="danger"
             @click="$emit('remove-custom-field')"
             :disabled="!selectedTarget || !isCustomTargetField(selectedTarget.field)"
           >
-            選択項目を削除
+            {{ t('wms.mapping.removeSelectedField', '選択項目を削除') }}
           </OButton>
         </div>
       </template>
@@ -29,9 +29,9 @@
       <table class="o-list-table target-table">
         <thead>
           <tr>
-            <th style="width: 70px">必須</th>
-            <th style="min-width: 220px">項目名</th>
-            <th style="min-width: 240px">変換内容</th>
+            <th style="width: 70px">{{ t('wms.mapping.required', '必須') }}</th>
+            <th style="min-width: 220px">{{ t('wms.mapping.fieldName', '項目名') }}</th>
+            <th style="min-width: 240px">{{ t('wms.mapping.mappingContent', '紐付け内容') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -43,7 +43,7 @@
             >
               <td>
                 <span class="o-badge" :class="row.required ? 'o-badge-danger' : 'o-badge-info'">
-                  {{ row.required ? '必須' : '任意' }}
+                  {{ row.required ? t('wms.mapping.requiredBadge', '必須') : t('wms.mapping.optionalBadge', '任意') }}
                 </span>
               </td>
               <td>
@@ -52,7 +52,7 @@
                   style="display: flex; align-items: center; gap: 4px"
                 >
                   <span>{{ row.label || row.field }}</span>
-                  <span v-if="row.isExpandable" class="o-badge o-badge-info" style="margin-left: 4px">展開のみ</span>
+                  <span v-if="row.isExpandable" class="o-badge o-badge-info" style="margin-left: 4px">{{ t('wms.mapping.expandOnly', '展開のみ') }}</span>
                   <span
                     v-if="getFieldHint(row.field)"
                     :title="getFieldHint(row.field) ?? ''"
@@ -61,14 +61,14 @@
                 </div>
               </td>
               <td>
-                <!-- 如果是可展开的 products，显示其子项的映射 -->
+                <!-- 商品の子項目マッピング表示 -->
                 <template v-if="row.isExpandable && row.field === 'products' && row.children">
                   <div v-for="child in row.children" :key="child.field" style="margin-bottom: 4px">
                     <span class="pipeline-chip" v-if="mappings[child.field]" style="display: inline-block; font-size: 11px">
                       {{ child.label }}: {{ summaryForMapping(mappings[child.field]) }}
                     </span>
                     <span class="pipeline-chip empty" v-else style="display: inline-block; font-size: 11px">
-                      {{ child.label }}: 未設定
+                      {{ child.label }}: {{ t('wms.mapping.notSet', '未設定') }}
                     </span>
                   </div>
                 </template>
@@ -76,7 +76,7 @@
                   <span class="pipeline-chip" v-if="mappings[row.field]">
                     {{ summaryForMapping(mappings[row.field]) }}
                   </span>
-                  <span class="pipeline-chip empty" v-else>未設定</span>
+                  <span class="pipeline-chip empty" v-else>{{ t('wms.mapping.notSet', '未設定') }}</span>
                 </template>
               </td>
             </tr>
@@ -91,7 +91,7 @@
               >
                 <td>
                   <span class="o-badge" :class="child.required ? 'o-badge-danger' : 'o-badge-info'">
-                    {{ child.required ? '必須' : '任意' }}
+                    {{ child.required ? t('wms.mapping.requiredBadge', '必須') : t('wms.mapping.optionalBadge', '任意') }}
                   </span>
                 </td>
                 <td>
@@ -103,7 +103,7 @@
                   <span class="pipeline-chip" v-if="mappings[child.field]">
                     {{ summaryForMapping(mappings[child.field]) }}
                   </span>
-                  <span class="pipeline-chip empty" v-else>未設定</span>
+                  <span class="pipeline-chip empty" v-else>{{ t('wms.mapping.notSet', '未設定') }}</span>
                 </td>
               </tr>
             </template>
@@ -117,6 +117,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 interface TargetRow {
   field: string
@@ -179,27 +182,7 @@ function isCustomTargetField(field: string): boolean {
   gap: 8px;
   flex-wrap: wrap;
 }
-.o-list-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.o-list-table th,
-.o-list-table td {
-  border: 1px solid var(--o-border-color, #dee2e6);
-  padding: 8px 10px;
-  text-align: left;
-  font-size: 13px;
-}
-.o-list-table th {
-  background: var(--o-gray-100, #f8f9fa);
-  font-weight: 600;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-.o-list-table tbody tr:hover {
-  background: #f5f7fa;
-}
+/* .o-list-table base styles are defined globally in style.css */
 .row-selected {
   background: #ecf5ff !important;
 }

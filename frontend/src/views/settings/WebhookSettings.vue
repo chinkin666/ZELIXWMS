@@ -6,63 +6,25 @@
       </template>
     </ControlPanel>
 
-    <!-- Filter -->
-    <div class="search-section">
-      <select v-model="filterEvent" class="o-input" style="width: 220px" @change="loadList">
-        <option value="">すべてのイベント</option>
-        <option v-for="ev in availableEvents" :key="ev" :value="ev">{{ ev }}</option>
-      </select>
-      <label class="search-section__filter">
-        <input v-model="showEnabledOnly" type="checkbox" @change="loadList" />
-        有効のみ
-      </label>
-    </div>
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="webhookSettingsSearch"
+      @search="handleSearch"
+    />
 
-    <!-- Table -->
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width: 60px">状態</th>
-            <th class="o-table-th" style="width: 180px">名称</th>
-            <th class="o-table-th" style="width: 180px">イベント</th>
-            <th class="o-table-th">URL</th>
-            <th class="o-table-th" style="width: 80px">リトライ</th>
-            <th class="o-table-th" style="width: 260px">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td class="o-table-td o-table-empty" colspan="6">読み込み中...</td>
-          </tr>
-          <tr v-else-if="webhooks.length === 0">
-            <td class="o-table-td o-table-empty" colspan="6">データがありません</td>
-          </tr>
-          <tr v-for="w in webhooks" :key="w._id" class="o-table-row">
-            <td class="o-table-td" style="text-align: center">
-              <span
-                :class="w.enabled ? 'o-status-tag o-status-tag--confirmed' : 'o-status-tag o-status-tag--cancelled'"
-                style="cursor: pointer"
-                @click="handleToggle(w)"
-              >
-                {{ w.enabled ? 'ON' : 'OFF' }}
-              </span>
-            </td>
-            <td class="o-table-td">{{ w.name }}</td>
-            <td class="o-table-td"><code class="event-code">{{ w.event }}</code></td>
-            <td class="o-table-td"><span class="url-cell">{{ w.url }}</span></td>
-            <td class="o-table-td" style="text-align: center">{{ w.retry }}</td>
-            <td class="o-table-td o-table-td--actions">
-              <OButton variant="secondary" size="sm" :disabled="testingId === w._id" @click="handleTest(w)">
-                {{ testingId === w._id ? 'テスト中...' : 'テスト' }}
-              </OButton>
-              <OButton variant="secondary" size="sm" @click="openLogs(w)">ログ</OButton>
-              <OButton variant="primary" size="sm" @click="openEdit(w)">編集</OButton>
-              <OButton variant="icon-danger" size="sm" @click="confirmDelete(w)">削除</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="webhooks"
+        :height="520"
+        row-key="_id"
+        pagination-enabled
+        pagination-mode="client"
+        :page-size="20"
+        :global-search-text="globalSearchText"
+      />
     </div>
 
     <!-- Create/Edit Dialog -->
@@ -167,11 +129,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchWebhooks,
   createWebhook,
@@ -185,13 +151,13 @@ import {
 } from '@/api/webhook'
 
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 // State
 const webhooks = ref<Webhook[]>([])
 const availableEvents = ref<string[]>([])
 const loading = ref(false)
-const filterEvent = ref('')
-const showEnabledOnly = ref(false)
+const globalSearchText = ref('')
 
 // Dialog
 const dialogOpen = ref(false)
@@ -222,13 +188,149 @@ const logsLoading = ref(false)
 const logsFilterStatus = ref('')
 const logsPagination = ref({ page: 1, limit: 50, total: 0, totalPages: 1 })
 
+// Column definitions
+const baseColumns: TableColumn[] = [
+  {
+    key: 'enabled',
+    title: '状態',
+    width: 70,
+    searchable: true,
+    searchType: 'boolean',
+  },
+  {
+    key: 'name',
+    title: '名称',
+    width: 180,
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'event',
+    title: 'イベント',
+    width: 180,
+    searchable: true,
+    searchType: 'select',
+    get searchOptions() {
+      return availableEvents.value.map((ev) => ({ label: ev, value: ev }))
+    },
+  },
+  {
+    key: 'url',
+    title: 'URL',
+    width: 300,
+  },
+  {
+    key: 'retry',
+    title: 'リトライ',
+    width: 80,
+  },
+]
+
+const searchColumns: TableColumn[] = baseColumns.filter((c) => c.searchable)
+
+const tableColumns: TableColumn[] = [
+  ...baseColumns.map((col) => {
+    if (col.key === 'enabled') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Webhook }) =>
+          h(
+            'span',
+            {
+              class: rowData.enabled
+                ? 'o-status-tag o-status-tag--confirmed'
+                : 'o-status-tag o-status-tag--cancelled',
+              style: 'cursor: pointer',
+              onClick: () => handleToggle(rowData),
+            },
+            rowData.enabled ? 'ON' : 'OFF',
+          ),
+      }
+    }
+    if (col.key === 'event') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Webhook }) =>
+          h('code', { class: 'event-code' }, rowData.event),
+      }
+    }
+    if (col.key === 'url') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Webhook }) =>
+          h('span', { class: 'url-cell' }, rowData.url),
+      }
+    }
+    if (col.key === 'retry') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Webhook }) =>
+          h('span', { style: 'text-align: center; display: block' }, String(rowData.retry)),
+      }
+    }
+    return col
+  }),
+  {
+    key: 'actions',
+    title: t('wms.common.actions', '操作'),
+    width: 260,
+    cellRenderer: ({ rowData }: { rowData: Webhook }) =>
+      h('div', { class: 'action-cell' }, [
+        h(
+          OButton,
+          {
+            variant: 'secondary',
+            size: 'sm',
+            disabled: testingId.value === rowData._id,
+            onClick: () => handleTest(rowData),
+          },
+          () => (testingId.value === rowData._id ? 'テスト中...' : 'テスト'),
+        ),
+        h(
+          OButton,
+          { variant: 'secondary', size: 'sm', onClick: () => openLogs(rowData) },
+          () => 'ログ',
+        ),
+        h(
+          OButton,
+          { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) },
+          () => '編集',
+        ),
+        h(
+          OButton,
+          { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) },
+          () => '削除',
+        ),
+      ]),
+  },
+]
+
+// Search
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+    delete payload.__global
+  } else {
+    globalSearchText.value = ''
+  }
+
+  // Build server-side filter params from search payload
+  const params: { event?: string; enabled?: string } = {}
+
+  if (payload.event?.value) {
+    params.event = String(payload.event.value)
+  }
+  if (payload.enabled?.value !== undefined && payload.enabled?.value !== '') {
+    params.enabled = String(payload.enabled.value)
+  }
+
+  loadList(params)
+}
+
 // Load
-const loadList = async () => {
+const loadList = async (params: { event?: string; enabled?: string } = {}) => {
   loading.value = true
   try {
-    const params: { event?: string; enabled?: string } = {}
-    if (filterEvent.value) params.event = filterEvent.value
-    if (showEnabledOnly.value) params.enabled = 'true'
     const result = await fetchWebhooks(params)
     webhooks.value = result.data
     availableEvents.value = result.availableEvents
@@ -407,21 +509,6 @@ onMounted(() => {
   margin-right: -20px;
 }
 
-.search-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.search-section__filter {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
 .event-code {
   font-size: 12px;
   background: var(--o-gray-100, #f0f2f5);
@@ -448,6 +535,12 @@ onMounted(() => {
   white-space: nowrap;
   font-size: 12px;
   color: var(--o-gray-500, #909399);
+}
+
+.action-cell {
+  display: flex;
+  gap: 4px;
+  align-items: center;
 }
 
 .form-grid {

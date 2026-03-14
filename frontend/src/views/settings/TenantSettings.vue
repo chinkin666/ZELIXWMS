@@ -6,92 +6,30 @@
       </template>
     </ControlPanel>
 
-    <!-- Filter bar -->
-    <div class="search-section">
-      <input
-        v-model="searchText"
-        type="text"
-        class="o-input"
-        style="flex: 1; max-width: 400px;"
-        placeholder="テナントコード・名称で検索..."
-        @keydown.enter="handleSearch"
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="tenantSettingsSearch"
+      @search="handleSearch"
+    />
+
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="tenants"
+        :height="520"
+        row-key="_id"
+        highlight-columns-on-hover
+        pagination-enabled
+        pagination-mode="server"
+        :page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        :current-page="currentPage"
+        :global-search-text="globalSearchText"
+        @page-change="handlePageChange"
       />
-      <select v-model="filterStatus" class="o-input" style="width: 160px;">
-        <option value="">全ステータス</option>
-        <option value="active">有効</option>
-        <option value="suspended">停止中</option>
-        <option value="cancelled">解約</option>
-        <option value="trial">トライアル</option>
-      </select>
-      <select v-model="filterPlan" class="o-input" style="width: 160px;">
-        <option value="">全プラン</option>
-        <option value="free">フリー</option>
-        <option value="starter">スターター</option>
-        <option value="standard">スタンダード</option>
-        <option value="pro">プロ</option>
-        <option value="enterprise">エンタープライズ</option>
-      </select>
-      <OButton variant="primary" @click="handleSearch">検索</OButton>
-    </div>
-
-    <!-- Table -->
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width: 140px">テナントコード</th>
-            <th class="o-table-th" style="width: 200px">テナント名</th>
-            <th class="o-table-th" style="width: 130px">プラン</th>
-            <th class="o-table-th" style="width: 110px">ステータス</th>
-            <th class="o-table-th" style="width: 100px">上限ユーザー</th>
-            <th class="o-table-th" style="width: 100px">上限倉庫</th>
-            <th class="o-table-th" style="width: 100px">上限顧客</th>
-            <th class="o-table-th" style="width: 220px">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td class="o-table-td o-table-empty" colspan="8">読み込み中...</td>
-          </tr>
-          <tr v-else-if="tenants.length === 0">
-            <td class="o-table-td o-table-empty" colspan="8">データがありません</td>
-          </tr>
-          <tr v-for="t in tenants" :key="t._id" class="o-table-row">
-            <td class="o-table-td">{{ t.tenantCode }}</td>
-            <td class="o-table-td">{{ t.name }}</td>
-            <td class="o-table-td">
-              <span class="o-status-tag" :class="planTagClass(t.plan)">{{ planLabel(t.plan) }}</span>
-            </td>
-            <td class="o-table-td">
-              <span class="o-status-tag" :class="statusTagClass(t.status)">{{ statusLabel(t.status) }}</span>
-            </td>
-            <td class="o-table-td" style="text-align: center">{{ t.maxUsers }}</td>
-            <td class="o-table-td" style="text-align: center">{{ t.maxWarehouses }}</td>
-            <td class="o-table-td" style="text-align: center">{{ t.maxClients }}</td>
-            <td class="o-table-td o-table-td--actions">
-              <OButton variant="primary" size="sm" @click="openEdit(t)">編集</OButton>
-              <OButton variant="secondary" size="sm" @click="openStatusChange(t)">ステータス変更</OButton>
-              <OButton variant="icon-danger" size="sm" @click="confirmDelete(t)">削除</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagination -->
-    <div class="o-table-pagination">
-      <span class="o-table-pagination__info">全{{ total }}件中 {{ paginationStart }}-{{ paginationEnd }}件</span>
-      <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-        </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">&lsaquo;</OButton>
-        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">&rsaquo;</OButton>
-      </div>
     </div>
 
     <!-- Create/Edit Dialog -->
@@ -179,11 +117,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { h, computed, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchTenants,
   createTenant,
@@ -196,42 +138,7 @@ import {
 } from '@/api/tenant'
 
 const { show: showToast } = useToast()
-
-// State
-const tenants = ref<Tenant[]>([])
-const total = ref(0)
-const loading = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(20)
-const searchText = ref('')
-const filterStatus = ref('')
-const filterPlan = ref('')
-
-// Dialog
-const dialogOpen = ref(false)
-const editingId = ref<string | null>(null)
-const isEditing = computed(() => !!editingId.value)
-
-// Status change dialog
-const statusDialogOpen = ref(false)
-const statusChangeTarget = ref<Tenant | null>(null)
-const newStatus = ref<TenantStatus>('active')
-
-const emptyForm = () => ({
-  tenantCode: '',
-  name: '',
-  plan: 'free' as TenantPlan,
-  status: 'trial' as TenantStatus,
-  maxUsers: 5,
-  maxWarehouses: 1,
-  maxClients: 10,
-  contactName: '',
-  contactEmail: '',
-  contactPhone: '',
-  memo: '',
-})
-
-const form = ref(emptyForm())
+const { t } = useI18n()
 
 // Labels
 const statusLabels: Record<TenantStatus, string> = {
@@ -273,19 +180,158 @@ const planTagClass = (plan: TenantPlan) => {
   return map[plan] || ''
 }
 
-// Computed
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
-const paginationStart = computed(() => (total.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1))
-const paginationEnd = computed(() => Math.min(currentPage.value * pageSize.value, total.value))
+// Status / plan options for search
+const statusOptions = [
+  { label: '有効', value: 'active' },
+  { label: '停止中', value: 'suspended' },
+  { label: '解約', value: 'cancelled' },
+  { label: 'トライアル', value: 'trial' },
+]
+
+const planOptions = [
+  { label: 'フリー', value: 'free' },
+  { label: 'スターター', value: 'starter' },
+  { label: 'スタンダード', value: 'standard' },
+  { label: 'プロ', value: 'pro' },
+  { label: 'エンタープライズ', value: 'enterprise' },
+]
+
+// --- Column definitions ---
+const baseColumns: TableColumn[] = [
+  {
+    key: 'tenantCode',
+    title: 'テナントコード',
+    width: 140,
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'name',
+    title: 'テナント名',
+    width: 200,
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'plan',
+    title: 'プラン',
+    width: 130,
+    searchable: true,
+    searchType: 'select',
+    searchOptions: planOptions,
+  },
+  {
+    key: 'status',
+    title: 'ステータス',
+    width: 110,
+    searchable: true,
+    searchType: 'select',
+    searchOptions: statusOptions,
+  },
+  {
+    key: 'maxUsers',
+    title: '上限ユーザー',
+    width: 100,
+    align: 'center',
+  },
+  {
+    key: 'maxWarehouses',
+    title: '上限倉庫',
+    width: 100,
+    align: 'center',
+  },
+  {
+    key: 'maxClients',
+    title: '上限顧客',
+    width: 100,
+    align: 'center',
+  },
+]
+
+const searchColumns = baseColumns.filter((c) => c.searchable)
+
+const tableColumns: TableColumn[] = [
+  ...baseColumns.map((col) => {
+    if (col.key === 'plan') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Tenant }) =>
+          h('span', { class: ['o-status-tag', planTagClass(rowData.plan)] }, planLabel(rowData.plan)),
+      }
+    }
+    if (col.key === 'status') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Tenant }) =>
+          h('span', { class: ['o-status-tag', statusTagClass(rowData.status)] }, statusLabel(rowData.status)),
+      }
+    }
+    return col
+  }),
+  {
+    key: 'actions',
+    title: t('wms.common.actions', '操作'),
+    width: 220,
+    align: 'center',
+    cellRenderer: ({ rowData }: { rowData: Tenant }) =>
+      h('div', { class: 'o-table-td--actions' }, [
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openStatusChange(rowData) }, () => 'ステータス変更'),
+        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+      ]),
+  },
+]
+
+// State
+const tenants = ref<Tenant[]>([])
+const total = ref(0)
+const loading = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(20)
+const globalSearchText = ref('')
+
+// Current search filters from SearchForm
+const currentFilters = ref<Record<string, { operator: Operator; value: any }>>({})
+
+// Dialog
+const dialogOpen = ref(false)
+const editingId = ref<string | null>(null)
+const isEditing = computed(() => !!editingId.value)
+
+// Status change dialog
+const statusDialogOpen = ref(false)
+const statusChangeTarget = ref<Tenant | null>(null)
+const newStatus = ref<TenantStatus>('active')
+
+const emptyForm = () => ({
+  tenantCode: '',
+  name: '',
+  plan: 'free' as TenantPlan,
+  status: 'trial' as TenantStatus,
+  maxUsers: 5,
+  maxWarehouses: 1,
+  maxClients: 10,
+  contactName: '',
+  contactEmail: '',
+  contactPhone: '',
+  memo: '',
+})
+
+const form = ref(emptyForm())
 
 // Load
 const loadList = async () => {
   loading.value = true
   try {
+    const filters = currentFilters.value
+    const searchParam = filters.tenantCode?.value || filters.name?.value || undefined
+    const statusParam = filters.status?.value || undefined
+    const planParam = filters.plan?.value || undefined
+
     const result = await fetchTenants({
-      search: searchText.value || undefined,
-      status: filterStatus.value || undefined,
-      plan: filterPlan.value || undefined,
+      search: searchParam,
+      status: statusParam,
+      plan: planParam,
       page: currentPage.value,
       limit: pageSize.value,
     })
@@ -298,18 +344,22 @@ const loadList = async () => {
   }
 }
 
-const handleSearch = () => {
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  // Extract global search text
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+    delete payload.__global
+  } else {
+    globalSearchText.value = ''
+  }
+  currentFilters.value = { ...payload }
   currentPage.value = 1
   loadList()
 }
 
-const handlePageSizeChange = () => {
-  currentPage.value = 1
-  loadList()
-}
-
-const goToPage = (page: number) => {
-  currentPage.value = page
+const handlePageChange = (payload: { page: number; pageSize: number }) => {
+  currentPage.value = payload.page
+  pageSize.value = payload.pageSize
   loadList()
 }
 
@@ -405,8 +455,6 @@ onMounted(() => {
 </script>
 
 <style>
-@import '@/styles/order-table.css';
-
 .o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 .o-status-tag--trial { background: #ecf5ff; color: #409eff; }
 .o-status-tag--suspended { background: #fdf6ec; color: #e6a23c; }
@@ -428,13 +476,6 @@ onMounted(() => {
 :deep(.o-control-panel) {
   margin-left: -20px;
   margin-right: -20px;
-}
-
-/* Search section */
-.search-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 /* Status change form */

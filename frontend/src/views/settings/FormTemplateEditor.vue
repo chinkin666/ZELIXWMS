@@ -1,10 +1,10 @@
 <template>
   <div class="form-template-editor">
-    <ControlPanel title="帳票テンプレート編集" :show-search="false">
+    <ControlPanel :title="t('wms.formEditor.title', '帳票テンプレート編集')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" @click="handlePreview" :disabled="previewing">{{ previewing ? 'プレビュー中...' : 'プレビュー' }}</OButton>
-        <OButton variant="primary" @click="handleSave" :disabled="saving">{{ saving ? '保存中...' : '保存' }}</OButton>
-        <OButton variant="secondary" @click="handleBack">戻る</OButton>
+        <OButton variant="secondary" @click="handlePreview" :disabled="previewing">{{ previewing ? t('wms.formEditor.previewing', 'プレビュー中...') : t('wms.formEditor.preview', 'プレビュー') }}</OButton>
+        <OButton variant="primary" @click="handleSave" :disabled="saving">{{ saving ? t('wms.formEditor.saving', '保存中...') : t('wms.common.save', '保存') }}</OButton>
+        <OButton variant="secondary" @click="handleBack">{{ t('wms.formEditor.back', '戻る') }}</OButton>
       </template>
     </ControlPanel>
 
@@ -39,19 +39,19 @@
         <!-- ヘッダー・フッター -->
         <div v-show="activeTab === 'header-footer'" class="settings-section">
             <div class="section-header">
-              <h3 class="section-title">ヘッダー・フッター項目</h3>
-              <OButton variant="primary" @click="addHeaderFooterItem">+ 追加</OButton>
+              <h3 class="section-title">{{ t('wms.formEditor.headerFooterItems', 'ヘッダー・フッター項目') }}</h3>
+              <OButton variant="primary" @click="addHeaderFooterItem">+ {{ t('wms.formEditor.add', '追加') }}</OButton>
             </div>
             <p class="section-hint">
-              ヘッダー、フッター、またはドキュメントタイトルを自由に追加できます。
+              {{ t('wms.formEditor.headerFooterHint', 'ヘッダー、フッター、またはドキュメントタイトルを自由に追加できます。') }}
               <br />
               <span class="hint-sub" v-pre>利用可能な変数: {{date}}, {{time}}, {{datetime}}, {{page}}, {{pages}}</span>
             </p>
 
             <div v-if="!template.headerFooterItems?.length" class="empty-columns">
-              <p style="color: #909399; text-align: center; padding: 20px">項目が設定されていません</p>
+              <p style="color: #909399; text-align: center; padding: 20px">{{ t('wms.formEditor.noItemsConfigured', '項目が設定されていません') }}</p>
               <div style="text-align: center">
-                <OButton variant="primary" @click="addHeaderFooterItem">+ 項目を追加</OButton>
+                <OButton variant="primary" @click="addHeaderFooterItem">+ {{ t('wms.formEditor.addItem', '項目を追加') }}</OButton>
               </div>
             </div>
 
@@ -78,29 +78,29 @@
                 <div class="o-form hf-form">
                   <!-- 基本設定 -->
                   <div class="o-form-group">
-                    <label>位置</label>
+                    <label>{{ t('wms.formEditor.position', '位置') }}</label>
                     <div class="radio-group">
-                      <label><input type="radio" v-model="item.position" value="header" /> ヘッダー</label>
-                      <label><input type="radio" v-model="item.position" value="footer" /> フッター</label>
-                      <label><input type="radio" v-model="item.position" value="title" /> タイトル</label>
+                      <label><input type="radio" v-model="item.position" value="header" /> {{ t('wms.formEditor.header', 'ヘッダー') }}</label>
+                      <label><input type="radio" v-model="item.position" value="footer" /> {{ t('wms.formEditor.footer', 'フッター') }}</label>
+                      <label><input type="radio" v-model="item.position" value="title" /> {{ t('wms.formEditor.titleLabel', 'タイトル') }}</label>
                     </div>
                   </div>
 
                   <div class="o-form-group">
-                    <label>表示ページ</label>
+                    <label>{{ t('wms.formEditor.showOnPage', '表示ページ') }}</label>
                     <div class="radio-group">
-                      <label><input type="radio" v-model="item.showOn" value="all" /> 全ページ</label>
-                      <label><input type="radio" v-model="item.showOn" value="first" /> 最初のページのみ</label>
-                      <label><input type="radio" v-model="item.showOn" value="last" /> 最後のページのみ</label>
+                      <label><input type="radio" v-model="item.showOn" value="all" /> {{ t('wms.formEditor.allPages', '全ページ') }}</label>
+                      <label><input type="radio" v-model="item.showOn" value="first" /> {{ t('wms.formEditor.firstPageOnly', '最初のページのみ') }}</label>
+                      <label><input type="radio" v-model="item.showOn" value="last" /> {{ t('wms.formEditor.lastPageOnly', '最後のページのみ') }}</label>
                     </div>
                   </div>
 
                   <div class="o-form-group">
-                    <label>タイプ</label>
+                    <label>{{ t('wms.formEditor.type', 'タイプ') }}</label>
                     <div class="radio-group">
-                      <label><input type="radio" v-model="item.type" value="text" @change="onHFTypeChange(item)" /> テキスト</label>
-                      <label><input type="radio" v-model="item.type" value="columns" @change="onHFTypeChange(item)" /> カラム</label>
-                      <label><input type="radio" v-model="item.type" value="table" @change="onHFTypeChange(item)" /> テーブル</label>
+                      <label><input type="radio" v-model="item.type" value="text" @change="onHFTypeChange(item)" /> {{ t('wms.formEditor.text', 'テキスト') }}</label>
+                      <label><input type="radio" v-model="item.type" value="columns" @change="onHFTypeChange(item)" /> {{ t('wms.formEditor.columns', 'カラム') }}</label>
+                      <label><input type="radio" v-model="item.type" value="table" @change="onHFTypeChange(item)" /> {{ t('wms.formEditor.table', 'テーブル') }}</label>
                     </div>
                   </div>
 
@@ -109,7 +109,7 @@
                   <!-- テキストタイプ -->
                   <template v-if="item.type === 'text'">
                     <div class="o-form-group">
-                      <label>テキスト</label>
+                      <label>{{ t('wms.formEditor.text', 'テキスト') }}</label>
                       <input v-model="item.text" class="o-input" placeholder="{{date}} - タイトル" />
                     </div>
                   </template>
@@ -117,22 +117,22 @@
                   <!-- カラムタイプ -->
                   <template v-if="item.type === 'columns'">
                     <div class="o-form-group">
-                      <label>カラム</label>
+                      <label>{{ t('wms.formEditor.columns', 'カラム') }}</label>
                       <div class="columns-editor">
                         <div v-for="(col, colIdx) in item.columns" :key="colIdx" class="column-row">
-                          <input v-model="col.text" class="o-input" placeholder="テキスト" style="flex: 1" />
+                          <input v-model="col.text" class="o-input" :placeholder="t('wms.formEditor.text', 'テキスト')" style="flex: 1" />
                           <select v-model="col.width" class="o-input" style="width: 100px">
-                            <option value="auto">自動</option>
-                            <option value="*">均等</option>
+                            <option value="auto">{{ t('wms.formEditor.auto', '自動') }}</option>
+                            <option value="*">{{ t('wms.formEditor.equal', '均等') }}</option>
                           </select>
                           <select v-model="col.alignment" class="o-input" style="width: 80px">
-                            <option value="left">左</option>
-                            <option value="center">中央</option>
-                            <option value="right">右</option>
+                            <option value="left">{{ t('wms.formEditor.left', '左') }}</option>
+                            <option value="center">{{ t('wms.formEditor.center', '中央') }}</option>
+                            <option value="right">{{ t('wms.formEditor.right', '右') }}</option>
                           </select>
                           <button class="o-btn-text o-btn-text-danger" @click="removeHFColumn(item, colIdx)">&#x2715;</button>
                         </div>
-                        <OButton variant="secondary" @click="addHFColumn(item)">+ カラム追加</OButton>
+                        <OButton variant="secondary" @click="addHFColumn(item)">+ {{ t('wms.formEditor.addColumn', 'カラム追加') }}</OButton>
                       </div>
                     </div>
                   </template>
@@ -140,11 +140,11 @@
                   <!-- テーブルタイプ -->
                   <template v-if="item.type === 'table'">
                     <div class="o-form-group">
-                      <label>テーブル</label>
+                      <label>{{ t('wms.formEditor.table', 'テーブル') }}</label>
                       <div class="table-editor">
                         <div class="table-controls">
-                          <OButton variant="secondary" @click="addHFTableRow(item)">行追加</OButton>
-                          <OButton variant="secondary" @click="addHFTableCol(item)">列追加</OButton>
+                          <OButton variant="secondary" @click="addHFTableRow(item)">{{ t('wms.formEditor.addRow', '行追加') }}</OButton>
+                          <OButton variant="secondary" @click="addHFTableCol(item)">{{ t('wms.formEditor.addCol', '列追加') }}</OButton>
                         </div>
                         <table v-if="item.table?.body?.length" class="hf-table">
                           <tbody>
@@ -164,23 +164,23 @@
                             :key="colIdx"
                             class="o-btn-text o-btn-text-danger"
                             @click="removeHFTableCol(item, colIdx)"
-                          >列{{ colIdx + 1 }}削除</button>
+                          >{{ t('wms.formEditor.colLabel', '列') }}{{ colIdx + 1 }}{{ t('wms.common.delete', '削除') }}</button>
                         </div>
                       </div>
                     </div>
 
-                    <div class="o-divider"><span>テーブルスタイル</span></div>
+                    <div class="o-divider"><span>{{ t('wms.formEditor.tableStyle', 'テーブルスタイル') }}</span></div>
 
                     <div class="o-form-group">
-                      <label>ヘッダー行数</label>
+                      <label>{{ t('wms.formEditor.headerRows', 'ヘッダー行数') }}</label>
                       <div style="display: flex; align-items: center; gap: 8px">
                         <input type="number" :value="item.table?.tableStyle?.headerRows ?? 0" min="0" :max="item.table?.body?.length ?? 0" class="o-input" style="width: 80px" @input="setTableStyle(item, 'headerRows', parseInt(($event.target as HTMLInputElement).value))" />
-                        <span class="hint">0の場合はヘッダーなし</span>
+                        <span class="hint">{{ t('wms.formEditor.headerRowsHint', '0の場合はヘッダーなし') }}</span>
                       </div>
                     </div>
 
                     <div class="o-form-group">
-                      <label>ヘッダー背景色</label>
+                      <label>{{ t('wms.formEditor.headerBgColor', 'ヘッダー背景色') }}</label>
                       <div style="display: flex; align-items: center; gap: 8px">
                         <input type="color" :value="item.table?.tableStyle?.headerBgColor || '#2a3474'" @input="setTableStyle(item, 'headerBgColor', ($event.target as HTMLInputElement).value)" />
                         <input :value="item.table?.tableStyle?.headerBgColor" class="o-input" style="width: 100px" placeholder="#2a3474" @input="setTableStyle(item, 'headerBgColor', ($event.target as HTMLInputElement).value)" />
@@ -188,7 +188,7 @@
                     </div>
 
                     <div class="o-form-group">
-                      <label>ヘッダー文字色</label>
+                      <label>{{ t('wms.formEditor.headerTextColor', 'ヘッダー文字色') }}</label>
                       <div style="display: flex; align-items: center; gap: 8px">
                         <input type="color" :value="item.table?.tableStyle?.headerTextColor || '#ffffff'" @input="setTableStyle(item, 'headerTextColor', ($event.target as HTMLInputElement).value)" />
                         <input :value="item.table?.tableStyle?.headerTextColor" class="o-input" style="width: 100px" placeholder="#ffffff" @input="setTableStyle(item, 'headerTextColor', ($event.target as HTMLInputElement).value)" />
@@ -196,7 +196,7 @@
                     </div>
 
                     <div class="o-form-group">
-                      <label>罫線色</label>
+                      <label>{{ t('wms.formEditor.borderColor', '罫線色') }}</label>
                       <div style="display: flex; align-items: center; gap: 8px">
                         <input type="color" :value="item.table?.tableStyle?.borderColor || '#cccccc'" @input="setTableStyle(item, 'borderColor', ($event.target as HTMLInputElement).value)" />
                         <input :value="item.table?.tableStyle?.borderColor" class="o-input" style="width: 100px" placeholder="#cccccc" @input="setTableStyle(item, 'borderColor', ($event.target as HTMLInputElement).value)" />
@@ -204,7 +204,7 @@
                     </div>
 
                     <div class="o-form-group">
-                      <label>セル内余白</label>
+                      <label>{{ t('wms.formEditor.cellPadding', 'セル内余白') }}</label>
                       <div style="display: flex; align-items: center; gap: 8px">
                         <input type="number" :value="item.table?.tableStyle?.cellPadding ?? 4" min="0" max="20" class="o-input" style="width: 80px" @input="setTableStyle(item, 'cellPadding', parseInt(($event.target as HTMLInputElement).value))" />
                         <span class="unit">pt</span>
@@ -212,20 +212,20 @@
                     </div>
 
                     <div class="o-form-group">
-                      <label>水平方向</label>
+                      <label>{{ t('wms.formEditor.horizontalAlign', '水平方向') }}</label>
                       <div class="radio-group">
-                        <label><input type="radio" :checked="(item.table?.tableStyle?.horizontalAlign ?? 'left') === 'left'" @change="setTableStyle(item, 'horizontalAlign', 'left')" /> 左</label>
-                        <label><input type="radio" :checked="(item.table?.tableStyle?.horizontalAlign ?? 'left') === 'center'" @change="setTableStyle(item, 'horizontalAlign', 'center')" /> 中央</label>
-                        <label><input type="radio" :checked="(item.table?.tableStyle?.horizontalAlign ?? 'left') === 'right'" @change="setTableStyle(item, 'horizontalAlign', 'right')" /> 右</label>
+                        <label><input type="radio" :checked="(item.table?.tableStyle?.horizontalAlign ?? 'left') === 'left'" @change="setTableStyle(item, 'horizontalAlign', 'left')" /> {{ t('wms.formEditor.left', '左') }}</label>
+                        <label><input type="radio" :checked="(item.table?.tableStyle?.horizontalAlign ?? 'left') === 'center'" @change="setTableStyle(item, 'horizontalAlign', 'center')" /> {{ t('wms.formEditor.center', '中央') }}</label>
+                        <label><input type="radio" :checked="(item.table?.tableStyle?.horizontalAlign ?? 'left') === 'right'" @change="setTableStyle(item, 'horizontalAlign', 'right')" /> {{ t('wms.formEditor.right', '右') }}</label>
                       </div>
                     </div>
 
                     <div class="o-form-group">
-                      <label>垂直方向</label>
+                      <label>{{ t('wms.formEditor.verticalAlign', '垂直方向') }}</label>
                       <div class="radio-group">
-                        <label><input type="radio" :checked="(item.table?.tableStyle?.verticalAlign ?? 'middle') === 'top'" @change="setTableStyle(item, 'verticalAlign', 'top')" /> 上</label>
-                        <label><input type="radio" :checked="(item.table?.tableStyle?.verticalAlign ?? 'middle') === 'middle'" @change="setTableStyle(item, 'verticalAlign', 'middle')" /> 中央</label>
-                        <label><input type="radio" :checked="(item.table?.tableStyle?.verticalAlign ?? 'middle') === 'bottom'" @change="setTableStyle(item, 'verticalAlign', 'bottom')" /> 下</label>
+                        <label><input type="radio" :checked="(item.table?.tableStyle?.verticalAlign ?? 'middle') === 'top'" @change="setTableStyle(item, 'verticalAlign', 'top')" /> {{ t('wms.formEditor.top', '上') }}</label>
+                        <label><input type="radio" :checked="(item.table?.tableStyle?.verticalAlign ?? 'middle') === 'middle'" @change="setTableStyle(item, 'verticalAlign', 'middle')" /> {{ t('wms.formEditor.center', '中央') }}</label>
+                        <label><input type="radio" :checked="(item.table?.tableStyle?.verticalAlign ?? 'middle') === 'bottom'" @change="setTableStyle(item, 'verticalAlign', 'bottom')" /> {{ t('wms.formEditor.bottom', '下') }}</label>
                       </div>
                     </div>
                   </template>
@@ -233,31 +233,31 @@
                   <div class="o-divider"></div>
 
                   <!-- スタイル設定 -->
-                  <h4 class="sub-section-title">スタイル</h4>
+                  <h4 class="sub-section-title">{{ t('wms.formEditor.style', 'スタイル') }}</h4>
                   <div class="o-form-group">
-                    <label>フォントサイズ</label>
+                    <label>{{ t('wms.formEditor.fontSize', 'フォントサイズ') }}</label>
                     <div style="display: flex; align-items: center; gap: 8px">
                       <input type="number" v-model.number="item.style.fontSize" min="6" max="36" class="o-input" style="width: 80px" />
                       <span class="unit">pt</span>
                     </div>
                   </div>
                   <div class="o-form-group">
-                    <label>スタイル</label>
+                    <label>{{ t('wms.formEditor.style', 'スタイル') }}</label>
                     <div style="display: flex; gap: 12px">
-                      <label><input type="checkbox" v-model="item.style.bold" /> 太字</label>
-                      <label><input type="checkbox" v-model="item.style.italic" /> 斜体</label>
+                      <label><input type="checkbox" v-model="item.style.bold" /> {{ t('wms.formEditor.bold', '太字') }}</label>
+                      <label><input type="checkbox" v-model="item.style.italic" /> {{ t('wms.formEditor.italic', '斜体') }}</label>
                     </div>
                   </div>
                   <div class="o-form-group">
-                    <label>配置</label>
+                    <label>{{ t('wms.formEditor.alignment', '配置') }}</label>
                     <div class="radio-group">
-                      <label><input type="radio" v-model="item.style.alignment" value="left" /> 左</label>
-                      <label><input type="radio" v-model="item.style.alignment" value="center" /> 中央</label>
-                      <label><input type="radio" v-model="item.style.alignment" value="right" /> 右</label>
+                      <label><input type="radio" v-model="item.style.alignment" value="left" /> {{ t('wms.formEditor.left', '左') }}</label>
+                      <label><input type="radio" v-model="item.style.alignment" value="center" /> {{ t('wms.formEditor.center', '中央') }}</label>
+                      <label><input type="radio" v-model="item.style.alignment" value="right" /> {{ t('wms.formEditor.right', '右') }}</label>
                     </div>
                   </div>
                   <div class="o-form-group">
-                    <label>文字色</label>
+                    <label>{{ t('wms.formEditor.textColor', '文字色') }}</label>
                     <div style="display: flex; align-items: center; gap: 8px">
                       <input type="color" v-model="item.style.color" />
                       <input v-model="item.style.color" class="o-input" style="width: 100px" placeholder="#000000" />
@@ -271,35 +271,35 @@
         <!-- 列設定 -->
         <div v-show="activeTab === 'columns'" class="settings-section">
             <div class="section-header">
-              <h3 class="section-title">出力する列</h3>
+              <h3 class="section-title">{{ t('wms.formEditor.outputColumns', '出力する列') }}</h3>
               <div class="dropdown-wrap" style="position: relative">
                 <OButton variant="primary" @click="columnDropdownOpen = !columnDropdownOpen">
-                  + 列を追加 &#x25BC;
+                  + {{ t('wms.formEditor.addColumnMenu', '列を追加') }} &#x25BC;
                 </OButton>
                 <div v-if="columnDropdownOpen" class="o-dropdown-menu">
-                  <div class="o-dropdown-item" @click="handleAddColumn('single'); columnDropdownOpen = false">単一内容の列</div>
-                  <div class="o-dropdown-item" @click="handleAddColumn('multi'); columnDropdownOpen = false">複数内容の列（縦並び）</div>
+                  <div class="o-dropdown-item" @click="handleAddColumn('single'); columnDropdownOpen = false">{{ t('wms.formEditor.singleColumn', '単一内容の列') }}</div>
+                  <div class="o-dropdown-item" @click="handleAddColumn('multi'); columnDropdownOpen = false">{{ t('wms.formEditor.multiColumn', '複数内容の列（縦並び）') }}</div>
                 </div>
               </div>
             </div>
             <p class="section-hint">
-              帳票に出力する列を設定します。
+              {{ t('wms.formEditor.columnHint', '帳票に出力する列を設定します。') }}
               <br />
-              <span class="hint-sub">• 「単一内容」: 1つのフィールドを表示（複数内容列がある場合、行をまたいで結合）</span>
+              <span class="hint-sub">{{ t('wms.formEditor.singleColumnHint', '• 「単一内容」: 1つのフィールドを表示（複数内容列がある場合、行をまたいで結合）') }}</span>
               <br />
-              <span class="hint-sub">• 「複数内容」: 複数のフィールドを縦に並べて表示（各フィールドは別々のセルに分割）</span>
+              <span class="hint-sub">{{ t('wms.formEditor.multiColumnHint', '• 「複数内容」: 複数のフィールドを縦に並べて表示（各フィールドは別々のセルに分割）') }}</span>
               <br />
-              <span class="hint-sub">※ 複数内容列のヘッダーは改行で区切って複数行にできます</span>
+              <span class="hint-sub">{{ t('wms.formEditor.multiHeaderHint', '※ 複数内容列のヘッダーは改行で区切って複数行にできます') }}</span>
             </p>
 
             <div v-if="template.columns.length === 0" class="empty-columns">
-              <p style="color: #909399; text-align: center; padding: 20px">列が設定されていません</p>
+              <p style="color: #909399; text-align: center; padding: 20px">{{ t('wms.formEditor.noColumnsConfigured', '列が設定されていません') }}</p>
               <div style="text-align: center">
                 <div class="dropdown-wrap" style="position: relative; display: inline-block">
-                  <OButton variant="primary" @click="emptyColumnDropdownOpen = !emptyColumnDropdownOpen">+ 列を追加 &#x25BC;</OButton>
+                  <OButton variant="primary" @click="emptyColumnDropdownOpen = !emptyColumnDropdownOpen">+ {{ t('wms.formEditor.addColumnMenu', '列を追加') }} &#x25BC;</OButton>
                   <div v-if="emptyColumnDropdownOpen" class="o-dropdown-menu">
-                    <div class="o-dropdown-item" @click="handleAddColumn('single'); emptyColumnDropdownOpen = false">単一内容の列</div>
-                    <div class="o-dropdown-item" @click="handleAddColumn('multi'); emptyColumnDropdownOpen = false">複数内容の列</div>
+                    <div class="o-dropdown-item" @click="handleAddColumn('single'); emptyColumnDropdownOpen = false">{{ t('wms.formEditor.singleColumn', '単一内容の列') }}</div>
+                    <div class="o-dropdown-item" @click="handleAddColumn('multi'); emptyColumnDropdownOpen = false">{{ t('wms.formEditor.multiColumnShort', '複数内容の列') }}</div>
                   </div>
                 </div>
               </div>
@@ -316,35 +316,35 @@
                   <div class="column-header-left">
                     <span class="column-number">#{{ index + 1 }}</span>
                     <span class="o-badge" :class="col.type === 'single' ? 'o-badge-info' : 'o-badge-warning'">
-                      {{ col.type === 'single' ? '単一' : '複数' }}
+                      {{ col.type === 'single' ? t('wms.formEditor.single', '単一') : t('wms.formEditor.multi', '複数') }}
                     </span>
                   </div>
                   <div class="column-card-actions">
-                    <button class="o-btn-text" title="一番上へ" :disabled="index === 0" @click="moveColumnToTop(index)">&#x21C8;</button>
-                    <button class="o-btn-text" title="上へ" :disabled="index === 0" @click="moveColumn(index, -1)">&#x2191;</button>
-                    <button class="o-btn-text" title="下へ" :disabled="index === template.columns.length - 1" @click="moveColumn(index, 1)">&#x2193;</button>
-                    <button class="o-btn-text" title="一番下へ" :disabled="index === template.columns.length - 1" @click="moveColumnToBottom(index)">&#x21CA;</button>
-                    <button class="o-btn-text o-btn-text-danger" title="削除" @click="removeColumn(index)">&#x2715;</button>
+                    <button class="o-btn-text" :title="t('wms.formEditor.moveToTop', '一番上へ')" :disabled="index === 0" @click="moveColumnToTop(index)">&#x21C8;</button>
+                    <button class="o-btn-text" :title="t('wms.formEditor.moveUp', '上へ')" :disabled="index === 0" @click="moveColumn(index, -1)">&#x2191;</button>
+                    <button class="o-btn-text" :title="t('wms.formEditor.moveDown', '下へ')" :disabled="index === template.columns.length - 1" @click="moveColumn(index, 1)">&#x2193;</button>
+                    <button class="o-btn-text" :title="t('wms.formEditor.moveToBottom', '一番下へ')" :disabled="index === template.columns.length - 1" @click="moveColumnToBottom(index)">&#x21CA;</button>
+                    <button class="o-btn-text o-btn-text-danger" :title="t('wms.common.delete', '削除')" @click="removeColumn(index)">&#x2715;</button>
                   </div>
                 </div>
 
                 <!-- 共通設定: ラベルと幅 -->
                 <div class="o-form column-form">
                   <div class="o-form-group">
-                    <label>ヘッダー</label>
+                    <label>{{ t('wms.formEditor.headerLabel', 'ヘッダー') }}</label>
                     <div style="flex: 1">
-                      <textarea v-if="col.type === 'multi'" v-model="col.label" class="o-input" rows="2" :placeholder="'複数行の場合は改行で区切る'" style="width: 100%"></textarea>
-                      <input v-else v-model="col.label" class="o-input" placeholder="列の表示名" style="width: 100%" />
-                      <div v-if="col.type === 'multi'" class="hint">複数行ヘッダーは改行で区切ってください</div>
+                      <textarea v-if="col.type === 'multi'" v-model="col.label" class="o-input" rows="2" :placeholder="t('wms.formEditor.multiLinePlaceholder', '複数行の場合は改行で区切る')" style="width: 100%"></textarea>
+                      <input v-else v-model="col.label" class="o-input" :placeholder="t('wms.formEditor.columnDisplayName', '列の表示名')" style="width: 100%" />
+                      <div v-if="col.type === 'multi'" class="hint">{{ t('wms.formEditor.multiLineHint', '複数行ヘッダーは改行で区切ってください') }}</div>
                     </div>
                   </div>
 
                   <div class="o-form-group">
-                    <label>列幅</label>
+                    <label>{{ t('wms.formEditor.columnWidth', '列幅') }}</label>
                     <div class="width-input">
                       <div class="radio-group">
-                        <label><input type="radio" :checked="isAutoWidth(col.width)" @change="setWidthMode(col, 'auto')" /> 自動</label>
-                        <label><input type="radio" :checked="!isAutoWidth(col.width)" @change="setWidthMode(col, 'fixed')" /> 固定</label>
+                        <label><input type="radio" :checked="isAutoWidth(col.width)" @change="setWidthMode(col, 'auto')" /> {{ t('wms.formEditor.auto', '自動') }}</label>
+                        <label><input type="radio" :checked="!isAutoWidth(col.width)" @change="setWidthMode(col, 'fixed')" /> {{ t('wms.formEditor.fixed', '固定') }}</label>
                       </div>
                       <template v-if="!isAutoWidth(col.width)">
                         <input type="number" v-model.number="col.width" min="20" max="500" class="o-input" style="width: 80px; margin-left: 12px" />
@@ -358,10 +358,10 @@
                 <template v-if="col.type === 'single'">
                   <div class="o-divider content-divider"></div>
                   <div class="content-section">
-                    <h4 class="content-title">内容設定</h4>
+                    <h4 class="content-title">{{ t('wms.formEditor.contentSettings', '内容設定') }}</h4>
                     <div class="o-form column-form">
                       <div class="o-form-group">
-                        <label>フィールド</label>
+                        <label>{{ t('wms.formEditor.field', 'フィールド') }}</label>
                         <select v-model="col.field" class="o-input" style="width: 100%" @change="onSingleFieldChange(col)">
                           <option v-for="field in availableFields" :key="field.key" :value="field.key">
                             {{ field.label }} ({{ field.key }})
@@ -370,19 +370,19 @@
                       </div>
 
                       <div class="o-form-group">
-                        <label>表示形式</label>
+                        <label>{{ t('wms.formEditor.displayFormat', '表示形式') }}</label>
                         <select v-model="col.renderType" class="o-input" style="width: 100%" @change="onRenderTypeChange(col)">
-                          <option value="text">テキスト</option>
-                          <option v-if="getFieldType(col.field) === 'date'" value="date">日付</option>
-                          <option v-if="fieldSupportBarcode(col.field)" value="qrcode">QRコード</option>
-                          <option v-if="fieldSupportBarcode(col.field)" value="barcode">バーコード</option>
+                          <option value="text">{{ t('wms.formEditor.text', 'テキスト') }}</option>
+                          <option v-if="getFieldType(col.field) === 'date'" value="date">{{ t('wms.formEditor.date', '日付') }}</option>
+                          <option v-if="fieldSupportBarcode(col.field)" value="qrcode">{{ t('wms.formEditor.qrCode', 'QRコード') }}</option>
+                          <option v-if="fieldSupportBarcode(col.field)" value="barcode">{{ t('wms.formEditor.barcode', 'バーコード') }}</option>
                         </select>
                       </div>
 
                       <!-- バーコード/QRコード設定 -->
                       <template v-if="col.renderType === 'barcode' || col.renderType === 'qrcode'">
                         <div class="o-form-group">
-                          <label>{{ col.renderType === 'barcode' ? 'バーコード種類' : 'QRコード種類' }}</label>
+                          <label>{{ col.renderType === 'barcode' ? t('wms.formEditor.barcodeType', 'バーコード種類') : t('wms.formEditor.qrCodeType', 'QRコード種類') }}</label>
                           <select :value="col.barcodeConfig?.format || (col.renderType === 'barcode' ? 'code128' : 'qrcode')" class="o-input" style="width: 100%" @change="setBarcodeFormat(col, ($event.target as HTMLSelectElement).value)">
                             <template v-if="col.renderType === 'barcode'">
                               <option value="code128">Code 128</option>
@@ -399,7 +399,7 @@
                         </div>
 
                         <div class="o-form-group">
-                          <label>サイズ</label>
+                          <label>{{ t('wms.formEditor.size', 'サイズ') }}</label>
                           <div class="barcode-size-inputs">
                             <input type="number" :value="col.barcodeConfig?.width || (col.renderType === 'barcode' ? 120 : 60)" min="20" max="200" class="o-input" style="width: 80px" @input="setBarcodeSize(col, 'width', parseInt(($event.target as HTMLInputElement).value))" />
                             <span class="size-separator">x</span>
@@ -411,7 +411,7 @@
 
                       <!-- 日付フォーマット -->
                       <div class="o-form-group" v-if="col.renderType === 'date'">
-                        <label>日付形式</label>
+                        <label>{{ t('wms.formEditor.dateFormat', '日付形式') }}</label>
                         <select v-model="col.dateFormat" class="o-input" style="width: 100%">
                           <option value="YYYY/MM/DD">2026/01/04</option>
                           <option value="YYYY-MM-DD">2026-01-04</option>
@@ -424,10 +424,10 @@
 
                       <div class="o-divider"></div>
                       <div class="o-form-group">
-                        <label>プレビュー用一時データ</label>
+                        <label>{{ t('wms.formEditor.previewData', 'プレビュー用一時データ') }}</label>
                         <div style="flex: 1">
-                          <textarea v-model="col.previewData" rows="3" class="o-input" style="width: 100%" placeholder="例: サンプル値（省略可）" @blur="updatePreview"></textarea>
-                          <div class="hint">プレビュー時にこのフィールドで使用する一時データ（JSON文字列）。空白の場合はデフォルトデータが使用されます。</div>
+                          <textarea v-model="col.previewData" rows="3" class="o-input" style="width: 100%" :placeholder="t('wms.formEditor.previewDataPlaceholder', '例: サンプル値（省略可）')" @blur="updatePreview"></textarea>
+                          <div class="hint">{{ t('wms.formEditor.previewDataHint', 'プレビュー時にこのフィールドで使用する一時データ（JSON文字列）。空白の場合はデフォルトデータが使用されます。') }}</div>
                         </div>
                       </div>
                     </div>
@@ -439,13 +439,13 @@
                   <div class="o-divider content-divider"></div>
                   <div class="content-section">
                     <div class="content-header">
-                      <h4 class="content-title">内容設定（{{ col.children?.length || 0 }}件）</h4>
-                      <OButton variant="secondary" @click="addChildContent(col)">+ 内容を追加</OButton>
+                      <h4 class="content-title">{{ t('wms.formEditor.contentSettings', '内容設定') }}（{{ col.children?.length || 0 }}{{ t('wms.formEditor.items', '件') }}）</h4>
+                      <OButton variant="secondary" @click="addChildContent(col)">+ {{ t('wms.formEditor.addContent', '内容を追加') }}</OButton>
                     </div>
 
                     <div v-if="!col.children?.length" class="empty-children">
-                      <p>内容が設定されていません</p>
-                      <OButton variant="primary" @click="addChildContent(col)">内容を追加</OButton>
+                      <p>{{ t('wms.formEditor.noContentConfigured', '内容が設定されていません') }}</p>
+                      <OButton variant="primary" @click="addChildContent(col)">{{ t('wms.formEditor.addContent', '内容を追加') }}</OButton>
                     </div>
 
                     <div v-else class="children-list">
@@ -455,7 +455,7 @@
                         class="child-card"
                       >
                         <div class="child-header">
-                          <span class="child-number">{{ childIndex + 1 }}行目</span>
+                          <span class="child-number">{{ childIndex + 1 }}{{ t('wms.formEditor.rowSuffix', '行目') }}</span>
                           <div class="child-actions">
                             <button class="o-btn-text" :disabled="childIndex === 0" @click="moveChildContent(col, childIndex, -1)">&#x2191;</button>
                             <button class="o-btn-text" :disabled="childIndex === (col.children?.length || 0) - 1" @click="moveChildContent(col, childIndex, 1)">&#x2193;</button>
@@ -465,12 +465,12 @@
 
                         <div class="o-form child-form">
                           <div class="o-form-group">
-                            <label>ラベル</label>
-                            <input v-model="child.label" class="o-input" placeholder="省略可（セル内ラベル）" />
+                            <label>{{ t('wms.formEditor.label', 'ラベル') }}</label>
+                            <input v-model="child.label" class="o-input" :placeholder="t('wms.formEditor.labelPlaceholder', '省略可（セル内ラベル）')" />
                           </div>
 
                           <div class="o-form-group">
-                            <label>フィールド</label>
+                            <label>{{ t('wms.formEditor.field', 'フィールド') }}</label>
                             <select v-model="child.field" class="o-input" style="width: 100%" @change="onChildFieldChange(child)">
                               <option v-for="field in availableFields" :key="field.key" :value="field.key">
                                 {{ field.label }} ({{ field.key }})
@@ -479,19 +479,19 @@
                           </div>
 
                           <div class="o-form-group">
-                            <label>表示形式</label>
+                            <label>{{ t('wms.formEditor.displayFormat', '表示形式') }}</label>
                             <select v-model="child.renderType" class="o-input" style="width: 100%" @change="onChildRenderTypeChange(child)">
-                              <option value="text">テキスト</option>
-                              <option v-if="getFieldType(child.field) === 'date'" value="date">日付</option>
-                              <option v-if="fieldSupportBarcode(child.field)" value="qrcode">QRコード</option>
-                              <option v-if="fieldSupportBarcode(child.field)" value="barcode">バーコード</option>
+                              <option value="text">{{ t('wms.formEditor.text', 'テキスト') }}</option>
+                              <option v-if="getFieldType(child.field) === 'date'" value="date">{{ t('wms.formEditor.date', '日付') }}</option>
+                              <option v-if="fieldSupportBarcode(child.field)" value="qrcode">{{ t('wms.formEditor.qrCode', 'QRコード') }}</option>
+                              <option v-if="fieldSupportBarcode(child.field)" value="barcode">{{ t('wms.formEditor.barcode', 'バーコード') }}</option>
                             </select>
                           </div>
 
                           <!-- 子項目のバーコード設定 -->
                           <template v-if="child.renderType === 'barcode' || child.renderType === 'qrcode'">
                             <div class="o-form-group">
-                              <label>{{ child.renderType === 'barcode' ? 'バーコード' : 'QR種類' }}</label>
+                              <label>{{ child.renderType === 'barcode' ? t('wms.formEditor.barcode', 'バーコード') : t('wms.formEditor.qrCodeType', 'QR種類') }}</label>
                               <select :value="child.barcodeConfig?.format || (child.renderType === 'barcode' ? 'code128' : 'qrcode')" class="o-input" style="width: 100%" @change="setChildBarcodeFormat(child, ($event.target as HTMLSelectElement).value)">
                                 <template v-if="child.renderType === 'barcode'">
                                   <option value="code128">Code 128</option>
@@ -508,7 +508,7 @@
                             </div>
 
                             <div class="o-form-group">
-                              <label>サイズ</label>
+                              <label>{{ t('wms.formEditor.size', 'サイズ') }}</label>
                               <div class="barcode-size-inputs small">
                                 <input type="number" :value="child.barcodeConfig?.width || (child.renderType === 'barcode' ? 120 : 60)" min="20" max="400" class="o-input" style="width: 80px" @input="setChildBarcodeSize(child, 'width', parseInt(($event.target as HTMLInputElement).value))" />
                                 <span class="size-separator">x</span>
@@ -520,7 +520,7 @@
 
                           <!-- 子項目の日付フォーマット -->
                           <div class="o-form-group" v-if="child.renderType === 'date'">
-                            <label>日付形式</label>
+                            <label>{{ t('wms.formEditor.dateFormat', '日付形式') }}</label>
                             <select v-model="child.dateFormat" class="o-input" style="width: 100%">
                               <option value="YYYY/MM/DD">2026/01/04</option>
                               <option value="YYYY-MM-DD">2026-01-04</option>
@@ -530,10 +530,10 @@
 
                           <div class="o-divider"></div>
                           <div class="o-form-group">
-                            <label>プレビュー用一時データ</label>
+                            <label>{{ t('wms.formEditor.previewData', 'プレビュー用一時データ') }}</label>
                             <div style="flex: 1">
-                              <textarea v-model="child.previewData" rows="3" class="o-input" style="width: 100%" placeholder="例: サンプル値（省略可）" @blur="updatePreview"></textarea>
-                              <div class="hint">プレビュー時にこのフィールドで使用する一時データ（JSON文字列）。空白の場合はデフォルトデータが使用されます。</div>
+                              <textarea v-model="child.previewData" rows="3" class="o-input" style="width: 100%" :placeholder="t('wms.formEditor.previewDataPlaceholder', '例: サンプル値（省略可）')" @blur="updatePreview"></textarea>
+                              <div class="hint">{{ t('wms.formEditor.previewDataHint', 'プレビュー時にこのフィールドで使用する一時データ（JSON文字列）。空白の場合はデフォルトデータが使用されます。') }}</div>
                             </div>
                           </div>
                         </div>
@@ -565,7 +565,7 @@
 
     <div v-else class="loading">
       <span class="spinner"></span>
-      読み込み中...
+      {{ t('wms.formEditor.loading', '読み込み中...') }}
     </div>
   </div>
 </template>
@@ -583,9 +583,13 @@ import BasicSettingsTab from './form-template-editor/BasicSettingsTab.vue'
 import PageSettingsTab from './form-template-editor/PageSettingsTab.vue'
 import StylesTab from './form-template-editor/StylesTab.vue'
 import PreviewPanel from './form-template-editor/PreviewPanel.vue'
+import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 
 const route = useRoute()
 const router = useRouter()
+const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const template = ref<FormTemplate | null>(null)
 const activeTab = ref('basic')
@@ -600,13 +604,13 @@ let previewDebounceTimer: ReturnType<typeof setTimeout> | null = null
 const columnDropdownOpen = ref(false)
 const emptyColumnDropdownOpen = ref(false)
 
-const tabs = [
-  { name: 'basic', label: '基本設定' },
-  { name: 'page', label: '用紙設定' },
-  { name: 'header-footer', label: 'ヘッダー・フッター' },
-  { name: 'columns', label: '列設定' },
-  { name: 'styles', label: 'スタイル設定' },
-]
+const tabs = computed(() => [
+  { name: 'basic', label: t('wms.formEditor.tabBasic', '基本設定') },
+  { name: 'page', label: t('wms.formEditor.tabPage', '用紙設定') },
+  { name: 'header-footer', label: t('wms.formEditor.tabHeaderFooter', 'ヘッダー・フッター') },
+  { name: 'columns', label: t('wms.formEditor.tabColumns', '列設定') },
+  { name: 'styles', label: t('wms.formEditor.tabStyles', 'スタイル設定') },
+])
 
 // 利用可能なフィールド一覧
 const availableFields = computed(() => {
@@ -638,14 +642,14 @@ function onUpdateStyle(key: string, value: any) {
 async function loadTemplate() {
   const id = route.params.id as string
   if (!id) {
-    alert('テンプレートIDが指定されていません')
+    showToast(t('wms.formEditor.noTemplateId', 'テンプレートIDが指定されていません'), 'danger')
     return
   }
 
   try {
     template.value = await fetchFormTemplate(id)
   } catch (e: any) {
-    alert(e?.message || 'テンプレートの読み込みに失敗しました')
+    showToast(e?.message || t('wms.formEditor.loadFailed', 'テンプレートの読み込みに失敗しました'), 'danger')
   }
 }
 
@@ -879,9 +883,9 @@ function moveChildContent(col: FormTemplateColumn, index: number, direction: num
 
 function getPositionLabel(position: string): string {
   switch (position) {
-    case 'header': return 'ヘッダー'
-    case 'footer': return 'フッター'
-    case 'title': return 'タイトル'
+    case 'header': return t('wms.formEditor.header', 'ヘッダー')
+    case 'footer': return t('wms.formEditor.footer', 'フッター')
+    case 'title': return t('wms.formEditor.titleLabel', 'タイトル')
     default: return position
   }
 }
@@ -897,18 +901,18 @@ function getPositionBadgeClass(position: string): string {
 
 function getTypeLabel(type: string): string {
   switch (type) {
-    case 'text': return 'テキスト'
-    case 'columns': return 'カラム'
-    case 'table': return 'テーブル'
+    case 'text': return t('wms.formEditor.text', 'テキスト')
+    case 'columns': return t('wms.formEditor.columns', 'カラム')
+    case 'table': return t('wms.formEditor.table', 'テーブル')
     default: return type
   }
 }
 
 function getShowOnLabel(showOn: string): string {
   switch (showOn) {
-    case 'all': return '全ページ'
-    case 'first': return '最初のみ'
-    case 'last': return '最後のみ'
+    case 'all': return t('wms.formEditor.allPages', '全ページ')
+    case 'first': return t('wms.formEditor.firstOnly', '最初のみ')
+    case 'last': return t('wms.formEditor.lastOnly', '最後のみ')
     default: return showOn
   }
 }
@@ -1035,9 +1039,9 @@ async function handleSave() {
   saving.value = true
   try {
     await updateFormTemplate(template.value._id, template.value)
-    alert('保存しました')
+    showToast(t('wms.formEditor.saved', '保存しました'), 'success')
   } catch (e: any) {
-    alert(e?.message || '保存に失敗しました')
+    showToast(e?.message || t('wms.formEditor.saveFailed', '保存に失敗しました'), 'danger')
   } finally {
     saving.value = false
   }
@@ -1051,7 +1055,7 @@ async function handlePreview() {
     const sampleData = generateSampleData(template.value.targetType)
     await generateFormPdf(template.value, sampleData, { preview: true })
   } catch (e: any) {
-    alert(e?.message || 'プレビューの生成に失敗しました')
+    showToast(e?.message || t('wms.formEditor.previewFailed', 'プレビューの生成に失敗しました'), 'danger')
   } finally {
     previewing.value = false
   }
@@ -1144,8 +1148,8 @@ async function updatePreview() {
       previewUrl.value = URL.createObjectURL(blob)
     }
   } catch (e: any) {
-    console.error('プレビューの生成に失敗しました', e)
-    previewError.value = e?.message || 'プレビューの生成に失敗しました'
+    console.error('Preview generation failed', e)
+    previewError.value = e?.message || t('wms.formEditor.previewFailed', 'プレビューの生成に失敗しました')
     if (previewUrl.value) {
       URL.revokeObjectURL(previewUrl.value)
       previewUrl.value = null
@@ -1186,7 +1190,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.form-template-editor { display: flex; flex-direction: column; height: 100%; }
+.form-template-editor { display: flex; flex-direction: column; height: 100%; padding: 0 20px 20px; }
+:deep(.o-control-panel) { margin-left: -20px; margin-right: -20px; }
 .editor-content { flex: 1; min-height: 0; }
 .editor-layout { display: flex; gap: 16px; height: 100%; min-height: 600px; }
 .editor-left { flex: 0 0 50%; min-width: 0; overflow-y: auto; }

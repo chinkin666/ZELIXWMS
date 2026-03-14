@@ -58,7 +58,7 @@ export const createCustomizedHeader = (
       const cellVNode = cells[columnIndex]
       if (!cellVNode) return
 
-      // 选择列 / 操作列 等辅助列，不参与分组但需要保留占位
+      // 選択列・操作列等の補助列、グループ化対象外だが占位を保持 / 选择列 / 操作列 等辅助列，不参与分组但需要保留占位
       if (column.key === '__selection__' || column.key === 'selection' || column.key === 'actions' || column.key === '__actions__') {
         // 确保宽度正确获取，优先使用 column.width，然后是 cellVNode 中的宽度
         const colWidth = column.width ?? cellVNode.props?.column?.width ?? cellVNode.props?.style?.width ?? 80

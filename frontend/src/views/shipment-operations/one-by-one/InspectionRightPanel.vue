@@ -3,19 +3,19 @@
     <!-- 统计摘要栏 -->
     <div class="stats-bar">
       <div class="stat-item">
-        <span class="stat-label">出荷指示数</span>
+        <span class="stat-label">{{ t('wms.inspection.shipmentCount', '出荷指示数') }}</span>
         <span class="stat-value">{{ totalQuantity }}</span>
       </div>
       <div class="stat-item stat-inspected-block">
-        <span class="stat-label">検品済</span>
+        <span class="stat-label">{{ t('wms.inspection.inspectedCount', '検品済') }}</span>
         <span class="stat-value">{{ inspectedQuantity }}</span>
       </div>
       <div class="stat-item stat-remaining-block">
-        <span class="stat-label">残り</span>
+        <span class="stat-label">{{ t('wms.inspection.remaining', '残り') }}</span>
         <span class="stat-value">{{ remainingQuantity }}</span>
       </div>
       <div class="stat-item stat-orders stat-clickable" @click="$emit('open-order-list')">
-        <span class="stat-label">注文</span>
+        <span class="stat-label">{{ t('wms.inspection.orders', '注文') }}</span>
         <span class="stat-value">{{ processedCount }} / {{ totalOrderCount }}</span>
       </div>
     </div>
@@ -26,12 +26,12 @@
         <table class="o-list-table o-list-table-border" style="width: 100%">
           <thead>
             <tr>
-              <th style="min-width: 180px">商品名</th>
+              <th style="min-width: 180px">{{ t('wms.inspection.productName', '商品名') }}</th>
               <th style="min-width: 140px">SKU</th>
-              <th style="min-width: 160px">検品コード（バーコード）</th>
-              <th style="width: 110px; text-align: center">出荷指示数</th>
-              <th style="width: 110px; text-align: center" class="col-inspected">検品数</th>
-              <th style="width: 110px; text-align: center" class="col-remaining">残数</th>
+              <th style="min-width: 160px">{{ t('wms.inspection.inspectionCode', '検品コード（バーコード）') }}</th>
+              <th style="width: 110px; text-align: center">{{ t('wms.inspection.shipmentCount', '出荷指示数') }}</th>
+              <th style="width: 110px; text-align: center" class="col-inspected">{{ t('wms.inspection.inspectedQty', '検品数') }}</th>
+              <th style="width: 110px; text-align: center" class="col-remaining">{{ t('wms.inspection.remainingQty', '残数') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -59,13 +59,14 @@
         </table>
       </template>
       <div v-else class="empty-table-hint">
-        注文をスキャンすると商品一覧が表示されます
+        {{ t('wms.inspection.scanToShowProducts', '注文をスキャンすると商品一覧が表示されます') }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n'
 import type { OrderDocument } from '@/types/order'
 import type { Product } from '@/types/product'
 
@@ -79,6 +80,8 @@ interface InspectionItem {
   remainingQuantity: number
   productData?: Product
 }
+
+const { t } = useI18n()
 
 defineProps<{
   currentOrder: OrderDocument | null
@@ -165,25 +168,7 @@ function getRowClassName(row: InspectionItem): string {
   border-radius: 8px;
 }
 
-.o-list-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 13px;
-}
-.o-list-table-border th,
-.o-list-table-border td {
-  border: 1px solid #ebeef5;
-  padding: 8px 12px;
-}
-.o-list-table th {
-  background: #f5f7fa;
-  font-weight: 600;
-  color: #606266;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-.o-list-table td { color: #303133; }
+/* .o-list-table base styles are defined globally in style.css */
 
 .col-inspected, .col-remaining { padding: 0 !important; }
 

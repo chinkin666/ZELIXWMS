@@ -70,7 +70,7 @@ export interface YamatoCarrierData {
  */
 export interface CarrierData {
   yamato?: YamatoCarrierData
-  // 未来扩展:
+  // 将来の拡張: / 未来扩展:
   // sagawa?: SagawaCarrierData
   // yupack?: YupackCarrierData
 }
@@ -120,17 +120,17 @@ export interface OrderDocument {
   honorific?: string // 敬称（デフォルト: "様"）
   products: OrderProduct[]
   /**
-   * 商品聚合字段（用于搜索、过滤、索引优化）
-   * - 后端自动计算，前端主要用于统计和快速过滤
-   * - 不显示在UI中，但可用于搜索和排序
+   * 商品集約フィールド（検索・フィルタリング・インデックス最適化用） / 商品聚合字段（用于搜索、过滤、索引优化）
+   * - バックエンドで自動計算、フロントエンドでは主に統計と高速フィルタリングに使用 / 后端自动计算，前端主要用于统计和快速过滤
+   * - UIには表示しないが、検索やソートに利用可能 / 不显示在UI中，但可用于搜索和排序
    */
   _productsMeta?: {
-    skus: string[] // 所有SKU的数组（去重）
-    names: string[] // 所有商品名的数组（去重，过滤空值）
-    barcodes: string[] // 所有バーコードの配列（去重、过滤空值）
-    skuCount: number // SKU种类数量
-    totalQuantity: number // 商品总数量（所有quantity之和）
-    totalPrice: number // 合計金額（所有subtotalの合計）
+    skus: string[] // 全SKUの配列（重複排除） / 所有SKU的数组（去重）
+    names: string[] // 全商品名の配列（重複排除、空値除外） / 所有商品名的数组（去重，过滤空值）
+    barcodes: string[] // 全バーコードの配列（重複排除、空値除外） / 所有バーコードの配列（去重、过滤空值）
+    skuCount: number // SKU種類数 / SKU种类数量
+    totalQuantity: number // 商品総数量（全quantityの合計） / 商品总数量（所有quantity之和）
+    totalPrice: number // 合計金額（全subtotalの合計） / 合計金額（所有subtotalの合計）
   }
   shipPlanDate: string
   invoiceType: InvoiceType // 0:発払い, 1:EAZY, 2:コレクト, 3:クロネコゆうメール, 4:タイム, 5:着払い, 6:発払い複数口, 7:クロネコゆうパケット, 8:宅急便コンパクト, 9:コンパクトコレクト, A:ネコポス
@@ -247,7 +247,7 @@ export function getOrderFieldDefinitions(opts?: {
       searchType: 'string',
       formEditable: false, // システム自動生成のため編集不可
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => rowData.orderNumber,
-      sortMethod: naturalSort, // 使用自然排序处理包含"-"的编号
+      sortMethod: naturalSort, // "-"を含む番号を自然順ソートで処理 / 使用自然排序处理包含"-"的编号
     },
     {
       key: 'customerManagementNumber',
@@ -336,13 +336,13 @@ export function getOrderFieldDefinitions(opts?: {
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
         const value = rowData.deliveryDatePreference
         if (!value) return '-'
-        // 规范化日期，只保留日期部分（YYYY/MM/DD）
+        // 日付を正規化し、日付部分のみ保持（YYYY/MM/DD） / 规范化日期，只保留日期部分（YYYY/MM/DD）
         if (typeof value === 'string') {
-          // 如果已经是 YYYY/MM/DD 格式，直接返回
+          // 既にYYYY/MM/DD形式ならそのまま返す / 如果已经是 YYYY/MM/DD 格式，直接返回
           if (/^\d{4}\/\d{2}\/\d{2}$/.test(value)) return value
-          // 如果是 YYYY-MM-DD 格式，转换为 YYYY/MM/DD
+          // YYYY-MM-DD形式ならYYYY/MM/DDに変換 / 如果是 YYYY-MM-DD 格式，转换为 YYYY/MM/DD
           if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value.replace(/-/g, '/')
-          // 如果包含时分秒，只提取日期部分
+          // 時分秒を含む場合、日付部分のみ抽出 / 如果包含时分秒，只提取日期部分
           const dateMatch = value.match(/^(\d{4})[-\/](\d{2})[-\/](\d{2})/)
           if (dateMatch) {
             const [, year, month, day] = dateMatch
@@ -406,7 +406,7 @@ export function getOrderFieldDefinitions(opts?: {
       tableVisible: false, // 特定の出荷オペレーション画面のみ表示
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
         const v = rowData.trackingId
-        // 只在获取到的情况下显示，没有值返回 '-' 以保持列对齐
+        // 値がある場合のみ表示、値がなければ'-'を返して列の整列を維持 / 只在获取到的情况下显示，没有值返回 '-' 以保持列对齐
         return v ? String(v) : '-'
       },
     },
@@ -418,7 +418,7 @@ export function getOrderFieldDefinitions(opts?: {
       width: 300,
       fieldType: 'array',
       required: true,
-      searchType: undefined, // 不再直接搜索products，使用下面的细分字段
+      searchType: undefined, // productsを直接検索せず、以下の詳細フィールドを使用 / 不再直接搜索products，使用下面的细分字段
       formEditable: true,
       tableVisible: true,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
@@ -436,7 +436,7 @@ export function getOrderFieldDefinitions(opts?: {
       required: false,
       searchType: 'number',
       formEditable: false,
-      tableVisible: false, // 不在表格中显示，仅用于搜索
+      tableVisible: false, // テーブルに非表示、検索のみに使用 / 不在表格中显示，仅用于搜索
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
         return rowData._productsMeta?.totalQuantity ?? 0
       },
@@ -451,7 +451,7 @@ export function getOrderFieldDefinitions(opts?: {
       required: false,
       searchType: 'number',
       formEditable: false,
-      tableVisible: false, // 不在表格中显示，仅用于搜索
+      tableVisible: false, // テーブルに非表示、検索のみに使用 / 不在表格中显示，仅用于搜索
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
         return rowData._productsMeta?.skuCount ?? 0
       },
@@ -466,7 +466,7 @@ export function getOrderFieldDefinitions(opts?: {
       required: false,
       searchType: 'string',
       formEditable: false,
-      tableVisible: false, // 不在表格中显示，仅用于搜索
+      tableVisible: false, // テーブルに非表示、検索のみに使用 / 不在表格中显示，仅用于搜索
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
         const names = rowData._productsMeta?.names ?? []
         return names.length > 0 ? names.join(', ') : '-'
@@ -482,7 +482,7 @@ export function getOrderFieldDefinitions(opts?: {
       required: false,
       searchType: 'string',
       formEditable: false,
-      tableVisible: false, // 不在表格中显示，仅用于搜索
+      tableVisible: false, // テーブルに非表示、検索のみに使用 / 不在表格中显示，仅用于搜索
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
         const skus = rowData._productsMeta?.skus ?? []
         return skus.length > 0 ? skus.join(', ') : '-'
@@ -498,7 +498,7 @@ export function getOrderFieldDefinitions(opts?: {
       required: false,
       searchType: 'string',
       formEditable: false,
-      tableVisible: false, // 不在表格中显示，仅用于搜索
+      tableVisible: false, // テーブルに非表示、検索のみに使用 / 不在表格中显示，仅用于搜索
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) => {
         const barcodes = rowData._productsMeta?.barcodes ?? []
         return barcodes.length > 0 ? barcodes.join(', ') : '-'
@@ -999,7 +999,7 @@ export function getOrderFieldDefinitions(opts?: {
         if (!records || !Array.isArray(records) || records.length === 0) {
           return '-'
         }
-        // 各记录内容换行显示（纯文本，换行符会被保留）
+        // 各記録の内容を改行表示（プレーンテキスト、改行は保持） / 各记录内容换行显示（纯文本，换行符会被保留）
         return records.map((r) => r.content).join('\n')
       },
     },

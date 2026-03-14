@@ -3,7 +3,7 @@
     :total-count="allRowsCount"
     :selected-count="selectedCount"
     :error-count="errorCount"
-    total-label="登録対象"
+    :total-label="t('wms.shipmentOrder.registrationTarget', '登録対象')"
   >
     <template #left>
       <template v-if="bundleModeEnabled">
@@ -13,7 +13,7 @@
           :disabled="selectedCount === 0 || selectedBundleGroupKeysCount === 0"
           @click="$emit('bundle-merge')"
         >
-          同梱する
+          {{ t('wms.shipmentOrder.bundle', '同梱する') }}
         </OButton>
         <OButton
           variant="warning"
@@ -21,7 +21,7 @@
           :disabled="!hasUnbundleableRows"
           @click="$emit('unbundle')"
         >
-          同梱を解除する
+          {{ t('wms.shipmentOrder.unbundle', '同梱を解除する') }}
         </OButton>
       </template>
       <template v-else>
@@ -31,7 +31,7 @@
           :disabled="selectedCount === 0"
           @click="$emit('ship-plan-date')"
         >
-          出荷予定日一括設定
+          {{ t('wms.shipmentOrder.bulkShipDate', '出荷予定日一括設定') }}
         </OButton>
         <OButton
           variant="primary"
@@ -39,7 +39,7 @@
           :disabled="selectedCount === 0"
           @click="$emit('sender-bulk')"
         >
-          ご依頼主一括設定
+          {{ t('wms.shipmentOrder.bulkSender', 'ご依頼主一括設定') }}
         </OButton>
         <OButton
           variant="primary"
@@ -47,7 +47,7 @@
           :disabled="selectedCount === 0 || !hasCarriers"
           @click="$emit('carrier-bulk')"
         >
-          配送業者一括設定
+          {{ t('wms.shipmentOrder.bulkCarrier', '配送業者一括設定') }}
         </OButton>
         <OButton
           variant="danger"
@@ -55,24 +55,24 @@
           :disabled="allRowsCount === 0"
           @click="$emit('clear-all')"
         >
-          データクリア
+          {{ t('wms.shipmentOrder.clearData', 'データクリア') }}
         </OButton>
       </template>
     </template>
     <template #center>
       <div class="bottom-bar__meta">
-        登録対象：<strong>{{ allRowsCount }}</strong>件
+        {{ t('wms.shipmentOrder.registrationTarget', '登録対象') }}：<strong>{{ allRowsCount }}</strong>{{ t('wms.common.items', '件') }}
         <span v-if="errorCount > 0" class="bottom-bar__errors">
-          （誤り：<strong>{{ errorCount }}</strong>件）
+          （{{ t('wms.shipmentOrder.errors', '誤り') }}：<strong>{{ errorCount }}</strong>{{ t('wms.common.items', '件') }}）
         </span>
         <span v-if="unregisteredSkuRowCount > 0" class="bottom-bar__unregistered">
-          （商品SKU未登録：<strong>{{ unregisteredSkuRowCount }}</strong>件）
+          （{{ t('wms.shipmentOrder.unregisteredSku', '商品SKU未登録') }}：<strong>{{ unregisteredSkuRowCount }}</strong>{{ t('wms.common.items', '件') }}）
         </span>
       </div>
     </template>
     <template #alert>
       <div v-if="backendErrorCount > 0" class="bottom-bar__alert">
-        <span>サーバー側でエラーが発生しました。エラー行のみ表示に切り替えています。</span>
+        <span>{{ t('wms.shipmentOrder.serverErrorMessage', 'サーバー側でエラーが発生しました。エラー行のみ表示に切り替えています。') }}</span>
         <button class="bottom-bar__alert-close" @click="$emit('clear-backend-errors')">&times;</button>
       </div>
     </template>
@@ -83,14 +83,14 @@
           :disabled="allRowsCount === 0 || isSubmitting"
           @click="$emit('submit')"
         >
-          {{ isSubmitting ? '確認中...' : '出荷確認する' }}
+          {{ isSubmitting ? t('wms.shipmentOrder.confirming', '確認中...') : t('wms.shipmentOrder.confirmShipment', '出荷確認する') }}
         </OButton>
         <OButton
           v-if="backendErrorCount > 0"
           variant="danger"
           @click="$emit('show-error-detail')"
         >
-          エラー詳細
+          {{ t('wms.shipmentOrder.errorDetail', 'エラー詳細') }}
         </OButton>
       </template>
       <template v-else-if="displayFilter === 'processing'">
@@ -99,21 +99,21 @@
           :disabled="selectedCount === 0"
           @click="$emit('delete-pending')"
         >
-          削除
+          {{ t('wms.common.delete', '削除') }}
         </OButton>
         <OButton
           variant="primary"
           :disabled="selectedCount === 0 || isConfirming"
           @click="$emit('confirm-print-ready')"
         >
-          {{ isConfirming ? '確定中...' : '出荷指示確定' }}
+          {{ isConfirming ? t('wms.shipmentOrder.confirmingOrder', '確定中...') : t('wms.shipmentOrder.confirmShipInstruction', '出荷指示確定') }}
         </OButton>
         <OButton
           variant="secondary"
           :disabled="isLoadingPendingWaybill"
           @click="$emit('reload-pending')"
         >
-          {{ isLoadingPendingWaybill ? '読込中...' : '再読込' }}
+          {{ isLoadingPendingWaybill ? t('wms.shipmentOrder.loading', '読込中...') : t('wms.shipmentOrder.reload', '再読込') }}
         </OButton>
       </template>
       <template v-else-if="displayFilter === 'pending_waybill'">
@@ -122,7 +122,7 @@
           :disabled="isLoadingPendingWaybill"
           @click="$emit('reload-pending')"
         >
-          {{ isLoadingPendingWaybill ? '読込中...' : '再読込' }}
+          {{ isLoadingPendingWaybill ? t('wms.shipmentOrder.loading', '読込中...') : t('wms.shipmentOrder.reload', '再読込') }}
         </OButton>
       </template>
     </template>
@@ -132,6 +132,9 @@
 <script setup lang="ts">
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
 import OButton from '@/components/odoo/OButton.vue'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 defineProps<{
   allRowsCount: number

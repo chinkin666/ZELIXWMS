@@ -1,17 +1,17 @@
 <template>
   <div class="inbound-order-create">
-    <ControlPanel title="入庫指示作成" :show-search="false">
+    <ControlPanel :title="t('wms.inbound.createOrder', '入庫指示作成')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="$router.push('/inbound/orders')">戻る</OButton>
+        <OButton variant="secondary" size="sm" @click="$router.push('/inbound/orders')">{{ t('wms.common.back', '戻る') }}</OButton>
       </template>
     </ControlPanel>
 
     <div class="o-card">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">入庫先ロケーション <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inbound.destinationLocation', '入庫先ロケーション') }} <span class="required">*</span></label>
           <select v-model="form.destinationLocationId" class="o-input">
-            <option value="">選択してください...</option>
+            <option value="">{{ t('wms.common.pleaseSelect', '選択してください...') }}</option>
             <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
               {{ loc.code }} ({{ loc.name }})
             </option>
@@ -19,26 +19,26 @@
         </div>
 
         <div class="form-field">
-          <label class="form-label">入庫予定日</label>
+          <label class="form-label">{{ t('wms.inbound.expectedDate', '入庫予定日') }}</label>
           <input v-model="form.expectedDate" type="date" class="o-input" />
         </div>
 
         <div class="form-field">
-          <label class="form-label">仕入先名</label>
-          <input v-model="form.supplierName" type="text" class="o-input" placeholder="仕入先名..." />
+          <label class="form-label">{{ t('wms.inbound.supplierName', '仕入先名') }}</label>
+          <input v-model="form.supplierName" type="text" class="o-input" :placeholder="t('wms.inbound.supplierNamePlaceholder', '仕入先名...')" />
         </div>
 
         <div class="form-field">
-          <label class="form-label">メモ</label>
-          <input v-model="form.memo" type="text" class="o-input" placeholder="入庫メモ..." />
+          <label class="form-label">{{ t('wms.product.memo', 'メモ') }}</label>
+          <input v-model="form.memo" type="text" class="o-input" :placeholder="t('wms.inbound.memoPlaceholder', '入庫メモ...')" />
         </div>
       </div>
     </div>
 
     <!-- 入庫明細 -->
     <div class="section-header">
-      <h3 class="section-title">入庫明細</h3>
-      <OButton variant="secondary" size="sm" @click="addLine">行を追加</OButton>
+      <h3 class="section-title">{{ t('wms.inbound.orderDetails', '入庫明細') }}</h3>
+      <OButton variant="secondary" size="sm" @click="addLine">{{ t('wms.inbound.addLine', '行を追加') }}</OButton>
     </div>
 
     <div class="o-table-wrapper">
@@ -46,25 +46,25 @@
         <thead>
           <tr>
             <th class="o-table-th" style="width:40px;">#</th>
-            <th class="o-table-th" style="width:250px;">商品 <span class="required">*</span></th>
-            <th class="o-table-th o-table-th--right" style="width:120px;">予定数量 <span class="required">*</span></th>
-            <th class="o-table-th" style="width:100px;">在庫区分</th>
-            <th class="o-table-th" style="width:130px;">注文番号</th>
-            <th class="o-table-th" style="width:130px;">ロット番号</th>
-            <th class="o-table-th" style="width:120px;">賞味期限</th>
-            <th class="o-table-th" style="width:150px;">メモ</th>
+            <th class="o-table-th" style="width:250px;">{{ t('wms.inbound.product', '商品') }} <span class="required">*</span></th>
+            <th class="o-table-th o-table-th--right" style="width:120px;">{{ t('wms.inbound.expectedQuantity', '予定数量') }} <span class="required">*</span></th>
+            <th class="o-table-th" style="width:100px;">{{ t('wms.inbound.stockCategory', '在庫区分') }}</th>
+            <th class="o-table-th" style="width:130px;">{{ t('wms.inbound.orderReferenceNumber', '注文番号') }}</th>
+            <th class="o-table-th" style="width:130px;">{{ t('wms.inbound.lotNumber', 'ロット番号') }}</th>
+            <th class="o-table-th" style="width:120px;">{{ t('wms.inbound.expiryDate', '賞味期限') }}</th>
+            <th class="o-table-th" style="width:150px;">{{ t('wms.product.memo', 'メモ') }}</th>
             <th class="o-table-th" style="width:60px;"></th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="form.lines.length === 0">
-            <td colspan="9" class="o-table-empty">行を追加してください</td>
+            <td colspan="9" class="o-table-empty">{{ t('wms.inbound.pleaseAddLine', '行を追加してください') }}</td>
           </tr>
           <tr v-for="(line, i) in form.lines" :key="i" class="o-table-row">
             <td class="o-table-td" style="text-align:center;">{{ i + 1 }}</td>
             <td class="o-table-td">
               <select v-model="line.productId" class="o-input o-input-sm">
-                <option value="">商品を選択...</option>
+                <option value="">{{ t('wms.inbound.selectProduct', '商品を選択...') }}</option>
                 <option v-for="p in products" :key="p._id" :value="p._id">
                   {{ p.sku }} - {{ p.name }}
                 </option>
@@ -75,12 +75,12 @@
             </td>
             <td class="o-table-td">
               <select v-model="line.stockCategory" class="o-input o-input-sm">
-                <option value="new">新品</option>
-                <option value="damaged">仕損</option>
+                <option value="new">{{ t('wms.inbound.stockNew', '新品') }}</option>
+                <option value="damaged">{{ t('wms.inbound.stockDamaged', '仕損') }}</option>
               </select>
             </td>
             <td class="o-table-td">
-              <input v-model="line.orderReferenceNumber" type="text" class="o-input o-input-sm" placeholder="注文番号..." />
+              <input v-model="line.orderReferenceNumber" type="text" class="o-input o-input-sm" :placeholder="t('wms.inbound.orderReferenceNumberPlaceholder', '注文番号...')" />
             </td>
             <td class="o-table-td">
               <input v-model="line.lotNumber" type="text" class="o-input o-input-sm" placeholder="LOT-..." />
@@ -105,7 +105,7 @@
         :disabled="!canSubmit || isSubmitting"
         @click="handleSubmit"
       >
-        {{ isSubmitting ? '作成中...' : '入庫指示を作成' }}
+        {{ isSubmitting ? t('wms.inbound.creating', '作成中...') : t('wms.inbound.createOrderButton', '入庫指示を作成') }}
       </OButton>
     </div>
   </div>
@@ -115,6 +115,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { createInboundOrder } from '@/api/inboundOrder'
@@ -125,6 +126,7 @@ import type { Location } from '@/types/inventory'
 
 const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
 const isSubmitting = ref(false)
 const products = ref<Product[]>([])
 const locations = ref<Location[]>([])
@@ -193,10 +195,10 @@ const handleSubmit = async () => {
       })),
     }
     const order = await createInboundOrder(payload)
-    toast.showSuccess(`入庫指示 ${order.orderNumber} を作成しました`)
+    toast.showSuccess(t('wms.inbound.createSuccess', '入庫指示を作成しました'))
     router.push('/inbound/orders')
   } catch (e: any) {
-    toast.showError(e?.message || '作成に失敗しました')
+    toast.showError(e?.message || t('wms.inbound.createError', '作成に失敗しました'))
   } finally {
     isSubmitting.value = false
   }
@@ -211,9 +213,9 @@ onMounted(async () => {
     products.value = prods
     locations.value = locs
   } catch (e: any) {
-    toast.showError('マスタデータの取得に失敗しました')
+    toast.showError(t('wms.inbound.masterDataError', 'マスタデータの取得に失敗しました'))
   }
-  // 默认加一行
+  // デフォルトで1行追加 / 默认加一行
   addLine()
 })
 </script>
@@ -226,7 +228,13 @@ onMounted(async () => {
 .inbound-order-create {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 .o-card {
@@ -255,7 +263,7 @@ onMounted(async () => {
   color: var(--o-gray-700, #303133);
 }
 
-.required { color: #f56c6c; }
+.required { color: var(--o-danger); }
 
 .section-header {
   display: flex;
@@ -289,7 +297,7 @@ onMounted(async () => {
 .btn-remove {
   background: none;
   border: none;
-  color: #f56c6c;
+  color: var(--o-danger);
   font-size: 18px;
   cursor: pointer;
   padding: 0 4px;

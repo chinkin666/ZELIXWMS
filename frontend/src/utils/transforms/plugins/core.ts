@@ -1,70 +1,70 @@
 /**
- * Transform plugins - 前端实现
- * 所有转换逻辑都在前端执行
+ * Transform plugins - フロントエンド実装 / 前端实现
+ * 全ての変換ロジックはフロントエンドで実行 / 所有转换逻辑都在前端执行
  */
 
 import type { TransformContext } from '@/api/mappingConfig'
 
-// 辅助函数：获取日文字符宽度（半角=1，全角=2）
+// ヘルパー関数：日本語文字の表示幅を取得（半角=1、全角=2） / 辅助函数：获取日文字符宽度（半角=1，全角=2）
 function getJapaneseCharWidth(ch: string): number {
   const code = ch.charCodeAt(0)
-  // ASCII (半角)
+  // ASCII（半角） / ASCII（半角）
   if (code <= 0x007f) return 1
-  // 半角カタカナ
+  // 半角カタカナ / 半角片假名
   if (code >= 0xff61 && code <= 0xff9f) return 1
-  // 半角ハングル
+  // 半角ハングル / 半角韩文
   if (code >= 0xffa0 && code <= 0xffdc) return 1
-  // CJK統一漢字
+  // CJK統一漢字 / CJK统一汉字
   if (code >= 0x4e00 && code <= 0x9fff) return 2
-  // 平仮名
+  // 平仮名 / 平假名
   if (code >= 0x3040 && code <= 0x309f) return 2
-  // 片仮名（全角）
+  // 片仮名（全角） / 片假名（全角）
   if (code >= 0x30a0 && code <= 0x30ff) return 2
-  // 全角ASCII・記号 (0xFF01-0xFF60)
+  // 全角ASCII・記号 / 全角ASCII・符号 (0xFF01-0xFF60)
   if (code >= 0xff01 && code <= 0xff60) return 2
-  // 全角通貨記号など (0xFFE0-0xFFEF)
+  // 全角通貨記号など / 全角货币符号等 (0xFFE0-0xFFEF)
   if (code >= 0xffe0 && code <= 0xffef) return 2
-  // CJK記号・句読点
+  // CJK記号・句読点 / CJK符号・标点
   if (code >= 0x3000 && code <= 0x303f) return 2
-  // その他は全角として扱う（安全側）
+  // その他は全角として扱う（安全側） / 其他视为全角（安全起见）
   return 2
 }
 
-// 全角到半角的映射表
+// 全角から半角への変換マップ / 全角到半角的映射表
 const fullToHalfWidthMap: Record<string, string> = {
-  // 数字
+  // 数字 / 数字
   '０': '0', '１': '1', '２': '2', '３': '3', '４': '4',
   '５': '5', '６': '6', '７': '7', '８': '8', '９': '9',
-  // 大写字母
+  // 大文字アルファベット / 大写字母
   'Ａ': 'A', 'Ｂ': 'B', 'Ｃ': 'C', 'Ｄ': 'D', 'Ｅ': 'E', 'Ｆ': 'F',
   'Ｇ': 'G', 'Ｈ': 'H', 'Ｉ': 'I', 'Ｊ': 'J', 'Ｋ': 'K', 'Ｌ': 'L',
   'Ｍ': 'M', 'Ｎ': 'N', 'Ｏ': 'O', 'Ｐ': 'P', 'Ｑ': 'Q', 'Ｒ': 'R',
   'Ｓ': 'S', 'Ｔ': 'T', 'Ｕ': 'U', 'Ｖ': 'V', 'Ｗ': 'W', 'Ｘ': 'X',
   'Ｙ': 'Y', 'Ｚ': 'Z',
-  // 小写字母
+  // 小文字アルファベット / 小写字母
   'ａ': 'a', 'ｂ': 'b', 'ｃ': 'c', 'ｄ': 'd', 'ｅ': 'e', 'ｆ': 'f',
   'ｇ': 'g', 'ｈ': 'h', 'ｉ': 'i', 'ｊ': 'j', 'ｋ': 'k', 'ｌ': 'l',
   'ｍ': 'm', 'ｎ': 'n', 'ｏ': 'o', 'ｐ': 'p', 'ｑ': 'q', 'ｒ': 'r',
   'ｓ': 's', 'ｔ': 't', 'ｕ': 'u', 'ｖ': 'v', 'ｗ': 'w', 'ｘ': 'x',
   'ｙ': 'y', 'ｚ': 'z',
-  // 符号
+  // 記号 / 符号
   '！': '!', '？': '?', '：': ':', '；': ';', '，': ',', '．': '.',
   '（': '(', '）': ')', '［': '[', '］': ']', '｛': '{', '｝': '}',
   '「': '"', '」': '"', '『': "'", '』': "'", '〜': '~', 'ー': '-',
   '＿': '_', '＠': '@', '＃': '#', '＄': '$', '％': '%', '＆': '&',
   '＊': '*', '＋': '+', '＝': '=', '＜': '<', '＞': '>', '／': '/',
   '＼': '\\', '｜': '|', '＾': '^', '｀': '`',
-  '　': ' ', // 全角空格
+  '　': ' ', // 全角スペース / 全角空格
 }
 
-// 半角到全角的映射表（反向映射）
+// 半角から全角への変換マップ（逆変換） / 半角到全角的映射表（反向映射）
 const halfToFullWidthMap: Record<string, string> = Object.fromEntries(
   Object.entries(fullToHalfWidthMap).map(([full, half]) => [half, full])
 )
 
-// 辅助函数：按格式解析日期（使用本地时间，不进行时区转换）
+// ヘルパー関数：フォーマットに従って日付を解析（ローカルタイムを使用、タイムゾーン変換なし） / 辅助函数：按格式解析日期（使用本地时间，不进行时区转换）
 function parseDateByFormat(value: string, format: string): Date | null {
-  // 支持灵活的时间格式（小时、分钟、秒可以是1位或2位数）
+  // 柔軟な時間形式をサポート（時・分・秒は1桁または2桁） / 支持灵活的时间格式（小时、分钟、秒可以是1位或2位数）
   const formatMap: Record<string, RegExp> = {
     'YYYY-MM-DD': /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
     'YYYY/MM/DD': /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/,
@@ -78,7 +78,7 @@ function parseDateByFormat(value: string, format: string): Date | null {
 
   const regex = formatMap[format]
   if (!regex) {
-    // 如果没有匹配的格式，尝试使用 Date 构造函数（但要注意时区问题）
+    // マッチするフォーマットがない場合、Dateコンストラクタで解析を試みる（タイムゾーンに注意） / 如果没有匹配的格式，尝试使用 Date 构造函数（但要注意时区问题）
     const d = new Date(value)
     return isNaN(d.getTime()) ? null : d
   }
@@ -94,7 +94,7 @@ function parseDateByFormat(value: string, format: string): Date | null {
     const hour = parseInt(parts[4] || '0', 10)
     const minute = parseInt(parts[5] || '0', 10)
     const second = parseInt(parts[6] || '0', 10)
-    // 使用本地时间创建 Date 对象，不进行时区转换
+    // ローカルタイムでDateオブジェクトを作成、タイムゾーン変換なし / 使用本地时间创建 Date 对象，不进行时区转换
     return new Date(year, month, day, hour, minute, second)
   } else if (format.includes('HH:mm')) {
     const parts = match as RegExpMatchArray
@@ -103,7 +103,7 @@ function parseDateByFormat(value: string, format: string): Date | null {
     const day = parseInt(parts[3] || '0', 10)
     const hour = parseInt(parts[4] || '0', 10)
     const minute = parseInt(parts[5] || '0', 10)
-    // 使用本地时间创建 Date 对象，不进行时区转换
+    // ローカルタイムでDateオブジェクトを作成、タイムゾーン変換なし / 使用本地时间创建 Date 对象，不进行时区转换
     return new Date(year, month, day, hour, minute, 0)
   } else {
     const parts = match as RegExpMatchArray
@@ -126,7 +126,7 @@ function parseDateByFormat(value: string, format: string): Date | null {
   }
 }
 
-// 辅助函数：格式化日期
+// ヘルパー関数：日付のフォーマット / 辅助函数：格式化日期
 function formatDate(date: Date, format: string): string {
   const year = date.getFullYear()
   const month = date.getMonth() + 1
@@ -134,42 +134,42 @@ function formatDate(date: Date, format: string): string {
   const monthPadded = String(month).padStart(2, '0')
   const dayPadded = String(day).padStart(2, '0')
 
-  // 特殊格式：只输出年
+  // 特殊フォーマット：年のみ出力 / 特殊格式：只输出年
   if (format === 'YYYY') {
     return String(year)
   }
 
-  // 特殊格式：只输出月（补0）
+  // 特殊フォーマット：月のみ出力（ゼロ埋め） / 特殊格式：只输出月（补0）
   if (format === 'MM') {
     return monthPadded
   }
 
-  // 特殊格式：只输出月（不补0）
+  // 特殊フォーマット：月のみ出力（ゼロ埋めなし） / 特殊格式：只输出月（不补0）
   if (format === 'M') {
     return String(month)
   }
 
-  // 特殊格式：只输出日（补0）
+  // 特殊フォーマット：日のみ出力（ゼロ埋め） / 特殊格式：只输出日（补0）
   if (format === 'DD') {
     return dayPadded
   }
 
-  // 特殊格式：只输出日（不补0）
+  // 特殊フォーマット：日のみ出力（ゼロ埋めなし） / 特殊格式：只输出日（不补0）
   if (format === 'D') {
     return String(day)
   }
 
-  // 日语格式：YYYY年MM月DD日（补0）
+  // 日本語フォーマット：YYYY年MM月DD日（ゼロ埋め） / 日语格式：YYYY年MM月DD日（补0）
   if (format === 'YYYY年MM月DD日') {
     return `${year}年${monthPadded}月${dayPadded}日`
   }
 
-  // 日语格式：YYYY年M月D日（不补0）
+  // 日本語フォーマット：YYYY年M月D日（ゼロ埋めなし） / 日语格式：YYYY年M月D日（不补0）
   if (format === 'YYYY年M月D日') {
     return `${year}年${month}月${day}日`
   }
 
-  // 标准格式处理（需要先处理长的标记，避免被短的替换）
+  // 標準フォーマット処理（長いトークンを先に処理し、短いトークンで置換されるのを防ぐ） / 标准格式处理（需要先处理长的标记，避免被短的替换）
   const result = format
     .replace(/YYYY/g, String(year))
     .replace(/MM/g, monthPadded)
@@ -180,7 +180,7 @@ function formatDate(date: Date, format: string): string {
   return result
 }
 
-// 辅助函数：格式化时间
+// ヘルパー関数：時刻のフォーマット / 辅助函数：格式化时间
 function formatTime(date: Date, format: string): string {
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
@@ -289,19 +289,19 @@ export const charToHalfWidthPlugin: TransformPlugin = {
     return value
       .split('')
       .map((char) => {
-        // 数字
+        // 数字 / 数字
         if (includeDigits && char >= '０' && char <= '９') {
           return fullToHalfWidthMap[char] ?? char
         }
-        // 大写字母
+        // 大文字アルファベット / 大写字母
         if (includeLetters && char >= 'Ａ' && char <= 'Ｚ') {
           return fullToHalfWidthMap[char] ?? char
         }
-        // 小写字母
+        // 小文字アルファベット / 小写字母
         if (includeLetters && char >= 'ａ' && char <= 'ｚ') {
           return fullToHalfWidthMap[char] ?? char
         }
-        // 符号
+        // 記号 / 符号
         if (includeSymbols && fullToHalfWidthMap[char]) {
           return fullToHalfWidthMap[char]
         }
@@ -327,19 +327,19 @@ export const charToFullWidthPlugin: TransformPlugin = {
     return value
       .split('')
       .map((char) => {
-        // 数字
+        // 数字 / 数字
         if (includeDigits && char >= '0' && char <= '9') {
           return halfToFullWidthMap[char] ?? char
         }
-        // 大写字母
+        // 大文字アルファベット / 大写字母
         if (includeLetters && char >= 'A' && char <= 'Z') {
           return halfToFullWidthMap[char] ?? char
         }
-        // 小写字母
+        // 小文字アルファベット / 小写字母
         if (includeLetters && char >= 'a' && char <= 'z') {
           return halfToFullWidthMap[char] ?? char
         }
-        // 符号
+        // 記号 / 符号
         if (includeSymbols && halfToFullWidthMap[char]) {
           return halfToFullWidthMap[char]
         }
@@ -365,7 +365,7 @@ export const stringInsertSymbolPlugin: TransformPlugin = {
       return value
     }
 
-    // 去重并排序（从大到小），从后往前插入，避免位置偏移
+    // 重複を除去し降順ソート、後ろから前へ挿入して位置ずれを防ぐ / 去重并排序（从大到小），从后往前插入，避免位置偏移
     const uniquePositions = Array.from(new Set(positions))
       .filter((pos) => typeof pos === 'number' && pos >= 0)
       .sort((a, b) => b - a)
@@ -376,7 +376,7 @@ export const stringInsertSymbolPlugin: TransformPlugin = {
 
     let result = value
     for (const pos of uniquePositions) {
-      // pos 是插入位置（0=先頭、1=1文字目後、2=2文字目後...）
+      // posは挿入位置（0=先頭、1=1文字目後、2=2文字目後...） / pos 是插入位置（0=开头、1=第1个字符后、2=第2个字符后...）
       if (pos <= result.length) {
         result = result.slice(0, pos) + symbol + result.slice(pos)
       }
@@ -460,8 +460,8 @@ export const lookupMapPlugin: TransformPlugin = {
 }
 
 /**
- * 解析 groups 参数字符串，返回要选取的索引数组
- * 支持格式: "1" / "1,3" / "1-3" / "0-2,4"
+ * groupsパラメータ文字列を解析し、選択するインデックスの配列を返す / 解析 groups 参数字符串，返回要选取的索引数组
+ * 対応フォーマット / 支持格式: "1" / "1,3" / "1-3" / "0-2,4"
  */
 function parseGroupsParam(groupsStr: string): number[] {
   if (!groupsStr || typeof groupsStr !== 'string') return []
@@ -471,7 +471,7 @@ function parseGroupsParam(groupsStr: string): number[] {
 
   for (const part of parts) {
     if (part.includes('-')) {
-      // 范围格式: "1-3"
+      // 範囲形式 / 范围格式: "1-3"
       const [startStr, endStr] = part.split('-')
       const start = parseInt(startStr || '0', 10)
       const end = parseInt(endStr || '0', 10)
@@ -481,7 +481,7 @@ function parseGroupsParam(groupsStr: string): number[] {
         }
       }
     } else {
-      // 单个数字: "1"
+      // 単一の数字 / 单个数字: "1"
       const num = parseInt(part, 10)
       if (!isNaN(num) && num >= 0) {
         indices.add(num)
@@ -511,7 +511,7 @@ export const regexExtractPlugin: TransformPlugin = {
     try {
       const re = new RegExp(pattern, flags)
 
-      // groups 参数指定时，使用 exec 获取 capture groups
+      // groupsパラメータ指定時、execでキャプチャグループを取得 / groups 参数指定时，使用 exec 获取 capture groups
       if (groupsParam) {
         const selectedIndices = parseGroupsParam(groupsParam)
         if (selectedIndices.length === 0) {
@@ -522,7 +522,7 @@ export const regexExtractPlugin: TransformPlugin = {
         let match: RegExpExecArray | null
 
         if (flags.includes('g')) {
-          // 全局匹配：每次 exec 返回一个匹配
+          // グローバルマッチ：execの各呼び出しで1つのマッチを返す / 全局匹配：每次 exec 返回一个匹配
           while ((match = re.exec(str)) !== null) {
             for (const idx of selectedIndices) {
               if (idx < match.length && match[idx] !== undefined) {
@@ -531,7 +531,7 @@ export const regexExtractPlugin: TransformPlugin = {
             }
           }
         } else {
-          // 非全局：只执行一次
+          // 非グローバル：1回のみ実行 / 非全局：只执行一次
           match = re.exec(str)
           if (match) {
             for (const idx of selectedIndices) {
@@ -546,19 +546,19 @@ export const regexExtractPlugin: TransformPlugin = {
         return results.join(separator)
       }
 
-      // 原有逻辑（无 groups 参数时）
+      // 既存ロジック（groupsパラメータなしの場合） / 原有逻辑（无 groups 参数时）
       const matches = str.match(re)
 
       if (!matches) return params?.default ?? undefined
 
-      // グローバルフラグがない場合、キャプチャグループを確認
+      // グローバルフラグがない場合、キャプチャグループを確認 / 没有全局标志时，检查捕获组
       if (!flags.includes('g') && matches.length > 1) {
-        // キャプチャグループがある場合、グループ1以降を結合
+        // キャプチャグループがある場合、グループ1以降を結合 / 如果有捕获组，将组1及之后的结合
         const groups = matches.slice(1).filter(m => m !== undefined)
         return groups.length > 0 ? groups.join(separator) : matches[0]
       }
 
-      // グローバルフラグがある場合、全マッチを結合
+      // グローバルフラグがある場合、全マッチを結合 / 有全局标志时，将所有匹配结合
       return matches.join(separator)
     } catch (e) {
       console.error('regex.extract error:', e)
@@ -680,8 +680,8 @@ export const dateParsePlugin: TransformPlugin = {
       const seconds = String(parsedDate.getSeconds()).padStart(2, '0')
       return `${hours}:${minutes}:${seconds}`
     } else {
-      // precision === 'datetime': 使用本地时间，不进行时区转换
-      // 格式：YYYY-MM-DDTHH:mm:ss（日期数值，不带时区信息）
+      // precision === 'datetime': ローカルタイムを使用、タイムゾーン変換なし / 使用本地时间，不进行时区转换
+      // フォーマット：YYYY-MM-DDTHH:mm:ss（タイムゾーン情報なし） / 格式：YYYY-MM-DDTHH:mm:ss（日期数值，不带时区信息）
       const year = parsedDate.getFullYear()
       const month = String(parsedDate.getMonth() + 1).padStart(2, '0')
       const day = String(parsedDate.getDate()).padStart(2, '0')
@@ -710,12 +710,12 @@ export const dateFormatPlugin: TransformPlugin = {
     if (params?.format) {
       const format = params.format
       
-      // 特殊格式：只输出年
+      // 特殊フォーマット：年のみ出力 / 特殊格式：只输出年
       if (format === 'YYYY') {
         return String(d.getFullYear())
       }
       
-      // 特殊格式：只输出月
+      // 特殊フォーマット：月のみ出力 / 特殊格式：只输出月
       if (format === 'MM') {
         return String(d.getMonth() + 1).padStart(2, '0')
       }
@@ -723,7 +723,7 @@ export const dateFormatPlugin: TransformPlugin = {
         return String(d.getMonth() + 1)
       }
       
-      // 特殊格式：只输出日
+      // 特殊フォーマット：日のみ出力 / 特殊格式：只输出日
       if (format === 'DD') {
         return String(d.getDate()).padStart(2, '0')
       }
@@ -731,12 +731,12 @@ export const dateFormatPlugin: TransformPlugin = {
         return String(d.getDate())
       }
       
-      // 日语格式
+      // 日本語フォーマット / 日语格式
       if (format === 'YYYY年MM月DD日' || format === 'YYYY年M月D日') {
         return formatDate(d, format)
       }
       
-      // 其他格式使用原有逻辑
+      // その他のフォーマットは既存ロジックを使用 / 其他格式使用原有逻辑
       return formatDateTimeByPattern(d, format)
     }
 
@@ -770,13 +770,13 @@ export const dateAddDaysPlugin: TransformPlugin = {
   run: ({ value, params }) => {
     if (!value) return value
     
-    // 保存原始值（用于保持格式）
+    // 元の値を保存（フォーマットを維持するため） / 保存原始值（用于保持格式）
     const originalValue = typeof value === 'string' ? value : String(value)
     
-    // 解析日期
+    // 日付を解析 / 解析日期
     let parsedDate: Date | null = null
     
-    // 尝试按常见格式解析
+    // 一般的なフォーマットで解析を試みる / 尝试按常见格式解析
     const commonFormats = [
       'YYYY-MM-DD',
       'YYYY/MM/DD',
@@ -798,7 +798,7 @@ export const dateAddDaysPlugin: TransformPlugin = {
       }
     }
     
-    // 如果还没有解析成功，尝试直接解析
+    // まだ解析に成功していない場合、直接解析を試みる / 如果还没有解析成功，尝试直接解析
     if (!parsedDate) {
       if (value instanceof Date) {
         parsedDate = value
@@ -812,20 +812,20 @@ export const dateAddDaysPlugin: TransformPlugin = {
     
     if (!parsedDate) return value
     
-    // 获取要加的天数，默认30
+    // 加算する日数を取得、デフォルト30 / 获取要加的天数，默认30
     const days = params?.days ?? 30
     const daysNum = typeof days === 'number' ? days : parseInt(String(days), 10)
     if (isNaN(daysNum)) return value
     
-    // 加天数
+    // 日数を加算 / 加天数
     const resultDate = new Date(parsedDate)
     resultDate.setDate(resultDate.getDate() + daysNum)
     
-    // 检测原始格式并保持相同格式输出
+    // 元のフォーマットを検出し、同じフォーマットで出力 / 检测原始格式并保持相同格式输出
     if (typeof originalValue === 'string') {
-      // 尝试匹配常见格式（按从具体到一般的顺序）
+      // 一般的なフォーマットにマッチを試みる（具体的なものから一般的なものの順） / 尝试匹配常见格式（按从具体到一般的顺序）
       if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(originalValue)) {
-        // ISO格式 YYYY-MM-DDTHH:mm:ss
+        // ISO形式 / ISO格式 YYYY-MM-DDTHH:mm:ss
         const year = resultDate.getFullYear()
         const month = String(resultDate.getMonth() + 1).padStart(2, '0')
         const day = String(resultDate.getDate()).padStart(2, '0')
@@ -864,7 +864,7 @@ export const dateAddDaysPlugin: TransformPlugin = {
         const day = String(resultDate.getDate()).padStart(2, '0')
         return `${year}/${month}/${day}`
       } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(originalValue)) {
-        // MM/DD/YYYY 或 DD/MM/YYYY（无法区分，默认使用 MM/DD/YYYY）
+        // MM/DD/YYYYまたはDD/MM/YYYY（区別不可、デフォルトでMM/DD/YYYYを使用） / MM/DD/YYYY 或 DD/MM/YYYY（无法区分，默认使用 MM/DD/YYYY）
         const year = resultDate.getFullYear()
         const month = String(resultDate.getMonth() + 1).padStart(2, '0')
         const day = String(resultDate.getDate()).padStart(2, '0')
@@ -872,7 +872,7 @@ export const dateAddDaysPlugin: TransformPlugin = {
       }
     }
     
-    // 如果无法识别格式，使用ISO格式输出
+    // フォーマットを識別できない場合、ISO形式で出力 / 如果无法识别格式，使用ISO格式输出
     const year = resultDate.getFullYear()
     const month = String(resultDate.getMonth() + 1).padStart(2, '0')
     const day = String(resultDate.getDate()).padStart(2, '0')
@@ -915,7 +915,7 @@ export const httpFetchJsonPlugin: TransformPlugin = {
       })
     }
 
-    // 构建 body
+    // bodyを構築 / 构建 body
     let bodyData: any = params?.body
     if (params?.bodyParams && params.bodyParams.length > 0) {
       bodyData = {}
@@ -989,12 +989,12 @@ export const productFromColumnsPlugin: TransformPlugin = {
     const quantityColumn = params?.quantityColumn || 'quantity'
     const nameColumn = params?.nameColumn || 'name'
 
-    // 列から値を取得（value が指定されていない場合は列から取得）
+    // 列から値を取得（valueが指定されていない場合は列から取得） / 从列获取值（如果未指定 value 则从列获取）
     const sku = row[skuColumn] !== undefined ? row[skuColumn] : value ?? ''
     const quantity = row[quantityColumn] ?? ''
     const name = row[nameColumn] ?? ''
 
-    // 数量を数値に変換
+    // 数量を数値に変換 / 将数量转换为数值
     let quantityNum = 1
     if (quantity !== undefined && quantity !== null && quantity !== '') {
       const parsed = typeof quantity === 'number' ? quantity : parseFloat(String(quantity))
@@ -1032,13 +1032,13 @@ export const productToStringPlugin: TransformPlugin = {
   descriptionJa:
     '商品配列（products）を「商品名 x 数量 / 商品名 x 数量」形式の文字列に変換します。数量が1の場合は「x 数量」を表示しません。入力: products配列、出力: 文字列（フォーマット済み）',
   run: ({ value, params }) => {
-    // 如果已经是字符串，直接返回（兼容 export 时已经转换的情况）
+    // 既に文字列の場合、そのまま返す（export時に既に変換済みの場合に対応） / 如果已经是字符串，直接返回（兼容 export 时已经转换的情况）
     if (typeof value === 'string') {
       return value
     }
     
     if (!Array.isArray(value)) {
-      // もし配列でない場合、空配列として扱う
+      // もし配列でない場合、空配列として扱う / 如果不是数组，则作为空数组处理
       return ''
     }
 
@@ -1063,7 +1063,7 @@ export const productToStringPlugin: TransformPlugin = {
   },
 }
 
-// 导出所有插件
+// 全プラグインをエクスポート / 导出所有插件
 export const transformPlugins: Record<string, TransformPlugin> = {
   'string.trim': stringTrimPlugin,
   'string.pad': stringPadPlugin,

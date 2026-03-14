@@ -13,18 +13,18 @@ import type {
 } from '@/api/mappingConfig'
 import { getNestedValue, setNestedValue } from './nestedObject'
 
-// 导入插件定义
+// プラグイン定義をインポート / 导入插件定义
 import { transformPlugins as pluginDefs } from './transforms/plugins/core'
 import { combinePlugins as combineDefs } from './transforms/plugins/combine'
 
-// 将插件定义转换为执行函数
+// プラグイン定義を実行関数に変換 / 将插件定义转换为执行函数
 const transformPlugins: Record<string, (args: { value: any; params: any; context: TransformContext }) => any> = {}
 for (const [name, plugin] of Object.entries(pluginDefs)) {
   transformPlugins[name] = plugin.run
 }
 
 
-// 将 combine 插件定义转换为执行函数
+// combineプラグイン定義を実行関数に変換 / 将 combine 插件定义转换为执行函数
 const combinePlugins: Record<string, (values: any[], params: any, context: TransformContext) => any> = {}
 for (const [name, plugin] of Object.entries(combineDefs)) {
   combinePlugins[name] = plugin.run
@@ -46,7 +46,7 @@ async function runStep(
   
   const onError = step.onError ?? defaultOnError
   try {
-    // 确保 context 包含 row 信息
+    // contextにrow情報が含まれていることを確認 / 确保 context 包含 row 信息
     const contextWithRow = {
       ...context,
       meta: {
@@ -118,7 +118,7 @@ export async function runTransformMapping(
   row: Record<string, any>,
   context: TransformContext = {},
 ): Promise<any> {
-  // 确保 context 包含 row 信息，供插件使用（如 http.fetchJson 的 bodyParams）
+  // contextにrow情報を含め、プラグインで使用可能にする（例：http.fetchJsonのbodyParams） / 确保 context 包含 row 信息，供插件使用（如 http.fetchJson 的 bodyParams）
   const contextWithRow = {
     ...context,
     meta: {
@@ -155,7 +155,7 @@ export async function applyTransformMappings(
   for (const mapping of mappings) {
     try {
       const value = await runTransformMapping(mapping, sourceRow, context)
-      // 使用 setNestedValue 支持嵌套字段（如 carrierData.yamato.hatsuBaseNo1）
+      // setNestedValueでネストされたフィールドをサポート（例：carrierData.yamato.hatsuBaseNo1） / 使用 setNestedValue 支持嵌套字段（如 carrierData.yamato.hatsuBaseNo1）
       if (mapping.targetField.includes('.')) {
         setNestedValue(result, mapping.targetField, value)
       } else {

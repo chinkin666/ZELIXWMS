@@ -1,22 +1,31 @@
 <template>
   <div class="mapping-config-list">
-    <ControlPanel title="レイアウト管理" :show-search="false">
+    <ControlPanel :title="t('wms.settings.mapping.title', 'レイアウト管理')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="handleAdd">新規レイアウト</OButton>
+        <OButton variant="primary" @click="handleAdd">{{ t('wms.settings.mapping.newLayout', '新規レイアウト') }}</OButton>
       </template>
     </ControlPanel>
+
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="mappingPatternsSearch"
+      @search="handleSearch"
+    />
 
     <div class="table-section">
       <Table
         :columns="tableColumns"
         :data="mappingConfigs"
-        :height="580"
+        :height="520"
         row-key="_id"
         highlight-columns-on-hover
         pagination-enabled
         pagination-mode="client"
         :page-size="10"
         :page-sizes="[10, 20, 50]"
+        :global-search-text="globalSearchText"
       />
     </div>
   </div>
@@ -25,19 +34,23 @@
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
 import Table from '@/components/table/Table.vue'
-import type { TableColumn } from '@/types/table'
+import type { TableColumn, Operator } from '@/types/table'
 import { getAllMappingConfigs, createMappingConfig, deleteMappingConfig, type MappingConfig } from '@/api/mappingConfig'
 
 const router = useRouter()
+const { t } = useI18n()
 const { show: showToast } = useToast()
 const mappingConfigs = ref<MappingConfig[]>([])
 const loading = ref(false)
+const globalSearchText = ref('')
 
-// 格式化日期
+// 日付フォーマット
 const formatDate = (dateString: string | undefined): string => {
   if (!dateString) return '-'
   try {
@@ -54,113 +67,153 @@ const formatDate = (dateString: string | undefined): string => {
   }
 }
 
-// 格式化布尔值
-const formatBoolean = (value: boolean | undefined): string => {
-  return value ? 'はい' : 'いいえ'
-}
+// タイプ表示名
+const CONFIG_TYPE_OPTIONS = [
+  { label: t('wms.settings.mapping.typeOrderImport', '受注データ取込'), value: 'ec-company-to-order' },
+  { label: t('wms.settings.mapping.typeCarrierExport', '送り状データ出力'), value: 'order-to-carrier' },
+  { label: t('wms.settings.mapping.typeSheetExport', '出荷明細リスト出力'), value: 'order-to-sheet' },
+  { label: t('wms.settings.mapping.typeCarrierImport', '送り状データ取込'), value: 'carrier-receipt-to-order' },
+  { label: t('wms.settings.mapping.typeProductImport', '商品マスタ取込'), value: 'product' },
+  { label: t('wms.settings.mapping.typeSourceCompanyImport', '依頼主マスタ取込'), value: 'order-source-company' },
+]
 
-// 格式化类型
+const typeMap: Record<string, string> = Object.fromEntries(
+  CONFIG_TYPE_OPTIONS.map((o) => [o.value, o.label]),
+)
+
 const formatType = (type: string | undefined): string => {
   if (!type) return '-'
-  const typeMap: Record<string, string> = {
-    'ec-company-to-order': '出荷予定データ',
-    'order-to-carrier': '送り状データ',
-    'order-to-sheet': '出荷明細リスト出力(csv)',
-    product: '商品マスタ',
-    'order-source-company': 'ご依頼主マスタ',
-  }
   return typeMap[type] || type
 }
 
-// 表格列配置
-const tableColumns: TableColumn[] = [
+// 列定義
+const baseColumns: TableColumn[] = [
   {
     key: 'name',
     dataKey: 'name',
-    title: 'レイアウト名',
+    title: t('wms.settings.mapping.layoutName', 'レイアウト名'),
     width: 200,
     fieldType: 'string',
     searchable: true,
     searchType: 'string',
-    cellRenderer: ({ rowData }: { rowData: MappingConfig }) => rowData.name || '-',
   },
   {
     key: 'configType',
     dataKey: 'configType',
-    title: 'タイプ',
-    width: 150,
+    title: t('wms.settings.configType'),
+    width: 180,
     fieldType: 'string',
     searchable: true,
-    searchType: 'string',
-    cellRenderer: ({ rowData }: { rowData: MappingConfig }) => formatType(rowData.configType),
+    searchType: 'select',
+    searchOptions: CONFIG_TYPE_OPTIONS,
   },
-
   {
     key: 'description',
     dataKey: 'description',
-    title: '説明',
+    title: t('wms.settings.description'),
     width: 250,
     fieldType: 'string',
     searchable: true,
     searchType: 'string',
-    cellRenderer: ({ rowData }: { rowData: MappingConfig }) => rowData.description || '-',
   },
   {
     key: 'isDefault',
     dataKey: 'isDefault',
-    title: 'デフォルト',
+    title: t('wms.settings.isDefault'),
     width: 100,
     fieldType: 'boolean',
     searchable: true,
     searchType: 'boolean',
-    cellRenderer: ({ rowData }: { rowData: MappingConfig }) =>
-      formatBoolean(rowData.isDefault),
   },
   {
     key: 'mappingsCount',
     dataKey: 'mappingsCount',
-    title: 'マッピング数',
-    width: 120,
+    title: t('wms.settings.mapping.mappingsCount', '紐付け数'),
+    width: 100,
     fieldType: 'number',
-    cellRenderer: ({ rowData }: { rowData: MappingConfig & { mappingsCount?: number } }) =>
-      rowData.mappingsCount ?? 0,
   },
   {
     key: 'createdAt',
     dataKey: 'createdAt',
-    title: '作成日時',
-    width: 180,
+    title: t('wms.settings.mapping.createdAt', '作成日時'),
+    width: 160,
     fieldType: 'date',
-    searchable: true,
-    searchType: 'date',
-    dateFormat: 'YYYY-MM-DD HH:mm:ss',
-    cellRenderer: ({ rowData }: { rowData: MappingConfig }) => formatDate(rowData.createdAt),
   },
   {
     key: 'updatedAt',
     dataKey: 'updatedAt',
-    title: '更新日時',
-    width: 180,
+    title: t('wms.settings.mapping.updatedAt', '更新日時'),
+    width: 160,
     fieldType: 'date',
-    searchable: true,
-    searchType: 'date',
-    dateFormat: 'YYYY-MM-DD HH:mm:ss',
-    cellRenderer: ({ rowData }: { rowData: MappingConfig }) => formatDate(rowData.updatedAt),
   },
+]
+
+const searchColumns: TableColumn[] = baseColumns.filter((c) => c.searchable)
+
+const tableColumns: TableColumn[] = [
+  ...baseColumns.map((col) => {
+    if (col.key === 'configType') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: MappingConfig }) => formatType(rowData.configType),
+      }
+    }
+    if (col.key === 'isDefault') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: MappingConfig }) =>
+          h(
+            'span',
+            { class: rowData.isDefault ? 'o-badge o-badge-success' : 'o-badge o-badge-info' },
+            rowData.isDefault ? t('wms.settings.mapping.yes', 'はい') : t('wms.settings.mapping.no', 'いいえ'),
+          ),
+      }
+    }
+    if (col.key === 'mappingsCount') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: MappingConfig & { mappingsCount?: number } }) =>
+          rowData.mappingsCount ?? 0,
+      }
+    }
+    if (col.key === 'createdAt') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: MappingConfig }) => formatDate(rowData.createdAt),
+      }
+    }
+    if (col.key === 'updatedAt') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: MappingConfig }) => formatDate(rowData.updatedAt),
+      }
+    }
+    return col
+  }),
   {
     key: 'actions',
-    title: '操作',
-    width: 160,
+    title: '',
+    width: 200,
     cellRenderer: ({ rowData }: { rowData: MappingConfig }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateMappingConfig(rowData) }, () => '複製'),
-        h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleEdit(rowData) }, () => t('wms.common.edit')),
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateMappingConfig(rowData) }, () => t('wms.settings.mapping.duplicate', '複製')),
+        h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => t('wms.common.delete')),
       ]),
   },
 ]
 
-// 加载数据
+// 検索処理
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+    delete payload.__global
+  } else {
+    globalSearchText.value = ''
+  }
+}
+
+// データ読み込み
 const loadMappingConfigs = async () => {
   loading.value = true
   try {
@@ -171,50 +224,50 @@ const loadMappingConfigs = async () => {
     }))
   } catch (error) {
     console.error('Failed to load mapping configs:', error)
-    showToast('レイアウトの読み込みに失敗しました', 'danger')
+    showToast(t('wms.settings.mapping.loadError', 'レイアウトの読み込みに失敗しました'), 'danger')
   } finally {
     loading.value = false
   }
 }
 
-// 添加新配置
+// 新規追加
 const handleAdd = () => {
   router.push('/settings/mapping-patterns/new')
 }
 
-// 编辑配置
+// 編集
 const handleEdit = (row: MappingConfig) => {
   router.push({
     path: `/settings/mapping-patterns/edit/${row._id}`,
   })
 }
 
+// 複製
 const duplicateMappingConfig = async (row: MappingConfig) => {
   try {
     const { _id, createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = row
     const { mappingsCount: _mappingsCount, ...data } = rest as any
     await createMappingConfig({ ...data, name: `${row.name}_copy`, isDefault: false })
-    showToast('複製しました', 'success')
+    showToast(t('wms.settings.mapping.duplicateSuccess', '複製しました'), 'success')
     await loadMappingConfigs()
   } catch (e: any) {
-    showToast(e?.message || '複製に失敗しました', 'danger')
+    showToast(e?.message || t('wms.settings.mapping.duplicateError', '複製に失敗しました'), 'danger')
   }
 }
 
-// 确认删除
+// 削除確認
 const confirmDelete = (row: MappingConfig) => {
-  if (!confirm(`「${row.name}」を削除しますか？`)) return
+  if (!confirm(t('wms.settings.mapping.deleteConfirm', `「${row.name}」を削除しますか？`))) return
   deleteMappingConfig(row._id)
     .then(async () => {
-      showToast('削除しました', 'success')
+      showToast(t('wms.settings.mapping.deleteSuccess', '削除しました'), 'success')
       await loadMappingConfigs()
     })
     .catch((error: any) => {
-      showToast(error?.message || '削除に失敗しました', 'danger')
+      showToast(error?.message || t('wms.settings.mapping.deleteError', '削除に失敗しました'), 'danger')
     })
 }
 
-// 组件挂载时加载数据
 onMounted(() => {
   loadMappingConfigs()
 })
@@ -226,53 +279,25 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  gap: 16px;
 }
 :deep(.o-control-panel) {
   margin-left: -20px;
   margin-right: -20px;
 }
 
-
-
-
 .table-section {
   flex: 1;
   overflow: hidden;
 }
 
-.o-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--o-border-color, #dcdfe6);
-  border-radius: var(--o-border-radius, 4px);
-  font-size: var(--o-font-size-base, 14px);
-  cursor: pointer;
-  background: var(--o-view-background, #fff);
-  color: var(--o-gray-700, #303133);
-  transition: 0.2s;
-  white-space: nowrap;
-}
-
-.o-btn-primary { background: var(--o-brand-primary, #714b67); color: #fff; border-color: var(--o-brand-primary, #714b67); }
-.o-btn-sm { padding: 4px 10px; font-size: 13px; }
-.o-btn-outline-primary { background: transparent; color: var(--o-brand-primary, #714b67); border-color: var(--o-brand-primary, #714b67); }
-.o-btn-outline-secondary { background: transparent; color: var(--o-gray-600, #909399); border-color: var(--o-gray-600, #909399); }
-.o-btn-outline-danger { background: transparent; color: #f56c6c; border-color: #f56c6c; }
-
-/* 操作列样式 - 垂直排列 */
 :deep(.action-cell) {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 4px;
+  gap: 6px;
 }
 
 :deep(.action-cell .o-btn) {
   margin: 0;
-  min-width: 54px;
 }
 </style>

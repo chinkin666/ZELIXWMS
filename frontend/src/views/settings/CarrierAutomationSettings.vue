@@ -1,6 +1,6 @@
 <template>
   <div class="carrier-automation-settings">
-    <ControlPanel title="配送業者自動化設定" :show-search="false" />
+    <ControlPanel :title="t('wms.settings.carrierAutomationTitle', '配送業者自動化設定')" :show-search="false" />
 
     <div class="o-card automation-tabs-card">
       <div class="o-tabs">
@@ -8,72 +8,72 @@
           class="o-tab"
           :class="{ active: activeTab === 'yamato-b2' }"
           @click="activeTab = 'yamato-b2'"
-        >ヤマトB2 Cloud</button>
-        <button class="o-tab" disabled title="Coming Soon">佐川急便</button>
-        <button class="o-tab" disabled title="Coming Soon">西濃運輸</button>
+        >{{ t('wms.settings.yamatoB2Cloud', 'ヤマトB2 Cloud') }}</button>
+        <button class="o-tab" disabled title="Coming Soon">{{ t('wms.settings.sagawa', '佐川急便') }}</button>
+        <button class="o-tab" disabled title="Coming Soon">{{ t('wms.settings.seino', '西濃運輸') }}</button>
       </div>
 
       <div class="tab-content" v-if="activeTab === 'yamato-b2'">
-        <div v-if="loading" class="loading-state">読み込み中...</div>
+        <div v-if="loading" class="loading-state">{{ t('wms.settings.loading', '読み込み中...') }}</div>
         <template v-else>
           <div class="config-form">
             <div class="o-form-group">
-              <label class="o-form-label">有効</label>
+              <label class="form-label">{{ t('wms.settings.enabled', '有効') }}</label>
               <div style="display:flex;align-items:center;gap:12px">
                 <label class="o-toggle">
                   <input type="checkbox" v-model="yamatoB2Form.enabled" />
                   <span class="o-toggle-slider"></span>
                 </label>
-                <span class="form-hint">ONにすると、配送業者データ出力・取込で自動化機能が使えます</span>
+                <span class="form-hint">{{ t('wms.settings.automationEnabledHint', 'ONにすると、配送業者データ出力・取込で自動化機能が使えます') }}</span>
               </div>
             </div>
 
             <hr class="o-divider" />
-            <h4 class="section-label">API接続設定</h4>
+            <h4 class="section-label">{{ t('wms.settings.apiConnectionSettings', 'API接続設定') }}</h4>
 
             <div class="o-form-group">
-              <label class="o-form-label">APIエンドポイント <span class="required">*</span></label>
+              <label class="form-label">{{ t('wms.settings.apiEndpoint', 'APIエンドポイント') }} <span class="required">*</span></label>
               <input class="o-input" v-model="yamatoB2Form.apiEndpoint" placeholder="https://yamato-b2-webapi.nexand.org" style="max-width:400px" />
             </div>
 
             <div class="o-form-group">
-              <label class="o-form-label">API Key <span class="required">*</span></label>
-              <input class="o-input" v-model="yamatoB2Form.apiKey" type="password" placeholder="公開API用のアクセスキー" style="max-width:400px" />
-              <div class="field-hint">API提供者から発行されたアクセスキーを入力してください</div>
+              <label class="form-label">API Key <span class="required">*</span></label>
+              <input class="o-input" v-model="yamatoB2Form.apiKey" type="password" :placeholder="t('wms.settings.apiKeyPlaceholder', '公開API用のアクセスキー')" style="max-width:400px" />
+              <div class="field-hint">{{ t('wms.settings.apiKeyHint', 'API提供者から発行されたアクセスキーを入力してください') }}</div>
             </div>
 
             <div class="o-form-group">
-              <label class="o-form-label">お客様コード <span class="required">*</span></label>
-              <input class="o-input" v-model="yamatoB2Form.customerCode" placeholder="ヤマトビジネスメンバーズID" style="max-width:400px" />
+              <label class="form-label">{{ t('wms.settings.customerCode', 'お客様コード') }} <span class="required">*</span></label>
+              <input class="o-input" v-model="yamatoB2Form.customerCode" :placeholder="t('wms.settings.customerCodePlaceholder', 'ヤマトビジネスメンバーズID')" style="max-width:400px" />
             </div>
 
             <div class="o-form-group">
-              <label class="o-form-label">パスワード <span class="required">*</span></label>
-              <input class="o-input" v-model="yamatoB2Form.customerPassword" type="password" placeholder="パスワード" style="max-width:400px" />
+              <label class="form-label">{{ t('wms.settings.password', 'パスワード') }} <span class="required">*</span></label>
+              <input class="o-input" v-model="yamatoB2Form.customerPassword" type="password" :placeholder="t('wms.settings.password', 'パスワード')" style="max-width:400px" />
             </div>
 
             <div class="o-form-group">
-              <label class="o-form-label">分類コード</label>
-              <input class="o-input" v-model="yamatoB2Form.customerClsCode" placeholder="任意（お届け先分類コード）" style="max-width:400px" />
+              <label class="form-label">{{ t('wms.settings.classificationCode', '分類コード') }}</label>
+              <input class="o-input" v-model="yamatoB2Form.customerClsCode" :placeholder="t('wms.settings.classificationCodePlaceholder', '任意（お届け先分類コード）')" style="max-width:400px" />
             </div>
 
             <div class="o-form-group">
-              <label class="o-form-label">ログインユーザーID</label>
-              <input class="o-input" v-model="yamatoB2Form.loginUserId" placeholder="任意" style="max-width:400px" />
+              <label class="form-label">{{ t('wms.settings.loginUserId', 'ログインユーザーID') }}</label>
+              <input class="o-input" v-model="yamatoB2Form.loginUserId" :placeholder="t('wms.settings.optional', '任意')" style="max-width:400px" />
             </div>
 
             <hr class="o-divider" />
-            <h4 class="section-label">サービス種類マッピング</h4>
-            <div class="field-hint" style="margin-bottom:16px">各送り状種類のB2サービス種類と印刷テンプレートを設定します</div>
+            <h4 class="section-label">{{ t('wms.settings.serviceTypeMapping', 'サービス種類マッピング') }}</h4>
+            <div class="field-hint" style="margin-bottom:16px">{{ t('wms.settings.serviceTypeMappingHint', '各送り状種類のB2サービス種類と印刷テンプレートを設定します') }}</div>
 
             <div class="service-mapping-wrapper">
               <table class="o-list-table service-mapping-table">
                 <thead>
                   <tr>
-                    <th style="width:180px">送り状種類</th>
-                    <th style="width:180px">B2サービス種類</th>
-                    <th style="width:160px">PDF取得元</th>
-                    <th style="min-width:180px">印刷テンプレート</th>
+                    <th style="width:180px">{{ t('wms.settings.waybillType') }}</th>
+                    <th style="width:180px">{{ t('wms.settings.b2ServiceType', 'B2サービス種類') }}</th>
+                    <th style="width:160px">{{ t('wms.settings.pdfSource', 'PDF取得元') }}</th>
+                    <th style="min-width:180px">{{ t('wms.settings.printTemplate') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -112,7 +112,7 @@
                         @change="updateMappingRow(row.invoiceType, 'printTemplateId', ($event.target as HTMLSelectElement).value || undefined)"
                         :disabled="row.pdfSource === 'b2-webapi'"
                       >
-                        <option value="">テンプレートを選択</option>
+                        <option value="">{{ t('wms.settings.selectTemplate', 'テンプレートを選択') }}</option>
                         <option
                           v-for="t in printTemplates"
                           :key="t.id"
@@ -126,68 +126,68 @@
             </div>
 
             <hr class="o-divider" />
-            <h4 class="section-label">請求先</h4>
+            <h4 class="section-label">{{ t('wms.settings.billingSection', '請求先') }}</h4>
 
             <div class="o-form-group">
-              <label class="o-form-label">請求先顧客コード</label>
+              <label class="form-label">{{ t('wms.settings.invoiceCode', '請求先顧客コード') }}</label>
               <input class="o-input" v-model="yamatoB2Form.invoiceCode" placeholder="10〜12桁" maxlength="12" style="width:200px" />
-              <div class="field-hint">B2 Cloudで設定された請求先の顧客コード（10〜12桁）</div>
+              <div class="field-hint">{{ t('wms.settings.invoiceCodeHint', 'B2 Cloudで設定された請求先の顧客コード（10〜12桁）') }}</div>
             </div>
 
             <div class="o-form-group">
-              <label class="o-form-label">運賃管理番号</label>
+              <label class="form-label">{{ t('wms.settings.invoiceFreightNo', '運賃管理番号') }}</label>
               <input class="o-input" v-model="yamatoB2Form.invoiceFreightNo" placeholder="2桁" maxlength="2" style="width:100px" />
-              <div class="field-hint">運賃の管理番号（2桁）</div>
+              <div class="field-hint">{{ t('wms.settings.invoiceFreightNoHint', '運賃の管理番号（2桁）') }}</div>
             </div>
             <hr class="o-divider" />
-            <h4 class="section-label">自動検証設定</h4>
-            <div class="field-hint" style="margin-bottom:16px">出荷確認時にB2 Cloudへの自動検証を定期的にリトライする設定です</div>
+            <h4 class="section-label">{{ t('wms.settings.autoValidationSettings', '自動検証設定') }}</h4>
+            <div class="field-hint" style="margin-bottom:16px">{{ t('wms.settings.autoValidationHint', '出荷確認時にB2 Cloudへの自動検証を定期的にリトライする設定です') }}</div>
 
             <div class="o-form-group">
-              <label class="o-form-label">自動検証</label>
+              <label class="form-label">{{ t('wms.settings.autoValidation', '自動検証') }}</label>
               <div style="display:flex;align-items:center;gap:12px">
                 <label class="o-toggle">
                   <input type="checkbox" v-model="autoValidationForm.enabled" />
                   <span class="o-toggle-slider"></span>
                 </label>
-                <span class="form-hint">ONにすると、検証失敗時に自動でリトライします</span>
+                <span class="form-hint">{{ t('wms.settings.autoValidationEnabledHint', 'ONにすると、検証失敗時に自動でリトライします') }}</span>
               </div>
             </div>
 
             <div class="o-form-group" v-if="autoValidationForm.enabled">
-              <label class="o-form-label">検証間隔</label>
+              <label class="form-label">{{ t('wms.settings.validationInterval', '検証間隔') }}</label>
               <div style="display:flex;align-items:center;gap:12px">
                 <select class="o-input" v-model.number="autoValidationForm.intervalMinutes" style="width:160px">
-                  <option :value="1">1分</option>
-                  <option :value="5">5分</option>
-                  <option :value="10">10分</option>
-                  <option :value="30">30分</option>
-                  <option :value="60">60分</option>
+                  <option :value="1">1{{ t('wms.settings.minuteUnit', '分') }}</option>
+                  <option :value="5">5{{ t('wms.settings.minuteUnit', '分') }}</option>
+                  <option :value="10">10{{ t('wms.settings.minuteUnit', '分') }}</option>
+                  <option :value="30">30{{ t('wms.settings.minuteUnit', '分') }}</option>
+                  <option :value="60">60{{ t('wms.settings.minuteUnit', '分') }}</option>
                 </select>
-                <span class="form-hint">検証失敗後、次のリトライまでの間隔</span>
+                <span class="form-hint">{{ t('wms.settings.validationIntervalHint', '検証失敗後、次のリトライまでの間隔') }}</span>
               </div>
             </div>
 
             <div class="o-form-group" v-if="autoValidationForm.enabled">
-              <label class="o-form-label">最大リトライ回数</label>
+              <label class="form-label">{{ t('wms.settings.maxRetries', '最大リトライ回数') }}</label>
               <div style="display:flex;align-items:center;gap:12px">
                 <input class="o-input" type="number" v-model.number="autoValidationForm.maxRetries" min="1" max="20" style="width:100px" />
-                <span class="form-hint">この回数を超えるとエラーを表示して停止します</span>
+                <span class="form-hint">{{ t('wms.settings.maxRetriesHint', 'この回数を超えるとエラーを表示して停止します') }}</span>
               </div>
             </div>
           </div>
 
           <div class="form-actions">
             <OButton variant="secondary" @click="testConnection" :disabled="testing || !canTest">
-              {{ testing ? 'テスト中...' : '接続テスト' }}
+              {{ testing ? t('wms.settings.testing', 'テスト中...') : t('wms.settings.connectionTest', '接続テスト') }}
             </OButton>
             <OButton variant="primary" @click="saveConfig" :disabled="saving">
-              {{ saving ? '保存中...' : '保存' }}
+              {{ saving ? t('wms.settings.saving', '保存中...') : t('wms.common.save') }}
             </OButton>
           </div>
 
           <div v-if="testResult" class="test-result" :class="testResult.success ? 'test-success' : 'test-error'">
-            <strong>{{ testResult.success ? '接続成功' : '接続失敗' }}</strong>
+            <strong>{{ testResult.success ? t('wms.settings.connectionSuccess', '接続成功') : t('wms.settings.connectionFailed', '接続失敗') }}</strong>
             <p>{{ testResult.message }}</p>
             <button class="dismiss-btn" @click="testResult = null">&times;</button>
           </div>
@@ -199,6 +199,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
@@ -210,6 +211,7 @@ import {
 } from '@/api/carrierAutomation'
 import { fetchPrintTemplates, type PrintTemplateApiModel } from '@/api/printTemplates'
 
+const { t } = useI18n()
 const { show: showToast } = useToast()
 
 const activeTab = ref('yamato-b2')
@@ -398,7 +400,7 @@ const loadConfig = async () => {
       })
     }
   } catch (error: any) {
-    showToast(error?.message || '設定の取得に失敗しました', 'danger')
+    showToast(error?.message || t('wms.settings.configFetchFailed', '設定の取得に失敗しました'), 'danger')
   } finally {
     loading.value = false
   }
@@ -406,7 +408,7 @@ const loadConfig = async () => {
 
 const saveConfig = async () => {
   if (!yamatoB2Form.value.apiKey || !yamatoB2Form.value.customerCode || !yamatoB2Form.value.customerPassword) {
-    showToast('API Key、お客様コード、パスワードは必須です', 'warning')
+    showToast(t('wms.settings.apiFieldsRequired', 'API Key、お客様コード、パスワードは必須です'), 'warning')
     return
   }
 
@@ -417,9 +419,9 @@ const saveConfig = async () => {
       yamatoB2: yamatoB2Form.value,
       autoValidation: autoValidationForm.value,
     })
-    showToast('設定を保存しました', 'success')
+    showToast(t('wms.settings.configSaved', '設定を保存しました'), 'success')
   } catch (error: any) {
-    showToast(error?.message || '保存に失敗しました', 'danger')
+    showToast(error?.message || t('wms.settings.saveFailed', '保存に失敗しました'), 'danger')
   } finally {
     saving.value = false
   }
@@ -427,7 +429,7 @@ const saveConfig = async () => {
 
 const testConnection = async () => {
   if (!yamatoB2Form.value.apiKey || !yamatoB2Form.value.customerCode || !yamatoB2Form.value.customerPassword) {
-    showToast('API Key、お客様コード、パスワードは必須です', 'warning')
+    showToast(t('wms.settings.apiFieldsRequired', 'API Key、お客様コード、パスワードは必須です'), 'warning')
     return
   }
 
@@ -444,14 +446,14 @@ const testConnection = async () => {
     // Then test
     testResult.value = await testCarrierAutomationConnection('yamato-b2')
     if (testResult.value.success) {
-      showToast('接続テスト成功', 'success')
+      showToast(t('wms.settings.connectionTestSuccess', '接続テスト成功'), 'success')
     } else {
-      showToast(`接続テスト失敗: ${testResult.value.message}`, 'danger')
+      showToast(`${t('wms.settings.connectionTestFailed', '接続テスト失敗')}: ${testResult.value.message}`, 'danger')
     }
   } catch (error: any) {
     testResult.value = {
       success: false,
-      message: error?.message || '接続テストに失敗しました',
+      message: error?.message || t('wms.settings.connectionTestError', '接続テストに失敗しました'),
     }
     showToast(testResult.value.message, 'danger')
   } finally {
@@ -556,7 +558,7 @@ onMounted(() => {
 .o-input:disabled { opacity: 0.6; background: #f5f7fa; }
 
 .o-form-group { margin-bottom: 1rem; }
-.o-form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
+.form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
 .required { color: #f56c6c; }
 
 .o-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
@@ -590,20 +592,7 @@ onMounted(() => {
   color: var(--o-gray-500, #909399);
 }
 
-.o-list-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.o-list-table th, .o-list-table td {
-  padding: 8px 10px;
-  border: 1px solid var(--o-border-color, #ebeef5);
-  text-align: left;
-}
-.o-list-table th {
-  background: var(--o-list-header-bg, #f5f7fa);
-  font-weight: 500;
-}
+/* .o-list-table base styles are defined globally in style.css */
 
 .service-mapping-wrapper {
   overflow-x: auto;

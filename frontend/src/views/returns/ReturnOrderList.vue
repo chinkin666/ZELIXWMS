@@ -1,40 +1,41 @@
 <template>
   <div class="return-order-list">
-    <ControlPanel title="返品一覧" :show-search="false">
+    <ControlPanel :title="t('wms.returns.returnList', '返品一覧')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;align-items:center;">
-          <select v-model="filterStatus" class="o-input o-input-sm" style="width:120px;" @change="currentPage = 1; loadData()">
-            <option value="">全状態</option>
-            <option value="draft">下書き</option>
-            <option value="inspecting">検品中</option>
-            <option value="completed">完了</option>
-            <option value="cancelled">キャンセル</option>
-          </select>
-          <OButton variant="secondary" size="sm" @click="exportCsv">CSV出力</OButton>
-          <OButton variant="secondary" size="sm" @click="showImportPanel = !showImportPanel">CSV取込</OButton>
-          <OButton variant="primary" size="sm" @click="$router.push('/returns/create')">新規作成</OButton>
+          <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.returns.csvExport', 'CSV出力') }}</OButton>
+          <OButton variant="secondary" size="sm" @click="showImportPanel = !showImportPanel">{{ t('wms.returns.csvImport', 'CSV取込') }}</OButton>
+          <OButton variant="primary" size="sm" @click="$router.push('/returns/create')">{{ t('wms.common.create', '新規作成') }}</OButton>
         </div>
       </template>
     </ControlPanel>
 
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="returnOrderListSearch"
+      @search="handleSearch"
+    />
+
     <!-- CSV Import Panel -->
     <div v-if="showImportPanel" class="import-panel">
       <div class="import-panel-header">
-        <strong>返品CSV取込</strong>
-        <span class="import-hint">CSVフォーマット: 品番,数量,返品理由,顧客名,受付日,メモ</span>
+        <strong>{{ t('wms.returns.csvImportTitle', '返品CSV取込') }}</strong>
+        <span class="import-hint">{{ t('wms.returns.csvFormat', 'CSVフォーマット: 品番,数量,返品理由,顧客名,受付日,メモ') }}</span>
       </div>
       <div class="import-panel-body">
         <input ref="fileInputRef" type="file" accept=".csv,.txt" @change="handleFileSelect" />
         <div v-if="importPreview.length > 0" class="import-preview">
-          <p>{{ importPreview.length }}件の返品データを検出</p>
+          <p>{{ importPreview.length }}{{ t('wms.returns.returnDataDetected', '件の返品データを検出') }}</p>
           <table class="o-table" style="margin-top:8px;">
             <thead>
               <tr>
-                <th class="o-table-th">品番</th>
-                <th class="o-table-th">数量</th>
-                <th class="o-table-th">返品理由</th>
-                <th class="o-table-th">顧客名</th>
-                <th class="o-table-th">受付日</th>
+                <th class="o-table-th">{{ t('wms.returns.productSku', '品番') }}</th>
+                <th class="o-table-th">{{ t('wms.returns.quantity', '数量') }}</th>
+                <th class="o-table-th">{{ t('wms.returns.returnReason', '返品理由') }}</th>
+                <th class="o-table-th">{{ t('wms.returns.customerName', '顧客名') }}</th>
+                <th class="o-table-th">{{ t('wms.returns.receivedDate', '受付日') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -47,114 +48,57 @@
               </tr>
               <tr v-if="importPreview.length > 10">
                 <td colspan="5" class="o-table-td" style="text-align:center;color:#909399;">
-                  ... 他{{ importPreview.length - 10 }}件
+                  ... {{ t('wms.returns.otherItems', '他') }}{{ importPreview.length - 10 }}{{ t('wms.common.items', '件') }}
                 </td>
               </tr>
             </tbody>
           </table>
           <div style="margin-top:8px;display:flex;gap:6px;">
             <OButton variant="primary" size="sm" :disabled="importing" @click="executeImport">
-              {{ importing ? '取込中...' : '取込実行' }}
+              {{ importing ? t('wms.returns.importing', '取込中...') : t('wms.returns.executeImport', '取込実行') }}
             </OButton>
-            <OButton variant="secondary" size="sm" @click="clearImport">キャンセル</OButton>
+            <OButton variant="secondary" size="sm" @click="clearImport">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width:40px;">
-              <input type="checkbox" :checked="allChecked" @change="toggleAll" />
-            </th>
-            <th class="o-table-th" style="width:170px;">返品番号</th>
-            <th class="o-table-th" style="width:90px;">状態</th>
-            <th class="o-table-th" style="width:100px;">返品理由</th>
-            <th class="o-table-th" style="width:120px;">顧客名</th>
-            <th class="o-table-th" style="width:170px;">元出荷番号</th>
-            <th class="o-table-th o-table-th--right" style="width:70px;">行数</th>
-            <th class="o-table-th o-table-th--right" style="width:80px;">総数量</th>
-            <th class="o-table-th" style="width:100px;">受付日</th>
-            <th class="o-table-th" style="width:100px;">作成日時</th>
-            <th class="o-table-th" style="width:250px;">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoading">
-            <td colspan="11" class="o-table-empty">読み込み中...</td>
-          </tr>
-          <tr v-else-if="rows.length === 0">
-            <td colspan="11" class="o-table-empty">データがありません</td>
-          </tr>
-          <tr v-for="row in rows" :key="row._id" class="o-table-row">
-            <td class="o-table-td">
-              <input type="checkbox" :checked="selectedIds.has(row._id)" @change="toggleRow(row._id)" />
-            </td>
-            <td class="o-table-td">
-              <span class="order-number clickable" @click="$router.push(`/returns/${row._id}`)">{{ row.orderNumber }}</span>
-            </td>
-            <td class="o-table-td">
-              <span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span>
-            </td>
-            <td class="o-table-td">{{ reasonLabel(row.returnReason) }}</td>
-            <td class="o-table-td">{{ row.customerName || '-' }}</td>
-            <td class="o-table-td" style="font-family:monospace;">{{ row.shipmentOrderNumber || '-' }}</td>
-            <td class="o-table-td o-table-td--right">{{ row.lines.length }}</td>
-            <td class="o-table-td o-table-td--right">{{ totalQty(row) }}</td>
-            <td class="o-table-td">{{ formatDate(row.receivedDate) }}</td>
-            <td class="o-table-td">{{ formatDateTime(row.createdAt) }}</td>
-            <td class="o-table-td o-table-td--actions">
-              <div style="display:inline-flex;gap:4px;flex-wrap:wrap;">
-                <OButton size="sm" variant="secondary" @click="$router.push(`/returns/${row._id}`)">詳細</OButton>
-                <OButton v-if="row.status === 'draft'" variant="primary" size="sm" @click="handleStartInspection(row)">検品開始</OButton>
-                <OButton v-if="row.status === 'inspecting'" variant="success" size="sm" @click="handleComplete(row)">完了</OButton>
-                <OButton
-                  v-if="row.status !== 'completed' && row.status !== 'cancelled'"
-                  variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;"
-                  @click="handleCancel(row)"
-                >取消</OButton>
-                <OButton
-                  v-if="row.status === 'draft' || row.status === 'cancelled'"
-                  variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;"
-                  @click="handleDelete(row)"
-                >削除</OButton>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
     <!-- Bulk action bar -->
     <div v-if="selectedIds.size > 0" class="bulk-bar">
-      <span>{{ selectedIds.size }}件選択中</span>
-      <OButton variant="primary" size="sm" :disabled="bulkProcessing" @click="bulkStartInspection">一括検品開始</OButton>
-      <OButton variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;" :disabled="bulkProcessing" @click="bulkCancel">一括取消</OButton>
+      <span>{{ selectedIds.size }}{{ t('wms.returns.selectedCount', '件選択中') }}</span>
+      <OButton variant="primary" size="sm" :disabled="bulkProcessing" @click="bulkStartInspection">{{ t('wms.returns.bulkStartInspection', '一括検品開始') }}</OButton>
+      <OButton variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;" :disabled="bulkProcessing" @click="bulkCancel">{{ t('wms.returns.bulkCancel', '一括取消') }}</OButton>
     </div>
 
-    <div class="o-table-pagination">
-      <span class="o-table-pagination__info">{{ total }} 件</span>
-      <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;" @change="currentPage = 1; loadData()">
-          <option :value="25">25</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-        </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--; loadData()">&lsaquo;</OButton>
-        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++; loadData()">&rsaquo;</OButton>
-      </div>
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="rows"
+        :height="520"
+        row-key="_id"
+        pagination-enabled
+        pagination-mode="server"
+        :total="total"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        :page-sizes="[25, 50, 100]"
+        :global-search-text="globalSearchText"
+        @page-change="handlePageChange"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchReturnOrders,
   startReturnInspection,
@@ -165,23 +109,26 @@ import {
 } from '@/api/returnOrder'
 import type { ReturnOrder } from '@/api/returnOrder'
 
+const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
 const isLoading = ref(false)
 const rows = ref<ReturnOrder[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(25)
-const filterStatus = ref('')
+const globalSearchText = ref('')
 
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+// Current search filters
+const currentFilterStatus = ref('')
 
-const statusLabel = (s: string) => ({ draft: '下書き', inspecting: '検品中', completed: '完了', cancelled: 'キャンセル' }[s] || s)
+const statusLabel = (s: string) => ({ draft: t('wms.returns.statusDraft', '下書き'), inspecting: t('wms.returns.statusInspecting', '検品中'), completed: t('wms.returns.statusCompleted', '完了'), cancelled: t('wms.returns.statusCancelled', 'キャンセル') }[s] || s)
 const statusClass = (s: string) => ({
   draft: 'o-status-tag--draft', inspecting: 'o-status-tag--printed',
   completed: 'o-status-tag--confirmed', cancelled: 'o-status-tag--cancelled',
 }[s] || '')
 const reasonLabel = (r: string) => ({
-  customer_request: 'お客様都合', defective: '不良品', wrong_item: '誤配送', damaged: '破損', other: 'その他',
+  customer_request: t('wms.returns.reasonCustomerRequest', 'お客様都合'), defective: t('wms.returns.reasonDefective', '不良品'), wrong_item: t('wms.returns.reasonWrongItem', '誤配送'), damaged: t('wms.returns.reasonDamaged', '破損'), other: t('wms.returns.reasonOther', 'その他'),
 }[r] || r)
 const totalQty = (row: ReturnOrder) => row.lines.reduce((s, l) => s + l.quantity, 0)
 const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('ja-JP') : '-'
@@ -189,19 +136,180 @@ const formatDateTime = (d: string) => d ? new Date(d).toLocaleString('ja-JP', { 
 
 // --- Selection ---
 const selectedIds = ref<Set<string>>(new Set())
-const allChecked = computed(() => rows.value.length > 0 && rows.value.every(r => selectedIds.value.has(r._id)))
+
+function toggleRow(id: string) {
+  const next = new Set(selectedIds.value)
+  if (next.has(id)) { next.delete(id) } else { next.add(id) }
+  selectedIds.value = next
+}
 
 function toggleAll() {
-  if (allChecked.value) {
+  const allChecked = rows.value.length > 0 && rows.value.every(r => selectedIds.value.has(r._id))
+  if (allChecked) {
     selectedIds.value = new Set()
   } else {
     selectedIds.value = new Set(rows.value.map(r => r._id))
   }
 }
-function toggleRow(id: string) {
-  const next = new Set(selectedIds.value)
-  if (next.has(id)) { next.delete(id) } else { next.add(id) }
-  selectedIds.value = next
+
+// Column definitions
+const baseColumns: TableColumn[] = [
+  {
+    key: 'checkbox',
+    title: '',
+    width: 40,
+    cellRenderer: ({ rowData }: { rowData: ReturnOrder }) =>
+      h('input', {
+        type: 'checkbox',
+        checked: selectedIds.value.has(rowData._id),
+        onChange: () => toggleRow(rowData._id),
+      }),
+    headerCellRenderer: () =>
+      h('input', {
+        type: 'checkbox',
+        checked: rows.value.length > 0 && rows.value.every(r => selectedIds.value.has(r._id)),
+        onChange: toggleAll,
+      }),
+  },
+  {
+    key: 'orderNumber',
+    dataKey: 'orderNumber',
+    title: t('wms.returns.returnNumber', '返品番号'),
+    width: 170,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+    cellRenderer: ({ rowData }: { rowData: ReturnOrder }) =>
+      h('span', { class: 'order-number clickable', onClick: () => router.push(`/returns/${rowData._id}`) }, rowData.orderNumber),
+  },
+  {
+    key: 'status',
+    dataKey: 'status',
+    title: t('wms.returns.status', '状態'),
+    width: 90,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: t('wms.returns.statusDraft', '下書き'), value: 'draft' },
+      { label: t('wms.returns.statusInspecting', '検品中'), value: 'inspecting' },
+      { label: t('wms.returns.statusCompleted', '完了'), value: 'completed' },
+      { label: t('wms.returns.statusCancelled', 'キャンセル'), value: 'cancelled' },
+    ],
+    cellRenderer: ({ rowData }: { rowData: ReturnOrder }) =>
+      h('span', { class: `o-status-tag ${statusClass(rowData.status)}` }, statusLabel(rowData.status)),
+  },
+  {
+    key: 'returnReason',
+    dataKey: 'returnReason',
+    title: t('wms.returns.returnReason', '返品理由'),
+    width: 100,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: ReturnOrder }) => reasonLabel(rowData.returnReason),
+  },
+  {
+    key: 'customerName',
+    dataKey: 'customerName',
+    title: t('wms.returns.customerName', '顧客名'),
+    width: 120,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+    cellRenderer: ({ rowData }: { rowData: ReturnOrder }) => rowData.customerName || '-',
+  },
+  {
+    key: 'shipmentOrderNumber',
+    dataKey: 'shipmentOrderNumber',
+    title: t('wms.returns.originalShipmentNumber', '元出荷番号'),
+    width: 170,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: ReturnOrder }) =>
+      h('span', { style: 'font-family:monospace;' }, rowData.shipmentOrderNumber || '-'),
+  },
+  {
+    key: 'lineCount',
+    title: t('wms.returns.lineCount', '行数'),
+    width: 70,
+    fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: ReturnOrder }) =>
+      h('span', { style: 'text-align:right;display:block;' }, String(rowData.lines.length)),
+  },
+  {
+    key: 'totalQty',
+    title: t('wms.returns.totalQuantity', '総数量'),
+    width: 80,
+    fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: ReturnOrder }) =>
+      h('span', { style: 'text-align:right;display:block;' }, String(totalQty(rowData))),
+  },
+  {
+    key: 'receivedDate',
+    dataKey: 'receivedDate',
+    title: t('wms.returns.receivedDate', '受付日'),
+    width: 100,
+    fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: ReturnOrder }) => formatDate(rowData.receivedDate),
+  },
+  {
+    key: 'createdAt',
+    dataKey: 'createdAt',
+    title: t('wms.returns.createdAt', '作成日時'),
+    width: 100,
+    fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: ReturnOrder }) => formatDateTime(rowData.createdAt),
+  },
+]
+
+const searchColumns: TableColumn[] = baseColumns.filter((c) => c.searchable)
+
+const tableColumns: TableColumn[] = [
+  ...baseColumns,
+  {
+    key: 'actions',
+    title: t('wms.common.actions', '操作'),
+    width: 250,
+    cellRenderer: ({ rowData }: { rowData: ReturnOrder }) => {
+      const buttons: any[] = []
+      buttons.push(h(OButton, { size: 'sm', variant: 'secondary', onClick: () => router.push(`/returns/${rowData._id}`) }, () => t('wms.returns.details', '詳細')))
+      if (rowData.status === 'draft') {
+        buttons.push(h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleStartInspection(rowData) }, () => t('wms.returns.startInspection', '検品開始')))
+      }
+      if (rowData.status === 'inspecting') {
+        buttons.push(h(OButton, { variant: 'success', size: 'sm', onClick: () => handleComplete(rowData) }, () => t('wms.returns.complete', '完了')))
+      }
+      if (rowData.status !== 'completed' && rowData.status !== 'cancelled') {
+        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', style: 'border-color:#f56c6c;color:#f56c6c;', onClick: () => handleCancel(rowData) }, () => t('wms.returns.cancel', '取消')))
+      }
+      if (rowData.status === 'draft' || rowData.status === 'cancelled') {
+        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', style: 'border-color:#f56c6c;color:#f56c6c;', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')))
+      }
+      return h('div', { class: 'action-cell' }, buttons)
+    },
+  },
+]
+
+// Search handler
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+  } else {
+    globalSearchText.value = ''
+  }
+
+  if (payload.status?.value) {
+    currentFilterStatus.value = String(payload.status.value)
+  } else {
+    currentFilterStatus.value = ''
+  }
+
+  currentPage.value = 1
+  loadData()
+}
+
+const handlePageChange = (payload: { page: number; pageSize: number }) => {
+  currentPage.value = payload.page
+  pageSize.value = payload.pageSize
+  loadData()
 }
 
 // --- Bulk Actions ---
@@ -209,13 +317,13 @@ const bulkProcessing = ref(false)
 
 async function bulkStartInspection() {
   const targets = rows.value.filter(r => selectedIds.value.has(r._id) && r.status === 'draft')
-  if (targets.length === 0) { toast.showWarning('下書き状態の返品が選択されていません'); return }
+  if (targets.length === 0) { toast.showWarning(t('wms.returns.noDraftSelected', '下書き状態の返品が選択されていません')); return }
   bulkProcessing.value = true
   let ok = 0; let fail = 0
   for (const r of targets) {
     try { await startReturnInspection(r._id); ok++ } catch { fail++ }
   }
-  toast.showSuccess(`検品開始: ${ok}件成功${fail > 0 ? `、${fail}件失敗` : ''}`)
+  toast.showSuccess(`${t('wms.returns.startInspection', '検品開始')}: ${ok}${t('wms.returns.successCount', '件成功')}${fail > 0 ? `、${fail}${t('wms.returns.failCount', '件失敗')}` : ''}`)
   selectedIds.value = new Set()
   bulkProcessing.value = false
   await loadData()
@@ -223,22 +331,28 @@ async function bulkStartInspection() {
 
 async function bulkCancel() {
   const targets = rows.value.filter(r => selectedIds.value.has(r._id) && r.status !== 'completed' && r.status !== 'cancelled')
-  if (targets.length === 0) { toast.showWarning('キャンセル可能な返品が選択されていません'); return }
-  if (!confirm(`${targets.length}件の返品をキャンセルしますか？`)) return
+  if (targets.length === 0) { toast.showWarning(t('wms.returns.noCancellableSelected', 'キャンセル可能な返品が選択されていません')); return }
+  if (!confirm(`${targets.length}${t('wms.returns.confirmBulkCancel', '件の返品をキャンセルしますか？')}`)) return
   bulkProcessing.value = true
   let ok = 0; let fail = 0
   for (const r of targets) {
     try { await cancelReturnOrder(r._id); ok++ } catch { fail++ }
   }
-  toast.showSuccess(`キャンセル: ${ok}件成功${fail > 0 ? `、${fail}件失敗` : ''}`)
+  toast.showSuccess(`${t('wms.returns.cancel', 'キャンセル')}: ${ok}${t('wms.returns.successCount', '件成功')}${fail > 0 ? `、${fail}${t('wms.returns.failCount', '件失敗')}` : ''}`)
   selectedIds.value = new Set()
   bulkProcessing.value = false
   await loadData()
 }
 
 // --- CSV Export ---
+function dispositionLabel(d: string) {
+  return ({ restock: t('wms.returns.dispositionRestock', '再入庫'), dispose: t('wms.returns.dispositionDispose', '廃棄'), repair: t('wms.returns.dispositionRepair', '修理'), pending: t('wms.returns.dispositionPending', '未処理') }[d] || d)
+}
+
 function exportCsv() {
-  const csvRows: string[] = ['返品番号,状態,返品理由,顧客名,元出荷番号,品番,品名,数量,検品数,処分,再入庫数,廃棄数,受付日,作成日,メモ']
+  const csvRows: string[] = [
+    [t('wms.returns.returnNumber', '返品番号'), t('wms.returns.status', '状態'), t('wms.returns.returnReason', '返品理由'), t('wms.returns.customerName', '顧客名'), t('wms.returns.originalShipmentNumber', '元出荷番号'), t('wms.returns.productSku', '品番'), t('wms.returns.productName', '品名'), t('wms.returns.quantity', '数量'), t('wms.returns.inspectedQuantity', '検品数'), t('wms.returns.disposition', '処分'), t('wms.returns.restockedQuantity', '再入庫数'), t('wms.returns.disposedQuantity', '廃棄数'), t('wms.returns.receivedDate', '受付日'), t('wms.returns.createdAt', '作成日'), t('wms.returns.memo', 'メモ')].join(','),
+  ]
   for (const r of rows.value) {
     for (const l of r.lines) {
       csvRows.push([
@@ -270,10 +384,6 @@ function exportCsv() {
   URL.revokeObjectURL(url)
 }
 
-function dispositionLabel(d: string) {
-  return ({ restock: '再入庫', dispose: '廃棄', repair: '修理', pending: '未処理' }[d] || d)
-}
-
 // --- CSV Import ---
 const showImportPanel = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
@@ -295,7 +405,6 @@ function handleFileSelect(event: Event) {
       if (first === '品番' || first === 'sku' || first === 'productsku') continue
       const qty = Number(parts[1])
       if (isNaN(qty) || qty <= 0) continue
-      // Map reason text to code
       const reasonRaw = (parts[2] || '').trim()
       const reason = resolveReasonCode(reasonRaw)
       parsed.push({
@@ -335,7 +444,7 @@ async function executeImport() {
     clearImport()
     await loadData()
   } catch (e: any) {
-    toast.showError(e.message || '取込に失敗しました')
+    toast.showError(e.message || t('wms.returns.importFailed', '取込に失敗しました'))
   } finally {
     importing.value = false
   }
@@ -351,15 +460,15 @@ function clearImport() {
 const loadData = async () => {
   isLoading.value = true
   try {
-    const res = await fetchReturnOrders({ status: filterStatus.value || undefined, page: currentPage.value, limit: pageSize.value })
+    const res = await fetchReturnOrders({ status: currentFilterStatus.value || undefined, page: currentPage.value, limit: pageSize.value })
     rows.value = res.data
     total.value = res.total
     selectedIds.value = new Set()
-  } catch (e: any) { toast.showError(e?.message || '取得に失敗') } finally { isLoading.value = false }
+  } catch (e: any) { toast.showError(e?.message || t('wms.returns.fetchFailed', '取得に失敗')) } finally { isLoading.value = false }
 }
 
 const handleStartInspection = async (row: ReturnOrder) => {
-  try { await startReturnInspection(row._id); toast.showSuccess('検品を開始しました'); await loadData() }
+  try { await startReturnInspection(row._id); toast.showSuccess(t('wms.returns.inspectionStarted', '検品を開始しました')); await loadData() }
   catch (e: any) { toast.showError(e?.message) }
 }
 const handleComplete = async (row: ReturnOrder) => {
@@ -371,13 +480,13 @@ const handleComplete = async (row: ReturnOrder) => {
   } catch (e: any) { toast.showError(e?.message) }
 }
 const handleCancel = async (row: ReturnOrder) => {
-  if (!confirm(`返品 ${row.orderNumber} をキャンセルしますか？`)) return
-  try { await cancelReturnOrder(row._id); toast.showSuccess('キャンセルしました'); await loadData() }
+  if (!confirm(t('wms.returns.confirmCancel', '返品をキャンセルしますか？') + ` (${row.orderNumber})`)) return
+  try { await cancelReturnOrder(row._id); toast.showSuccess(t('wms.returns.cancelled', 'キャンセルしました')); await loadData() }
   catch (e: any) { toast.showError(e?.message) }
 }
 const handleDelete = async (row: ReturnOrder) => {
-  if (!confirm(`返品 ${row.orderNumber} を削除しますか？`)) return
-  try { await deleteReturnOrder(row._id); toast.showSuccess('削除しました'); await loadData() }
+  if (!confirm(t('wms.returns.confirmDelete', '返品を削除しますか？') + ` (${row.orderNumber})`)) return
+  try { await deleteReturnOrder(row._id); toast.showSuccess(t('wms.returns.deleted', '削除しました')); await loadData() }
   catch (e: any) { toast.showError(e?.message) }
 }
 
@@ -386,20 +495,40 @@ onMounted(() => loadData())
 
 <style>
 @import '@/styles/order-table.css';
+
+.o-status-tag--draft { background: #f4f4f5; color: #909399; }
+.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 </style>
 
 <style scoped>
-.return-order-list { display: flex; flex-direction: column; padding: 1rem; }
-.order-number { font-family: monospace; font-weight: 600; color: var(--o-brand-primary, #714b67); }
-.clickable { cursor: pointer; }
-.clickable:hover { text-decoration: underline; }
-.o-table-td--right { text-align: right; }
-.o-table-th--right { text-align: right; }
-.o-status-tag--draft { background: #f4f4f5; color: #909399; }
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
+.return-order-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0 20px 20px;
+  gap: 16px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
+}
+
+.table-section {
+  width: 100%;
+}
+
+:deep(.order-number) { font-family: monospace; font-weight: 600; color: var(--o-brand-primary, #714b67); }
+:deep(.clickable) { cursor: pointer; }
+:deep(.clickable:hover) { text-decoration: underline; }
+
+:deep(.action-cell) {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
 
 /* Import Panel */
-.import-panel { margin-top: 8px; border: 1px solid var(--o-border-color, #e4e7ed); border-radius: 8px; background: var(--o-view-background, #fff); overflow: hidden; }
+.import-panel { border: 1px solid var(--o-border-color, #e4e7ed); border-radius: 8px; background: var(--o-view-background, #fff); overflow: hidden; }
 .import-panel-header { padding: 10px 14px; background: var(--o-gray-100, #f5f7fa); border-bottom: 1px solid var(--o-border-color, #e4e7ed); display: flex; align-items: center; gap: 12px; font-size: 13px; }
 .import-hint { color: var(--o-gray-500, #909399); font-size: 12px; }
 .import-panel-body { padding: 14px; }
@@ -408,7 +537,7 @@ onMounted(() => loadData())
 /* Bulk bar */
 .bulk-bar {
   display: flex; align-items: center; gap: 10px; padding: 10px 16px;
-  background: var(--o-gray-100, #f0f2f5); border-radius: 6px; margin-top: 8px;
+  background: var(--o-gray-100, #f0f2f5); border-radius: 6px;
   font-size: 13px; font-weight: 500;
 }
 </style>

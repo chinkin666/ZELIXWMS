@@ -1,45 +1,45 @@
 <template>
   <div class="inbound-dashboard">
-    <ControlPanel title="入庫ダッシュボード" :show-search="false">
+    <ControlPanel :title="t('wms.inbound.dashboard', '入庫ダッシュボード')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" @click="loadData">更新</OButton>
-          <OButton variant="primary" size="sm" @click="$router.push('/inbound/create')">新規作成</OButton>
+          <OButton variant="secondary" size="sm" @click="loadData">{{ t('wms.common.refresh', '更新') }}</OButton>
+          <OButton variant="primary" size="sm" @click="$router.push('/inbound/create')">{{ t('wms.common.create', '新規作成') }}</OButton>
         </div>
       </template>
     </ControlPanel>
 
-    <div v-if="isLoading" class="loading-state">読み込み中...</div>
+    <div v-if="isLoading" class="loading-state">{{ t('wms.common.loading', '読み込み中...') }}</div>
 
     <template v-else>
       <!-- ステータス集計カード -->
       <div class="summary-cards">
         <div class="summary-card">
           <div class="summary-number">{{ statusCounts.draft }}</div>
-          <div class="summary-label">下書き</div>
+          <div class="summary-label">{{ t('wms.inbound.statusDraft', '下書き') }}</div>
         </div>
         <div class="summary-card summary-card--primary">
           <div class="summary-number">{{ statusCounts.confirmed }}</div>
-          <div class="summary-label">確認済（検品待ち）</div>
+          <div class="summary-label">{{ t('wms.inbound.statusConfirmedWaiting', '確認済（検品待ち）') }}</div>
         </div>
         <div class="summary-card summary-card--warning">
           <div class="summary-number">{{ statusCounts.receiving }}</div>
-          <div class="summary-label">検品中</div>
+          <div class="summary-label">{{ t('wms.inbound.statusReceiving', '検品中') }}</div>
         </div>
         <div class="summary-card summary-card--info">
           <div class="summary-number">{{ statusCounts.received }}</div>
-          <div class="summary-label">検品済（棚入れ待ち）</div>
+          <div class="summary-label">{{ t('wms.inbound.statusReceivedWaiting', '検品済（棚入れ待ち）') }}</div>
         </div>
         <div class="summary-card summary-card--success">
           <div class="summary-number">{{ statusCounts.done }}</div>
-          <div class="summary-label">完了</div>
+          <div class="summary-label">{{ t('wms.inbound.statusDone', '完了') }}</div>
         </div>
       </div>
 
       <!-- 本日予定到着 -->
       <div class="section">
-        <h2 class="section-title">本日の入庫予定</h2>
-        <div v-if="todayOrders.length === 0" class="empty-state">本日の入庫予定はありません</div>
+        <h2 class="section-title">{{ t('wms.inbound.todaySchedule', '本日の入庫予定') }}</h2>
+        <div v-if="todayOrders.length === 0" class="empty-state">{{ t('wms.inbound.noTodaySchedule', '本日の入庫予定はありません') }}</div>
         <div v-else class="today-grid">
           <div v-for="row in todayOrders" :key="row._id" class="o-card today-card" @click="goToOrder(row)">
             <div class="today-header">
@@ -48,8 +48,8 @@
             </div>
             <div class="today-info">
               <span v-if="row.supplier?.name">{{ row.supplier.name }}</span>
-              <span>{{ row.lines.length }} 行</span>
-              <span>{{ totalExpected(row) }} 個</span>
+              <span>{{ row.lines.length }} {{ t('wms.inbound.lines', '行') }}</span>
+              <span>{{ totalExpected(row) }} {{ t('wms.inbound.pieces', '個') }}</span>
             </div>
             <div class="today-progress">
               <div class="progress-bar">
@@ -63,19 +63,19 @@
 
       <!-- 処理待ち（confirmed + receiving） -->
       <div class="section">
-        <h2 class="section-title">処理待ち</h2>
-        <div v-if="pendingOrders.length === 0" class="empty-state">処理待ちの入庫指示はありません</div>
+        <h2 class="section-title">{{ t('wms.inbound.pending', '処理待ち') }}</h2>
+        <div v-if="pendingOrders.length === 0" class="empty-state">{{ t('wms.inbound.noPending', '処理待ちの入庫指示はありません') }}</div>
         <div class="o-table-wrapper" v-else>
           <table class="o-table">
             <thead>
               <tr>
-                <th class="o-table-th">入庫指示番号</th>
-                <th class="o-table-th">状態</th>
-                <th class="o-table-th">仕入先</th>
-                <th class="o-table-th o-table-th--right">行数</th>
-                <th class="o-table-th o-table-th--right">進捗</th>
-                <th class="o-table-th">入庫予定日</th>
-                <th class="o-table-th" style="width:120px;">操作</th>
+                <th class="o-table-th">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</th>
+                <th class="o-table-th">{{ t('wms.inbound.status', '状態') }}</th>
+                <th class="o-table-th">{{ t('wms.inbound.supplier', '仕入先') }}</th>
+                <th class="o-table-th o-table-th--right">{{ t('wms.inbound.lineCount', '行数') }}</th>
+                <th class="o-table-th o-table-th--right">{{ t('wms.inbound.progress', '進捗') }}</th>
+                <th class="o-table-th">{{ t('wms.inbound.expectedDate', '入庫予定日') }}</th>
+                <th class="o-table-th" style="width:120px;">{{ t('wms.common.actions', '操作') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -87,7 +87,7 @@
                 <td class="o-table-td o-table-td--right">{{ totalReceived(row) }} / {{ totalExpected(row) }}</td>
                 <td class="o-table-td">{{ row.expectedDate ? formatDate(row.expectedDate) : '-' }}</td>
                 <td class="o-table-td">
-                  <OButton variant="primary" size="sm" @click="goToOrder(row)">対応</OButton>
+                  <OButton variant="primary" size="sm" @click="goToOrder(row)">{{ t('wms.inbound.handle', '対応') }}</OButton>
                 </td>
               </tr>
             </tbody>
@@ -97,17 +97,17 @@
 
       <!-- 期限切れ（overdue） -->
       <div v-if="overdueOrders.length > 0" class="section">
-        <h2 class="section-title section-title--danger">期限超過</h2>
+        <h2 class="section-title section-title--danger">{{ t('wms.inbound.overdue', '期限超過') }}</h2>
         <div class="o-table-wrapper">
           <table class="o-table">
             <thead>
               <tr>
-                <th class="o-table-th">入庫指示番号</th>
-                <th class="o-table-th">状態</th>
-                <th class="o-table-th">仕入先</th>
-                <th class="o-table-th">入庫予定日</th>
-                <th class="o-table-th">経過日数</th>
-                <th class="o-table-th" style="width:120px;">操作</th>
+                <th class="o-table-th">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</th>
+                <th class="o-table-th">{{ t('wms.inbound.status', '状態') }}</th>
+                <th class="o-table-th">{{ t('wms.inbound.supplier', '仕入先') }}</th>
+                <th class="o-table-th">{{ t('wms.inbound.expectedDate', '入庫予定日') }}</th>
+                <th class="o-table-th">{{ t('wms.inbound.daysOverdue', '経過日数') }}</th>
+                <th class="o-table-th" style="width:120px;">{{ t('wms.common.actions', '操作') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -116,9 +116,9 @@
                 <td class="o-table-td"><span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></td>
                 <td class="o-table-td">{{ row.supplier?.name || '-' }}</td>
                 <td class="o-table-td text-danger">{{ formatDate(row.expectedDate!) }}</td>
-                <td class="o-table-td text-danger">{{ daysOverdue(row.expectedDate!) }}日</td>
+                <td class="o-table-td text-danger">{{ daysOverdue(row.expectedDate!) }}{{ t('wms.inbound.days', '日') }}</td>
                 <td class="o-table-td">
-                  <OButton variant="primary" size="sm" @click="goToOrder(row)">対応</OButton>
+                  <OButton variant="primary" size="sm" @click="goToOrder(row)">{{ t('wms.inbound.handle', '対応') }}</OButton>
                 </td>
               </tr>
             </tbody>
@@ -133,6 +133,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { fetchInboundOrders } from '@/api/inboundOrder'
@@ -140,6 +141,7 @@ import type { InboundOrder } from '@/types/inventory'
 
 const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
 const isLoading = ref(false)
 const allOrders = ref<InboundOrder[]>([])
 
@@ -173,7 +175,14 @@ const overdueOrders = computed(() =>
 )
 
 const statusLabel = (s: string) => {
-  const map: Record<string, string> = { draft: '下書き', confirmed: '確認済', receiving: '入庫中', received: '検品済', done: '完了', cancelled: 'キャンセル' }
+  const map: Record<string, string> = {
+    draft: t('wms.inbound.statusDraft', '下書き'),
+    confirmed: t('wms.inbound.statusConfirmed', '確認済'),
+    receiving: t('wms.inbound.statusReceiving', '入庫中'),
+    received: t('wms.inbound.statusReceived', '検品済'),
+    done: t('wms.inbound.statusDone', '完了'),
+    cancelled: t('wms.common.cancel', 'キャンセル'),
+  }
   return map[s] || s
 }
 
@@ -215,7 +224,7 @@ const loadData = async () => {
     const res = await fetchInboundOrders({ limit: 500 })
     allOrders.value = res.items
   } catch (e: any) {
-    toast.showError(e?.message || 'データの取得に失敗しました')
+    toast.showError(e?.message || t('wms.common.fetchError', 'データの取得に失敗しました'))
   } finally {
     isLoading.value = false
   }
@@ -232,7 +241,13 @@ onMounted(() => loadData())
 .inbound-dashboard {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 .loading-state, .empty-state {
@@ -258,9 +273,9 @@ onMounted(() => loadData())
 }
 
 .summary-card--primary { border-left: 4px solid var(--o-brand-primary, #D97756); }
-.summary-card--warning { border-left: 4px solid #e6a23c; }
-.summary-card--info { border-left: 4px solid #409eff; }
-.summary-card--success { border-left: 4px solid #67c23a; }
+.summary-card--warning { border-left: 4px solid var(--o-warning); }
+.summary-card--info { border-left: 4px solid var(--o-info); }
+.summary-card--success { border-left: 4px solid var(--o-success); }
 
 .summary-number {
   font-size: 28px;
@@ -288,8 +303,8 @@ onMounted(() => loadData())
 }
 
 .section-title--danger {
-  border-bottom-color: #f56c6c;
-  color: #f56c6c;
+  border-bottom-color: var(--o-danger);
+  color: var(--o-danger);
 }
 
 .today-grid {
@@ -352,7 +367,7 @@ onMounted(() => loadData())
 
 .progress-bar__fill {
   height: 100%;
-  background: #67c23a;
+  background: var(--o-success);
   border-radius: 3px;
   transition: width 0.3s;
 }
@@ -363,10 +378,10 @@ onMounted(() => loadData())
   white-space: nowrap;
 }
 
-.text-danger { color: #f56c6c; font-weight: 600; }
+.text-danger { color: var(--o-danger); font-weight: 600; }
 .o-table-td--right { text-align: right; }
 .o-table-th--right { text-align: right; }
 
-.o-status-tag--draft { background: #f4f4f5; color: #909399; }
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
+.o-status-tag--draft { background: var(--o-gray-100); color: var(--o-gray-500); }
+.o-status-tag--cancelled { background: var(--o-danger-bg); color: var(--o-danger); }
 </style>

@@ -23,28 +23,28 @@
     <ODialog :open="dialogVisible" :title="isEditing ? 'テンプレート編集' : 'テンプレート追加'" @close="dialogVisible = false">
       <div class="form-row">
         <div class="o-form-group">
-          <label class="o-form-label">テンプレート名 <span class="required">*</span></label>
+          <label class="form-label">テンプレート名 <span class="required">*</span></label>
           <input class="o-input" v-model="editForm.name" placeholder="例: ヤマトB2（メール便）" />
         </div>
         <div class="o-form-group">
-          <label class="o-form-label">ピクセル解像度(mm)</label>
+          <label class="form-label">ピクセル解像度(mm)</label>
           <input class="o-input" v-model.number="editForm.canvas.pxPerMm" type="number" min="1" step="0.5" />
         </div>
       </div>
 
       <div class="form-row">
         <div class="o-form-group">
-          <label class="o-form-label">幅(mm) <span class="required">*</span></label>
+          <label class="form-label">幅(mm) <span class="required">*</span></label>
           <input class="o-input" v-model.number="editForm.canvas.widthMm" type="number" min="1" step="1" />
         </div>
         <div class="o-form-group">
-          <label class="o-form-label">高さ(mm) <span class="required">*</span></label>
+          <label class="form-label">高さ(mm) <span class="required">*</span></label>
           <input class="o-input" v-model.number="editForm.canvas.heightMm" type="number" min="1" step="1" />
         </div>
       </div>
 
       <div class="o-form-group">
-        <label class="o-form-label">プログラムコード <span class="required">*</span></label>
+        <label class="form-label">プログラムコード <span class="required">*</span></label>
         <textarea
           class="o-input"
           v-model="elementsJson"
@@ -67,6 +67,7 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
@@ -79,6 +80,7 @@ import { createEmptyPrintTemplate } from '@/utils/print/templateStorage'
 
 const router = useRouter()
 const { show: showToast } = useToast()
+const { t } = useI18n()
 const templates = ref<PrintTemplate[]>([])
 const dialogVisible = ref(false)
 const saving = ref(false)
@@ -190,7 +192,7 @@ const tableColumns = computed((): TableColumn[] => {
     {
       key: 'actions',
       dataKey: 'actions',
-      title: '操作',
+      title: t('wms.common.actions', '操作'),
       width: 180,
       fixed: 'right',
       align: 'center',
@@ -212,31 +214,15 @@ onMounted(() => reload())
 .print-template-settings {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  padding: 0 20px 20px;
 }
 
-
-.o-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--o-border-color, #dcdfe6);
-  border-radius: var(--o-border-radius, 4px);
-  font-size: var(--o-font-size-base, 14px);
-  cursor: pointer;
-  background: var(--o-view-background, #fff);
-  color: var(--o-gray-700, #303133);
-  transition: 0.2s;
-  white-space: nowrap;
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
-.o-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.o-btn-primary { background: var(--o-brand-primary, #714b67); color: #fff; border-color: var(--o-brand-primary, #714b67); }
-.o-btn-secondary { background: var(--o-view-background, #fff); color: var(--o-gray-700, #303133); }
-.o-btn-sm { padding: 4px 10px; font-size: 13px; }
-.o-btn-outline-primary { background: transparent; color: var(--o-brand-primary, #714b67); border-color: var(--o-brand-primary, #714b67); }
-.o-btn-outline-secondary { background: transparent; color: var(--o-gray-600, #909399); border-color: var(--o-gray-600, #909399); }
-.o-btn-outline-success { background: transparent; color: #67c23a; border-color: #67c23a; }
-.o-btn-outline-danger { background: transparent; color: #f56c6c; border-color: #f56c6c; }
+
 
 .o-input {
   width: 100%;
@@ -251,7 +237,7 @@ onMounted(() => reload())
 textarea.o-input { resize: vertical; font-family: monospace; }
 
 .o-form-group { margin-bottom: 1rem; }
-.o-form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
+.form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
 .required { color: #f56c6c; }
 
 .form-row {
@@ -265,7 +251,7 @@ textarea.o-input { resize: vertical; font-family: monospace; }
   color: #6b7280;
 }
 
-/* 操作列样式 - 垂直排列 */
+/* 操作列スタイル - 縦並び / 操作列样式 - 垂直排列 */
 :deep(.action-cell) {
   display: flex;
   flex-direction: column;

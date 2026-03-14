@@ -1,6 +1,6 @@
 <template>
   <div class="shipment-operations-list">
-    <ControlPanel title="出荷一覧" :show-search="false" />
+    <ControlPanel :title="t('wms.shipment.listTitle', '出荷一覧')" :show-search="false" />
 
     <OrderSearchFormWrapper
       class="search-section"
@@ -12,7 +12,7 @@
     />
 
     <div class="between-controls">
-      <label class="switch-label">印刷済みのみ表示
+      <label class="switch-label">{{ t('wms.shipment.showPrintedOnly', '印刷済みのみ表示') }}
         <label class="o-toggle">
           <input type="checkbox" v-model="showPrintedOnly">
           <span class="o-toggle-slider"></span>
@@ -23,7 +23,7 @@
     <!-- Plain table (same style as shipment-orders/create) -->
     <div class="o-table-wrapper">
       <div v-if="tableSelectedKeys.length > 0" class="o-list-toolbar o-toolbar-active">
-        <span class="o-selected-count">{{ tableSelectedKeys.length }}件選択中</span>
+        <span class="o-selected-count">{{ tableSelectedKeys.length }}{{ t('wms.shipment.selectedSuffix', '件選択中') }}</span>
       </div>
       <table class="o-table">
         <thead>
@@ -36,25 +36,25 @@
                 @change="toggleSelectAll"
               />
             </th>
-            <th class="o-table-th" style="width:90px;">状態</th>
+            <th class="o-table-th" style="width:90px;">{{ t('wms.shipment.status', '状態') }}</th>
             <th class="o-table-th o-table-th--sortable" style="width:220px;" @click="handleSortClick('orderNumber')">
-              出荷管理番号
+              {{ t('wms.shipment.orderNumber', '出荷管理番号') }}
               <span v-if="sortBy === 'orderNumber'" class="o-sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
             </th>
-            <th class="o-table-th" style="width:200px;">配送情報</th>
-            <th class="o-table-th" style="width:180px;">配送指定</th>
-            <th class="o-table-th" style="width:200px;">お届け先</th>
-            <th class="o-table-th" style="width:200px;">商品</th>
-            <th class="o-table-th" style="width:170px;">履歴</th>
-            <th class="o-table-th" style="width:140px;">操作</th>
+            <th class="o-table-th" style="width:200px;">{{ t('wms.shipment.deliveryInfo', '配送情報') }}</th>
+            <th class="o-table-th" style="width:180px;">{{ t('wms.shipment.deliveryPreference', '配送指定') }}</th>
+            <th class="o-table-th" style="width:200px;">{{ t('wms.shipment.recipient', 'お届け先') }}</th>
+            <th class="o-table-th" style="width:200px;">{{ t('wms.shipment.products', '商品') }}</th>
+            <th class="o-table-th" style="width:170px;">{{ t('wms.shipment.history', '履歴') }}</th>
+            <th class="o-table-th" style="width:140px;">{{ t('wms.common.actions', '操作') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="isLoadingOrders">
-            <td colspan="9" class="o-table-empty">読み込み中...</td>
+            <td colspan="9" class="o-table-empty">{{ t('wms.common.loading', '読み込み中...') }}</td>
           </tr>
           <tr v-else-if="paginatedRows.length === 0">
-            <td colspan="9" class="o-table-empty">データがありません</td>
+            <td colspan="9" class="o-table-empty">{{ t('wms.common.noData', 'データがありません') }}</td>
           </tr>
           <tr
             v-for="row in paginatedRows"
@@ -71,25 +71,25 @@
             </td>
             <td class="o-table-td o-table-td--status">
               <div class="status-cell">
-                <span v-if="row.status?.confirm?.isConfirmed" class="o-status-tag o-status-tag--confirmed">確定済</span>
-                <span v-if="row.status?.carrierReceipt?.isReceived" class="o-status-tag o-status-tag--issued">送り状発行済</span>
-                <span v-if="row.status?.printed?.isPrinted" class="o-status-tag o-status-tag--printed">印刷済</span>
-                <span v-if="row.status?.inspected?.isInspected" class="o-status-tag o-status-tag--confirmed">検品済</span>
+                <span v-if="row.status?.confirm?.isConfirmed" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipment.confirmed', '確定済') }}</span>
+                <span v-if="row.status?.carrierReceipt?.isReceived" class="o-status-tag o-status-tag--issued">{{ t('wms.shipment.invoiceIssued', '送り状発行済') }}</span>
+                <span v-if="row.status?.printed?.isPrinted" class="o-status-tag o-status-tag--printed">{{ t('wms.shipment.printed', '印刷済') }}</span>
+                <span v-if="row.status?.inspected?.isInspected" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipment.inspected', '検品済') }}</span>
               </div>
             </td>
             <!-- 出荷管理番号 -->
             <td class="o-table-td o-table-td--mgmt">
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">出荷管理No</span>
+                  <span class="mgmt-cell__label">{{ t('wms.shipment.orderNo', '出荷管理No') }}</span>
                   <a href="#" class="mgmt-cell__link mgmt-cell__value" @click.prevent="handleView(row)">{{ row.orderNumber || '-' }}</a>
                 </div>
                 <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">注文番号</span>
+                  <span class="mgmt-cell__label">{{ t('wms.shipment.customerOrderNo', '注文番号') }}</span>
                   <span class="mgmt-cell__value">{{ row.customerManagementNumber || '-' }}</span>
                 </div>
                 <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">送り状番号</span>
+                  <span class="mgmt-cell__label">{{ t('wms.shipment.trackingNumber', '送り状番号') }}</span>
                   <span class="mgmt-cell__value">{{ row.trackingId || '-' }}</span>
                 </div>
               </div>
@@ -98,15 +98,15 @@
             <td class="o-table-td o-table-td--mgmt">
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">配送会社</span>
+                  <span class="mgmt-cell__label">{{ t('wms.shipment.carrier', '配送会社') }}</span>
                   <span class="mgmt-cell__value">{{ getCarrierLabel(row) }}</span>
                 </div>
                 <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">配送サービス</span>
+                  <span class="mgmt-cell__label">{{ t('wms.shipment.deliveryService', '配送サービス') }}</span>
                   <span class="mgmt-cell__value">{{ getInvoiceTypeLabel(row) }}</span>
                 </div>
                 <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">温度帯</span>
+                  <span class="mgmt-cell__label">{{ t('wms.shipment.temperatureZone', '温度帯') }}</span>
                   <span class="mgmt-cell__value" :style="{ color: getCoolTypeInfo(row).color }">{{ getCoolTypeInfo(row).label }}</span>
                 </div>
               </div>
@@ -115,15 +115,15 @@
             <td class="o-table-td o-table-td--mgmt">
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">出荷予定日</span>
+                  <span class="mgmt-cell__label">{{ t('wms.shipment.shipPlanDate', '出荷予定日') }}</span>
                   <span class="mgmt-cell__value">{{ row.shipPlanDate || '-' }}</span>
                 </div>
                 <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">お届け日</span>
-                  <span class="mgmt-cell__value">{{ row.deliveryDatePreference || '最短' }}</span>
+                  <span class="mgmt-cell__label">{{ t('wms.shipment.deliveryDate', 'お届け日') }}</span>
+                  <span class="mgmt-cell__value">{{ row.deliveryDatePreference || t('wms.shipment.earliest', '最短') }}</span>
                 </div>
                 <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">時間帯指定</span>
+                  <span class="mgmt-cell__label">{{ t('wms.shipment.timeSlot', '時間帯指定') }}</span>
                   <span class="mgmt-cell__value">{{ getTimeSlotLabel(row) }}</span>
                 </div>
               </div>
@@ -143,7 +143,7 @@
                 <div v-for="(p, pi) in (row.products || [])" :key="pi" class="product-item">
                   <div class="product-item__info">
                     <span class="product-item__name">{{ p.productName || '-' }}</span>
-                    <span class="product-item__meta">SKU: {{ p.inputSku || p.productSku || '-' }} / 個数: {{ p.quantity ?? 0 }}</span>
+                    <span class="product-item__meta">SKU: {{ p.inputSku || p.productSku || '-' }} / {{ t('wms.shipment.quantity', '個数') }}: {{ p.quantity ?? 0 }}</span>
                   </div>
                 </div>
                 <span v-if="!row.products?.length" class="o-cell">-</span>
@@ -153,23 +153,23 @@
             <td class="o-table-td o-table-td--mgmt">
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">確定日時</span>
+                  <span class="mgmt-cell__label">{{ t('wms.shipment.confirmedAt', '確定日時') }}</span>
                   <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.confirm?.confirmedAt) }}</span>
                 </div>
                 <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">送り状発行</span>
+                  <span class="mgmt-cell__label">{{ t('wms.shipment.invoiceIssuedAt', '送り状発行') }}</span>
                   <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.carrierReceipt?.receivedAt) }}</span>
                 </div>
                 <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">印刷日時</span>
+                  <span class="mgmt-cell__label">{{ t('wms.shipment.printedAt', '印刷日時') }}</span>
                   <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.printed?.printedAt) }}</span>
                 </div>
               </div>
             </td>
             <!-- 操作 -->
             <td class="o-table-td o-table-td--actions">
-              <OButton variant="primary" size="sm" @click="handleView(row)">詳細</OButton>
-              <OButton variant="secondary" size="sm" :disabled="isUnconfirming" style="border-color:#e6a23c;color:#e6a23c;" @click="handleUnconfirm(row)">確認取消</OButton>
+              <OButton variant="primary" size="sm" @click="handleView(row)">{{ t('wms.shipment.details', '詳細') }}</OButton>
+              <OButton variant="secondary" size="sm" :disabled="isUnconfirming" style="border-color:#e6a23c;color:#e6a23c;" @click="handleUnconfirm(row)">{{ t('wms.shipment.unconfirm', '確認取消') }}</OButton>
             </td>
           </tr>
         </tbody>
@@ -178,7 +178,7 @@
 
     <!-- Pagination -->
     <div class="o-table-pagination">
-      <span class="o-table-pagination__info">{{ displayRows.length }} 件</span>
+      <span class="o-table-pagination__info">{{ displayRows.length }} {{ t('wms.common.items', '件') }}</span>
       <div class="o-table-pagination__controls">
         <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;">
           <option :value="10">10</option>
@@ -197,7 +197,7 @@
     <OrderBottomBar
       :total-count="displayRows.length"
       :selected-count="tableSelectedKeys.length"
-      total-label="表示件数"
+      :total-label="t('wms.shipment.displayCount', '表示件数')"
     >
       <template #right>
         <OButton
@@ -205,21 +205,21 @@
           :disabled="tableSelectedKeys.length === 0"
           @click="handleCustomExportClick"
         >
-          出荷明細リスト出力(csv)
+          {{ t('wms.shipment.exportCsv', '出荷明細リスト出力(csv)') }}
         </OButton>
         <OButton
           variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleFormExportClick"
         >
-          出荷明細リスト出力(pdf)
+          {{ t('wms.shipment.exportPdf', '出荷明細リスト出力(pdf)') }}
         </OButton>
         <OButton
           variant="primary"
           :disabled="tableSelectedKeys.length === 0 || isMarkingShipped"
           @click="handleMarkShipped"
         >
-          {{ isMarkingShipped ? '処理中...' : '出荷完了' }}
+          {{ isMarkingShipped ? t('wms.common.processing', '処理中...') : t('wms.shipment.markShipped', '出荷完了') }}
         </OButton>
       </template>
     </OrderBottomBar>
@@ -228,7 +228,7 @@
       v-model="viewDialogVisible"
       :order="selectedOrder"
       :carriers="carriers"
-      title="出荷予定明細"
+      :title="t('wms.shipment.orderDetail', '出荷予定明細')"
       mode="view"
     />
 
@@ -267,10 +267,12 @@ import type { OrderDocument } from '@/types/order'
 import { yamatoB2Unconfirm, isCarrierDeleteError } from '@/api/carrierAutomation'
 import { useOrderCellHelpers } from '@/composables/useOrderCellHelpers'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 
 type SortOrder = 'asc' | 'desc' | null
 type OrderRow = Record<string, any>
 
+const { t } = useI18n()
 const toast = useToast()
 const rows = ref<OrderRow[]>([])
 const tableSelectedKeys = ref<Array<string | number>>([])
@@ -372,7 +374,7 @@ const handleView = async (row: any) => {
     selectedOrder.value = await fetchShipmentOrder(String(id))
     viewDialogVisible.value = true
   } catch (e: any) {
-    toast.showError(e?.message || '詳細の取得に失敗しました')
+    toast.showError(e?.message || t('wms.shipment.fetchDetailError', '詳細の取得に失敗しました'))
   }
 }
 
@@ -392,7 +394,7 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
 
       if (inputReason === null) return
       if (!inputReason.trim()) {
-        toast.showWarning('理由を入力してください')
+        toast.showWarning(t('wms.shipment.enterReasonRequired', '理由を入力してください'))
         return
       }
       reason = inputReason.trim()
@@ -403,7 +405,7 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
     try {
       const result = await yamatoB2Unconfirm([String(id)], reason, { skipCarrierDelete })
       if (result.success) {
-        let message = '確認を取り消しました'
+        let message = t('wms.shipment.unconfirmSuccess', '確認を取り消しました')
         if (result.carrierDeleteSkipped) {
           message += '（B2 Cloud削除スキップ）'
         } else if (result.b2DeleteResult) {
@@ -431,7 +433,7 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
     }
   } catch (e: any) {
     if (e === 'cancel') return
-    toast.showError(e?.message || '確認取消に失敗しました')
+    toast.showError(e?.message || t('wms.shipment.unconfirmError', '確認取消に失敗しました'))
     isUnconfirming.value = false
   }
 }
@@ -454,7 +456,7 @@ const handleFormExportClick = () => {
 // --- Mark Shipped ---
 const handleMarkShipped = async () => {
   if (tableSelectedKeys.value.length === 0) {
-    toast.showWarning('出荷完了行を選択してください')
+    toast.showWarning(t('wms.shipment.selectShippedRows', '出荷完了行を選択してください'))
     return
   }
 
@@ -479,7 +481,7 @@ const handleMarkShipped = async () => {
     tableSelectedKeys.value = []
     await loadOrders()
   } catch (e: any) {
-    toast.showError(e?.message || '出荷完了の更新に失敗しました')
+    toast.showError(e?.message || t('wms.shipment.markShippedError', '出荷完了の更新に失敗しました'))
   } finally {
     isMarkingShipped.value = false
   }
@@ -496,7 +498,7 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
 }
 
 const handleSave = (_payload: Record<string, { operator: Operator; value: any }>) => {
-  toast.showSuccess('検索条件を保存しました')
+  toast.showSuccess(t('wms.shipment.searchSaved', '検索条件を保存しました'))
 }
 
 // --- Sort ---
@@ -515,7 +517,7 @@ const loadCarriers = async () => {
   try {
     carriers.value = await fetchCarriers()
   } catch (e: any) {
-    toast.showError('配送業者マスタの取得に失敗しました')
+    toast.showError(t('wms.shipment.fetchCarrierError', '配送業者マスタの取得に失敗しました'))
   }
 }
 
@@ -548,8 +550,8 @@ const loadOrders = async () => {
       if (version !== loadOrdersVersion) return
 
       const items = Array.isArray(res?.items) ? res.items : []
-      const t = typeof res?.total === 'number' ? res.total : undefined
-      if (typeof t === 'number') total = t
+      const resTotal = typeof res?.total === 'number' ? res.total : undefined
+      if (typeof resTotal === 'number') total = resTotal
 
       if (!items.length) break
       all.push(...items)
@@ -561,7 +563,7 @@ const loadOrders = async () => {
     rows.value = all
   } catch (e: any) {
     if (version !== loadOrdersVersion) return
-    toast.showError(e?.message || '出荷予定の取得に失敗しました')
+    toast.showError(e?.message || t('wms.shipment.fetchOrdersError', '出荷予定の取得に失敗しました'))
   } finally {
     if (version === loadOrdersVersion) {
       isLoadingOrders.value = false
@@ -593,7 +595,13 @@ onMounted(async () => {
 .shipment-operations-list {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 .between-controls {

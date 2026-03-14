@@ -1,21 +1,21 @@
 <template>
-  <div class="expiry-alerts" style="display:flex;flex-direction:column;">
-    <ControlPanel title="賞味期限アラート" :show-search="false">
+  <div class="expiry-alerts">
+    <ControlPanel :title="t('wms.inventory.expiryAlerts', '賞味期限アラート')" :show-search="false">
       <template #center>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:13px;color:#606266;">表示期間</span>
+          <span style="font-size:13px;color:#606266;">{{ t('wms.inventory.displayPeriod', '表示期間') }}</span>
           <select v-model="daysAhead" class="o-input" style="width:120px;" @change="loadData">
-            <option :value="7">7日以内</option>
-            <option :value="14">14日以内</option>
-            <option :value="30">30日以内</option>
-            <option :value="60">60日以内</option>
-            <option :value="90">90日以内</option>
+            <option :value="7">{{ t('wms.inventory.withinDays', '{n}日以内', { n: '7' }) }}</option>
+            <option :value="14">{{ t('wms.inventory.withinDays', '{n}日以内', { n: '14' }) }}</option>
+            <option :value="30">{{ t('wms.inventory.withinDays', '{n}日以内', { n: '30' }) }}</option>
+            <option :value="60">{{ t('wms.inventory.withinDays', '{n}日以内', { n: '60' }) }}</option>
+            <option :value="90">{{ t('wms.inventory.withinDays', '{n}日以内', { n: '90' }) }}</option>
           </select>
         </div>
       </template>
       <template #actions>
         <OButton variant="secondary" size="sm" :disabled="isUpdating" @click="handleUpdateExpired">
-          {{ isUpdating ? '更新中...' : '期限切れ一括更新' }}
+          {{ isUpdating ? t('wms.inventory.updating', '更新中...') : t('wms.inventory.batchUpdateExpired', '期限切れ一括更新') }}
         </OButton>
       </template>
     </ControlPanel>
@@ -24,82 +24,208 @@
     <div class="summary-cards">
       <div class="summary-card summary-card--danger">
         <div class="summary-value">{{ expiredCount }}</div>
-        <div class="summary-label">期限切れ</div>
+        <div class="summary-label">{{ t('wms.inventory.expired', '期限切れ') }}</div>
       </div>
       <div class="summary-card summary-card--warning">
         <div class="summary-value">{{ warningCount }}</div>
-        <div class="summary-label">期限間近</div>
+        <div class="summary-label">{{ t('wms.inventory.nearExpiry', '期限間近') }}</div>
       </div>
       <div class="summary-card summary-card--info">
         <div class="summary-value">{{ alerts.length }}</div>
-        <div class="summary-label">合計</div>
+        <div class="summary-label">{{ t('wms.inventory.total', '合計') }}</div>
       </div>
     </div>
 
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width:80px;">状態</th>
-            <th class="o-table-th" style="width:140px;">ロット番号</th>
-            <th class="o-table-th" style="width:120px;">SKU</th>
-            <th class="o-table-th" style="width:180px;">商品名</th>
-            <th class="o-table-th" style="width:120px;">賞味期限</th>
-            <th class="o-table-th" style="width:100px;">残り日数</th>
-            <th class="o-table-th o-table-th--right" style="width:100px;">在庫数</th>
-            <th class="o-table-th o-table-th--right" style="width:100px;">有効在庫</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoading">
-            <td colspan="8" class="o-table-empty">読み込み中...</td>
-          </tr>
-          <tr v-else-if="alerts.length === 0">
-            <td colspan="8" class="o-table-empty">賞味期限アラートはありません</td>
-          </tr>
-          <tr v-for="alert in alerts" :key="alert.lotId" class="o-table-row">
-            <td class="o-table-td">
-              <span class="o-status-tag" :class="alert.isExpired ? 'o-status-tag--error' : 'o-status-tag--pending'">
-                {{ alert.isExpired ? '期限切れ' : '期限間近' }}
-              </span>
-            </td>
-            <td class="o-table-td"><strong>{{ alert.lotNumber }}</strong></td>
-            <td class="o-table-td">{{ alert.productSku }}</td>
-            <td class="o-table-td">{{ alert.productName || '-' }}</td>
-            <td class="o-table-td">
-              <span :class="alert.isExpired ? 'expiry-expired' : 'expiry-warning'">
-                {{ formatDate(alert.expiryDate) }}
-              </span>
-            </td>
-            <td class="o-table-td" style="text-align:center;">
-              <span v-if="alert.daysUntilExpiry !== null" :class="alert.daysUntilExpiry < 0 ? 'expiry-expired' : 'expiry-warning'">
-                {{ alert.daysUntilExpiry < 0 ? `${Math.abs(alert.daysUntilExpiry)}日超過` : `${alert.daysUntilExpiry}日` }}
-              </span>
-              <span v-else>-</span>
-            </td>
-            <td class="o-table-td" style="text-align:right;">{{ alert.totalQuantity }}</td>
-            <td class="o-table-td" style="text-align:right;">{{ alert.totalAvailable }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="expiryAlertsSearch"
+      @search="handleSearch"
+    />
+
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="alerts"
+        :height="520"
+        row-key="lotId"
+        pagination-enabled
+        pagination-mode="client"
+        :global-search-text="globalSearchText"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, h, onMounted } from 'vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OButton from '@/components/odoo/OButton.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import { fetchExpiryAlerts, updateExpiredLots } from '@/api/lot'
 import type { ExpiryAlert } from '@/types/inventory'
+import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
+
+const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const alerts = ref<ExpiryAlert[]>([])
 const isLoading = ref(false)
 const isUpdating = ref(false)
 const daysAhead = ref(30)
+const globalSearchText = ref('')
 
 const expiredCount = computed(() => alerts.value.filter(a => a.isExpired).length)
 const warningCount = computed(() => alerts.value.filter(a => !a.isExpired).length)
+
+function formatDate(d: string) {
+  return d ? new Date(d).toLocaleDateString('ja-JP') : ''
+}
+
+// Column definitions
+const searchColumns = computed<TableColumn[]>(() => [
+  {
+    key: 'isExpired',
+    dataKey: 'isExpired',
+    title: t('wms.inventory.status', '状態'),
+    width: 80,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inventory.expired', '期限切れ'), value: 'true' },
+      { label: t('wms.inventory.nearExpiry', '期限間近'), value: 'false' },
+    ],
+  },
+  {
+    key: 'lotNumber',
+    dataKey: 'lotNumber',
+    title: t('wms.inventory.lotNumber', 'ロット番号'),
+    width: 140,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'productSku',
+    dataKey: 'productSku',
+    title: 'SKU',
+    width: 120,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+])
+
+const tableColumns = computed<TableColumn[]>(() => [
+  {
+    key: 'isExpired',
+    dataKey: 'isExpired',
+    title: t('wms.inventory.status', '状態'),
+    width: 80,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inventory.expired', '期限切れ'), value: 'true' },
+      { label: t('wms.inventory.nearExpiry', '期限間近'), value: 'false' },
+    ],
+    cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) =>
+      h(
+        'span',
+        { class: `o-status-tag ${rowData.isExpired ? 'o-status-tag--error' : 'o-status-tag--pending'}` },
+        rowData.isExpired ? t('wms.inventory.expired', '期限切れ') : t('wms.inventory.nearExpiry', '期限間近'),
+      ),
+  },
+  {
+    key: 'lotNumber',
+    dataKey: 'lotNumber',
+    title: t('wms.inventory.lotNumber', 'ロット番号'),
+    width: 140,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+    cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) =>
+      h('strong', null, rowData.lotNumber),
+  },
+  {
+    key: 'productSku',
+    dataKey: 'productSku',
+    title: 'SKU',
+    width: 120,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+    cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) => rowData.productSku,
+  },
+  {
+    key: 'productName',
+    dataKey: 'productName',
+    title: t('wms.inventory.productName', '商品名'),
+    width: 180,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) => rowData.productName || '-',
+  },
+  {
+    key: 'expiryDate',
+    dataKey: 'expiryDate',
+    title: t('wms.inventory.expiryDate', '賞味期限'),
+    width: 120,
+    fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) =>
+      h(
+        'span',
+        { class: rowData.isExpired ? 'expiry-expired' : 'expiry-warning' },
+        formatDate(rowData.expiryDate),
+      ),
+  },
+  {
+    key: 'daysUntilExpiry',
+    dataKey: 'daysUntilExpiry',
+    title: t('wms.inventory.daysRemaining', '残り日数'),
+    width: 100,
+    fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) => {
+      if (rowData.daysUntilExpiry === null) return '-'
+      const cls = rowData.daysUntilExpiry < 0 ? 'expiry-expired' : 'expiry-warning'
+      const text = rowData.daysUntilExpiry < 0
+        ? `${Math.abs(rowData.daysUntilExpiry)}${t('wms.inventory.daysOverdue', '日超過')}`
+        : `${rowData.daysUntilExpiry}${t('wms.inventory.days', '日')}`
+      return h('span', { class: cls, style: 'text-align:center;display:block;' }, text)
+    },
+  },
+  {
+    key: 'totalQuantity',
+    dataKey: 'totalQuantity',
+    title: t('wms.inventory.stockQuantity', '在庫数'),
+    width: 100,
+    fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) =>
+      h('span', { style: 'text-align:right;display:block;' }, String(rowData.totalQuantity)),
+  },
+  {
+    key: 'totalAvailable',
+    dataKey: 'totalAvailable',
+    title: t('wms.inventory.availableStock', '有効在庫'),
+    width: 100,
+    fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) =>
+      h('span', { style: 'text-align:right;display:block;' }, String(rowData.totalAvailable)),
+  },
+])
+
+// Search handler
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+  } else {
+    globalSearchText.value = ''
+  }
+}
 
 async function loadData() {
   isLoading.value = true
@@ -107,44 +233,44 @@ async function loadData() {
     const res = await fetchExpiryAlerts(daysAhead.value)
     alerts.value = res.alerts
   } catch (e: any) {
-    console.error('アラート取得エラー:', e)
+    console.error(t('wms.inventory.alertFetchError', 'アラート取得エラー:'), e)
   } finally {
     isLoading.value = false
   }
 }
 
 async function handleUpdateExpired() {
-  if (!confirm('期限切れのロットステータスを一括更新しますか？')) return
+  if (!confirm(t('wms.inventory.confirmBatchUpdate', '期限切れのロットステータスを一括更新しますか？'))) return
   isUpdating.value = true
   try {
     const res = await updateExpiredLots()
-    alert(res.message)
+    showToast(res.message, 'success')
     await loadData()
   } catch (e: any) {
-    alert(e.response?.data?.message || 'エラーが発生しました')
+    showToast(e.response?.data?.message || t('wms.inventory.errorOccurred', 'エラーが発生しました'), 'danger')
   } finally {
     isUpdating.value = false
   }
-}
-
-function formatDate(d: string) {
-  return d ? new Date(d).toLocaleDateString('ja-JP') : ''
 }
 
 onMounted(loadData)
 </script>
 
 <style scoped>
-@import '@/styles/order-table.css';
-
 .expiry-alerts {
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 :deep(.o-control-panel) {
   margin-left: -20px;
   margin-right: -20px;
+}
+
+.table-section {
+  width: 100%;
 }
 
 .summary-cards {
@@ -178,8 +304,6 @@ onMounted(loadData)
   margin-top: 4px;
 }
 
-.o-table-th--right { text-align: right; }
-
-.expiry-expired { color: #f56c6c; font-weight: 600; }
-.expiry-warning { color: #e6a23c; font-weight: 500; }
+:deep(.expiry-expired) { color: #f56c6c; font-weight: 600; }
+:deep(.expiry-warning) { color: #e6a23c; font-weight: 500; }
 </style>

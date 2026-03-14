@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import OPresenceIndicator from './OPresenceIndicator.vue'
 import OFileUploader from './OFileUploader.vue'
 import ODialog from './ODialog.vue'
 import OButton from './OButton.vue'
@@ -41,207 +40,47 @@ defineEmits<{
   'search': [query: string]
 }>()
 
-// Route-to-group mapping for auto-breadcrumbs
-const routeGroupMap: Record<string, { group: string; groupRoute?: string }> = {
-  '/': { group: '' },
-  '/dashboard-customize': { group: 'sidebar.main', groupRoute: '/' },
-  '/discuss': { group: 'sidebar.main', groupRoute: '/' },
-  '/inbox': { group: 'sidebar.main', groupRoute: '/' },
-  '/calendar': { group: 'sidebar.main', groupRoute: '/' },
-  '/documents': { group: 'sidebar.main', groupRoute: '/' },
-  // Sales
-  '/crm': { group: 'sidebar.sales' },
-  '/orders': { group: 'sidebar.sales' },
-  '/pos': { group: 'sidebar.sales' },
-  '/customers': { group: 'sidebar.sales' },
-  '/products': { group: 'sidebar.sales' },
-  '/subscriptions': { group: 'sidebar.sales' },
-  '/rental': { group: 'sidebar.sales' },
-  '/ecommerce': { group: 'sidebar.sales' },
-  // Accounting
-  '/invoices': { group: 'sidebar.accounting' },
-  '/reporting': { group: 'sidebar.accounting' },
-  '/consolidation': { group: 'sidebar.accounting' },
-  '/bank-reconciliation': { group: 'sidebar.accounting' },
-  '/accounting-reports': { group: 'sidebar.accounting' },
-  '/tax-config': { group: 'sidebar.accounting' },
-  '/payment-providers': { group: 'sidebar.accounting' },
-  '/recurring-documents': { group: 'sidebar.accounting' },
-  '/analytic-accounts': { group: 'sidebar.accounting' },
-  '/journal-entries': { group: 'sidebar.accounting' },
-  '/accounting': { group: 'sidebar.accounting' },
-  '/chart-of-accounts': { group: 'sidebar.accounting' },
-  // Operations
-  '/projects': { group: 'sidebar.operations' },
-  '/inventory': { group: 'sidebar.operations' },
-  '/product-configurator': { group: 'sidebar.operations' },
-  '/product-categories': { group: 'sidebar.operations' },
-  '/warehouse-config': { group: 'sidebar.operations' },
-  '/uom': { group: 'sidebar.operations' },
-  '/manufacturing': { group: 'sidebar.operations' },
-  '/bom': { group: 'sidebar.operations' },
-  '/work-centers': { group: 'sidebar.operations' },
-  '/email-marketing': { group: 'sidebar.operations' },
-  '/fleet': { group: 'sidebar.operations' },
-  '/knowledge': { group: 'sidebar.operations' },
-  '/events': { group: 'sidebar.operations' },
-  '/field-service': { group: 'sidebar.operations' },
-  '/workflow': { group: 'sidebar.operations' },
-  '/social-marketing': { group: 'sidebar.operations' },
-  '/marketing-automation': { group: 'sidebar.operations' },
-  '/sms-marketing': { group: 'sidebar.operations' },
-  '/sign': { group: 'sidebar.operations' },
-  '/approvals': { group: 'sidebar.operations' },
-  '/maintenance': { group: 'sidebar.operations' },
-  '/quality': { group: 'sidebar.operations' },
-  '/elearning': { group: 'sidebar.operations' },
-  '/plm': { group: 'sidebar.operations' },
-  '/iot': { group: 'sidebar.operations' },
-  '/whatsapp': { group: 'sidebar.operations' },
-  '/purchase': { group: 'sidebar.operations' },
-  '/helpdesk': { group: 'sidebar.operations' },
-  '/surveys': { group: 'sidebar.operations' },
-  // HR
-  '/employees': { group: 'sidebar.humanResources' },
-  '/time-off': { group: 'sidebar.humanResources' },
-  '/recruitment': { group: 'sidebar.humanResources' },
-  '/appraisals': { group: 'sidebar.humanResources' },
-  '/attendances': { group: 'sidebar.humanResources' },
-  '/planning': { group: 'sidebar.humanResources' },
-  '/timesheets': { group: 'sidebar.humanResources' },
-  '/lunch': { group: 'sidebar.humanResources' },
-  '/referrals': { group: 'sidebar.humanResources' },
-  '/gamification': { group: 'sidebar.humanResources' },
-  '/expenses': { group: 'sidebar.humanResources' },
-  // Configuration
-  '/apps': { group: 'sidebar.configuration' },
-  '/settings': { group: 'sidebar.configuration' },
-  '/automation': { group: 'sidebar.configuration' },
-  '/email-templates': { group: 'sidebar.configuration' },
-  '/users': { group: 'sidebar.configuration' },
-  '/cron-jobs': { group: 'sidebar.configuration' },
-  '/system-parameters': { group: 'sidebar.configuration' },
-  '/translation-manager': { group: 'sidebar.configuration' },
-  '/company-settings': { group: 'sidebar.configuration' },
-  '/email-config': { group: 'sidebar.configuration' },
-  '/sequence-config': { group: 'sidebar.configuration' },
-  '/currencies': { group: 'sidebar.configuration' },
-  '/countries': { group: 'sidebar.configuration' },
-  '/access-rights': { group: 'sidebar.configuration' },
-  '/developer-mode': { group: 'sidebar.configuration' },
-  '/studio': { group: 'sidebar.configuration' },
-  '/barcode': { group: 'sidebar.configuration' },
-  '/website': { group: 'sidebar.configuration' },
-  '/portal': { group: 'sidebar.portal' },
-}
-
-// Form page parent mapping (detail pages → list parent)
-const formParentMap: Record<string, { parentLabel: string; parentRoute: string }> = {
-  'lead-form': { parentLabel: 'sidebar.crm', parentRoute: '/crm' },
-  'order-form': { parentLabel: 'sidebar.orders', parentRoute: '/orders' },
-  'contact-form': { parentLabel: 'sidebar.customers', parentRoute: '/customers' },
-  'product-form': { parentLabel: 'sidebar.products', parentRoute: '/products' },
-  'invoice-form': { parentLabel: 'sidebar.invoices', parentRoute: '/invoices' },
-  'invoice-print': { parentLabel: 'sidebar.invoices', parentRoute: '/invoices' },
-  'task-form': { parentLabel: 'sidebar.projects', parentRoute: '/projects' },
-  'employee-form': { parentLabel: 'sidebar.employees', parentRoute: '/employees' },
-  'recruitment-form': { parentLabel: 'sidebar.recruitment', parentRoute: '/recruitment' },
-  'appraisal-form': { parentLabel: 'sidebar.appraisals', parentRoute: '/appraisals' },
-  'ticket-form': { parentLabel: 'sidebar.helpdesk', parentRoute: '/helpdesk' },
-  'purchase-form': { parentLabel: 'sidebar.purchase', parentRoute: '/purchase' },
-  'manufacturing-form': { parentLabel: 'sidebar.manufacturing', parentRoute: '/manufacturing' },
-  'fleet-form': { parentLabel: 'sidebar.fleet', parentRoute: '/fleet' },
-  'expense-form': { parentLabel: 'sidebar.expenses', parentRoute: '/expenses' },
-  'email-template': { parentLabel: 'sidebar.emailMarketing', parentRoute: '/email-marketing' },
-  'knowledge-article': { parentLabel: 'sidebar.knowledge', parentRoute: '/knowledge' },
-  'survey-form': { parentLabel: 'sidebar.surveys', parentRoute: '/surveys' },
-}
-
-// WMS top-level navigation — maps prefix to parent breadcrumb label + default route
-const wmsParentMap: Record<string, { label: string; route: string }> = {
-  '/products': { label: '商品管理', route: '/products/list' },
-  '/shipment-orders': { label: '出荷指示', route: '/shipment-orders/create' },
-  '/shipment-operations': { label: '出荷作業', route: '/shipment-operations/tasks' },
-  '/shipment-results': { label: '出荷実績', route: '/shipment-results' },
-  '/inbound': { label: '入庫管理', route: '/inbound/orders' },
-  '/inventory': { label: '在庫管理', route: '/inventory/stock' },
-  '/settings': { label: '設定', route: '/settings/basic' },
-}
-
-// Auto-generate breadcrumbs from current route
+// Auto-generate breadcrumbs from Vue Router's matched route hierarchy.
+// Each parent route with meta.title becomes a breadcrumb; the redirect path is used as the link.
 const autoBreadcrumbs = computed<{ label: string; route?: string }[]>(() => {
   if (props.breadcrumbs && props.breadcrumbs.length > 0) {
     return props.breadcrumbs.map((crumb, i, arr) => ({
       label: crumb,
-      route: i < arr.length - 1 ? (breadcrumbRoutes[crumb] || undefined) : undefined,
+      route: i < arr.length - 1 ? undefined : undefined,
     }))
   }
 
-  const path = currentRoute.path
-  const routeName = currentRoute.name as string | undefined
+  const matched = currentRoute.matched
   const crumbs: { label: string; route?: string }[] = []
 
-  // Check form page parents first
-  if (routeName && formParentMap[routeName]) {
-    const parent = formParentMap[routeName]
-    const parentGroup = routeGroupMap[parent.parentRoute]
-    if (parentGroup?.group) {
-      crumbs.push({ label: t(parentGroup.group), route: undefined })
+  for (let i = 0; i < matched.length; i++) {
+    const record = matched[i]
+    const title = record.meta?.title as string | undefined
+    if (!title) continue
+
+    const isLast = i === matched.length - 1
+
+    if (isLast) {
+      // Current page: use props.title (may differ from route meta) or fallback to meta title
+      crumbs.push({ label: props.title ?? title })
+    } else {
+      // Parent: use redirect path as link target
+      const redirectPath = typeof record.redirect === 'string'
+        ? record.redirect
+        : typeof record.redirect === 'object' && record.redirect && 'path' in record.redirect
+          ? (record.redirect as { path: string }).path
+          : undefined
+      crumbs.push({ label: title, route: redirectPath })
     }
-    crumbs.push({ label: t(parent.parentLabel), route: parent.parentRoute })
-    crumbs.push({ label: props.title ?? '' })
-    return crumbs
   }
 
-  // WMS prefix match: /settings/carrier → parent "設定", etc.
-  const wmsKey = Object.keys(wmsParentMap)
-    .filter(k => path.startsWith(k + '/') || path === k)
-    .sort((a, b) => b.length - a.length)[0]
-  if (wmsKey) {
-    const parent = wmsParentMap[wmsKey]
-    // Push parent crumb only when: section has a default route, and we're on a different sub-route
-    if (parent && parent.route && path !== parent.route && path !== wmsKey) {
-      crumbs.push({ label: parent.label, route: parent.route })
-    }
-    crumbs.push({ label: props.title ?? '' })
-    return crumbs
+  // Fallback: if no matched routes had titles, just show the page title
+  if (crumbs.length === 0 && props.title) {
+    crumbs.push({ label: props.title })
   }
 
-  // Regular pages: add group as parent breadcrumb
-  const mapping = routeGroupMap[path]
-  if (mapping?.group) {
-    crumbs.push({ label: t(mapping.group), route: mapping.groupRoute })
-  }
-  crumbs.push({ label: props.title ?? '' })
   return crumbs
 })
-
-// Legacy breadcrumb route mapping (for manually passed breadcrumbs)
-const breadcrumbRoutes: Record<string, string> = {
-  'Contacts': '/customers',
-  'Pipeline': '/crm',
-  'Projects': '/projects',
-  'Invoices': '/invoices',
-  'Sales Orders': '/orders',
-  'Orders': '/orders',
-  'Products': '/products',
-  'Sales': '/orders',
-  'Inventory': '/inventory',
-  'Purchase': '/purchase',
-  'Employees': '/employees',
-  'Time Off': '/time-off',
-  'Accounting': '/accounting',
-  'Helpdesk': '/helpdesk',
-  'Expenses': '/expenses',
-  'Manufacturing': '/manufacturing',
-  'Knowledge': '/knowledge',
-  'Fleet': '/fleet',
-  'Appraisals': '/appraisals',
-  'Recruitment': '/recruitment',
-  'Surveys': '/surveys',
-  'Reporting': '/reporting',
-  'Settings': '/settings',
-}
 
 function navigateBreadcrumb(route?: string) {
   if (route) router.push(route)
@@ -269,7 +108,6 @@ function navigateBreadcrumb(route?: string) {
 
       <!-- Action buttons -->
       <div class="o-cp-actions">
-        <OPresenceIndicator />
         <slot name="actions">
           <OButton v-if="showUpload" variant="secondary" @click="showUploadDialog = true">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">

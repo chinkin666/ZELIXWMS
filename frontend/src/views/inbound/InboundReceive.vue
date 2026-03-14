@@ -1,35 +1,35 @@
 <template>
   <div class="inbound-receive">
-    <ControlPanel :title="`入庫検品 - ${order?.orderNumber || ''}`" :show-search="false">
+    <ControlPanel :title="`${t('wms.inbound.receiveInspection', '入庫検品')} - ${order?.orderNumber || ''}`" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="$router.push('/inbound/orders')">戻る</OButton>
+        <OButton variant="secondary" size="sm" @click="$router.push('/inbound/orders')">{{ t('wms.inbound.back', '戻る') }}</OButton>
       </template>
     </ControlPanel>
 
-    <div v-if="isLoading" class="loading-state">読み込み中...</div>
+    <div v-if="isLoading" class="loading-state">{{ t('wms.ui.loading', '読み込み中...') }}</div>
 
     <template v-else-if="order">
       <!-- 入庫指示ヘッダー -->
       <div class="o-card info-card">
         <div class="info-grid">
           <div class="info-item">
-            <span class="info-label">入庫指示番号</span>
+            <span class="info-label">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</span>
             <span class="info-value order-number">{{ order.orderNumber }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">状態</span>
+            <span class="info-label">{{ t('wms.common.status', '状態') }}</span>
             <span class="o-status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">仕入先</span>
+            <span class="info-label">{{ t('wms.inbound.supplier', '仕入先') }}</span>
             <span class="info-value">{{ order.supplier?.name || '-' }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">入庫先</span>
+            <span class="info-label">{{ t('wms.inbound.destination', '入庫先') }}</span>
             <span class="info-value">{{ getDestCode(order) }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">進捗</span>
+            <span class="info-label">{{ t('wms.inbound.progress', '進捗') }}</span>
             <span class="info-value">
               <span :class="{ 'text-success': totalReceived >= totalExpected && totalExpected > 0 }">
                 {{ totalReceived }} / {{ totalExpected }}
@@ -42,7 +42,7 @@
       <!-- 検品モード切替 -->
       <div class="o-card mode-card" v-if="order.status === 'confirmed' || order.status === 'receiving'">
         <div class="mode-row">
-          <span class="mode-label">検品方式:</span>
+          <span class="mode-label">{{ t('wms.inbound.inspectionMode', '検品方式') }}:</span>
           <div class="mode-tabs">
             <button
               v-for="m in inspectionModes" :key="m.key"
@@ -61,7 +61,7 @@
             v-model="scanInput"
             type="text"
             class="o-input scan-input"
-            placeholder="バーコード or SKUをスキャン / 入力..."
+            :placeholder="t('wms.inbound.scanPlaceholder', 'バーコード or SKUをスキャン / 入力...')"
             @keydown.enter="handleScan"
             autofocus
           />
@@ -72,7 +72,7 @@
             class="o-input"
             style="width:80px;text-align:right;"
           />
-          <OButton variant="primary" @click="handleScan" :disabled="isReceiving">入庫</OButton>
+          <OButton variant="primary" @click="handleScan" :disabled="isReceiving">{{ t('wms.inbound.receive', '入庫') }}</OButton>
         </div>
         <p v-if="scanMessage" class="scan-message" :class="{ 'scan-error': scanIsError }">{{ scanMessage }}</p>
       </div>
@@ -80,8 +80,8 @@
       <!-- 一括確認 -->
       <div class="o-card scan-card" v-if="(order.status === 'confirmed' || order.status === 'receiving') && inspectionMode === 'bulk'">
         <div style="display:flex;align-items:center;gap:12px;">
-          <span style="font-size:14px;color:var(--o-gray-600);">全行を予定数量で入庫します（信頼できる仕入先向け）</span>
-          <OButton variant="success" @click="handleBulkReceive" :disabled="isReceiving">一括確認</OButton>
+          <span style="font-size:14px;color:var(--o-gray-600);">{{ t('wms.inbound.bulkReceiveDesc', '全行を予定数量で入庫します（信頼できる仕入先向け）') }}</span>
+          <OButton variant="success" @click="handleBulkReceive" :disabled="isReceiving">{{ t('wms.inbound.bulkConfirm', '一括確認') }}</OButton>
         </div>
         <p v-if="scanMessage" class="scan-message" :class="{ 'scan-error': scanIsError }">{{ scanMessage }}</p>
       </div>
@@ -93,14 +93,14 @@
             <tr>
               <th class="o-table-th" style="width:40px;">#</th>
               <th class="o-table-th" style="width:140px;">SKU</th>
-              <th class="o-table-th" style="width:200px;">商品名</th>
-              <th class="o-table-th" style="width:140px;">ロット</th>
-              <th class="o-table-th" style="width:70px;">区分</th>
-              <th class="o-table-th o-table-th--right" style="width:100px;">予定数量</th>
-              <th class="o-table-th o-table-th--right" style="width:100px;">入庫済</th>
-              <th class="o-table-th o-table-th--right" style="width:100px;">残り</th>
-              <th class="o-table-th" style="width:100px;">進捗</th>
-              <th class="o-table-th" style="width:100px;">操作</th>
+              <th class="o-table-th" style="width:200px;">{{ t('wms.inbound.productName', '商品名') }}</th>
+              <th class="o-table-th" style="width:140px;">{{ t('wms.inbound.lot', 'ロット') }}</th>
+              <th class="o-table-th" style="width:70px;">{{ t('wms.inbound.category', '区分') }}</th>
+              <th class="o-table-th o-table-th--right" style="width:100px;">{{ t('wms.inbound.expectedQuantity', '予定数量') }}</th>
+              <th class="o-table-th o-table-th--right" style="width:100px;">{{ t('wms.inbound.received', '入庫済') }}</th>
+              <th class="o-table-th o-table-th--right" style="width:100px;">{{ t('wms.inbound.remaining', '残り') }}</th>
+              <th class="o-table-th" style="width:100px;">{{ t('wms.inbound.progress', '進捗') }}</th>
+              <th class="o-table-th" style="width:100px;">{{ t('wms.common.actions', '操作') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -111,7 +111,7 @@
               <td class="o-table-td">{{ line.lotNumber || '-' }}</td>
               <td class="o-table-td">
                 <span class="category-tag" :class="line.stockCategory === 'damaged' ? 'category-tag--damaged' : ''">
-                  {{ line.stockCategory === 'damaged' ? '仕損' : '新品' }}
+                  {{ line.stockCategory === 'damaged' ? t('wms.inbound.damaged', '仕損') : t('wms.inbound.new', '新品') }}
                 </span>
               </td>
               <td class="o-table-td o-table-td--right">{{ line.expectedQuantity }}</td>
@@ -138,13 +138,13 @@
                     />
                     <OButton variant="success" size="sm" :disabled="isReceiving || !manualQuantities[line.lineNumber]"
                       @click="handleReceiveLine(line.lineNumber, manualQuantities[line.lineNumber] || 1)"
-                    >入庫</OButton>
+                    >{{ t('wms.inbound.receive', '入庫') }}</OButton>
                   </div>
                   <OButton v-else variant="success" size="sm" :disabled="isReceiving"
                     @click="handleReceiveLine(line.lineNumber, 1)"
                   >+1</OButton>
                 </template>
-                <span v-else-if="line.receivedQuantity >= line.expectedQuantity" class="text-success">完了</span>
+                <span v-else-if="line.receivedQuantity >= line.expectedQuantity" class="text-success">{{ t('wms.inbound.complete', '完了') }}</span>
               </td>
             </tr>
           </tbody>
@@ -157,12 +157,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { fetchInboundOrder, receiveInboundLine, bulkReceiveInbound } from '@/api/inboundOrder'
 import type { InboundOrder, InboundOrderLine } from '@/types/inventory'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
@@ -171,11 +173,11 @@ const isReceiving = ref(false)
 const order = ref<InboundOrder | null>(null)
 
 const inspectionMode = ref<'scan' | 'manual' | 'bulk'>('scan')
-const inspectionModes = [
-  { key: 'scan' as const, label: 'スキャン検品' },
-  { key: 'manual' as const, label: '数量入力' },
-  { key: 'bulk' as const, label: '一括確認' },
-]
+const inspectionModes = computed(() => [
+  { key: 'scan' as const, label: t('wms.inbound.scanInspection', 'スキャン検品') },
+  { key: 'manual' as const, label: t('wms.inbound.manualEntry', '数量入力') },
+  { key: 'bulk' as const, label: t('wms.inbound.bulkConfirm', '一括確認') },
+])
 const manualQuantities = reactive<Record<number, number>>({})
 
 const scanInputRef = ref<HTMLInputElement | null>(null)
@@ -188,7 +190,14 @@ const totalExpected = computed(() => order.value?.lines.reduce((s, l) => s + l.e
 const totalReceived = computed(() => order.value?.lines.reduce((s, l) => s + l.receivedQuantity, 0) ?? 0)
 
 const statusLabel = (s: string) => {
-  const map: Record<string, string> = { draft: '下書き', confirmed: '確認済', receiving: '入庫中', received: '検品済', done: '完了', cancelled: 'キャンセル' }
+  const map: Record<string, string> = {
+    draft: t('wms.inbound.statusDraft', '下書き'),
+    confirmed: t('wms.inbound.statusConfirmed', '確認済'),
+    receiving: t('wms.inbound.statusReceiving', '入庫中'),
+    received: t('wms.inbound.statusReceived', '検品済'),
+    done: t('wms.inbound.statusDone', '完了'),
+    cancelled: t('wms.inbound.statusCancelled', 'キャンセル'),
+  }
   return map[s] || s
 }
 
@@ -230,7 +239,7 @@ const handleScan = () => {
     scanInput.value = ''
     scanQuantity.value = 1
   } else {
-    scanMessage.value = `SKU "${input}" に該当する未入庫行が見つかりません`
+    scanMessage.value = t('wms.inbound.skuNotFound', `SKU "${input}" に該当する未入庫行が見つかりません`)
     scanIsError.value = true
   }
 }
@@ -252,14 +261,14 @@ const handleReceiveLine = async (lineNumber: number, qty: number) => {
     order.value.status = result.orderStatus as any
 
     if (result.orderStatus === 'received') {
-      toast.showSuccess('検品が全て完了しました。棚入れを行ってください。')
+      toast.showSuccess(t('wms.inbound.allInspectionComplete', '検品が全て完了しました。棚入れを行ってください。'))
       setTimeout(() => router.push(`/inbound/putaway/${order.value!._id}`), 1500)
     }
 
     await nextTick()
     scanInputRef.value?.focus()
   } catch (e: any) {
-    scanMessage.value = e?.message || '入庫に失敗しました'
+    scanMessage.value = e?.message || t('wms.inbound.receiveFailed', '入庫に失敗しました')
     scanIsError.value = true
     toast.showError(scanMessage.value)
   } finally {
@@ -269,17 +278,17 @@ const handleReceiveLine = async (lineNumber: number, qty: number) => {
 
 const handleBulkReceive = async () => {
   if (!order.value || isReceiving.value) return
-  if (!confirm('全行を予定数量で一括入庫します。よろしいですか？')) return
+  if (!confirm(t('wms.inbound.confirmBulkReceive', '全行を予定数量で一括入庫します。よろしいですか？'))) return
   isReceiving.value = true
   scanMessage.value = ''
   try {
     const result = await bulkReceiveInbound(order.value._id)
     scanMessage.value = result.message
     scanIsError.value = false
-    toast.showSuccess('検品が全て完了しました。棚入れを行ってください。')
+    toast.showSuccess(t('wms.inbound.allInspectionComplete', '検品が全て完了しました。棚入れを行ってください。'))
     setTimeout(() => router.push(`/inbound/putaway/${order.value!._id}`), 1500)
   } catch (e: any) {
-    scanMessage.value = e?.message || '一括検品に失敗しました'
+    scanMessage.value = e?.message || t('wms.inbound.bulkReceiveFailed', '一括検品に失敗しました')
     scanIsError.value = true
     toast.showError(scanMessage.value)
   } finally {
@@ -293,7 +302,7 @@ const loadOrder = async () => {
     const id = route.params.id as string
     order.value = await fetchInboundOrder(id)
   } catch (e: any) {
-    toast.showError(e?.message || '入庫指示の取得に失敗しました')
+    toast.showError(e?.message || t('wms.inbound.fetchOrderFailed', '入庫指示の取得に失敗しました'))
   } finally {
     isLoading.value = false
   }
@@ -310,7 +319,13 @@ onMounted(() => loadOrder())
 .inbound-receive {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 .loading-state {

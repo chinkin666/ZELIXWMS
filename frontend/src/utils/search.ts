@@ -27,21 +27,21 @@ const normalizeString = (value: any): string => {
 }
 
 const matchesString = (value: any, operator: Operator, target: any) => {
-  // 对于数组字段（如 _productsMeta.names, _productsMeta.skus），需要特殊处理
-  // 检查数组中是否有任何元素匹配
+  // 配列フィールド（例：_productsMeta.names, _productsMeta.skus）は特殊処理が必要 / 对于数组字段（如 _productsMeta.names, _productsMeta.skus），需要特殊处理
+  // 配列内のいずれかの要素がマッチするかチェック / 检查数组中是否有任何元素匹配
   if (Array.isArray(value)) {
     if (value.length === 0) {
-      // 空数组的处理
+      // 空配列の処理 / 空数组的处理
       if (operator === 'isEmpty') return true
       if (operator === 'hasAnyValue') return false
-      // 其他操作符对空数组返回 false（不匹配）
+      // その他の演算子は空配列に対してfalseを返す（マッチしない） / 其他操作符对空数组返回 false（不匹配）
       return false
     }
     
     const t = normalizeString(target)
     const tLower = t.toLowerCase().trim()
     if (!tLower) {
-      // 目标为空时的处理
+      // ターゲットが空の場合の処理 / 目标为空时的处理
       if (operator === 'isEmpty') return false
       if (operator === 'hasAnyValue') return true
       return false
@@ -49,16 +49,16 @@ const matchesString = (value: any, operator: Operator, target: any) => {
     
     switch (operator) {
       case 'is':
-        // 数组中有完全匹配的元素
+        // 配列内に完全一致する要素がある / 数组中有完全匹配的元素
         return value.some((item) => String(item).toLowerCase().trim() === tLower)
       case 'isNot':
-        // 数组中没有任何完全匹配的元素
+        // 配列内に完全一致する要素がない / 数组中没有任何完全匹配的元素
         return !value.some((item) => String(item).toLowerCase().trim() === tLower)
       case 'contains':
-        // 数组中是否有任何元素包含目标字符串
+        // 配列内のいずれかの要素がターゲット文字列を含むか / 数组中是否有任何元素包含目标字符串
         return value.some((item) => String(item).toLowerCase().includes(tLower))
       case 'notContains':
-        // 数组中没有任何元素包含目标字符串
+        // 配列内のどの要素もターゲット文字列を含まない / 数组中没有任何元素包含目标字符串
         return !value.some((item) => String(item).toLowerCase().includes(tLower))
       case 'hasAnyValue':
         return value.length > 0
@@ -69,7 +69,7 @@ const matchesString = (value: any, operator: Operator, target: any) => {
     }
   }
   
-  // 非数组字段的原有逻辑
+  // 非配列フィールドの既存ロジック / 非数组字段的原有逻辑
   const v = normalizeString(value)
   const t = normalizeString(target)
   switch (operator) {
@@ -131,14 +131,14 @@ const matchesDate = (value: any, operator: Operator, target: any) => {
 
   const toTargetDate = (val: any) => toDate(val)
 
-  // 将日期设置为当天结束时间 (23:59:59.999)
+  // 日付を当日の終了時刻に設定 / 将日期设置为当天结束时间 (23:59:59.999)
   const toEndOfDay = (date: Date): Date => {
     const d = new Date(date)
     d.setHours(23, 59, 59, 999)
     return d
   }
 
-  // 将日期设置为当天开始时间 (00:00:00.000)
+  // 日付を当日の開始時刻に設定 / 将日期设置为当天开始时间 (00:00:00.000)
   const toStartOfDay = (date: Date): Date => {
     const d = new Date(date)
     d.setHours(0, 0, 0, 0)
@@ -151,7 +151,7 @@ const matchesDate = (value: any, operator: Operator, target: any) => {
     const end = toTargetDate(target[1])
     if (!start || !end) return false
     if (operator === 'between') {
-      // 开始日期使用当天开始，结束日期使用当天结束
+      // 開始日は当日開始時刻、終了日は当日終了時刻を使用 / 开始日期使用当天开始，结束日期使用当天结束
       return vDate >= toStartOfDay(start) && vDate <= toEndOfDay(end)
     }
   } else {
@@ -240,11 +240,11 @@ export const filterDataBySearch = <T>(
       const searchType = column.searchType
       let type: SearchType | undefined = searchType
       if (!type && fieldType) {
-        // 将 fieldType 转换为 SearchType，过滤掉不兼容的类型
+        // fieldTypeをSearchTypeに変換し、非互換の型を除外 / 将 fieldType 转换为 SearchType，过滤掉不兼容的类型
         if (fieldType === 'string' || fieldType === 'number' || fieldType === 'boolean' || fieldType === 'date' || fieldType === 'dateOnly' || fieldType === 'array') {
           type = fieldType === 'dateOnly' ? 'date' : fieldType === 'array' ? 'select' : fieldType as SearchType
         } else {
-          type = 'string' // 默认 fallback
+          type = 'string' // デフォルトのfallback / 默认 fallback
         }
       }
       if (!type) type = 'string'

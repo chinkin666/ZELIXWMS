@@ -147,9 +147,9 @@ function applyTheme(): void {
   root.style.setProperty('--o-navbar-height', `${settings.navbarHeight}px`)
   root.style.setProperty('--topbar-height', `${settings.navbarHeight}px`)
   root.style.setProperty('--o-font-size-base', `${settings.fontSize}px`)
-  root.style.setProperty('--o-border-radius', `${settings.borderRadius}px`)
-  root.style.setProperty('--o-border-radius-sm', `${Math.max(settings.borderRadius - 1, 0)}px`)
-  root.style.setProperty('--o-border-radius-lg', `${settings.borderRadius + 2}px`)
+  root.style.setProperty('--o-border-radius', '0')
+  root.style.setProperty('--o-border-radius-sm', '0')
+  root.style.setProperty('--o-border-radius-lg', '0')
   root.style.setProperty('--o-form-sheet-max-width', `${settings.contentMaxWidth}px`)
 
   // Font

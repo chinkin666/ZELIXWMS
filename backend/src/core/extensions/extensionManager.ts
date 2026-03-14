@@ -16,6 +16,8 @@ import { HookManager } from './hookManager';
 import { PluginManager } from './pluginManager';
 import { ScriptRunner } from './scriptRunner';
 import { WebhookDispatcher } from './webhookDispatcher';
+import { CustomFieldService } from './customFieldService';
+import { FeatureFlagService } from './featureFlagService';
 import { EventLog } from '@/models/eventLog';
 import type { HookEventName, EmitOptions } from './types';
 
@@ -24,17 +26,17 @@ class ExtensionManager {
   private pluginManager: PluginManager;
   private scriptRunner: ScriptRunner;
   private webhookDispatcher: WebhookDispatcher;
+  private customFieldService: CustomFieldService;
+  private featureFlagService: FeatureFlagService;
   private initialized = false;
-
-  // Phase 5+: 以下を追加予定
-  // private featureFlagService: FeatureFlagService;
-  // private customFieldService: CustomFieldService;
 
   constructor() {
     this.hookManager = new HookManager();
     this.pluginManager = new PluginManager(this.hookManager);
     this.scriptRunner = new ScriptRunner();
     this.webhookDispatcher = new WebhookDispatcher();
+    this.customFieldService = new CustomFieldService();
+    this.featureFlagService = new FeatureFlagService();
   }
 
   /**
@@ -140,9 +142,19 @@ class ExtensionManager {
     return this.scriptRunner;
   }
 
-  // Phase 5+: getter methods for other managers
-  // getFeatureFlagService(): FeatureFlagService { return this.featureFlagService; }
-  // getCustomFieldService(): CustomFieldService { return this.customFieldService; }
+  /**
+   * 获取 CustomFieldService 实例 / CustomFieldService インスタンスを取得
+   */
+  getCustomFieldService(): CustomFieldService {
+    return this.customFieldService;
+  }
+
+  /**
+   * 获取 FeatureFlagService 实例 / FeatureFlagService インスタンスを取得
+   */
+  getFeatureFlagService(): FeatureFlagService {
+    return this.featureFlagService;
+  }
 
   /**
    * 写入事件日志 / イベントログを書き込む

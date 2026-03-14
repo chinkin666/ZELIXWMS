@@ -1,13 +1,13 @@
 <template>
   <div class="wms-schedule-view">
-    <ControlPanel title="WMSスケジュール" :show-search="false">
+    <ControlPanel :title="t('wms.schedule.title', 'WMSスケジュール')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;align-items:center;">
           <OButton v-if="activeTab === 'schedules'" variant="primary" size="sm" @click="openCreateDialog">
-            新規スケジュール
+            {{ t('wms.schedule.newSchedule', '新規スケジュール') }}
           </OButton>
           <OButton v-if="activeTab === 'logs'" variant="secondary" size="sm" @click="exportLogsCsv">
-            CSV出力
+            {{ t('wms.schedule.exportCsv', 'CSV出力') }}
           </OButton>
         </div>
       </template>
@@ -19,68 +19,35 @@
         class="tab-btn"
         :class="{ active: activeTab === 'schedules' }"
         @click="activeTab = 'schedules'"
-      >スケジュール</button>
+      >{{ t('wms.schedule.schedules', 'スケジュール') }}</button>
       <button
         class="tab-btn"
         :class="{ active: activeTab === 'tasks' }"
         @click="activeTab = 'tasks'"
-      >タスク</button>
+      >{{ t('wms.schedule.tasks', 'タスク') }}</button>
       <button
         class="tab-btn"
         :class="{ active: activeTab === 'logs' }"
         @click="activeTab = 'logs'"
-      >ログ</button>
+      >{{ t('wms.schedule.logs', 'ログ') }}</button>
     </div>
 
     <!-- ================================================================= -->
     <!-- Tab 1: スケジュール -->
     <!-- ================================================================= -->
     <div v-if="activeTab === 'schedules'">
-      <div class="o-table-wrapper">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width:180px;">名前</th>
-              <th class="o-table-th" style="width:120px;">アクション</th>
-              <th class="o-table-th" style="width:90px;">タイプ</th>
-              <th class="o-table-th" style="width:120px;">実行時間</th>
-              <th class="o-table-th" style="width:70px;">有効</th>
-              <th class="o-table-th" style="width:140px;">最終実行</th>
-              <th class="o-table-th o-table-th--right" style="width:70px;">実行回数</th>
-              <th class="o-table-th" style="width:160px;">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="schedulesLoading">
-              <td colspan="8" class="o-table-empty">読み込み中...</td>
-            </tr>
-            <tr v-else-if="schedules.length === 0">
-              <td colspan="8" class="o-table-empty">データがありません</td>
-            </tr>
-            <tr v-for="s in schedules" :key="s._id" class="o-table-row">
-              <td class="o-table-td">{{ s.name }}</td>
-              <td class="o-table-td">
-                <span class="action-badge">{{ actionLabel(s.action) }}</span>
-              </td>
-              <td class="o-table-td">{{ s.scheduleType === 'scheduled' ? 'スケジュール' : '手動' }}</td>
-              <td class="o-table-td">{{ formatCronDisplay(s) }}</td>
-              <td class="o-table-td">
-                <button class="toggle-btn" :class="{ 'toggle-on': s.isEnabled }" @click="handleToggle(s)">
-                  {{ s.isEnabled ? 'ON' : 'OFF' }}
-                </button>
-              </td>
-              <td class="o-table-td">{{ formatDateTime(s.lastRunAt) }}</td>
-              <td class="o-table-td o-table-td--right">{{ s.runCount }}</td>
-              <td class="o-table-td">
-                <div style="display:flex;gap:4px;">
-                  <OButton variant="secondary" size="sm" @click="openEditDialog(s)">編集</OButton>
-                  <OButton variant="primary" size="sm" @click="handleRun(s)">実行</OButton>
-                  <OButton variant="secondary" size="sm" @click="handleDelete(s)">削除</OButton>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="table-section">
+        <Table
+          :columns="scheduleTableColumns"
+          :data="schedules"
+          :height="520"
+          row-key="_id"
+          highlight-columns-on-hover
+          pagination-enabled
+          pagination-mode="client"
+          :page-size="20"
+          :page-sizes="[20, 50]"
+        />
       </div>
     </div>
 
@@ -88,94 +55,29 @@
     <!-- Tab 2: タスク -->
     <!-- ================================================================= -->
     <div v-if="activeTab === 'tasks'">
-      <div class="filter-bar">
-        <div class="filter-row">
-          <div class="filter-item">
-            <label class="filter-label">ステータス</label>
-            <select class="o-input o-input-sm" v-model="taskFilterStatus">
-              <option value="">全て</option>
-              <option value="queued">待機中</option>
-              <option value="running">実行中</option>
-              <option value="completed">完了</option>
-              <option value="failed">失敗</option>
-              <option value="cancelled">キャンセル</option>
-            </select>
-          </div>
-          <div class="filter-item">
-            <label class="filter-label">開始日</label>
-            <input type="date" class="o-input o-input-sm" v-model="taskFilterDateFrom" />
-          </div>
-          <div class="filter-item">
-            <label class="filter-label">終了日</label>
-            <input type="date" class="o-input o-input-sm" v-model="taskFilterDateTo" />
-          </div>
-          <div class="filter-item filter-actions">
-            <OButton variant="primary" size="sm" @click="doTaskSearch">検索</OButton>
-            <OButton variant="secondary" size="sm" @click="resetTaskFilters">リセット</OButton>
-          </div>
-        </div>
-      </div>
+      <SearchForm
+        class="search-section"
+        :columns="taskSearchColumns"
+        :show-save="false"
+        storage-key="wmsTaskSearch"
+        @search="handleTaskSearch"
+      />
 
-      <div class="o-table-wrapper">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width:140px;">タスク番号</th>
-              <th class="o-table-th" style="width:140px;">スケジュール名</th>
-              <th class="o-table-th" style="width:100px;">アクション</th>
-              <th class="o-table-th" style="width:90px;">ステータス</th>
-              <th class="o-table-th o-table-th--right" style="width:60px;">処理数</th>
-              <th class="o-table-th o-table-th--right" style="width:60px;">成功数</th>
-              <th class="o-table-th o-table-th--right" style="width:60px;">エラー数</th>
-              <th class="o-table-th" style="width:70px;">トリガー</th>
-              <th class="o-table-th" style="width:140px;">開始日時</th>
-              <th class="o-table-th" style="width:80px;">処理時間</th>
-              <th class="o-table-th">メッセージ</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="tasksLoading">
-              <td colspan="11" class="o-table-empty">読み込み中...</td>
-            </tr>
-            <tr v-else-if="tasks.length === 0">
-              <td colspan="11" class="o-table-empty">データがありません</td>
-            </tr>
-            <tr v-for="t in tasks" :key="t._id" class="o-table-row">
-              <td class="o-table-td">
-                <span class="task-number">{{ t.taskNumber }}</span>
-              </td>
-              <td class="o-table-td">{{ t.scheduleName || '-' }}</td>
-              <td class="o-table-td">
-                <span class="action-badge">{{ actionLabel(t.action) }}</span>
-              </td>
-              <td class="o-table-td">
-                <span class="status-badge" :class="'status--' + t.status">{{ taskStatusLabel(t.status) }}</span>
-              </td>
-              <td class="o-table-td o-table-td--right">{{ t.processedCount }}</td>
-              <td class="o-table-td o-table-td--right">{{ t.successCount }}</td>
-              <td class="o-table-td o-table-td--right">{{ t.errorCount }}</td>
-              <td class="o-table-td">{{ t.triggeredBy === 'manual' ? '手動' : 'スケジューラ' }}</td>
-              <td class="o-table-td">{{ formatDateTime(t.startedAt) }}</td>
-              <td class="o-table-td">{{ t.durationMs != null ? formatDuration(t.durationMs) : '-' }}</td>
-              <td class="o-table-td">{{ t.message || '-' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Task Pagination -->
-      <div class="o-table-pagination">
-        <span class="o-table-pagination__info">{{ taskTotal }} 件中 {{ tasks.length }} 件表示</span>
-        <div class="o-table-pagination__controls">
-          <select class="o-input o-input-sm" v-model.number="taskPageSize" style="width:80px;" @change="onTaskPageSizeChange">
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-            <option :value="100">100</option>
-          </select>
-          <OButton variant="secondary" size="sm" :disabled="taskPage <= 1" @click="goTaskPage(taskPage - 1)">&lsaquo;</OButton>
-          <span class="o-table-pagination__page">{{ taskPage }} / {{ taskTotalPages }}</span>
-          <OButton variant="secondary" size="sm" :disabled="taskPage >= taskTotalPages" @click="goTaskPage(taskPage + 1)">&rsaquo;</OButton>
-        </div>
+      <div class="table-section">
+        <Table
+          :columns="taskTableColumns"
+          :data="tasks"
+          :height="520"
+          row-key="_id"
+          highlight-columns-on-hover
+          pagination-enabled
+          pagination-mode="server"
+          :page-size="taskPageSize"
+          :page-sizes="[25, 50, 100]"
+          :total="taskTotal"
+          :current-page="taskPage"
+          @page-change="onTaskPageChange"
+        />
       </div>
     </div>
 
@@ -183,132 +85,75 @@
     <!-- Tab 3: ログ -->
     <!-- ================================================================= -->
     <div v-if="activeTab === 'logs'">
-      <div class="filter-bar">
-        <div class="filter-row">
-          <div class="filter-item">
-            <label class="filter-label">アクション</label>
-            <select class="o-input o-input-sm" v-model="logFilterAction">
-              <option value="">全て</option>
-              <option v-for="(label, key) in ACTION_LABELS" :key="key" :value="key">{{ label }}</option>
-            </select>
-          </div>
-          <div class="filter-item">
-            <label class="filter-label">イベント</label>
-            <select class="o-input o-input-sm" v-model="logFilterEvent">
-              <option value="">全て</option>
-              <option v-for="(label, key) in EVENT_LABELS" :key="key" :value="key">{{ label }}</option>
-            </select>
-          </div>
-          <div class="filter-item">
-            <label class="filter-label">開始日</label>
-            <input type="date" class="o-input o-input-sm" v-model="logFilterDateFrom" />
-          </div>
-          <div class="filter-item">
-            <label class="filter-label">終了日</label>
-            <input type="date" class="o-input o-input-sm" v-model="logFilterDateTo" />
-          </div>
-          <div class="filter-item filter-actions">
-            <OButton variant="primary" size="sm" @click="doLogSearch">検索</OButton>
-            <OButton variant="secondary" size="sm" @click="resetLogFilters">リセット</OButton>
-          </div>
-        </div>
-      </div>
+      <SearchForm
+        class="search-section"
+        :columns="logSearchColumns"
+        :show-save="false"
+        storage-key="wmsLogSearch"
+        @search="handleLogSearch"
+      />
 
-      <div class="o-table-wrapper">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width:150px;">日時</th>
-              <th class="o-table-th" style="width:110px;">アクション</th>
-              <th class="o-table-th" style="width:120px;">イベント</th>
-              <th class="o-table-th" style="width:140px;">タスク番号</th>
-              <th class="o-table-th">メッセージ</th>
-              <th class="o-table-th" style="width:90px;">ユーザー</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="logsLoading">
-              <td colspan="6" class="o-table-empty">読み込み中...</td>
-            </tr>
-            <tr v-else-if="logs.length === 0">
-              <td colspan="6" class="o-table-empty">データがありません</td>
-            </tr>
-            <tr v-for="l in logs" :key="l._id" class="o-table-row">
-              <td class="o-table-td">{{ formatDateTime(l.createdAt) }}</td>
-              <td class="o-table-td">
-                <span class="action-badge">{{ actionLabel(l.action) }}</span>
-              </td>
-              <td class="o-table-td">{{ eventLabel(l.event) }}</td>
-              <td class="o-table-td">
-                <span v-if="l.taskNumber" class="task-number">{{ l.taskNumber }}</span>
-                <span v-else>-</span>
-              </td>
-              <td class="o-table-td">{{ l.message || '-' }}</td>
-              <td class="o-table-td">{{ l.userName }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Log Pagination -->
-      <div class="o-table-pagination">
-        <span class="o-table-pagination__info">{{ logTotal }} 件中 {{ logs.length }} 件表示</span>
-        <div class="o-table-pagination__controls">
-          <select class="o-input o-input-sm" v-model.number="logPageSize" style="width:80px;" @change="onLogPageSizeChange">
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-            <option :value="100">100</option>
-          </select>
-          <OButton variant="secondary" size="sm" :disabled="logPage <= 1" @click="goLogPage(logPage - 1)">&lsaquo;</OButton>
-          <span class="o-table-pagination__page">{{ logPage }} / {{ logTotalPages }}</span>
-          <OButton variant="secondary" size="sm" :disabled="logPage >= logTotalPages" @click="goLogPage(logPage + 1)">&rsaquo;</OButton>
-        </div>
+      <div class="table-section">
+        <Table
+          :columns="logTableColumns"
+          :data="logs"
+          :height="520"
+          row-key="_id"
+          highlight-columns-on-hover
+          pagination-enabled
+          pagination-mode="server"
+          :page-size="logPageSize"
+          :page-sizes="[25, 50, 100]"
+          :total="logTotal"
+          :current-page="logPage"
+          @page-change="onLogPageChange"
+        />
       </div>
     </div>
 
     <!-- ================================================================= -->
     <!-- Create / Edit Dialog -->
     <!-- ================================================================= -->
-    <ODialog v-model="showDialog" :title="editingId ? 'スケジュール編集' : '新規スケジュール'" size="lg" @close="closeDialog">
+    <ODialog v-model="showDialog" :title="editingId ? t('wms.schedule.editSchedule', 'スケジュール編集') : t('wms.schedule.newSchedule', '新規スケジュール')" size="lg" @close="closeDialog">
       <template #default>
         <div class="form-grid">
           <div class="form-field">
-            <label class="form-label">名前 <span class="required">*</span></label>
-            <input type="text" class="o-input" v-model="form.name" placeholder="スケジュール名" />
+            <label class="form-label">{{ t('wms.schedule.name', '名前') }} <span class="required">*</span></label>
+            <input type="text" class="o-input" v-model="form.name" :placeholder="t('wms.schedule.scheduleName', 'スケジュール名')" />
           </div>
           <div class="form-field">
-            <label class="form-label">アクション <span class="required">*</span></label>
+            <label class="form-label">{{ t('wms.schedule.action', 'アクション') }} <span class="required">*</span></label>
             <select class="o-input" v-model="form.action">
-              <option value="">選択してください</option>
+              <option value="">{{ t('wms.schedule.selectPlaceholder', '選択してください') }}</option>
               <option v-for="(label, key) in ACTION_LABELS" :key="key" :value="key">{{ label }}</option>
             </select>
           </div>
           <div class="form-field form-field--full">
-            <label class="form-label">説明</label>
-            <input type="text" class="o-input" v-model="form.description" placeholder="説明（任意）" />
+            <label class="form-label">{{ t('wms.schedule.description', '説明') }}</label>
+            <input type="text" class="o-input" v-model="form.description" :placeholder="t('wms.schedule.descriptionOptional', '説明（任意）')" />
           </div>
           <div class="form-field form-field--full">
-            <label class="form-label">実行タイプ</label>
+            <label class="form-label">{{ t('wms.schedule.executionType', '実行タイプ') }}</label>
             <div class="radio-group">
               <label class="radio-label">
-                <input type="radio" value="manual" v-model="form.scheduleType" /> 手動
+                <input type="radio" value="manual" v-model="form.scheduleType" /> {{ t('wms.schedule.manual', '手動') }}
               </label>
               <label class="radio-label">
-                <input type="radio" value="scheduled" v-model="form.scheduleType" /> スケジュール
+                <input type="radio" value="scheduled" v-model="form.scheduleType" /> {{ t('wms.schedule.scheduled', 'スケジュール') }}
               </label>
             </div>
           </div>
           <template v-if="form.scheduleType === 'scheduled'">
             <div class="form-field">
-              <label class="form-label">時 (0-23)</label>
+              <label class="form-label">{{ t('wms.schedule.hour', '時 (0-23)') }}</label>
               <input type="number" class="o-input" v-model.number="form.cronHour" min="0" max="23" />
             </div>
             <div class="form-field">
-              <label class="form-label">分 (0-59)</label>
+              <label class="form-label">{{ t('wms.schedule.minute', '分 (0-59)') }}</label>
               <input type="number" class="o-input" v-model.number="form.cronMinute" min="0" max="59" />
             </div>
             <div class="form-field form-field--full">
-              <label class="form-label">曜日 (空=毎日)</label>
+              <label class="form-label">{{ t('wms.schedule.daysOfWeek', '曜日 (空=毎日)') }}</label>
               <div class="checkbox-group">
                 <label v-for="(dayLabel, idx) in DAY_LABELS" :key="idx" class="checkbox-label">
                   <input type="checkbox" :value="idx" v-model="form.cronDaysOfWeek" />
@@ -317,26 +162,26 @@
               </div>
             </div>
             <div class="form-field">
-              <label class="form-label">Cron式 (上級)</label>
+              <label class="form-label">{{ t('wms.schedule.cronExpression', 'Cron式 (上級)') }}</label>
               <input type="text" class="o-input" v-model="form.cronExpression" placeholder="0 9 * * *" />
             </div>
             <div class="form-field">
               <label class="checkbox-label">
                 <input type="checkbox" v-model="form.skipHolidays" />
-                祝日スキップ
+                {{ t('wms.schedule.skipHolidays', '祝日スキップ') }}
               </label>
             </div>
           </template>
           <div class="form-field form-field--full">
-            <label class="form-label">メタデータ (JSON)</label>
+            <label class="form-label">{{ t('wms.schedule.metadataJson', 'メタデータ (JSON)') }}</label>
             <textarea class="o-input" v-model="form.metadataJson" rows="3" placeholder='{"key": "value"}'></textarea>
           </div>
         </div>
       </template>
       <template #footer>
         <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <OButton variant="secondary" size="sm" @click="closeDialog">キャンセル</OButton>
-          <OButton variant="primary" size="sm" @click="saveSchedule">保存</OButton>
+          <OButton variant="secondary" size="sm" @click="closeDialog">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
+          <OButton variant="primary" size="sm" @click="saveSchedule">{{ t('wms.common.save', '保存') }}</OButton>
         </div>
       </template>
     </ODialog>
@@ -344,11 +189,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, h, onMounted, reactive, ref, watch } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
 import {
   fetchWmsSchedules,
   createWmsSchedule,
@@ -361,42 +209,44 @@ import {
   exportWmsLogs,
 } from '@/api/wmsSchedule'
 import type { WmsSchedule, WmsTask, WmsScheduleLog } from '@/api/wmsSchedule'
+import type { TableColumn, Operator } from '@/types/table'
 
 const toast = useToast()
+const { t } = useI18n()
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 const ACTION_LABELS: Record<string, string> = {
-  auto_allocate: '自動引当',
-  auto_batch: '自動バッチ',
-  auto_print: '自動印刷',
-  auto_label: '自動ラベル',
-  inventory_sync: '在庫同期',
-  report_generate: 'レポート生成',
-  cleanup: 'クリーンアップ',
+  auto_allocate: t('wms.schedule.actionAutoAllocate', '自動引当'),
+  auto_batch: t('wms.schedule.actionAutoBatch', '自動バッチ'),
+  auto_print: t('wms.schedule.actionAutoPrint', '自動印刷'),
+  auto_label: t('wms.schedule.actionAutoLabel', '自動ラベル'),
+  inventory_sync: t('wms.schedule.actionInventorySync', '在庫同期'),
+  report_generate: t('wms.schedule.actionReportGenerate', 'レポート生成'),
+  cleanup: t('wms.schedule.actionCleanup', 'クリーンアップ'),
 }
 
 const EVENT_LABELS: Record<string, string> = {
-  schedule_created: '作成',
-  schedule_updated: '更新',
-  schedule_enabled: '有効化',
-  schedule_disabled: '無効化',
-  task_started: 'タスク開始',
-  task_completed: 'タスク完了',
-  task_failed: 'タスク失敗',
-  manual_run: '手動実行',
+  schedule_created: t('wms.schedule.eventCreated', '作成'),
+  schedule_updated: t('wms.schedule.eventUpdated', '更新'),
+  schedule_enabled: t('wms.schedule.eventEnabled', '有効化'),
+  schedule_disabled: t('wms.schedule.eventDisabled', '無効化'),
+  task_started: t('wms.schedule.eventTaskStarted', 'タスク開始'),
+  task_completed: t('wms.schedule.eventTaskCompleted', 'タスク完了'),
+  task_failed: t('wms.schedule.eventTaskFailed', 'タスク失敗'),
+  manual_run: t('wms.schedule.eventManualRun', '手動実行'),
 }
 
 const DAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'] as const
 
 const TASK_STATUS_LABELS: Record<string, string> = {
-  queued: '待機中',
-  running: '実行中',
-  completed: '完了',
-  failed: '失敗',
-  cancelled: 'キャンセル',
+  queued: t('wms.schedule.statusQueued', '待機中'),
+  running: t('wms.schedule.statusRunning', '実行中'),
+  completed: t('wms.schedule.statusCompleted', '完了'),
+  failed: t('wms.schedule.statusFailed', '失敗'),
+  cancelled: t('wms.schedule.statusCancelled', 'キャンセル'),
 }
 
 // ---------------------------------------------------------------------------
@@ -439,12 +289,12 @@ const formatDuration = (ms: number) => {
 const formatCronDisplay = (s: WmsSchedule) => {
   if (s.scheduleType !== 'scheduled') return '-'
   if (s.cronExpression) return s.cronExpression
-  const h = s.cronHour != null ? String(s.cronHour).padStart(2, '0') : '**'
+  const hr = s.cronHour != null ? String(s.cronHour).padStart(2, '0') : '**'
   const m = s.cronMinute != null ? String(s.cronMinute).padStart(2, '0') : '**'
   const days = s.cronDaysOfWeek.length > 0
     ? s.cronDaysOfWeek.map(d => DAY_LABELS[d]).join(',')
-    : '毎日'
-  return `${h}:${m} (${days})`
+    : t('wms.schedule.everyday', '毎日')
+  return `${hr}:${m} (${days})`
 }
 
 // ---------------------------------------------------------------------------
@@ -454,13 +304,53 @@ const formatCronDisplay = (s: WmsSchedule) => {
 const schedules = ref<WmsSchedule[]>([])
 const schedulesLoading = ref(false)
 
+const scheduleTableColumns: TableColumn[] = [
+  { key: 'name', dataKey: 'name', title: t('wms.schedule.name', '名前'), width: 180, fieldType: 'string' },
+  {
+    key: 'action', dataKey: 'action', title: t('wms.schedule.action', 'アクション'), width: 120, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsSchedule }) =>
+      h('span', { class: 'action-badge' }, actionLabel(rowData.action)),
+  },
+  {
+    key: 'scheduleType', dataKey: 'scheduleType', title: t('wms.schedule.type', 'タイプ'), width: 90, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsSchedule }) =>
+      rowData.scheduleType === 'scheduled' ? t('wms.schedule.scheduled', 'スケジュール') : t('wms.schedule.manual', '手動'),
+  },
+  {
+    key: 'cronDisplay', title: t('wms.schedule.executionTime', '実行時間'), width: 120, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsSchedule }) => formatCronDisplay(rowData),
+  },
+  {
+    key: 'isEnabled', dataKey: 'isEnabled', title: t('wms.schedule.enabled', '有効'), width: 70, fieldType: 'boolean',
+    cellRenderer: ({ rowData }: { rowData: WmsSchedule }) =>
+      h('button', {
+        class: `toggle-btn ${rowData.isEnabled ? 'toggle-on' : ''}`,
+        onClick: () => handleToggle(rowData),
+      }, rowData.isEnabled ? 'ON' : 'OFF'),
+  },
+  {
+    key: 'lastRunAt', dataKey: 'lastRunAt', title: t('wms.schedule.lastRun', '最終実行'), width: 140, fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: WmsSchedule }) => formatDateTime(rowData.lastRunAt),
+  },
+  { key: 'runCount', dataKey: 'runCount', title: t('wms.schedule.runCount', '実行回数'), width: 70, fieldType: 'number' },
+  {
+    key: 'actions', title: t('wms.common.actions', '操作'), width: 160, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsSchedule }) =>
+      h('div', { style: 'display:flex;gap:4px;' }, [
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openEditDialog(rowData) }, () => t('wms.common.edit', '編集')),
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleRun(rowData) }, () => t('wms.schedule.run', '実行')),
+        h(OButton, { variant: 'danger', size: 'sm', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')),
+      ]),
+  },
+]
+
 const loadSchedules = async () => {
   schedulesLoading.value = true
   try {
     const res = await fetchWmsSchedules()
     schedules.value = res.data
   } catch (e: unknown) {
-    toast.showError(e instanceof Error ? e.message : 'スケジュールの取得に失敗しました')
+    toast.showError(e instanceof Error ? e.message : t('wms.schedule.fetchError', 'スケジュールの取得に失敗しました'))
   } finally {
     schedulesLoading.value = false
   }
@@ -469,31 +359,31 @@ const loadSchedules = async () => {
 const handleToggle = async (s: WmsSchedule) => {
   try {
     await toggleWmsSchedule(s._id)
-    toast.showSuccess(`スケジュール「${s.name}」を${s.isEnabled ? '無効' : '有効'}にしました`)
+    toast.showSuccess(t('wms.schedule.toggleSuccess', `スケジュール「${s.name}」を${s.isEnabled ? '無効' : '有効'}にしました`))
     await loadSchedules()
   } catch (e: unknown) {
-    toast.showError(e instanceof Error ? e.message : '切り替えに失敗しました')
+    toast.showError(e instanceof Error ? e.message : t('wms.schedule.toggleError', '切り替えに失敗しました'))
   }
 }
 
 const handleRun = async (s: WmsSchedule) => {
   try {
     const task = await runWmsSchedule(s._id)
-    toast.showSuccess(`タスク ${task.taskNumber} を作成しました`)
+    toast.showSuccess(t('wms.schedule.taskCreated', `タスク ${task.taskNumber} を作成しました`))
     await loadSchedules()
   } catch (e: unknown) {
-    toast.showError(e instanceof Error ? e.message : '実行に失敗しました')
+    toast.showError(e instanceof Error ? e.message : t('wms.schedule.runError', '実行に失敗しました'))
   }
 }
 
 const handleDelete = async (s: WmsSchedule) => {
-  if (!confirm(`スケジュール「${s.name}」を削除しますか？`)) return
+  if (!confirm(t('wms.schedule.deleteConfirm', `スケジュール「${s.name}」を削除しますか？`))) return
   try {
     await deleteWmsSchedule(s._id)
-    toast.showSuccess('スケジュールを削除しました')
+    toast.showSuccess(t('wms.schedule.deleteSuccess', 'スケジュールを削除しました'))
     await loadSchedules()
   } catch (e: unknown) {
-    toast.showError(e instanceof Error ? e.message : '削除に失敗しました')
+    toast.showError(e instanceof Error ? e.message : t('wms.schedule.deleteError', '削除に失敗しました'))
   }
 }
 
@@ -557,7 +447,7 @@ const closeDialog = () => {
 
 const saveSchedule = async () => {
   if (!form.name.trim() || !form.action) {
-    toast.showError('名前とアクションは必須です')
+    toast.showError(t('wms.schedule.nameActionRequired', '名前とアクションは必須です'))
     return
   }
 
@@ -566,7 +456,7 @@ const saveSchedule = async () => {
     try {
       metadata = JSON.parse(form.metadataJson)
     } catch {
-      toast.showError('メタデータのJSONが不正です')
+      toast.showError(t('wms.schedule.invalidJson', 'メタデータのJSONが不正です'))
       return
     }
   }
@@ -587,15 +477,15 @@ const saveSchedule = async () => {
   try {
     if (editingId.value) {
       await updateWmsSchedule(editingId.value, payload)
-      toast.showSuccess('スケジュールを更新しました')
+      toast.showSuccess(t('wms.schedule.updateSuccess', 'スケジュールを更新しました'))
     } else {
       await createWmsSchedule(payload)
-      toast.showSuccess('スケジュールを作成しました')
+      toast.showSuccess(t('wms.schedule.createSuccess', 'スケジュールを作成しました'))
     }
     closeDialog()
     await loadSchedules()
   } catch (e: unknown) {
-    toast.showError(e instanceof Error ? e.message : '保存に失敗しました')
+    toast.showError(e instanceof Error ? e.message : t('wms.schedule.saveError', '保存に失敗しました'))
   }
 }
 
@@ -613,7 +503,54 @@ const taskFilterStatus = ref('')
 const taskFilterDateFrom = ref('')
 const taskFilterDateTo = ref('')
 
-const taskTotalPages = computed(() => Math.max(1, Math.ceil(taskTotal.value / taskPageSize.value)))
+const taskSearchColumns: TableColumn[] = [
+  {
+    key: 'status', dataKey: 'status', title: t('wms.schedule.status', 'ステータス'), width: 90, fieldType: 'string',
+    searchable: true, searchType: 'select',
+    searchOptions: [
+      { label: t('wms.schedule.statusQueued', '待機中'), value: 'queued' },
+      { label: t('wms.schedule.statusRunning', '実行中'), value: 'running' },
+      { label: t('wms.schedule.statusCompleted', '完了'), value: 'completed' },
+      { label: t('wms.schedule.statusFailed', '失敗'), value: 'failed' },
+      { label: t('wms.schedule.statusCancelled', 'キャンセル'), value: 'cancelled' },
+    ],
+  },
+]
+
+const taskTableColumns: TableColumn[] = [
+  {
+    key: 'taskNumber', dataKey: 'taskNumber', title: t('wms.schedule.taskNumber', 'タスク番号'), width: 140, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsTask }) => h('span', { class: 'task-number' }, rowData.taskNumber),
+  },
+  { key: 'scheduleName', dataKey: 'scheduleName', title: t('wms.schedule.scheduleName', 'スケジュール名'), width: 140, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsTask }) => rowData.scheduleName || '-' },
+  {
+    key: 'action', dataKey: 'action', title: t('wms.schedule.action', 'アクション'), width: 100, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsTask }) => h('span', { class: 'action-badge' }, actionLabel(rowData.action)),
+  },
+  {
+    key: 'status', dataKey: 'status', title: t('wms.schedule.status', 'ステータス'), width: 90, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsTask }) =>
+      h('span', { class: `status-badge status--${rowData.status}` }, taskStatusLabel(rowData.status)),
+  },
+  { key: 'processedCount', dataKey: 'processedCount', title: t('wms.schedule.processedCount', '処理数'), width: 60, fieldType: 'number' },
+  { key: 'successCount', dataKey: 'successCount', title: t('wms.schedule.successCount', '成功数'), width: 60, fieldType: 'number' },
+  { key: 'errorCount', dataKey: 'errorCount', title: t('wms.schedule.errorCount', 'エラー数'), width: 60, fieldType: 'number' },
+  {
+    key: 'triggeredBy', dataKey: 'triggeredBy', title: t('wms.schedule.trigger', 'トリガー'), width: 70, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsTask }) => rowData.triggeredBy === 'manual' ? t('wms.schedule.manual', '手動') : t('wms.schedule.scheduler', 'スケジューラ'),
+  },
+  {
+    key: 'startedAt', dataKey: 'startedAt', title: t('wms.schedule.startedAt', '開始日時'), width: 140, fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: WmsTask }) => formatDateTime(rowData.startedAt),
+  },
+  {
+    key: 'durationMs', dataKey: 'durationMs', title: t('wms.schedule.duration', '処理時間'), width: 80, fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: WmsTask }) => rowData.durationMs != null ? formatDuration(rowData.durationMs) : '-',
+  },
+  { key: 'message', dataKey: 'message', title: t('wms.schedule.message', 'メッセージ'), width: 200, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsTask }) => rowData.message || '-' },
+]
 
 const loadTasks = async () => {
   tasksLoading.value = true
@@ -628,32 +565,21 @@ const loadTasks = async () => {
     tasks.value = res.data
     taskTotal.value = res.total
   } catch (e: unknown) {
-    toast.showError(e instanceof Error ? e.message : 'タスクの取得に失敗しました')
+    toast.showError(e instanceof Error ? e.message : t('wms.schedule.taskFetchError', 'タスクの取得に失敗しました'))
   } finally {
     tasksLoading.value = false
   }
 }
 
-const doTaskSearch = () => {
+const handleTaskSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  taskFilterStatus.value = payload.status?.value || ''
   taskPage.value = 1
   loadTasks()
 }
 
-const resetTaskFilters = () => {
-  taskFilterStatus.value = ''
-  taskFilterDateFrom.value = ''
-  taskFilterDateTo.value = ''
-  taskPage.value = 1
-  loadTasks()
-}
-
-const onTaskPageSizeChange = () => {
-  taskPage.value = 1
-  loadTasks()
-}
-
-const goTaskPage = (p: number) => {
-  taskPage.value = p
+const onTaskPageChange = (payload: { page: number; pageSize: number }) => {
+  taskPage.value = payload.page
+  taskPageSize.value = payload.pageSize
   loadTasks()
 }
 
@@ -672,7 +598,41 @@ const logFilterEvent = ref('')
 const logFilterDateFrom = ref('')
 const logFilterDateTo = ref('')
 
-const logTotalPages = computed(() => Math.max(1, Math.ceil(logTotal.value / logPageSize.value)))
+const logSearchColumns: TableColumn[] = [
+  {
+    key: 'action', dataKey: 'action', title: t('wms.schedule.action', 'アクション'), width: 110, fieldType: 'string',
+    searchable: true, searchType: 'select',
+    searchOptions: Object.entries(ACTION_LABELS).map(([value, label]) => ({ label, value })),
+  },
+  {
+    key: 'event', dataKey: 'event', title: t('wms.schedule.event', 'イベント'), width: 120, fieldType: 'string',
+    searchable: true, searchType: 'select',
+    searchOptions: Object.entries(EVENT_LABELS).map(([value, label]) => ({ label, value })),
+  },
+]
+
+const logTableColumns: TableColumn[] = [
+  {
+    key: 'createdAt', dataKey: 'createdAt', title: t('wms.schedule.dateTime', '日時'), width: 150, fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: WmsScheduleLog }) => formatDateTime(rowData.createdAt),
+  },
+  {
+    key: 'action', dataKey: 'action', title: t('wms.schedule.action', 'アクション'), width: 110, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsScheduleLog }) => h('span', { class: 'action-badge' }, actionLabel(rowData.action)),
+  },
+  {
+    key: 'event', dataKey: 'event', title: t('wms.schedule.event', 'イベント'), width: 120, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsScheduleLog }) => eventLabel(rowData.event),
+  },
+  {
+    key: 'taskNumber', dataKey: 'taskNumber', title: t('wms.schedule.taskNumber', 'タスク番号'), width: 140, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsScheduleLog }) =>
+      rowData.taskNumber ? h('span', { class: 'task-number' }, rowData.taskNumber) : '-',
+  },
+  { key: 'message', dataKey: 'message', title: t('wms.schedule.message', 'メッセージ'), width: 200, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: WmsScheduleLog }) => rowData.message || '-' },
+  { key: 'userName', dataKey: 'userName', title: t('wms.schedule.user', 'ユーザー'), width: 90, fieldType: 'string' },
+]
 
 const loadLogs = async () => {
   logsLoading.value = true
@@ -688,33 +648,22 @@ const loadLogs = async () => {
     logs.value = res.data
     logTotal.value = res.total
   } catch (e: unknown) {
-    toast.showError(e instanceof Error ? e.message : 'ログの取得に失敗しました')
+    toast.showError(e instanceof Error ? e.message : t('wms.schedule.logFetchError', 'ログの取得に失敗しました'))
   } finally {
     logsLoading.value = false
   }
 }
 
-const doLogSearch = () => {
+const handleLogSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  logFilterAction.value = payload.action?.value || ''
+  logFilterEvent.value = payload.event?.value || ''
   logPage.value = 1
   loadLogs()
 }
 
-const resetLogFilters = () => {
-  logFilterAction.value = ''
-  logFilterEvent.value = ''
-  logFilterDateFrom.value = ''
-  logFilterDateTo.value = ''
-  logPage.value = 1
-  loadLogs()
-}
-
-const onLogPageSizeChange = () => {
-  logPage.value = 1
-  loadLogs()
-}
-
-const goLogPage = (p: number) => {
-  logPage.value = p
+const onLogPageChange = (payload: { page: number; pageSize: number }) => {
+  logPage.value = payload.page
+  logPageSize.value = payload.pageSize
   loadLogs()
 }
 
@@ -727,7 +676,7 @@ const exportLogsCsv = async () => {
       dateTo: logFilterDateTo.value || undefined,
     })
 
-    const csvRows: string[] = ['日時,アクション,イベント,タスク番号,メッセージ,ユーザー']
+    const csvRows: string[] = [`${t('wms.schedule.dateTime', '日時')},${t('wms.schedule.action', 'アクション')},${t('wms.schedule.event', 'イベント')},${t('wms.schedule.taskNumber', 'タスク番号')},${t('wms.schedule.message', 'メッセージ')},${t('wms.schedule.user', 'ユーザー')}`]
     for (const r of data) {
       csvRows.push([
         `"${formatDateTime(r.createdAt)}"`,
@@ -748,7 +697,7 @@ const exportLogsCsv = async () => {
     a.click()
     URL.revokeObjectURL(url)
   } catch (e: unknown) {
-    toast.showError(e instanceof Error ? e.message : 'エクスポートに失敗しました')
+    toast.showError(e instanceof Error ? e.message : t('wms.schedule.exportError', 'エクスポートに失敗しました'))
   }
 }
 
@@ -761,22 +710,27 @@ onMounted(() => {
 })
 </script>
 
-<style>
-@import '@/styles/order-table.css';
-</style>
-
 <style scoped>
 .wms-schedule-view {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  padding: 0 20px 20px;
+  gap: 16px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
+}
+
+.table-section {
+  width: 100%;
 }
 
 /* Tabs */
 .tab-bar {
   display: flex;
   gap: 0;
-  margin-bottom: 12px;
   border-bottom: 1px solid var(--o-gray-200, #e4e7ed);
 }
 
@@ -800,41 +754,6 @@ onMounted(() => {
   color: var(--o-brand-primary, #714b67);
   font-weight: 600;
   box-shadow: inset 0 -2px 0 var(--o-brand-primary, #714b67);
-}
-
-/* Filters */
-.filter-bar {
-  background: var(--o-gray-50, #fafafa);
-  border: 1px solid var(--o-gray-200, #e4e7ed);
-  border-radius: 4px;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-}
-
-.filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-end;
-}
-
-.filter-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.filter-label {
-  font-size: 12px;
-  color: var(--o-gray-600, #606266);
-  font-weight: 500;
-}
-
-.filter-actions {
-  display: flex;
-  flex-direction: row;
-  gap: 6px;
-  align-items: flex-end;
 }
 
 /* Badges */
@@ -936,7 +855,4 @@ onMounted(() => {
   font-size: 13px;
   cursor: pointer;
 }
-
-.o-table-td--right { text-align: right; }
-.o-table-th--right { text-align: right; }
 </style>

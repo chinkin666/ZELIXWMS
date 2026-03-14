@@ -55,10 +55,8 @@ export async function loadJapaneseFont(): Promise<Uint8Array> {
   loadingPromise = (async () => {
     for (const url of FONT_URLS) {
       try {
-        console.log(`Loading Japanese font from: ${url}`)
         const arrayBuffer = await fetchFont(url)
         cachedFontData = new Uint8Array(arrayBuffer)
-        console.log(`Japanese font loaded successfully (${cachedFontData.length} bytes)`)
         return cachedFontData
       } catch (error) {
         console.warn(`Failed to load font from ${url}:`, error)

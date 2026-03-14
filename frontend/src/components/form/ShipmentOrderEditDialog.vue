@@ -252,6 +252,15 @@
                 </div>
               </div>
             </template>
+
+            <!-- カスタムフィールド tab -->
+            <template v-if="activeTab === 'customFields'">
+              <OCustomFields
+                entity-type="order"
+                :model-value="(formData.customFields as Record<string, unknown>) ?? {}"
+                @update:model-value="(v: Record<string, unknown>) => formData.customFields = v"
+              />
+            </template>
           </div>
         </div>
       </div>
@@ -326,6 +335,7 @@ import { computed, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import FormField from './FormField.vue'
+import OCustomFields from '@/components/odoo/OCustomFields.vue'
 import type { TableColumn } from '@/types/table'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
 import type { Product } from '@/types/product'
@@ -416,6 +426,7 @@ const tabDefs = computed(() => {
   if (otherFields.value.length > 0) {
     tabs.push({ key: 'other', title: 'その他の情報', fields: otherFields.value })
   }
+  tabs.push({ key: 'customFields', title: 'カスタムフィールド', fields: [] as TableColumn[] })
   return tabs
 })
 
@@ -825,9 +836,9 @@ const handleSubmit = async () => {
   vertical-align: middle;
 }
 .o-status-warning {
-  background: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffc107;
+  background: var(--o-warning-bg);
+  color: var(--o-warning);
+  border: 1px solid var(--o-warning);
 }
 
 /* ── Top fields (2 column above tabs, like Odoo header fields) ── */
@@ -880,7 +891,7 @@ const handleSubmit = async () => {
 .o-field-value :deep(select.o-input:focus) {
   border-color: var(--o-brand-primary, #714B67);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.12);
+  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.12);
 }
 
 /* ── Notebook ── */
@@ -915,8 +926,8 @@ const handleSubmit = async () => {
 
 .o-tab-error {
   display: inline-block;
-  background: #dc3545;
-  color: #fff;
+  background: var(--o-danger);
+  color: var(--o-view-background);
   font-size: 10px;
   font-weight: 700;
   padding: 1px 6px;
@@ -970,13 +981,13 @@ const handleSubmit = async () => {
 .o-form-field :deep(select.o-input:focus) {
   border-color: var(--o-brand-primary, #714B67);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.12);
+  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.12);
 }
 
 .required-badge {
   display: inline-block;
-  background: #dc3545;
-  color: #fff;
+  background: var(--o-danger);
+  color: var(--o-view-background);
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
@@ -1023,13 +1034,13 @@ const handleSubmit = async () => {
 
 .o-inline-input:focus {
   border-color: var(--o-brand-primary, #714B67);
-  box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.12);
+  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.12);
 }
 .o-inline-input--error {
-  border-color: #dc3545;
+  border-color: var(--o-danger);
 }
 .o-inline-input--error:focus {
-  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.15);
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.15); /* keep as-is: danger focus ring */
 }
 
 .o-btn-icon {
@@ -1040,7 +1051,7 @@ const handleSubmit = async () => {
   padding: 4px;
   border-radius: 4px;
 }
-.o-btn-icon--danger:hover { color: #dc3545; }
+.o-btn-icon--danger:hover { color: var(--o-danger); }
 
 .o-add-line-btn {
   width: 100%;
@@ -1050,7 +1061,7 @@ const handleSubmit = async () => {
   gap: 0.375rem;
   padding: 0.375rem 0.625rem;
   background: none;
-  border: 1px dashed #999;
+  border: 1px dashed var(--o-gray-500);
   border-radius: var(--o-border-radius, 4px);
   color: var(--o-brand-primary, #714B67);
   font-size: 13px;
@@ -1059,7 +1070,7 @@ const handleSubmit = async () => {
 }
 .o-add-line-btn:hover {
   border-color: var(--o-brand-primary, #714B67);
-  background: rgba(113, 75, 103, 0.04);
+  background: rgba(217, 119, 86, 0.04);
 }
 
 /* ── Footer ── */
@@ -1073,7 +1084,7 @@ const handleSubmit = async () => {
   display: inline-block;
   width: 14px;
   height: 14px;
-  border: 2px solid #fff;
+  border: 2px solid var(--o-view-background);
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
@@ -1180,7 +1191,7 @@ const handleSubmit = async () => {
 
 .o-handling-chip--active {
   background: var(--o-brand-primary, #714B67);
-  color: #fff;
+  color: var(--o-view-background);
   border-color: var(--o-brand-primary, #714B67);
 }
 
@@ -1248,7 +1259,7 @@ const handleSubmit = async () => {
 }
 
 .o-sender-search-item:hover {
-  background: rgba(113, 75, 103, 0.08);
+  background: rgba(217, 119, 86, 0.08);
 }
 
 .o-sender-search-name {

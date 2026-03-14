@@ -1,26 +1,31 @@
-import type { NextFunction, Request, Response } from 'express';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
+import swaggerUi from 'swagger-ui-express';
 import { loadEnv } from '@/config/env';
-import { logger } from '@/lib/logger';
 import { registerCoreRoutes } from '@/api/routes';
 import { extensionManager } from '@/core/extensions';
+import { errorHandler, notFoundHandler } from '@/api/middleware/errorHandler';
+import { paginationGuard } from '@/api/middleware/paginationGuard';
+import { swaggerSpec } from '@/config/swagger';
+// NOTE: auth 中间件已就绪，可按路由单独使用 / auth ミドルウェアは準備完了、ルート単位で使用可能
+// import { requireAuth, requireRole, optionalAuth } from '@/api/middleware/auth';
 
 loadEnv();
 
 export const createApp = () => {
   const app = express();
 
-  // CORS 配置
+  // CORS 配置 / CORS 設定
+  // 允许的来源从环境变量读取（逗号分隔）/ 許可オリジンを環境変数から取得（カンマ区切り）
+  const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
+    : ['http://localhost:4001'];
   app.use(
     cors({
-      origin: process.env.FRONTEND_URL || [
-        'http://localhost:4001',
-        'http://192.168.0.166:4001',
-      ],
+      origin: allowedOrigins,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
@@ -32,16 +37,19 @@ export const createApp = () => {
   }));
   app.use(
     express.json({
-      limit: '1gb',
+      limit: '10mb',
     }),
   );
   app.use(
     express.urlencoded({
       extended: true,
-      limit: '1gb',
+      limit: '10mb',
     }),
   );
   app.use(morgan('dev'));
+
+  // 分页参数守卫（全局） / ページネーションガード（グローバル）
+  app.use(paginationGuard);
 
   // Serve uploaded files with 304 caching
   const env = loadEnv();
@@ -53,6 +61,10 @@ export const createApp = () => {
 
   registerCoreRoutes(app);
 
+  // Swagger UI / API ドキュメント
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
+
   // 插件自定义 API 路由 / プラグインカスタム API ルート
   // 插件通过 registerAPI() 注册的路由挂载到 /api/plugins/{name}/*
   app.use('/api/plugins', extensionManager.getPluginManager().getRouter());
@@ -61,18 +73,11 @@ export const createApp = () => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    logger.error(err, 'Unhandled error');
-    console.error('=== ERROR DETAILS ===');
-    console.error('Message:', err.message);
-    console.error('Stack:', err.stack);
-    console.error('=====================');
-    res.status(500).json({
-      message: 'Internal Server Error',
-      error: process.env.NODE_ENV !== 'production' ? err.message : undefined,
-      stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined,
-    });
-  });
+  // 未匹配路由处理 / 未マッチルートハンドラー
+  app.use(notFoundHandler);
+
+  // 全局错误处理 / グローバルエラーハンドラー
+  app.use(errorHandler);
 
   return app;
 };

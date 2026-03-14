@@ -1,13 +1,13 @@
 <template>
   <div class="order-item-scan">
-    <ControlPanel title="商品スキャン検品" :show-search="false">
+    <ControlPanel :title="t('wms.inspection.productScanInspection', '商品スキャン検品')" :show-search="false">
       <template #actions>
         <label class="o-toggle">
           <input type="checkbox" v-model="autoPrintEnabled" @change="saveAutoPrintSetting" />
           <span class="o-toggle__slider"></span>
-          <span class="toggle-label">{{ autoPrintEnabled ? '自動印刷' : '手動印刷' }}</span>
+          <span class="toggle-label">{{ autoPrintEnabled ? t('wms.inspection.autoPrint', '自動印刷') : t('wms.inspection.manualPrint', '手動印刷') }}</span>
         </label>
-        <OButton variant="secondary" @click="handleBack">戻る</OButton>
+        <OButton variant="secondary" @click="handleBack">{{ t('wms.inspection.goBack', '戻る') }}</OButton>
       </template>
     </ControlPanel>
 
@@ -26,7 +26,7 @@
       <input
         class="o-input main-input"
         v-model="inputValue"
-        placeholder="スキャンまたは入力してください"
+        :placeholder="t('wms.inspection.scanOrEnter', 'スキャンまたは入力してください')"
         @keyup.enter="handleInput"
         @input="handleInputChange"
         ref="mainInputRef"
@@ -36,7 +36,7 @@
     <!-- 上方表格：待扫描商品 -->
     <div class="table-section top-table">
       <div class="table-header">
-        <span class="table-title">スキャン待ち商品 ({{ pendingItems.length }})</span>
+        <span class="table-title">{{ t('wms.inspection.pendingItems', 'スキャン待ち商品') }} ({{ pendingItems.length }})</span>
       </div>
       <Table
         :columns="tableColumns"
@@ -53,7 +53,7 @@
     <!-- 下方表格：已扫描商品 -->
     <div class="table-section bottom-table">
       <div class="table-header">
-        <span class="table-title">スキャン済み商品 ({{ scannedItems.length }})</span>
+        <span class="table-title">{{ t('wms.inspection.scannedItems', 'スキャン済み商品') }} ({{ scannedItems.length }})</span>
       </div>
       <Table
         :columns="tableColumns"
@@ -67,7 +67,7 @@
       />
     </div>
 
-    <!-- 底部操作栏 -->
+    <!-- 下部操作バー / 底部操作栏 -->
     <ScanBottomBar
       :order-number="order?.orderNumber || '-'"
       :pending-count="pendingItems.length"
@@ -119,6 +119,7 @@ import ChangeInvoiceTypeDialog from '@/components/dialogs/ChangeInvoiceTypeDialo
 import ScanCompletionDialog from './order-item-scan/ScanCompletionDialog.vue'
 import ScanBottomBar from './order-item-scan/ScanBottomBar.vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import { useAutoPrint } from '@/composables/useAutoPrint'
 import { useInspectionPrint } from '@/composables/useInspectionPrint'
 import type { OrderDocument } from '@/types/order'
@@ -142,6 +143,8 @@ const toast = {
   warning: (msg: string) => _toast.show(msg, 'warning'),
   info: (msg: string) => _toast.show(msg, 'info'),
 }
+
+const { t } = useI18n()
 
 // Composables
 const { autoPrintEnabled, saveAutoPrintSetting } = useAutoPrint('orderItemScan_autoPrintEnabled')
@@ -198,9 +201,9 @@ const handleUnconfirmConfirm = async (reason: string, skipCarrierDelete = false)
     const orderId = String(order.value._id)
     const result = await yamatoB2Unconfirm([orderId], reason, { skipCarrierDelete })
     if (result.success) {
-      let message = '確認を取り消しました'
+      let message = t('wms.inspection.confirmCancelled', '確認を取り消しました')
       if (result.carrierDeleteSkipped) {
-        message += '（B2 Cloud削除スキップ）'
+        message += t('wms.inspection.b2CloudDeleteSkipped', '（B2 Cloud削除スキップ）')
       } else if (result.b2DeleteResult) {
         if (result.b2DeleteResult.success) {
           message += `（B2 Cloudから${result.b2DeleteResult.deleted}件削除）`
@@ -235,14 +238,14 @@ const handleUnconfirmConfirm = async (reason: string, skipCarrierDelete = false)
     if (isCarrierDeleteError(e)) {
       isUnconfirming.value = false
       const confirmed = confirm(
-        `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）`
+        t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteManual', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）')}`
       )
       if (confirmed) {
         await handleUnconfirmConfirm(reason, true)
       }
       return
     }
-    toast.error(e?.message || '確認取消に失敗しました')
+    toast.error(e?.message || t('wms.inspection.unconfirmFailed', '確認取消に失敗しました'))
     unconfirmDialogVisible.value = false
   } finally {
     isUnconfirming.value = false
@@ -266,7 +269,7 @@ const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrie
     const result = await changeInvoiceType([orderId], newInvoiceType, { skipCarrierDelete })
 
     if (result.success) {
-      let message = `送り状種類を変更しました（${result.updatedCount}件更新）`
+      let message = t('wms.inspection.invoiceTypeChanged', '送り状種類を変更しました') + `（${result.updatedCount}${t('wms.common.items', '件')}）`
       if (result.resubmittedCount > 0) {
         message += `、${result.resubmittedCount}件をB2 Cloudに再登録`
       }
@@ -317,7 +320,7 @@ const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrie
 
       router.push('/shipment-operations/one-by-one/scan')
     } else {
-      const errorMsg = result.errors?.join(', ') || '送り状種類変更に失敗しました'
+      const errorMsg = result.errors?.join(', ') || t('wms.inspection.invoiceTypeChangeFailed', '送り状種類変更に失敗しました')
       toast.error(errorMsg)
     }
     changeInvoiceTypeDialogVisible.value = false
@@ -325,14 +328,14 @@ const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrie
     if (isCarrierDeleteError(e)) {
       isChangingInvoiceType.value = false
       const confirmed = confirm(
-        `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）`
+        t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteManual', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）')}`
       )
       if (confirmed) {
         await handleChangeInvoiceTypeConfirm(newInvoiceType, true)
       }
       return
     }
-    toast.error(e?.message || '送り状種類変更に失敗しました')
+    toast.error(e?.message || t('wms.inspection.invoiceTypeChangeFailed', '送り状種類変更に失敗しました'))
     changeInvoiceTypeDialogVisible.value = false
   } finally {
     isChangingInvoiceType.value = false
@@ -356,14 +359,14 @@ const carrierName = computed(() => {
 const summaryItems = computed(() => {
   const o: any = order.value || {}
   return [
-    { key: 'orderNumber', label: '出荷管理No', value: o.orderNumber || '-' },
-    { key: 'trackingId', label: '伝票番号', value: o.trackingId || '-' },
-    { key: 'carrierId', label: '配送業者', value: carrierName.value },
-    { key: 'shipPlanDate', label: '出荷予定日', value: o.shipPlanDate || '-' },
-    { key: 'invoiceType', label: '送り状種類', value: o.invoiceType || '-' },
-    { key: 'recipientName', label: 'お届け先名', value: o.recipient?.name || '-' },
-    { key: 'recipientPhone', label: 'お届け先電話番号', value: o.recipient?.phone || '-' },
-    { key: 'recipientAddress', label: 'お届け先住所', value: [o.recipient?.prefecture, o.recipient?.city, o.recipient?.street, (o.recipient as any)?.building].filter(Boolean).join(' ') || '-' },
+    { key: 'orderNumber', label: t('wms.inspection.shipmentNumber', '出荷管理No'), value: o.orderNumber || '-' },
+    { key: 'trackingId', label: t('wms.inspection.trackingNumber', '伝票番号'), value: o.trackingId || '-' },
+    { key: 'carrierId', label: t('wms.inspection.carrier', '配送業者'), value: carrierName.value },
+    { key: 'shipPlanDate', label: t('wms.inspection.shipPlanDate', '出荷予定日'), value: o.shipPlanDate || '-' },
+    { key: 'invoiceType', label: t('wms.inspection.invoiceType', '送り状種類'), value: o.invoiceType || '-' },
+    { key: 'recipientName', label: t('wms.inspection.recipientName', 'お届け先名'), value: o.recipient?.name || '-' },
+    { key: 'recipientPhone', label: t('wms.inspection.recipientPhone', 'お届け先電話番号'), value: o.recipient?.phone || '-' },
+    { key: 'recipientAddress', label: t('wms.inspection.recipientAddress', 'お届け先住所'), value: [o.recipient?.prefecture, o.recipient?.city, o.recipient?.street, (o.recipient as any)?.building].filter(Boolean).join(' ') || '-' },
   ]
 })
 
@@ -373,7 +376,7 @@ const tableColumns = computed<TableColumn[]>(() => {
     {
       key: 'quantity',
       dataKey: 'quantity',
-      title: '数量',
+      title: t('wms.inspection.quantity', '数量'),
       width: 80,
       fieldType: 'number',
       align: 'center',
@@ -388,14 +391,14 @@ const tableColumns = computed<TableColumn[]>(() => {
     {
       key: 'name',
       dataKey: 'name',
-      title: '印刷用商品名',
+      title: t('wms.inspection.printProductName', '印刷用商品名'),
       width: 200,
       fieldType: 'string',
     },
     {
       key: 'barcode',
       dataKey: 'barcode',
-      title: 'バーコード',
+      title: t('wms.inspection.barcode', 'バーコード'),
       width: 200,
       fieldType: 'string',
       cellRenderer: ({ rowData }: { rowData: ProductItem }) => {
@@ -409,30 +412,30 @@ const tableColumns = computed<TableColumn[]>(() => {
     {
       key: 'coolType',
       dataKey: 'coolType',
-      title: 'クール区分',
+      title: t('wms.inspection.coolType', 'クール区分'),
       width: 120,
       fieldType: 'string',
       cellRenderer: ({ rowData }: { rowData: ProductItem }) => {
         const coolType = rowData.productData?.coolType
-        if (coolType === '0') return '通常'
-        if (coolType === '1') return 'クール冷凍'
-        if (coolType === '2') return 'クール冷蔵'
+        if (coolType === '0') return t('wms.inspection.coolTypeNormal', '通常')
+        if (coolType === '1') return t('wms.inspection.coolTypeFrozen', 'クール冷凍')
+        if (coolType === '2') return t('wms.inspection.coolTypeChilled', 'クール冷蔵')
         return '-'
       },
     },
     {
       key: 'mailCalcEnabled',
       dataKey: 'mailCalcEnabled',
-      title: 'メール便計算',
+      title: t('wms.inspection.mailCalc', 'メール便計算'),
       width: 140,
       fieldType: 'string',
       cellRenderer: ({ rowData }: { rowData: ProductItem }) => {
         const enabled = rowData.productData?.mailCalcEnabled
         if (enabled === true) {
           const maxQty = rowData.productData?.mailCalcMaxQuantity
-          return maxQty ? `する(${maxQty})` : 'する'
+          return maxQty ? `${t('wms.inspection.mailCalcYes', 'する')}(${maxQty})` : t('wms.inspection.mailCalcYes', 'する')
         }
-        if (enabled === false) return 'しない'
+        if (enabled === false) return t('wms.inspection.mailCalcNo', 'しない')
         return '-'
       },
     },
@@ -473,12 +476,12 @@ const getProductMatchingValues = (item: ProductItem): string[] => {
 const handleInput = () => {
   const input = inputValue.value.trim()
   if (!input) {
-    toast.warning('入力してください')
+    toast.warning(t('wms.inspection.pleaseEnter', '入力してください'))
     return
   }
 
   if (pendingItems.value.length === 0) {
-    toast.info('スキャン待ちの商品がありません')
+    toast.info(t('wms.inspection.noPendingProducts', 'スキャン待ちの商品がありません'))
     return
   }
 
@@ -497,7 +500,7 @@ const handleInput = () => {
   }
 
   if (!matchedItem || matchedIndex === -1) {
-    toast.warning(`マッチする商品が見つかりません: ${input}`)
+    toast.warning(t('wms.inspection.noMatchingProduct', 'マッチする商品が見つかりません') + `: ${input}`)
     inputValue.value = ''
     return
   }
@@ -570,7 +573,7 @@ const processInitialScan = (scanValue: string) => {
     }
   }
 
-  toast.success(`自動検品: ${matchedItem.name} (${scanValue})`)
+  toast.success(t('wms.inspection.autoInspection', '自動検品') + `: ${matchedItem.name} (${scanValue})`)
 }
 
 // 初始化商品列表
@@ -639,7 +642,7 @@ const updateParentPageOrderState = () => {
 // 打印订单
 const handlePrint = async () => {
   if (!inspPrint.printImageUrl.value || !inspPrint.printTemplate.value || !order.value) {
-    toast.warning('印刷プレビューが準備できていません')
+    toast.warning(t('wms.inspection.printPreviewNotReady', '印刷プレビューが準備できていません'))
     return
   }
 
@@ -655,15 +658,15 @@ const handlePrint = async () => {
         ])
       } catch (statusError: any) {
         console.error('Failed to update order status:', statusError)
-        toast.warning(`ステータス更新に失敗しました: ${statusError?.message || String(statusError)}`)
+        toast.warning(t('wms.inspection.statusUpdateFailed', 'ステータス更新に失敗しました') + `: ${statusError?.message || String(statusError)}`)
       }
     }
 
     const config = getPrintConfig()
     if (config.method === 'local-bridge') {
-      toast.success('印刷ジョブを送信しました')
+      toast.success(t('wms.inspection.printJobSent', '印刷ジョブを送信しました'))
     } else {
-      toast.success('印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）')
+      toast.success(t('wms.inspection.printStarted', '印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）'))
     }
 
     if (autoPrintEnabled.value) {
@@ -678,7 +681,7 @@ const handlePrint = async () => {
     }
   } catch (e: any) {
     console.error('Print error:', e)
-    toast.error(`印刷に失敗しました: ${e?.message || String(e)}`)
+    toast.error(t('wms.inspection.printFailed', '印刷に失敗しました') + `: ${e?.message || String(e)}`)
   }
 }
 
@@ -759,7 +762,7 @@ onBeforeUnmount(() => {
 onMounted(async () => {
   const orderId = route.params.orderId as string
   if (!orderId) {
-    toast.error('注文が見つかりません')
+    toast.error(t('wms.inspection.orderNotFound', '注文が見つかりません'))
     router.push('/shipment-operations/one-by-one/scan')
     return
   }
@@ -792,7 +795,7 @@ onMounted(async () => {
     }, 100)
   } catch (e: any) {
     console.error('Failed to load order:', e)
-    toast.error(e?.message || '注文の読み込みに失敗しました')
+    toast.error(e?.message || t('wms.inspection.loadOrderFailed', '注文の読み込みに失敗しました'))
     router.push('/shipment-operations/one-by-one/scan')
   }
 })
@@ -842,7 +845,7 @@ onMounted(async () => {
 
 .toggle-label {
   font-size: 13px;
-  color: #606266;
+  color: var(--o-gray-600);
 }
 
 .order-info-grid {
@@ -873,14 +876,20 @@ onMounted(async () => {
 .order-item-scan {
   display: flex;
   flex-direction: column;
+  gap: 16px;
   height: 100%;
-  padding: 20px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 .order-info-section {
   margin-bottom: 20px;
   padding: 16px;
-  background: #f5f7fa;
+  background: var(--o-gray-100);
   border-radius: 8px;
 }
 
@@ -896,22 +905,22 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #f5f7fa;
+  background: var(--o-gray-100);
   border-radius: 4px;
 }
 
 .table-title {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--o-gray-900);
 }
 
 .input-section {
   display: flex;
   align-items: center;
   padding: 20px;
-  background: #ffffff;
-  border: 2px solid #409eff;
+  background: var(--o-view-background);
+  border: 2px solid var(--o-info);
   border-radius: 8px;
   margin-bottom: 20px;
 }

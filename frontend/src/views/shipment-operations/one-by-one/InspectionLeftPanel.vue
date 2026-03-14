@@ -1,14 +1,14 @@
 <template>
   <div class="left-panel">
     <div class="left-panel__header">
-      <OButton variant="secondary" size="sm" @click="$emit('go-back')">&larr; 戻る</OButton>
-      <h2 class="page-title">1-1検品</h2>
-      <OButton variant="danger" size="sm" @click="$emit('clear')">クリア</OButton>
+      <OButton variant="secondary" size="sm" @click="$emit('go-back')">&larr; {{ t('wms.inspection.back', '戻る') }}</OButton>
+      <h2 class="page-title">{{ t('wms.inspection.oneByOneTitle', '1-1検品') }}</h2>
+      <OButton variant="danger" size="sm" @click="$emit('clear')">{{ t('wms.inspection.clear', 'クリア') }}</OButton>
     </div>
 
     <!-- ピッキング指示No -->
     <div v-if="orderGroupId" class="info-row">
-      <span class="info-label">ピッキング指示No</span>
+      <span class="info-label">{{ t('wms.inspection.pickingNo', 'ピッキング指示No') }}</span>
       <span class="info-value">{{ orderGroupId }}</span>
     </div>
 
@@ -28,7 +28,7 @@
           :value="inputValue"
           type="text"
           class="scan-input"
-          :placeholder="mode === 'order' ? '注文をスキャン...' : '商品をスキャン...'"
+          :placeholder="mode === 'order' ? t('wms.inspection.scanOrder', '注文をスキャン...') : t('wms.inspection.scanProduct', '商品をスキャン...')"
           @input="$emit('update:inputValue', ($event.target as HTMLInputElement).value)"
           @keyup.enter="$emit('submit')"
         />
@@ -41,7 +41,7 @@
       <label class="o-toggle">
         <input type="checkbox" :checked="autoPrintEnabled" @change="$emit('toggle-auto-print')" />
         <span class="o-toggle-slider"></span>
-        <span class="o-toggle-label">検品完了時 送り状自動出力</span>
+        <span class="o-toggle-label">{{ t('wms.inspection.autoPrintOnComplete', '検品完了時 送り状自動出力') }}</span>
       </label>
     </div>
 
@@ -63,17 +63,18 @@
             <span>SKU: {{ lastScannedProduct.sku }}</span>
           </div>
           <div v-if="lastScannedProduct.barcodes.length > 0" class="scanned-product-detail">
-            <span>バーコード: {{ lastScannedProduct.barcodes.join(', ') }}</span>
+            <span>{{ t('wms.inspection.barcode', 'バーコード') }}: {{ lastScannedProduct.barcodes.join(', ') }}</span>
           </div>
         </div>
       </template>
-      <div v-else class="empty-hint">スキャン待ち</div>
+      <div v-else class="empty-hint">{{ t('wms.inspection.waitingScan', 'スキャン待ち') }}</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import noImageSrc from '@/assets/images/no_image.png'
 import type { OrderDocument } from '@/types/order'
@@ -90,6 +91,8 @@ interface OrderInfoItem {
   label: string
   value: string
 }
+
+const { t } = useI18n()
 
 const props = defineProps<{
   orderGroupId: string | null

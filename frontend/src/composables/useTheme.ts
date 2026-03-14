@@ -56,11 +56,11 @@ export function useTheme() {
 
   function applyButtons(theme: ThemeConfig) {
     const root = document.documentElement
-    root.style.setProperty('--btn-radius', theme.buttons.borderRadius)
+    root.style.setProperty('--btn-radius', '0')
     root.style.setProperty('--btn-padding-y', theme.buttons.paddingY)
     root.style.setProperty('--btn-padding-x', theme.buttons.paddingX)
     root.style.setProperty('--btn-font-weight', String(theme.buttons.fontWeight))
-    root.style.setProperty('--border-radius', theme.borderRadius)
+    root.style.setProperty('--border-radius', '0')
     root.style.setProperty('--box-shadow', theme.boxShadow)
   }
 

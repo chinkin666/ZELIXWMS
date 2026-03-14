@@ -2,32 +2,32 @@
   <div class="template-printer-tab">
     <div v-if="loading" v-loading="true" style="min-height: 200px" />
 
-    <el-empty v-else-if="templates.length === 0" description="帳票テンプレートがありません" />
+    <el-empty v-else-if="templates.length === 0" :description="t('wms.printer.noFormTemplates', '帳票テンプレートがありません')" />
 
     <template v-else>
       <div v-if="printers.length === 0" style="margin-bottom: 12px">
         <el-alert type="warning" :closable="false" show-icon>
-          プリンター情報がありません。「接続」タブでサービスに接続してプリンター情報を取得してください。
+          {{ t('wms.printer.noPrintersConnectHint', 'プリンター情報がありません。「接続」タブでサービスに接続してプリンター情報を取得してください。') }}
         </el-alert>
       </div>
 
       <el-table :data="templates" stripe size="small" style="width: 100%">
-        <el-table-column label="テンプレート名" min-width="180">
+        <el-table-column :label="t('wms.printer.templateName', 'テンプレート名')" min-width="180">
           <template #default="{ row }">
             <div>
               <strong>{{ row.name }}</strong>
               <div class="template-meta">
-                {{ row.targetType }} ・ {{ row.pageSize }} {{ row.pageOrientation === 'landscape' ? '横' : '縦' }}
+                {{ row.targetType }} ・ {{ row.pageSize }} {{ row.pageOrientation === 'landscape' ? t('wms.printer.landscape', '横') : t('wms.printer.portrait', '縦') }}
               </div>
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column label="プリンター" width="220">
+        <el-table-column :label="t('wms.printer.printer', 'プリンター')" width="220">
           <template #default="{ row }">
             <el-select
               :model-value="getParams(row._id).printer || ''"
-              placeholder="デフォルト"
+              :placeholder="t('wms.printer.default', 'デフォルト')"
               clearable
               filterable
               size="small"
@@ -44,7 +44,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="用紙" width="160">
+        <el-table-column :label="t('wms.printer.paper', '用紙')" width="160">
           <template #default="{ row }">
             <el-select
               :model-value="getParams(row._id).paper || 'AUTO'"
@@ -52,7 +52,7 @@
               style="width: 100%"
               @change="(val: string) => updateParam(row._id, 'paper', val)"
             >
-              <el-option label="AUTO（デフォルト）" value="AUTO" />
+              <el-option :label="t('wms.printer.autoDefault', 'AUTO（デフォルト）')" value="AUTO" />
               <el-option
                 v-for="ps in getPaperSizes(getParams(row._id).printer)"
                 :key="ps.name"
@@ -63,7 +63,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="方向" width="120">
+        <el-table-column :label="t('wms.printer.orientation', '方向')" width="120">
           <template #default="{ row }">
             <el-select
               :model-value="getParams(row._id).orientation || 'portrait'"
@@ -71,13 +71,13 @@
               style="width: 100%"
               @change="(val: string) => updateParam(row._id, 'orientation', val)"
             >
-              <el-option label="縦" value="portrait" />
-              <el-option label="横" value="landscape" />
+              <el-option :label="t('wms.printer.portrait', '縦')" value="portrait" />
+              <el-option :label="t('wms.printer.landscape', '横')" value="landscape" />
             </el-select>
           </template>
         </el-table-column>
 
-        <el-table-column label="縮尺" width="110">
+        <el-table-column :label="t('wms.printer.scale', '縮尺')" width="110">
           <template #default="{ row }">
             <el-select
               :model-value="getParams(row._id).scale || 'fit'"
@@ -87,12 +87,12 @@
             >
               <el-option label="Fit" value="fit" />
               <el-option label="Fill" value="fill" />
-              <el-option label="実寸" value="actual" />
+              <el-option :label="t('wms.printer.actualSize', '実寸')" value="actual" />
             </el-select>
           </template>
         </el-table-column>
 
-        <el-table-column label="余白(mm)" width="100">
+        <el-table-column :label="t('wms.printer.marginMm', '余白(mm)')" width="100">
           <template #default="{ row }">
             <el-input-number
               :model-value="getParams(row._id).margin_mm ?? 6"
@@ -106,7 +106,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="部数" width="90">
+        <el-table-column :label="t('wms.printer.copies', '部数')" width="90">
           <template #default="{ row }">
             <el-input-number
               :model-value="getParams(row._id).copies ?? 1"
@@ -126,6 +126,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 import { fetchFormTemplates } from '@/api/formTemplate'
 import type { FormTemplate } from '@/types/formTemplate'
 import type { PrinterInfo, TemplatePrintParams } from '@/utils/print/printConfig'
@@ -133,6 +134,8 @@ import {
   getPrintParamsForFormTemplate,
   saveFormTemplateParams,
 } from '@/utils/print/printConfig'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   printers: PrinterInfo[]

@@ -1,7 +1,7 @@
 <template>
   <div class="panel right-top">
-    <div class="panel-title">属性</div>
-    <div v-if="!selectedEl" class="placeholder">请选择一个元素</div>
+    <div class="panel-title">{{ t('wms.printTemplate.properties') }}</div>
+    <div v-if="!selectedEl" class="placeholder">{{ t('wms.printTemplate.selectElement') }}</div>
     <div v-else class="props">
       <div class="o-form-group">
         <label>name</label>
@@ -51,13 +51,13 @@
           </select>
         </div>
         <div class="o-form-group">
-          <label>内容转换</label>
+          <label>{{ t('wms.printTemplate.contentTransform') }}</label>
           <OButton variant="primary" @click="$emit('open-transform-mapping', 'text')">
-            {{ (selectedEl as any).transformMapping ? '编辑转换' : '配置转换' }}
+            {{ (selectedEl as any).transformMapping ? t('wms.printTemplate.editTransform') : t('wms.printTemplate.configTransform') }}
           </OButton>
         </div>
         <div class="o-form-group">
-          <label>预览</label>
+          <label>{{ t('wms.printTemplate.preview') }}</label>
           <textarea :value="textPreviewValue" readonly rows="2" class="o-input" style="width: 100%; resize: vertical"></textarea>
         </div>
       </template>
@@ -87,18 +87,18 @@
           <input :value="(selectedEl as any).heightMm" type="number" step="1" class="o-input" @input="updateProp('heightMm', Number(($event.target as HTMLInputElement).value))" />
         </div>
         <div class="o-form-group">
-          <label>内容转换</label>
+          <label>{{ t('wms.printTemplate.contentTransform') }}</label>
           <OButton variant="primary" @click="$emit('open-transform-mapping', 'barcode')">
-            {{ (selectedEl as any).transformMapping ? '编辑转换' : '配置转換' }}
+            {{ (selectedEl as any).transformMapping ? t('wms.printTemplate.editTransform') : t('wms.printTemplate.configTransform') }}
           </OButton>
         </div>
         <div class="o-form-group">
-          <label>预览</label>
+          <label>{{ t('wms.printTemplate.preview') }}</label>
           <textarea :value="barcodePreviewValue" readonly rows="2" class="o-input" style="width: 100%; resize: vertical"></textarea>
         </div>
         <template v-if="(selectedEl as any).format === 'codabar'">
           <div class="o-form-group">
-            <label>起始字符</label>
+            <label>{{ t('wms.printTemplate.startChar') }}</label>
             <select :value="codabarStartChar" class="o-input" style="width: 100%" @change="$emit('update:codabarStartChar', ($event.target as HTMLSelectElement).value)">
               <option value="A">A</option>
               <option value="B">B</option>
@@ -107,7 +107,7 @@
             </select>
           </div>
           <div class="o-form-group">
-            <label>终止字符</label>
+            <label>{{ t('wms.printTemplate.stopChar') }}</label>
             <select :value="codabarStopChar" class="o-input" style="width: 100%" @change="$emit('update:codabarStopChar', ($event.target as HTMLSelectElement).value)">
               <option value="A">A</option>
               <option value="B">B</option>
@@ -124,15 +124,15 @@
 
       <template v-else-if="selectedEl.type === 'image'">
         <div class="o-form-group">
-          <label>图片</label>
+          <label>{{ t('wms.printTemplate.image') }}</label>
           <div style="display: flex; gap: 8px">
             <input ref="imageFileInput" type="file" accept="image/*" class="hidden-input" @change="onImageFileChange" />
-            <OButton variant="secondary" @click="triggerImageUpload">上传图片</OButton>
-            <OButton variant="secondary" :disabled="!((selectedEl as any).imageData)" @click="$emit('clear-image')">清除图片</OButton>
+            <OButton variant="secondary" @click="triggerImageUpload">{{ t('wms.printTemplate.uploadImage') }}</OButton>
+            <OButton variant="secondary" :disabled="!((selectedEl as any).imageData)" @click="$emit('clear-image')">{{ t('wms.printTemplate.clearImage') }}</OButton>
           </div>
         </div>
         <div class="o-form-group" v-if="(selectedEl as any).imageData">
-          <label>预览</label>
+          <label>{{ t('wms.printTemplate.preview') }}</label>
           <img :src="(selectedEl as any).imageData" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd;" />
         </div>
         <div class="o-form-group">
@@ -146,7 +146,7 @@
       </template>
 
       <div class="row">
-        <OButton variant="danger" @click="$emit('remove-selected')">删除</OButton>
+        <OButton variant="danger" @click="$emit('remove-selected')">{{ t('wms.common.delete') }}</OButton>
       </div>
     </div>
   </div>
@@ -155,7 +155,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import { useI18n } from '@/composables/useI18n'
 import type { PrintElement } from '@/types/printTemplate'
+
+const { t } = useI18n()
 
 defineProps<{
   selectedEl: PrintElement | null

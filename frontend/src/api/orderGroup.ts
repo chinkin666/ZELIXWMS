@@ -4,7 +4,7 @@ import { getApiBaseUrl } from '@/api/base'
 const API_BASE_URL = getApiBaseUrl()
 
 /**
- * 获取所有检品グループ（按优先级排序）
+ * 全検品グループ取得（優先度順） / 获取所有检品グループ（按优先级排序）
  */
 export async function fetchOrderGroups(): Promise<OrderGroup[]> {
   const response = await fetch(`${API_BASE_URL}/order-groups`)
@@ -15,7 +15,7 @@ export async function fetchOrderGroups(): Promise<OrderGroup[]> {
 }
 
 /**
- * 获取单个检品グループ
+ * 単一検品グループ取得 / 获取单个检品グループ
  */
 export async function fetchOrderGroup(id: string): Promise<OrderGroup> {
   const response = await fetch(`${API_BASE_URL}/order-groups/${id}`)
@@ -27,7 +27,7 @@ export async function fetchOrderGroup(id: string): Promise<OrderGroup> {
 }
 
 /**
- * 创建检品グループ
+ * 検品グループ作成 / 创建检品グループ
  */
 export async function createOrderGroup(data: OrderGroupFormData): Promise<OrderGroup> {
   const response = await fetch(`${API_BASE_URL}/order-groups`, {
@@ -43,7 +43,7 @@ export async function createOrderGroup(data: OrderGroupFormData): Promise<OrderG
 }
 
 /**
- * 更新检品グループ
+ * 検品グループ更新 / 更新检品グループ
  */
 export async function updateOrderGroup(id: string, data: Partial<OrderGroupFormData>): Promise<OrderGroup> {
   const response = await fetch(`${API_BASE_URL}/order-groups/${id}`, {
@@ -59,7 +59,7 @@ export async function updateOrderGroup(id: string, data: Partial<OrderGroupFormD
 }
 
 /**
- * 删除检品グループ
+ * 検品グループ削除 / 删除检品グループ
  */
 export async function deleteOrderGroup(id: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/order-groups/${id}`, {
@@ -72,7 +72,7 @@ export async function deleteOrderGroup(id: string): Promise<void> {
 }
 
 /**
- * 获取各分组的订单数量
+ * 各グループの注文数取得 / 获取各分组的订单数量
  */
 export interface OrderGroupCounts {
   total: number
@@ -89,7 +89,7 @@ export async function fetchOrderGroupCounts(): Promise<OrderGroupCounts> {
 }
 
 /**
- * 更新检品グループの优先级顺序
+ * 検品グループの優先順位更新 / 更新检品グループの优先级顺序
  */
 export async function reorderOrderGroups(orderedIds: string[]): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/order-groups/reorder`, {

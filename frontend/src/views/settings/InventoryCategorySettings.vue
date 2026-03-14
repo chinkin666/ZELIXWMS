@@ -7,63 +7,26 @@
       </template>
     </ControlPanel>
 
-    <div class="category-content">
-      <div v-if="isLoading" class="loading-state">読み込み中...</div>
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="inventoryCategorySearch"
+      @search="handleSearchEvent"
+    />
 
-      <div v-else-if="categories.length === 0" class="empty-state">
-        <p>在庫区分がありません</p>
-        <p class="empty-hint">「デフォルト作成」ボタンで通常・返品・不良を追加できます</p>
-      </div>
-
-      <table v-else class="o-table">
-        <thead>
-          <tr>
-            <th>コード</th>
-            <th>名称</th>
-            <th>説明</th>
-            <th>色ラベル</th>
-            <th>デフォルト</th>
-            <th>状態</th>
-            <th>表示順</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="cat in categories" :key="cat._id">
-            <td><code class="code-cell">{{ cat.code }}</code></td>
-            <td>{{ cat.name }}</td>
-            <td class="description-cell">{{ cat.description || '-' }}</td>
-            <td>
-              <span
-                v-if="cat.colorLabel"
-                class="color-badge"
-                :style="{ backgroundColor: cat.colorLabel }"
-              >{{ cat.colorLabel }}</span>
-              <span v-else>-</span>
-            </td>
-            <td>
-              <span v-if="cat.isDefault" class="o-badge o-badge-primary">デフォルト</span>
-            </td>
-            <td>
-              <span
-                class="o-badge"
-                :class="cat.isActive ? 'o-badge-success' : 'o-badge-info'"
-              >{{ cat.isActive ? '有効' : '無効' }}</span>
-            </td>
-            <td>{{ cat.sortOrder }}</td>
-            <td class="actions-cell">
-              <OButton variant="primary" size="sm" @click="openEdit(cat)">編集</OButton>
-              <OButton
-                variant="danger"
-                size="sm"
-                :disabled="cat.isDefault"
-                :title="cat.isDefault ? 'デフォルト在庫区分は削除できません' : ''"
-                @click="confirmDelete(cat)"
-              >削除</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="categories"
+        :height="520"
+        row-key="_id"
+        pagination-enabled
+        pagination-mode="client"
+        :page-size="20"
+        :page-sizes="[10, 20, 50, 100]"
+        :global-search-text="globalSearchText"
+      />
     </div>
 
     <!-- Create/Edit Dialog -->
@@ -146,11 +109,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, h, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchInventoryCategories,
   createInventoryCategory,
@@ -161,12 +128,14 @@ import {
 import type { InventoryCategory, InventoryCategoryFormData } from '@/api/inventoryCategory'
 
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const categories = ref<InventoryCategory[]>([])
 const isLoading = ref(false)
 const dialogVisible = ref(false)
 const isEditing = ref(false)
 const editingCategory = ref<InventoryCategory | null>(null)
+const globalSearchText = ref('')
 
 const initialFormData = (): InventoryCategoryFormData & { isActive: boolean } => ({
   code: '',
@@ -189,6 +158,151 @@ const resetForm = () => {
   formData.isActive = defaults.isActive
 }
 
+// ---------------------------------------------------------------------------
+// Search & Table columns
+// ---------------------------------------------------------------------------
+const baseColumns: TableColumn[] = [
+  {
+    key: 'code',
+    dataKey: 'code',
+    title: 'コード',
+    width: 120,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'name',
+    dataKey: 'name',
+    title: '名称',
+    width: 140,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'description',
+    dataKey: 'description',
+    title: '説明',
+    width: 200,
+    fieldType: 'string',
+  },
+  {
+    key: 'colorLabel',
+    dataKey: 'colorLabel',
+    title: '色ラベル',
+    width: 120,
+    fieldType: 'string',
+  },
+  {
+    key: 'isDefault',
+    dataKey: 'isDefault',
+    title: 'デフォルト',
+    width: 100,
+    fieldType: 'boolean',
+  },
+  {
+    key: 'isActive',
+    dataKey: 'isActive',
+    title: '状態',
+    width: 80,
+    fieldType: 'boolean',
+    searchable: true,
+    searchType: 'boolean',
+  },
+  {
+    key: 'sortOrder',
+    dataKey: 'sortOrder',
+    title: '表示順',
+    width: 80,
+    fieldType: 'number',
+  },
+]
+
+const searchColumns: TableColumn[] = baseColumns.filter((c) => c.searchable)
+
+const tableColumns: TableColumn[] = [
+  ...baseColumns.map((col) => {
+    if (col.key === 'code') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: InventoryCategory }) =>
+          h('code', { class: 'code-cell' }, rowData.code),
+      }
+    }
+    if (col.key === 'description') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: InventoryCategory }) => rowData.description || '-',
+      }
+    }
+    if (col.key === 'colorLabel') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: InventoryCategory }) =>
+          rowData.colorLabel
+            ? h('span', { class: 'color-badge', style: { backgroundColor: rowData.colorLabel } }, rowData.colorLabel)
+            : '-',
+      }
+    }
+    if (col.key === 'isDefault') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: InventoryCategory }) =>
+          rowData.isDefault
+            ? h('span', { class: 'o-badge o-badge-primary' }, 'デフォルト')
+            : '',
+      }
+    }
+    if (col.key === 'isActive') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: InventoryCategory }) =>
+          h(
+            'span',
+            { class: rowData.isActive ? 'o-badge o-badge-success' : 'o-badge o-badge-info' },
+            rowData.isActive ? '有効' : '無効',
+          ),
+      }
+    }
+    return col
+  }),
+  {
+    key: 'actions',
+    title: t('wms.common.actions', '操作'),
+    width: 140,
+    cellRenderer: ({ rowData }: { rowData: InventoryCategory }) =>
+      h('div', { class: 'action-cell' }, [
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(
+          OButton,
+          {
+            variant: 'danger',
+            size: 'sm',
+            disabled: rowData.isDefault,
+            title: rowData.isDefault ? 'デフォルト在庫区分は削除できません' : '',
+            onClick: () => confirmDelete(rowData),
+          },
+          () => '削除',
+        ),
+      ]),
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Search handler
+// ---------------------------------------------------------------------------
+const handleSearchEvent = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+  } else {
+    globalSearchText.value = ''
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Data loading
+// ---------------------------------------------------------------------------
 const loadCategories = async () => {
   isLoading.value = true
   try {
@@ -283,10 +397,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@import '@/styles/order-table.css';
-
 .inventory-category-settings {
   padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 :deep(.o-control-panel) {
@@ -294,48 +409,14 @@ onMounted(() => {
   margin-right: -20px;
 }
 
-.category-content {
-  margin-top: 8px;
-}
-
-.loading-state,
-.empty-state {
-  padding: 60px 0;
-  text-align: center;
-  color: var(--o-gray-500, #909399);
-}
-
-.empty-hint {
-  font-size: 13px;
-  margin-top: 8px;
-  color: #c0c4cc;
-}
-
-.o-table {
+.table-section {
   width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border: 1px solid var(--o-border-color, #e4e7ed);
-  border-radius: 4px;
 }
 
-.o-table th,
-.o-table td {
-  padding: 10px 14px;
-  text-align: left;
-  border-bottom: 1px solid var(--o-border-color, #e4e7ed);
-  font-size: 14px;
-}
-
-.o-table th {
-  background: #f5f7fa;
-  font-weight: 600;
-  color: var(--o-gray-700, #303133);
-  white-space: nowrap;
-}
-
-.o-table tbody tr:hover {
-  background: #f9f9fb;
+:deep(.action-cell) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .code-cell {
@@ -344,14 +425,6 @@ onMounted(() => {
   background: #f4f4f5;
   padding: 2px 6px;
   border-radius: 3px;
-}
-
-.description-cell {
-  color: var(--o-gray-500, #909399);
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .color-badge {
@@ -383,12 +456,6 @@ onMounted(() => {
 .o-badge-info {
   background: #f4f4f5;
   color: #909399;
-}
-
-.actions-cell {
-  white-space: nowrap;
-  display: flex;
-  gap: 6px;
 }
 
 /* Form styles */

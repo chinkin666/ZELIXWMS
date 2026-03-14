@@ -1,8 +1,8 @@
 <template>
   <div class="carrier-settings">
-    <ControlPanel title="配送業者設定" :show-search="false">
+    <ControlPanel :title="t('wms.settings.carrierSettingsTitle', '配送業者設定')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">新規追加</OButton>
+        <OButton variant="primary" @click="openCreate">{{ t('wms.settings.addNew', '新規追加') }}</OButton>
       </template>
     </ControlPanel>
 
@@ -30,12 +30,12 @@
     </div>
 
     <!-- Template Settings Dialog -->
-    <ODialog :open="templateDialogVisible" :title="`印刷テンプレート設定 - ${templateEditingCarrier?.name || ''}`" @close="templateDialogVisible = false">
+    <ODialog :open="templateDialogVisible" :title="`${t('wms.settings.printTemplateSettings', '印刷テンプレート設定')} - ${templateEditingCarrier?.name || ''}`" @close="templateDialogVisible = false">
       <table class="o-list-table">
         <thead>
           <tr>
-            <th style="width:220px">送り状種類</th>
-            <th>印刷テンプレート</th>
+            <th style="width:220px">{{ t('wms.settings.waybillType') }}</th>
+            <th>{{ t('wms.settings.printTemplate') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -43,7 +43,7 @@
             <td>{{ row.invoiceType }}: {{ row.name }}</td>
             <td>
               <select class="o-input" v-model="row.printTemplateId" style="width:100%">
-                <option value="">選択してください</option>
+                <option value="">{{ t('wms.settings.pleaseSelect', '選択してください') }}</option>
                 <option
                   v-for="tpl in printTemplates"
                   :key="tpl.id"
@@ -55,54 +55,54 @@
         </tbody>
       </table>
       <template #footer>
-        <OButton variant="secondary" @click="templateDialogVisible = false">キャンセル</OButton>
-        <OButton variant="primary" :disabled="templateSaving" @click="saveTemplateSettings">保存</OButton>
+        <OButton variant="secondary" @click="templateDialogVisible = false">{{ t('wms.common.cancel') }}</OButton>
+        <OButton variant="primary" :disabled="templateSaving" @click="saveTemplateSettings">{{ t('wms.common.save') }}</OButton>
       </template>
     </ODialog>
 
     <ODialog
       :open="dialogVisible"
-      :title="isEditing ? '配送業者を編集' : '配送業者を追加'"
+      :title="isEditing ? t('wms.settings.editCarrier') : t('wms.settings.addCarrier')"
       size="xl"
       @close="dialogVisible = false"
     >
       <div class="carrier-form">
         <div class="form-row">
           <div class="o-form-group">
-            <label class="o-form-label">配送業者コード <span class="required">*</span></label>
+            <label class="form-label">{{ t('wms.settings.carrierCode') }} <span class="required">*</span></label>
             <input class="o-input" v-model="editForm.code" placeholder="例: yamato_b2" :disabled="isEditing" />
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">配送業者名 <span class="required">*</span></label>
-            <input class="o-input" v-model="editForm.name" placeholder="配送業者名" />
+            <label class="form-label">{{ t('wms.settings.carrierName') }} <span class="required">*</span></label>
+            <input class="o-input" v-model="editForm.name" :placeholder="t('wms.settings.carrierName')" />
           </div>
         </div>
         <div class="form-row">
           <div class="o-form-group">
-            <label class="o-form-label">有効</label>
+            <label class="form-label">{{ t('wms.settings.enabled', '有効') }}</label>
             <label class="o-toggle">
               <input type="checkbox" v-model="editForm.enabled" />
               <span class="o-toggle-slider"></span>
             </label>
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">伝票番号列名</label>
-            <input class="o-input" v-model="editForm.trackingIdColumnName" placeholder="回执/実績ファイルの列名（例: 伝票番号）" />
+            <label class="form-label">{{ t('wms.settings.trackingColumn') }}</label>
+            <input class="o-input" v-model="editForm.trackingIdColumnName" :placeholder="t('wms.settings.trackingColumnPlaceholder', '回执/実績ファイルの列名（例: 伝票番号）')" />
           </div>
         </div>
         <div class="o-form-group">
-          <label class="o-form-label">説明</label>
-          <textarea class="o-input" v-model="editForm.description" rows="2" placeholder="補足説明"></textarea>
+          <label class="form-label">{{ t('wms.settings.description') }}</label>
+          <textarea class="o-input" v-model="editForm.description" rows="2" :placeholder="t('wms.settings.supplementary')"></textarea>
         </div>
 
         <div class="format-header">
           <div>
-            <h4>フォーマット定義（列）</h4>
-            <p class="subtext">列名・型・最大文字数・必須・ユーザー入力可否を編集できます</p>
+            <h4>{{ t('wms.settings.formatDefinition', 'フォーマット定義（列）') }}</h4>
+            <p class="subtext">{{ t('wms.settings.formatDefinitionHint', '列名・型・最大文字数・必須・ユーザー入力可否を編集できます') }}</p>
           </div>
           <div class="format-actions">
-            <OButton variant="secondary" size="sm" @click="addColumn">列を追加</OButton>
-            <OButton variant="secondary" size="sm" @click="resetColumnsFromEditing">リセット</OButton>
+            <OButton variant="secondary" size="sm" @click="addColumn">{{ t('wms.settings.addColumn', '列を追加') }}</OButton>
+            <OButton variant="secondary" size="sm" @click="resetColumnsFromEditing">{{ t('wms.settings.reset', 'リセット') }}</OButton>
           </div>
         </div>
 
@@ -110,28 +110,28 @@
           <table class="o-list-table format-table">
             <thead>
               <tr>
-                <th style="min-width:150px">列名</th>
-                <th style="min-width:220px">列説明</th>
-                <th style="width:120px">型</th>
-                <th style="width:110px">最大文字数</th>
-                <th style="width:90px;text-align:center">必須</th>
-                <th style="width:120px;text-align:center">ユーザー入力</th>
-                <th style="width:90px">操作</th>
+                <th style="min-width:150px">{{ t('wms.settings.columnName', '列名') }}</th>
+                <th style="min-width:220px">{{ t('wms.settings.columnDescription', '列説明') }}</th>
+                <th style="width:120px">{{ t('wms.settings.columnType', '型') }}</th>
+                <th style="width:110px">{{ t('wms.settings.maxWidth', '最大文字数') }}</th>
+                <th style="width:90px;text-align:center">{{ t('wms.settings.required', '必須') }}</th>
+                <th style="width:120px;text-align:center">{{ t('wms.settings.userUploadable', 'ユーザー入力') }}</th>
+                <th style="width:90px">{{ t('wms.settings.actions') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(row, $index) in editForm.formatDefinition.columns" :key="row.__key">
-                <td><input class="o-input" v-model="row.name" placeholder="列名" /></td>
-                <td><input class="o-input" v-model="row.description" placeholder="説明・型・長さなど" /></td>
+                <td><input class="o-input" v-model="row.name" :placeholder="t('wms.settings.columnName', '列名')" /></td>
+                <td><input class="o-input" v-model="row.description" :placeholder="t('wms.settings.columnDescriptionPlaceholder', '説明・型・長さなど')" /></td>
                 <td>
                   <select class="o-input" v-model="row.type">
-                    <option value="string">文字列</option>
-                    <option value="number">数値</option>
-                    <option value="date">日付</option>
-                    <option value="boolean">真偽値</option>
+                    <option value="string">{{ t('wms.settings.typeString', '文字列') }}</option>
+                    <option value="number">{{ t('wms.settings.typeNumber', '数値') }}</option>
+                    <option value="date">{{ t('wms.settings.typeDate', '日付') }}</option>
+                    <option value="boolean">{{ t('wms.settings.typeBoolean', '真偽値') }}</option>
                   </select>
                 </td>
-                <td><input class="o-input" v-model.number="row.maxWidth" type="number" min="1" placeholder="半角幅" /></td>
+                <td><input class="o-input" v-model.number="row.maxWidth" type="number" min="1" :placeholder="t('wms.settings.halfWidthChars', '半角幅')" /></td>
                 <td style="text-align:center">
                   <input type="checkbox" v-model="row.required" />
                 </td>
@@ -144,7 +144,7 @@
                     size="sm"
                     @click="removeColumn($index)"
                     :disabled="editForm.formatDefinition.columns.length <= 1"
-                  >削除</OButton>
+                  >{{ t('wms.common.delete') }}</OButton>
                 </td>
               </tr>
             </tbody>
@@ -153,9 +153,9 @@
       </div>
 
       <template #footer>
-        <OButton variant="secondary" @click="dialogVisible = false">キャンセル</OButton>
+        <OButton variant="secondary" @click="dialogVisible = false">{{ t('wms.common.cancel') }}</OButton>
         <OButton variant="primary" :disabled="saving" @click="handleSave">
-          {{ isEditing ? '更新' : '作成' }}
+          {{ isEditing ? t('wms.settings.update', '更新') : t('wms.common.create') }}
         </OButton>
       </template>
     </ODialog>
@@ -164,6 +164,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
@@ -176,6 +177,7 @@ import { fetchPrintTemplates } from '@/api/printTemplates'
 import type { Carrier, CarrierFilters, CarrierColumnConfig, CarrierService } from '@/types/carrier'
 import type { PrintTemplate } from '@/types/printTemplate'
 
+const { t } = useI18n()
 const { show: showToast } = useToast()
 
 /** 固定の送り状種類（11種） */
@@ -216,7 +218,7 @@ const baseColumns: TableColumn[] = [
   {
     key: 'code',
     dataKey: 'code',
-    title: '配送業者コード',
+    title: t('wms.settings.carrierCode'),
     width: 140,
     fieldType: 'string',
     searchable: true,
@@ -225,7 +227,7 @@ const baseColumns: TableColumn[] = [
   {
     key: 'name',
     dataKey: 'name',
-    title: '配送業者名',
+    title: t('wms.settings.carrierName'),
     width: 180,
     fieldType: 'string',
     searchable: true,
@@ -234,7 +236,7 @@ const baseColumns: TableColumn[] = [
   {
     key: 'trackingIdColumnName',
     dataKey: 'trackingIdColumnName',
-    title: '伝票番号列名',
+    title: t('wms.settings.trackingColumn'),
     width: 180,
     fieldType: 'string',
     searchable: true,
@@ -243,7 +245,7 @@ const baseColumns: TableColumn[] = [
   {
     key: 'enabled',
     dataKey: 'enabled',
-    title: '有効',
+    title: t('wms.settings.enabled', '有効'),
     width: 100,
     fieldType: 'boolean',
     searchable: true,
@@ -251,14 +253,14 @@ const baseColumns: TableColumn[] = [
   },
   {
     key: 'formatColumns',
-    title: '列数',
+    title: t('wms.settings.columnCount', '列数'),
     width: 80,
     fieldType: 'number',
   },
   {
     key: 'createdAt',
     dataKey: 'createdAt',
-    title: '作成日時',
+    title: t('wms.settings.createdAt', '作成日時'),
     width: 180,
     fieldType: 'date',
     formEditable: false,
@@ -294,20 +296,20 @@ const tableColumns: TableColumn[] = [
   }),
   {
     key: 'actions',
-    title: '操作',
+    title: t('wms.settings.actions'),
     width: 220,
     cellRenderer: ({ rowData }: { rowData: Carrier }) => {
       if (rowData.isBuiltIn) {
         return h('div', { class: 'action-cell' }, [
-          h('span', { style: { color: '#909399', fontSize: '12px' } }, '(内蔵)'),
-          h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+          h('span', { style: { color: '#909399', fontSize: '12px' } }, t('wms.settings.builtIn', '(内蔵)')),
+          h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => t('wms.common.edit')),
         ])
       }
       return h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateCarrier(rowData) }, () => '複製'),
-        h(OButton, { variant: 'success', size: 'sm', onClick: () => openTemplateSettings(rowData) }, () => 'テンプレート設定'),
-        h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => t('wms.common.edit')),
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateCarrier(rowData) }, () => t('wms.settings.duplicate', '複製')),
+        h(OButton, { variant: 'success', size: 'sm', onClick: () => openTemplateSettings(rowData) }, () => t('wms.settings.templateSettings', 'テンプレート設定')),
+        h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => t('wms.common.delete')),
       ])
     },
   },
@@ -364,7 +366,7 @@ const loadList = async () => {
   try {
     list.value = await fetchCarriers(currentFilters.value)
   } catch (error: any) {
-    showToast(error?.message || '取得に失敗しました', 'danger')
+    showToast(error?.message || t('wms.settings.fetchFailed', '取得に失敗しました'), 'danger')
   } finally {
     loading.value = false
   }
@@ -418,7 +420,7 @@ const resetColumnsFromEditing = () => {
 
 const handleSave = async () => {
   if (!editForm.value.code.trim() || !editForm.value.name.trim()) {
-    showToast('配送業者コード・配送業者名は必須です', 'warning')
+    showToast(t('wms.settings.carrierCodeNameRequired', '配送業者コード・配送業者名は必須です'), 'warning')
     return
   }
 
@@ -444,16 +446,16 @@ const handleSave = async () => {
   try {
     if (isEditing.value && editingRow.value?._id) {
       await updateCarrier(editingRow.value._id, payload)
-      showToast('更新しました', 'success')
+      showToast(t('wms.settings.updated', '更新しました'), 'success')
     } else {
       await createCarrier(payload)
-      showToast('作成しました', 'success')
+      showToast(t('wms.settings.created', '作成しました'), 'success')
     }
     dialogVisible.value = false
     resetEditForm()
     await loadList()
   } catch (error: any) {
-    showToast(error?.response?.data?.message || error?.message || '保存に失敗しました', 'danger')
+    showToast(error?.response?.data?.message || error?.message || t('wms.settings.saveFailed', '保存に失敗しました'), 'danger')
   } finally {
     saving.value = false
   }
@@ -463,18 +465,18 @@ const duplicateCarrier = async (row: Carrier) => {
   try {
     const { _id, createdAt: _createdAt, updatedAt: _updatedAt, isBuiltIn: _isBuiltIn, automationType: _automationType, ...rest } = row
     await createCarrier({ ...rest, code: `${row.code}_copy`, name: `${row.name}_copy` } as any)
-    showToast('複製しました', 'success')
+    showToast(t('wms.settings.duplicated', '複製しました'), 'success')
     await loadList()
   } catch (e: any) {
-    showToast(e?.response?.data?.message || e?.message || '複製に失敗しました', 'danger')
+    showToast(e?.response?.data?.message || e?.message || t('wms.settings.duplicateFailed', '複製に失敗しました'), 'danger')
   }
 }
 
 const confirmDelete = (row: Carrier) => {
-  if (!confirm(`「${row.name}」を削除しますか？`)) return
+  if (!confirm(t('wms.settings.confirmDelete', `「${row.name}」を削除しますか？`))) return
   deleteCarrier(row._id)
     .then(async () => {
-      showToast('削除しました', 'success')
+      showToast(t('wms.settings.deleted', '削除しました'), 'success')
       await loadList()
     })
     .catch(() => {})
@@ -499,7 +501,7 @@ const openTemplateSettings = async (row: Carrier) => {
     try {
       printTemplates.value = await fetchPrintTemplates()
     } catch (_e: any) {
-      showToast('印刷テンプレートの取得に失敗しました', 'danger')
+      showToast(t('wms.settings.printTemplateFetchFailed', '印刷テンプレートの取得に失敗しました'), 'danger')
       return
     }
   }
@@ -539,10 +541,10 @@ const saveTemplateSettings = async () => {
       list.value[idx].services = services
     }
 
-    showToast('保存しました', 'success')
+    showToast(t('wms.settings.saved', '保存しました'), 'success')
     templateDialogVisible.value = false
   } catch (e: any) {
-    showToast(e?.response?.data?.message || e?.message || '保存に失敗しました', 'danger')
+    showToast(e?.response?.data?.message || e?.message || t('wms.settings.saveFailed', '保存に失敗しました'), 'danger')
   } finally {
     templateSaving.value = false
   }
@@ -572,33 +574,6 @@ onMounted(() => {
   width: 100%;
 }
 
-.o-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--o-border-color, #dcdfe6);
-  border-radius: var(--o-border-radius, 4px);
-  font-size: var(--o-font-size-base, 14px);
-  cursor: pointer;
-  background: var(--o-view-background, #fff);
-  color: var(--o-gray-700, #303133);
-  transition: 0.2s;
-  white-space: nowrap;
-}
-
-.o-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.o-btn-primary { background: var(--o-brand-primary, #714b67); color: #fff; border-color: var(--o-brand-primary, #714b67); }
-.o-btn-secondary { background: var(--o-view-background, #fff); color: var(--o-gray-700, #303133); }
-.o-btn-sm { padding: 4px 10px; font-size: 13px; }
-.o-btn-outline-primary { background: transparent; color: var(--o-brand-primary, #714b67); border-color: var(--o-brand-primary, #714b67); }
-.o-btn-outline-secondary { background: transparent; color: var(--o-gray-600, #909399); border-color: var(--o-gray-600, #909399); }
-.o-btn-outline-success { background: transparent; color: #67c23a; border-color: #67c23a; }
-.o-btn-outline-danger { background: transparent; color: #f56c6c; border-color: #f56c6c; }
 
 .o-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
 .o-badge-success { background: #f0f9eb; color: #67c23a; }
@@ -620,7 +595,7 @@ textarea.o-input {
 }
 
 .o-form-group { margin-bottom: 1rem; }
-.o-form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
+.form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }
 .required { color: #f56c6c; }
 
 .o-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
@@ -630,22 +605,9 @@ textarea.o-input {
 .o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #714b67); }
 .o-toggle input:checked + .o-toggle-slider::after { left: 22px; }
 
-.o-list-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.o-list-table th, .o-list-table td {
-  padding: 8px 10px;
-  border: 1px solid var(--o-border-color, #ebeef5);
-  text-align: left;
-}
-.o-list-table th {
-  background: var(--o-list-header-bg, #f5f7fa);
-  font-weight: 500;
-}
+/* .o-list-table base styles are defined globally in style.css */
 
-/* 操作列样式 - 垂直排列 */
+/* 操作列スタイル - 縦並び / 操作列样式 - 垂直排列 */
 :deep(.action-cell) {
   display: flex;
   flex-direction: column;

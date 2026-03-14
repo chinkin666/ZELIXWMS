@@ -1,97 +1,41 @@
 <template>
   <div class="inbound-history">
-    <ControlPanel title="入庫履歴" :show-search="false">
+    <ControlPanel :title="t('wms.inbound.history', '入庫履歴')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" @click="showFilters = !showFilters">
-            {{ showFilters ? '検索を隠す' : '絞り込み' }}
-          </OButton>
           <OButton variant="secondary" size="sm" @click="showExportSettings = !showExportSettings">
-            CSV設定
+            {{ t('wms.inbound.csvSettings', 'CSV設定') }}
           </OButton>
-          <OButton variant="secondary" size="sm" @click="exportCsv">CSV出力</OButton>
+          <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inbound.csvExport', 'CSV出力') }}</OButton>
         </div>
       </template>
     </ControlPanel>
 
     <!-- 検索パネル -->
-    <div v-if="showFilters" class="o-card filter-card">
-      <div class="filter-grid">
-        <div class="filter-field">
-          <label class="filter-label">完了日</label>
-          <div style="display:flex;gap:4px;align-items:center;">
-            <input v-model="filters.dateFrom" type="date" class="o-input o-input-sm" />
-            <span>〜</span>
-            <input v-model="filters.dateTo" type="date" class="o-input o-input-sm" />
-          </div>
-        </div>
-        <div class="filter-field">
-          <label class="filter-label">品番</label>
-          <input v-model="filters.productSku" type="text" class="o-input o-input-sm" placeholder="部分一致..." />
-        </div>
-        <div class="filter-field">
-          <label class="filter-label">商品名</label>
-          <input v-model="filters.productName" type="text" class="o-input o-input-sm" placeholder="部分一致..." />
-        </div>
-        <div class="filter-field">
-          <label class="filter-label">仕入先</label>
-          <input v-model="filters.supplierName" type="text" class="o-input o-input-sm" placeholder="部分一致..." />
-        </div>
-        <div class="filter-field">
-          <label class="filter-label">ロケーション</label>
-          <input v-model="filters.locationCode" type="text" class="o-input o-input-sm" placeholder="部分一致..." />
-        </div>
-        <div class="filter-field">
-          <label class="filter-label">在庫区分</label>
-          <select v-model="filters.stockCategory" class="o-input o-input-sm">
-            <option value="">全て</option>
-            <option value="new">新品</option>
-            <option value="damaged">仕損</option>
-          </select>
-        </div>
-        <div class="filter-field">
-          <label class="filter-label">注文番号</label>
-          <input v-model="filters.orderReferenceNumber" type="text" class="o-input o-input-sm" placeholder="部分一致..." />
-        </div>
-        <div class="filter-field">
-          <label class="filter-label">入荷予定数</label>
-          <div style="display:flex;gap:4px;align-items:center;">
-            <input v-model.number="filters.expectedQtyMin" type="number" min="0" class="o-input o-input-sm" style="width:70px;" placeholder="min" />
-            <span>〜</span>
-            <input v-model.number="filters.expectedQtyMax" type="number" min="0" class="o-input o-input-sm" style="width:70px;" placeholder="max" />
-          </div>
-        </div>
-        <div class="filter-field">
-          <label class="filter-label">入庫実績数</label>
-          <div style="display:flex;gap:4px;align-items:center;">
-            <input v-model.number="filters.receivedQtyMin" type="number" min="0" class="o-input o-input-sm" style="width:70px;" placeholder="min" />
-            <span>〜</span>
-            <input v-model.number="filters.receivedQtyMax" type="number" min="0" class="o-input o-input-sm" style="width:70px;" placeholder="max" />
-          </div>
-        </div>
-      </div>
-      <div style="margin-top:12px;display:flex;gap:6px;">
-        <OButton variant="primary" size="sm" @click="currentPage = 1; loadData()">検索</OButton>
-        <OButton variant="secondary" size="sm" @click="resetFilters">リセット</OButton>
-      </div>
-    </div>
+    <SearchForm
+      :columns="searchColumns"
+      :show-save="false"
+      :initial-values="searchInitialValues"
+      storage-key="inboundHistorySearch"
+      @search="handleSearch"
+    />
 
     <!-- CSV導出設定パネル -->
     <div v-if="showExportSettings" class="o-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h3 class="card-title" style="margin:0;">CSV導出設定</h3>
+        <h3 class="card-title" style="margin:0;">{{ t('wms.inbound.csvExportSettings', 'CSV導出設定') }}</h3>
         <div style="display:flex;gap:6px;">
           <select v-model="selectedExportPreset" class="o-input o-input-sm" style="width:160px;" @change="loadExportPreset">
-            <option value="">デフォルト</option>
+            <option value="">{{ t('wms.common.default', 'デフォルト') }}</option>
             <option v-for="p in exportPresets" :key="p.name" :value="p.name">{{ p.name }}</option>
           </select>
-          <OButton variant="secondary" size="sm" @click="saveExportPreset">保存</OButton>
+          <OButton variant="secondary" size="sm" @click="saveExportPreset">{{ t('wms.common.save', '保存') }}</OButton>
           <OButton
             v-if="selectedExportPreset"
             variant="secondary" size="sm"
-            style="border-color:#f56c6c;color:#f56c6c;"
+            style="border-color:var(--o-danger);color:var(--o-danger);"
             @click="deleteExportPreset"
-          >削除</OButton>
+          >{{ t('wms.common.delete', '削除') }}</OButton>
         </div>
       </div>
       <div class="export-col-grid">
@@ -106,8 +50,8 @@
         </label>
       </div>
       <div style="margin-top:8px;display:flex;gap:6px;">
-        <OButton variant="secondary" size="sm" @click="selectAllExportCols">全選択</OButton>
-        <OButton variant="secondary" size="sm" @click="exportColumns = []">全解除</OButton>
+        <OButton variant="secondary" size="sm" @click="selectAllExportCols">{{ t('wms.inbound.selectAll', '全選択') }}</OButton>
+        <OButton variant="secondary" size="sm" @click="exportColumns = []">{{ t('wms.inbound.deselectAll', '全解除') }}</OButton>
       </div>
     </div>
 
@@ -116,25 +60,25 @@
       <table class="o-table">
         <thead>
           <tr>
-            <th class="o-table-th" style="width:140px;">入庫指示番号</th>
-            <th class="o-table-th" style="width:110px;">品番</th>
-            <th class="o-table-th" style="width:150px;">商品名</th>
-            <th class="o-table-th" style="width:90px;">ロケーション</th>
-            <th class="o-table-th" style="width:60px;">区分</th>
-            <th class="o-table-th o-table-th--right" style="width:70px;">予定数</th>
-            <th class="o-table-th o-table-th--right" style="width:70px;">実績数</th>
-            <th class="o-table-th" style="width:100px;">仕入先</th>
-            <th class="o-table-th" style="width:100px;">注文番号</th>
-            <th class="o-table-th" style="width:80px;">ロット</th>
-            <th class="o-table-th" style="width:100px;">完了日時</th>
+            <th class="o-table-th" style="width:140px;">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</th>
+            <th class="o-table-th" style="width:110px;">{{ t('wms.inbound.productSku', '品番') }}</th>
+            <th class="o-table-th" style="width:150px;">{{ t('wms.product.productName', '商品名') }}</th>
+            <th class="o-table-th" style="width:90px;">{{ t('wms.inbound.location', 'ロケーション') }}</th>
+            <th class="o-table-th" style="width:60px;">{{ t('wms.inbound.stockCategory', '区分') }}</th>
+            <th class="o-table-th o-table-th--right" style="width:70px;">{{ t('wms.inbound.expectedQty', '予定数') }}</th>
+            <th class="o-table-th o-table-th--right" style="width:70px;">{{ t('wms.inbound.receivedQty', '実績数') }}</th>
+            <th class="o-table-th" style="width:100px;">{{ t('wms.inbound.supplier', '仕入先') }}</th>
+            <th class="o-table-th" style="width:100px;">{{ t('wms.inbound.orderReferenceNumber', '注文番号') }}</th>
+            <th class="o-table-th" style="width:80px;">{{ t('wms.inbound.lot', 'ロット') }}</th>
+            <th class="o-table-th" style="width:100px;">{{ t('wms.inbound.completedAt', '完了日時') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="isLoading">
-            <td colspan="11" class="o-table-empty">読み込み中...</td>
+            <td colspan="11" class="o-table-empty">{{ t('wms.common.loading', '読み込み中...') }}</td>
           </tr>
           <tr v-else-if="rows.length === 0">
-            <td colspan="11" class="o-table-empty">データがありません</td>
+            <td colspan="11" class="o-table-empty">{{ t('wms.common.noData', 'データがありません') }}</td>
           </tr>
           <tr v-for="(row, idx) in rows" :key="idx" class="o-table-row">
             <td class="o-table-td"><span class="order-number">{{ row.orderNumber }}</span></td>
@@ -147,7 +91,7 @@
             </td>
             <td class="o-table-td">
               <span class="o-status-tag" :class="row.stockCategory === 'damaged' ? 'o-status-tag--held' : 'o-status-tag--confirmed'">
-                {{ row.stockCategory === 'damaged' ? '仕損' : '新品' }}
+                {{ row.stockCategory === 'damaged' ? t('wms.inbound.stockDamaged', '仕損') : t('wms.inbound.stockNew', '新品') }}
               </span>
             </td>
             <td class="o-table-td o-table-td--right">{{ row.expectedQuantity }}</td>
@@ -165,7 +109,7 @@
 
     <!-- Pagination -->
     <div class="o-table-pagination">
-      <span class="o-table-pagination__info">{{ total }} 件</span>
+      <span class="o-table-pagination__info">{{ total }} {{ t('wms.common.items', '件') }}</span>
       <div class="o-table-pagination__controls">
         <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;" @change="currentPage = 1; loadData()">
           <option :value="50">50</option>
@@ -181,12 +125,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
 import { searchInboundHistory } from '@/api/inboundOrder'
 import type { InboundHistoryLine } from '@/types/inventory'
+import type { TableColumn, Operator } from '@/types/table'
 
 const EXPORT_STORAGE_KEY = 'zelix_inbound_export_presets'
 
@@ -201,29 +148,29 @@ interface ExportPreset {
   columns: string[]
 }
 
-const allExportColumns: ExportColumn[] = [
-  { key: 'orderNumber', label: '入庫指示番号', getValue: r => r.orderNumber },
-  { key: 'productSku', label: '品番', getValue: r => r.productSku },
-  { key: 'productName', label: '商品名', getValue: r => r.productName || '' },
-  { key: 'locationCode', label: 'ロケーション', getValue: r => r.locationCode || '' },
-  { key: 'putawayLocationCode', label: '棚入れ先', getValue: r => r.putawayLocationCode || '' },
-  { key: 'stockCategory', label: '在庫区分', getValue: r => r.stockCategory === 'damaged' ? '仕損' : '新品' },
-  { key: 'expectedQuantity', label: '入荷予定数', getValue: r => r.expectedQuantity },
-  { key: 'receivedQuantity', label: '入庫実績数', getValue: r => r.receivedQuantity },
-  { key: 'supplierName', label: '仕入先', getValue: r => r.supplierName || '' },
-  { key: 'orderReferenceNumber', label: '注文番号', getValue: r => r.orderReferenceNumber || '' },
-  { key: 'lotNumber', label: 'ロット', getValue: r => r.lotNumber || '' },
-  { key: 'expiryDate', label: '賞味期限', getValue: r => r.expiryDate ? new Date(r.expiryDate).toLocaleDateString('ja-JP') : '' },
-  { key: 'completedAt', label: '完了日時', getValue: r => r.completedAt ? new Date(r.completedAt).toLocaleString('ja-JP') : '' },
-  { key: 'expectedDate', label: '入庫予定日', getValue: r => r.expectedDate ? new Date(r.expectedDate).toLocaleDateString('ja-JP') : '' },
-  { key: 'memo', label: 'メモ', getValue: r => r.memo || '' },
-]
-
-const defaultExportKeys = allExportColumns.map(c => c.key)
-
 const toast = useToast()
+const { t } = useI18n()
+
+const allExportColumns = computed<ExportColumn[]>(() => [
+  { key: 'orderNumber', label: t('wms.inbound.orderNumber', '入庫指示番号'), getValue: r => r.orderNumber },
+  { key: 'productSku', label: t('wms.inbound.productSku', '品番'), getValue: r => r.productSku },
+  { key: 'productName', label: t('wms.product.productName', '商品名'), getValue: r => r.productName || '' },
+  { key: 'locationCode', label: t('wms.inbound.location', 'ロケーション'), getValue: r => r.locationCode || '' },
+  { key: 'putawayLocationCode', label: t('wms.inbound.putawayLocation', '棚入れ先'), getValue: r => r.putawayLocationCode || '' },
+  { key: 'stockCategory', label: t('wms.inbound.stockCategory', '在庫区分'), getValue: r => r.stockCategory === 'damaged' ? t('wms.inbound.stockDamaged', '仕損') : t('wms.inbound.stockNew', '新品') },
+  { key: 'expectedQuantity', label: t('wms.inbound.expectedQtyFull', '入荷予定数'), getValue: r => r.expectedQuantity },
+  { key: 'receivedQuantity', label: t('wms.inbound.receivedQtyFull', '入庫実績数'), getValue: r => r.receivedQuantity },
+  { key: 'supplierName', label: t('wms.inbound.supplier', '仕入先'), getValue: r => r.supplierName || '' },
+  { key: 'orderReferenceNumber', label: t('wms.inbound.orderReferenceNumber', '注文番号'), getValue: r => r.orderReferenceNumber || '' },
+  { key: 'lotNumber', label: t('wms.inbound.lot', 'ロット'), getValue: r => r.lotNumber || '' },
+  { key: 'expiryDate', label: t('wms.inbound.expiryDate', '賞味期限'), getValue: r => r.expiryDate ? new Date(r.expiryDate).toLocaleDateString('ja-JP') : '' },
+  { key: 'completedAt', label: t('wms.inbound.completedAt', '完了日時'), getValue: r => r.completedAt ? new Date(r.completedAt).toLocaleString('ja-JP') : '' },
+  { key: 'expectedDate', label: t('wms.inbound.expectedDate', '入庫予定日'), getValue: r => r.expectedDate ? new Date(r.expectedDate).toLocaleDateString('ja-JP') : '' },
+  { key: 'memo', label: t('wms.product.memo', 'メモ'), getValue: r => r.memo || '' },
+])
+
+const defaultExportKeys = ['orderNumber', 'productSku', 'productName', 'locationCode', 'putawayLocationCode', 'stockCategory', 'expectedQuantity', 'receivedQuantity', 'supplierName', 'orderReferenceNumber', 'lotNumber', 'expiryDate', 'completedAt', 'expectedDate', 'memo']
 const isLoading = ref(false)
-const showFilters = ref(true)
 const showExportSettings = ref(false)
 const rows = ref<InboundHistoryLine[]>([])
 const total = ref(0)
@@ -234,19 +181,66 @@ const exportPresets = ref<ExportPreset[]>([])
 const selectedExportPreset = ref('')
 
 const now = new Date()
-const filters = reactive({
-  dateFrom: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10),
-  dateTo: now.toISOString().slice(0, 10),
-  productSku: '',
-  productName: '',
-  supplierName: '',
-  locationCode: '',
-  stockCategory: '',
-  orderReferenceNumber: '',
-  expectedQtyMin: undefined as number | undefined,
-  expectedQtyMax: undefined as number | undefined,
-  receivedQtyMin: undefined as number | undefined,
-  receivedQtyMax: undefined as number | undefined,
+const defaultDateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+const defaultDateTo = now.toISOString().slice(0, 10)
+
+const searchColumns = computed<TableColumn[]>(() => [
+  {
+    key: 'completedAt',
+    title: t('wms.inbound.completedDate', '完了日'),
+    searchable: true,
+    searchType: 'daterange',
+  },
+  {
+    key: 'productSku',
+    title: t('wms.inbound.productSku', '品番'),
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'productName',
+    title: t('wms.product.productName', '商品名'),
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'supplierName',
+    title: t('wms.inbound.supplier', '仕入先'),
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'locationCode',
+    title: t('wms.inbound.location', 'ロケーション'),
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'stockCategory',
+    title: t('wms.inbound.stockCategory', '在庫区分'),
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inbound.stockNew', '新品'), value: 'new' },
+      { label: t('wms.inbound.stockDamaged', '仕損'), value: 'damaged' },
+    ],
+  },
+  {
+    key: 'orderReferenceNumber',
+    title: t('wms.inbound.orderReferenceNumber', '注文番号'),
+    searchable: true,
+    searchType: 'string',
+  },
+])
+
+const searchInitialValues: Record<string, any> = {
+  completedAt__from: defaultDateFrom,
+  completedAt__to: defaultDateTo,
+}
+
+const filters = ref<Record<string, any>>({
+  dateFrom: defaultDateFrom,
+  dateTo: defaultDateTo,
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
@@ -284,7 +278,7 @@ const loadExportPreset = () => {
 }
 
 const saveExportPreset = () => {
-  const name = prompt('プリセット名を入力してください:')
+  const name = prompt(t('wms.inbound.presetNamePrompt', 'プリセット名を入力してください:'))
   if (!name) return
   const existing = exportPresets.value.findIndex(p => p.name === name)
   const preset: ExportPreset = { name, columns: [...exportColumns.value] }
@@ -295,31 +289,42 @@ const saveExportPreset = () => {
   }
   persistExportPresets()
   selectedExportPreset.value = name
-  toast.showSuccess(`プリセット「${name}」を保存しました`)
+  toast.showSuccess(t('wms.inbound.presetSaved', 'プリセットを保存しました'))
 }
 
 const deleteExportPreset = () => {
   if (!selectedExportPreset.value) return
-  if (!confirm(`プリセット「${selectedExportPreset.value}」を削除しますか？`)) return
+  if (!confirm(t('wms.inbound.presetDeleteConfirm', 'このプリセットを削除しますか？'))) return
   exportPresets.value = exportPresets.value.filter(p => p.name !== selectedExportPreset.value)
   persistExportPresets()
   selectedExportPreset.value = ''
   exportColumns.value = [...defaultExportKeys]
 }
 
-const resetFilters = () => {
-  filters.dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
-  filters.dateTo = now.toISOString().slice(0, 10)
-  filters.productSku = ''
-  filters.productName = ''
-  filters.supplierName = ''
-  filters.locationCode = ''
-  filters.stockCategory = ''
-  filters.orderReferenceNumber = ''
-  filters.expectedQtyMin = undefined
-  filters.expectedQtyMax = undefined
-  filters.receivedQtyMin = undefined
-  filters.receivedQtyMax = undefined
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  const nextFilters: Record<string, any> = {}
+
+  // 完了日 (daterange)
+  if (payload.completedAt) {
+    const [from, to] = payload.completedAt.value as [string, string]
+    if (from) nextFilters.dateFrom = from
+    if (to) nextFilters.dateTo = to
+  }
+
+  // String fields (contains)
+  const stringFields = ['productSku', 'productName', 'supplierName', 'locationCode', 'orderReferenceNumber']
+  for (const key of stringFields) {
+    if (payload[key]?.value) {
+      nextFilters[key] = String(payload[key].value).trim()
+    }
+  }
+
+  // Select field
+  if (payload.stockCategory?.value) {
+    nextFilters.stockCategory = payload.stockCategory.value
+  }
+
+  filters.value = nextFilters
   currentPage.value = 1
   loadData()
 }
@@ -328,14 +333,14 @@ const loadData = async () => {
   isLoading.value = true
   try {
     const res = await searchInboundHistory({
-      ...filters,
+      ...filters.value,
       page: currentPage.value,
       limit: pageSize.value,
     })
     rows.value = res.items
     total.value = res.total
   } catch (e: any) {
-    toast.showError(e?.message || 'データの取得に失敗しました')
+    toast.showError(e?.message || t('wms.common.fetchError', 'データの取得に失敗しました'))
   } finally {
     isLoading.value = false
   }
@@ -343,13 +348,13 @@ const loadData = async () => {
 
 const exportCsv = () => {
   if (rows.value.length === 0) {
-    toast.showError('エクスポートするデータがありません')
+    toast.showError(t('wms.inbound.noExportData', 'エクスポートするデータがありません'))
     return
   }
 
-  const activeCols = allExportColumns.filter(c => exportColumns.value.includes(c.key))
+  const activeCols = allExportColumns.value.filter(c => exportColumns.value.includes(c.key))
   if (activeCols.length === 0) {
-    toast.showError('出力する列を1つ以上選択してください')
+    toast.showError(t('wms.inbound.selectAtLeastOneColumn', '出力する列を1つ以上選択してください'))
     return
   }
 
@@ -362,7 +367,7 @@ const exportCsv = () => {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `入庫履歴_${filters.dateFrom}_${filters.dateTo}.csv`
+  a.download = `入庫履歴_${filters.value.dateFrom || ''}_${filters.value.dateTo || ''}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -384,7 +389,13 @@ onMounted(() => {
 .inbound-history {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 .o-card {
@@ -402,27 +413,6 @@ onMounted(() => {
   margin: 0 0 12px 0;
 }
 
-.filter-card {
-  background: var(--o-gray-50, #fafafa);
-}
-
-.filter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-.filter-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.filter-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--o-gray-600, #606266);
-}
 
 .export-col-grid {
   display: flex;
@@ -443,9 +433,9 @@ onMounted(() => {
 }
 
 .export-col-item--active {
-  background: #e8f5e9;
-  border-color: #66bb6a;
-  color: #2e7d32;
+  background: var(--o-success-bg);
+  border-color: var(--o-success);
+  color: var(--o-success);
 }
 
 .order-number {

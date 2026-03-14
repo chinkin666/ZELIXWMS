@@ -1,0 +1,66 @@
+# ============================================================
+# Docker Compose - ZELIXWMS 出荷管理システム
+# ============================================================
+# Services: backend, frontend, mongo, redis
+# サービス: バックエンド, フロントエンド, MongoDB, Redis
+# ============================================================
+# Usage / 使い方:
+#   docker compose up -d          # Start all services / 全サービス起動
+#   docker compose down           # Stop all services / 全サービス停止
+#   docker compose logs -f        # View logs / ログ確認
+# ============================================================
+
+services:
+  # Backend API server / バックエンド API サーバー
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - HOST=0.0.0.0
+      - MONGODB_URI=mongodb://mongo:27017/nexand-shipment
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      mongo:
+        condition: service_started
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  # Frontend (Nginx + Vue SPA) / フロントエンド (Nginx + Vue SPA)
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # In Docker network, frontend nginx proxies /api to backend:4000
+        # Docker ネットワーク内では nginx が /api を backend:4000 にプロキシ
+        # The browser-side origin is empty so requests go to the same host
+        # ブラウザ側のオリジンは空にして同一ホストにリクエスト
+        VITE_BACKEND_ORIGIN: ""
+        VITE_BACKEND_API_PREFIX: /api
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # MongoDB database / MongoDB データベース
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+    restart: unless-stopped
+
+  # Redis cache / Redis キャッシュ (BullMQ job queue)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  mongo-data:

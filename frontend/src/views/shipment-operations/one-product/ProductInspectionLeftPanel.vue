@@ -1,14 +1,14 @@
 <template>
   <div class="left-panel">
     <div class="left-panel__header">
-      <OButton variant="secondary" size="sm" @click="$emit('go-back')">&larr; 戻る</OButton>
-      <h2 class="page-title">出荷検品</h2>
-      <OButton variant="danger" size="sm" @click="$emit('clear')">クリア</OButton>
+      <OButton variant="secondary" size="sm" @click="$emit('go-back')">&larr; {{ t('wms.inspection.back', '戻る') }}</OButton>
+      <h2 class="page-title">{{ t('wms.inspection.productInspectionTitle', '出荷検品') }}</h2>
+      <OButton variant="danger" size="sm" @click="$emit('clear')">{{ t('wms.inspection.clear', 'クリア') }}</OButton>
     </div>
 
     <!-- ピッキング指示No -->
     <div v-if="orderGroupId" class="info-row">
-      <span class="info-label">ピッキング指示No</span>
+      <span class="info-label">{{ t('wms.inspection.pickingNo', 'ピッキング指示No') }}</span>
       <span class="info-value">{{ orderGroupId }}</span>
     </div>
 
@@ -20,7 +20,7 @@
           :value="inputValue"
           type="text"
           class="scan-input"
-          placeholder="商品をスキャン..."
+          :placeholder="t('wms.inspection.scanProduct', '商品をスキャン...')"
           @input="$emit('update:inputValue', ($event.target as HTMLInputElement).value)"
           @keyup.enter="$emit('submit')"
         />
@@ -33,7 +33,7 @@
       <label class="o-toggle">
         <input type="checkbox" :checked="autoPrintEnabled" @change="$emit('toggle-auto-print')" />
         <span class="o-toggle-slider"></span>
-        <span class="o-toggle-label">検品完了時 送り状自動出力</span>
+        <span class="o-toggle-label">{{ t('wms.inspection.autoPrintOnComplete', '検品完了時 送り状自動出力') }}</span>
       </label>
     </div>
 
@@ -56,20 +56,20 @@
       <template v-if="currentMatchedProduct">
         <div class="product-info-card">
           <div class="product-info-row">
-            <span class="product-info-label">商品名</span>
+            <span class="product-info-label">{{ t('wms.inspection.productName', '商品名') }}</span>
             <span class="product-info-value">{{ currentMatchedProduct.name }}</span>
           </div>
           <div class="product-info-row">
-            <span class="product-info-label">商品コード(SKU)</span>
+            <span class="product-info-label">{{ t('wms.inspection.productCodeSku', '商品コード(SKU)') }}</span>
             <span class="product-info-value">{{ currentMatchedProduct.sku }}</span>
           </div>
           <div class="product-info-row">
-            <span class="product-info-label">検品コード</span>
+            <span class="product-info-label">{{ t('wms.inspection.inspectionCodeLabel', '検品コード') }}</span>
             <span class="product-info-value">{{ currentMatchedProduct.barcodes.join(', ') || '-' }}</span>
           </div>
         </div>
       </template>
-      <div v-else class="empty-hint">スキャン待ち</div>
+      <div v-else class="empty-hint">{{ t('wms.inspection.waitingScan', 'スキャン待ち') }}</div>
     </div>
 
     <!-- OK 表示 -->
@@ -82,6 +82,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import noImageSrc from '@/assets/images/no_image.png'
 
@@ -91,6 +92,8 @@ interface ProductInfo {
   barcodes: string[]
   imageUrl?: string
 }
+
+const { t } = useI18n()
 
 defineProps<{
   orderGroupId: string | null

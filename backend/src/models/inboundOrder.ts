@@ -37,6 +37,8 @@ export interface IInboundOrder {
   completedAt?: Date;
   memo?: string;
   createdBy?: string;
+  /** 自定义字段 / カスタムフィールド */
+  customFields?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -92,6 +94,9 @@ const inboundOrderSchema = new mongoose.Schema<IInboundOrder>(
     completedAt: { type: Date },
     memo: { type: String, trim: true },
     createdBy: { type: String, trim: true },
+
+    // 自定义字段 / カスタムフィールド（Phase 5）
+    customFields: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
   {
     timestamps: true,

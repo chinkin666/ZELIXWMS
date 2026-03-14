@@ -12,6 +12,7 @@ import { printImage, printPdfBlob } from '@/utils/print/printImage'
 import { getPrintConfig } from '@/utils/print/printConfig'
 import { resolvePrintTemplateId, resolvePdfSource } from '@/utils/print/resolvePrintTemplate'
 import { yamatoB2FetchBatchPdf } from '@/api/carrierAutomation'
+import { useToast } from '@/composables/useToast'
 
 export interface PrintContext {
   carriers: Carrier[]
@@ -24,6 +25,7 @@ export interface PrintContext {
  * Shared between inspection pages (OneByOneInspection, OneProductInspection, OrderItemScan).
  */
 export function useInspectionPrint() {
+  const { show: showToast } = useToast()
   const printRendering = ref(false)
   const printError = ref('')
   const printImageUrl = ref('')
@@ -219,15 +221,15 @@ export function useInspectionPrint() {
 
     const config = getPrintConfig()
     if (config.method === 'local-bridge') {
-      alert('印刷ジョブを送信しました')
+      showToast('印刷ジョブを送信しました', 'success')
     } else {
-      alert('印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）')
+      showToast('印刷を開始しました（印刷ダイアログで100%スケール/余白なしを選択してください）', 'info', 5000)
     }
   }
 
   async function printFromB2WebApi(order: OrderDocument) {
     if (!order.trackingId) {
-      alert('追跡番号がありません')
+      showToast('追跡番号がありません', 'warning')
       return
     }
     const pdfBlob = await yamatoB2FetchBatchPdf([order.trackingId])
@@ -237,9 +239,9 @@ export function useInspectionPrint() {
     })
     const config = getPrintConfig()
     if (config.method === 'local-bridge') {
-      alert('印刷ジョブを送信しました')
+      showToast('印刷ジョブを送信しました', 'success')
     } else {
-      alert('印刷を開始しました')
+      showToast('印刷を開始しました', 'success')
     }
   }
 
@@ -253,7 +255,7 @@ export function useInspectionPrint() {
       ])
     } catch (e: any) {
       console.error('Failed to update order status:', e)
-      alert(`ステータス更新に失敗しました: ${e?.message || String(e)}`)
+      showToast(`ステータス更新に失敗しました: ${e?.message || String(e)}`, 'danger')
     }
   }
 
@@ -264,7 +266,7 @@ export function useInspectionPrint() {
       await updateShipmentOrderStatus(orderId, 'mark-inspected')
     } catch (e: any) {
       console.error('Failed to update order status:', e)
-      alert(`ステータス更新に失敗しました: ${e?.message || String(e)}`)
+      showToast(`ステータス更新に失敗しました: ${e?.message || String(e)}`, 'danger')
     }
   }
 

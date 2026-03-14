@@ -1,7 +1,7 @@
 /**
- * 本地打印桥接 API 工具函数
- * 对应 Local Print Bridge API (http://127.0.0.1:8765)
- * 自动处理 CORS 问题：在本地环境使用 Vite 代理，在远程环境直接访问
+ * ローカル印刷ブリッジAPIユーティリティ / 本地打印桥接 API 工具函数
+ * Local Print Bridge API (http://127.0.0.1:8765) 対応 / 对应 Local Print Bridge API (http://127.0.0.1:8765)
+ * CORS自動処理：ローカル環境ではViteプロキシ、リモート環境では直接アクセス / 自动处理 CORS 问题：在本地环境使用 Vite 代理，在远程环境直接访问
  */
 
 import type { PrinterInfo, TemplatePrintParams } from './printConfig'
@@ -34,7 +34,7 @@ function getDirectUrl(serviceUrl: string, apiPath: string): string {
 }
 
 /**
- * 尝试使用代理，如果失败则回退到直接访问
+ * プロキシ経由を試行、失敗時は直接アクセスにフォールバック / 尝试使用代理，如果失败则回退到直接访问
  */
 async function fetchWithProxyFallback(
   serviceUrl: string,
@@ -44,13 +44,13 @@ async function fetchWithProxyFallback(
   const isLocal = isLocalAddress(serviceUrl)
   const isLocalEnv = isRunningLocally()
 
-  // 远程服务器 + 本地服务：直接访问
+  // リモートサーバー + ローカルサービス：直接アクセス / 远程服务器 + 本地服务：直接访问
   if (isLocal && !isLocalEnv) {
     const directUrl = getDirectUrl(serviceUrl, apiPath)
     return fetch(directUrl, options)
   }
 
-  // 本地环境 + 本地服务：先代理，后直接
+  // ローカル環境 + ローカルサービス：プロキシ優先、直接アクセスフォールバック / 本地环境 + 本地服务：先代理，后直接
   if (isLocal && isLocalEnv) {
     try {
       const proxyUrl = getProxyUrl(apiPath)
@@ -80,7 +80,7 @@ async function fetchWithProxyFallback(
 }
 
 /**
- * 通用 API 调用
+ * 汎用API呼び出し / 通用 API 调用
  */
 async function callApi<T = any>(
   serviceUrl: string,
@@ -110,7 +110,7 @@ async function callApi<T = any>(
 // ─── API Endpoints ───
 
 /**
- * GET /api/health - 健康检查
+ * GET /api/health - ヘルスチェック / 健康检查
  */
 export async function healthCheck(serviceUrl: string) {
   return callApi<{
@@ -122,7 +122,7 @@ export async function healthCheck(serviceUrl: string) {
 }
 
 /**
- * GET /api/printers - 获取打印机列表
+ * GET /api/printers - プリンター一覧取得 / 获取打印机列表
  */
 export async function getPrinters(serviceUrl: string) {
   return callApi<{
@@ -132,7 +132,7 @@ export async function getPrinters(serviceUrl: string) {
 }
 
 /**
- * GET /api/default-printer - 获取配置的默认打印机
+ * GET /api/default-printer - 設定済みデフォルトプリンター取得 / 获取配置的默认打印机
  */
 export async function getDefaultPrinter(serviceUrl: string) {
   return callApi<{
@@ -141,7 +141,7 @@ export async function getDefaultPrinter(serviceUrl: string) {
 }
 
 /**
- * PUT /api/default-printer - 设置默认打印机
+ * PUT /api/default-printer - デフォルトプリンター設定 / 设置默认打印机
  */
 export async function setDefaultPrinter(serviceUrl: string, printerName: string | null) {
   return callApi<{
@@ -154,7 +154,7 @@ export async function setDefaultPrinter(serviceUrl: string, printerName: string 
 }
 
 /**
- * GET /api/supported-formats - 获取支持的文件格式
+ * GET /api/supported-formats - 対応ファイル形式取得 / 获取支持的文件格式
  */
 export async function getSupportedFormats(serviceUrl: string) {
   return callApi<{
@@ -164,7 +164,7 @@ export async function getSupportedFormats(serviceUrl: string) {
 }
 
 /**
- * POST /api/print - 打印文件
+ * POST /api/print - ファイル印刷 / 打印文件
  */
 export async function printFile(
   serviceUrl: string,
@@ -212,7 +212,7 @@ export async function printFile(
 }
 
 /**
- * GET /api/debug/printer-caps - 调试打印机能力
+ * GET /api/debug/printer-caps - プリンター機能デバッグ / 调试打印机能力
  */
 export async function getDebugPrinterCaps(serviceUrl: string, printerName: string) {
   const qs = new URLSearchParams({ printer: printerName }).toString()

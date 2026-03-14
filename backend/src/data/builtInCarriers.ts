@@ -1,4 +1,5 @@
 import type { ICarrier } from '../models/carrier';
+import { SAGAWA_CARRIER } from './sagawaCarrier';
 
 /**
  * 内置配送業者的创建时间（固定值）
@@ -155,6 +156,7 @@ export const YAMATO_B2_CARRIER: ICarrier = {
  */
 export const BUILT_IN_CARRIERS: ICarrier[] = [
   YAMATO_B2_CARRIER,
+  SAGAWA_CARRIER,
 ];
 
 /**

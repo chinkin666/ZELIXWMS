@@ -74,37 +74,37 @@
     <!-- 手動印刷確認ダイアログ -->
     <ODialog
       :open="completionDialogVisible"
-      title="検品完了"
+      :title="t('wms.inspection.inspectionComplete', '検品完了')"
       size="lg"
       @close="handleCompletionDialogClose"
     >
       <div class="completion-message">
-        <p>すべての商品の検品が完了しました。</p>
-        <p>出荷管理No: {{ currentOrder?.orderNumber }}</p>
+        <p>{{ t('wms.inspection.allItemsInspected', 'すべての商品の検品が完了しました。') }}</p>
+        <p>{{ t('wms.inspection.shipmentNumber', '出荷管理No') }}: {{ currentOrder?.orderNumber }}</p>
       </div>
 
       <div class="print-preview-section">
-        <div v-if="inspPrint.printRendering.value" class="rendering">レンダリング中...</div>
+        <div v-if="inspPrint.printRendering.value" class="rendering">{{ t('wms.inspection.rendering', 'レンダリング中...') }}</div>
         <div v-else-if="inspPrint.printError.value" class="error">{{ inspPrint.printError.value }}</div>
         <div v-else-if="inspPrint.currentPdfSource.value === 'b2-webapi'" class="preview-b2-cloud">
           <div class="b2-cloud-icon">PDF</div>
-          <div class="b2-cloud-text">B2 Cloudから取得</div>
+          <div class="b2-cloud-text">{{ t('wms.inspection.fetchedFromB2Cloud', 'B2 Cloudから取得') }}</div>
           <div class="b2-cloud-tracking">{{ currentOrder?.trackingId }}</div>
         </div>
-        <div v-else-if="!inspPrint.printImageUrl.value" class="placeholder">印刷プレビューを生成中...</div>
+        <div v-else-if="!inspPrint.printImageUrl.value" class="placeholder">{{ t('wms.inspection.generatingPreview', '印刷プレビューを生成中...') }}</div>
         <div v-else class="preview">
           <img :src="inspPrint.printImageUrl.value" class="preview-img" />
         </div>
       </div>
 
       <template #footer>
-        <OButton variant="secondary" @click="handleCompletionConfirmNoPrint">確認（印刷なし）</OButton>
+        <OButton variant="secondary" @click="handleCompletionConfirmNoPrint">{{ t('wms.inspection.confirmNoPrint', '確認（印刷なし）') }}</OButton>
         <OButton
           variant="primary"
           :disabled="(inspPrint.currentPdfSource.value === 'local' && (!inspPrint.printImageUrl.value || inspPrint.printRendering.value)) || (inspPrint.currentPdfSource.value === 'b2-webapi' && !currentOrder?.trackingId)"
           @click="handlePrint"
         >
-          印刷
+          {{ t('wms.inspection.print', '印刷') }}
         </OButton>
       </template>
     </ODialog>
@@ -112,20 +112,20 @@
     <!-- 注文一覧ダイアログ -->
     <ODialog
       :open="orderListDialogVisible"
-      title="注文一覧"
+      :title="t('wms.inspection.orderList', '注文一覧')"
       size="lg"
       @close="orderListDialogVisible = false"
     >
       <div class="order-list-section">
-        <h4>未検品（{{ pendingOrders.length }}件）</h4>
+        <h4>{{ t('wms.inspection.uninspected', '未検品') }}（{{ pendingOrders.length }}{{ t('wms.common.items', '件') }}）</h4>
         <div style="max-height: 250px; overflow: auto">
           <table class="o-list-table o-list-table-border" style="width: 100%">
             <thead>
               <tr>
-                <th style="width: 200px">出荷管理No</th>
-                <th style="min-width: 180px">お客様管理番号</th>
-                <th style="width: 160px">伝票番号</th>
-                <th style="width: 80px; text-align: center">商品数</th>
+                <th style="width: 200px">{{ t('wms.inspection.shipmentNumber', '出荷管理No') }}</th>
+                <th style="min-width: 180px">{{ t('wms.inspection.customerManagementNumber', 'お客様管理番号') }}</th>
+                <th style="width: 160px">{{ t('wms.inspection.trackingNumber', '伝票番号') }}</th>
+                <th style="width: 80px; text-align: center">{{ t('wms.inspection.productCount', '商品数') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -142,16 +142,16 @@
         </div>
       </div>
       <div class="order-list-section">
-        <h4>検品済（{{ processedOrdersData.length }}件）</h4>
+        <h4>{{ t('wms.inspection.inspected', '検品済') }}（{{ processedOrdersData.length }}{{ t('wms.common.items', '件') }}）</h4>
         <div style="max-height: 250px; overflow: auto">
-          <div v-if="loadingProcessedOrders" style="text-align: center; padding: 16px; color: #909399">読み込み中...</div>
+          <div v-if="loadingProcessedOrders" style="text-align: center; padding: 16px; color: var(--o-gray-500)">{{ t('wms.common.loading', '読み込み中...') }}</div>
           <table v-else class="o-list-table o-list-table-border" style="width: 100%">
             <thead>
               <tr>
-                <th style="width: 200px">出荷管理No</th>
-                <th style="min-width: 180px">お客様管理番号</th>
-                <th style="width: 160px">伝票番号</th>
-                <th style="width: 80px; text-align: center">商品数</th>
+                <th style="width: 200px">{{ t('wms.inspection.shipmentNumber', '出荷管理No') }}</th>
+                <th style="min-width: 180px">{{ t('wms.inspection.customerManagementNumber', 'お客様管理番号') }}</th>
+                <th style="width: 160px">{{ t('wms.inspection.trackingNumber', '伝票番号') }}</th>
+                <th style="width: 80px; text-align: center">{{ t('wms.inspection.productCount', '商品数') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -168,7 +168,7 @@
         </div>
       </div>
       <template #footer>
-        <OButton variant="secondary" @click="orderListDialogVisible = false">閉じる</OButton>
+        <OButton variant="secondary" @click="orderListDialogVisible = false">{{ t('wms.common.close', '閉じる') }}</OButton>
       </template>
     </ODialog>
 
@@ -180,19 +180,19 @@
     >
       <div class="wrong-scan-content">
         <div class="wrong-scan-icon">!</div>
-        <div class="wrong-scan-title">この注文に該当しない商品です</div>
+        <div class="wrong-scan-title">{{ t('wms.inspection.wrongScanTitle', 'この注文に該当しない商品です') }}</div>
         <div class="wrong-scan-detail">
-          スキャン値: <strong>{{ wrongScanValue }}</strong>
+          {{ t('wms.inspection.scanValue', 'スキャン値') }}: <strong>{{ wrongScanValue }}</strong>
         </div>
         <div class="wrong-scan-hint">
-          現在の注文（{{ currentOrder?.orderNumber }}）に含まれない商品がスキャンされました。
+          {{ t('wms.inspection.wrongScanHint', '現在の注文に含まれない商品がスキャンされました。') }}
         </div>
         <OButton
           variant="danger"
           class="wrong-scan-close-btn"
           @click="wrongScanDialogVisible = false"
         >
-          確認して閉じる
+          {{ t('wms.inspection.confirmAndClose', '確認して閉じる') }}
         </OButton>
       </div>
       <template #footer><span></span></template>
@@ -201,7 +201,7 @@
     <!-- 手動検品数調整ダイアログ -->
     <ODialog
       :open="adjustDialogVisible"
-      title="検品数を調整"
+      :title="t('wms.inspection.adjustQuantity', '検品数を調整')"
       size="sm"
       @close="adjustDialogVisible = false"
     >
@@ -220,10 +220,10 @@
       </div>
       <template #footer>
         <div class="adjust-dialog-footer">
-          <span class="adjust-shortcuts">ESC キャンセル / F1 確定</span>
+          <span class="adjust-shortcuts">ESC {{ t('wms.common.cancel', 'キャンセル') }} / F1 {{ t('wms.inspection.confirm', '確定') }}</span>
           <div>
-            <OButton variant="secondary" @click="adjustDialogVisible = false">キャンセル</OButton>
-            <OButton variant="primary" @click="handleAdjustConfirm">確定</OButton>
+            <OButton variant="secondary" @click="adjustDialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
+            <OButton variant="primary" @click="handleAdjustConfirm">{{ t('wms.inspection.confirm', '確定') }}</OButton>
           </div>
         </div>
       </template>
@@ -253,12 +253,14 @@ import { yamatoB2Unconfirm, changeInvoiceType, splitOrder as splitOrderApi, isCa
 import type { SplitOrderRequest, CarrierAutomationConfig } from '@/types/carrierAutomation'
 import { isBuiltInCarrierId } from '@/utils/carrier'
 import { resolvePdfSource } from '@/utils/print/resolvePrintTemplate'
-import noImageSrc from '@/assets/images/no_image.png'
-import { getApiBaseUrl } from '@/api/base'
+import { resolveImageUrl } from '@/utils/imageUrl'
 import { useAutoPrint } from '@/composables/useAutoPrint'
 import { useInspectionPrint } from '@/composables/useInspectionPrint'
+import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 
-const IMAGE_BASE = getApiBaseUrl().replace(/\/api$/, '')
+const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const router = useRouter()
 const route = useRoute()
@@ -401,29 +403,23 @@ const orderInfoItems = computed(() => {
   const carrierHit = hasOrder ? carriers.value.find((c) => c._id === o.carrierId) : null
   const carrierDisplay = carrierHit ? carrierHit.name : (hasOrder ? (o.carrierId || '-') : '')
   return [
-    { key: 'orderNumber', label: '出荷管理No', value: hasOrder ? (o.orderNumber || '-') : '' },
-    { key: 'customerManagementNumber', label: 'お客様管理番号', value: hasOrder ? (o.customerManagementNumber || '-') : '' },
-    { key: 'senderName', label: 'ご依頼主', value: hasOrder ? (o.sender?.name || '-') : '' },
-    { key: 'carrier', label: '配送業者', value: carrierDisplay },
-    { key: 'invoiceType', label: '送り状種別', value: hasOrder ? (o.invoiceType || '-') : '' },
-    { key: 'coolType', label: 'クール区分', value: hasOrder ? formatCoolType(o.coolType) : '' },
-    { key: 'trackingId', label: '伝票番号', value: hasOrder ? (o.trackingId || '-') : '' },
+    { key: 'orderNumber', label: t('wms.inspection.shipmentNumber', '出荷管理No'), value: hasOrder ? (o.orderNumber || '-') : '' },
+    { key: 'customerManagementNumber', label: t('wms.inspection.customerManagementNumber', 'お客様管理番号'), value: hasOrder ? (o.customerManagementNumber || '-') : '' },
+    { key: 'senderName', label: t('wms.inspection.sender', 'ご依頼主'), value: hasOrder ? (o.sender?.name || '-') : '' },
+    { key: 'carrier', label: t('wms.inspection.carrier', '配送業者'), value: carrierDisplay },
+    { key: 'invoiceType', label: t('wms.inspection.invoiceType', '送り状種別'), value: hasOrder ? (o.invoiceType || '-') : '' },
+    { key: 'coolType', label: t('wms.inspection.coolType', 'クール区分'), value: hasOrder ? formatCoolType(o.coolType) : '' },
+    { key: 'trackingId', label: t('wms.inspection.trackingNumber', '伝票番号'), value: hasOrder ? (o.trackingId || '-') : '' },
   ]
 })
 
 // ─── Helper Functions ─────────────────────────────────────────────────
 
 function formatCoolType(v: string | undefined): string {
-  if (v === '0') return '通常'
-  if (v === '1') return 'クール冷凍'
-  if (v === '2') return 'クール冷蔵'
+  if (v === '0') return t('wms.inspection.coolTypeNormal', '通常')
+  if (v === '1') return t('wms.inspection.coolTypeFrozen', 'クール冷凍')
+  if (v === '2') return t('wms.inspection.coolTypeChilled', 'クール冷蔵')
   return '-'
-}
-
-function resolveImageUrl(url?: string): string {
-  if (!url) return noImageSrc
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-  return `${IMAGE_BASE}${url}`
 }
 
 const scannedProductImageSrc = computed(() => {
@@ -550,7 +546,7 @@ function handleInput() {
 
 function handleOrderMatch(input: string) {
   if (pendingOrders.value.length === 0) {
-    alert('処理待ちの注文がありません')
+    showToast(t('wms.inspection.noPendingOrders', '処理待ちの注文がありません'), 'warning')
     return
   }
 
@@ -564,7 +560,7 @@ function handleOrderMatch(input: string) {
   }
 
   if (!matched) {
-    alert(`マッチする注文が見つかりません: ${input}`)
+    showToast(t('wms.inspection.noMatchingOrder', 'マッチする注文が見つかりません') + `: ${input}`, 'danger')
     focusScanInput()
     return
   }
@@ -626,7 +622,7 @@ function checkCompletion() {
   const alreadyPrinted = !!(currentOrder.value as any)?.status?.printed?.isPrinted
 
   if (alreadyPrinted) {
-    if (confirm('この注文は既に印刷済みです。もう一度印刷しますか？')) {
+    if (confirm(t('wms.inspection.alreadyPrintedConfirm', 'この注文は既に印刷済みです。もう一度印刷しますか？'))) {
       if (autoPrintEnabled.value) {
         triggerAutoPrint()
       } else {
@@ -658,7 +654,7 @@ async function triggerAutoPrint() {
   try {
     if (pdfSource === 'b2-webapi') {
       if (!currentOrder.value.trackingId) {
-        alert('追跡番号がありません（B2 CloudからPDFを取得できません）')
+        showToast(t('wms.inspection.noTrackingNumber', '追跡番号がありません（B2 CloudからPDFを取得できません）'), 'danger')
         completionDialogVisible.value = true
         return
       }
@@ -677,7 +673,7 @@ async function triggerAutoPrint() {
     }
   } catch (e: any) {
     console.error('Auto print failed:', e)
-    alert(`自動印刷に失敗しました: ${e?.message || String(e)}`)
+    showToast(t('wms.inspection.autoPrintFailed', '自動印刷に失敗しました') + `: ${e?.message || String(e)}`, 'danger')
     completionDialogVisible.value = true
   }
 }
@@ -703,7 +699,7 @@ function finishCurrentOrder() {
       currentOrder.value = nextOrder
       mode.value = 'product'
       initializeInspectionItems()
-      alert(`分割注文 ${nextOrder.orderNumber || nextId} に自動移動しました`)
+      showToast(t('wms.inspection.autoMovedToSplitOrder', '分割注文に自動移動しました') + `: ${nextOrder.orderNumber || nextId}`, 'info')
       focusScanInput()
       return
     }
@@ -729,7 +725,7 @@ async function handlePrint() {
     finishCurrentOrder()
   } catch (e: any) {
     console.error('Print error:', e)
-    alert(`印刷に失敗しました: ${e?.message || String(e)}`)
+    showToast(t('wms.inspection.printFailed', '印刷に失敗しました') + `: ${e?.message || String(e)}`, 'danger')
   }
 }
 
@@ -816,7 +812,7 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
     if (builtIn) {
       const result = await yamatoB2Unconfirm([orderId], reason, { skipCarrierDelete })
       if (result.success) {
-        let message = '確認を取り消しました'
+        let message = t('wms.inspection.confirmCancelled', '確認を取り消しました')
         if (result.carrierDeleteSkipped) {
           message += '（B2 Cloud削除スキップ）'
         } else if (result.b2DeleteResult) {
@@ -824,11 +820,11 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
             ? `（B2 Cloudから${result.b2DeleteResult.deleted}件削除）`
             : `（B2 Cloud削除失敗: ${result.b2DeleteResult.error}）`
         }
-        alert(message)
+        showToast(message, 'success')
       }
     } else {
       await updateShipmentOrderStatus(orderId, 'unconfirm', 'confirm')
-      alert('確認を取り消しました')
+      showToast(t('wms.inspection.confirmCancelled', '確認を取り消しました'), 'success')
     }
 
     removeCurrentOrderAndReset()
@@ -836,13 +832,13 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
   } catch (e: any) {
     if (builtIn && isCarrierDeleteError(e)) {
       isUnconfirming.value = false
-      if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？`)) {
+      if (confirm(t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDelete', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？')}`)) {
         await handleUnconfirmConfirm(reason, true)
         return
       }
       return
     }
-    alert(e?.message || '確認取消に失敗しました')
+    showToast(e?.message || t('wms.inspection.unconfirmFailed', '確認取消に失敗しました'), 'danger')
     unconfirmDialogVisible.value = false
   } finally {
     isUnconfirming.value = false
@@ -868,12 +864,12 @@ async function handleChangeInvoiceTypeConfirm(newInvoiceType: string, skipCarrie
     const result = await changeInvoiceType([orderId], newInvoiceType, { skipCarrierDelete })
 
     if (result.success) {
-      let message = `送り状種類を変更しました（${result.updatedCount}件更新）`
+      let message = t('wms.inspection.invoiceTypeChanged', '送り状種類を変更しました') + `（${result.updatedCount}${t('wms.common.items', '件')}）`
       if (result.resubmittedCount > 0) message += `、${result.resubmittedCount}件をB2 Cloudに再登録`
       if (result.carrierDeleteSkipped) message += '（B2 Cloud削除スキップ）'
 
       if (builtIn && result.resubmittedCount > 0) {
-        alert(message)
+        showToast(message, 'success')
         currentOrder.value = await fetchShipmentOrder(orderId)
         initializeInspectionItems()
         changeInvoiceTypeDialogVisible.value = false
@@ -881,22 +877,22 @@ async function handleChangeInvoiceTypeConfirm(newInvoiceType: string, skipCarrie
         return
       }
 
-      alert(message)
+      showToast(message, 'success')
       removeCurrentOrderAndReset()
     } else {
-      alert(result.errors?.join(', ') || '送り状種類変更に失敗しました')
+      showToast(result.errors?.join(', ') || t('wms.inspection.invoiceTypeChangeFailed', '送り状種類変更に失敗しました'), 'danger')
     }
     changeInvoiceTypeDialogVisible.value = false
   } catch (e: any) {
     if (builtIn && isCarrierDeleteError(e)) {
       isChangingInvoiceType.value = false
-      if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？`)) {
+      if (confirm(t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDelete', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？')}`)) {
         await handleChangeInvoiceTypeConfirm(newInvoiceType, true)
         return
       }
       return
     }
-    alert(e?.message || '送り状種類変更に失敗しました')
+    showToast(e?.message || t('wms.inspection.invoiceTypeChangeFailed', '送り状種類変更に失敗しました'), 'danger')
     changeInvoiceTypeDialogVisible.value = false
   } finally {
     isChangingInvoiceType.value = false
@@ -918,9 +914,9 @@ async function handleSplitOrderConfirm(request: SplitOrderRequest, skipCarrierDe
   try {
     const result = await splitOrderApi({ ...request, skipCarrierDelete })
     if (result.success) {
-      let message = `注文を${result.splitOrders.length}件に分割しました`
+      let message = t('wms.inspection.orderSplit', '注文を分割しました') + `（${result.splitOrders.length}${t('wms.common.items', '件')}）`
       if (result.carrierDeleteSkipped) message += '（B2 Cloud削除スキップ）'
-      alert(message)
+      showToast(message, 'success')
 
       const originalId = String(currentOrder.value?._id)
       pendingOrders.value = pendingOrders.value.filter(o => String(o._id) !== originalId)
@@ -958,19 +954,19 @@ async function handleSplitOrderConfirm(request: SplitOrderRequest, skipCarrierDe
         focusScanInput()
       }
     } else {
-      alert(result.errors?.join(', ') || '注文分割に失敗しました')
+      showToast(result.errors?.join(', ') || t('wms.inspection.orderSplitFailed', '注文分割に失敗しました'), 'danger')
     }
     splitOrderDialogVisible.value = false
   } catch (e: any) {
     if (builtIn && isCarrierDeleteError(e)) {
       isSplittingOrder.value = false
-      if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして続行しますか？`)) {
+      if (confirm(t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteContinue', 'B2 Cloud削除をスキップして続行しますか？')}`)) {
         await handleSplitOrderConfirm(request, true)
         return
       }
       return
     }
-    alert(e?.message || '注文分割に失敗しました')
+    showToast(e?.message || t('wms.inspection.orderSplitFailed', '注文分割に失敗しました'), 'danger')
     splitOrderDialogVisible.value = false
   } finally {
     isSplittingOrder.value = false
@@ -1006,7 +1002,7 @@ async function loadOrdersFromStorage(): Promise<void> {
     }
   } catch (e) {
     console.error('Failed to load orders from storage:', e)
-    alert('保存された注文の読み込みに失敗しました')
+    showToast(t('wms.inspection.loadOrdersFailed', '保存された注文の読み込みに失敗しました'), 'danger')
   }
 }
 
@@ -1072,7 +1068,7 @@ onMounted(async () => {
       pendingOrders.value = result.items
     } catch (e) {
       console.error('Failed to load orders by group:', e)
-      alert('注文の読み込みに失敗しました')
+      showToast(t('wms.inspection.loadOrdersFailed', '注文の読み込みに失敗しました'), 'danger')
     }
   } else {
     await loadOrdersFromStorage()
@@ -1081,7 +1077,7 @@ onMounted(async () => {
   totalOrderCount.value = pendingOrders.value.length + processedOrderIds.value.length
 
   if (pendingOrders.value.length === 0 && processedOrderIds.value.length === 0) {
-    alert('検品対象の注文がありません。一覧ページに戻ります。')
+    showToast(t('wms.inspection.noOrdersToInspect', '検品対象の注文がありません。一覧ページに戻ります。'), 'warning')
     router.push('/shipment-operations/tasks')
     return
   }
@@ -1107,7 +1103,7 @@ function fkeyUndoLastScan() {
   if (item) {
     item.inspectedQuantity--
     item.remainingQuantity++
-    alert(`${item.name} の検品を1つ取り消しました`)
+    showToast(t('wms.inspection.undoScanSuccess', '検品を1つ取り消しました') + `: ${item.name}`, 'info')
   }
   lastScannedProduct.value = null
   focusScanInput()
@@ -1120,7 +1116,7 @@ function fkeyClearCurrentOrder() {
   inspectionItems.value = []
   lastScannedProduct.value = null
   focusScanInput()
-  alert('注文をクリアしました')
+  showToast(t('wms.inspection.orderCleared', '注文をクリアしました'), 'info')
 }
 
 function fkeyAdjustQuantity() {
@@ -1148,18 +1144,18 @@ function fkeyChangeInvoiceType() {
 }
 
 const fKeyDefs: FKeyDef[] = [
-  { key: 'ESC', code: 'Escape', label: '戻る', action: handleGoBack },
-  { key: 'F1', code: 'F1', label: '直前取消', action: fkeyUndoLastScan },
-  { key: 'F2', code: 'F2', label: '注文クリア', action: fkeyClearCurrentOrder },
+  { key: 'ESC', code: 'Escape', label: t('wms.inspection.goBack', '戻る'), action: handleGoBack },
+  { key: 'F1', code: 'F1', label: t('wms.inspection.undoLast', '直前取消'), action: fkeyUndoLastScan },
+  { key: 'F2', code: 'F2', label: t('wms.inspection.clearOrder', '注文クリア'), action: fkeyClearCurrentOrder },
   { key: 'F3', code: 'F3', label: '' },
   { key: 'F4', code: 'F4', label: '' },
-  { key: 'F5', code: 'F5', label: '数量修正', action: fkeyAdjustQuantity },
-  { key: 'F6', code: 'F6', label: '注文分割', action: fkeySplitOrder },
+  { key: 'F5', code: 'F5', label: t('wms.inspection.adjustQty', '数量修正'), action: fkeyAdjustQuantity },
+  { key: 'F6', code: 'F6', label: t('wms.inspection.splitOrder', '注文分割'), action: fkeySplitOrder },
   { key: 'F7', code: 'F7', label: '' },
   { key: 'F8', code: 'F8', label: '' },
-  { key: 'F9', code: 'F9', label: '確認取消', action: fkeyUnconfirm },
-  { key: 'F10', code: 'F10', label: '', labelOnly: '納品書印刷' },
-  { key: 'F11', code: 'F11', label: '送り状種類変更', action: fkeyChangeInvoiceType },
+  { key: 'F9', code: 'F9', label: t('wms.inspection.unconfirm', '確認取消'), action: fkeyUnconfirm },
+  { key: 'F10', code: 'F10', label: '', labelOnly: t('wms.inspection.printInvoice', '納品書印刷') },
+  { key: 'F11', code: 'F11', label: t('wms.inspection.changeInvoiceType', '送り状種類変更'), action: fkeyChangeInvoiceType },
   { key: 'F12', code: 'F12', label: '' },
 ]
 
@@ -1253,28 +1249,9 @@ onBeforeUnmount(() => {
 
 /* ─── Order List Dialog ─────────────────── */
 .order-list-section { margin-bottom: 16px; }
-.order-list-section h4 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #303133; }
+.order-list-section h4 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--o-gray-900); }
 
-/* ─── Table styles ───────────────────────── */
-.o-list-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 13px;
-}
-.o-list-table-border th,
-.o-list-table-border td {
-  border: 1px solid #ebeef5;
-  padding: 8px 12px;
-}
-.o-list-table th {
-  background: #f5f7fa;
-  font-weight: 600;
-  color: #606266;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-.o-list-table td { color: #303133; }
+/* .o-list-table base styles are defined globally in style.css */
 
 /* ─── Wrong scan warning dialog ──────────── */
 .wrong-scan-content {
@@ -1289,7 +1266,7 @@ onBeforeUnmount(() => {
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: #f56c6c;
+  background: var(--o-danger);
   color: #fff;
   font-size: 40px;
   font-weight: 900;
@@ -1298,9 +1275,9 @@ onBeforeUnmount(() => {
   justify-content: center;
 }
 
-.wrong-scan-title { font-size: 22px; font-weight: 700; color: #f56c6c; }
-.wrong-scan-detail { font-size: 16px; color: #303133; }
-.wrong-scan-hint { font-size: 13px; color: #909399; text-align: center; max-width: 360px; }
+.wrong-scan-title { font-size: 22px; font-weight: 700; color: var(--o-danger); }
+.wrong-scan-detail { font-size: 16px; color: var(--o-gray-900); }
+.wrong-scan-hint { font-size: 13px; color: var(--o-gray-500); text-align: center; max-width: 360px; }
 
 .wrong-scan-close-btn {
   width: 240px;
@@ -1314,16 +1291,16 @@ onBeforeUnmount(() => {
 .completion-message {
   text-align: center;
   padding: 12px;
-  background: #f5f7fa;
+  background: var(--o-gray-100);
   border-radius: 4px;
   margin-bottom: 16px;
 }
 
-.completion-message p { margin: 6px 0; font-size: 14px; color: #303133; }
+.completion-message p { margin: 6px 0; font-size: 14px; color: var(--o-gray-900); }
 
 .print-preview-section {
   border: 1px solid #e5e7eb;
-  background: #f9fafb;
+  background: var(--o-gray-100);
   height: 520px;
   overflow: auto;
   display: flex;
@@ -1350,7 +1327,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   gap: 12px;
   padding: 24px;
-  background: #fef9c3;
+  background: var(--o-warning-bg);
   border: 2px dashed #ca8a04;
   border-radius: 12px;
 }
@@ -1377,7 +1354,7 @@ onBeforeUnmount(() => {
 }
 
 .adjust-dialog-content p { width: 100%; margin: 0 0 8px; font-weight: 500; }
-.adjust-hint { font-size: 13px; color: #909399; }
+.adjust-hint { font-size: 13px; color: var(--o-gray-500); }
 
 .adjust-dialog-footer {
   display: flex;
@@ -1386,7 +1363,7 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
-.adjust-shortcuts { font-size: 12px; color: #909399; }
+.adjust-shortcuts { font-size: 12px; color: var(--o-gray-500); }
 
 /* ─── Button / Input styles ──────────────── */
 .o-input {
@@ -1397,5 +1374,5 @@ onBeforeUnmount(() => {
   outline: none;
   box-sizing: border-box;
 }
-.o-input:focus { border-color: #409eff; }
+.o-input:focus { border-color: var(--o-info); }
 </style>

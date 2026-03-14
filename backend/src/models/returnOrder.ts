@@ -34,6 +34,8 @@ export interface IReturnOrder {
   lines: IReturnOrderLine[];
   memo?: string;
   createdBy?: string;
+  /** 自定义字段 / カスタムフィールド */
+  customFields?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -158,6 +160,9 @@ const returnOrderSchema = new mongoose.Schema<IReturnOrder>(
       type: String,
       trim: true,
     },
+
+    // 自定义字段 / カスタムフィールド（Phase 5）
+    customFields: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
   {
     timestamps: true,

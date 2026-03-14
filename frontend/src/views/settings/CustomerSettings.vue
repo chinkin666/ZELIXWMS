@@ -8,22 +8,13 @@
       </template>
     </ControlPanel>
 
-    <!-- Search bar -->
-    <div class="search-section">
-      <input
-        v-model="searchText"
-        type="text"
-        class="o-input"
-        style="flex: 1; max-width: 400px;"
-        placeholder="得意先コード・名称・電話・メールで検索..."
-        @keydown.enter="handleSearch"
-      />
-      <OButton variant="primary" @click="handleSearch">検索</OButton>
-      <label class="search-section__filter">
-        <input v-model="showActiveOnly" type="checkbox" @change="handleSearch" />
-        有効のみ
-      </label>
-    </div>
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="customerSettingsSearch"
+      @search="handleSearch"
+    />
 
     <!-- CSV Import Panel -->
     <div v-if="showImportPanel" class="import-panel">
@@ -70,61 +61,21 @@
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width: 130px">得意先コード</th>
-            <th class="o-table-th" style="width: 200px">名称</th>
-            <th class="o-table-th" style="width: 110px">郵便番号</th>
-            <th class="o-table-th" style="width: 140px">電話</th>
-            <th class="o-table-th" style="width: 200px">メール</th>
-            <th class="o-table-th" style="width: 80px">有効</th>
-            <th class="o-table-th" style="width: 140px">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td class="o-table-td o-table-empty" colspan="7">読み込み中...</td>
-          </tr>
-          <tr v-else-if="customers.length === 0">
-            <td class="o-table-td o-table-empty" colspan="7">データがありません</td>
-          </tr>
-          <tr v-for="c in customers" :key="c._id" class="o-table-row">
-            <td class="o-table-td">{{ c.customerCode }}</td>
-            <td class="o-table-td">{{ c.name }}</td>
-            <td class="o-table-td">{{ c.postalCode || '-' }}</td>
-            <td class="o-table-td">{{ c.phone || '-' }}</td>
-            <td class="o-table-td">{{ c.email || '-' }}</td>
-            <td class="o-table-td" style="text-align: center">
-              <span :class="c.isActive ? 'o-status-tag o-status-tag--confirmed' : 'o-status-tag o-status-tag--cancelled'">
-                {{ c.isActive ? '有効' : '無効' }}
-              </span>
-            </td>
-            <td class="o-table-td o-table-td--actions">
-              <OButton variant="primary" size="sm" @click="openEdit(c)">編集</OButton>
-              <OButton variant="icon-danger" size="sm" @click="confirmDelete(c)">削除</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagination -->
-    <div class="o-table-pagination">
-      <span class="o-table-pagination__info">全{{ total }}件中 {{ paginationStart }}-{{ paginationEnd }}件</span>
-      <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-        </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">&lsaquo;</OButton>
-        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">&rsaquo;</OButton>
-      </div>
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="customers"
+        :height="520"
+        row-key="_id"
+        pagination-enabled
+        pagination-mode="server"
+        :total="total"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :global-search-text="globalSearchText"
+        @page-change="handlePageChange"
+      />
     </div>
 
     <!-- Create/Edit Dialog -->
@@ -180,11 +131,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchCustomers,
   createCustomer,
@@ -196,6 +151,7 @@ import {
 } from '@/api/customer'
 
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 // State
 const customers = ref<Customer[]>([])
@@ -203,8 +159,8 @@ const total = ref(0)
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(20)
-const searchText = ref('')
-const showActiveOnly = ref(true)
+const globalSearchText = ref('')
+const showActiveOnly = ref<boolean | undefined>(undefined)
 
 // Dialog
 const dialogOpen = ref(false)
@@ -233,20 +189,106 @@ const importPreviewData = ref<Record<string, string>[]>([])
 const importing = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-// Computed
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
-const paginationStart = computed(() => (total.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1))
-const paginationEnd = computed(() => Math.min(currentPage.value * pageSize.value, total.value))
+// Search / Table columns
+const baseColumns: TableColumn[] = [
+  {
+    key: 'customerCode',
+    dataKey: 'customerCode',
+    title: '得意先コード',
+    width: 130,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'name',
+    dataKey: 'name',
+    title: '名称',
+    width: 200,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'postalCode',
+    dataKey: 'postalCode',
+    title: '郵便番号',
+    width: 110,
+    fieldType: 'string',
+  },
+  {
+    key: 'phone',
+    dataKey: 'phone',
+    title: '電話',
+    width: 140,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'email',
+    dataKey: 'email',
+    title: 'メール',
+    width: 200,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'isActive',
+    dataKey: 'isActive',
+    title: '有効',
+    width: 80,
+    fieldType: 'boolean',
+    searchable: true,
+    searchType: 'boolean',
+  },
+]
+
+const searchColumns: TableColumn[] = baseColumns.filter((c) => c.searchable)
+
+const tableColumns: TableColumn[] = [
+  ...baseColumns.map((col) => {
+    if (col.key === 'isActive') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Customer }) =>
+          h(
+            'span',
+            { class: rowData.isActive ? 'o-status-tag o-status-tag--confirmed' : 'o-status-tag o-status-tag--cancelled' },
+            rowData.isActive ? '有効' : '無効',
+          ),
+      }
+    }
+    return {
+      ...col,
+      cellRenderer: ({ rowData }: { rowData: Customer }) => (rowData as any)[col.dataKey || col.key] || '-',
+    }
+  }),
+  {
+    key: 'actions',
+    title: t('wms.common.actions', '操作'),
+    width: 140,
+    cellRenderer: ({ rowData }: { rowData: Customer }) =>
+      h('div', { class: 'action-cell' }, [
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+      ]),
+  },
+]
+
+// Current search filters for server-side requests
+const currentSearchText = ref('')
 
 // Load
 const loadList = async () => {
   loading.value = true
   try {
     const result = await fetchCustomers({
-      search: searchText.value || undefined,
+      search: currentSearchText.value || undefined,
       page: currentPage.value,
       limit: pageSize.value,
-      isActive: showActiveOnly.value ? 'true' : undefined,
+      isActive: showActiveOnly.value === true ? 'true' : showActiveOnly.value === false ? 'false' : undefined,
     })
     customers.value = result.data
     total.value = result.total
@@ -257,18 +299,29 @@ const loadList = async () => {
   }
 }
 
-const handleSearch = () => {
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+    currentSearchText.value = String(payload.__global.value).trim()
+  } else {
+    globalSearchText.value = ''
+    currentSearchText.value = ''
+  }
+
+  // Extract field-specific filters
+  if (typeof payload.isActive?.value === 'boolean') {
+    showActiveOnly.value = payload.isActive.value
+  } else {
+    showActiveOnly.value = undefined
+  }
+
   currentPage.value = 1
   loadList()
 }
 
-const handlePageSizeChange = () => {
-  currentPage.value = 1
-  loadList()
-}
-
-const goToPage = (page: number) => {
-  currentPage.value = page
+const handlePageChange = (payload: { page: number; pageSize: number }) => {
+  currentPage.value = payload.page
+  pageSize.value = payload.pageSize
   loadList()
 }
 
@@ -490,20 +543,14 @@ onMounted(() => {
   margin-right: -20px;
 }
 
-/* Search section */
-.search-section {
+.table-section {
+  width: 100%;
+}
+
+:deep(.action-cell) {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.search-section__filter {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
 }
 
 /* Import panel */

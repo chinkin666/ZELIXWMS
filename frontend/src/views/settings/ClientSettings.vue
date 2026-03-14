@@ -7,84 +7,29 @@
       </template>
     </ControlPanel>
 
-    <!-- Search bar -->
-    <div class="search-section">
-      <input
-        v-model="searchText"
-        type="text"
-        class="o-input"
-        style="flex: 1; max-width: 400px;"
-        placeholder="顧客コード・名称・メールで検索..."
-        @keydown.enter="handleSearch"
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="clientSettingsSearch"
+      @search="handleSearch"
+    />
+
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="clients"
+        :height="520"
+        row-key="_id"
+        pagination-enabled
+        pagination-mode="server"
+        :total="total"
+        :current-page="currentPage"
+        :page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :global-search-text="globalSearchText"
+        @page-change="handlePageChange"
       />
-      <OButton variant="primary" @click="handleSearch">検索</OButton>
-      <label class="search-section__filter">
-        <input v-model="showActiveOnly" type="checkbox" @change="handleSearch" />
-        有効のみ
-      </label>
-    </div>
-
-    <!-- Table -->
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width: 130px">顧客コード</th>
-            <th class="o-table-th" style="width: 200px">顧客名</th>
-            <th class="o-table-th" style="width: 120px">担当者名</th>
-            <th class="o-table-th" style="width: 140px">電話番号</th>
-            <th class="o-table-th" style="width: 120px">契約プラン</th>
-            <th class="o-table-th" style="width: 80px">課金</th>
-            <th class="o-table-th" style="width: 80px">有効</th>
-            <th class="o-table-th" style="width: 140px">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td class="o-table-td o-table-empty" colspan="8">読み込み中...</td>
-          </tr>
-          <tr v-else-if="clients.length === 0">
-            <td class="o-table-td o-table-empty" colspan="8">データがありません</td>
-          </tr>
-          <tr v-for="c in clients" :key="c._id" class="o-table-row">
-            <td class="o-table-td">{{ c.clientCode }}</td>
-            <td class="o-table-td">{{ c.name }}</td>
-            <td class="o-table-td">{{ c.contactName || '-' }}</td>
-            <td class="o-table-td">{{ c.phone || '-' }}</td>
-            <td class="o-table-td">{{ planLabel(c.plan) }}</td>
-            <td class="o-table-td" style="text-align: center">
-              <span :class="c.billingEnabled ? 'o-status-tag o-status-tag--confirmed' : 'o-status-tag o-status-tag--cancelled'">
-                {{ c.billingEnabled ? '有効' : '無効' }}
-              </span>
-            </td>
-            <td class="o-table-td" style="text-align: center">
-              <span :class="c.isActive ? 'o-status-tag o-status-tag--confirmed' : 'o-status-tag o-status-tag--cancelled'">
-                {{ c.isActive ? '有効' : '無効' }}
-              </span>
-            </td>
-            <td class="o-table-td o-table-td--actions">
-              <OButton variant="primary" size="sm" @click="openEdit(c)">編集</OButton>
-              <OButton variant="icon-danger" size="sm" @click="confirmDelete(c)">削除</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagination -->
-    <div class="o-table-pagination">
-      <span class="o-table-pagination__info">全{{ total }}件中 {{ paginationStart }}-{{ paginationEnd }}件</span>
-      <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-        </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">&lsaquo;</OButton>
-        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">&rsaquo;</OButton>
-      </div>
     </div>
 
     <!-- Create/Edit Dialog -->
@@ -160,11 +105,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, h, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchClients,
   createClient,
@@ -175,6 +124,7 @@ import {
 } from '@/api/client'
 
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const planLabelMap: Record<string, string> = {
   free: 'フリー',
@@ -194,8 +144,8 @@ const total = ref(0)
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(20)
-const searchText = ref('')
-const showActiveOnly = ref(true)
+const globalSearchText = ref('')
+const showActiveOnly = ref<boolean | undefined>(undefined)
 
 // Dialog
 const dialogOpen = ref(false)
@@ -221,20 +171,119 @@ const emptyForm = () => ({
 
 const form = ref(emptyForm())
 
-// Computed
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
-const paginationStart = computed(() => (total.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1))
-const paginationEnd = computed(() => Math.min(currentPage.value * pageSize.value, total.value))
+// Search / Table columns
+const baseColumns: TableColumn[] = [
+  {
+    key: 'clientCode',
+    dataKey: 'clientCode',
+    title: '顧客コード',
+    width: 130,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'name',
+    dataKey: 'name',
+    title: '顧客名',
+    width: 200,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'contactName',
+    dataKey: 'contactName',
+    title: '担当者名',
+    width: 120,
+    fieldType: 'string',
+  },
+  {
+    key: 'phone',
+    dataKey: 'phone',
+    title: '電話番号',
+    width: 140,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'plan',
+    dataKey: 'plan',
+    title: '契約プラン',
+    width: 120,
+    fieldType: 'string',
+  },
+  {
+    key: 'billingEnabled',
+    dataKey: 'billingEnabled',
+    title: '課金',
+    width: 80,
+    fieldType: 'boolean',
+  },
+  {
+    key: 'isActive',
+    dataKey: 'isActive',
+    title: '有効',
+    width: 80,
+    fieldType: 'boolean',
+    searchable: true,
+    searchType: 'boolean',
+  },
+]
+
+const searchColumns: TableColumn[] = baseColumns.filter((c) => c.searchable)
+
+const tableColumns: TableColumn[] = [
+  ...baseColumns.map((col) => {
+    if (col.key === 'isActive' || col.key === 'billingEnabled') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Client }) => {
+          const val = (rowData as any)[col.dataKey || col.key]
+          return h(
+            'span',
+            { class: val ? 'o-status-tag o-status-tag--confirmed' : 'o-status-tag o-status-tag--cancelled' },
+            val ? '有効' : '無効',
+          )
+        },
+      }
+    }
+    if (col.key === 'plan') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Client }) => planLabel(rowData.plan),
+      }
+    }
+    return {
+      ...col,
+      cellRenderer: ({ rowData }: { rowData: Client }) => (rowData as any)[col.dataKey || col.key] || '-',
+    }
+  }),
+  {
+    key: 'actions',
+    title: t('wms.common.actions', '操作'),
+    width: 140,
+    cellRenderer: ({ rowData }: { rowData: Client }) =>
+      h('div', { class: 'action-cell' }, [
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+      ]),
+  },
+]
+
+// Current search filters for server-side requests
+const currentSearchText = ref('')
 
 // Load
 const loadList = async () => {
   loading.value = true
   try {
     const result = await fetchClients({
-      search: searchText.value || undefined,
+      search: currentSearchText.value || undefined,
       page: currentPage.value,
       limit: pageSize.value,
-      isActive: showActiveOnly.value ? 'true' : undefined,
+      isActive: showActiveOnly.value === true ? 'true' : showActiveOnly.value === false ? 'false' : undefined,
     })
     clients.value = result.data
     total.value = result.total
@@ -245,18 +294,29 @@ const loadList = async () => {
   }
 }
 
-const handleSearch = () => {
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+    currentSearchText.value = String(payload.__global.value).trim()
+  } else {
+    globalSearchText.value = ''
+    currentSearchText.value = ''
+  }
+
+  // Extract field-specific filters
+  if (typeof payload.isActive?.value === 'boolean') {
+    showActiveOnly.value = payload.isActive.value
+  } else {
+    showActiveOnly.value = undefined
+  }
+
   currentPage.value = 1
   loadList()
 }
 
-const handlePageSizeChange = () => {
-  currentPage.value = 1
-  loadList()
-}
-
-const goToPage = (page: number) => {
-  currentPage.value = page
+const handlePageChange = (payload: { page: number; pageSize: number }) => {
+  currentPage.value = payload.page
+  pageSize.value = payload.pageSize
   loadList()
 }
 
@@ -361,8 +421,6 @@ onMounted(() => {
 </script>
 
 <style>
-@import '@/styles/order-table.css';
-
 .o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 </style>
 
@@ -379,20 +437,14 @@ onMounted(() => {
   margin-right: -20px;
 }
 
-/* Search section */
-.search-section {
+.table-section {
+  width: 100%;
+}
+
+:deep(.action-cell) {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.search-section__filter {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
 }
 
 /* Form */

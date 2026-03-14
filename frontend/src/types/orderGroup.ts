@@ -1,5 +1,5 @@
 /**
- * 未分類の特殊値（用于筛选没有被分配到任何分组的订单）
+ * 未分類の特殊値（グループに割り当てられていない注文のフィルタリング用） / 未分類的特殊值（用于筛选没有被分配到任何分组的订单）
  */
 export const UNCATEGORIZED_VALUE = '__uncategorized__'
 
@@ -18,7 +18,7 @@ export interface OrderGroup {
 }
 
 /**
- * 创建/更新検品グループ的表单数据
+ * 検品グループの作成/更新フォームデータ / 创建/更新検品グループ的表单数据
  */
 export interface OrderGroupFormData {
   name: string

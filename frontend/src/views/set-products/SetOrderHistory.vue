@@ -1,58 +1,48 @@
 <template>
   <div class="set-order-history">
-    <ControlPanel title="セット組指示履歴" :show-search="false">
-      <template #center>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <input v-model="searchText" type="text" class="o-input" placeholder="品番・名称で検索..." style="width:220px;" />
-          <select v-model="typeFilter" class="o-input" style="width:120px;" @change="loadData">
-            <option value="">全種別</option>
-            <option value="assembly">組立</option>
-            <option value="disassembly">バラシ</option>
-          </select>
-          <select v-model="statusFilter" class="o-input" style="width:120px;" @change="loadData">
-            <option value="">全ステータス</option>
-            <option value="pending">未着手</option>
-            <option value="in_progress">作業中</option>
-            <option value="completed">完了</option>
-            <option value="cancelled">キャンセル</option>
-          </select>
-        </div>
-      </template>
+    <ControlPanel :title="t('wms.setProduct.orderHistory', 'セット組指示履歴')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="exportCsv">CSVダウンロード</OButton>
+        <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.setProduct.csvDownload', 'CSVダウンロード') }}</OButton>
       </template>
     </ControlPanel>
+
+    <SearchForm
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="setOrderHistorySearch"
+      @search="handleSearch"
+    />
 
     <div class="o-table-wrapper">
       <table class="o-table">
         <thead>
           <tr>
-            <th class="o-table-th">指示番号</th>
-            <th class="o-table-th" style="width:70px;">種別</th>
-            <th class="o-table-th" style="width:120px;">品番</th>
-            <th class="o-table-th" style="width:150px;">名称</th>
-            <th class="o-table-th" style="width:80px;">指示数</th>
-            <th class="o-table-th" style="width:80px;">完成数</th>
-            <th class="o-table-th" style="width:100px;">在庫区分</th>
-            <th class="o-table-th" style="width:90px;">ロット</th>
-            <th class="o-table-th" style="width:100px;">消費期限</th>
-            <th class="o-table-th" style="width:80px;">ステータス</th>
-            <th class="o-table-th" style="width:110px;">完成日</th>
-            <th class="o-table-th" style="width:110px;">作成日</th>
+            <th class="o-table-th">{{ t('wms.setProduct.orderNumber', '指示番号') }}</th>
+            <th class="o-table-th" style="width:70px;">{{ t('wms.setProduct.type', '種別') }}</th>
+            <th class="o-table-th" style="width:120px;">{{ t('wms.setProduct.sku', '品番') }}</th>
+            <th class="o-table-th" style="width:150px;">{{ t('wms.setProduct.name', '名称') }}</th>
+            <th class="o-table-th" style="width:80px;">{{ t('wms.setProduct.orderQuantity', '指示数') }}</th>
+            <th class="o-table-th" style="width:80px;">{{ t('wms.setProduct.completedQuantity', '完成数') }}</th>
+            <th class="o-table-th" style="width:100px;">{{ t('wms.setProduct.stockCategory', '在庫区分') }}</th>
+            <th class="o-table-th" style="width:90px;">{{ t('wms.setProduct.lot', 'ロット') }}</th>
+            <th class="o-table-th" style="width:100px;">{{ t('wms.setProduct.expiryDate', '消費期限') }}</th>
+            <th class="o-table-th" style="width:80px;">{{ t('wms.setProduct.status', 'ステータス') }}</th>
+            <th class="o-table-th" style="width:110px;">{{ t('wms.setProduct.completedDate', '完成日') }}</th>
+            <th class="o-table-th" style="width:110px;">{{ t('wms.setProduct.createdDate', '作成日') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="isLoading">
-            <td colspan="12" class="o-table-empty">読み込み中...</td>
+            <td colspan="12" class="o-table-empty">{{ t('wms.common.loading', '読み込み中...') }}</td>
           </tr>
           <tr v-else-if="orders.length === 0">
-            <td colspan="12" class="o-table-empty">履歴がありません</td>
+            <td colspan="12" class="o-table-empty">{{ t('wms.setProduct.noHistory', '履歴がありません') }}</td>
           </tr>
           <tr v-for="order in orders" :key="order._id" class="o-table-row">
             <td class="o-table-td"><strong>{{ order.orderNumber }}</strong></td>
             <td class="o-table-td">
               <span class="type-tag" :class="'type--' + order.type">
-                {{ order.type === 'assembly' ? '組立' : 'バラシ' }}
+                {{ order.type === 'assembly' ? t('wms.setProduct.assemblyType', '組立') : t('wms.setProduct.disassemblyType', 'バラシ') }}
               </span>
             </td>
             <td class="o-table-td">{{ order.setSku }}</td>
@@ -79,12 +69,54 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import OPager from '@/components/odoo/OPager.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
 import { fetchSetOrders } from '@/api/setProduct'
 import type { SetOrder, SetOrderStatus } from '@/types/setProduct'
+import type { TableColumn, Operator } from '@/types/table'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
+
+const searchColumns = computed<TableColumn[]>(() => [
+  {
+    key: 'search',
+    title: t('wms.setProduct.skuName', '品番・名称'),
+    width: 220,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'type',
+    title: t('wms.setProduct.type', '種別'),
+    width: 120,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: t('wms.setProduct.assemblyType', '組立'), value: 'assembly' },
+      { label: t('wms.setProduct.disassemblyType', 'バラシ'), value: 'disassembly' },
+    ],
+  },
+  {
+    key: 'status',
+    title: t('wms.setProduct.status', 'ステータス'),
+    width: 120,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: t('wms.setProduct.statusPending', '未着手'), value: 'pending' },
+      { label: t('wms.setProduct.statusInProgress', '作業中'), value: 'in_progress' },
+      { label: t('wms.setProduct.statusCompleted', '完了'), value: 'completed' },
+      { label: t('wms.setProduct.statusCancelled', 'キャンセル'), value: 'cancelled' },
+    ],
+  },
+])
 
 const orders = ref<SetOrder[]>([])
 const isLoading = ref(false)
@@ -96,14 +128,13 @@ const total = ref(0)
 const limit = 50
 const totalPages = computed(() => Math.ceil(total.value / limit))
 
-let searchTimer: ReturnType<typeof setTimeout> | null = null
-watch(searchText, () => {
-  if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => {
-    page.value = 1
-    loadData()
-  }, 300)
-})
+function handleSearch(payload: Record<string, { operator: Operator; value: any }>) {
+  searchText.value = payload.search?.value ? String(payload.search.value).trim() : ''
+  typeFilter.value = payload.type?.value ? String(payload.type.value) : ''
+  statusFilter.value = payload.status?.value ? String(payload.status.value) : ''
+  page.value = 1
+  loadData()
+}
 
 async function loadData() {
   isLoading.value = true
@@ -111,7 +142,7 @@ async function loadData() {
     const res = await fetchSetOrders({
       type: typeFilter.value || undefined,
       status: statusFilter.value || undefined,
-      search: searchText.value.trim() || undefined,
+      search: searchText.value || undefined,
       page: page.value,
       limit,
     })
@@ -135,20 +166,35 @@ function formatDate(d: string) {
 
 function statusLabel(s: SetOrderStatus): string {
   const map: Record<SetOrderStatus, string> = {
-    pending: '未着手',
-    in_progress: '作業中',
-    completed: '完了',
-    cancelled: 'キャンセル',
+    pending: t('wms.setProduct.statusPending', '未着手'),
+    in_progress: t('wms.setProduct.statusInProgress', '作業中'),
+    completed: t('wms.setProduct.statusCompleted', '完了'),
+    cancelled: t('wms.setProduct.statusCancelled', 'キャンセル'),
   }
   return map[s] || s
 }
 
 function exportCsv() {
-  const rows: string[] = ['指示番号,種別,品番,名称,指示数,完成数,在庫区分,ロット,消費期限,ステータス,完成日,作成日']
+  const rows: string[] = [
+    [
+      t('wms.setProduct.orderNumber', '指示番号'),
+      t('wms.setProduct.type', '種別'),
+      t('wms.setProduct.sku', '品番'),
+      t('wms.setProduct.name', '名称'),
+      t('wms.setProduct.orderQuantity', '指示数'),
+      t('wms.setProduct.completedQuantity', '完成数'),
+      t('wms.setProduct.stockCategory', '在庫区分'),
+      t('wms.setProduct.lot', 'ロット'),
+      t('wms.setProduct.expiryDate', '消費期限'),
+      t('wms.setProduct.status', 'ステータス'),
+      t('wms.setProduct.completedDate', '完成日'),
+      t('wms.setProduct.createdDate', '作成日'),
+    ].join(','),
+  ]
   for (const o of orders.value) {
     rows.push([
       `"${o.orderNumber}"`,
-      o.type === 'assembly' ? '組立' : 'バラシ',
+      o.type === 'assembly' ? t('wms.setProduct.assemblyType', '組立') : t('wms.setProduct.disassemblyType', 'バラシ'),
       `"${o.setSku}"`,
       `"${o.setName}"`,
       o.quantity,
@@ -177,7 +223,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.set-order-history { max-width: 1600px; margin: 0 auto; }
+.set-order-history {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
+}
 .o-table-wrapper { overflow-x: auto; margin-top: 8px; }
 .o-table { width: 100%; border-collapse: collapse; background: var(--o-view-background, #fff); border: 1px solid var(--o-border-color, #e4e7ed); border-radius: 8px; overflow: hidden; }
 .o-table-th { text-align: left; padding: 10px 12px; background: var(--o-gray-100, #f5f7fa); font-weight: 600; font-size: 13px; color: var(--o-gray-600, #606266); border-bottom: 1px solid var(--o-border-color, #e4e7ed); white-space: nowrap; }
@@ -186,17 +242,14 @@ onMounted(() => {
 .o-table-empty { text-align: center; padding: 40px; color: var(--o-gray-400, #c0c4cc); }
 
 .type-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
-.type--assembly { background: #ecf5ff; color: #409eff; }
-.type--disassembly { background: #fdf6ec; color: #e6a23c; }
+.type--assembly { background: var(--o-info-bg, #ecf5ff); color: var(--o-info, #409eff); }
+.type--disassembly { background: var(--o-warning-bg, #fdf6ec); color: var(--o-warning, #e6a23c); }
 
 .status-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
-.status--pending { background: #f5f5f5; color: #909399; }
-.status--in_progress { background: #ecf5ff; color: #409eff; }
-.status--completed { background: #e1f3d8; color: #67c23a; }
-.status--cancelled { background: #fde2e2; color: #f56c6c; }
-
-.o-input { padding: 6px 10px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: 4px; font-size: 14px; outline: none; }
-.o-input:focus { border-color: var(--o-brand-primary, #714b67); }
+.status--pending { background: var(--o-gray-200, #f5f5f5); color: var(--o-gray-500, #909399); }
+.status--in_progress { background: var(--o-info-bg, #ecf5ff); color: var(--o-info, #409eff); }
+.status--completed { background: var(--o-success-bg, #e1f3d8); color: var(--o-success, #67c23a); }
+.status--cancelled { background: var(--o-danger-bg, #fde2e2); color: var(--o-danger, #f56c6c); }
 
 .pagination-bar { display: flex; justify-content: center; padding: 16px 0; }
 </style>

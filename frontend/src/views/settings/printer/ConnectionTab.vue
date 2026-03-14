@@ -2,7 +2,7 @@
   <div class="connection-tab">
     <!-- Service URL -->
     <div class="form-group">
-      <label class="form-label">サービスURL</label>
+      <label class="form-label">{{ t('wms.printer.serviceUrl', 'サービスURL') }}</label>
       <input
         class="o-input"
         v-model="serviceUrl"
@@ -15,48 +15,48 @@
     <!-- Connection Actions -->
     <div class="form-actions">
       <OButton variant="primary" :disabled="connecting" @click="handleConnect">
-        {{ connecting ? '接続中...' : '接続テスト' }}
+        {{ connecting ? t('wms.printer.connecting', '接続中...') : t('wms.printer.connectionTest', '接続テスト') }}
       </OButton>
       <OButton variant="secondary" :disabled="!isConnected || refreshing" @click="handleRefreshPrinters">
-        {{ refreshing ? '更新中...' : 'プリンター情報を更新' }}
+        {{ refreshing ? t('wms.printer.refreshing', '更新中...') : t('wms.printer.refreshPrinters', 'プリンター情報を更新') }}
       </OButton>
     </div>
 
     <!-- Status Card -->
     <div class="o-card status-card">
       <div class="o-card__header">
-        <span>接続ステータス</span>
+        <span>{{ t('wms.printer.connectionStatus', '接続ステータス') }}</span>
         <span class="o-badge" :class="isConnected ? 'o-badge-success' : 'o-badge-info'">
-          {{ isConnected ? '接続済み' : '未接続' }}
+          {{ isConnected ? t('wms.printer.connected', '接続済み') : t('wms.printer.disconnected', '未接続') }}
         </span>
       </div>
       <div class="o-card__body">
         <template v-if="isConnected && healthInfo">
           <div class="kv-list">
             <div class="kv-row">
-              <span class="kv-label">ステータス</span>
+              <span class="kv-label">{{ t('wms.printer.status', 'ステータス') }}</span>
               <span class="kv-value">
                 <span class="o-badge o-badge-success">{{ healthInfo.status }}</span>
               </span>
             </div>
             <div class="kv-row">
-              <span class="kv-label">ホスト</span>
+              <span class="kv-label">{{ t('wms.printer.host', 'ホスト') }}</span>
               <span class="kv-value">{{ healthInfo.host }}</span>
             </div>
             <div class="kv-row">
-              <span class="kv-label">ポート</span>
+              <span class="kv-label">{{ t('wms.printer.port', 'ポート') }}</span>
               <span class="kv-value">{{ healthInfo.port }}</span>
             </div>
             <div class="kv-row">
-              <span class="kv-label">設定ファイル</span>
+              <span class="kv-label">{{ t('wms.printer.configFile', '設定ファイル') }}</span>
               <span class="kv-value"><span class="monospace">{{ healthInfo.config_path }}</span></span>
             </div>
             <div class="kv-row">
-              <span class="kv-label">キャッシュ済みプリンター</span>
-              <span class="kv-value">{{ cachedPrinterCount }} 台</span>
+              <span class="kv-label">{{ t('wms.printer.cachedPrinters', 'キャッシュ済みプリンター') }}</span>
+              <span class="kv-value">{{ cachedPrinterCount }} {{ t('wms.printer.unitPrinters', '台') }}</span>
             </div>
             <div class="kv-row">
-              <span class="kv-label">最終更新</span>
+              <span class="kv-label">{{ t('wms.printer.lastUpdated', '最終更新') }}</span>
               <span class="kv-value">{{ lastCacheUpdateDisplay }}</span>
             </div>
           </div>
@@ -64,14 +64,14 @@
 
         <template v-else-if="connectionError">
           <div class="o-alert o-alert-error">
-            <strong>接続に失敗しました</strong>
+            <strong>{{ t('wms.printer.connectionFailed', '接続に失敗しました') }}</strong>
             <p>{{ connectionError }}</p>
           </div>
         </template>
 
         <template v-else>
           <div class="o-empty-state">
-            <p>サービスに接続してください</p>
+            <p>{{ t('wms.printer.pleaseConnect', 'サービスに接続してください') }}</p>
           </div>
         </template>
       </div>
@@ -83,6 +83,7 @@
 import { ref, computed, onMounted } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import { healthCheck, getPrinters } from '@/utils/print/printBridgeApi'
 import {
   getPrintConfig,
@@ -90,6 +91,7 @@ import {
   updatePrintersCache,
 } from '@/utils/print/printConfig'
 
+const { t } = useI18n()
 const toast = useToast()
 
 const emit = defineEmits<{
@@ -109,7 +111,7 @@ const cachedPrinterCount = computed(() => {
 
 const lastCacheUpdateDisplay = computed(() => {
   const ts = getPrintConfig().localBridge.lastCacheUpdate
-  if (!ts) return '未取得'
+  if (!ts) return t('wms.printer.notYetFetched', '未取得')
   try {
     return new Date(ts).toLocaleString('ja-JP')
   } catch {
@@ -125,7 +127,7 @@ function handleUrlChange() {
 
 async function handleConnect() {
   if (!serviceUrl.value.trim()) {
-    toast.show('サービスURLを入力してください', 'warning')
+    toast.show(t('wms.printer.enterServiceUrl', 'サービスURLを入力してください'), 'warning')
     return
   }
 
@@ -143,10 +145,10 @@ async function handleConnect() {
     handleUrlChange()
     await refreshPrinters()
 
-    toast.show('接続成功', 'success')
+    toast.show(t('wms.printer.connectionSuccess', '接続成功'), 'success')
   } catch (error: any) {
-    connectionError.value = error.message || 'サービスが起動していない可能性があります'
-    toast.show(`接続に失敗しました: ${connectionError.value}`, 'danger')
+    connectionError.value = error.message || t('wms.printer.serviceNotRunning', 'サービスが起動していない可能性があります')
+    toast.show(`${t('wms.printer.connectionFailed', '接続に失敗しました')}: ${connectionError.value}`, 'danger')
   } finally {
     connecting.value = false
   }
@@ -159,7 +161,7 @@ async function refreshPrinters() {
     updatePrintersCache(data.printers, data.default_printer_os)
     emit('printers-updated')
   } catch (error: any) {
-    toast.show(`プリンター情報の取得に失敗しました: ${error.message}`, 'danger')
+    toast.show(`${t('wms.printer.fetchPrintersFailed', 'プリンター情報の取得に失敗しました')}: ${error.message}`, 'danger')
   } finally {
     refreshing.value = false
   }
@@ -167,7 +169,7 @@ async function refreshPrinters() {
 
 async function handleRefreshPrinters() {
   await refreshPrinters()
-  toast.show('プリンター情報を更新しました', 'success')
+  toast.show(t('wms.printer.printersUpdated', 'プリンター情報を更新しました'), 'success')
 }
 
 onMounted(() => {

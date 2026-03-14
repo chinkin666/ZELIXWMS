@@ -1,6 +1,6 @@
 <template>
   <div class="shipment-order-history">
-    <ControlPanel title="出荷実績一覧" :show-search="false" />
+    <ControlPanel :title="t('wms.shipmentOrder.historyTitle', '出荷実績一覧')" :show-search="false" />
 
     <OrderSearchFormWrapper
       class="search-section"
@@ -46,7 +46,7 @@
       v-model="viewDialogVisible"
       :order="selectedOrder"
       :carriers="carriers"
-      title="出荷実績を確定"
+      :title="t('wms.shipmentOrder.confirmResults', '出荷実績を確定')"
       mode="view"
     />
   </div>
@@ -57,6 +57,7 @@ import { computed, h, onMounted, ref } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import Table from '@/components/table/OrderTable.vue'
 import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
 import OrderViewDialog from '@/components/shipment-orders/OrderViewDialog.vue'
@@ -65,6 +66,7 @@ import { fetchShipmentOrder, fetchShipmentOrdersPage } from '@/api/shipmentOrder
 import { useShipmentOrderBase } from './composables/useShipmentOrderBase'
 
 const { showError } = useToast()
+const { t } = useI18n()
 
 const {
   carriers,
@@ -113,7 +115,7 @@ const handleView = async (row: any) => {
     selectedOrder.value = await fetchShipmentOrder(String(id))
     viewDialogVisible.value = true
   } catch (e: any) {
-    showError(e?.message || '詳細の取得に失敗しました')
+    showError(e?.message || t('wms.shipmentOrder.fetchDetailError', '詳細の取得に失敗しました'))
   }
 }
 
@@ -140,12 +142,12 @@ const tableColumns = computed(() => {
   const actionColumn = {
     key: 'actions',
     dataKey: 'actions',
-    title: '操作',
+    title: t('wms.common.actions', '操作'),
     width: 100,
     fixed: 'right' as const,
     align: 'center' as const,
     cellRenderer: ({ rowData }: { rowData: any }) =>
-      h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleView(rowData) }, () => '詳細'),
+      h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleView(rowData) }, () => t('wms.shipmentOrder.detail', '詳細')),
   }
   return [...baseColumns.value, actionColumn]
 })
@@ -167,7 +169,7 @@ const loadOrders = async () => {
     displayRows.value = result.items
     totalItems.value = result.total
   } catch (e: any) {
-    showError(e?.message || '出荷実績の取得に失敗しました')
+    showError(e?.message || t('wms.shipmentOrder.fetchHistoryError', '出荷実績の取得に失敗しました'))
   }
 }
 
@@ -182,6 +184,13 @@ onMounted(async () => {
 .shipment-order-history {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 .search-section {

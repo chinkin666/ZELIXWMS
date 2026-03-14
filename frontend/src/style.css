@@ -5,6 +5,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  border-radius: 0 !important;
 }
 
 :root {
@@ -39,9 +40,9 @@
   --o-font-size-smaller: 0.75rem;
   --o-spacer: 1rem;
   --o-border-color: #E2DBD5;
-  --o-border-radius: 0.25rem;
-  --o-border-radius-sm: 0.1875rem;
-  --o-border-radius-lg: 0.375rem;
+  --o-border-radius: 0;
+  --o-border-radius-sm: 0;
+  --o-border-radius-lg: 0;
 
   --o-webclient-background: #FAF7F5;
   --o-view-background: #ffffff;
@@ -390,3 +391,54 @@ select.o-input {
 .o-badge-info { background: var(--o-info-bg); color: var(--o-info-text); }
 .o-badge-secondary { background: var(--o-gray-200); color: var(--o-gray-700); }
 .o-badge-primary { background: var(--o-brand-lightest); color: var(--o-brand-primary); }
+
+/* ===== Global List Table Styles (matches order-table.css) ===== */
+.o-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--o-font-size-small, 13px);
+  table-layout: fixed;
+}
+.o-list-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--o-gray-100, #f8f9fa);
+  color: var(--o-gray-700, #495057);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--o-border-color, #d6d6d6);
+  border-left: 1px solid var(--o-border-color, #d6d6d6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+.o-list-table thead th:first-child {
+  border-left: none;
+}
+.o-list-table tbody td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--o-border-color, #f0f0f0);
+  border-left: 1px solid var(--o-border-color, #f0f0f0);
+  font-size: var(--o-font-size-small, 13px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: top;
+}
+.o-list-table tbody td:first-child {
+  border-left: none;
+}
+.o-list-table tbody tr:hover {
+  background: var(--o-list-hover, #edf2ff);
+}
+.o-list-table tbody tr.selected {
+  background: var(--o-list-selected, #e8f0fe);
+}
+.o-list-table tbody tr.selected:hover {
+  background: #d0e4fd;
+}

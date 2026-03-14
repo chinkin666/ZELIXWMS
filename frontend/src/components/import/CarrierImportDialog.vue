@@ -6,8 +6,19 @@
     @close="handleClose"
   >
     <div class="import-dialog-content">
-      <!-- 一致条件 -->
-      <div class="match-section">
+      <!-- レイアウト選択 -->
+      <div class="layout-section">
+        <h3>取込レイアウト</h3>
+        <div class="layout-row">
+          <select class="o-input" v-model="selectedMode" style="width: 260px">
+            <option value="manual">手動マッチ（レイアウト未使用）</option>
+            <option v-for="opt in layoutOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 手動マッチ条件（レイアウト未使用時のみ） -->
+      <div v-if="selectedMode === 'manual'" class="match-section">
         <h3>一致条件（キー）</h3>
         <div class="match-row">
           <div class="match-item">
@@ -27,6 +38,19 @@
         </div>
         <div class="match-hint">
           例: 注文の「出荷管理No（orderNumber）」= ファイルの「注文番号」列
+        </div>
+      </div>
+
+      <!-- レイアウト使用時の照合キー選択 -->
+      <div v-if="selectedMode !== 'manual'" class="match-section">
+        <h3>照合キー</h3>
+        <div class="match-row" style="grid-template-columns: 1fr">
+          <div class="match-item">
+            <div class="match-label">注文のどの項目で照合するか</div>
+            <select class="o-input" v-model="orderMatchField" style="width: 100%">
+              <option v-for="opt in orderMatchFieldOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -146,6 +170,8 @@ import * as XLSX from 'xlsx'
 import ODialog from '@/components/odoo/ODialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import { importCarrierReceiptRows, type ImportCarrierReceiptRowsResult } from '@/api/shipmentOrders'
+import { getAllMappingConfigs, type MappingConfig } from '@/api/mappingConfig'
+import { applyTransformMappings } from '@/utils/transformRunner'
 import { useToast } from '@/composables/useToast'
 
 const toast = useToast()
@@ -173,6 +199,23 @@ const parsedRows = ref<Record<string, any>[]>([])
 const importing = ref(false)
 const lastResult = ref<ImportCarrierReceiptRowsResult | null>(null)
 
+// Layout mode: 'manual' or a mapping config _id
+const selectedMode = ref<string>('manual')
+const layoutConfigs = ref<MappingConfig[]>([])
+
+const layoutOptions = computed(() =>
+  layoutConfigs.value.map((c) => ({
+    label: `${c.name}${c.isDefault ? ' (default)' : ''}`,
+    value: c._id,
+  })),
+)
+
+const selectedConfig = computed(() =>
+  selectedMode.value !== 'manual'
+    ? layoutConfigs.value.find((c) => c._id === selectedMode.value) ?? null
+    : null,
+)
+
 const fileMatchColumn = ref('')
 const orderMatchField = ref<'orderNumber' | 'customerManagementNumber' | 'recipient.phone' | 'recipient.postalCode'>('orderNumber')
 const fileEncoding = ref<'auto' | 'utf-8' | 'utf-8-sig' | 'shift_jis' | 'gbk'>('auto')
@@ -198,11 +241,42 @@ const isCsvFile = computed(() => {
 })
 
 const canImport = computed(() => {
-  return !!selectedFile.value && parsedRows.value.length > 0 && !!fileMatchColumn.value && !!orderMatchField.value
+  if (!selectedFile.value || parsedRows.value.length === 0) return false
+  if (selectedMode.value === 'manual') {
+    return !!fileMatchColumn.value && !!orderMatchField.value
+  }
+  // Layout mode: need a valid config
+  return !!selectedConfig.value
 })
 
 const previewRows = computed(() => parsedRows.value.slice(0, 10))
 const previewHeaders = computed(() => fileHeaders.value.slice(0, 12))
+
+// --- Load mapping configs ---
+const loadLayoutConfigs = async () => {
+  try {
+    const configs = await getAllMappingConfigs('carrier-receipt-to-order')
+    layoutConfigs.value = configs
+    // Auto-select default if available
+    const defaultConfig = configs.find((c) => c.isDefault)
+    if (defaultConfig) {
+      selectedMode.value = defaultConfig._id
+    } else if (configs.length > 0 && configs[0]) {
+      selectedMode.value = configs[0]._id
+    }
+  } catch {
+    // Silently fail — manual mode still works
+    layoutConfigs.value = []
+  }
+}
+
+// Load configs when dialog opens
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (isOpen) loadLayoutConfigs()
+  },
+)
 
 // --- File parsing ---
 
@@ -369,14 +443,36 @@ watch(fileEncoding, async () => {
 const handleImport = async () => {
   if (!canImport.value || importing.value) return
 
-  const items = parsedRows.value.map((r) => ({
-    matchValue: r?.[fileMatchColumn.value],
-    carrierRawRow: r,
-  }))
+  let items: Array<{ matchValue: any; carrierRawRow: Record<string, any> }>
+
+  if (selectedMode.value !== 'manual' && selectedConfig.value) {
+    // Layout mode: apply transform mappings to extract matchValue + carrierRawRow
+    const mappings = selectedConfig.value.mappings || []
+    const transformedItems: typeof items = []
+
+    for (const rawRow of parsedRows.value) {
+      const transformed = await applyTransformMappings(mappings, rawRow)
+      transformedItems.push({
+        matchValue: transformed.matchValue ?? '',
+        carrierRawRow: { ...rawRow, ...transformed },
+      })
+    }
+    items = transformedItems
+  } else {
+    // Manual mode: direct column match
+    items = parsedRows.value.map((r) => ({
+      matchValue: r?.[fileMatchColumn.value],
+      carrierRawRow: r,
+    }))
+  }
 
   const emptyCount = items.filter(i => i.matchValue == null || String(i.matchValue).trim() === '').length
   if (emptyCount === items.length) {
-    toast.showWarning(`選択した列「${fileMatchColumn.value}」の値がすべて空です。列の選択を確認してください。`)
+    if (selectedMode.value === 'manual') {
+      toast.showWarning(`選択した列「${fileMatchColumn.value}」の値がすべて空です。列の選択を確認してください。`)
+    } else {
+      toast.showWarning('レイアウトの「照合値」マッピングに該当するデータがすべて空です。レイアウト設定を確認してください。')
+    }
     return
   }
 
@@ -422,6 +518,7 @@ const handleClose = () => {
   gap: 24px;
 }
 
+.layout-section,
 .match-section,
 .upload-section,
 .preview-section {
@@ -430,6 +527,7 @@ const handleClose = () => {
   gap: 12px;
 }
 
+.layout-section h3,
 .match-section h3,
 .upload-section h3,
 .preview-section h3 {
@@ -437,6 +535,12 @@ const handleClose = () => {
   font-size: 16px;
   font-weight: 600;
   color: #303133;
+}
+
+.layout-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .match-row {

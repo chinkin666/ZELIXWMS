@@ -1,5 +1,5 @@
 <template>
-  <ODialog :open="visible" title="出荷明細リスト出力(csv)" @close="visible = false" width="980px">
+  <ODialog :open="visible" title="出荷明細リスト出力" @close="visible = false" width="980px">
     <div class="meta">
       <div class="meta__row">
         <div class="meta__item meta__item--select">

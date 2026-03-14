@@ -1,10 +1,10 @@
 <template>
   <div class="editor-root">
-    <ControlPanel title="印刷テンプレート編集" :show-search="false">
+    <ControlPanel :title="$t('wms.printTemplate.editTitle', '印刷テンプレート編集')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" @click="goBack">戻る</OButton>
+        <OButton variant="secondary" @click="goBack">{{ $t('wms.settings.back', '戻る') }}</OButton>
         <OButton variant="primary" :disabled="saving" @click="save">
-          {{ saving ? '保存中...' : '保存' }}
+          {{ saving ? $t('wms.settings.saving', '保存中...') : $t('wms.common.save', '保存') }}
         </OButton>
       </template>
     </ControlPanel>
@@ -88,6 +88,8 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import type { PrintBarcodeElement, PrintElement, PrintImageElement, PrintTemplate, PrintTextElement } from '@/types/printTemplate'
 import { fetchPrintTemplate, updatePrintTemplate } from '@/api/printTemplates'
 import { renderBarcodePngDataUrl } from '@/utils/print/renderBarcodeDataUrl'
@@ -104,6 +106,8 @@ import ElementList from './print-template-editor/ElementList.vue'
 
 const route = useRoute()
 const router = useRouter()
+const { show: showToast } = useToast()
+const { t: $t } = useI18n()
 
 const templateId = String(route.params.id || '')
 
@@ -242,7 +246,7 @@ async function updatePreviewValues() {
           textPreviewValue.value = `Error: ${e instanceof Error ? e.message : String(e)}`
         }
       } else {
-        textPreviewValue.value = '(需要上传示例数据)'
+        textPreviewValue.value = $t('wms.printTemplate.needSampleData', '(サンプルデータをアップロードしてください)')
       }
     } else {
       textPreviewValue.value = ''
@@ -273,7 +277,7 @@ async function updatePreviewValues() {
           barcodePreviewValue.value = `Error: ${e instanceof Error ? e.message : String(e)}`
         }
       } else {
-        barcodePreviewValue.value = '(需要上传示例数据)'
+        barcodePreviewValue.value = $t('wms.printTemplate.needSampleData', '(サンプルデータをアップロードしてください)')
       }
     } else {
       barcodePreviewValue.value = ''
@@ -391,7 +395,7 @@ function setBgImageFromFile(file: File) {
   reader.onload = (e) => {
     const base64 = e.target?.result as string
     if (!base64) {
-      alert('参考图读取失败')
+      showToast($t('wms.printTemplate.refImageReadFailed', '参考画像の読み込みに失敗しました'), 'danger')
       return
     }
     bgImageUrl.value = base64
@@ -402,12 +406,12 @@ function setBgImageFromFile(file: File) {
     }
     img.onerror = () => {
       clearBgImage()
-      alert('参考图加载失败')
+      showToast($t('wms.printTemplate.refImageLoadFailed', '参考画像の読み込みに失敗しました'), 'danger')
     }
     img.src = base64
   }
   reader.onerror = () => {
-    alert('参考图读取失败')
+    showToast('参考图读取失败', 'danger')
   }
   reader.readAsDataURL(file)
 }
@@ -455,7 +459,7 @@ function loadTemplate() {
           scheduleRender()
         }
         img.onerror = () => {
-          alert('参考图加载失败')
+          showToast($t('wms.printTemplate.refImageLoadFailed', '参考画像の読み込みに失敗しました'), 'danger')
         }
         img.src = hit.referenceImageData
       }
@@ -495,9 +499,9 @@ async function save() {
     }
 
     await updatePrintTemplate(template.value.id, payload)
-    alert('保存しました')
+    showToast($t('wms.settings.saved', '保存しました'), 'success')
   } catch (e: any) {
-    alert(e?.message || '保存に失敗しました')
+    showToast(e?.message || $t('wms.settings.saveFailed', '保存に失敗しました'), 'danger')
   } finally {
     saving.value = false
   }
@@ -583,7 +587,7 @@ function insertField(key: string) {
   template.value.elements.push(newElement)
   selectedId.value = id
   scheduleRender()
-  alert(`已添加文字图层: ${key}`)
+  showToast($t('wms.printTemplate.textLayerAdded', `テキストレイヤーを追加しました: ${key}`), 'success')
 }
 
 function clearTableData() {
@@ -605,22 +609,22 @@ async function parseTableFile(file: File) {
     }
 
     if (result.rows.length === 0) {
-      alert('表格为空或无法解析')
+      showToast($t('wms.printTemplate.emptyTable', 'テーブルが空か解析できません'), 'warning')
       return
     }
 
     if (result.headers.length === 0) {
-      alert('表格没有有效的表头')
+      showToast($t('wms.printTemplate.noHeaders', '有効なヘッダーがありません'), 'warning')
       return
     }
 
     tableHeaders.value = result.headers
     uploadedTableData.value = result.rows
     selectedRowIndex.value = 0
-    alert(`已加载 ${result.rows.length} 行数据，${result.headers.length} 个字段`)
+    showToast($t('wms.printTemplate.dataLoaded', `${result.rows.length}行のデータ、${result.headers.length}フィールドを読み込みました`), 'success')
     scheduleRender()
   } catch (e: any) {
-    alert(e?.message || '文件解析失败')
+    showToast(e?.message || $t('wms.printTemplate.parseFileFailed', 'ファイル解析に失敗しました'), 'danger')
     console.error('Table parsing error:', e)
   }
 }
@@ -1054,7 +1058,7 @@ function onImageFileChange(e: Event) {
 
   const el = selectedEl.value
   if (!el || el.type !== 'image') {
-    alert('请先选择一个图片元素')
+    showToast($t('wms.printTemplate.selectImageFirst', '画像要素を先に選択してください'), 'warning')
     return
   }
 
@@ -1073,13 +1077,13 @@ function onImageFileChange(e: Event) {
         scheduleRender()
       }
       img.onerror = () => {
-        alert('图片加载失败')
+        showToast($t('wms.printTemplate.imageLoadFailed', '画像の読み込みに失敗しました'), 'danger')
       }
       img.src = result
     }
   }
   reader.onerror = () => {
-    alert('文件读取失败')
+    showToast($t('wms.printTemplate.fileReadFailed', 'ファイルの読み取りに失敗しました'), 'danger')
   }
   reader.readAsDataURL(file)
 
@@ -1135,6 +1139,12 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 .layout {

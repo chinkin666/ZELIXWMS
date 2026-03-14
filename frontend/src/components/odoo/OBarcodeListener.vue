@@ -328,7 +328,7 @@ watch(() => props.enabled, (enabled) => {
 
 <style scoped>
 .o-barcode-listener {
-  --o-brand-primary: #714B67;
+  /* brand primary inherited from global */
   position: relative;
   font-family: inherit;
 }
@@ -340,7 +340,7 @@ watch(() => props.enabled, (enabled) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(113, 75, 103, 0.08);
+  background: rgba(217, 119, 86, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -353,7 +353,7 @@ watch(() => props.enabled, (enabled) => {
   font-weight: 700;
   font-family: monospace;
   color: var(--o-brand-primary, #714B67);
-  background: #fff;
+  background: var(--o-view-background);
   padding: 16px 32px;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
@@ -378,8 +378,8 @@ watch(() => props.enabled, (enabled) => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #fff;
-  border: 1px solid #dee2e6;
+  background: var(--o-view-background);
+  border: 1px solid var(--o-border-color);
   border-radius: 8px;
   margin-bottom: 12px;
 }
@@ -398,13 +398,13 @@ watch(() => props.enabled, (enabled) => {
 }
 
 .o-barcode-status__dot--active {
-  background: #28a745;
+  background: var(--o-success);
   box-shadow: 0 0 6px rgba(40, 167, 69, 0.5);
   animation: o-barcode-pulse 2s infinite;
 }
 
 .o-barcode-status__dot--inactive {
-  background: #adb5bd;
+  background: var(--o-gray-400);
 }
 
 @keyframes o-barcode-pulse {
@@ -414,17 +414,17 @@ watch(() => props.enabled, (enabled) => {
 
 .o-barcode-status__text {
   font-size: 13px;
-  color: #495057;
+  color: var(--o-gray-700);
   font-weight: 500;
 }
 
 .o-barcode-status__prefix {
   font-size: 12px;
-  color: #868e96;
+  color: var(--o-gray-500);
 }
 
 .o-barcode-status__prefix code {
-  background: #f1f3f5;
+  background: var(--o-gray-100);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 11px;
@@ -433,8 +433,8 @@ watch(() => props.enabled, (enabled) => {
 /* Manual Entry */
 .o-barcode-manual {
   padding: 12px 16px;
-  background: #fff;
-  border: 1px solid #dee2e6;
+  background: var(--o-view-background);
+  border: 1px solid var(--o-border-color);
   border-radius: 8px;
   margin-bottom: 12px;
 }
@@ -443,7 +443,7 @@ watch(() => props.enabled, (enabled) => {
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: #495057;
+  color: var(--o-gray-700);
   margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -457,7 +457,7 @@ watch(() => props.enabled, (enabled) => {
 .o-barcode-manual__input {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--o-border-color);
   border-radius: 6px;
   font-size: 14px;
   font-family: monospace;
@@ -467,13 +467,13 @@ watch(() => props.enabled, (enabled) => {
 
 .o-barcode-manual__input:focus {
   border-color: var(--o-brand-primary, #714B67);
-  box-shadow: 0 0 0 3px rgba(113, 75, 103, 0.1);
+  box-shadow: 0 0 0 3px rgba(217, 119, 86, 0.1);
 }
 
 .o-barcode-manual__submit {
   padding: 8px 16px;
   background: var(--o-brand-primary, #714B67);
-  color: #fff;
+  color: var(--o-view-background);
   border: none;
   border-radius: 6px;
   font-size: 13px;
@@ -493,8 +493,8 @@ watch(() => props.enabled, (enabled) => {
 
 /* History */
 .o-barcode-history {
-  background: #fff;
-  border: 1px solid #dee2e6;
+  background: var(--o-view-background);
+  border: 1px solid var(--o-border-color);
   border-radius: 8px;
   padding: 12px 16px;
 }
@@ -503,18 +503,18 @@ watch(() => props.enabled, (enabled) => {
   margin: 0 0 12px 0;
   font-size: 14px;
   font-weight: 600;
-  color: #212529;
+  color: var(--o-gray-900);
 }
 
 .o-barcode-history__count {
   font-weight: 400;
-  color: #868e96;
+  color: var(--o-gray-500);
 }
 
 .o-barcode-history__empty {
   text-align: center;
   padding: 20px;
-  color: #868e96;
+  color: var(--o-gray-500);
   font-size: 13px;
 }
 
@@ -523,7 +523,7 @@ watch(() => props.enabled, (enabled) => {
   align-items: center;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px solid #f1f3f5;
+  border-bottom: 1px solid var(--o-gray-100);
 }
 
 .o-barcode-history__item:last-child {
@@ -532,10 +532,10 @@ watch(() => props.enabled, (enabled) => {
 
 .o-barcode-history__barcode code {
   font-size: 13px;
-  background: #f8f9fa;
+  background: var(--o-gray-100);
   padding: 3px 8px;
   border-radius: 4px;
-  color: #212529;
+  color: var(--o-gray-900);
 }
 
 .o-barcode-history__meta {
@@ -554,27 +554,27 @@ watch(() => props.enabled, (enabled) => {
 
 .o-barcode-history__format--ean-13,
 .o-barcode-history__format--ean-8 {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: var(--o-success-bg);
+  color: var(--o-success);
 }
 
 .o-barcode-history__format--code128 {
-  background: #e3f2fd;
-  color: #1565c0;
+  background: var(--o-info-bg);
+  color: var(--o-info);
 }
 
 .o-barcode-history__format--qr {
-  background: #f3e5f5;
-  color: #7b1fa2;
+  background: var(--o-warning-bg);
+  color: var(--o-warning);
 }
 
 .o-barcode-history__format--unknown {
-  background: #f5f5f5;
-  color: #757575;
+  background: var(--o-gray-100);
+  color: var(--o-gray-500);
 }
 
 .o-barcode-history__time {
   font-size: 11px;
-  color: #adb5bd;
+  color: var(--o-gray-400);
 }
 </style>

@@ -1,11 +1,11 @@
 <template>
   <div class="print-page">
     <div class="no-print toolbar">
-      <button class="toolbar-btn" @click="handlePrint">印刷</button>
-      <button class="toolbar-btn" @click="$router.back()">戻る</button>
+      <button class="toolbar-btn" @click="handlePrint">{{ t('wms.inbound.print', '印刷') }}</button>
+      <button class="toolbar-btn" @click="$router.back()">{{ t('wms.inbound.back', '戻る') }}</button>
     </div>
 
-    <div v-if="isLoading" class="loading">読み込み中...</div>
+    <div v-if="isLoading" class="loading">{{ t('wms.ui.loading', '読み込み中...') }}</div>
 
     <template v-else-if="order">
       <div class="kanban-grid">
@@ -13,7 +13,7 @@
           <!-- カードヘッダー -->
           <div class="card-header">
             <span class="card-order">{{ order.orderNumber }}</span>
-            <span class="card-line">行 {{ line.lineNumber }}</span>
+            <span class="card-line">{{ t('wms.inbound.line', '行') }} {{ line.lineNumber }}</span>
           </div>
 
           <!-- 商品情報 -->
@@ -25,48 +25,48 @@
           <!-- 数量 -->
           <div class="card-qty-row">
             <div class="card-qty-box">
-              <div class="card-qty-label">入荷予定数</div>
+              <div class="card-qty-label">{{ t('wms.inbound.expectedQty', '入荷予定数') }}</div>
               <div class="card-qty-value">{{ line.expectedQuantity }}</div>
             </div>
             <div class="card-qty-box card-qty-box--confirm">
-              <div class="card-qty-label">確認数</div>
+              <div class="card-qty-label">{{ t('wms.inbound.confirmedQty', '確認数') }}</div>
               <div class="card-qty-value">&nbsp;</div>
             </div>
           </div>
 
           <!-- タリーボックス（正の字記入欄） -->
           <div class="card-tally">
-            <div class="tally-label">検数欄</div>
+            <div class="tally-label">{{ t('wms.inbound.tallyField', '検数欄') }}</div>
             <div class="tally-area"></div>
           </div>
 
           <!-- 詳細情報 -->
           <div class="card-details">
             <div class="detail-row">
-              <span class="detail-label">在庫区分</span>
-              <span class="detail-value">{{ line.stockCategory === 'damaged' ? '仕損' : '新品' }}</span>
+              <span class="detail-label">{{ t('wms.inbound.stockCategory', '在庫区分') }}</span>
+              <span class="detail-value">{{ line.stockCategory === 'damaged' ? t('wms.inbound.damaged', '仕損') : t('wms.inbound.new', '新品') }}</span>
             </div>
             <div v-if="order.supplier?.name" class="detail-row">
-              <span class="detail-label">仕入先</span>
+              <span class="detail-label">{{ t('wms.inbound.supplier', '仕入先') }}</span>
               <span class="detail-value">{{ order.supplier.name }}</span>
             </div>
             <div v-if="line.lotNumber" class="detail-row">
-              <span class="detail-label">ロット</span>
+              <span class="detail-label">{{ t('wms.inbound.lot', 'ロット') }}</span>
               <span class="detail-value">{{ line.lotNumber }}</span>
             </div>
             <div v-if="line.expiryDate" class="detail-row">
-              <span class="detail-label">賞味期限</span>
+              <span class="detail-label">{{ t('wms.inbound.expiryDate', '賞味期限') }}</span>
               <span class="detail-value">{{ formatDate(line.expiryDate) }}</span>
             </div>
             <div v-if="order.expectedDate" class="detail-row">
-              <span class="detail-label">入荷予定日</span>
+              <span class="detail-label">{{ t('wms.inbound.expectedDate', '入荷予定日') }}</span>
               <span class="detail-value">{{ formatDate(order.expectedDate) }}</span>
             </div>
           </div>
 
           <!-- メモ -->
           <div v-if="line.memo" class="card-memo">
-            <span class="detail-label">メモ:</span> {{ line.memo }}
+            <span class="detail-label">{{ t('wms.inbound.memo', 'メモ') }}:</span> {{ line.memo }}
           </div>
         </div>
       </div>
@@ -77,9 +77,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import { fetchInboundOrder } from '@/api/inboundOrder'
 import type { InboundOrder } from '@/types/inventory'
 
+const { t } = useI18n()
 const route = useRoute()
 const isLoading = ref(true)
 const order = ref<InboundOrder | null>(null)

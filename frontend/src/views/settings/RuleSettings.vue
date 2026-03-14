@@ -7,91 +7,30 @@
       </template>
     </ControlPanel>
 
-    <!-- Filter bar -->
-    <div class="search-section">
-      <input
-        v-model="searchText"
-        type="text"
-        class="o-input"
-        style="flex: 1; max-width: 400px;"
-        placeholder="ルール名・コードで検索..."
-        @keydown.enter="handleSearch"
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="ruleSettingsSearch"
+      @search="handleSearch"
+    />
+
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="rules"
+        :height="520"
+        row-key="_id"
+        highlight-columns-on-hover
+        pagination-enabled
+        pagination-mode="server"
+        :page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        :current-page="currentPage"
+        :global-search-text="globalSearchText"
+        @page-change="handlePageChange"
       />
-      <select v-model="moduleFilter" class="o-input" style="width: 160px;" @change="handleSearch">
-        <option value="">全モジュール</option>
-        <option v-for="m in moduleOptions" :key="m.value" :value="m.value">{{ m.label }}</option>
-      </select>
-      <label class="search-section__filter">
-        <input v-model="showActiveOnly" type="checkbox" @change="handleSearch" />
-        有効のみ
-      </label>
-      <OButton variant="primary" @click="handleSearch">検索</OButton>
-    </div>
-
-    <!-- Table -->
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width: 200px">ルール名</th>
-            <th class="o-table-th" style="width: 100px">モジュール</th>
-            <th class="o-table-th" style="width: 80px">優先度</th>
-            <th class="o-table-th" style="width: 80px">条件数</th>
-            <th class="o-table-th" style="width: 100px">アクション数</th>
-            <th class="o-table-th" style="width: 80px">実行回数</th>
-            <th class="o-table-th" style="width: 80px">有効</th>
-            <th class="o-table-th" style="width: 140px">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td class="o-table-td o-table-empty" colspan="8">読み込み中...</td>
-          </tr>
-          <tr v-else-if="rules.length === 0">
-            <td class="o-table-td o-table-empty" colspan="8">データがありません</td>
-          </tr>
-          <tr v-for="r in rules" :key="r._id" class="o-table-row">
-            <td class="o-table-td">
-              <div>{{ r.name }}</div>
-              <div v-if="r.ruleCode" class="rule-code">{{ r.ruleCode }}</div>
-            </td>
-            <td class="o-table-td">{{ moduleLabel(r.module) }}</td>
-            <td class="o-table-td" style="text-align: center">{{ r.priority }}</td>
-            <td class="o-table-td" style="text-align: center">{{ countConditions(r) }}</td>
-            <td class="o-table-td" style="text-align: center">{{ r.actions.length }}</td>
-            <td class="o-table-td" style="text-align: center">{{ r.executionCount ?? 0 }}</td>
-            <td class="o-table-td" style="text-align: center">
-              <button
-                class="toggle-switch"
-                :class="{ 'toggle-switch--active': r.isActive }"
-                @click="handleToggle(r)"
-              >
-                <span class="toggle-switch__slider" />
-              </button>
-            </td>
-            <td class="o-table-td o-table-td--actions">
-              <OButton variant="primary" size="sm" @click="openEdit(r)">編集</OButton>
-              <OButton variant="icon-danger" size="sm" @click="confirmDelete(r)">削除</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagination -->
-    <div class="o-table-pagination">
-      <span class="o-table-pagination__info">全{{ total }}件中 {{ paginationStart }}-{{ paginationEnd }}件</span>
-      <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-        </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">&lsaquo;</OButton>
-        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">&rsaquo;</OButton>
-      </div>
     </div>
 
     <!-- Create/Edit Dialog -->
@@ -214,11 +153,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { h, ref, computed, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchRules,
   createRule,
@@ -232,6 +175,7 @@ import {
 } from '@/api/rule'
 
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 // Module options
 const moduleOptions = [
@@ -264,15 +208,137 @@ const operatorOptions = [
   { value: 'regex', label: '正規表現' },
 ] as const
 
+// --- Column definitions ---
+const baseColumns: TableColumn[] = [
+  {
+    key: 'name',
+    title: 'ルール名',
+    width: 200,
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'module',
+    title: 'モジュール',
+    width: 100,
+    searchable: true,
+    searchType: 'select',
+    searchOptions: moduleOptions.map((m) => ({ label: m.label, value: m.value })),
+  },
+  {
+    key: 'priority',
+    title: '優先度',
+    width: 80,
+    align: 'center',
+  },
+  {
+    key: 'conditionCount',
+    title: '条件数',
+    width: 80,
+    align: 'center',
+  },
+  {
+    key: 'actionCount',
+    title: 'アクション数',
+    width: 100,
+    align: 'center',
+  },
+  {
+    key: 'executionCount',
+    title: '実行回数',
+    width: 80,
+    align: 'center',
+  },
+  {
+    key: 'isActive',
+    title: '有効',
+    width: 80,
+    align: 'center',
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: '有効', value: 'true' },
+      { label: '無効', value: 'false' },
+    ],
+  },
+]
+
+const searchColumns = baseColumns.filter((c) => c.searchable)
+
+const tableColumns: TableColumn[] = [
+  ...baseColumns.map((col) => {
+    if (col.key === 'name') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: RuleDefinition }) =>
+          h('div', [
+            h('div', rowData.name),
+            rowData.ruleCode ? h('div', { class: 'rule-code' }, rowData.ruleCode) : null,
+          ]),
+      }
+    }
+    if (col.key === 'module') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: RuleDefinition }) => moduleLabel(rowData.module),
+      }
+    }
+    if (col.key === 'conditionCount') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: RuleDefinition }) =>
+          String(rowData.conditionGroups.reduce((sum, g) => sum + g.conditions.length, 0)),
+      }
+    }
+    if (col.key === 'actionCount') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: RuleDefinition }) =>
+          String(rowData.actions.length),
+      }
+    }
+    if (col.key === 'executionCount') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: RuleDefinition }) =>
+          String(rowData.executionCount ?? 0),
+      }
+    }
+    if (col.key === 'isActive') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: RuleDefinition }) =>
+          h('button', {
+            class: ['toggle-switch', { 'toggle-switch--active': rowData.isActive }],
+            onClick: () => handleToggle(rowData),
+          }, [h('span', { class: 'toggle-switch__slider' })]),
+      }
+    }
+    return col
+  }),
+  {
+    key: 'actions',
+    title: t('wms.common.actions', '操作'),
+    width: 140,
+    align: 'center',
+    cellRenderer: ({ rowData }: { rowData: RuleDefinition }) =>
+      h('div', { class: 'o-table-td--actions' }, [
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+      ]),
+  },
+]
+
 // State
 const rules = ref<RuleDefinition[]>([])
 const total = ref(0)
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(20)
-const searchText = ref('')
-const moduleFilter = ref('')
-const showActiveOnly = ref(false)
+const globalSearchText = ref('')
+
+// Current search filters from SearchForm
+const currentFilters = ref<Record<string, { operator: Operator; value: any }>>({})
 
 // Dialog
 const dialogOpen = ref(false)
@@ -318,23 +384,23 @@ const testForm = ref({ module: 'inbound', contextJson: '' })
 const testResults = ref<RuleTestResult[]>([])
 const testExecuted = ref(false)
 
-// Computed
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
-const paginationStart = computed(() => (total.value === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1))
-const paginationEnd = computed(() => Math.min(currentPage.value * pageSize.value, total.value))
-
-const countConditions = (r: RuleDefinition) => {
-  return r.conditionGroups.reduce((sum, g) => sum + g.conditions.length, 0)
-}
-
 // Load
 const loadList = async () => {
   loading.value = true
   try {
+    // Build API params from current filters
+    const filters = currentFilters.value
+    const searchParam = filters.name?.value || undefined
+    const moduleParam = filters.module?.value || undefined
+    let isActiveParam: string | undefined
+    if (filters.isActive?.value !== undefined && filters.isActive?.value !== '') {
+      isActiveParam = String(filters.isActive.value)
+    }
+
     const result = await fetchRules({
-      search: searchText.value || undefined,
-      module: moduleFilter.value || undefined,
-      isActive: showActiveOnly.value ? 'true' : undefined,
+      search: searchParam,
+      module: moduleParam,
+      isActive: isActiveParam,
       page: currentPage.value,
       limit: pageSize.value,
     })
@@ -347,18 +413,22 @@ const loadList = async () => {
   }
 }
 
-const handleSearch = () => {
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  // Extract global search text
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+    delete payload.__global
+  } else {
+    globalSearchText.value = ''
+  }
+  currentFilters.value = { ...payload }
   currentPage.value = 1
   loadList()
 }
 
-const handlePageSizeChange = () => {
-  currentPage.value = 1
-  loadList()
-}
-
-const goToPage = (page: number) => {
-  currentPage.value = page
+const handlePageChange = (payload: { page: number; pageSize: number }) => {
+  currentPage.value = payload.page
+  pageSize.value = payload.pageSize
   loadList()
 }
 
@@ -528,10 +598,6 @@ onMounted(() => {
 })
 </script>
 
-<style>
-@import '@/styles/order-table.css';
-</style>
-
 <style scoped>
 .rule-settings {
   padding: 0 20px 20px;
@@ -543,22 +609,6 @@ onMounted(() => {
 :deep(.o-control-panel) {
   margin-left: -20px;
   margin-right: -20px;
-}
-
-/* Search section */
-.search-section {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.search-section__filter {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  white-space: nowrap;
 }
 
 /* Rule code subtitle */

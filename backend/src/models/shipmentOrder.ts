@@ -209,6 +209,9 @@ export interface IShipmentOrder {
    */
   orderGroupId?: string;
 
+  /** 自定义字段 / カスタムフィールド */
+  customFields?: Record<string, unknown>;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -354,6 +357,9 @@ const shipmentOrderSchema = new mongoose.Schema<IShipmentOrder>(
     },
 
     orderGroupId: { type: String, trim: true, index: true },
+
+    // 自定义字段 / カスタムフィールド（Phase 5）
+    customFields: { type: mongoose.Schema.Types.Mixed, default: {} },
 
     status: {
       carrierReceipt: {

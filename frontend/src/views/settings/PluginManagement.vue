@@ -2,77 +2,33 @@
   <div class="plugin-management">
     <ControlPanel title="プラグイン管理" :show-search="false" />
 
-    <!-- 插件列表 -->
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width: 60px">状態</th>
-            <th class="o-table-th" style="width: 180px">名称</th>
-            <th class="o-table-th" style="width: 80px">バージョン</th>
-            <th class="o-table-th">説明</th>
-            <th class="o-table-th" style="width: 100px">作者</th>
-            <th class="o-table-th" style="width: 180px">Hook イベント</th>
-            <th class="o-table-th" style="width: 200px">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td class="o-table-td o-table-empty" colspan="7">読み込み中...</td>
-          </tr>
-          <tr v-else-if="plugins.length === 0">
-            <td class="o-table-td o-table-empty" colspan="7">
-              プラグインがインストールされていません。
-              <code>extensions/plugins/</code> にプラグインを配置してください。
-            </td>
-          </tr>
-          <tr v-for="p in plugins" :key="p.name" class="o-table-row">
-            <td class="o-table-td" style="text-align: center">
-              <span :class="statusTagClass(p.status)">{{ statusLabel(p.status) }}</span>
-            </td>
-            <td class="o-table-td"><strong>{{ p.name }}</strong></td>
-            <td class="o-table-td" style="text-align: center">{{ p.version }}</td>
-            <td class="o-table-td">{{ p.description }}</td>
-            <td class="o-table-td">{{ p.author }}</td>
-            <td class="o-table-td">
-              <code v-for="h in p.hooks" :key="h" class="event-code">{{ h }}</code>
-            </td>
-            <td class="o-table-td o-table-td--actions">
-              <OButton
-                v-if="p.status === 'enabled'"
-                variant="secondary" size="sm"
-                :disabled="toggling === p.name"
-                @click="handleDisable(p)"
-              >
-                無効化
-              </OButton>
-              <OButton
-                v-else-if="p.status === 'disabled'"
-                variant="primary" size="sm"
-                :disabled="toggling === p.name"
-                @click="handleEnable(p)"
-              >
-                有効化
-              </OButton>
-              <OButton
-                v-if="p.config && Object.keys(p.config).length > 0"
-                variant="secondary" size="sm"
-                @click="openConfig(p)"
-              >
-                設定
-              </OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="pluginManagementSearch"
+      @search="handleSearch"
+    />
+
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="plugins"
+        :height="520"
+        row-key="name"
+        pagination-enabled
+        pagination-mode="client"
+        :page-size="20"
+        :global-search-text="globalSearchText"
+      />
     </div>
 
-    <!-- 错误信息 -->
+    <!-- エラー情報 -->
     <div v-for="p in errorPlugins" :key="p.name" class="error-banner">
       <strong>{{ p.name }}</strong>: {{ p.errorMessage }}
     </div>
 
-    <!-- 配置对话框 -->
+    <!-- 設定ダイアログ -->
     <ODialog v-model="configDialogOpen" :title="`${configPluginName} 設定`" size="md" @confirm="handleSaveConfig">
       <div class="config-form">
         <div v-for="(def, key) in configSchema" :key="key" class="form-field form-field--full">
@@ -99,11 +55,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchPlugins,
   enablePlugin,
@@ -114,11 +74,13 @@ import {
 } from '@/api/plugin'
 
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 // State
 const plugins = ref<PluginInfo[]>([])
 const loading = ref(false)
 const toggling = ref<string | null>(null)
+const globalSearchText = ref('')
 
 // Config dialog
 const configDialogOpen = ref(false)
@@ -128,6 +90,154 @@ const configValues = ref<Record<string, any>>({})
 
 // Computed
 const errorPlugins = computed(() => plugins.value.filter((p) => p.status === 'error' && p.errorMessage))
+
+// Column definitions
+const baseColumns: TableColumn[] = [
+  {
+    key: 'status',
+    title: '状態',
+    width: 70,
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: '有効', value: 'enabled' },
+      { label: '無効', value: 'disabled' },
+      { label: 'エラー', value: 'error' },
+      { label: '未初期化', value: 'installed' },
+    ],
+  },
+  {
+    key: 'name',
+    title: '名称',
+    width: 180,
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'version',
+    title: 'バージョン',
+    width: 80,
+  },
+  {
+    key: 'description',
+    title: '説明',
+    width: 300,
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'author',
+    title: '作者',
+    width: 100,
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'hooks',
+    title: 'Hook イベント',
+    width: 180,
+  },
+]
+
+const searchColumns: TableColumn[] = baseColumns.filter((c) => c.searchable)
+
+const tableColumns: TableColumn[] = [
+  ...baseColumns.map((col) => {
+    if (col.key === 'status') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: PluginInfo }) =>
+          h('span', { class: statusTagClass(rowData.status) }, statusLabel(rowData.status)),
+      }
+    }
+    if (col.key === 'name') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: PluginInfo }) =>
+          h('strong', {}, rowData.name),
+      }
+    }
+    if (col.key === 'version') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: PluginInfo }) =>
+          h('span', { style: 'text-align: center; display: block' }, rowData.version),
+      }
+    }
+    if (col.key === 'hooks') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: PluginInfo }) =>
+          h(
+            'span',
+            {},
+            (rowData.hooks || []).map((hook) =>
+              h('code', { class: 'event-code', key: hook }, hook),
+            ),
+          ),
+      }
+    }
+    return col
+  }),
+  {
+    key: 'actions',
+    title: t('wms.common.actions', '操作'),
+    width: 200,
+    cellRenderer: ({ rowData }: { rowData: PluginInfo }) => {
+      const buttons: any[] = []
+
+      if (rowData.status === 'enabled') {
+        buttons.push(
+          h(
+            OButton,
+            {
+              variant: 'secondary',
+              size: 'sm',
+              disabled: toggling.value === rowData.name,
+              onClick: () => handleDisable(rowData),
+            },
+            () => '無効化',
+          ),
+        )
+      } else if (rowData.status === 'disabled') {
+        buttons.push(
+          h(
+            OButton,
+            {
+              variant: 'primary',
+              size: 'sm',
+              disabled: toggling.value === rowData.name,
+              onClick: () => handleEnable(rowData),
+            },
+            () => '有効化',
+          ),
+        )
+      }
+
+      if (rowData.config && Object.keys(rowData.config).length > 0) {
+        buttons.push(
+          h(
+            OButton,
+            { variant: 'secondary', size: 'sm', onClick: () => openConfig(rowData) },
+            () => '設定',
+          ),
+        )
+      }
+
+      return h('div', { class: 'action-cell' }, buttons)
+    },
+  },
+]
+
+// Search
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+    delete payload.__global
+  } else {
+    globalSearchText.value = ''
+  }
+}
 
 // Load
 const loadList = async () => {
@@ -177,7 +287,6 @@ const openConfig = async (p: PluginInfo) => {
 
   try {
     const result = await fetchPluginConfig(p.name)
-    // 合并默认值和当前值 / デフォルト値と現在の値をマージ
     const values: Record<string, any> = {}
     for (const [key, def] of Object.entries(configSchema.value)) {
       values[key] = result.data[key] ?? def.default ?? ''
@@ -226,8 +335,6 @@ onMounted(() => {
 </script>
 
 <style>
-@import '@/styles/order-table.css';
-
 .o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 .o-status-tag--pending { background: #fdf6ec; color: #e6a23c; }
 </style>
@@ -254,6 +361,12 @@ onMounted(() => {
   font-family: 'SF Mono', 'Fira Code', monospace;
   margin-right: 4px;
   margin-bottom: 2px;
+}
+
+.action-cell {
+  display: flex;
+  gap: 4px;
+  align-items: center;
 }
 
 .error-banner {

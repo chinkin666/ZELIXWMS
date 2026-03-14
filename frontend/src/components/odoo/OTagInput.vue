@@ -159,7 +159,7 @@ function focusInput() {
 
 .o-tag-input--focused {
   border-color: var(--o-brand-primary, #714B67);
-  box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.15);
+  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.15);
 }
 
 .o-tag-chip {
@@ -264,7 +264,7 @@ function focusInput() {
 
 [data-theme="dark"] .o-tag-input--focused {
   border-color: var(--o-brand-primary);
-  box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.25);
+  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.25);
 }
 
 [data-theme="dark"] .o-tag-chip {

@@ -2,27 +2,27 @@
   <div class="template-printer-tab">
     <div v-if="printers.length === 0" style="margin-bottom: 12px">
       <el-alert type="warning" :closable="false" show-icon>
-        プリンター情報がありません。「接続」タブでサービスに接続してプリンター情報を取得してください。
+        {{ t('wms.printer.noPrintersConnectHint', 'プリンター情報がありません。「接続」タブでサービスに接続してプリンター情報を取得してください。') }}
       </el-alert>
     </div>
 
     <!-- B2 Cloud PDF Section -->
     <el-card shadow="never">
       <template #header>
-        <span class="section-title">B2 Cloud PDF（ヤマトB2 WebAPIから取得したPDF）</span>
+        <span class="section-title">{{ t('wms.printer.b2CloudPdfTitle', 'B2 Cloud PDF（ヤマトB2 WebAPIから取得したPDF）') }}</span>
       </template>
       <el-table :data="b2InvoiceTypes" stripe size="small" style="width: 100%">
-        <el-table-column label="送り状種類" width="200">
+        <el-table-column :label="t('wms.printer.invoiceType', '送り状種類')" width="200">
           <template #default="{ row }">
             <strong>{{ row.value }}: {{ row.label }}</strong>
           </template>
         </el-table-column>
 
-        <el-table-column label="プリンター" width="220">
+        <el-table-column :label="t('wms.printer.printer', 'プリンター')" width="220">
           <template #default="{ row }">
             <el-select
               :model-value="getB2Params(row.value).printer || ''"
-              placeholder="デフォルト"
+              :placeholder="t('wms.printer.default', 'デフォルト')"
               clearable
               filterable
               size="small"
@@ -34,7 +34,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="用紙" width="160">
+        <el-table-column :label="t('wms.printer.paper', '用紙')" width="160">
           <template #default="{ row }">
             <el-select
               :model-value="getB2Params(row.value).paper || 'AUTO'"
@@ -42,7 +42,7 @@
               style="width: 100%"
               @change="(val: string) => updateB2Param(row.value, 'paper', val)"
             >
-              <el-option label="AUTO（デフォルト）" value="AUTO" />
+              <el-option :label="t('wms.printer.autoDefault', 'AUTO（デフォルト）')" value="AUTO" />
               <el-option
                 v-for="ps in getPaperSizes(getB2Params(row.value).printer)"
                 :key="ps.name"
@@ -53,7 +53,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="方向" width="120">
+        <el-table-column :label="t('wms.printer.orientation', '方向')" width="120">
           <template #default="{ row }">
             <el-select
               :model-value="getB2Params(row.value).orientation || 'portrait'"
@@ -61,13 +61,13 @@
               style="width: 100%"
               @change="(val: string) => updateB2Param(row.value, 'orientation', val)"
             >
-              <el-option label="縦" value="portrait" />
-              <el-option label="横" value="landscape" />
+              <el-option :label="t('wms.printer.portrait', '縦')" value="portrait" />
+              <el-option :label="t('wms.printer.landscape', '横')" value="landscape" />
             </el-select>
           </template>
         </el-table-column>
 
-        <el-table-column label="縮尺" width="110">
+        <el-table-column :label="t('wms.printer.scale', '縮尺')" width="110">
           <template #default="{ row }">
             <el-select
               :model-value="getB2Params(row.value).scale || 'fit'"
@@ -77,12 +77,12 @@
             >
               <el-option label="Fit" value="fit" />
               <el-option label="Fill" value="fill" />
-              <el-option label="実寸" value="actual" />
+              <el-option :label="t('wms.printer.actualSize', '実寸')" value="actual" />
             </el-select>
           </template>
         </el-table-column>
 
-        <el-table-column label="余白(mm)" width="100">
+        <el-table-column :label="t('wms.printer.marginMm', '余白(mm)')" width="100">
           <template #default="{ row }">
             <el-input-number
               :model-value="getB2Params(row.value).margin_mm ?? 6"
@@ -96,7 +96,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="部数" width="90">
+        <el-table-column :label="t('wms.printer.copies', '部数')" width="90">
           <template #default="{ row }">
             <el-input-number
               :model-value="getB2Params(row.value).copies ?? 1"
@@ -115,12 +115,12 @@
     <!-- Print Templates Section -->
     <el-card shadow="never">
       <template #header>
-        <span class="section-title">印刷テンプレート</span>
+        <span class="section-title">{{ t('wms.printer.printTemplates', '印刷テンプレート') }}</span>
       </template>
       <div v-if="loading" v-loading="true" style="min-height: 200px" />
-      <el-empty v-else-if="templates.length === 0" description="印刷テンプレートがありません" />
+      <el-empty v-else-if="templates.length === 0" :description="t('wms.printer.noPrintTemplates', '印刷テンプレートがありません')" />
       <el-table v-else :data="templates" stripe size="small" style="width: 100%">
-        <el-table-column label="テンプレート名" min-width="180">
+        <el-table-column :label="t('wms.printer.templateName', 'テンプレート名')" min-width="180">
           <template #default="{ row }">
             <div>
               <strong>{{ row.name }}</strong>
@@ -131,11 +131,11 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="プリンター" width="220">
+        <el-table-column :label="t('wms.printer.printer', 'プリンター')" width="220">
           <template #default="{ row }">
             <el-select
               :model-value="getParams(row.id).printer || ''"
-              placeholder="デフォルト"
+              :placeholder="t('wms.printer.default', 'デフォルト')"
               clearable
               filterable
               size="small"
@@ -152,7 +152,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="用紙" width="160">
+        <el-table-column :label="t('wms.printer.paper', '用紙')" width="160">
           <template #default="{ row }">
             <el-select
               :model-value="getParams(row.id).paper || 'AUTO'"
@@ -160,7 +160,7 @@
               style="width: 100%"
               @change="(val: string) => updateParam(row.id, 'paper', val)"
             >
-              <el-option label="AUTO（デフォルト）" value="AUTO" />
+              <el-option :label="t('wms.printer.autoDefault', 'AUTO（デフォルト）')" value="AUTO" />
               <el-option
                 v-for="ps in getPaperSizes(getParams(row.id).printer)"
                 :key="ps.name"
@@ -171,7 +171,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="方向" width="120">
+        <el-table-column :label="t('wms.printer.orientation', '方向')" width="120">
           <template #default="{ row }">
             <el-select
               :model-value="getParams(row.id).orientation || 'portrait'"
@@ -179,13 +179,13 @@
               style="width: 100%"
               @change="(val: string) => updateParam(row.id, 'orientation', val)"
             >
-              <el-option label="縦" value="portrait" />
-              <el-option label="横" value="landscape" />
+              <el-option :label="t('wms.printer.portrait', '縦')" value="portrait" />
+              <el-option :label="t('wms.printer.landscape', '横')" value="landscape" />
             </el-select>
           </template>
         </el-table-column>
 
-        <el-table-column label="縮尺" width="110">
+        <el-table-column :label="t('wms.printer.scale', '縮尺')" width="110">
           <template #default="{ row }">
             <el-select
               :model-value="getParams(row.id).scale || 'fit'"
@@ -195,12 +195,12 @@
             >
               <el-option label="Fit" value="fit" />
               <el-option label="Fill" value="fill" />
-              <el-option label="実寸" value="actual" />
+              <el-option :label="t('wms.printer.actualSize', '実寸')" value="actual" />
             </el-select>
           </template>
         </el-table-column>
 
-        <el-table-column label="余白(mm)" width="100">
+        <el-table-column :label="t('wms.printer.marginMm', '余白(mm)')" width="100">
           <template #default="{ row }">
             <el-input-number
               :model-value="getParams(row.id).margin_mm ?? 6"
@@ -214,7 +214,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="部数" width="90">
+        <el-table-column :label="t('wms.printer.copies', '部数')" width="90">
           <template #default="{ row }">
             <el-input-number
               :model-value="getParams(row.id).copies ?? 1"
@@ -233,7 +233,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 import { fetchPrintTemplates, type PrintTemplateApiModel } from '@/api/printTemplates'
 import type { PrinterInfo, TemplatePrintParams } from '@/utils/print/printConfig'
 import {
@@ -243,19 +244,21 @@ import {
   saveB2CloudPrintParams,
 } from '@/utils/print/printConfig'
 
-const b2InvoiceTypes = [
-  { label: '発払い', value: '0' },
+const { t } = useI18n()
+
+const b2InvoiceTypes = computed(() => [
+  { label: t('wms.printer.invoiceTypePrepaid', '発払い'), value: '0' },
   { label: 'EAZY', value: '1' },
-  { label: 'コレクト', value: '2' },
-  { label: 'クロネコゆうメール（DM便）', value: '3' },
-  { label: 'タイム', value: '4' },
-  { label: '着払い', value: '5' },
-  { label: '発払い複数口', value: '6' },
-  { label: 'クロネコゆうパケット', value: '7' },
-  { label: '宅急便コンパクト', value: '8' },
-  { label: 'コンパクトコレクト', value: '9' },
-  { label: 'ネコポス', value: 'A' },
-]
+  { label: t('wms.printer.invoiceTypeCollect', 'コレクト'), value: '2' },
+  { label: t('wms.printer.invoiceTypeDmMail', 'クロネコゆうメール（DM便）'), value: '3' },
+  { label: t('wms.printer.invoiceTypeTime', 'タイム'), value: '4' },
+  { label: t('wms.printer.invoiceTypeCod', '着払い'), value: '5' },
+  { label: t('wms.printer.invoiceTypeMultiPrepaid', '発払い複数口'), value: '6' },
+  { label: t('wms.printer.invoiceTypeYuPacket', 'クロネコゆうパケット'), value: '7' },
+  { label: t('wms.printer.invoiceTypeCompact', '宅急便コンパクト'), value: '8' },
+  { label: t('wms.printer.invoiceTypeCompactCollect', 'コンパクトコレクト'), value: '9' },
+  { label: t('wms.printer.invoiceTypeNekopos', 'ネコポス'), value: 'A' },
+])
 
 const props = defineProps<{
   printers: PrinterInfo[]

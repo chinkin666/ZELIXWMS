@@ -253,7 +253,7 @@
                 </OButton>
               </div>
 
-              <!-- 默认文本输入 -->
+              <!-- デフォルトテキスト入力 / 默认文本输入 -->
               <input
                 v-else
                 class="o-input"
@@ -624,7 +624,7 @@ const handleClose = () => {
   dialogVisible.value = false
 }
 
-// 处理提交
+// 送信処理 / 处理提交
 const handleSubmit = async () => {
   const { valid, errors } = validateForm()
 
@@ -636,7 +636,7 @@ const handleSubmit = async () => {
   try {
     submitting.value = true
 
-    // 构建提交数据（保持嵌套结构）
+    // 送信データ構築 / 构建提交数据（保持嵌套结构）
     const submitData: Record<string, any> = {}
     formColumns.value.forEach((column) => {
       const key = getNestedKey(column)

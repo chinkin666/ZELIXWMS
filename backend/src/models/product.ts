@@ -53,6 +53,8 @@ export interface IProduct {
   alertDaysBeforeExpiry: number;
   defaultLocationId?: mongoose.Types.ObjectId;
   safetyStock: number;
+  /** 自定义字段 / カスタムフィールド */
+  customFields?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -217,6 +219,9 @@ const productSchema = new mongoose.Schema<IProduct>(
       type: Number,
       default: 0,
     },
+
+    // 自定义字段 / カスタムフィールド（Phase 5）
+    customFields: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
   {
     timestamps: true,

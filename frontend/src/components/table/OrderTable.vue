@@ -100,7 +100,7 @@
               v-if="hasActionColumn"
               style="width: 120px; text-align: center;"
             >
-              操作
+              {{ t('wms.common.actions', '操作') }}
             </th>
           </tr>
         </thead>
@@ -437,19 +437,15 @@ import BulkEditDialog from './BulkEditDialog.vue'
 import OPager from '@/components/odoo/OPager.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import { LINK_COLOR } from '@/theme/config'
+import { useI18n } from '@/composables/useI18n'
 import type { Product } from '@/types/product'
 import InfoTag from './InfoTag.vue'
 import noImageSrc from '@/assets/images/no_image.png'
-import { getApiBaseUrl } from '@/api/base'
+import { resolveImageUrl } from '@/utils/imageUrl'
 
-const ORDER_TABLE_API_BASE = getApiBaseUrl().replace(/\/api$/, '')
+const resolveProductImageUrl = (url?: string): string => resolveImageUrl(url)
 
-const resolveProductImageUrl = (url?: string): string => {
-  if (!url) return noImageSrc
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-  return `${ORDER_TABLE_API_BASE}${url}`
-}
-
+const { t } = useI18n()
 
 // 操作列渲染組件
 const ActionCell = defineComponent({
@@ -1617,8 +1613,6 @@ const applyBulkEdit = (payload: {
     selectedKeys: [...innerSelectedKeys.value],
     selectedRows,
   })
-
-  console.log(`一括編集：${changed}件更新しました`)
 }
 
 const handleBatchDeleteClick = () => {
@@ -1865,49 +1859,12 @@ defineExpose({
 }
 
 .nex-table__wrapper {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-  overflow: visible;
+  overflow: auto;
+  border: 1px solid var(--o-border-color, #d6d6d6);
+  background: var(--o-view-background, #fff);
 }
 
-.o-list-table {
-  width: 100%;
-  border-collapse: collapse;
-  border: 1px solid #ebeef5;
-  table-layout: auto;
-}
-
-.o-list-table thead th {
-  background-color: #fafafa;
-  color: v-bind('LINK_COLOR');
-  font-size: 13px;
-  font-weight: normal;
-  vertical-align: top;
-  text-align: left;
-  padding: 10px;
-  border-bottom: 1px solid #ebeef5;
-  border-right: 1px solid #ebeef5;
-}
-
-.o-list-table thead th:last-child {
-  border-right: none;
-}
-
-.o-list-table tbody td {
-  font-size: 12px;
-  vertical-align: top;
-  padding: 10px;
-  border-bottom: 1px solid #ebeef5;
-  border-right: 1px solid #ebeef5;
-}
-
-.o-list-table tbody td:last-child {
-  border-right: none;
-}
-
-.o-list-table tbody tr:hover {
-  background-color: #f5f7fa;
-}
+/* .o-list-table base styles are defined globally in style.css */
 
 .nex-table__pagination {
   margin-top: 16px;

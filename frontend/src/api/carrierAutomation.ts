@@ -177,7 +177,7 @@ export function isCarrierDeleteError(error: unknown): error is CarrierDeleteErro
  * - trackingId, carrierRawRow をクリア
  * - B2 Cloud 履歴から削除（trackingId がある場合）
  * - internalRecord に記録を追加
- * @param options.skipCarrierDelete B2削除をスキップして本地操作のみ実行
+ * @param options.skipCarrierDelete B2削除をスキップしてローカル操作のみ実行 / B2削除をスキップして本地操作のみ実行
  */
 export async function yamatoB2Unconfirm(
   orderIds: string[],
@@ -205,7 +205,7 @@ export async function yamatoB2Unconfirm(
  * 送り状種類変更
  * - 内蔵Carrier（B2 Cloud等）の場合：既存運単を削除 → invoiceType更新 → 再提出 → 新trackingId取得
  * - 手動Carrierの場合：invoiceType更新 → ステータスリセット（確認画面に戻す）
- * @param options.skipCarrierDelete B2削除をスキップして本地操作のみ実行
+ * @param options.skipCarrierDelete B2削除をスキップしてローカル操作のみ実行 / B2削除をスキップして本地操作のみ実行
  */
 export async function changeInvoiceType(
   orderIds: string[],

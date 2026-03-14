@@ -1,13 +1,13 @@
 <template>
   <ODialog
     :open="open"
-    title="子SKU管理"
+    :title="t('wms.product.subSkuManagement', '子SKU管理')"
     size="lg"
     @close="$emit('update:open', false)"
   >
     <div v-if="editingProduct" class="sub-sku-header">
-      <p><strong>親商品:</strong> {{ editingProduct.sku }} - {{ editingProduct.name }}</p>
-      <p v-if="editingProduct.price"><strong>親商品価格:</strong> &yen;{{ editingProduct.price.toLocaleString() }}</p>
+      <p><strong>{{ t('wms.product.parentProduct', '親商品') }}:</strong> {{ editingProduct.sku }} - {{ editingProduct.name }}</p>
+      <p v-if="editingProduct.price"><strong>{{ t('wms.product.parentProductPrice', '親商品価格') }}:</strong> &yen;{{ editingProduct.price.toLocaleString() }}</p>
     </div>
 
     <SubSkuInlineEditor
@@ -21,10 +21,10 @@
     />
 
     <template #footer>
-      <OButton variant="secondary" @click="$emit('update:open', false)">キャンセル</OButton>
+      <OButton variant="secondary" @click="$emit('update:open', false)">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
       <OButton variant="primary" :disabled="saving" @click="$emit('save')">
         <span v-if="saving">...</span>
-        <span v-else>保存</span>
+        <span v-else>{{ t('wms.common.save', '保存') }}</span>
       </OButton>
     </template>
   </ODialog>
@@ -33,8 +33,11 @@
 <script setup lang="ts">
 import ODialog from '@/components/odoo/ODialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
+import { useI18n } from '@/composables/useI18n'
 import SubSkuInlineEditor from './SubSkuInlineEditor.vue'
 import type { Product, SubSku } from '@/types/product'
+
+const { t } = useI18n()
 
 defineProps<{
   open: boolean

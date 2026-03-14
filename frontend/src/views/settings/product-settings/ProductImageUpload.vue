@@ -1,7 +1,7 @@
 <template>
   <div class="image-upload-section">
     <div class="o-divider">
-      <span class="o-divider-text">商品画像</span>
+      <span class="o-divider-text">{{ t('wms.product.productImage', '商品画像') }}</span>
     </div>
     <div class="image-upload-content">
       <div class="image-preview">
@@ -12,11 +12,11 @@
         <div v-if="!showUrlInput" class="image-input-row">
           <label class="o-btn o-btn-secondary o-btn-sm">
             <span v-if="uploading">...</span>
-            <span v-else>&#128247; ファイルをアップロード</span>
+            <span v-else>&#128247; {{ t('wms.product.uploadFile', 'ファイルをアップロード') }}</span>
             <input type="file" accept="image/*" class="hidden-input" @change="handleImageFileChange" />
           </label>
-          <OButton variant="secondary" size="sm" @click="showUrlInput = true">外部URLを指定</OButton>
-          <OButton v-if="imageUrl" variant="danger" size="sm" @click="$emit('update:imageUrl', '')">削除</OButton>
+          <OButton variant="secondary" size="sm" @click="showUrlInput = true">{{ t('wms.product.specifyExternalUrl', '外部URLを指定') }}</OButton>
+          <OButton v-if="imageUrl" variant="danger" size="sm" @click="$emit('update:imageUrl', '')">{{ t('wms.common.delete', '削除') }}</OButton>
         </div>
         <!-- URL input mode -->
         <div v-else class="image-input-row">
@@ -25,9 +25,9 @@
             @input="$emit('update:imageUrl', ($event.target as HTMLInputElement).value)"
             type="text"
             class="o-input o-input-sm"
-            placeholder="画像URLを入力 (https://...)"
+            :placeholder="t('wms.product.enterImageUrl', '画像URLを入力 (https://...)')"
           />
-          <OButton variant="secondary" size="sm" @click="showUrlInput = false">戻る</OButton>
+          <OButton variant="secondary" size="sm" @click="showUrlInput = false">{{ t('wms.product.back', '戻る') }}</OButton>
         </div>
       </div>
     </div>
@@ -37,8 +37,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
+import { useI18n } from '@/composables/useI18n'
 import { uploadProductImage } from '@/api/product'
-import { getApiBaseUrl } from '@/api/base'
+import { resolveImageUrl } from '@/utils/imageUrl'
 import noImageSrc from '@/assets/images/no_image.png'
 import { useToast } from '@/composables/useToast'
 
@@ -50,18 +51,12 @@ const emit = defineEmits<{
   (e: 'update:imageUrl', value: string): void
 }>()
 
+const { t } = useI18n()
 const toast = useToast()
 const showUrlInput = ref(false)
 const uploading = ref(false)
 
-const API_BASE = getApiBaseUrl().replace(/\/api$/, '')
-
-const resolvedImageUrl = computed(() => {
-  const url = props.imageUrl
-  if (!url) return noImageSrc
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-  return `${API_BASE}${url}`
-})
+const resolvedImageUrl = computed(() => resolveImageUrl(props.imageUrl))
 
 const handleImageFileChange = async (event: Event) => {
   const input = event.target as HTMLInputElement
@@ -71,9 +66,9 @@ const handleImageFileChange = async (event: Event) => {
   try {
     const result = await uploadProductImage(file)
     emit('update:imageUrl', result.imageUrl)
-    toast.showSuccess('画像をアップロードしました')
+    toast.showSuccess(t('wms.product.imageUploaded', '画像をアップロードしました'))
   } catch (error: any) {
-    toast.showError(error?.message || '画像のアップロードに失敗しました')
+    toast.showError(error?.message || t('wms.product.imageUploadFailed', '画像のアップロードに失敗しました'))
   } finally {
     uploading.value = false
     input.value = ''

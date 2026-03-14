@@ -6,7 +6,7 @@
       </div>
       <div class="o-stat-info">
         <span class="o-stat-value">{{ nonHeldCount }}</span>
-        <span class="o-stat-label">登録対象</span>
+        <span class="o-stat-label">{{ t('wms.shipmentOrder.registrationTarget', '登録対象') }}</span>
       </div>
     </div>
     <div class="o-stat-card">
@@ -15,7 +15,7 @@
       </div>
       <div class="o-stat-info">
         <span class="o-stat-value">{{ errorCount }}</span>
-        <span class="o-stat-label">エラー件数</span>
+        <span class="o-stat-label">{{ t('wms.shipmentOrder.errorCount', 'エラー件数') }}</span>
       </div>
     </div>
     <div class="o-stat-card">
@@ -24,27 +24,31 @@
       </div>
       <div class="o-stat-info">
         <span class="o-stat-value">{{ pendingWaybillNonHeldCount }}</span>
-        <span class="o-stat-label">送り状未発行</span>
+        <span class="o-stat-label">{{ t('wms.shipmentOrder.pendingWaybill', '送り状未発行') }}</span>
       </div>
     </div>
     <div
       class="o-stat-card"
       :class="{ 'o-stat-card--clickable': holdClickable }"
       @click="$emit('hold-click')"
-      title="選択中の行を保留/解除（送り状未発行・保留タブのみ）"
+      :title="t('wms.shipmentOrder.holdTooltip', '選択中の行を保留/解除（送り状未発行・保留タブのみ）')"
     >
       <div class="o-stat-icon o-stat-icon-held">
         <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M6.5 1A1.5 1.5 0 0 0 5 2.5V3H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1H11v-.5A1.5 1.5 0 0 0 9.5 1h-3zm0 1h3a.5.5 0 0 1 .5.5V3H6v-.5a.5.5 0 0 1 .5-.5z"/></svg>
       </div>
       <div class="o-stat-info">
         <span class="o-stat-value">{{ totalHeldCount }}</span>
-        <span class="o-stat-label">保留</span>
+        <span class="o-stat-label">{{ t('wms.shipmentOrder.held', '保留') }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
+
 defineProps<{
   nonHeldCount: number
   errorCount: number

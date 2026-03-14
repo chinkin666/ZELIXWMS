@@ -1,8 +1,8 @@
 /**
- * 工具函数：从 JSON Schema 生成表单字段配置
+ * ユーティリティ関数：JSON Schemaからフォームフィールド設定を生成 / 工具函数：从 JSON Schema 生成表单字段配置
  */
 
-// 参数名到日语标签的映射
+// パラメータ名から日本語ラベルへのマッピング / 参数名到日语标签的映射
 const paramLabelMap: Record<string, string> = {
   // regex.extract
   pattern: '正規表現パターン',
@@ -15,7 +15,7 @@ const paramLabelMap: Record<string, string> = {
   // condition.equals
   compareTo: '比較する値',
   // string.split
-  // separator は上で定義済み
+  // separatorは上で定義済み / separator 已在上面定义
   // jp.sliceByWidth
   startWidth: '開始位置（文字幅）',
   endWidth: '終了位置（文字幅）',
@@ -46,7 +46,7 @@ const paramLabelMap: Record<string, string> = {
   pick: '取得するパス',
 }
 
-// 参数名到 placeholder 的映射
+// パラメータ名からプレースホルダーへのマッピング / 参数名到 placeholder 的映射
 const paramPlaceholderMap: Record<string, string> = {
   pattern: '例: \\d+ (数字を抽出)',
   flags: 'g=全部, i=大小文字無視, 空=最初の1つ',
@@ -80,7 +80,7 @@ export interface FormField {
 }
 
 /**
- * 将 JSON Schema 转换为表单字段配置
+ * JSON Schemaをフォームフィールド設定に変換 / 将 JSON Schema 转换为表单字段配置
  */
 export function jsonSchemaToFormFields(schema: any, prefix = ''): FormField[] {
   if (!schema || schema.type !== 'object' || !schema.properties) {
@@ -94,7 +94,7 @@ export function jsonSchemaToFormFields(schema: any, prefix = ''): FormField[] {
     const fieldKey = prefix ? `${prefix}.${key}` : key
     const isRequired = required.includes(key)
 
-    // 获取日语标签和 placeholder
+    // 日本語ラベルとプレースホルダーを取得 / 获取日语标签和 placeholder
     const label = paramLabelMap[key] || key
     const placeholder = paramPlaceholderMap[key] || prop.description || key
 
@@ -143,7 +143,7 @@ export function jsonSchemaToFormFields(schema: any, prefix = ''): FormField[] {
         description: prop.description,
       })
     } else if (prop.type === 'any') {
-      // any 类型作为字符串输入处理
+      // any型は文字列入力として処理 / any 类型作为字符串输入处理
       fields.push({
         key: fieldKey,
         label,
@@ -154,7 +154,7 @@ export function jsonSchemaToFormFields(schema: any, prefix = ''): FormField[] {
         description: prop.description,
       })
     } else if (prop.type === 'array') {
-      // 简化处理：数组暂时作为字符串输入（逗号分隔）
+      // 簡略化処理：配列は暫定的に文字列入力（カンマ区切り） / 简化处理：数组暂时作为字符串输入（逗号分隔）
       fields.push({
         key: fieldKey,
         label: key,
@@ -165,7 +165,7 @@ export function jsonSchemaToFormFields(schema: any, prefix = ''): FormField[] {
         description: prop.description,
       })
     } else {
-      // object 或其他类型，递归处理
+      // objectまたはその他の型、再帰処理 / object 或其他类型，递归处理
       const nested = jsonSchemaToFormFields(prop, fieldKey)
       fields.push(...nested)
     }
@@ -175,13 +175,13 @@ export function jsonSchemaToFormFields(schema: any, prefix = ''): FormField[] {
 }
 
 /**
- * 从表单值构建参数对象
+ * フォーム値からパラメータオブジェクトを構築 / 从表单值构建参数对象
  */
 export function buildParamsFromForm(fields: FormField[], formData: Record<string, any>): any {
   const params: any = {}
   const fieldKeys = new Set(fields.map(f => f.key))
 
-  // 首先处理 fields 中定义的字段
+  // まずfieldsに定義されたフィールドを処理 / 首先处理 fields 中定义的字段
   for (const field of fields) {
     const value = formData[field.key]
     if (value !== undefined && value !== null && value !== '') {
@@ -199,15 +199,15 @@ export function buildParamsFromForm(fields: FormField[], formData: Record<string
     }
   }
 
-  // 保留所有不在 fields 中的原始数据（如 lookup.map 的 cases）
-  // 但排除临时字段（_entryIds, _entryMap）
+  // fieldsに含まれない全ての元データを保持（例：lookup.mapのcases） / 保留所有不在 fields 中的原始数据（如 lookup.map 的 cases）
+  // ただし一時フィールド（_entryIds, _entryMap）は除外 / 但排除临时字段（_entryIds, _entryMap）
   for (const [key, value] of Object.entries(formData)) {
     if (!fieldKeys.has(key) && !key.startsWith('_')) {
       params[key] = value
     }
   }
 
-  // 处理嵌套对象（key 包含点号）
+  // ネストされたオブジェクトを処理（keyにドットを含む場合） / 处理嵌套对象（key 包含点号）
   const result: any = {}
   for (const [key, value] of Object.entries(params)) {
     if (key.includes('.')) {

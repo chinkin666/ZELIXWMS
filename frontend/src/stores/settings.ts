@@ -16,7 +16,7 @@ const defaultSettings: AppSettings = {
 export const useSettingsStore = defineStore('settings', () => {
   const orderSearchStyle = ref<OrderSearchStyle>(defaultSettings.orderSearchStyle)
 
-  // 从 localStorage 加载设置
+  // localStorageから設定を読み込む / 从 localStorage 加载设置
   const loadSettings = () => {
     if (typeof window === 'undefined') return
     try {
@@ -32,7 +32,7 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
-  // 保存设置到 localStorage
+  // 設定をlocalStorageに保存する / 保存设置到 localStorage
   const saveSettings = () => {
     if (typeof window === 'undefined') return
     try {
@@ -45,16 +45,16 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
-  // 设置搜索框样式
+  // 検索ボックスのスタイルを設定する / 设置搜索框样式
   const setOrderSearchStyle = (style: OrderSearchStyle) => {
     orderSearchStyle.value = style
     saveSettings()
   }
 
-  // 初始化时加载设置
+  // 初期化時に設定を読み込む / 初始化时加载设置
   loadSettings()
 
-  // 监听变化自动保存
+  // 変更を監視して自動保存 / 监听变化自动保存
   watch(orderSearchStyle, () => {
     saveSettings()
   })

@@ -1,9 +1,9 @@
 <template>
   <div v-show="visible" class="settings-section">
-    <h3 class="section-title">用紙設定</h3>
+    <h3 class="section-title">{{ t('wms.formEditor.pageSettings', '用紙設定') }}</h3>
     <div class="o-form">
       <div class="o-form-group">
-        <label>用紙サイズ</label>
+        <label>{{ t('wms.formEditor.pageSize', '用紙サイズ') }}</label>
         <div class="radio-group">
           <label><input type="radio" :checked="template.pageSize === 'A4'" @change="$emit('update-field', 'pageSize', 'A4')" /> A4</label>
           <label><input type="radio" :checked="template.pageSize === 'A3'" @change="$emit('update-field', 'pageSize', 'A3')" /> A3</label>
@@ -12,29 +12,29 @@
         </div>
       </div>
       <div class="o-form-group">
-        <label>印刷向き</label>
+        <label>{{ t('wms.formEditor.pageOrientation', '印刷向き') }}</label>
         <div class="radio-group">
-          <label><input type="radio" :checked="template.pageOrientation === 'portrait'" @change="$emit('update-field', 'pageOrientation', 'portrait')" /> 縦 (portrait)</label>
-          <label><input type="radio" :checked="template.pageOrientation === 'landscape'" @change="$emit('update-field', 'pageOrientation', 'landscape')" /> 横 (landscape)</label>
+          <label><input type="radio" :checked="template.pageOrientation === 'portrait'" @change="$emit('update-field', 'pageOrientation', 'portrait')" /> {{ t('wms.formEditor.portrait', '縦 (portrait)') }}</label>
+          <label><input type="radio" :checked="template.pageOrientation === 'landscape'" @change="$emit('update-field', 'pageOrientation', 'landscape')" /> {{ t('wms.formEditor.landscape', '横 (landscape)') }}</label>
         </div>
       </div>
       <div class="o-form-group">
-        <label>余白 (pt)</label>
+        <label>{{ t('wms.formEditor.margins', '余白 (pt)') }}</label>
         <div class="margin-inputs">
           <div class="margin-input">
-            <span>左</span>
+            <span>{{ t('wms.formEditor.marginLeft', '左') }}</span>
             <input type="number" :value="template.pageMargins[0]" min="0" max="200" class="o-input" style="width: 80px" @input="$emit('update-margin', 0, parseInt(($event.target as HTMLInputElement).value))" />
           </div>
           <div class="margin-input">
-            <span>上</span>
+            <span>{{ t('wms.formEditor.marginTop', '上') }}</span>
             <input type="number" :value="template.pageMargins[1]" min="0" max="200" class="o-input" style="width: 80px" @input="$emit('update-margin', 1, parseInt(($event.target as HTMLInputElement).value))" />
           </div>
           <div class="margin-input">
-            <span>右</span>
+            <span>{{ t('wms.formEditor.marginRight', '右') }}</span>
             <input type="number" :value="template.pageMargins[2]" min="0" max="200" class="o-input" style="width: 80px" @input="$emit('update-margin', 2, parseInt(($event.target as HTMLInputElement).value))" />
           </div>
           <div class="margin-input">
-            <span>下</span>
+            <span>{{ t('wms.formEditor.marginBottom', '下') }}</span>
             <input type="number" :value="template.pageMargins[3]" min="0" max="200" class="o-input" style="width: 80px" @input="$emit('update-margin', 3, parseInt(($event.target as HTMLInputElement).value))" />
           </div>
         </div>
@@ -45,6 +45,9 @@
 
 <script setup lang="ts">
 import type { FormTemplate } from '@/types/formTemplate'
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 
 defineProps<{
   visible: boolean

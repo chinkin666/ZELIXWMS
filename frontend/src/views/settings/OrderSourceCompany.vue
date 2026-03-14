@@ -47,6 +47,7 @@
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import SearchForm from '@/components/search/SearchForm.vue'
@@ -66,6 +67,7 @@ import {
 import type { OrderSourceCompany, OrderSourceCompanyFilters } from '@/types/orderSourceCompany'
 
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const list = ref<OrderSourceCompany[]>([])
 const loading = ref(false)
@@ -178,7 +180,7 @@ const tableColumns: TableColumn[] = [
   }),
   {
     key: 'actions',
-    title: '操作',
+    title: t('wms.common.actions', '操作'),
     width: 200,
     cellRenderer: ({ rowData }: { rowData: OrderSourceCompany }) =>
       h('div', { class: 'action-cell' }, [
@@ -372,57 +374,8 @@ onMounted(() => {
   width: 100%;
 }
 
-.o-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--o-border-color, #dcdfe6);
-  border-radius: var(--o-border-radius, 4px);
-  font-size: var(--o-font-size-base, 14px);
-  cursor: pointer;
-  background: var(--o-view-background, #fff);
-  color: var(--o-gray-700, #303133);
-  transition: 0.2s;
-  white-space: nowrap;
-}
 
-.o-btn-primary {
-  background: var(--o-brand-primary, #714b67);
-  color: #fff;
-  border-color: var(--o-brand-primary, #714b67);
-}
-
-.o-btn-success {
-  background: #67c23a;
-  color: #fff;
-  border-color: #67c23a;
-}
-
-.o-btn-sm {
-  padding: 4px 10px;
-  font-size: 13px;
-}
-
-.o-btn-outline-primary {
-  background: transparent;
-  color: var(--o-brand-primary, #714b67);
-  border-color: var(--o-brand-primary, #714b67);
-}
-
-.o-btn-outline-secondary {
-  background: transparent;
-  color: var(--o-gray-600, #909399);
-  border-color: var(--o-gray-600, #909399);
-}
-
-.o-btn-outline-danger {
-  background: transparent;
-  color: #f56c6c;
-  border-color: #f56c6c;
-}
-
-/* 操作列样式 - 垂直排列 */
+/* 操作列スタイル - 縦並び / 操作列样式 - 垂直排列 */
 :deep(.action-cell) {
   display: flex;
   flex-direction: column;

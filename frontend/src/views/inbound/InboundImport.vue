@@ -1,47 +1,47 @@
 <template>
   <div class="inbound-import">
-    <ControlPanel title="入庫予定CSV取込" :show-search="false">
+    <ControlPanel :title="t('wms.inbound.csvImportTitle', '入庫予定CSV取込')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="$router.push('/inbound/orders')">戻る</OButton>
+        <OButton variant="secondary" size="sm" @click="$router.push('/inbound/orders')">{{ t('wms.inbound.back', '戻る') }}</OButton>
       </template>
     </ControlPanel>
 
     <!-- ステップ1: ファイル選択 -->
     <div class="o-card">
-      <h3 class="card-title">1. CSVファイル選択</h3>
+      <h3 class="card-title">1. {{ t('wms.inbound.csvFileSelect', 'CSVファイル選択') }}</h3>
       <div class="upload-area" @dragover.prevent @drop.prevent="handleDrop">
         <input ref="fileInput" type="file" accept=".csv" style="display:none;" @change="handleFileSelect" />
         <div v-if="!csvFile" class="upload-placeholder" @click="fileInput?.click()">
           <span style="font-size:32px;color:var(--o-gray-400);">+</span>
-          <p>クリックまたはドラッグ＆ドロップでCSVファイルを選択</p>
-          <p class="upload-hint">対応形式: CSV (UTF-8, Shift_JIS)</p>
+          <p>{{ t('wms.inbound.csvDropHint', 'クリックまたはドラッグ＆ドロップでCSVファイルを選択') }}</p>
+          <p class="upload-hint">{{ t('wms.inbound.csvFormatHint', '対応形式: CSV (UTF-8, Shift_JIS)') }}</p>
         </div>
         <div v-else class="upload-selected">
           <span>{{ csvFile.name }} ({{ (csvFile.size / 1024).toFixed(1) }} KB)</span>
-          <OButton variant="secondary" size="sm" @click="resetFile">変更</OButton>
+          <OButton variant="secondary" size="sm" @click="resetFile">{{ t('wms.inbound.change', '変更') }}</OButton>
         </div>
       </div>
       <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
-        <OButton variant="secondary" size="sm" @click="downloadTemplate">テンプレートダウンロード</OButton>
+        <OButton variant="secondary" size="sm" @click="downloadTemplate">{{ t('wms.inbound.downloadTemplate', 'テンプレートダウンロード') }}</OButton>
       </div>
     </div>
 
     <!-- ステップ2: 列マッピング -->
     <div v-if="csvHeaders.length > 0 && !mappingConfirmed" class="o-card">
-      <h3 class="card-title">2. 列マッピング設定</h3>
+      <h3 class="card-title">2. {{ t('wms.inbound.columnMapping', '列マッピング設定') }}</h3>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
-        <label class="filter-label">プリセット:</label>
+        <label class="filter-label">{{ t('wms.inbound.preset', 'プリセット') }}:</label>
         <select v-model="selectedPreset" class="o-input o-input-sm" style="width:200px;" @change="loadPreset">
-          <option value="">自動検出</option>
+          <option value="">{{ t('wms.inbound.autoDetect', '自動検出') }}</option>
           <option v-for="p in savedPresets" :key="p.name" :value="p.name">{{ p.name }}</option>
         </select>
-        <OButton variant="secondary" size="sm" @click="savePreset">現在の設定を保存</OButton>
+        <OButton variant="secondary" size="sm" @click="savePreset">{{ t('wms.inbound.saveCurrentSettings', '現在の設定を保存') }}</OButton>
         <OButton
           v-if="selectedPreset"
           variant="secondary" size="sm"
           style="border-color:#f56c6c;color:#f56c6c;"
           @click="deletePreset"
-        >削除</OButton>
+        >{{ t('wms.common.delete', '削除') }}</OButton>
       </div>
 
       <div class="mapping-grid">
@@ -51,7 +51,7 @@
             <span v-if="field.required" class="required">*</span>
           </div>
           <select v-model="columnMapping[field.key]" class="o-input o-input-sm mapping-select">
-            <option value="">-- 未設定 --</option>
+            <option value="">-- {{ t('wms.inbound.notSet', '未設定') }} --</option>
             <option v-for="(h, idx) in csvHeaders" :key="idx" :value="idx">
               {{ h }} ({{ csvSampleValues[idx] || '' }})
             </option>
@@ -60,31 +60,31 @@
       </div>
 
       <div style="margin-top:12px;display:flex;gap:8px;">
-        <OButton variant="primary" size="sm" @click="applyMapping">マッピングを適用</OButton>
+        <OButton variant="primary" size="sm" @click="applyMapping">{{ t('wms.inbound.applyMapping', 'マッピングを適用') }}</OButton>
       </div>
     </div>
 
     <!-- ステップ3: プレビュー -->
     <div v-if="parsedRows.length > 0 && mappingConfirmed" class="o-card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h3 class="card-title" style="margin:0;">3. データ確認 ({{ parsedRows.length }} 行)</h3>
-        <OButton variant="secondary" size="sm" @click="mappingConfirmed = false">マッピング変更</OButton>
+        <h3 class="card-title" style="margin:0;">3. {{ t('wms.inbound.dataConfirmation', 'データ確認') }} ({{ parsedRows.length }} {{ t('wms.inbound.rows', '行') }})</h3>
+        <OButton variant="secondary" size="sm" @click="mappingConfirmed = false">{{ t('wms.inbound.changeMapping', 'マッピング変更') }}</OButton>
       </div>
       <div class="o-table-wrapper" style="max-height:400px;overflow:auto;">
         <table class="o-table">
           <thead>
             <tr>
               <th class="o-table-th" style="width:40px;">#</th>
-              <th class="o-table-th">商品コード</th>
-              <th class="o-table-th">商品名</th>
-              <th class="o-table-th o-table-th--right">数量</th>
-              <th class="o-table-th">在庫区分</th>
-              <th class="o-table-th">ロット番号</th>
-              <th class="o-table-th">賞味期限</th>
-              <th class="o-table-th">仕入先</th>
-              <th class="o-table-th">注文番号</th>
-              <th class="o-table-th">メモ</th>
-              <th class="o-table-th">状態</th>
+              <th class="o-table-th">{{ t('wms.inbound.productCode', '商品コード') }}</th>
+              <th class="o-table-th">{{ t('wms.inbound.productName', '商品名') }}</th>
+              <th class="o-table-th o-table-th--right">{{ t('wms.inbound.quantity', '数量') }}</th>
+              <th class="o-table-th">{{ t('wms.inbound.stockCategory', '在庫区分') }}</th>
+              <th class="o-table-th">{{ t('wms.inbound.lotNumber', 'ロット番号') }}</th>
+              <th class="o-table-th">{{ t('wms.inbound.expiryDate', '賞味期限') }}</th>
+              <th class="o-table-th">{{ t('wms.inbound.supplier', '仕入先') }}</th>
+              <th class="o-table-th">{{ t('wms.inbound.orderReferenceNumber', '注文番号') }}</th>
+              <th class="o-table-th">{{ t('wms.inbound.memo', 'メモ') }}</th>
+              <th class="o-table-th">{{ t('wms.common.status', '状態') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -93,7 +93,7 @@
               <td class="o-table-td"><span class="sku-text">{{ row.sku }}</span></td>
               <td class="o-table-td">{{ row.productName || '-' }}</td>
               <td class="o-table-td o-table-td--right">{{ row.quantity }}</td>
-              <td class="o-table-td">{{ row.stockCategory === 'damaged' ? '仕損' : '新品' }}</td>
+              <td class="o-table-td">{{ row.stockCategory === 'damaged' ? t('wms.inbound.damaged', '仕損') : t('wms.inbound.new', '新品') }}</td>
               <td class="o-table-td">{{ row.lotNumber || '-' }}</td>
               <td class="o-table-td">{{ row.expiryDate || '-' }}</td>
               <td class="o-table-td">{{ row.supplier || '-' }}</td>
@@ -102,7 +102,7 @@
               <td class="o-table-td">
                 <span v-if="row.error" class="text-danger">{{ row.error }}</span>
                 <span v-else-if="row.matched" class="text-success">OK</span>
-                <span v-else class="text-warning">検証中...</span>
+                <span v-else class="text-warning">{{ t('wms.inbound.validating', '検証中...') }}</span>
               </td>
             </tr>
           </tbody>
@@ -110,30 +110,30 @@
       </div>
 
       <div style="display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap;">
-        <label style="font-size:13px;color:var(--o-gray-600);">入庫先:</label>
+        <label style="font-size:13px;color:var(--o-gray-600);">{{ t('wms.inbound.destination', '入庫先') }}:</label>
         <select v-model="selectedLocationId" class="o-input o-input-sm" style="width:200px;">
-          <option value="">ロケーション選択</option>
+          <option value="">{{ t('wms.inbound.selectLocation', 'ロケーション選択') }}</option>
           <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
             {{ loc.code }} ({{ loc.name }})
           </option>
         </select>
-        <label style="font-size:13px;color:var(--o-gray-600);">入庫予定日:</label>
+        <label style="font-size:13px;color:var(--o-gray-600);">{{ t('wms.inbound.expectedDate', '入庫予定日') }}:</label>
         <input v-model="expectedDate" type="date" class="o-input o-input-sm" style="width:140px;" />
       </div>
     </div>
 
     <!-- ステップ4: 実行 -->
     <div v-if="parsedRows.length > 0 && mappingConfirmed" class="o-card">
-      <h3 class="card-title">4. 入庫指示作成</h3>
+      <h3 class="card-title">4. {{ t('wms.inbound.createInboundOrder', '入庫指示作成') }}</h3>
       <div style="display:flex;gap:8px;align-items:center;">
         <span style="font-size:13px;color:var(--o-gray-600);">
-          有効行: {{ validRows.length }} / {{ parsedRows.length }}
+          {{ t('wms.inbound.validRows', '有効行') }}: {{ validRows.length }} / {{ parsedRows.length }}
         </span>
         <OButton
           variant="primary"
           :disabled="validRows.length === 0 || !selectedLocationId || isCreating"
           @click="handleCreate"
-        >入庫指示を作成 ({{ groupCount }}件)</OButton>
+        >{{ t('wms.inbound.createOrder', '入庫指示を作成') }} ({{ groupCount }}{{ t('wms.inbound.items', '件') }})</OButton>
       </div>
       <p v-if="createResult" class="create-result" :class="{ 'text-success': !createError, 'text-danger': createError }">
         {{ createResult }}
@@ -145,6 +145,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
@@ -174,20 +175,21 @@ interface ColumnPreset {
 
 const STORAGE_KEY = 'zelix_inbound_import_presets'
 
-const systemFields = [
-  { key: 'sku', label: '商品コード (SKU)', required: true },
-  { key: 'productName', label: '商品名', required: false },
-  { key: 'quantity', label: '数量', required: true },
-  { key: 'stockCategory', label: '在庫区分 (new/damaged)', required: false },
-  { key: 'lotNumber', label: 'ロット番号', required: false },
-  { key: 'expiryDate', label: '賞味期限', required: false },
-  { key: 'supplier', label: '仕入先', required: false },
-  { key: 'orderReferenceNumber', label: '注文番号', required: false },
-  { key: 'memo', label: 'メモ', required: false },
-]
-
+const { t } = useI18n()
 const router = useRouter()
 const toast = useToast()
+
+const systemFields = computed(() => [
+  { key: 'sku', label: t('wms.inbound.productCodeSku', '商品コード (SKU)'), required: true },
+  { key: 'productName', label: t('wms.inbound.productName', '商品名'), required: false },
+  { key: 'quantity', label: t('wms.inbound.quantity', '数量'), required: true },
+  { key: 'stockCategory', label: t('wms.inbound.stockCategoryLabel', '在庫区分 (new/damaged)'), required: false },
+  { key: 'lotNumber', label: t('wms.inbound.lotNumber', 'ロット番号'), required: false },
+  { key: 'expiryDate', label: t('wms.inbound.expiryDate', '賞味期限'), required: false },
+  { key: 'supplier', label: t('wms.inbound.supplier', '仕入先'), required: false },
+  { key: 'orderReferenceNumber', label: t('wms.inbound.orderReferenceNumber', '注文番号'), required: false },
+  { key: 'memo', label: t('wms.inbound.memo', 'メモ'), required: false },
+])
 const fileInput = ref<HTMLInputElement | null>(null)
 const csvFile = ref<File | null>(null)
 const csvHeaders = ref<string[]>([])
@@ -251,7 +253,7 @@ const loadPreset = () => {
 }
 
 const savePreset = () => {
-  const name = prompt('プリセット名を入力してください:')
+  const name = prompt(t('wms.inbound.enterPresetName', 'プリセット名を入力してください:'))
   if (!name) return
   const existing = savedPresets.value.findIndex(p => p.name === name)
   const preset: ColumnPreset = { name, mapping: { ...columnMapping } }
@@ -262,12 +264,12 @@ const savePreset = () => {
   }
   persistPresets()
   selectedPreset.value = name
-  toast.showSuccess(`プリセット「${name}」を保存しました`)
+  toast.showSuccess(t('wms.inbound.presetSaved', `プリセット「${name}」を保存しました`))
 }
 
 const deletePreset = () => {
   if (!selectedPreset.value) return
-  if (!confirm(`プリセット「${selectedPreset.value}」を削除しますか？`)) return
+  if (!confirm(t('wms.inbound.confirmDeletePreset', `プリセット「${selectedPreset.value}」を削除しますか？`))) return
   savedPresets.value = savedPresets.value.filter(p => p.name !== selectedPreset.value)
   persistPresets()
   selectedPreset.value = ''
@@ -325,7 +327,7 @@ const processFile = async (file: File) => {
     const text = await readFileAsText(file)
     const lines = text.split(/\r?\n/).filter(l => l.trim())
     if (lines.length < 2) {
-      toast.showError('CSVにデータ行がありません')
+      toast.showError(t('wms.inbound.csvNoDataRows', 'CSVにデータ行がありません'))
       return
     }
 
@@ -346,7 +348,7 @@ const processFile = async (file: File) => {
 
     autoDetectMapping()
   } catch (e: any) {
-    toast.showError('CSVの解析に失敗しました: ' + (e?.message || ''))
+    toast.showError(t('wms.inbound.csvParseFailed', 'CSVの解析に失敗しました') + ': ' + (e?.message || ''))
   }
 }
 
@@ -354,7 +356,7 @@ const readFileAsText = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(new Error('ファイル読み込みエラー'))
+    reader.onerror = () => reject(new Error(t('wms.inbound.fileReadError', 'ファイル読み込みエラー')))
     reader.readAsText(file, 'UTF-8')
   })
 }
@@ -364,7 +366,7 @@ const applyMapping = async () => {
   const skuCol = columnMapping.sku
   const qtyCol = columnMapping.quantity
   if (skuCol === '' || qtyCol === '') {
-    toast.showError('「商品コード」と「数量」は必須です')
+    toast.showError(t('wms.inbound.skuAndQtyRequired', '「商品コード」と「数量」は必須です'))
     return
   }
 
@@ -404,10 +406,8 @@ const applyMapping = async () => {
 
 const validateProducts = async () => {
   try {
-    const { getApiBaseUrl } = await import('@/api/base')
-    const res = await fetch(`${getApiBaseUrl()}/products?limit=10000`)
-    if (!res.ok) throw new Error('商品一覧の取得に失敗')
-    const data = await res.json()
+    const { http } = await import('@/api/http')
+    const data = await http.get<any>('/products', { limit: '10000' })
     const products = (data.products || data.items || data) as Array<{ _id: string; sku: string; name: string }>
     const skuMap = new Map(products.map(p => [p.sku, p]))
 
@@ -418,17 +418,17 @@ const validateProducts = async () => {
         row.productId = product._id
         if (!row.productName) row.productName = product.name
       } else {
-        row.error = '商品が見つかりません'
+        row.error = t('wms.inbound.productNotFound', '商品が見つかりません')
       }
     }
   } catch (e: any) {
-    toast.showError(e?.message || '商品検証に失敗しました')
+    toast.showError(e?.message || t('wms.inbound.productValidationFailed', '商品検証に失敗しました'))
   }
 }
 
 const handleCreate = async () => {
   if (validRows.value.length === 0 || !selectedLocationId.value) return
-  if (!confirm(`${groupCount.value}件の入庫指示を作成しますか？`)) return
+  if (!confirm(t('wms.inbound.confirmCreateOrders', `${groupCount.value}件の入庫指示を作成しますか？`))) return
 
   isCreating.value = true
   createResult.value = ''
@@ -462,11 +462,11 @@ const handleCreate = async () => {
       createdCount++
     }
 
-    createResult.value = `${createdCount}件の入庫指示を作成しました`
+    createResult.value = t('wms.inbound.ordersCreated', `${createdCount}件の入庫指示を作成しました`)
     toast.showSuccess(createResult.value)
     setTimeout(() => router.push('/inbound/orders'), 1500)
   } catch (e: any) {
-    createResult.value = e?.message || '作成に失敗しました'
+    createResult.value = e?.message || t('wms.inbound.createFailed', '作成に失敗しました')
     createError.value = true
     toast.showError(createResult.value)
   } finally {
@@ -505,7 +505,13 @@ onMounted(async () => {
 .inbound-import {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 .o-card {

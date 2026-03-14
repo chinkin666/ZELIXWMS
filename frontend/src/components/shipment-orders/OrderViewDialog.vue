@@ -152,15 +152,7 @@ import { getNestedValue, setNestedValue } from '@/utils/nestedObject'
 import { createProductMap, resolveProductBySku } from '@/utils/productMapUtils'
 import type { Product } from '@/types/product'
 import noImageSrc from '@/assets/images/no_image.png'
-import { getApiBaseUrl } from '@/api/base'
-
-const ORDER_VIEW_API_BASE = getApiBaseUrl().replace(/\/api$/, '')
-
-const resolveImageUrl = (url?: string): string => {
-  if (!url) return noImageSrc
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-  return `${ORDER_VIEW_API_BASE}${url}`
-}
+import { resolveImageUrl } from '@/utils/imageUrl'
 
 const props = defineProps<{
   modelValue: boolean
@@ -195,7 +187,7 @@ const carrierOptions = computed(() => {
 // 商品マスタ（fallback用）
 const productMap = ref<Map<string, Product>>(new Map())
 
-// 获取可编辑的字段定义（只有 formEditable: true 的字段）
+// 編集可能なフィールド定義を取得（formEditable: true のフィールドのみ） / 获取可编辑的字段定义（只有 formEditable: true 的字段）
 const formColumns = computed(() => {
   const allFields = getOrderFieldDefinitions({
     carrierOptions: carrierOptions.value,
@@ -216,13 +208,13 @@ onMounted(() => {
   loadProducts()
 })
 
-// 将订单数据转换为表单数据格式
-// 日期时间字段：从 ISO 8601（可能带 Z）转换为 YYYY-MM-DDTHH:mm:ss.SSS（不带 Z，不进行时区转换）
+// 注文データをフォームデータ形式に変換 / 将订单数据转换为表单数据格式
+// 日時フィールド：ISO 8601（Z付き可能性あり）からYYYY-MM-DDTHH:mm:ss.SSS（Z無し、タイムゾーン変換なし）に変換 / 日期时间字段：从 ISO 8601（可能带 Z）转换为 YYYY-MM-DDTHH:mm:ss.SSS（不带 Z，不进行时区转换）
 const orderData = computed(() => {
   const o: any = props.order || {}
   const result: Record<string, any> = { ...o }
 
-  // 处理日期时间字段：转换为 FormDialog 期望的格式（YYYY-MM-DDTHH:mm:ss.SSS）
+  // 日時フィールドを処理：FormDialogが期待する形式（YYYY-MM-DDTHH:mm:ss.SSS）に変換 / 处理日期时间字段：转换为 FormDialog 期望的格式（YYYY-MM-DDTHH:mm:ss.SSS）
   for (const col of formColumns.value) {
     if (col.fieldType === 'date') {
       const key = col.dataKey || col.key
@@ -230,27 +222,27 @@ const orderData = computed(() => {
 
       const value = result[key]
       if (value && typeof value === 'string') {
-        // 如果已经是 YYYY-MM-DDTHH:mm:ss.SSS 格式（不带 Z），直接使用
+        // すでにYYYY-MM-DDTHH:mm:ss.SSS形式（Z無し）の場合、そのまま使用 / 如果已经是 YYYY-MM-DDTHH:mm:ss.SSS 格式（不带 Z），直接使用
         if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}$/.test(value)) {
-          // 已经是正确格式，直接使用
+          // 正しい形式、そのまま使用 / 已经是正确格式，直接使用
           result[key] = value
         } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
-          // 是 ISO 格式但可能带 Z 或没有毫秒，转换为标准格式
-          // 去掉 Z（如果有），确保有毫秒部分
+          // ISO形式だがZ付きまたはミリ秒無しの可能性あり、標準形式に変換 / 是 ISO 格式但可能带 Z 或没有毫秒，转换为标准格式
+          // Zを除去（あれば）、ミリ秒部分を確保 / 去掉 Z（如果有），确保有毫秒部分
           let normalized = value.replace(/Z$/, '')
           if (!normalized.includes('.')) {
-            // 没有毫秒，添加 .000
+            // ミリ秒なし、.000を追加 / 没有毫秒，添加 .000
             normalized = normalized.replace(/T(\d{2}:\d{2}:\d{2})(.*)$/, 'T$1.000')
           } else if (!/\.\d{3}$/.test(normalized)) {
-            // 有毫秒但格式不对，修正为 .000
+            // ミリ秒はあるが形式が不正、.000に修正 / 有毫秒但格式不对，修正为 .000
             normalized = normalized.replace(/\.\d+$/, '.000')
           }
           result[key] = normalized
         } else {
-          // 其他格式，尝试解析（不进行时区转换，直接使用 UTC 时间）
+          // その他の形式、解析を試行（タイムゾーン変換なし、UTC時間を直接使用） / 其他格式，尝试解析（不进行时区转换，直接使用 UTC 时间）
           const date = new Date(value)
           if (!isNaN(date.getTime())) {
-            // 使用 UTC 时间组件构建字符串（不进行时区转换）
+            // UTCタイムコンポーネントで文字列を構築（タイムゾーン変換なし） / 使用 UTC 时间组件构建字符串（不进行时区转换）
             const year = date.getUTCFullYear()
             const month = String(date.getUTCMonth() + 1).padStart(2, '0')
             const day = String(date.getUTCDate()).padStart(2, '0')
@@ -268,7 +260,7 @@ const orderData = computed(() => {
   return result
 })
 
-// 处理表单提交
+// フォーム送信を処理 / 处理表单提交
 const handleFormSubmit = async (data: Record<string, any>) => {
   if (!props.order?._id) {
     alert('注文が見つかりません')
@@ -276,45 +268,45 @@ const handleFormSubmit = async (data: Record<string, any>) => {
   }
 
   try {
-    // 只发送要修改的字段到后端（不包含 _id，_id 由 URL 参数提供）
-    // 后端会进行数据类型验证
+    // 変更するフィールドのみバックエンドに送信（_idは含まない、_idはURLパラメータで提供） / 只发送要修改的字段到后端（不包含 _id，_id 由 URL 参数提供）
+    // バックエンドでデータ型の検証を行う / 后端会进行数据类型验证
     const updateData: Record<string, any> = {}
     for (const col of formColumns.value) {
       const key = col.dataKey || col.key
       if (!key) continue
 
-      // 使用 getNestedValue 获取嵌套字段的值（如 recipient.name）
+      // getNestedValueでネストされたフィールドの値を取得（例: recipient.name） / 使用 getNestedValue 获取嵌套字段的值（如 recipient.name）
       const value = getNestedValue(data, key)
 
-      // 跳过 undefined 和 null
+      // undefinedとnullをスキップ / 跳过 undefined 和 null
       if (value === undefined || value === null) continue
 
-      // 处理空字符串：对于可选字段，空字符串转换为 undefined
+      // 空文字列の処理：オプションフィールドの場合、空文字列をundefinedに変換 / 处理空字符串：对于可选字段，空字符串转换为 undefined
       if (typeof value === 'string' && value.trim() === '') {
-        // 对于必填字段，保留空字符串（让后端验证）
-        // 对于可选字段，跳过
+        // 必須フィールドの場合、空文字列を保持（バックエンドで検証） / 对于必填字段，保留空字符串（让后端验证）
+        // オプションフィールドの場合、スキップ / 对于可选字段，跳过
         if (col.required) {
           setNestedValue(updateData, key, value)
         }
         continue
       }
 
-      // 处理数组：空数组转换为 undefined（对于可选字段）
+      // 配列の処理：空配列をundefinedに変換（オプションフィールドの場合） / 处理数组：空数组转换为 undefined（对于可选字段）
       if (Array.isArray(value) && value.length === 0 && !col.required) {
         continue
       }
 
-      // 处理日期时间字段：FormDialog 返回 YYYY-MM-DDTHH:mm:ss.SSS 格式（不带 Z）
-      // 转换为 ISO 8601 UTC 格式（添加 Z），不进行时区转换
+      // 日時フィールドの処理：FormDialogはYYYY-MM-DDTHH:mm:ss.SSS形式（Z無し）を返す / 处理日期时间字段：FormDialog 返回 YYYY-MM-DDTHH:mm:ss.SSS 格式（不带 Z）
+      // ISO 8601 UTC形式に変換（Zを追加）、タイムゾーン変換なし / 转换为 ISO 8601 UTC 格式（添加 Z），不进行时区转换
       if (col.fieldType === 'date' && value) {
         if (typeof value === 'string') {
-          // FormDialog 返回的是 YYYY-MM-DDTHH:mm:ss.SSS（不带 Z，表示 UTC 时间）
-          // 添加 Z 转换为 ISO 8601 UTC 格式
+          // FormDialogが返すのはYYYY-MM-DDTHH:mm:ss.SSS（Z無し、UTC時間を表す） / FormDialog 返回的是 YYYY-MM-DDTHH:mm:ss.SSS（不带 Z，表示 UTC 时间）
+          // Zを追加してISO 8601 UTC形式に変換 / 添加 Z 转换为 ISO 8601 UTC 格式
           if (value.endsWith('Z')) {
-            // 已经有 Z，直接使用
+            // すでにZあり、そのまま使用 / 已经有 Z，直接使用
             setNestedValue(updateData, key, value)
           } else {
-            // 添加 Z 表示 UTC 时间（不进行时区转换）
+            // Zを追加してUTC時間を示す（タイムゾーン変換なし） / 添加 Z 表示 UTC 时间（不进行时区转换）
             setNestedValue(updateData, key, value + 'Z')
           }
         } else {
@@ -323,14 +315,14 @@ const handleFormSubmit = async (data: Record<string, any>) => {
         continue
       }
 
-      // 处理日期（仅日期）：确保格式为 YYYY/MM/DD
+      // 日付（日付のみ）の処理：形式がYYYY/MM/DDであることを確保 / 处理日期（仅日期）：确保格式为 YYYY/MM/DD
       if (col.fieldType === 'dateOnly' && value) {
         if (typeof value === 'string') {
-          // 如果已经是 YYYY/MM/DD 或 YYYY-MM-DD 格式，直接使用
+          // すでにYYYY/MM/DDまたはYYYY-MM-DD形式の場合、そのまま使用 / 如果已经是 YYYY/MM/DD 或 YYYY-MM-DD 格式，直接使用
           if (/^\d{4}[-\/]\d{2}[-\/]\d{2}$/.test(value)) {
             setNestedValue(updateData, key, value.replace(/-/g, '/'))
           } else {
-            // 尝试从其他格式转换
+            // 他の形式からの変換を試行 / 尝试从其他格式转换
             const date = new Date(value)
             if (!isNaN(date.getTime())) {
               const year = date.getFullYear()
@@ -347,7 +339,7 @@ const handleFormSubmit = async (data: Record<string, any>) => {
         continue
       }
 
-      // 其他字段直接使用
+      // その他のフィールドはそのまま使用 / 其他字段直接使用
       setNestedValue(updateData, key, value)
     }
 
@@ -356,7 +348,7 @@ const handleFormSubmit = async (data: Record<string, any>) => {
     emit('updated', result.data?.order || props.order)
     visible.value = false
   } catch (error: any) {
-    // 显示更详细的错误信息
+    // より詳細なエラー情報を表示 / 显示更详细的错误信息
     const errorMessage = error?.message || '出荷予定の更新に失敗しました'
     const errorDetails = error?.errors ? `\n詳細: ${JSON.stringify(error.errors, null, 2)}` : ''
     alert(errorMessage + errorDetails)
@@ -444,7 +436,7 @@ const productsTable = computed(() => {
   const pMap = productMap.value
   return items.map((p: any) => {
     const sku = p?.productSku || p?.inputSku || ''
-    // fallback: 商品マスタから検索
+    // fallback: 商品マスタから検索 / fallback: 从商品主数据中检索
     const resolved = sku && pMap.size > 0 ? resolveProductBySku(sku, pMap) : null
     const masterProduct = resolved?.product ?? null
     return {
@@ -460,7 +452,7 @@ const productsTable = computed(() => {
 const internalRecords = computed(() => {
   const o: any = props.order || {}
   const records = Array.isArray(o.internalRecord) ? o.internalRecord : []
-  // 按时间倒序排列（最新的在前）
+  // 時間の降順で並べ替え（最新が先頭） / 按时间倒序排列（最新的在前）
   return [...records].sort((a, b) => {
     const timeA = new Date(a.timestamp).getTime()
     const timeB = new Date(b.timestamp).getTime()

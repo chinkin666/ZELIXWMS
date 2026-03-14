@@ -1,16 +1,16 @@
 <template>
   <div class="inventory-adjustments">
-    <ControlPanel title="在庫調整" :show-search="false" />
+    <ControlPanel :title="t('wms.inventory.adjustments', '在庫調整')" :show-search="false" />
 
     <div class="adjust-form o-card">
-      <h3 class="form-title">在庫調整（棚卸し）</h3>
-      <p class="form-desc">商品の在庫数量を手動で調整します。正の値で増加、負の値で減少します。</p>
+      <h3 class="form-title">{{ t('wms.inventory.adjustmentStocktaking', '在庫調整（棚卸し）') }}</h3>
+      <p class="form-desc">{{ t('wms.inventory.adjustmentDesc', '商品の在庫数量を手動で調整します。正の値で増加、負の値で減少します。') }}</p>
 
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">商品 <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inventory.product', '商品') }} <span class="required">*</span></label>
           <select v-model="form.productId" class="o-input" @change="handleProductChange">
-            <option value="">商品を選択...</option>
+            <option value="">{{ t('wms.inventory.selectProduct', '商品を選択...') }}</option>
             <option v-for="p in products" :key="p._id" :value="p._id">
               {{ p.sku }} - {{ p.name }}
             </option>
@@ -18,9 +18,9 @@
         </div>
 
         <div class="form-field">
-          <label class="form-label">ロケーション <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.inventory.location', 'ロケーション') }} <span class="required">*</span></label>
           <select v-model="form.locationId" class="o-input">
-            <option value="">ロケーションを選択...</option>
+            <option value="">{{ t('wms.inventory.selectLocation', 'ロケーションを選択...') }}</option>
             <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
               {{ loc.code }} ({{ loc.name }})
             </option>
@@ -28,14 +28,14 @@
         </div>
 
         <div class="form-field">
-          <label class="form-label">調整数量 <span class="required">*</span></label>
-          <input v-model.number="form.adjustQuantity" type="number" class="o-input" placeholder="例: +10 or -5" />
-          <span class="form-hint">正: 在庫増加 / 負: 在庫減少</span>
+          <label class="form-label">{{ t('wms.inventory.adjustQuantity', '調整数量') }} <span class="required">*</span></label>
+          <input v-model.number="form.adjustQuantity" type="number" class="o-input" :placeholder="t('wms.inventory.adjustQuantityPlaceholder', '例: +10 or -5')" />
+          <span class="form-hint">{{ t('wms.inventory.adjustQuantityHint', '正: 在庫増加 / 負: 在庫減少') }}</span>
         </div>
 
         <div class="form-field">
-          <label class="form-label">メモ</label>
-          <input v-model="form.memo" type="text" class="o-input" placeholder="調整理由..." />
+          <label class="form-label">{{ t('wms.inventory.memo', 'メモ') }}</label>
+          <input v-model="form.memo" type="text" class="o-input" :placeholder="t('wms.inventory.adjustReasonPlaceholder', '調整理由...')" />
         </div>
       </div>
 
@@ -45,70 +45,50 @@
           :disabled="!canSubmit || isSubmitting"
           @click="handleSubmit"
         >
-          {{ isSubmitting ? '処理中...' : '在庫を調整' }}
+          {{ isSubmitting ? t('wms.inventory.processing', '処理中...') : t('wms.inventory.adjustStock', '在庫を調整') }}
         </OButton>
       </div>
     </div>
 
     <!-- 調整履歴 -->
     <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
-      最近の調整履歴
-      <OButton variant="secondary" size="sm" @click="exportAdjustmentCsv">CSV出力</OButton>
+      {{ t('wms.inventory.recentAdjustmentHistory', '最近の調整履歴') }}
+      <OButton variant="secondary" size="sm" @click="exportAdjustmentCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</OButton>
     </div>
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width:160px;">移動番号</th>
-            <th class="o-table-th" style="width:120px;">SKU</th>
-            <th class="o-table-th" style="width:160px;">商品名</th>
-            <th class="o-table-th o-table-th--right" style="width:80px;">数量</th>
-            <th class="o-table-th" style="width:160px;">ロケーション</th>
-            <th class="o-table-th" style="width:140px;">実行日時</th>
-            <th class="o-table-th" style="width:200px;">メモ</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoadingHistory">
-            <td colspan="7" class="o-table-empty">読み込み中...</td>
-          </tr>
-          <tr v-else-if="historyRows.length === 0">
-            <td colspan="7" class="o-table-empty">調整履歴がありません</td>
-          </tr>
-          <tr v-for="row in historyRows" :key="row._id" class="o-table-row">
-            <td class="o-table-td"><span class="move-number">{{ row.moveNumber }}</span></td>
-            <td class="o-table-td">{{ row.productSku }}</td>
-            <td class="o-table-td">{{ row.productName || '-' }}</td>
-            <td class="o-table-td o-table-td--right">
-              <span :class="isIncrease(row) ? 'text-success' : 'text-danger'">
-                {{ isIncrease(row) ? '+' : '-' }}{{ row.quantity }}
-              </span>
-            </td>
-            <td class="o-table-td">
-              <span class="location-badge">{{ isIncrease(row) ? row.toLocation?.code : row.fromLocation?.code }}</span>
-            </td>
-            <td class="o-table-td">{{ row.executedAt ? formatDateTime(row.executedAt) : '-' }}</td>
-            <td class="o-table-td">{{ row.memo || '-' }}</td>
-          </tr>
-        </tbody>
-      </table>
+
+    <div class="table-section">
+      <Table
+        :columns="historyTableColumns"
+        :data="historyRows"
+        :height="400"
+        row-key="_id"
+        highlight-columns-on-hover
+        pagination-enabled
+        pagination-mode="client"
+        :page-size="20"
+        :page-sizes="[20, 50]"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import Table from '@/components/table/Table.vue'
 import { adjustStock, fetchMovements } from '@/api/inventory'
 import { fetchLocations } from '@/api/location'
 import { fetchProducts } from '@/api/product'
 import type { Product } from '@/types/product'
 import type { Location } from '@/types/inventory'
 import type { StockMove } from '@/types/inventory'
+import type { TableColumn } from '@/types/table'
 
 const toast = useToast()
+const { t } = useI18n()
 
 const products = ref<Product[]>([])
 const locations = ref<Location[]>([])
@@ -134,9 +114,51 @@ const canSubmit = computed(() =>
 const handleProductChange = () => {
   const product = products.value.find(p => p._id === form.value.productId)
   if (product && !form.value.locationId) {
-    // 默认选择产品的 defaultLocationId (如果前端有此字段的话)
+    // default location selection if available
   }
 }
+
+const isIncrease = (row: StockMove) => {
+  return row.toLocation?.code && !row.toLocation.code.startsWith('VIRTUAL/')
+}
+
+const formatDateTime = (d: string) => {
+  if (!d) return '-'
+  return new Date(d).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
+const historyTableColumns = computed<TableColumn[]>(() => [
+  {
+    key: 'moveNumber', dataKey: 'moveNumber', title: t('wms.inventory.moveNumber', '移動番号'), width: 160, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockMove }) => h('span', { class: 'move-number' }, rowData.moveNumber),
+  },
+  { key: 'productSku', dataKey: 'productSku', title: 'SKU', width: 120, fieldType: 'string' },
+  {
+    key: 'productName', dataKey: 'productName', title: t('wms.inventory.productName', '商品名'), width: 160, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockMove }) => rowData.productName || '-',
+  },
+  {
+    key: 'quantity', dataKey: 'quantity', title: t('wms.inventory.quantity', '数量'), width: 80, fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: StockMove }) => {
+      const inc = isIncrease(rowData)
+      return h('span', { class: inc ? 'text-success' : 'text-danger' },
+        `${inc ? '+' : '-'}${rowData.quantity}`)
+    },
+  },
+  {
+    key: 'location', title: t('wms.inventory.location', 'ロケーション'), width: 160, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockMove }) =>
+      h('span', { class: 'location-badge' }, isIncrease(rowData) ? rowData.toLocation?.code : rowData.fromLocation?.code),
+  },
+  {
+    key: 'executedAt', title: t('wms.inventory.executedAt', '実行日時'), width: 140, fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: StockMove }) => rowData.executedAt ? formatDateTime(rowData.executedAt) : '-',
+  },
+  {
+    key: 'memo', dataKey: 'memo', title: t('wms.inventory.memo', 'メモ'), width: 200, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockMove }) => rowData.memo || '-',
+  },
+])
 
 const handleSubmit = async () => {
   if (!canSubmit.value) return
@@ -153,19 +175,10 @@ const handleSubmit = async () => {
     form.value.memo = ''
     await loadHistory()
   } catch (e: any) {
-    toast.showError(e?.message || '在庫調整に失敗しました')
+    toast.showError(e?.message || t('wms.inventory.adjustmentFailed', '在庫調整に失敗しました'))
   } finally {
     isSubmitting.value = false
   }
-}
-
-const isIncrease = (row: StockMove) => {
-  return row.toLocation?.code && !row.toLocation.code.startsWith('VIRTUAL/')
-}
-
-const formatDateTime = (d: string) => {
-  if (!d) return '-'
-  return new Date(d).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
 const loadHistory = async () => {
@@ -174,14 +187,24 @@ const loadHistory = async () => {
     const res = await fetchMovements({ moveType: 'adjustment', limit: 20 })
     historyRows.value = res.items
   } catch (e: any) {
-    toast.showError('調整履歴の取得に失敗しました')
+    toast.showError(t('wms.inventory.adjustmentHistoryFetchFailed', '調整履歴の取得に失敗しました'))
   } finally {
     isLoadingHistory.value = false
   }
 }
 
 const exportAdjustmentCsv = () => {
-  const csvRows: string[] = ['移動番号,SKU,商品名,数量,ロケーション,実行日時,メモ']
+  const csvRows: string[] = [
+    [
+      t('wms.inventory.moveNumber', '移動番号'),
+      'SKU',
+      t('wms.inventory.productName', '商品名'),
+      t('wms.inventory.quantity', '数量'),
+      t('wms.inventory.location', 'ロケーション'),
+      t('wms.inventory.executedAt', '実行日時'),
+      t('wms.inventory.memo', 'メモ'),
+    ].join(','),
+  ]
   for (const r of historyRows.value) {
     const inc = isIncrease(r)
     csvRows.push([
@@ -213,21 +236,27 @@ onMounted(async () => {
     products.value = prods
     locations.value = locs
   } catch (e: any) {
-    toast.showError('マスタデータの取得に失敗しました')
+    toast.showError(t('wms.inventory.masterDataFetchFailed', 'マスタデータの取得に失敗しました'))
   }
   await loadHistory()
 })
 </script>
 
-<style>
-@import '@/styles/order-table.css';
-</style>
-
 <style scoped>
 .inventory-adjustments {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  padding: 0 20px 20px;
+  gap: 16px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
+}
+
+.table-section {
+  width: 100%;
 }
 
 .o-card {
@@ -235,7 +264,6 @@ onMounted(async () => {
   border: 1px solid var(--o-border-color, #e4e7ed);
   border-radius: var(--o-border-radius, 8px);
   padding: 1.5rem;
-  margin-bottom: 1.5rem;
 }
 
 .form-title {
@@ -285,7 +313,6 @@ onMounted(async () => {
   font-size: 16px;
   font-weight: 600;
   color: var(--o-gray-700, #303133);
-  margin-bottom: 12px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--o-border-color, #e4e7ed);
 }
@@ -316,8 +343,6 @@ onMounted(async () => {
 
 .text-success { color: #67c23a; font-weight: 600; }
 .text-danger { color: #f56c6c; font-weight: 600; }
-.o-table-td--right { text-align: right; }
-.o-table-th--right { text-align: right; }
 
 @media (max-width: 768px) {
   .form-grid { grid-template-columns: 1fr; }

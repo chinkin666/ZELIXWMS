@@ -6,7 +6,7 @@
     @close="handleClose"
   >
     <div class="import-dialog-content">
-      <!-- 上半部分：文件上传 -->
+      <!-- 上部：ファイルアップロード / 上半部分：文件上传 -->
       <div class="upload-section">
         <h3>ファイルをアップロード</h3>
         <div
@@ -37,7 +37,7 @@
         <div v-if="fileName" class="file-info">
           <span style="color: var(--o-success, #28a745)">選択中: {{ fileName }}</span>
         </div>
-        <!-- 编码选择（仅 CSV 文件时显示） -->
+        <!-- エンコーディング選択（CSVファイルのみ表示） / 编码选择（仅 CSV 文件时显示） -->
         <div v-if="isCsvFile" class="encoding-section">
           <div class="o-form-group" style="margin-top: 12px; margin-bottom: 0">
             <label class="o-form-label">文字コード</label>
@@ -57,7 +57,7 @@
         </div>
       </div>
 
-      <!-- 下半部分：Mapping Config 选择 -->
+      <!-- 下部：マッピング設定選択 / 下半部分：Mapping Config 选择 -->
       <div class="mapping-section">
         <h3>レイアウトを選択</h3>
         <select
@@ -79,7 +79,7 @@
         </div>
       </div>
 
-      <!-- 重複処理オプション -->
+      <!-- 重複処理オプション / 重复处理选项 -->
       <div v-if="props.showDuplicateStrategy" class="duplicate-strategy-section">
         <h3>重複処理</h3>
         <div class="strategy-radio-group">
@@ -101,7 +101,7 @@
         </div>
       </div>
 
-      <!-- 预览区域 -->
+      <!-- プレビューエリア / 预览区域 -->
       <div v-if="previewRows.length > 0" class="preview-section">
         <h3>プレビュー（最初の5行）</h3>
         <div style="max-height: 200px; overflow: auto; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px">
@@ -150,10 +150,10 @@ import { normalizeDateOnly } from '@/utils/dateNormalize'
 import { getNestedValue } from '@/utils/nestedObject'
 
 /**
- * 从 mapped row 中获取值，支持嵌套键和扁平键两种格式
- * 例如：getRowValue(row, 'orderer.postalCode') 会尝试：
- * 1. row.orderer?.postalCode（嵌套结构）
- * 2. row['orderer.postalCode']（扁平键）
+ * マッピング済み行から値を取得、ネストキーとフラットキーの両形式対応 / 从 mapped row 中获取值，支持嵌套键和扁平键两种格式
+ * 例: getRowValue(row, 'orderer.postalCode') は以下を試行 / 例如：getRowValue(row, 'orderer.postalCode') 会尝试：
+ * 1. row.orderer?.postalCode（ネスト構造 / 嵌套结构）
+ * 2. row['orderer.postalCode']（フラットキー / 扁平键）
  */
 function getRowValue(row: Record<string, any>, path: string, defaultValue: any = ''): any {
   const val = getNestedValue(row, path)
@@ -161,8 +161,8 @@ function getRowValue(row: Record<string, any>, path: string, defaultValue: any =
 }
 
 /**
- * 将嵌套对象平铺为扁平键格式，用于预览显示
- * 例如: { recipient: { postalCode: '123' } } => { 'recipient.postalCode': '123' }
+ * ネストオブジェクトをフラットキー形式に展開（プレビュー表示用） / 将嵌套对象平铺为扁平键格式，用于预览显示
+ * 例: { recipient: { postalCode: '123' } } => { 'recipient.postalCode': '123' }
  */
 function flattenForPreview(obj: Record<string, any>, prefix = ''): Record<string, any> {
   const result: Record<string, any> = {}
@@ -265,19 +265,19 @@ const processFile = (file: File) => {
   selectedFile.value = file
   fileName.value = file.name
 
-  // 如果已选择 mapping config，立即解析预览
+  // マッピング設定選択済みなら即座にプレビュー解析 / 如果已选择 mapping config，立即解析预览
   if (selectedConfigId.value) {
     parseAndPreview()
   }
 }
 
-// 加载 mapping configs
+// マッピング設定読み込み / 加载 mapping configs
 const loadMappingConfigs = async () => {
   loadingConfigs.value = true
   try {
     const configs = await getAllMappingConfigs(props.configType || 'ec-company-to-order')
     mappingConfigs.value = configs
-    // 如果有默认配置，自动选择
+    // デフォルト設定があれば自動選択 / 如果有默认配置，自动选择
     const defaultConfig = configs.find((c) => c.isDefault)
     if (defaultConfig) {
       selectedConfigId.value = defaultConfig._id
@@ -290,14 +290,14 @@ const loadMappingConfigs = async () => {
   }
 }
 
-// 监听 mapping config 变化，重新解析
+// マッピング設定変更を監視、再解析 / 监听 mapping config 变化，重新解析
 watch(selectedConfigId, () => {
   if (selectedFile.value && selectedConfigId.value) {
     parseAndPreview()
   }
 })
 
-// 解析文件并预览
+// ファイル解析とプレビュー / 解析文件并预览
 const parseAndPreview = async () => {
   if (!selectedFile.value || !selectedConfig.value) {
     return
@@ -323,7 +323,7 @@ const parseAndPreview = async () => {
   }
 }
 
-// 解析文件
+// ファイル解析 / 解析文件
 const parseFile = async (file: File): Promise<Record<string, any>[]> => {
   const isExcel = file.type.includes('sheet') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')
 
@@ -334,21 +334,21 @@ const parseFile = async (file: File): Promise<Record<string, any>[]> => {
   }
 }
 
-// 解析 Excel 文件
+// Excelファイル解析 / 解析 Excel 文件
 const parseExcelFile = async (file: File): Promise<Record<string, any>[]> => {
   const buf = await file.arrayBuffer()
   const wb = XLSX.read(buf, { type: 'array' })
   return parseSheetToRows(wb)
 }
 
-// 编码检测函数（与 wizard 保持一致）
+// エンコーディング検出関数（wizardと同一） / 编码检测函数（与 wizard 保持一致）
 const detectCsvEncoding = (buf: ArrayBuffer): 'utf-8' | 'utf-8-sig' | 'shift_jis' | 'gbk' => {
   const bytes = new Uint8Array(buf)
-  // 检测 BOM
+  // BOM検出 / 检测 BOM
   if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
     return 'utf-8-sig'
   }
-  // 尝试解码并评分
+  // デコード試行とスコアリング / 尝试解码并评分
   const decodeWithEnc = (buf: ArrayBuffer, enc: string): string => {
     try {
       const decoder = new TextDecoder(enc as any, { fatal: false })
@@ -374,7 +374,7 @@ const detectCsvEncoding = (buf: ArrayBuffer): 'utf-8' | 'utf-8-sig' | 'shift_jis
   return best?.enc ?? 'utf-8'
 }
 
-// 解码函数（与 wizard 保持一致）
+// デコード関数（wizardと同一） / 解码函数（与 wizard 保持一致）
 const decodeWithEncoding = (buf: ArrayBuffer, enc: string): string => {
   try {
     const decoder = new TextDecoder(enc === 'gbk' ? 'gb18030' : (enc as any), { fatal: false })
@@ -384,19 +384,19 @@ const decodeWithEncoding = (buf: ArrayBuffer, enc: string): string => {
   }
 }
 
-// 解析 CSV 文件（使用与 wizard 相同的方法）
+// CSVファイル解析（wizardと同じ方法） / 解析 CSV 文件（使用与 wizard 相同的方法）
 const parseCsvFile = async (file: File): Promise<Record<string, any>[]> => {
   try {
     const buf = await file.arrayBuffer()
-    // 使用用户选择的编码，如果是 'auto' 则自动检测
+    // ユーザー選択のエンコーディング使用、'auto'の場合は自動検出 / 使用用户选择的编码，如果是 'auto' 则自动检测
     const encoding = fileEncoding.value === 'auto' ? detectCsvEncoding(buf) : fileEncoding.value
-    // 解码为文本
+    // テキストにデコード / 解码为文本
     let text = decodeWithEncoding(buf, encoding)
-    // 移除 BOM（如果有）
+    // BOM除去（存在する場合） / 移除 BOM（如果有）
     if (encoding === 'utf-8-sig' && text.charCodeAt(0) === 0xfeff) {
       text = text.slice(1)
     }
-    // 使用 XLSX 解析 CSV 文本
+    // XLSXでCSVテキストを解析 / 使用 XLSX 解析 CSV 文本
     const wb = XLSX.read(text, { type: 'string' })
     return parseSheetToRows(wb)
   } catch (error) {
@@ -406,15 +406,15 @@ const parseCsvFile = async (file: File): Promise<Record<string, any>[]> => {
   }
 }
 
-// 编码变化处理
+// エンコーディング変更処理 / 编码变化处理
 const handleEncodingChange = () => {
-  // 如果已选择文件且是 CSV，重新解析预览
+  // ファイル選択済みかつCSVの場合、プレビュー再解析 / 如果已选择文件且是 CSV，重新解析预览
   if (selectedFile.value && isCsvFile.value && selectedConfigId.value) {
     parseAndPreview()
   }
 }
 
-// 辅助函数：将 XLSX sheet 转换为行数组
+// ヘルパー関数：XLSXシートを行配列に変換 / 辅助函数：将 XLSX sheet 转换为行数组
 // NOTE: some xlsx typings don't expose WorkBook type consistently; keep it permissive here.
 // 使用原始显示值（cell.w），避免 XLSX 自动格式化日期，纯粹根据 transform 配置来转换
 const parseSheetToRows = (wb: any): Record<string, any>[] => {
@@ -424,34 +424,34 @@ const parseSheetToRows = (wb: any): Record<string, any>[] => {
 
   const sheet = wb.Sheets[wb.SheetNames[0]]
 
-  // 手动读取单元格，使用原始显示值（cell.w），避免 XLSX 自动格式化日期
-  // 这样保持 Excel/CSV 中实际显示的值，不进行任何转换，纯粹根据 transform 配置来转换
+  // セルを手動読取り、元の表示値（cell.w）を使用、XLSXの日付自動変換を回避 / 手动读取单元格，使用原始显示值（cell.w），避免 XLSX 自动格式化日期
+  // Excel/CSV内の実際の表示値を維持、変換はtransform設定に委譲 / 这样保持 Excel/CSV 中实际显示的值，不进行任何转换，纯粹根据 transform 配置来转换
   const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1')
   const headers: string[] = []
   const rows: Record<string, any>[] = []
 
-  // 读取表头（第一行）
+  // ヘッダー読取り（第一行） / 读取表头（第一行）
   for (let col = range.s.c; col <= range.e.c; col++) {
     const cellAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col })
     const cell = sheet[cellAddress]
-    // 使用 cell.w（显示值）如果存在，否则使用原始值转换为字符串
+    // cell.w（表示値）があればそれを使用、なければ元の値を文字列化 / 使用 cell.w（显示值）如果存在，否则使用原始值转换为字符串
     const value = cell?.w != null ? String(cell.w) : (cell?.v != null ? String(cell.v) : '')
     headers.push(value.trim())
   }
 
-  // 过滤空表头
+  // 空ヘッダーをフィルタ / 过滤空表头
   const validHeaders = headers.filter((h) => h)
   if (validHeaders.length === 0) return []
 
-  // 读取数据行（从第二行开始）
+  // データ行読取り（第二行から） / 读取数据行（从第二行开始）
   for (let row = range.s.r + 1; row <= range.e.r; row++) {
     const obj: Record<string, any> = {}
     validHeaders.forEach((header, colIndex) => {
       const col = range.s.c + colIndex
       const cellAddress = XLSX.utils.encode_cell({ r: row, c: col })
       const cell = sheet[cellAddress]
-      // 使用 cell.w（显示值）如果存在，否则使用原始值转换为字符串
-      // 这样保持 Excel/CSV 中实际显示的值，不进行任何转换
+      // cell.w（表示値）があればそれを使用、なければ元の値を文字列化 / 使用 cell.w（显示值）如果存在，否则使用原始值转换为字符串
+      // Excel/CSV内の実際の表示値を維持、変換なし / 这样保持 Excel/CSV 中实际显示的值，不进行任何转换
       const value = cell?.w != null ? String(cell.w) : (cell?.v != null ? String(cell.v) : '')
       obj[header] = value
     })
@@ -468,7 +468,7 @@ const parseSheetToRows = (wb: any): Record<string, any>[] => {
   return rows
 }
 
-// 导入处理
+// インポート処理 / 导入处理
 const handleImport = async () => {
   if (!selectedFile.value || !selectedConfig.value) {
     return
@@ -484,7 +484,7 @@ const handleImport = async () => {
     const mappedRows = []
       for (const row of rows) {
         const mapped = await applyTransformMappings(transformMappings, row)
-        // 从 mapping-config 中读取 ecCompanyId（如果是 ec-company-to-order 类型）
+        // mapping-configからecCompanyIdを読取り（ec-company-to-order型の場合） / 从 mapping-config 中读取 ecCompanyId（如果是 ec-company-to-order 类型）
         if (config.configType === 'ec-company-to-order' && (config as any).ecCompanyId) {
           mapped.ecCompanyId = (config as any).ecCompanyId
         }
@@ -500,13 +500,13 @@ const handleImport = async () => {
       return
     }
 
-    // 辅助函数：解析 handlingTags（支持字符串和数组格式）
+    // ヘルパー関数：handlingTags解析（文字列・配列形式対応） / 辅助函数：解析 handlingTags（支持字符串和数组格式）
     const parseHandlingTags = (value: any): string[] => {
       if (Array.isArray(value)) {
         return value.filter((tag) => tag && typeof tag === 'string' && tag.trim())
       }
       if (typeof value === 'string' && value.trim()) {
-        // 支持逗号、分号、空格分隔的字符串
+        // カンマ・セミコロン・スペース区切りの文字列に対応 / 支持逗号、分号、空格分隔的字符串
         return value
           .split(/[,;，；\s]+/)
           .map((tag) => tag.trim())
@@ -515,11 +515,11 @@ const handleImport = async () => {
       return []
     }
 
-    // 转换为 UserOrderRow 格式（默认行为）
+    // UserOrderRow形式に変換（デフォルト動作） / 转换为 UserOrderRow 格式（默认行为）
     const now = new Date().toISOString()
     const importedRows = mappedRows.map((row, idx) => {
       const sourceRow = rows[idx] || {}
-      // 处理 products：使用 getRowValue 支持嵌套结构（setNestedValue 创建的是 { products: { '0': { sku: ... } } }）
+      // products処理：getRowValueでネスト構造に対応 / 处理 products：使用 getRowValue 支持嵌套结构（setNestedValue 创建的是 { products: { '0': { sku: ... } } }）
       let products: { sku: string; quantity: number; name: string }[] = []
       const productSku = getRowValue(row, 'products.0.sku', undefined)
       const productQty = getRowValue(row, 'products.0.quantity', undefined)
@@ -527,7 +527,7 @@ const handleImport = async () => {
       const productBarcode = getRowValue(row, 'products.0.barcode', undefined)
 
       if (productSku !== undefined || productQty !== undefined) {
-        // 从 products.0.sku、products.0.quantity、products.0.name 和 products.0.barcode 构建 products 数组
+        // products.0.sku、products.0.quantity、products.0.name、products.0.barcodeからproducts配列を構築 / 从 products.0.sku、products.0.quantity、products.0.name 和 products.0.barcode 构建 products 数组
         products = [{
           sku: productSku || '',
           quantity: productQty ? Number(productQty) : 1,
@@ -535,7 +535,7 @@ const handleImport = async () => {
           ...(productBarcode ? { barcode: [String(productBarcode)] } : {}),
         }]
       } else if (Array.isArray(row.products) && row.products.length > 0) {
-        // 如果已经是 products 数组格式，直接使用
+        // 既にproducts配列形式の場合、そのまま使用 / 如果已经是 products 数组格式，直接使用
         products = row.products.map((p: any) => ({
           sku: p.sku || '',
           quantity: p.quantity ? Number(p.quantity) : 1,
@@ -601,7 +601,7 @@ const handleImport = async () => {
           name: getRowValue(row, 'sender.name'),
           phone: getRowValue(row, 'sender.phone'),
         },
-        // 配送業者固有データ（嵌套结构）
+        // 配送業者固有データ（ネスト構造） / 配送業者固有データ（嵌套结构）
         carrierData: {
           yamato: {
             sortingCode: getRowValue(row, 'carrierData.yamato.sortingCode', undefined),
@@ -628,7 +628,7 @@ const handleImport = async () => {
   }
 }
 
-// 关闭处理
+// 閉じる処理 / 关闭处理
 const handleClose = () => {
   visible.value = false
   selectedFile.value = null
@@ -636,15 +636,15 @@ const handleClose = () => {
   fileList.value = []
   selectedConfigId.value = ''
   previewRows.value = []
-  fileEncoding.value = props.defaultFileEncoding || 'auto' // 重置编码选择
-  duplicateStrategy.value = 'error' // 重置重複処理オプション
+  fileEncoding.value = props.defaultFileEncoding || 'auto' // エンコーディング選択リセット / 重置编码选择
+  duplicateStrategy.value = 'error' // 重複処理オプションリセット / 重置重複処理オプション
   // Reset file input
   if (fileInputRef.value) {
     fileInputRef.value.value = ''
   }
 }
 
-// 打开时加载配置
+// ダイアログ表示時に設定読み込み / 打开时加载配置
 watch(visible, (newVal) => {
   if (newVal) {
     // initialize encoding each time dialog opens
@@ -677,7 +677,7 @@ watch(visible, (newVal) => {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--o-gray-900);
 }
 
 .upload-drop-zone {
@@ -696,12 +696,12 @@ watch(visible, (newVal) => {
 .upload-drop-zone:hover,
 .upload-drop-zone.drag-over {
   border-color: var(--o-brand-primary, #714b67);
-  background: var(--o-brand-primary-light, rgba(113, 75, 103, 0.05));
+  background: var(--o-brand-primary-light, rgba(217, 119, 86, 0.05));
 }
 
 .upload-text {
   font-size: 14px;
-  color: #606266;
+  color: var(--o-gray-600);
 }
 
 .upload-text em {
@@ -712,7 +712,7 @@ watch(visible, (newVal) => {
 
 .upload-tip {
   font-size: 12px;
-  color: #909399;
+  color: var(--o-gray-500);
 }
 
 .file-info {
@@ -757,7 +757,7 @@ watch(visible, (newVal) => {
   display: flex;
   flex-direction: column;
   padding: 8px 12px;
-  border: 1px solid #e4e7ed;
+  border: 1px solid var(--o-border-color);
   border-radius: 4px;
   transition: border-color 0.2s;
   cursor: pointer;
@@ -765,7 +765,7 @@ watch(visible, (newVal) => {
 
 .strategy-option.selected {
   border-color: var(--o-brand-primary, #714b67);
-  background-color: rgba(113, 75, 103, 0.05);
+  background-color: rgba(217, 119, 86, 0.05);
 }
 
 .strategy-option input[type="radio"] {
@@ -787,7 +787,7 @@ watch(visible, (newVal) => {
   display: inline-block;
   width: 14px;
   height: 14px;
-  border: 2px solid #fff;
+  border: 2px solid var(--o-view-background);
   border-top-color: transparent;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;

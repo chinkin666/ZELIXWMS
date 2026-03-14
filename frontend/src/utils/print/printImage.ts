@@ -201,9 +201,8 @@ async function printImageViaLocalBridge(
     const params = resolveTemplateParams(opts)
 
     const { printFile } = await import('./printBridgeApi')
-    const result = await printFile(serviceUrl, blob, params, 'print.png')
+    await printFile(serviceUrl, blob, params, 'print.png')
 
-    console.log('Print job submitted:', result)
     return null
   } catch (error: any) {
     console.error('Failed to print via local bridge:', error)
@@ -251,9 +250,6 @@ export async function printPdfBlob(
       // Fall through to browser print
     }
   }
-
-  const sizeMB = pdfBlob.size / 1024 / 1024
-  console.log(`[printPdfBlob] PDF size: ${sizeMB.toFixed(2)}MB`)
 
   const blobUrl = URL.createObjectURL(pdfBlob)
 

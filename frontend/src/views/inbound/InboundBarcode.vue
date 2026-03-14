@@ -1,27 +1,27 @@
 <template>
   <div class="print-page">
     <div class="no-print toolbar">
-      <button class="toolbar-btn" @click="handlePrint">印刷</button>
-      <button class="toolbar-btn" @click="$router.back()">戻る</button>
+      <button class="toolbar-btn" @click="handlePrint">{{ t('wms.inbound.print', '印刷') }}</button>
+      <button class="toolbar-btn" @click="$router.back()">{{ t('wms.inbound.back', '戻る') }}</button>
       <div class="toolbar-options">
         <label class="toolbar-label">
-          <input type="checkbox" v-model="showOrderBarcode" /> 指示番号バーコード
+          <input type="checkbox" v-model="showOrderBarcode" /> {{ t('wms.inbound.orderNumberBarcode', '指示番号バーコード') }}
         </label>
         <label class="toolbar-label">
-          <input type="checkbox" v-model="showSkuBarcode" /> 品番バーコード
+          <input type="checkbox" v-model="showSkuBarcode" /> {{ t('wms.inbound.skuBarcode', '品番バーコード') }}
         </label>
         <label class="toolbar-label">
-          サイズ:
+          {{ t('wms.inbound.labelSize', 'サイズ') }}:
           <select v-model="labelSize" class="toolbar-select">
-            <option value="small">小</option>
-            <option value="medium">中</option>
-            <option value="large">大</option>
+            <option value="small">{{ t('wms.inbound.sizeSmall', '小') }}</option>
+            <option value="medium">{{ t('wms.inbound.sizeMedium', '中') }}</option>
+            <option value="large">{{ t('wms.inbound.sizeLarge', '大') }}</option>
           </select>
         </label>
       </div>
     </div>
 
-    <div v-if="isLoading" class="loading">読み込み中...</div>
+    <div v-if="isLoading" class="loading">{{ t('wms.ui.loading', '読み込み中...') }}</div>
 
     <template v-else-if="order">
       <div class="barcode-grid" :class="`barcode-grid--${labelSize}`">
@@ -41,11 +41,11 @@
             <div class="label-sku">{{ line.productSku }}</div>
             <div class="label-name">{{ line.productName || '' }}</div>
             <div class="label-meta">
-              <span>数量: {{ line.expectedQuantity }}</span>
+              <span>{{ t('wms.inbound.quantity', '数量') }}: {{ line.expectedQuantity }}</span>
               <span v-if="line.lotNumber">LOT: {{ line.lotNumber }}</span>
             </div>
             <div v-if="line.expiryDate" class="label-meta">
-              賞味期限: {{ formatDate(line.expiryDate) }}
+              {{ t('wms.inbound.expiryDate', '賞味期限') }}: {{ formatDate(line.expiryDate) }}
             </div>
           </div>
         </div>
@@ -57,10 +57,12 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from '@/composables/useI18n'
 import { fetchInboundOrder } from '@/api/inboundOrder'
 import type { InboundOrder } from '@/types/inventory'
 import JsBarcode from 'jsbarcode'
 
+const { t } = useI18n()
 const route = useRoute()
 const isLoading = ref(true)
 const order = ref<InboundOrder | null>(null)
@@ -149,7 +151,7 @@ onMounted(async () => {
   gap: 8px;
   margin-bottom: 16px;
   padding: 8px;
-  background: #f5f5f5;
+  background: var(--o-gray-100);
   border-radius: 4px;
   align-items: center;
   flex-wrap: wrap;
@@ -157,9 +159,9 @@ onMounted(async () => {
 
 .toolbar-btn {
   padding: 6px 16px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--o-border-color);
   border-radius: 4px;
-  background: #fff;
+  background: var(--o-view-background);
   cursor: pointer;
   font-size: 13px;
 }
@@ -188,7 +190,7 @@ onMounted(async () => {
 
 .toolbar-select {
   padding: 2px 6px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--o-border-color);
   border-radius: 3px;
   font-size: 12px;
 }
@@ -196,7 +198,7 @@ onMounted(async () => {
 .loading {
   text-align: center;
   padding: 3rem;
-  color: #999;
+  color: var(--o-gray-500);
 }
 
 .barcode-grid {
@@ -219,7 +221,7 @@ onMounted(async () => {
 }
 
 .barcode-label {
-  border: 1px solid #999;
+  border: 1px solid var(--o-gray-500);
   border-radius: 3px;
   padding: 8px;
   page-break-inside: avoid;

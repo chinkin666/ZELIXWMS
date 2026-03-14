@@ -1,70 +1,38 @@
 import type { Carrier, CarrierFilters, UpsertCarrierDto } from '@/types/carrier'
 
-import { getApiBaseUrl } from '@/api/base'
+import { http } from '@/api/http'
 
-const API_BASE_URL = getApiBaseUrl()
-
-const buildQueryUrl = (filters?: CarrierFilters): string => {
-  const url = new URL(`${API_BASE_URL}/carriers`)
-  if (filters) {
-    if (filters.code) url.searchParams.append('code', filters.code)
-    if (filters.name) url.searchParams.append('name', filters.name)
-    if (typeof filters.enabled === 'boolean') url.searchParams.append('enabled', String(filters.enabled))
-  }
-  return url.toString()
+/**
+ * クエリパラメータを構築 / Build query params from filters
+ */
+function buildCarrierParams(filters?: CarrierFilters): Record<string, string> | undefined {
+  if (!filters) return undefined
+  const params: Record<string, string> = {}
+  if (filters.code) params.code = filters.code
+  if (filters.name) params.name = filters.name
+  if (typeof filters.enabled === 'boolean') params.enabled = String(filters.enabled)
+  return Object.keys(params).length > 0 ? params : undefined
 }
 
 /**
- * 获取配送業者列表
- * 后端API已包含内置配送業者（放在列表最前面）
+ * 配送業者一覧を取得 / Fetch carrier list
+ * バックエンドAPIには組み込み配送業者が含まれている（リストの先頭に配置） / 后端API已包含内置配送业者（放在列表最前面）
  */
-export async function fetchCarriers(filters?: CarrierFilters): Promise<Carrier[]> {
-  const response = await fetch(buildQueryUrl(filters))
-  if (!response.ok) {
-    throw new Error(`配送業者の取得に失敗しました: ${response.statusText}`)
-  }
-  return response.json()
+export function fetchCarriers(filters?: CarrierFilters): Promise<Carrier[]> {
+  return http.get<Carrier[]>('/carriers', buildCarrierParams(filters))
 }
 
-export async function createCarrier(payload: UpsertCarrierDto): Promise<Carrier> {
-  const response = await fetch(`${API_BASE_URL}/carriers`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-  if (!response.ok) {
-    const message = (await response.json().catch(() => ({}))).message || response.statusText
-    throw new Error(`配送業者の作成に失敗しました: ${message}`)
-  }
-  return response.json()
+/** 配送業者を作成 / Create carrier */
+export function createCarrier(payload: UpsertCarrierDto): Promise<Carrier> {
+  return http.post<Carrier>('/carriers', payload)
 }
 
-export async function updateCarrier(id: string, payload: UpsertCarrierDto): Promise<Carrier> {
-  const response = await fetch(`${API_BASE_URL}/carriers/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-  if (!response.ok) {
-    const message = (await response.json().catch(() => ({}))).message || response.statusText
-    throw new Error(`配送業者の更新に失敗しました: ${message}`)
-  }
-  return response.json()
+/** 配送業者を更新 / Update carrier */
+export function updateCarrier(id: string, payload: UpsertCarrierDto): Promise<Carrier> {
+  return http.put<Carrier>(`/carriers/${id}`, payload)
 }
 
-export async function deleteCarrier(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/carriers/${id}`, {
-    method: 'DELETE',
-  })
-  if (!response.ok) {
-    const message = (await response.json().catch(() => ({}))).message || response.statusText
-    throw new Error(`配送業者の削除に失敗しました: ${message}`)
-  }
+/** 配送業者を削除 / Delete carrier */
+export function deleteCarrier(id: string): Promise<void> {
+  return http.delete<void>(`/carriers/${id}`)
 }
-
-
-
-
-
-
-

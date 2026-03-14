@@ -1,15 +1,15 @@
 <template>
   <div class="printer-settings">
-    <ControlPanel title="プリンター設定" :show-search="false">
+    <ControlPanel :title="t('wms.settings.printerSettings', 'プリンター設定')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="handleReset">リセット</OButton>
+        <OButton variant="secondary" size="sm" @click="handleReset">{{ t('wms.settings.reset', 'リセット') }}</OButton>
       </template>
     </ControlPanel>
 
     <!-- Print Method Selection -->
     <div class="o-card method-card">
       <div class="o-form-group" style="margin-bottom:0">
-        <label class="o-form-label">印刷方法</label>
+        <label class="form-label">{{ t('wms.settings.printMethod', '印刷方法') }}</label>
         <div class="radio-group">
           <label class="radio-option">
             <input
@@ -19,7 +19,7 @@
               :checked="config.method === 'browser'"
               @change="handleMethodChange('browser')"
             />
-            <span>ブラウザ印刷</span>
+            <span>{{ t('wms.settings.browserPrint', 'ブラウザ印刷') }}</span>
           </label>
           <label class="radio-option">
             <input
@@ -29,7 +29,7 @@
               :checked="config.method === 'local-bridge'"
               @change="handleMethodChange('local-bridge')"
             />
-            <span>ローカル印刷</span>
+            <span>{{ t('wms.settings.localPrint', 'ローカル印刷') }}</span>
           </label>
         </div>
       </div>
@@ -39,7 +39,7 @@
     <template v-if="config.method === 'browser'">
       <div class="o-card browser-info">
         <p style="text-align:center;color:#909399;padding:20px 0">
-          ブラウザの標準印刷機能を使用します。印刷時にブラウザのダイアログが表示されます。
+          {{ t('wms.settings.browserPrintDescription', 'ブラウザの標準印刷機能を使用します。印刷時にブラウザのダイアログが表示されます。') }}
         </p>
       </div>
     </template>
@@ -52,22 +52,22 @@
             class="o-tab"
             :class="{ active: activeTab === 'connection' }"
             @click="activeTab = 'connection'"
-          >接続</button>
+          >{{ t('wms.settings.connection', '接続') }}</button>
           <button
             class="o-tab"
             :class="{ active: activeTab === 'printers' }"
             @click="activeTab = 'printers'"
-          >プリンター一覧</button>
+          >{{ t('wms.settings.printerList', 'プリンター一覧') }}</button>
           <button
             class="o-tab"
             :class="{ active: activeTab === 'print-templates' }"
             @click="activeTab = 'print-templates'"
-          >印刷テンプレート</button>
+          >{{ t('wms.settings.printTemplates', '印刷テンプレート') }}</button>
           <button
             class="o-tab"
             :class="{ active: activeTab === 'form-templates' }"
             @click="activeTab = 'form-templates'"
-          >帳票テンプレート</button>
+          >{{ t('wms.settings.formTemplates', '帳票テンプレート') }}</button>
         </div>
 
         <div class="tab-content">
@@ -91,6 +91,7 @@ import { ref, reactive, onMounted } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import {
   getPrintConfig,
   savePrintConfig,
@@ -104,6 +105,7 @@ import PrintTemplatePrinterTab from './printer/PrintTemplatePrinterTab.vue'
 import FormTemplatePrinterTab from './printer/FormTemplatePrinterTab.vue'
 
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const config = reactive<PrintConfig>(getPrintConfig())
 const activeTab = ref('connection')
@@ -125,12 +127,12 @@ function handleMethodChange(method: string) {
 }
 
 async function handleReset() {
-  if (!confirm('すべてのプリンター設定をリセットしますか？テンプレートごとの設定もすべて削除されます。')) return
+  if (!confirm(t('wms.settings.confirmResetPrinter', 'すべてのプリンター設定をリセットしますか？テンプレートごとの設定もすべて削除されます。'))) return
   resetPrintConfig()
   const fresh = getPrintConfig()
   Object.assign(config, fresh)
   refreshCachedData()
-  showToast('設定をリセットしました', 'success')
+  showToast(t('wms.settings.settingsReset', '設定をリセットしました'), 'success')
 }
 
 onMounted(() => {
@@ -161,25 +163,9 @@ onMounted(() => {
   padding: 1.25rem;
 }
 
-.o-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--o-border-color, #dcdfe6);
-  border-radius: var(--o-border-radius, 4px);
-  font-size: var(--o-font-size-base, 14px);
-  cursor: pointer;
-  background: var(--o-view-background, #fff);
-  color: var(--o-gray-700, #303133);
-  transition: 0.2s;
-  white-space: nowrap;
-}
-.o-btn-secondary { background: var(--o-view-background, #fff); color: var(--o-gray-700, #303133); }
-.o-btn-sm { padding: 4px 10px; font-size: 13px; }
 
 .o-form-group { margin-bottom: 1rem; }
-.o-form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.5rem; }
+.form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.5rem; }
 
 .radio-group {
   display: flex;

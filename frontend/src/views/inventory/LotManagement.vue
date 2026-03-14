@@ -1,139 +1,78 @@
 <template>
-  <div class="lot-management" style="display:flex;flex-direction:column;">
-    <ControlPanel title="ロット管理" :show-search="false">
-      <template #center>
-        <input
-          v-model="searchText"
-          type="text"
-          class="o-input"
-          placeholder="ロット番号・SKU・商品名で検索..."
-          style="width: 280px;"
-          @input="handleSearchDebounced"
-        />
-      </template>
+  <div class="lot-management">
+    <ControlPanel :title="t('wms.inventory.lotManagement', 'ロット管理')" :show-search="false">
       <template #actions>
-        <div style="display:flex;gap:6px;">
-          <select v-model="statusFilter" class="o-input" style="width:120px;" @change="loadData">
-            <option value="">全ステータス</option>
-            <option value="active">有効</option>
-            <option value="expired">期限切れ</option>
-            <option value="recalled">リコール</option>
-            <option value="quarantine">隔離</option>
-          </select>
-          <OButton variant="primary" size="sm" @click="openCreateDialog">
-            新規作成
-          </OButton>
-        </div>
+        <OButton variant="primary" size="sm" @click="openCreateDialog">
+          {{ t('wms.common.create', '新規作成') }}
+        </OButton>
       </template>
     </ControlPanel>
 
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width:140px;">ロット番号</th>
-            <th class="o-table-th" style="width:120px;">SKU</th>
-            <th class="o-table-th" style="width:180px;">商品名</th>
-            <th class="o-table-th" style="width:120px;">賞味期限</th>
-            <th class="o-table-th" style="width:120px;">製造日</th>
-            <th class="o-table-th" style="width:80px;">ステータス</th>
-            <th class="o-table-th" style="width:180px;">メモ</th>
-            <th class="o-table-th" style="width:140px;">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoading">
-            <td colspan="8" class="o-table-empty">読み込み中...</td>
-          </tr>
-          <tr v-else-if="lots.length === 0">
-            <td colspan="8" class="o-table-empty">ロットがありません</td>
-          </tr>
-          <tr v-for="lot in lots" :key="lot._id" class="o-table-row">
-            <td class="o-table-td"><strong>{{ lot.lotNumber }}</strong></td>
-            <td class="o-table-td">{{ lot.productSku }}</td>
-            <td class="o-table-td">{{ lot.productName || '-' }}</td>
-            <td class="o-table-td">
-              <span v-if="lot.expiryDate" :class="expiryClass(lot.expiryDate)">
-                {{ formatDate(lot.expiryDate) }}
-              </span>
-              <span v-else>-</span>
-            </td>
-            <td class="o-table-td">{{ lot.manufactureDate ? formatDate(lot.manufactureDate) : '-' }}</td>
-            <td class="o-table-td">
-              <span class="o-status-tag" :class="'o-status-tag--' + statusTagVariant(lot.status)">{{ statusLabel(lot.status) }}</span>
-            </td>
-            <td class="o-table-td">{{ lot.memo || '-' }}</td>
-            <td class="o-table-td o-table-td--actions">
-              <div style="display:inline-flex;gap:4px;">
-                <OButton variant="primary" size="sm" @click="openEditDialog(lot)">編集</OButton>
-                <OButton
-                  variant="secondary" size="sm"
-                  style="border-color:#f56c6c;color:#f56c6c;"
-                  @click="handleDelete(lot)"
-                >
-                  削除
-                </OButton>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="lotManagementSearch"
+      @search="handleSearch"
+    />
 
-    <div class="o-table-pagination">
-      <span class="o-table-pagination__info">{{ total }} 件</span>
-      <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;">
-          <option :value="25">25</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-        </select>
-        <OButton variant="secondary" size="sm" :disabled="page <= 1" @click="page--; loadData()">&lsaquo;</OButton>
-        <span class="o-table-pagination__page">{{ page }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="page >= totalPages" @click="page++; loadData()">&rsaquo;</OButton>
-      </div>
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="lots"
+        :height="520"
+        row-key="_id"
+        pagination-enabled
+        pagination-mode="server"
+        :total="total"
+        :current-page="page"
+        :page-size="pageSize"
+        :page-sizes="[25, 50, 100]"
+        :global-search-text="globalSearchText"
+        @page-change="handlePageChange"
+      />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogVisible" :title="editingId ? 'ロット編集' : 'ロット新規作成'" size="md">
+    <ODialog v-model="dialogVisible" :title="editingId ? t('wms.inventory.editLot', 'ロット編集') : t('wms.inventory.createLot', 'ロット新規作成')" size="md">
       <div class="dialog-form">
         <div v-if="!editingId" class="form-field">
-          <label class="form-label">商品</label>
+          <label class="form-label">{{ t('wms.inventory.product', '商品') }}</label>
           <select v-model="form.productId" class="o-input">
-            <option value="">商品を選択...</option>
+            <option value="">{{ t('wms.inventory.selectProduct', '商品を選択...') }}</option>
             <option v-for="p in productOptions" :key="p._id" :value="p._id">{{ p.sku }} - {{ p.name }}</option>
           </select>
         </div>
         <div v-if="!editingId" class="form-field">
-          <label class="form-label">ロット番号</label>
-          <input v-model="form.lotNumber" type="text" class="o-input" placeholder="例: LOT-2026-001" />
+          <label class="form-label">{{ t('wms.inventory.lotNumber', 'ロット番号') }}</label>
+          <input v-model="form.lotNumber" type="text" class="o-input" :placeholder="t('wms.inventory.lotNumberPlaceholder', '例: LOT-2026-001')" />
         </div>
         <div class="form-field">
-          <label class="form-label">賞味期限</label>
+          <label class="form-label">{{ t('wms.inventory.expiryDate', '賞味期限') }}</label>
           <input v-model="form.expiryDate" type="date" class="o-input" />
         </div>
         <div class="form-field">
-          <label class="form-label">製造日</label>
+          <label class="form-label">{{ t('wms.inventory.manufactureDate', '製造日') }}</label>
           <input v-model="form.manufactureDate" type="date" class="o-input" />
         </div>
         <div v-if="editingId" class="form-field">
-          <label class="form-label">ステータス</label>
+          <label class="form-label">{{ t('wms.inventory.lotStatus', 'ステータス') }}</label>
           <select v-model="form.status" class="o-input">
-            <option value="active">有効</option>
-            <option value="expired">期限切れ</option>
-            <option value="recalled">リコール</option>
-            <option value="quarantine">隔離</option>
+            <option value="active">{{ t('wms.inventory.statusActive', '有効') }}</option>
+            <option value="expired">{{ t('wms.inventory.expired', '期限切れ') }}</option>
+            <option value="recalled">{{ t('wms.inventory.statusRecalled', 'リコール') }}</option>
+            <option value="quarantine">{{ t('wms.inventory.statusQuarantine', '隔離') }}</option>
           </select>
         </div>
         <div class="form-field">
-          <label class="form-label">メモ</label>
+          <label class="form-label">{{ t('wms.inventory.memo', 'メモ') }}</label>
           <textarea v-model="form.memo" class="o-input" rows="2" />
         </div>
       </div>
       <template #footer>
-        <OButton variant="secondary" @click="dialogVisible = false">キャンセル</OButton>
+        <OButton variant="secondary" @click="dialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
         <OButton variant="primary" :disabled="isSaving" @click="handleSave">
-          {{ isSaving ? '保存中...' : '保存' }}
+          {{ isSaving ? t('wms.inventory.saving', '保存中...') : t('wms.common.save', '保存') }}
         </OButton>
       </template>
     </ODialog>
@@ -141,22 +80,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, h, onMounted } from 'vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import { fetchLots, createLot, updateLot, deleteLot } from '@/api/lot'
 import type { Lot, LotStatus } from '@/types/inventory'
-import { getApiBaseUrl } from '@/api/base'
+import { http } from '@/api/http'
+import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
+
+const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const lots = ref<Lot[]>([])
 const isLoading = ref(false)
-const searchText = ref('')
-const statusFilter = ref('')
+const globalSearchText = ref('')
 const page = ref(1)
 const total = ref(0)
 const pageSize = ref(50)
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
+
+// Current search filters
+const currentSearchText = ref('')
+const currentStatusFilter = ref('')
 
 // Product options for create dialog
 const productOptions = ref<Array<{ _id: string; sku: string; name: string }>>([])
@@ -174,28 +123,202 @@ const form = ref({
   memo: '',
 })
 
-let searchTimer: ReturnType<typeof setTimeout> | null = null
-function handleSearchDebounced() {
-  if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => {
-    page.value = 1
-    loadData()
-  }, 300)
+function formatDate(d: string) {
+  return d ? new Date(d).toLocaleDateString('ja-JP') : ''
+}
+
+function expiryClass(d: string): string {
+  const now = new Date()
+  const exp = new Date(d)
+  const daysLeft = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  if (daysLeft < 0) return 'expiry-expired'
+  if (daysLeft <= 30) return 'expiry-warning'
+  return ''
+}
+
+function statusLabel(s: LotStatus): string {
+  const map: Record<LotStatus, string> = {
+    active: t('wms.inventory.statusActive', '有効'),
+    expired: t('wms.inventory.expired', '期限切れ'),
+    recalled: t('wms.inventory.statusRecalled', 'リコール'),
+    quarantine: t('wms.inventory.statusQuarantine', '隔離'),
+  }
+  return map[s] || s
+}
+
+function statusTagVariant(s: LotStatus): string {
+  const map: Record<LotStatus, string> = {
+    active: 'confirmed',
+    expired: 'error',
+    recalled: 'pending',
+    quarantine: 'new',
+  }
+  return map[s] || 'new'
+}
+
+// Column definitions
+const searchColumns = computed<TableColumn[]>(() => [
+  {
+    key: 'lotNumber',
+    dataKey: 'lotNumber',
+    title: t('wms.inventory.lotNumber', 'ロット番号'),
+    width: 140,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'productSku',
+    dataKey: 'productSku',
+    title: 'SKU',
+    width: 120,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'status',
+    dataKey: 'status',
+    title: t('wms.inventory.lotStatus', 'ステータス'),
+    width: 80,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inventory.statusActive', '有効'), value: 'active' },
+      { label: t('wms.inventory.expired', '期限切れ'), value: 'expired' },
+      { label: t('wms.inventory.statusRecalled', 'リコール'), value: 'recalled' },
+      { label: t('wms.inventory.statusQuarantine', '隔離'), value: 'quarantine' },
+    ],
+  },
+])
+
+const tableColumns = computed<TableColumn[]>(() => [
+  {
+    key: 'lotNumber',
+    dataKey: 'lotNumber',
+    title: t('wms.inventory.lotNumber', 'ロット番号'),
+    width: 140,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Lot }) =>
+      h('strong', null, rowData.lotNumber),
+  },
+  {
+    key: 'productSku',
+    dataKey: 'productSku',
+    title: 'SKU',
+    width: 120,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Lot }) => rowData.productSku,
+  },
+  {
+    key: 'productName',
+    dataKey: 'productName',
+    title: t('wms.inventory.productName', '商品名'),
+    width: 180,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Lot }) => rowData.productName || '-',
+  },
+  {
+    key: 'expiryDate',
+    dataKey: 'expiryDate',
+    title: t('wms.inventory.expiryDate', '賞味期限'),
+    width: 120,
+    fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: Lot }) => {
+      if (!rowData.expiryDate) return '-'
+      return h('span', { class: expiryClass(rowData.expiryDate) }, formatDate(rowData.expiryDate))
+    },
+  },
+  {
+    key: 'manufactureDate',
+    dataKey: 'manufactureDate',
+    title: t('wms.inventory.manufactureDate', '製造日'),
+    width: 120,
+    fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: Lot }) =>
+      rowData.manufactureDate ? formatDate(rowData.manufactureDate) : '-',
+  },
+  {
+    key: 'status',
+    dataKey: 'status',
+    title: t('wms.inventory.lotStatus', 'ステータス'),
+    width: 80,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inventory.statusActive', '有効'), value: 'active' },
+      { label: t('wms.inventory.expired', '期限切れ'), value: 'expired' },
+      { label: t('wms.inventory.statusRecalled', 'リコール'), value: 'recalled' },
+      { label: t('wms.inventory.statusQuarantine', '隔離'), value: 'quarantine' },
+    ],
+    cellRenderer: ({ rowData }: { rowData: Lot }) =>
+      h('span', { class: `o-status-tag o-status-tag--${statusTagVariant(rowData.status)}` }, statusLabel(rowData.status)),
+  },
+  {
+    key: 'memo',
+    dataKey: 'memo',
+    title: t('wms.inventory.memo', 'メモ'),
+    width: 180,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Lot }) => rowData.memo || '-',
+  },
+  {
+    key: 'actions',
+    title: t('wms.common.actions', '操作'),
+    width: 140,
+    cellRenderer: ({ rowData }: { rowData: Lot }) =>
+      h('div', { class: 'action-cell' }, [
+        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEditDialog(rowData) }, () => t('wms.common.edit', '編集')),
+        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')),
+      ]),
+  },
+])
+
+// Search handler
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+    currentSearchText.value = String(payload.__global.value).trim()
+  } else {
+    globalSearchText.value = ''
+    currentSearchText.value = ''
+  }
+
+  if (payload.status?.value) {
+    currentStatusFilter.value = String(payload.status.value)
+  } else {
+    currentStatusFilter.value = ''
+  }
+
+  page.value = 1
+  loadData()
+}
+
+const handlePageChange = (payload: { page: number; pageSize: number }) => {
+  page.value = payload.page
+  pageSize.value = payload.pageSize
+  loadData()
 }
 
 async function loadData() {
   isLoading.value = true
   try {
     const res = await fetchLots({
-      search: searchText.value || undefined,
-      status: statusFilter.value || undefined,
+      search: currentSearchText.value || undefined,
+      status: currentStatusFilter.value || undefined,
       page: page.value,
       limit: pageSize.value,
     })
     lots.value = res.items
     total.value = res.total
   } catch (e: any) {
-    console.error('ロット一覧取得エラー:', e)
+    console.error(t('wms.inventory.lotListFetchError', 'ロット一覧取得エラー:'), e)
   } finally {
     isLoading.value = false
   }
@@ -203,15 +326,14 @@ async function loadData() {
 
 async function loadProducts() {
   try {
-    const res = await fetch(`${getApiBaseUrl()}/products?limit=1000`)
-    const data = await res.json()
+    const data = await http.get<any>('/products', { limit: '1000' })
     productOptions.value = (data.items || data || []).map((p: any) => ({
       _id: p._id,
       sku: p.sku,
       name: p.name,
     }))
   } catch (e: any) {
-    console.error('商品取得エラー:', e)
+    console.error(t('wms.inventory.productFetchError', '商品取得エラー:'), e)
   }
 }
 
@@ -246,7 +368,7 @@ async function handleSave() {
       })
     } else {
       if (!form.value.productId || !form.value.lotNumber.trim()) {
-        alert('商品とロット番号は必須です')
+        showToast(t('wms.inventory.productAndLotRequired', '商品とロット番号は必須です'), 'warning')
         return
       }
       await createLot({
@@ -260,53 +382,20 @@ async function handleSave() {
     dialogVisible.value = false
     await loadData()
   } catch (e: any) {
-    alert(e.response?.data?.message || 'エラーが発生しました')
+    showToast(e.response?.data?.message || t('wms.inventory.errorOccurred', 'エラーが発生しました'), 'danger')
   } finally {
     isSaving.value = false
   }
 }
 
 async function handleDelete(lot: Lot) {
-  if (!confirm(`ロット「${lot.lotNumber}」を削除しますか？`)) return
+  if (!confirm(t('wms.inventory.confirmDeleteLot', `ロット「${lot.lotNumber}」を削除しますか？`))) return
   try {
     await deleteLot(lot._id)
     await loadData()
   } catch (e: any) {
-    alert(e.response?.data?.message || '削除に失敗しました')
+    showToast(e.response?.data?.message || t('wms.inventory.deleteFailed', '削除に失敗しました'), 'danger')
   }
-}
-
-function formatDate(d: string) {
-  return d ? new Date(d).toLocaleDateString('ja-JP') : ''
-}
-
-function expiryClass(d: string): string {
-  const now = new Date()
-  const exp = new Date(d)
-  const daysLeft = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-  if (daysLeft < 0) return 'expiry-expired'
-  if (daysLeft <= 30) return 'expiry-warning'
-  return ''
-}
-
-function statusLabel(s: LotStatus): string {
-  const map: Record<LotStatus, string> = {
-    active: '有効',
-    expired: '期限切れ',
-    recalled: 'リコール',
-    quarantine: '隔離',
-  }
-  return map[s] || s
-}
-
-function statusTagVariant(s: LotStatus): string {
-  const map: Record<LotStatus, string> = {
-    active: 'confirmed',
-    expired: 'error',
-    recalled: 'pending',
-    quarantine: 'new',
-  }
-  return map[s] || 'new'
 }
 
 onMounted(() => {
@@ -316,11 +405,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
-@import '@/styles/order-table.css';
-
 .lot-management {
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 :deep(.o-control-panel) {
@@ -328,8 +417,17 @@ onMounted(() => {
   margin-right: -20px;
 }
 
-.expiry-expired { color: #f56c6c; font-weight: 600; }
-.expiry-warning { color: #e6a23c; font-weight: 500; }
+.table-section {
+  width: 100%;
+}
+
+:deep(.expiry-expired) { color: #f56c6c; font-weight: 600; }
+:deep(.expiry-warning) { color: #e6a23c; font-weight: 500; }
+
+:deep(.action-cell) {
+  display: inline-flex;
+  gap: 4px;
+}
 
 .dialog-form {
   display: flex;

@@ -1,0 +1,39 @@
+# Dependencies / 依存パッケージ
+node_modules
+
+# Build output / ビルド出力
+dist
+
+# Git
+.git
+.gitignore
+
+# Environment files / 環境設定ファイル
+.env
+.env.*
+
+# IDE / エディタ設定
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs / ログ
+*.log
+logs/
+
+# Temp files / 一時ファイル
+tmp/
+
+# Documentation / ドキュメント
+*.md
+docs/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore

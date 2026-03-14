@@ -2,14 +2,14 @@
   <div class="editor-right">
     <div class="preview-header">
       <div class="preview-controls">
-        <span class="preview-label">プレビュー行数:</span>
+        <span class="preview-label">{{ t('wms.formEditor.previewRowCount', 'プレビュー行数:') }}</span>
         <input type="number" :value="previewRowCount" min="1" max="100" class="o-input" style="width: 100px" @input="$emit('update:previewRowCount', parseInt(($event.target as HTMLInputElement).value))" />
       </div>
     </div>
     <div class="preview-container">
       <div v-if="previewError" class="preview-error">
         <span class="error-icon" style="font-size: 48px">&#x26A0;</span>
-        <p>プレビューエラー</p>
+        <p>{{ t('wms.formEditor.previewError', 'プレビューエラー') }}</p>
         <pre class="error-message">{{ previewError }}</pre>
       </div>
       <iframe
@@ -19,13 +19,16 @@
         frameborder="0"
       />
       <div v-else class="preview-placeholder">
-        <p>プレビューを生成中...</p>
+        <p>{{ t('wms.formEditor.previewGenerating', 'プレビューを生成中...') }}</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 defineProps<{
   previewRowCount: number
   previewUrl: string | null

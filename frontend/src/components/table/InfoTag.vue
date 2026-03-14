@@ -55,7 +55,7 @@ const tagStyle = computed(() => {
   vertical-align: middle;
 }
 
-/* 绝对定位模式（默认，用于数量tag等） */
+/* 絶対位置モード（デフォルト、数量タグ等用） / 绝对定位模式（默认，用于数量tag等） */
 .info-tag {
   position: absolute;
   right: 0px;

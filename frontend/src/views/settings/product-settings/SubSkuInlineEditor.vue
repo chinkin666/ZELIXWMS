@@ -1,15 +1,15 @@
 <template>
   <div class="sub-sku-inline-section">
     <div class="o-divider">
-      <span class="o-divider-text">子SKU管理</span>
+      <span class="o-divider-text">{{ t('wms.product.subSkuManagement', '子SKU管理') }}</span>
     </div>
     <table class="o-list-table" style="width: 100%">
       <thead>
         <tr>
-          <th :style="{ width: skuColumnWidth }">子SKUコード</th>
-          <th :style="{ width: priceColumnWidth }">価格</th>
-          <th>説明</th>
-          <th style="width: 60px; text-align: center">有効</th>
+          <th :style="{ width: skuColumnWidth }">{{ t('wms.product.subSkuCode', '子SKUコード') }}</th>
+          <th :style="{ width: priceColumnWidth }">{{ t('wms.product.price', '価格') }}</th>
+          <th>{{ t('wms.product.description', '説明') }}</th>
+          <th style="width: 60px; text-align: center">{{ t('wms.product.active', '有効') }}</th>
           <th style="width: 60px; text-align: center"></th>
         </tr>
       </thead>
@@ -22,7 +22,7 @@
                 type="text"
                 class="o-input o-input-sm"
                 :class="{ 'is-error': validationErrors[$index] }"
-                placeholder="子SKUコード"
+                :placeholder="t('wms.product.subSkuCode', '子SKUコード')"
                 @blur="$emit('validate', $index)"
               />
               <div v-if="validationErrors[$index]" class="sku-error-message">
@@ -36,31 +36,34 @@
               type="number"
               class="o-input o-input-sm"
               :min="0"
-              placeholder="親価格"
+              :placeholder="t('wms.product.parentPrice', '親価格')"
               style="width: 100%"
             />
           </td>
           <td>
-            <input v-model="row.description" type="text" class="o-input o-input-sm" placeholder="説明（例: セール価格）" />
+            <input v-model="row.description" type="text" class="o-input o-input-sm" :placeholder="t('wms.product.descriptionExample', '説明（例: セール価格）')" />
           </td>
           <td style="text-align: center">
             <input type="checkbox" v-model="row.isActive" />
           </td>
           <td style="text-align: center">
-            <OButton variant="danger" size="sm" @click="$emit('remove', $index)">削除</OButton>
+            <OButton variant="danger" size="sm" @click="$emit('remove', $index)">{{ t('wms.common.delete', '削除') }}</OButton>
           </td>
         </tr>
       </tbody>
     </table>
     <div class="sub-sku-actions">
-      <OButton variant="primary" size="sm" @click="$emit('add')">+ 子SKUを追加</OButton>
+      <OButton variant="primary" size="sm" @click="$emit('add')">+ {{ t('wms.product.addSubSku', '子SKUを追加') }}</OButton>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import OButton from '@/components/odoo/OButton.vue'
+import { useI18n } from '@/composables/useI18n'
 import type { SubSku } from '@/types/product'
+
+const { t } = useI18n()
 
 withDefaults(defineProps<{
   subSkus: SubSku[]

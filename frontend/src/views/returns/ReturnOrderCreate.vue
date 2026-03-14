@@ -1,54 +1,54 @@
 <template>
   <div class="return-create">
-    <ControlPanel title="返品作成" :show-search="false">
+    <ControlPanel :title="t('wms.returns.createTitle', '返品作成')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="$router.back()">戻る</OButton>
+        <OButton variant="secondary" size="sm" @click="$router.back()">{{ t('wms.returns.back', '戻る') }}</OButton>
       </template>
     </ControlPanel>
 
     <div class="form-card o-card">
       <div class="form-grid">
         <div class="form-row">
-          <label class="form-label">返品理由 <span class="required">*</span></label>
+          <label class="form-label">{{ t('wms.returns.returnReason', '返品理由') }} <span class="required">*</span></label>
           <select v-model="form.returnReason" class="o-input" style="width:200px;">
-            <option value="customer_request">お客様都合</option>
-            <option value="defective">不良品</option>
-            <option value="wrong_item">誤配送</option>
-            <option value="damaged">破損</option>
-            <option value="other">その他</option>
+            <option value="customer_request">{{ t('wms.returns.reasonCustomerRequest', 'お客様都合') }}</option>
+            <option value="defective">{{ t('wms.returns.reasonDefective', '不良品') }}</option>
+            <option value="wrong_item">{{ t('wms.returns.reasonWrongItem', '誤配送') }}</option>
+            <option value="damaged">{{ t('wms.returns.reasonDamaged', '破損') }}</option>
+            <option value="other">{{ t('wms.returns.reasonOther', 'その他') }}</option>
           </select>
         </div>
 
         <div class="form-row">
-          <label class="form-label">顧客名</label>
-          <input v-model="form.customerName" class="o-input" style="width:200px;" placeholder="顧客名" />
+          <label class="form-label">{{ t('wms.returns.customerName', '顧客名') }}</label>
+          <input v-model="form.customerName" class="o-input" style="width:200px;" :placeholder="t('wms.returns.customerName', '顧客名')" />
         </div>
 
         <div class="form-row">
-          <label class="form-label">受付日</label>
+          <label class="form-label">{{ t('wms.returns.receivedDate', '受付日') }}</label>
           <input v-model="form.receivedDate" type="date" class="o-input" style="width:200px;" />
         </div>
 
         <div class="form-row">
-          <label class="form-label">元出荷番号</label>
+          <label class="form-label">{{ t('wms.returns.originalShipmentNumber', '元出荷番号') }}</label>
           <input v-model="form.shipmentOrderNumber" class="o-input" style="width:200px;" placeholder="SH..." />
         </div>
 
         <div class="form-row" style="grid-column:1/-1;">
-          <label class="form-label">理由詳細</label>
+          <label class="form-label">{{ t('wms.returns.reasonDetail', '理由詳細') }}</label>
           <textarea v-model="form.reasonDetail" class="o-input" rows="2" style="width:100%;max-width:500px;" />
         </div>
       </div>
 
       <!-- 返品明細 -->
       <div class="lines-section">
-        <h3 class="lines-title">返品明細</h3>
+        <h3 class="lines-title">{{ t('wms.returns.returnLines', '返品明細') }}</h3>
         <table class="o-table" style="margin-bottom:0.5rem;">
           <thead>
             <tr>
-              <th class="o-table-th" style="width:200px;">商品 (SKU検索)</th>
-              <th class="o-table-th o-table-th--right" style="width:80px;">数量</th>
-              <th class="o-table-th" style="width:120px;">メモ</th>
+              <th class="o-table-th" style="width:200px;">{{ t('wms.returns.productSkuSearch', '商品 (SKU検索)') }}</th>
+              <th class="o-table-th o-table-th--right" style="width:80px;">{{ t('wms.returns.quantity', '数量') }}</th>
+              <th class="o-table-th" style="width:120px;">{{ t('wms.returns.memo', 'メモ') }}</th>
               <th class="o-table-th" style="width:50px;"></th>
             </tr>
           </thead>
@@ -69,12 +69,12 @@
             </tr>
           </tbody>
         </table>
-        <OButton variant="secondary" size="sm" @click="addLine">+ 行追加</OButton>
+        <OButton variant="secondary" size="sm" @click="addLine">{{ t('wms.returns.addLine', '+ 行追加') }}</OButton>
       </div>
 
       <div class="form-actions">
         <OButton variant="primary" :disabled="isSubmitting" @click="handleCreate">
-          {{ isSubmitting ? '作成中...' : '作成' }}
+          {{ isSubmitting ? t('wms.returns.creating', '作成中...') : t('wms.common.create', '作成') }}
         </OButton>
       </div>
     </div>
@@ -85,13 +85,15 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { createReturnOrder } from '@/api/returnOrder'
-import { getApiBaseUrl } from '@/api/base'
+import { http } from '@/api/http'
 
 const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
 const isSubmitting = ref(false)
 
 const form = reactive({
@@ -107,18 +109,17 @@ const addLine = () => form.lines.push({ productSku: '', quantity: 1, memo: '' })
 
 const handleCreate = async () => {
   const validLines = form.lines.filter(l => l.productSku.trim())
-  if (validLines.length === 0) { toast.showError('少なくとも1行の商品を入力してください'); return }
+  if (validLines.length === 0) { toast.showError(t('wms.returns.atLeastOneLine', '少なくとも1行の商品を入力してください')); return }
 
   isSubmitting.value = true
   try {
     // SKUから商品IDを解決
     const resolvedLines = []
     for (const line of validLines) {
-      const res = await fetch(`${getApiBaseUrl()}/products?search=${encodeURIComponent(line.productSku)}&limit=1`)
-      const data = await res.json()
+      const data = await http.get<any>('/products', { search: line.productSku, limit: '1' })
       const products = data.data || data || []
       const product = Array.isArray(products) ? products[0] : null
-      if (!product) { toast.showError(`商品 ${line.productSku} が見つかりません`); isSubmitting.value = false; return }
+      if (!product) { toast.showError(t('wms.returns.productNotFound', `商品 ${line.productSku} が見つかりません`)); isSubmitting.value = false; return }
       resolvedLines.push({
         productId: product._id,
         productSku: product.sku,
@@ -136,10 +137,10 @@ const handleCreate = async () => {
       lines: resolvedLines,
       memo: undefined,
     })
-    toast.showSuccess(`返品 ${result.orderNumber} を作成しました`)
+    toast.showSuccess(t('wms.returns.createSuccess', `返品 ${result.orderNumber} を作成しました`))
     router.push(`/returns/${result._id}`)
   } catch (e: any) {
-    toast.showError(e?.message || '作成に失敗しました')
+    toast.showError(e?.message || t('wms.returns.createError', '作成に失敗しました'))
   } finally {
     isSubmitting.value = false
   }
@@ -151,7 +152,8 @@ const handleCreate = async () => {
 </style>
 
 <style scoped>
-.return-create { padding: 1rem; }
+.return-create { display: flex; flex-direction: column; gap: 16px; padding: 0 20px 20px; }
+:deep(.o-control-panel) { margin-left: -20px; margin-right: -20px; }
 .form-card { max-width: 800px; padding: 1.5rem; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
 .form-row { display: flex; flex-direction: column; gap: 4px; }

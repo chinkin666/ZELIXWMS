@@ -2,11 +2,11 @@
   <div class="bottom-bar">
     <div class="bottom-bar__left">
       <div class="bottom-bar__meta">
-        出荷管理No: <strong>{{ orderNumber }}</strong>
+        {{ t('wms.inspection.orderNo', '出荷管理No') }}: <strong>{{ orderNumber }}</strong>
         <span class="meta-separator">|</span>
-        スキャン待ち: <strong>{{ pendingCount }}</strong>件
+        {{ t('wms.inspection.pendingScan', 'スキャン待ち') }}: <strong>{{ pendingCount }}</strong>{{ t('wms.common.items', '件') }}
         <span class="meta-separator">|</span>
-        スキャン済み: <strong>{{ scannedCount }}</strong>件
+        {{ t('wms.inspection.scannedItems', 'スキャン済み') }}: <strong>{{ scannedCount }}</strong>{{ t('wms.common.items', '件') }}
       </div>
     </div>
     <div class="bottom-bar__right">
@@ -15,21 +15,24 @@
         :disabled="isUnconfirming"
         @click="$emit('open-unconfirm')"
       >
-        {{ isUnconfirming ? '処理中...' : '確認取消' }}
+        {{ isUnconfirming ? t('wms.common.processing', '処理中...') : t('wms.inspection.unconfirm', '確認取消') }}
       </OButton>
       <OButton
         variant="info"
         :disabled="isChangingInvoiceType"
         @click="$emit('open-change-invoice-type')"
       >
-        {{ isChangingInvoiceType ? '処理中...' : '送り状種類変更' }}
+        {{ isChangingInvoiceType ? t('wms.common.processing', '処理中...') : t('wms.inspection.changeInvoiceType', '送り状種類変更') }}
       </OButton>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
+
+const { t } = useI18n()
 
 defineProps<{
   orderNumber: string

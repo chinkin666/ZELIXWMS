@@ -3,15 +3,15 @@
     <!-- 统计摘要栏 -->
     <div class="stats-bar">
       <div class="stat-item">
-        <span class="stat-label">出荷指示数</span>
+        <span class="stat-label">{{ t('wms.inspection.shipmentCount', '出荷指示数') }}</span>
         <span class="stat-value">{{ totalCount }}</span>
       </div>
       <div class="stat-item stat-inspected-block">
-        <span class="stat-label">検品済</span>
+        <span class="stat-label">{{ t('wms.inspection.inspectedCount', '検品済') }}</span>
         <span class="stat-value">{{ inspectedCount }}</span>
       </div>
       <div class="stat-item stat-remaining-block">
-        <span class="stat-label">残り</span>
+        <span class="stat-label">{{ t('wms.inspection.remaining', '残り') }}</span>
         <span class="stat-value">{{ totalCount - inspectedCount }}</span>
       </div>
     </div>
@@ -22,15 +22,15 @@
         <thead>
           <tr>
             <th style="width: 60px; text-align: center">No</th>
-            <th style="width: 150px">伝票番号</th>
-            <th style="width: 120px">配送業者</th>
-            <th style="width: 110px">送り状種類</th>
-            <th style="min-width: 120px">商品名</th>
+            <th style="width: 150px">{{ t('wms.inspection.slipNumber', '伝票番号') }}</th>
+            <th style="width: 120px">{{ t('wms.inspection.carrierName', '配送業者') }}</th>
+            <th style="width: 110px">{{ t('wms.inspection.invoiceType', '送り状種類') }}</th>
+            <th style="min-width: 120px">{{ t('wms.inspection.productName', '商品名') }}</th>
             <th style="min-width: 170px">SKU</th>
-            <th style="min-width: 220px">検品コード（バーコード）</th>
-            <th style="width: 100px; text-align: center">出荷指示数</th>
-            <th style="width: 80px; text-align: center">検品数</th>
-            <th style="width: 80px; text-align: center">残数</th>
+            <th style="min-width: 220px">{{ t('wms.inspection.inspectionCode', '検品コード（バーコード）') }}</th>
+            <th style="width: 100px; text-align: center">{{ t('wms.inspection.shipmentCount', '出荷指示数') }}</th>
+            <th style="width: 80px; text-align: center">{{ t('wms.inspection.inspectedQty', '検品数') }}</th>
+            <th style="width: 80px; text-align: center">{{ t('wms.inspection.remainingQty', '残数') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -58,6 +58,7 @@
 
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 import type { OrderDocument } from '@/types/order'
 
 interface TableRow {
@@ -72,6 +73,8 @@ interface TableRow {
   isInspected: boolean
   order: OrderDocument
 }
+
+const { t } = useI18n()
 
 const props = defineProps<{
   tableRows: TableRow[]
@@ -154,25 +157,7 @@ defineExpose({ scrollToRow })
   max-height: calc(100vh - 200px);
 }
 
-.o-list-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 13px;
-}
-.o-list-table-border th,
-.o-list-table-border td {
-  border: 1px solid #ebeef5;
-  padding: 8px 12px;
-}
-.o-list-table th {
-  background: #f5f7fa;
-  font-weight: 600;
-  color: #606266;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-.o-list-table td { color: #303133; }
+/* .o-list-table base styles are defined globally in style.css */
 
 .row-inspected { background-color: #81B337 !important; }
 .row-inspected td { color: #fff !important; background-color: #81B337 !important; }

@@ -2,7 +2,7 @@
   <div v-if="visible" class="drawer-overlay" @click.self="$emit('update:visible', false)">
     <div class="drawer-panel">
       <div class="drawer-header">
-        <h3 class="drawer-title">スキーマ分析</h3>
+        <h3 class="drawer-title">{{ t('wms.shipment.schemaAnalysis', 'スキーマ分析') }}</h3>
         <button class="drawer-close" @click="$emit('update:visible', false)">&times;</button>
       </div>
       <div class="drawer-body">
@@ -17,9 +17,12 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n'
 import OrderSchemaAnalysis from '@/components/schema-analysis/OrderSchemaAnalysis.vue'
 import type { OrderDocument } from '@/types/order'
 import type { Carrier } from '@/types/carrier'
+
+const { t } = useI18n()
 
 defineProps<{
   visible: boolean

@@ -1,123 +1,80 @@
 <template>
   <div class="inventory-movements">
-    <ControlPanel title="入出庫履歴" :show-search="false">
+    <ControlPanel :title="t('wms.inventory.movementHistory', '入出庫履歴')" :show-search="false">
       <template #actions>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <select v-model="filterMoveType" class="o-input o-input-sm" style="width:120px;" @change="loadData">
-            <option value="">全タイプ</option>
-            <option value="inbound">入庫</option>
-            <option value="outbound">出庫</option>
-            <option value="transfer">移動</option>
-            <option value="adjustment">調整</option>
-            <option value="return">返品</option>
-          </select>
-          <select v-model="filterState" class="o-input o-input-sm" style="width:100px;" @change="loadData">
-            <option value="">全状態</option>
-            <option value="draft">下書き</option>
-            <option value="confirmed">確認済</option>
-            <option value="done">完了</option>
-            <option value="cancelled">取消</option>
-          </select>
-          <OButton variant="secondary" size="sm" @click="exportCsv">CSV出力</OButton>
-        </div>
+        <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</OButton>
       </template>
     </ControlPanel>
 
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width:160px;">移動番号</th>
-            <th class="o-table-th" style="width:80px;">タイプ</th>
-            <th class="o-table-th" style="width:80px;">状態</th>
-            <th class="o-table-th" style="width:120px;">SKU</th>
-            <th class="o-table-th" style="width:160px;">商品名</th>
-            <th class="o-table-th o-table-th--right" style="width:80px;">数量</th>
-            <th class="o-table-th" style="width:160px;">移動元</th>
-            <th class="o-table-th" style="width:160px;">移動先</th>
-            <th class="o-table-th" style="width:140px;">関連</th>
-            <th class="o-table-th" style="width:140px;">実行日時</th>
-            <th class="o-table-th" style="width:160px;">メモ</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoading">
-            <td colspan="11" class="o-table-empty">読み込み中...</td>
-          </tr>
-          <tr v-else-if="rows.length === 0">
-            <td colspan="11" class="o-table-empty">データがありません</td>
-          </tr>
-          <tr v-for="row in rows" :key="row._id" class="o-table-row">
-            <td class="o-table-td"><span class="move-number">{{ row.moveNumber }}</span></td>
-            <td class="o-table-td">
-              <span class="move-type-badge" :class="'move-type--' + row.moveType">{{ moveTypeLabel(row.moveType) }}</span>
-            </td>
-            <td class="o-table-td">
-              <span class="o-status-tag" :class="stateClass(row.state)">{{ stateLabel(row.state) }}</span>
-            </td>
-            <td class="o-table-td">{{ row.productSku }}</td>
-            <td class="o-table-td">{{ row.productName || '-' }}</td>
-            <td class="o-table-td o-table-td--right">{{ row.quantity }}</td>
-            <td class="o-table-td">
-              <span class="location-badge">{{ row.fromLocation?.code || '-' }}</span>
-            </td>
-            <td class="o-table-td">
-              <span class="location-badge">{{ row.toLocation?.code || '-' }}</span>
-            </td>
-            <td class="o-table-td">
-              <span v-if="row.referenceNumber" class="text-muted">{{ row.referenceNumber }}</span>
-              <span v-else>-</span>
-            </td>
-            <td class="o-table-td">{{ row.executedAt ? formatDateTime(row.executedAt) : row.createdAt ? formatDateTime(row.createdAt) : '-' }}</td>
-            <td class="o-table-td">{{ row.memo || '-' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="inventoryMovementsSearch"
+      @search="handleSearch"
+    />
 
-    <!-- Pagination -->
-    <div class="o-table-pagination">
-      <span class="o-table-pagination__info">{{ total }} 件中 {{ rows.length }} 件表示</span>
-      <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;">
-          <option :value="25">25</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-        </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--; loadData()">&lsaquo;</OButton>
-        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++; loadData()">&rsaquo;</OButton>
-      </div>
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="rows"
+        :height="520"
+        row-key="_id"
+        highlight-columns-on-hover
+        pagination-enabled
+        pagination-mode="server"
+        :page-size="pageSize"
+        :page-sizes="[25, 50, 100]"
+        :total="total"
+        :current-page="currentPage"
+        :global-search-text="globalSearchText"
+        @page-change="onPageChange"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
 import { fetchMovements } from '@/api/inventory'
 import type { StockMove } from '@/types/inventory'
+import type { TableColumn, Operator } from '@/types/table'
 
 const toast = useToast()
+const { t } = useI18n()
 const isLoading = ref(false)
 const rows = ref<StockMove[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(50)
+const globalSearchText = ref('')
 const filterMoveType = ref('')
 const filterState = ref('')
 
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
-
-const moveTypeLabel = (t: string) => {
-  const map: Record<string, string> = { inbound: '入庫', outbound: '出庫', transfer: '移動', adjustment: '調整', return: '返品' }
-  return map[t] || t
+const moveTypeLabel = (val: string) => {
+  const map: Record<string, string> = {
+    inbound: t('wms.inventory.moveTypeInbound', '入庫'),
+    outbound: t('wms.inventory.moveTypeOutbound', '出庫'),
+    transfer: t('wms.inventory.moveTypeTransfer', '移動'),
+    adjustment: t('wms.inventory.moveTypeAdjustment', '調整'),
+    return: t('wms.inventory.moveTypeReturn', '返品'),
+  }
+  return map[val] || val
 }
 
 const stateLabel = (s: string) => {
-  const map: Record<string, string> = { draft: '下書き', confirmed: '確認済', done: '完了', cancelled: '取消' }
+  const map: Record<string, string> = {
+    draft: t('wms.inventory.stateDraft', '下書き'),
+    confirmed: t('wms.inventory.stateConfirmed', '確認済'),
+    done: t('wms.inventory.stateDone', '完了'),
+    cancelled: t('wms.inventory.stateCancelled', '取消'),
+  }
   return map[s] || s
 }
 
@@ -136,8 +93,126 @@ const formatDateTime = (d: string) => {
   return new Date(d).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
+const searchColumns = computed<TableColumn[]>(() => [
+  { key: 'moveNumber', dataKey: 'moveNumber', title: t('wms.inventory.moveNumber', '移動番号'), width: 160, fieldType: 'string', searchable: true, searchType: 'string' },
+  {
+    key: 'moveType', dataKey: 'moveType', title: t('wms.inventory.moveType', 'タイプ'), width: 80, fieldType: 'string',
+    searchable: true, searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inventory.moveTypeInbound', '入庫'), value: 'inbound' },
+      { label: t('wms.inventory.moveTypeOutbound', '出庫'), value: 'outbound' },
+      { label: t('wms.inventory.moveTypeTransfer', '移動'), value: 'transfer' },
+      { label: t('wms.inventory.moveTypeAdjustment', '調整'), value: 'adjustment' },
+      { label: t('wms.inventory.moveTypeReturn', '返品'), value: 'return' },
+    ],
+  },
+  {
+    key: 'state', dataKey: 'state', title: t('wms.inventory.status', '状態'), width: 80, fieldType: 'string',
+    searchable: true, searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inventory.stateDraft', '下書き'), value: 'draft' },
+      { label: t('wms.inventory.stateConfirmed', '確認済'), value: 'confirmed' },
+      { label: t('wms.inventory.stateDone', '完了'), value: 'done' },
+      { label: t('wms.inventory.stateCancelled', '取消'), value: 'cancelled' },
+    ],
+  },
+  { key: 'productSku', dataKey: 'productSku', title: 'SKU', width: 120, fieldType: 'string', searchable: true, searchType: 'string' },
+])
+
+const tableColumns = computed<TableColumn[]>(() => [
+  {
+    key: 'moveNumber', dataKey: 'moveNumber', title: t('wms.inventory.moveNumber', '移動番号'), width: 160, fieldType: 'string', searchable: true, searchType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockMove }) => h('span', { class: 'move-number' }, rowData.moveNumber),
+  },
+  {
+    key: 'moveType', dataKey: 'moveType', title: t('wms.inventory.moveType', 'タイプ'), width: 80, fieldType: 'string',
+    searchable: true, searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inventory.moveTypeInbound', '入庫'), value: 'inbound' },
+      { label: t('wms.inventory.moveTypeOutbound', '出庫'), value: 'outbound' },
+      { label: t('wms.inventory.moveTypeTransfer', '移動'), value: 'transfer' },
+      { label: t('wms.inventory.moveTypeAdjustment', '調整'), value: 'adjustment' },
+      { label: t('wms.inventory.moveTypeReturn', '返品'), value: 'return' },
+    ],
+    cellRenderer: ({ rowData }: { rowData: StockMove }) =>
+      h('span', { class: `move-type-badge move-type--${rowData.moveType}` }, moveTypeLabel(rowData.moveType)),
+  },
+  {
+    key: 'state', dataKey: 'state', title: t('wms.inventory.status', '状態'), width: 80, fieldType: 'string',
+    searchable: true, searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inventory.stateDraft', '下書き'), value: 'draft' },
+      { label: t('wms.inventory.stateConfirmed', '確認済'), value: 'confirmed' },
+      { label: t('wms.inventory.stateDone', '完了'), value: 'done' },
+      { label: t('wms.inventory.stateCancelled', '取消'), value: 'cancelled' },
+    ],
+    cellRenderer: ({ rowData }: { rowData: StockMove }) =>
+      h('span', { class: `o-status-tag ${stateClass(rowData.state)}` }, stateLabel(rowData.state)),
+  },
+  { key: 'productSku', dataKey: 'productSku', title: 'SKU', width: 120, fieldType: 'string', searchable: true, searchType: 'string' },
+  { key: 'productName', dataKey: 'productName', title: t('wms.inventory.productName', '商品名'), width: 160, fieldType: 'string' },
+  { key: 'quantity', dataKey: 'quantity', title: t('wms.inventory.quantity', '数量'), width: 80, fieldType: 'number' },
+  {
+    key: 'fromLocation', title: t('wms.inventory.fromLocation', '移動元'), width: 160, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockMove }) =>
+      h('span', { class: 'location-badge' }, rowData.fromLocation?.code || '-'),
+  },
+  {
+    key: 'toLocation', title: t('wms.inventory.toLocation', '移動先'), width: 160, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockMove }) =>
+      h('span', { class: 'location-badge' }, rowData.toLocation?.code || '-'),
+  },
+  { key: 'referenceNumber', dataKey: 'referenceNumber', title: t('wms.inventory.reference', '関連'), width: 140, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockMove }) =>
+      rowData.referenceNumber ? h('span', { class: 'text-muted' }, rowData.referenceNumber) : '-',
+  },
+  {
+    key: 'executedAt', title: t('wms.inventory.executedAt', '実行日時'), width: 140, fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: StockMove }) =>
+      rowData.executedAt ? formatDateTime(rowData.executedAt) : rowData.createdAt ? formatDateTime(rowData.createdAt) : '-',
+  },
+  {
+    key: 'memo', dataKey: 'memo', title: t('wms.inventory.memo', 'メモ'), width: 160, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockMove }) => rowData.memo || '-',
+  },
+])
+
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+    delete payload.__global
+  } else {
+    globalSearchText.value = ''
+  }
+
+  filterMoveType.value = payload.moveType?.value || ''
+  filterState.value = payload.state?.value || ''
+  currentPage.value = 1
+  loadData()
+}
+
+const onPageChange = (payload: { page: number; pageSize: number }) => {
+  currentPage.value = payload.page
+  pageSize.value = payload.pageSize
+  loadData()
+}
+
 const exportCsv = () => {
-  const csvRows: string[] = ['移動番号,タイプ,状態,SKU,商品名,数量,移動元,移動先,関連番号,実行日時,メモ']
+  const csvRows: string[] = [
+    [
+      t('wms.inventory.moveNumber', '移動番号'),
+      t('wms.inventory.moveType', 'タイプ'),
+      t('wms.inventory.status', '状態'),
+      'SKU',
+      t('wms.inventory.productName', '商品名'),
+      t('wms.inventory.quantity', '数量'),
+      t('wms.inventory.fromLocation', '移動元'),
+      t('wms.inventory.toLocation', '移動先'),
+      t('wms.inventory.referenceNumber', '関連番号'),
+      t('wms.inventory.executedAt', '実行日時'),
+      t('wms.inventory.memo', 'メモ'),
+    ].join(','),
+  ]
   for (const r of rows.value) {
     csvRows.push([
       `"${r.moveNumber}"`,
@@ -175,7 +250,7 @@ const loadData = async () => {
     rows.value = res.items
     total.value = res.total
   } catch (e: any) {
-    toast.showError(e?.message || 'データの取得に失敗しました')
+    toast.showError(e?.message || t('wms.inventory.dataFetchFailed', 'データの取得に失敗しました'))
   } finally {
     isLoading.value = false
   }
@@ -184,15 +259,21 @@ const loadData = async () => {
 onMounted(() => loadData())
 </script>
 
-<style>
-@import '@/styles/order-table.css';
-</style>
-
 <style scoped>
 .inventory-movements {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
+  padding: 0 20px 20px;
+  gap: 16px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
+}
+
+.table-section {
+  width: 100%;
 }
 
 .move-number {
@@ -228,6 +309,4 @@ onMounted(() => loadData())
 }
 
 .text-muted { color: var(--o-gray-500, #909399); font-size: 12px; }
-.o-table-td--right { text-align: right; }
-.o-table-th--right { text-align: right; }
 </style>

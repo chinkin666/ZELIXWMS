@@ -1,16 +1,16 @@
 <template>
   <div class="order-group-settings">
-    <ControlPanel title="検品グループ設定" :show-search="false">
+    <ControlPanel :title="t('wms.settings.orderGroupSettings', '検品グループ設定')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">グループを追加</OButton>
+        <OButton variant="primary" @click="openCreate">{{ t('wms.settings.addGroup', 'グループを追加') }}</OButton>
       </template>
     </ControlPanel>
 
     <div class="groups-list">
-      <div v-if="isLoading" class="loading-state">読み込み中...</div>
+      <div v-if="isLoading" class="loading-state">{{ t('wms.settings.loading', '読み込み中...') }}</div>
 
       <div v-else-if="groups.length === 0" class="empty-state">
-        <p>検品グループがありません</p>
+        <p>{{ t('wms.settings.noOrderGroups', '検品グループがありません') }}</p>
       </div>
 
       <draggable
@@ -33,7 +33,7 @@
             <div class="group-info">
               <div class="group-name">
                 {{ group.name }}
-                <span v-if="!group.enabled" class="o-badge o-badge-info">無効</span>
+                <span v-if="!group.enabled" class="o-badge o-badge-info">{{ t('wms.settings.disabled', '無効') }}</span>
               </div>
               <div class="group-meta">
                 <span class="group-id">{{ group.orderGroupId }}</span>
@@ -50,8 +50,8 @@
                 />
                 <span class="o-toggle-slider"></span>
               </label>
-              <OButton variant="primary" size="sm" @click="openEdit(group)">編集</OButton>
-              <OButton variant="danger" size="sm" @click="confirmDelete(group)">削除</OButton>
+              <OButton variant="primary" size="sm" @click="openEdit(group)">{{ t('wms.common.edit', '編集') }}</OButton>
+              <OButton variant="danger" size="sm" @click="confirmDelete(group)">{{ t('wms.common.delete', '削除') }}</OButton>
             </div>
           </div>
         </template>
@@ -71,6 +71,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import draggable from 'vuedraggable'
@@ -85,6 +86,7 @@ import type { OrderGroup, OrderGroupFormData } from '@/types/orderGroup'
 import OrderGroupFormDialog from '@/components/order-group/OrderGroupFormDialog.vue'
 
 const { show: showToast } = useToast()
+const { t } = useI18n()
 
 const groups = ref<OrderGroup[]>([])
 const isLoading = ref(false)
@@ -97,7 +99,7 @@ const loadGroups = async () => {
   try {
     groups.value = await fetchOrderGroups()
   } catch (e: any) {
-    showToast(e.message || '検品グループの取得に失敗しました', 'danger')
+    showToast(e.message || t('wms.settings.fetchGroupsFailed', '検品グループの取得に失敗しました'), 'danger')
   } finally {
     isLoading.value = false
   }
@@ -119,15 +121,15 @@ const handleSubmit = async (data: OrderGroupFormData) => {
   try {
     if (isEditing.value && editingGroup.value) {
       await updateOrderGroup(editingGroup.value._id, data)
-      showToast('検品グループを更新しました', 'success')
+      showToast(t('wms.settings.groupUpdated', '検品グループを更新しました'), 'success')
     } else {
       await createOrderGroup(data)
-      showToast('検品グループを作成しました', 'success')
+      showToast(t('wms.settings.groupCreated', '検品グループを作成しました'), 'success')
     }
     dialogVisible.value = false
     await loadGroups()
   } catch (e: any) {
-    showToast(e.message || '保存に失敗しました', 'danger')
+    showToast(e.message || t('wms.settings.saveFailed', '保存に失敗しました'), 'danger')
   }
 }
 
@@ -135,20 +137,20 @@ const handleEnableChange = async (group: OrderGroup, enabled: boolean) => {
   try {
     await updateOrderGroup(group._id, { enabled })
     group.enabled = enabled
-    showToast(enabled ? 'グループを有効にしました' : 'グループを無効にしました', 'success')
+    showToast(enabled ? t('wms.settings.groupEnabled', 'グループを有効にしました') : t('wms.settings.groupDisabled', 'グループを無効にしました'), 'success')
   } catch (e: any) {
-    showToast(e.message || '更新に失敗しました', 'danger')
+    showToast(e.message || t('wms.settings.updateFailed', '更新に失敗しました'), 'danger')
   }
 }
 
 const confirmDelete = async (group: OrderGroup) => {
-  if (!confirm(`検品グループ「${group.name}」を削除しますか？このグループに属する注文のグループ設定もクリアされます。`)) return
+  if (!confirm(t('wms.settings.confirmDeleteGroup', `検品グループ「${group.name}」を削除しますか？このグループに属する注文のグループ設定もクリアされます。`))) return
   try {
     await deleteOrderGroup(group._id)
-    showToast('検品グループを削除しました', 'success')
+    showToast(t('wms.settings.groupDeleted', '検品グループを削除しました'), 'success')
     await loadGroups()
   } catch (e: any) {
-    showToast(e.message || '削除に失敗しました', 'danger')
+    showToast(e.message || t('wms.settings.deleteFailed', '削除に失敗しました'), 'danger')
   }
 }
 
@@ -157,7 +159,7 @@ const onDragEnd = async () => {
     const orderedIds = groups.value.map((g) => g._id)
     await reorderOrderGroups(orderedIds)
   } catch (e: any) {
-    showToast(e.message || '優先順位の更新に失敗しました', 'danger')
+    showToast(e.message || t('wms.settings.reorderFailed', '優先順位の更新に失敗しました'), 'danger')
     await loadGroups()
   }
 }
@@ -169,6 +171,9 @@ onMounted(() => {
 
 <style scoped>
 .order-group-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   padding: 0 20px 20px;
 }
 :deep(.o-control-panel) {
@@ -177,27 +182,6 @@ onMounted(() => {
 }
 
 
-
-
-
-.o-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--o-border-color, #dcdfe6);
-  border-radius: var(--o-border-radius, 4px);
-  font-size: var(--o-font-size-base, 14px);
-  cursor: pointer;
-  background: var(--o-view-background, #fff);
-  color: var(--o-gray-700, #303133);
-  transition: 0.2s;
-  white-space: nowrap;
-}
-.o-btn-primary { background: var(--o-brand-primary, #714b67); color: #fff; border-color: var(--o-brand-primary, #714b67); }
-.o-btn-sm { padding: 4px 10px; font-size: 13px; }
-.o-btn-outline-primary { background: transparent; color: var(--o-brand-primary, #714b67); border-color: var(--o-brand-primary, #714b67); }
-.o-btn-outline-danger { background: transparent; color: #f56c6c; border-color: #f56c6c; }
 
 .o-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
 .o-badge-info { background: #f4f4f5; color: #909399; }

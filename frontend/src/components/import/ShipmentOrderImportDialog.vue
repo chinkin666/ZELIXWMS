@@ -622,8 +622,6 @@ const handleImport = async () => {
       return result
     })
 
-    console.log('[DEBUG ImportDialog] first row orderer:', JSON.stringify(importedRows[0]?.orderer))
-    console.log('[DEBUG ImportDialog] first mapped row:', JSON.stringify(mappedRows[0]))
     emit('import', importedRows)
     alert(`${importedRows.length}件のデータを取り込みしました`)
     handleClose()

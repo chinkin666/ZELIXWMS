@@ -1,6 +1,6 @@
-import { getApiBaseUrl } from '@/api/base'
+import { http } from '@/api/http'
 
-const API_BASE_URL = getApiBaseUrl()
+// ─── Types / 型定義 ─────────────────────────────────────────────────────────
 
 export interface Customer {
   _id: string
@@ -39,82 +39,51 @@ export interface BulkImportResult {
   errors: { row: number; customerCode?: string; message: string }[]
 }
 
-export async function fetchCustomers(params?: CustomerListParams): Promise<CustomerListResponse> {
-  const url = new URL(`${API_BASE_URL}/customers`)
-  if (params) {
-    if (params.search) url.searchParams.append('search', params.search)
-    if (params.page) url.searchParams.append('page', String(params.page))
-    if (params.limit) url.searchParams.append('limit', String(params.limit))
-    if (params.isActive !== undefined) url.searchParams.append('isActive', params.isActive)
-  }
-  const response = await fetch(url.toString())
-  if (!response.ok) {
-    throw new Error(`得意先の取得に失敗しました: ${response.statusText}`)
-  }
-  return response.json()
+// ─── Helper / ヘルパー ──────────────────────────────────────────────────────
+
+function buildCustomerParams(params?: CustomerListParams): Record<string, string> | undefined {
+  if (!params) return undefined
+  const result: Record<string, string> = {}
+  if (params.search) result.search = params.search
+  if (params.page) result.page = String(params.page)
+  if (params.limit) result.limit = String(params.limit)
+  if (params.isActive !== undefined) result.isActive = params.isActive
+  return Object.keys(result).length > 0 ? result : undefined
 }
 
-export async function fetchCustomer(id: string): Promise<Customer> {
-  const response = await fetch(`${API_BASE_URL}/customers/${id}`)
-  if (!response.ok) {
-    throw new Error(`得意先の取得に失敗しました: ${response.statusText}`)
-  }
-  return response.json()
+// ─── API Functions / API 関数 ───────────────────────────────────────────────
+
+/** 得意先一覧を取得 / Fetch customer list */
+export function fetchCustomers(params?: CustomerListParams): Promise<CustomerListResponse> {
+  return http.get<CustomerListResponse>('/customers', buildCustomerParams(params))
 }
 
-export async function createCustomer(data: Partial<Customer>): Promise<Customer> {
-  const response = await fetch(`${API_BASE_URL}/customers`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!response.ok) {
-    const message = (await response.json().catch(() => ({}))).message || response.statusText
-    throw new Error(`得意先の作成に失敗しました: ${message}`)
-  }
-  return response.json()
+/** 得意先を取得 / Fetch single customer */
+export function fetchCustomer(id: string): Promise<Customer> {
+  return http.get<Customer>(`/customers/${id}`)
 }
 
-export async function updateCustomer(id: string, data: Partial<Customer>): Promise<Customer> {
-  const response = await fetch(`${API_BASE_URL}/customers/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!response.ok) {
-    const message = (await response.json().catch(() => ({}))).message || response.statusText
-    throw new Error(`得意先の更新に失敗しました: ${message}`)
-  }
-  return response.json()
+/** 得意先を作成 / Create customer */
+export function createCustomer(data: Partial<Customer>): Promise<Customer> {
+  return http.post<Customer>('/customers', data)
 }
 
-export async function deleteCustomer(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/customers/${id}`, {
-    method: 'DELETE',
-  })
-  if (!response.ok) {
-    const message = (await response.json().catch(() => ({}))).message || response.statusText
-    throw new Error(`得意先の削除に失敗しました: ${message}`)
-  }
+/** 得意先を更新 / Update customer */
+export function updateCustomer(id: string, data: Partial<Customer>): Promise<Customer> {
+  return http.put<Customer>(`/customers/${id}`, data)
 }
 
-export async function bulkImportCustomers(customers: Partial<Customer>[]): Promise<BulkImportResult> {
-  const response = await fetch(`${API_BASE_URL}/customers/bulk-import`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ customers }),
-  })
-  if (!response.ok) {
-    const data = await response.json().catch(() => ({}))
-    throw new Error(data?.message || '一括取り込みに失敗しました')
-  }
-  return response.json()
+/** 得意先を削除 / Delete customer */
+export function deleteCustomer(id: string): Promise<void> {
+  return http.delete<void>(`/customers/${id}`)
 }
 
-export async function exportCustomers(): Promise<Customer[]> {
-  const response = await fetch(`${API_BASE_URL}/customers/export`)
-  if (!response.ok) {
-    throw new Error(`得意先のエクスポートに失敗しました: ${response.statusText}`)
-  }
-  return response.json()
+/** 得意先を一括取り込み / Bulk import customers */
+export function bulkImportCustomers(customers: Partial<Customer>[]): Promise<BulkImportResult> {
+  return http.post<BulkImportResult>('/customers/bulk-import', { customers })
+}
+
+/** 得意先をエクスポート / Export customers */
+export function exportCustomers(): Promise<Customer[]> {
+  return http.get<Customer[]>('/customers/export')
 }

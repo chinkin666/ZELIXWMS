@@ -1,12 +1,12 @@
 <template>
   <div class="table-card">
-    <div class="table-title">入力元（Source）</div>
+    <div class="table-title">{{ t('wms.mapping.source', '入力元') }}</div>
     <div class="source-table-wrap" style="height: 520px; overflow-y: auto;">
       <table class="o-list-table source-table">
         <thead>
           <tr>
-            <th style="min-width: 240px">項目名</th>
-            <th style="min-width: 200px">使用中の出力先</th>
+            <th style="min-width: 240px">{{ t('wms.mapping.fieldName', '項目名') }}</th>
+            <th style="min-width: 200px">{{ t('wms.mapping.linkedTarget', '紐付け先') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -41,7 +41,7 @@
                   {{ getTargetDisplayName(targetField) }}
                 </span>
                 <span v-if="getUsedByTargets(row.name).length === 0" class="empty-text">
-                  未使用
+                  {{ t('wms.mapping.unused', '未使用') }}
                 </span>
               </div>
             </td>
@@ -53,6 +53,10 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
+
 interface SourceRow {
   name: string
   label?: string
@@ -92,27 +96,7 @@ function isSelected(row: SourceRow): boolean {
   flex-wrap: wrap;
   gap: 8px;
 }
-.o-list-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.o-list-table th,
-.o-list-table td {
-  border: 1px solid var(--o-border-color, #dee2e6);
-  padding: 8px 10px;
-  text-align: left;
-  font-size: 13px;
-}
-.o-list-table th {
-  background: var(--o-gray-100, #f8f9fa);
-  font-weight: 600;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-.o-list-table tbody tr:hover {
-  background: #f5f7fa;
-}
+/* .o-list-table base styles are defined globally in style.css */
 .row-selected {
   background: #ecf5ff !important;
 }

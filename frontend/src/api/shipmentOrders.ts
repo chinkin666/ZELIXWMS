@@ -65,7 +65,7 @@ export async function fetchShipmentOrders(params?: { limit?: number }): Promise<
   // - use q(JSON) to send SearchForm payload.
   const url = new URL(`${API_BASE_URL}/shipment-orders`)
   if (params?.limit) url.searchParams.set('limit', String(params.limit))
-  // 默认使用 orderNumber 排序
+  // デフォルトはorderNumberでソート / 默认使用 orderNumber 排序
   url.searchParams.set('sortBy', 'orderNumber')
   url.searchParams.set('sortOrder', 'asc')
   const response = await fetch(url.toString())
@@ -104,7 +104,7 @@ export async function fetchShipmentOrdersPage<T = any>(query: FetchShipmentOrder
   url.searchParams.set('page', String(query.page))
   url.searchParams.set('limit', String(query.limit))
 
-  // 默认使用 orderNumber 排序（如果没有指定）
+  // デフォルトはorderNumberでソート（未指定の場合） / 默认使用 orderNumber 排序（如果没有指定）
   const sortBy = query.sortBy || 'orderNumber'
   const sortOrder = query.sortOrder || 'asc'
   

@@ -1,15 +1,6 @@
 <template>
   <div class="barcode-mgmt">
     <ControlPanel title="バーコード管理" :show-search="false">
-      <template #center>
-        <input
-          v-model="searchText"
-          type="text"
-          class="o-input"
-          placeholder="SKU・商品名・バーコードで検索..."
-          style="width: 280px;"
-        />
-      </template>
       <template #actions>
         <div style="display:flex;gap:6px;">
           <OButton variant="secondary" size="sm" @click="showImportPanel = !showImportPanel">
@@ -65,45 +56,26 @@
       </div>
     </div>
 
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width:140px;">SKU</th>
-            <th class="o-table-th" style="width:200px;">商品名</th>
-            <th class="o-table-th">バーコード一覧</th>
-            <th class="o-table-th" style="width:120px;">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoading">
-            <td colspan="4" class="o-table-empty">読み込み中...</td>
-          </tr>
-          <tr v-else-if="filteredProducts.length === 0">
-            <td colspan="4" class="o-table-empty">該当する商品がありません</td>
-          </tr>
-          <tr v-for="product in filteredProducts" :key="product._id" class="o-table-row">
-            <td class="o-table-td"><strong>{{ product.sku }}</strong></td>
-            <td class="o-table-td">{{ product.name }}</td>
-            <td class="o-table-td">
-              <div class="barcode-list">
-                <span
-                  v-for="(bc, idx) in (product.barcode || [])"
-                  :key="idx"
-                  class="barcode-tag"
-                >
-                  {{ bc }}
-                  <button class="barcode-tag-remove" @click="removeBarcode(product, idx)" title="削除">&times;</button>
-                </span>
-                <span v-if="!product.barcode || product.barcode.length === 0" class="no-barcode">未登録</span>
-              </div>
-            </td>
-            <td class="o-table-td">
-              <OButton variant="primary" size="sm" @click="openAddDialog(product)">追加</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <SearchForm
+      class="search-section"
+      :columns="searchColumns"
+      :show-save="false"
+      storage-key="barcodeManagementSearch"
+      @search="handleSearch"
+    />
+
+    <div class="table-section">
+      <Table
+        :columns="tableColumns"
+        :data="products"
+        :height="520"
+        row-key="_id"
+        pagination-enabled
+        pagination-mode="client"
+        :page-size="25"
+        :page-sizes="[10, 25, 50, 100]"
+        :global-search-text="globalSearchText"
+      />
     </div>
 
     <!-- Add Barcode Dialog -->
@@ -146,26 +118,113 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, h, onMounted } from 'vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
+import SearchForm from '@/components/search/SearchForm.vue'
+import Table from '@/components/table/Table.vue'
+import type { TableColumn, Operator } from '@/types/table'
 import { fetchProducts, updateProduct } from '@/api/product'
 import type { Product } from '@/types/product'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 
 const toast = useToast()
+const { t } = useI18n()
 
 const products = ref<Product[]>([])
 const isLoading = ref(false)
 const searchText = ref('')
+const globalSearchText = ref('')
 const showImportPanel = ref(false)
 
-// Search is reactive via computed filteredProducts — no debounce needed for client-side filter
+// ---------------------------------------------------------------------------
+// Table columns
+// ---------------------------------------------------------------------------
+const baseColumns: TableColumn[] = [
+  {
+    key: 'sku',
+    dataKey: 'sku',
+    title: 'SKU',
+    width: 140,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'name',
+    dataKey: 'name',
+    title: '商品名',
+    width: 200,
+    fieldType: 'string',
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'barcode',
+    dataKey: 'barcode',
+    title: 'バーコード一覧',
+    width: 400,
+    fieldType: 'array',
+  },
+]
 
+const searchColumns: TableColumn[] = baseColumns.filter((c) => c.searchable)
+
+const tableColumns: TableColumn[] = [
+  {
+    ...baseColumns[0],
+    cellRenderer: ({ rowData }: { rowData: Product }) =>
+      h('strong', {}, rowData.sku),
+  },
+  {
+    ...baseColumns[1],
+    cellRenderer: ({ rowData }: { rowData: Product }) => rowData.name || '-',
+  },
+  {
+    ...baseColumns[2],
+    cellRenderer: ({ rowData }: { rowData: Product }) => {
+      const barcodes = rowData.barcode || []
+      if (barcodes.length === 0) {
+        return h('span', { class: 'no-barcode' }, '未登録')
+      }
+      return h('div', { class: 'barcode-list' },
+        barcodes.map((bc, idx) =>
+          h('span', { class: 'barcode-tag', key: idx }, [
+            bc,
+            h('button', {
+              class: 'barcode-tag-remove',
+              title: '削除',
+              onClick: () => removeBarcode(rowData, idx),
+              innerHTML: '&times;',
+            }),
+          ]),
+        ),
+      )
+    },
+  },
+  {
+    key: 'actions',
+    title: t('wms.common.actions', '操作'),
+    width: 120,
+    cellRenderer: ({ rowData }: { rowData: Product }) =>
+      h(OButton, { variant: 'primary', size: 'sm', onClick: () => openAddDialog(rowData) }, () => '追加'),
+  },
+]
+
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  if (payload.__global?.value) {
+    globalSearchText.value = String(payload.__global.value).trim()
+  } else {
+    globalSearchText.value = ''
+  }
+}
+
+// Search is reactive via computed filteredProducts — used for CSV export
 const filteredProducts = computed(() => {
-  if (!searchText.value.trim()) return products.value
-  const q = searchText.value.trim().toLowerCase()
+  if (!searchText.value.trim() && !globalSearchText.value) return products.value
+  const q = (searchText.value.trim() || globalSearchText.value).toLowerCase()
   return products.value.filter(p =>
     p.sku.toLowerCase().includes(q) ||
     p.name.toLowerCase().includes(q) ||
@@ -353,50 +412,23 @@ onMounted(() => {
 
 <style scoped>
 .barcode-mgmt {
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.o-table-wrapper {
-  overflow-x: auto;
-  margin-top: 8px;
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
-.o-table {
+.search-section {
+  margin-bottom: 12px;
+}
+
+.table-section {
   width: 100%;
-  border-collapse: collapse;
-  background: var(--o-view-background, #fff);
-  border: 1px solid var(--o-border-color, #e4e7ed);
-  border-radius: var(--o-border-radius, 8px);
-  overflow: hidden;
-}
-
-.o-table-th {
-  text-align: left;
-  padding: 10px 12px;
-  background: var(--o-gray-100, #f5f7fa);
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--o-gray-600, #606266);
-  border-bottom: 1px solid var(--o-border-color, #e4e7ed);
-  white-space: nowrap;
-}
-
-.o-table-row:hover {
-  background: var(--o-gray-50, #fafafa);
-}
-
-.o-table-td {
-  padding: 8px 12px;
-  font-size: 13px;
-  border-bottom: 1px solid var(--o-border-color-light, #ebeef5);
-  color: var(--o-gray-700, #303133);
-}
-
-.o-table-empty {
-  text-align: center;
-  padding: 40px;
-  color: var(--o-gray-400, #c0c4cc);
 }
 
 .barcode-list {

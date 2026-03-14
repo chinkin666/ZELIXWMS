@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import { useToast } from '@/composables/useToast'
+import { useI18n } from '@/composables/useI18n'
 import {
   fetchSystemSettings,
   updateSystemSettings,
@@ -11,6 +12,7 @@ import {
 } from '@/api/systemSettings'
 
 const { showSuccess, showError, showWarning } = useToast()
+const { t } = useI18n()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -45,7 +47,7 @@ async function loadSettings(): Promise<void> {
     const data = await fetchSystemSettings()
     applySettings(data)
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '設定の読み込みに失敗しました'
+    const msg = e instanceof Error ? e.message : t('wms.settings.loadSettingsFailed', '設定の読み込みに失敗しました')
     showError(msg)
   } finally {
     loading.value = false
@@ -64,9 +66,9 @@ async function handleSave(): Promise<void> {
     } = form.value
     const data = await updateSystemSettings(payload)
     applySettings(data)
-    showSuccess('設定を保存しました')
+    showSuccess(t('wms.settings.settingsSaved', '設定を保存しました'))
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '設定の保存に失敗しました'
+    const msg = e instanceof Error ? e.message : t('wms.settings.saveSettingsFailed', '設定の保存に失敗しました')
     showError(msg)
   } finally {
     saving.value = false
@@ -74,16 +76,16 @@ async function handleSave(): Promise<void> {
 }
 
 async function handleReset(): Promise<void> {
-  const confirmed = window.confirm('すべての設定をデフォルト値にリセットしますか？')
+  const confirmed = window.confirm(t('wms.settings.confirmResetAll', 'すべての設定をデフォルト値にリセットしますか？'))
   if (!confirmed) return
 
   saving.value = true
   try {
     const data = await resetSystemSettings()
     applySettings(data)
-    showWarning('設定をデフォルト値にリセットしました')
+    showWarning(t('wms.settings.settingsResetToDefault', '設定をデフォルト値にリセットしました'))
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : '設定のリセットに失敗しました'
+    const msg = e instanceof Error ? e.message : t('wms.settings.resetSettingsFailed', '設定のリセットに失敗しました')
     showError(msg)
   } finally {
     saving.value = false
@@ -95,43 +97,43 @@ onMounted(loadSettings)
 
 <template>
   <div class="system-settings">
-    <ControlPanel title="応用設定" :show-search="false">
+    <ControlPanel :title="t('wms.settings.advancedSettings', '応用設定')" :show-search="false">
       <template #actions>
         <OButton variant="secondary" :disabled="saving" @click="handleReset">
-          リセット
+          {{ t('wms.settings.reset', 'リセット') }}
         </OButton>
         <OButton variant="primary" :disabled="saving" @click="handleSave">
-          保存
+          {{ t('wms.common.save', '保存') }}
         </OButton>
       </template>
     </ControlPanel>
 
-    <div v-if="loading" class="settings-loading">読み込み中...</div>
+    <div v-if="loading" class="settings-loading">{{ t('wms.settings.loading', '読み込み中...') }}</div>
 
     <div v-else class="settings-body">
       <!-- 入荷設定 -->
       <div class="o-card settings-card">
         <div class="card-header">
-          <span class="card-title">入荷設定</span>
-          <span class="card-description">入荷時の検品やロット自動作成に関する設定</span>
+          <span class="card-title">{{ t('wms.settings.inboundSettings', '入荷設定') }}</span>
+          <span class="card-description">{{ t('wms.settings.inboundSettingsDesc', '入荷時の検品やロット自動作成に関する設定') }}</span>
         </div>
         <div class="card-body">
           <div class="o-form-group">
-            <label class="o-form-label">入荷時に検品を必須にする</label>
+            <label class="form-label">{{ t('wms.settings.inboundRequireInspection', '入荷時に検品を必須にする') }}</label>
             <label class="toggle-switch">
               <input v-model="form.inboundRequireInspection" type="checkbox" />
               <span class="toggle-slider" />
             </label>
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">入荷時にロットを自動作成</label>
+            <label class="form-label">{{ t('wms.settings.inboundAutoCreateLot', '入荷時にロットを自動作成') }}</label>
             <label class="toggle-switch">
               <input v-model="form.inboundAutoCreateLot" type="checkbox" />
               <span class="toggle-slider" />
             </label>
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">デフォルト入荷ロケーション</label>
+            <label class="form-label">{{ t('wms.settings.defaultInboundLocation', 'デフォルト入荷ロケーション') }}</label>
             <input
               v-model="form.inboundDefaultLocationCode"
               type="text"
@@ -145,19 +147,19 @@ onMounted(loadSettings)
       <!-- 在庫設定 -->
       <div class="o-card settings-card">
         <div class="card-header">
-          <span class="card-title">在庫設定</span>
-          <span class="card-description">在庫管理・ロット追跡・賞味期限に関する設定</span>
+          <span class="card-title">{{ t('wms.settings.inventorySettings', '在庫設定') }}</span>
+          <span class="card-description">{{ t('wms.settings.inventorySettingsDesc', '在庫管理・ロット追跡・賞味期限に関する設定') }}</span>
         </div>
         <div class="card-body">
           <div class="o-form-group">
-            <label class="o-form-label">マイナス在庫を許可</label>
+            <label class="form-label">{{ t('wms.settings.allowNegativeStock', 'マイナス在庫を許可') }}</label>
             <label class="toggle-switch">
               <input v-model="form.inventoryAllowNegativeStock" type="checkbox" />
               <span class="toggle-slider" />
             </label>
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">デフォルト安全在庫数</label>
+            <label class="form-label">{{ t('wms.settings.defaultSafetyStock', 'デフォルト安全在庫数') }}</label>
             <input
               v-model.number="form.inventoryDefaultSafetyStock"
               type="number"
@@ -166,14 +168,14 @@ onMounted(loadSettings)
             />
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">ロット追跡を有効化</label>
+            <label class="form-label">{{ t('wms.settings.enableLotTracking', 'ロット追跡を有効化') }}</label>
             <label class="toggle-switch">
               <input v-model="form.inventoryLotTrackingEnabled" type="checkbox" />
               <span class="toggle-slider" />
             </label>
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">賞味期限アラート日数</label>
+            <label class="form-label">{{ t('wms.settings.expiryAlertDays', '賞味期限アラート日数') }}</label>
             <input
               v-model.number="form.inventoryExpiryAlertDays"
               type="number"
@@ -187,27 +189,27 @@ onMounted(loadSettings)
       <!-- 出荷設定 -->
       <div class="o-card settings-card">
         <div class="card-header">
-          <span class="card-title">出荷設定</span>
-          <span class="card-description">出荷時の自動引当・検品に関する設定</span>
+          <span class="card-title">{{ t('wms.settings.outboundSettings', '出荷設定') }}</span>
+          <span class="card-description">{{ t('wms.settings.outboundSettingsDesc', '出荷時の自動引当・検品に関する設定') }}</span>
         </div>
         <div class="card-body">
           <div class="o-form-group">
-            <label class="o-form-label">出荷時に自動引当</label>
+            <label class="form-label">{{ t('wms.settings.outboundAutoAllocate', '出荷時に自動引当') }}</label>
             <label class="toggle-switch">
               <input v-model="form.outboundAutoAllocate" type="checkbox" />
               <span class="toggle-slider" />
             </label>
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">引当ルール</label>
+            <label class="form-label">{{ t('wms.settings.allocationRule', '引当ルール') }}</label>
             <select v-model="form.outboundAllocationRule" class="o-input">
-              <option value="FIFO">FIFO（先入先出）</option>
-              <option value="FEFO">FEFO（先期限先出）</option>
-              <option value="LIFO">LIFO（後入先出）</option>
+              <option value="FIFO">{{ t('wms.settings.fifo', 'FIFO（先入先出）') }}</option>
+              <option value="FEFO">{{ t('wms.settings.fefo', 'FEFO（先期限先出）') }}</option>
+              <option value="LIFO">{{ t('wms.settings.lifo', 'LIFO（後入先出）') }}</option>
             </select>
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">出荷検品必須</label>
+            <label class="form-label">{{ t('wms.settings.outboundRequireInspection', '出荷検品必須') }}</label>
             <label class="toggle-switch">
               <input v-model="form.outboundRequireInspection" type="checkbox" />
               <span class="toggle-slider" />
@@ -219,24 +221,24 @@ onMounted(loadSettings)
       <!-- バーコード設定 -->
       <div class="o-card settings-card">
         <div class="card-header">
-          <span class="card-title">バーコード設定</span>
-          <span class="card-description">バーコードフォーマットとスキャンモードの設定</span>
+          <span class="card-title">{{ t('wms.settings.barcodeSettings', 'バーコード設定') }}</span>
+          <span class="card-description">{{ t('wms.settings.barcodeSettingsDesc', 'バーコードフォーマットとスキャンモードの設定') }}</span>
         </div>
         <div class="card-body">
           <div class="o-form-group">
-            <label class="o-form-label">デフォルトバーコード形式</label>
+            <label class="form-label">{{ t('wms.settings.defaultBarcodeFormat', 'デフォルトバーコード形式') }}</label>
             <select v-model="form.barcodeDefaultFormat" class="o-input">
               <option value="code128">Code 128</option>
               <option value="ean13">EAN-13</option>
               <option value="code39">Code 39</option>
-              <option value="qrcode">QRコード</option>
+              <option value="qrcode">{{ t('wms.settings.qrCode', 'QRコード') }}</option>
             </select>
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">スキャンモード</label>
+            <label class="form-label">{{ t('wms.settings.scanMode', 'スキャンモード') }}</label>
             <select v-model="form.barcodeScanMode" class="o-input">
-              <option value="single">シングル（1件ずつ）</option>
-              <option value="continuous">連続スキャン</option>
+              <option value="single">{{ t('wms.settings.scanSingle', 'シングル（1件ずつ）') }}</option>
+              <option value="continuous">{{ t('wms.settings.scanContinuous', '連続スキャン') }}</option>
             </select>
           </div>
         </div>
@@ -245,20 +247,20 @@ onMounted(loadSettings)
       <!-- 一般設定 -->
       <div class="o-card settings-card">
         <div class="card-header">
-          <span class="card-title">一般設定</span>
-          <span class="card-description">言語・タイムゾーン・表示形式の設定</span>
+          <span class="card-title">{{ t('wms.settings.generalSettings', '一般設定') }}</span>
+          <span class="card-description">{{ t('wms.settings.generalSettingsDesc', '言語・タイムゾーン・表示形式の設定') }}</span>
         </div>
         <div class="card-body">
           <div class="o-form-group">
-            <label class="o-form-label">システム言語</label>
+            <label class="form-label">{{ t('wms.settings.systemLanguage', 'システム言語') }}</label>
             <select v-model="form.systemLanguage" class="o-input">
-              <option value="ja">日本語</option>
+              <option value="ja">{{ t('wms.settings.langJa', '日本語') }}</option>
               <option value="en">English</option>
-              <option value="zh">中文</option>
+              <option value="zh">{{ t('wms.settings.langZh', '中文') }}</option>
             </select>
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">タイムゾーン</label>
+            <label class="form-label">{{ t('wms.settings.timezone', 'タイムゾーン') }}</label>
             <select v-model="form.timezone" class="o-input">
               <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
               <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
@@ -268,7 +270,7 @@ onMounted(loadSettings)
             </select>
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">日付フォーマット</label>
+            <label class="form-label">{{ t('wms.settings.dateFormat', '日付フォーマット') }}</label>
             <select v-model="form.dateFormat" class="o-input">
               <option value="YYYY-MM-DD">YYYY-MM-DD</option>
               <option value="YYYY/MM/DD">YYYY/MM/DD</option>
@@ -277,7 +279,7 @@ onMounted(loadSettings)
             </select>
           </div>
           <div class="o-form-group">
-            <label class="o-form-label">デフォルトページサイズ</label>
+            <label class="form-label">{{ t('wms.settings.defaultPageSize', 'デフォルトページサイズ') }}</label>
             <input
               v-model.number="form.pageSize"
               type="number"
@@ -294,7 +296,15 @@ onMounted(loadSettings)
 
 <style scoped>
 .system-settings {
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+:deep(.o-control-panel) {
+  margin-left: -20px;
+  margin-right: -20px;
 }
 
 .settings-loading {
@@ -358,7 +368,7 @@ onMounted(loadSettings)
   gap: 1rem;
 }
 
-.o-form-label {
+.form-label {
   font-size: var(--o-font-size-base, 14px);
   color: var(--o-gray-700, #495057);
   white-space: nowrap;
@@ -447,7 +457,7 @@ select.o-input {
     width: 100%;
   }
 
-  .o-form-label {
+  .form-label {
     min-width: auto;
   }
 }

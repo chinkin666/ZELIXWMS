@@ -1,37 +1,37 @@
 <template>
   <div v-show="visible" class="settings-section">
-    <h3 class="section-title">スタイル設定</h3>
+    <h3 class="section-title">{{ t('wms.formEditor.styleSettings', 'スタイル設定') }}</h3>
     <div class="o-form">
       <div class="o-form-group">
-        <label>フォントサイズ</label>
+        <label>{{ t('wms.formEditor.fontSize', 'フォントサイズ') }}</label>
         <div style="display: flex; align-items: center; gap: 8px">
           <input type="number" :value="styles.fontSize" min="6" max="24" class="o-input" style="width: 80px" @input="updateStyle('fontSize', parseInt(($event.target as HTMLInputElement).value))" />
           <span class="unit">pt</span>
         </div>
       </div>
       <div class="o-form-group">
-        <label>ヘッダー背景色</label>
+        <label>{{ t('wms.formEditor.headerBgColor', 'ヘッダー背景色') }}</label>
         <div style="display: flex; align-items: center; gap: 8px">
           <input type="color" :value="styles.headerBgColor" @input="updateStyle('headerBgColor', ($event.target as HTMLInputElement).value)" />
           <input :value="styles.headerBgColor" class="o-input" style="width: 120px" placeholder="#2a3474" @input="updateStyle('headerBgColor', ($event.target as HTMLInputElement).value)" />
         </div>
       </div>
       <div class="o-form-group">
-        <label>ヘッダー文字色</label>
+        <label>{{ t('wms.formEditor.headerTextColor', 'ヘッダー文字色') }}</label>
         <div style="display: flex; align-items: center; gap: 8px">
           <input type="color" :value="styles.headerTextColor" @input="updateStyle('headerTextColor', ($event.target as HTMLInputElement).value)" />
           <input :value="styles.headerTextColor" class="o-input" style="width: 120px" placeholder="#ffffff" @input="updateStyle('headerTextColor', ($event.target as HTMLInputElement).value)" />
         </div>
       </div>
       <div class="o-form-group">
-        <label>罫線色</label>
+        <label>{{ t('wms.formEditor.borderColor', '罫線色') }}</label>
         <div style="display: flex; align-items: center; gap: 8px">
           <input type="color" :value="styles.borderColor" @input="updateStyle('borderColor', ($event.target as HTMLInputElement).value)" />
           <input :value="styles.borderColor" class="o-input" style="width: 120px" placeholder="#cccccc" @input="updateStyle('borderColor', ($event.target as HTMLInputElement).value)" />
         </div>
       </div>
       <div class="o-form-group">
-        <label>セル内余白</label>
+        <label>{{ t('wms.formEditor.cellPadding', 'セル内余白') }}</label>
         <div style="display: flex; align-items: center; gap: 8px">
           <input type="number" :value="styles.cellPadding" min="0" max="20" class="o-input" style="width: 80px" @input="updateStyle('cellPadding', parseInt(($event.target as HTMLInputElement).value))" />
           <span class="unit">pt</span>
@@ -40,14 +40,14 @@
 
       <div class="o-divider"></div>
 
-      <h4 class="sub-section-title">セル配置</h4>
+      <h4 class="sub-section-title">{{ t('wms.formEditor.cellAlignment', 'セル配置') }}</h4>
 
       <div class="o-form-group">
-        <label>水平方向</label>
+        <label>{{ t('wms.formEditor.horizontalAlign', '水平方向') }}</label>
         <div class="o-segmented">
-          <button :class="{ active: styles.horizontalAlign === 'left' }" @click="updateStyle('horizontalAlign', 'left')">&#x21E4; 左</button>
-          <button :class="{ active: styles.horizontalAlign === 'center' }" @click="updateStyle('horizontalAlign', 'center')">&#x2014; 中央</button>
-          <button :class="{ active: styles.horizontalAlign === 'right' }" @click="updateStyle('horizontalAlign', 'right')">&#x21E5; 右</button>
+          <button :class="{ active: styles.horizontalAlign === 'left' }" @click="updateStyle('horizontalAlign', 'left')">&#x21E4; {{ t('wms.formEditor.alignLeft', '左') }}</button>
+          <button :class="{ active: styles.horizontalAlign === 'center' }" @click="updateStyle('horizontalAlign', 'center')">&#x2014; {{ t('wms.formEditor.alignCenter', '中央') }}</button>
+          <button :class="{ active: styles.horizontalAlign === 'right' }" @click="updateStyle('horizontalAlign', 'right')">&#x21E5; {{ t('wms.formEditor.alignRight', '右') }}</button>
         </div>
       </div>
     </div>
@@ -55,6 +55,9 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from '@/composables/useI18n'
+
+const { t } = useI18n()
 defineProps<{
   visible: boolean
   styles: {
