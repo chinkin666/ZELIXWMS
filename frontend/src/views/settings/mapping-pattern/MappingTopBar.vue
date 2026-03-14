@@ -57,7 +57,7 @@
     <div class="top-right">
       <div class="field">
         <div class="label">{{ t('wms.mapping.sampleData', 'サンプルデータ') }}</div>
-        <OButton variant="secondary" @click="$emit('load-sample-orders')">{{ t('wms.mapping.loadSampleOrders', '注文サンプルを読み込む') }}</OButton>
+        <OButton variant="secondary" @click="$emit('load-sample-orders')">{{ t('wms.mapping.loadSampleOrders', '出荷指示サンプル読込') }}</OButton>
       </div>
       <div class="field">
         <div class="label">{{ t('wms.mapping.layoutName', 'レイアウト名') }}</div>
@@ -122,24 +122,28 @@ function onNativeFileSelect(event: Event) {
 <style scoped>
 .top-bar {
   display: flex;
-  gap: 32px;
+  gap: 24px;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 8px 0 4px;
+  padding: 14px 16px;
+  background: var(--o-view-background, #fff);
+  border: 1px solid var(--o-border-color, #e4e7ed);
 }
 .top-left,
 .top-right {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 14px;
 }
 .field .label {
+  font-size: 12px;
   font-weight: 600;
+  color: var(--o-gray-600, #606266);
   margin-bottom: 4px;
 }
 .hint {
-  color: #999;
-  font-size: 12px;
+  color: var(--o-gray-400, #c0c4cc);
+  font-size: 11px;
   margin-top: 4px;
 }
 .upload-row {

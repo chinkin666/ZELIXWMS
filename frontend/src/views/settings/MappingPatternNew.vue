@@ -1183,26 +1183,25 @@ const handleLoad = async () => {
 }
 
 .target-description-box {
-  grid-column: 1;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-  padding: 12px;
-  margin-top: 12px;
+  background: var(--o-view-background, #fff);
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-left: 3px solid var(--o-brand-primary, #D97756);
+  padding: 12px 16px;
+  margin-top: 8px;
   max-height: 200px;
   overflow-y: auto;
 }
 
 .target-description-title {
   font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 8px;
-  color: #303133;
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: var(--o-gray-800, #303133);
 }
 
 .target-description-content {
   font-size: 13px;
-  color: #606266;
+  color: var(--o-gray-600, #606266);
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
