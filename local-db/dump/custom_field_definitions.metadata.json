@@ -1,0 +1,22 @@
+{
+  "indexes": [
+    {
+      "v": 2,
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_"
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1,
+        "entityType": 1,
+        "fieldKey": 1
+      },
+      "name": "tenantId_1_entityType_1_fieldKey_1",
+      "background": true,
+      "unique": true
+    }
+  ]
+}

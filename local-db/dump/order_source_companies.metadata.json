@@ -1,0 +1,27 @@
+{
+  "indexes": [
+    {
+      "v": 2,
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_"
+    },
+    {
+      "v": 2,
+      "key": {
+        "senderName": 1
+      },
+      "name": "senderName_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "senderPostalCode": 1
+      },
+      "name": "senderPostalCode_1",
+      "background": true
+    }
+  ]
+}

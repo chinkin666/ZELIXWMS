@@ -1,0 +1,44 @@
+{
+  "indexes": [
+    {
+      "v": 2,
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_"
+    },
+    {
+      "v": 2,
+      "key": {
+        "scheduleId": 1
+      },
+      "name": "scheduleId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "taskNumber": 1
+      },
+      "name": "taskNumber_1",
+      "background": true,
+      "unique": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "createdAt": -1
+      },
+      "name": "createdAt_-1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "status": 1
+      },
+      "name": "status_1",
+      "background": true
+    }
+  ]
+}
