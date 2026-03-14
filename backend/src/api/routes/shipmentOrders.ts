@@ -236,6 +236,20 @@ shipmentOrderRouter.post('/:id/status', handleStatus);
  *                 limit:
  *                   type: integer
  */
+// 出荷グループ別 注文数集計 / 出荷グループ別注文数集計
+shipmentOrderRouter.get('/group-counts', async (_req, res) => {
+  try {
+    const { ShipmentOrder } = await import('@/models/shipmentOrder');
+    const result = await ShipmentOrder.aggregate([
+      { $match: { orderGroupId: { $exists: true, $ne: null, $ne: '' } } },
+      { $group: { _id: '$orderGroupId', count: { $sum: 1 } } },
+    ]);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 shipmentOrderRouter.get('/', listOrders);
 
 /**
