@@ -1,7 +1,7 @@
 <template>
   <ODialog
     :open="visible"
-    title="注文分割"
+    title="出荷指示分割"
     @close="handleCancel"
     width="900px"
   >

@@ -18,7 +18,7 @@ const navItems = [
   { label: 'ホーム', sublabel: 'ダッシュボード', path: '/home', keywords: 'home dashboard ダッシュボード 首页' },
   { label: '出荷指示作成', sublabel: '新規出荷', path: '/shipment/orders/create', keywords: 'shipment create order 出荷 作成 新規' },
   { label: '出荷作業一覧', sublabel: '検品・出荷', path: '/shipment/operations/tasks', keywords: 'shipment tasks 出荷 作業 検品' },
-  { label: '出荷一覧', sublabel: '注文リスト', path: '/shipment/operations/list', keywords: 'shipment list 出荷 一覧' },
+  { label: '出荷一覧', sublabel: '出荷指示リスト', path: '/shipment/operations/list', keywords: 'shipment list 出荷 一覧' },
   { label: '出荷実績', sublabel: '出荷履歴', path: '/shipment/results', keywords: 'results history 実績 履歴' },
   { label: '1-1検品', sublabel: '単品検品', path: '/shipment/operations/one-by-one/inspection', keywords: 'inspection 検品 1対1' },
   { label: 'N-1検品', sublabel: '複数検品', path: '/shipment/operations/n-by-one/inspection', keywords: 'inspection 検品 N対1' },

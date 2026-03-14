@@ -42,9 +42,7 @@
               style="cursor: pointer"
             >
               <td>
-                <span class="o-badge" :class="row.required ? 'o-badge-danger' : 'o-badge-info'">
-                  {{ row.required ? t('wms.mapping.requiredBadge', '必須') : t('wms.mapping.optionalBadge', '任意') }}
-                </span>
+                <span v-if="row.required" class="required-badge">必須</span>
               </td>
               <td>
                 <div
@@ -90,9 +88,7 @@
                 style="cursor: pointer; background-color: #f9fafc"
               >
                 <td>
-                  <span class="o-badge" :class="child.required ? 'o-badge-danger' : 'o-badge-info'">
-                    {{ child.required ? t('wms.mapping.requiredBadge', '必須') : t('wms.mapping.optionalBadge', '任意') }}
-                  </span>
+                  <span v-if="child.required" class="required-badge">必須</span>
                 </td>
                 <td>
                   <div class="product-child-item" style="display: flex; align-items: center; gap: 4px">
@@ -160,10 +156,14 @@ function isCustomTargetField(field: string): boolean {
 </script>
 
 <style scoped>
+.required-badge {
+  display: inline-block; background: #dc3545; color: #fff;
+  font-size: 10px; font-weight: 700; line-height: 1;
+  padding: 2px 5px; border-radius: 3px; white-space: nowrap;
+}
 .table-card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  background: var(--o-view-background, #fff);
+  border: 1px solid var(--o-border-color, #e4e7ed);
   padding: 10px;
   display: flex;
   flex-direction: column;

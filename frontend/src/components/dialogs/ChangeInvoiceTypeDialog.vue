@@ -7,12 +7,12 @@
   >
     <div class="dialog-content">
       <div class="order-info">
-        <p>選択中の注文: <strong>{{ orderCount }}</strong>件</p>
+        <p>選択中の出荷指示: <strong>{{ orderCount }}</strong>件</p>
         <p v-if="hasExistingTrackingIds && hasBuiltInCarrier" class="warning-text">
-          一部の注文は既にB2 Cloudに登録されています。変更を適用するとB2 Cloudから削除され、新しい送り状種類で再登録されます。
+          一部の出荷指示は既にB2 Cloudに登録されています。変更を適用するとB2 Cloudから削除され、新しい送り状種類で再登録されます。
         </p>
         <p v-if="hasManualCarrier" class="error-text">
-          手動連携の注文が含まれています。運送会社のシステムから手動で注文を削除してください。
+          手動連携の出荷指示が含まれています。運送会社のシステムから手動で削除してください。
         </p>
       </div>
 
@@ -115,7 +115,7 @@ const coolTypeWarning = computed(() => {
   if (!selectedInvoiceType.value) return null
   if (coolSupportedInvoiceTypes.has(selectedInvoiceType.value)) return null
   const option = invoiceTypeOptions.find((o) => o.value === selectedInvoiceType.value)
-  return `選択した送り状種類「${option?.label}」はクール便に対応していません。クール便の注文が含まれているため選択できません。`
+  return `選択した送り状種類「${option?.label}」はクール便に対応していません。クール便の出荷指示が含まれているため選択できません。`
 })
 
 const isOptionAvailable = (value: string) => {

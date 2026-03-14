@@ -13,7 +13,7 @@
           B2 Cloud連携を使用している場合、B2 Cloudからも削除されます。
         </p>
         <p v-if="showManualCarrierWarning" class="error-text">
-          手動連携の注文です。運送会社のシステムから手動で注文を削除してください。
+          手動連携の出荷指示です。運送会社のシステムから手動で削除してください。
         </p>
       </div>
 

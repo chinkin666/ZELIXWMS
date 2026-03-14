@@ -9,8 +9,8 @@
           style="width: 160px"
         >
           <option value="" disabled>条件タイプ</option>
-          <option value="orderField">注文フィールド</option>
-          <option value="orderStatus">注文ステータス</option>
+          <option value="orderField">出荷指示フィールド</option>
+          <option value="orderStatus">出荷指示ステータス</option>
           <option value="orderGroup">出荷グループ</option>
           <option value="carrierRawRow">配送業者データ</option>
         </select>
