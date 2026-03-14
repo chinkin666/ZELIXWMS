@@ -411,7 +411,7 @@ function setBgImageFromFile(file: File) {
     img.src = base64
   }
   reader.onerror = () => {
-    showToast('参考图读取失败', 'danger')
+    showToast('参考画像の読み込みに失敗しました', 'danger')
   }
   reader.readAsDataURL(file)
 }

@@ -10,11 +10,18 @@ import {
 } from '@/services/printTemplateService';
 import { logger } from '@/lib/logger';
 
+// 参考画像の最大サイズ（5MB）/ 参考画像の最大サイズ
+const MAX_REF_IMAGE_SIZE = 5 * 1024 * 1024;
+
 export const createTemplate = async (req: Request, res: Response): Promise<void> => {
   try {
     const dto = req.body as CreatePrintTemplateDto;
     if (!dto?.name || !dto?.canvas || !Array.isArray(dto?.elements)) {
       res.status(400).json({ message: 'Invalid request: name, canvas, elements are required' });
+      return;
+    }
+    if (dto.referenceImageData && dto.referenceImageData.length > MAX_REF_IMAGE_SIZE) {
+      res.status(400).json({ message: '参考画像が大きすぎます（最大5MB）' });
       return;
     }
     const created = await createPrintTemplate(dto);
@@ -66,6 +73,10 @@ export const updateTemplate = async (req: Request, res: Response): Promise<void>
       return;
     }
     const dto = req.body as UpdatePrintTemplateDto;
+    if (dto.referenceImageData && dto.referenceImageData.length > MAX_REF_IMAGE_SIZE) {
+      res.status(400).json({ message: '参考画像が大きすぎます（最大5MB）' });
+      return;
+    }
     const updated = await updatePrintTemplate(id, dto);
     if (!updated) {
       res.status(404).json({ message: 'Print template not found' });

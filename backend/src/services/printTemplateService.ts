@@ -60,7 +60,7 @@ export const listPrintTemplates = async (filters?: {
   const tenantId = getTenantId();
   const q: any = { tenantId };
   if (filters?.name) q.name = { $regex: String(filters.name).trim(), $options: 'i' };
-  const items = await PrintTemplate.find(q).sort({ createdAt: -1 });
+  const items = await PrintTemplate.find(q).sort({ createdAt: -1 }).limit(200);
   return items.map((doc) => toDocument(doc, false));
 };
 
