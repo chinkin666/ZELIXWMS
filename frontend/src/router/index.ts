@@ -498,6 +498,12 @@ const router = createRouter({
               meta: { title: 'プラグイン管理' },
             },
             {
+              path: 'scripts',
+              name: 'ScriptEditor',
+              component: () => import('@/views/settings/ScriptEditor.vue'),
+              meta: { title: '自動化スクリプト' },
+            },
+            {
               path: 'system',
               name: 'SystemSettings',
               component: () => import('@/views/settings/SystemSettings.vue'),

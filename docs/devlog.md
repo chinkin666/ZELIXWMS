@@ -5,6 +5,50 @@
 
 ---
 
+## [2026-03-14] Extension Architecture Phase 4 完成 / 拡張アーキテクチャ Phase 4 完了
+
+**变更类型 / 変更種別**: feat
+**影响范围 / 影響範囲**: `backend/src/core/extensions/scriptRunner.ts`、`backend/src/models/automationScript.ts`、`backend/src/models/scriptExecutionLog.ts`
+**关联文档 / 関連ドキュメント**: `docs/extension/05-plan.md`
+
+### 内容 / 内容
+
+实现了 Extension Architecture Phase 4（ScriptRunner）：
+
+#### 新增文件 / 新規ファイル
+- `backend/src/models/automationScript.ts` — 自动化脚本模型
+- `backend/src/models/scriptExecutionLog.ts` — 脚本执行日志模型（30天TTL）
+- `backend/src/core/extensions/scriptRunner.ts` — 脚本执行器（Node.js vm 沙箱）
+- `backend/src/api/controllers/scriptController.ts` — 脚本管理 API
+- `frontend/src/api/script.ts` — 前端脚本 API 客户端
+- `frontend/src/views/settings/ScriptEditor.vue` — 脚本管理页面
+
+#### 修改文件 / 変更ファイル
+- `backend/src/core/extensions/extensionManager.ts` — 集成 ScriptRunner（emit 后异步执行匹配脚本）
+- `backend/src/api/routes/extensions.ts` — 注册脚本管理路由
+- `frontend/src/router/index.ts` — 注册脚本页面路由
+- `frontend/src/layouts/WmsLayout.vue` — 侧边栏添加「スクリプト」菜单
+
+#### 安全特性 / セキュリティ機能
+- Node.js vm 沙箱隔离（禁止代码生成和 WASM）
+- 禁止关键字检查（require, import, eval, process, fs 等）
+- 白名单字段修改（仅允许修改指定路径如 order.orderGroup）
+- 超时保护（100ms - 30s 可配置）
+- 创建时强制语法校验
+
+#### API 新增 / API 追加
+- `GET /api/extensions/scripts` — 列出所有脚本
+- `POST /api/extensions/scripts` — 创建脚本（含语法校验）
+- `GET /api/extensions/scripts/:id` — 获取单个脚本
+- `PUT /api/extensions/scripts/:id` — 更新脚本
+- `DELETE /api/extensions/scripts/:id` — 删除脚本
+- `POST /api/extensions/scripts/:id/toggle` — 切换启用/禁用
+- `POST /api/extensions/scripts/:id/validate` — 语法校验
+- `POST /api/extensions/scripts/:id/test` — 手动测试执行
+- `GET /api/extensions/scripts/:id/logs` — 查询执行日志
+
+---
+
 ## [2026-03-14] Extension Architecture Phase 3 完成 / 拡張アーキテクチャ Phase 3 完了
 
 **变更类型 / 変更種別**: feat

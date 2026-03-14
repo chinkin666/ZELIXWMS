@@ -116,6 +116,7 @@ const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'テナント管理', to: '/settings/tenants' },
     { label: 'Webhook', to: '/settings/webhooks' },
     { label: 'プラグイン', to: '/settings/plugins' },
+    { label: 'スクリプト', to: '/settings/scripts' },
     { label: '応用設定', to: '/settings/system' },
   ],
 }

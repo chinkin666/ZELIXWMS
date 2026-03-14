@@ -30,6 +30,17 @@ import {
   getPluginConfig,
   updatePluginConfig,
 } from '@/api/controllers/pluginController';
+import {
+  listScripts,
+  getScript,
+  createScript,
+  updateScript,
+  deleteScript,
+  toggleScript,
+  validateScript,
+  testScript,
+  getScriptLogs,
+} from '@/api/controllers/scriptController';
 
 export const extensionRouter = Router();
 
@@ -59,6 +70,16 @@ extensionRouter.post('/plugins/:name/disable', disablePlugin);
 extensionRouter.get('/plugins/:name/config', getPluginConfig);
 extensionRouter.put('/plugins/:name/config', updatePluginConfig);
 
-// Phase 4: extensionRouter.use('/scripts', scriptController)
+// 脚本管理 / スクリプト管理
+extensionRouter.get('/scripts', listScripts);
+extensionRouter.post('/scripts', createScript);
+extensionRouter.get('/scripts/:id', getScript);
+extensionRouter.put('/scripts/:id', updateScript);
+extensionRouter.delete('/scripts/:id', deleteScript);
+extensionRouter.post('/scripts/:id/toggle', toggleScript);
+extensionRouter.post('/scripts/:id/validate', validateScript);
+extensionRouter.post('/scripts/:id/test', testScript);
+extensionRouter.get('/scripts/:id/logs', getScriptLogs);
+
 // Phase 5: extensionRouter.use('/custom-fields', customFieldController)
 // Phase 5: extensionRouter.use('/feature-flags', featureFlagController)

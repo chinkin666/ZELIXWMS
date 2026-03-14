@@ -4,7 +4,8 @@
  * Phase 1: HookManager
  * Phase 2: WebhookDispatcher
  * Phase 3: PluginManager
- * Phase 4+: ScriptRunner 等を順次追加
+ * Phase 4: ScriptRunner
+ * Phase 5+: CustomFields, FeatureFlags 等を順次追加
  *
  * 所有 Engine 操作完成后通过此类发射事件。
  * すべての Engine 操作完了後、このクラスを通じてイベントを発行する。
@@ -13,6 +14,7 @@
 import { logger } from '@/lib/logger';
 import { HookManager } from './hookManager';
 import { PluginManager } from './pluginManager';
+import { ScriptRunner } from './scriptRunner';
 import { WebhookDispatcher } from './webhookDispatcher';
 import { EventLog } from '@/models/eventLog';
 import type { HookEventName, EmitOptions } from './types';
@@ -20,17 +22,18 @@ import type { HookEventName, EmitOptions } from './types';
 class ExtensionManager {
   private hookManager: HookManager;
   private pluginManager: PluginManager;
+  private scriptRunner: ScriptRunner;
   private webhookDispatcher: WebhookDispatcher;
   private initialized = false;
 
-  // Phase 4+: 以下を追加予定
-  // private scriptRunner: ScriptRunner;
+  // Phase 5+: 以下を追加予定
   // private featureFlagService: FeatureFlagService;
   // private customFieldService: CustomFieldService;
 
   constructor() {
     this.hookManager = new HookManager();
     this.pluginManager = new PluginManager(this.hookManager);
+    this.scriptRunner = new ScriptRunner();
     this.webhookDispatcher = new WebhookDispatcher();
   }
 
@@ -73,7 +76,11 @@ class ExtensionManager {
       // 1. Hook handlers（プラグイン + 組み込み処理）
       const handlerCount = await this.hookManager.emit(event, payload, tenantId);
 
-      // 2. Phase 4: await this.scriptRunner.executeForEvent(event, payload)
+      // 2. ScriptRunner — 执行匹配的自动化脚本（异步，不阻塞）
+      // 2. ScriptRunner — 一致する自動化スクリプトを実行（非同期、ブロックしない）
+      this.scriptRunner.executeForEvent(event, payload).catch((err) => {
+        logger.error({ event, err }, 'Script execution error / スクリプト実行エラー');
+      });
 
       // 3. Webhook 投递（异步，不阻塞）/ Webhook 配信（非同期、ブロックしない）
       this.webhookDispatcher.dispatch(event, payload).catch((err) => {
@@ -126,8 +133,14 @@ class ExtensionManager {
     return this.pluginManager;
   }
 
-  // Phase 4+: getter methods for other managers
-  // getScriptRunner(): ScriptRunner { return this.scriptRunner; }
+  /**
+   * 获取 ScriptRunner 实例 / ScriptRunner インスタンスを取得
+   */
+  getScriptRunner(): ScriptRunner {
+    return this.scriptRunner;
+  }
+
+  // Phase 5+: getter methods for other managers
   // getFeatureFlagService(): FeatureFlagService { return this.featureFlagService; }
   // getCustomFieldService(): CustomFieldService { return this.customFieldService; }
 
