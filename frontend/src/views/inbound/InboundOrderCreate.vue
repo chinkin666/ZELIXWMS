@@ -24,8 +24,22 @@
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.supplierName', '仕入先名') }}</label>
-          <input v-model="form.supplierName" type="text" class="o-input" :placeholder="t('wms.inbound.supplierNamePlaceholder', '仕入先名...')" />
+          <label class="form-label">{{ t('wms.inbound.supplierName', '仕入先') }}</label>
+          <select v-model="form.supplierId" class="o-input" @change="onSupplierChange">
+            <option value="">{{ t('wms.common.pleaseSelect', '選択してください...') }}</option>
+            <option v-for="s in suppliers" :key="s._id" :value="s._id">
+              {{ s.supplierCode ? `[${s.supplierCode}] ` : '' }}{{ s.name }}
+            </option>
+            <option value="__manual__">{{ t('wms.inbound.manualInput', '手動入力...') }}</option>
+          </select>
+          <input
+            v-if="form.supplierId === '__manual__'"
+            v-model="form.supplierName"
+            type="text"
+            class="o-input"
+            style="margin-top:4px;"
+            :placeholder="t('wms.inbound.supplierNamePlaceholder', '仕入先名を入力...')"
+          />
         </div>
 
         <div class="form-field">
@@ -121,6 +135,7 @@ import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { createInboundOrder } from '@/api/inboundOrder'
 import { fetchLocations } from '@/api/location'
 import { fetchProducts } from '@/api/product'
+import { fetchSuppliers, type SupplierData } from '@/api/supplier'
 import type { Product } from '@/types/product'
 import type { Location } from '@/types/inventory'
 
@@ -130,6 +145,7 @@ const { t } = useI18n()
 const isSubmitting = ref(false)
 const products = ref<Product[]>([])
 const locations = ref<Location[]>([])
+const suppliers = ref<SupplierData[]>([])
 
 interface FormLine {
   productId: string
@@ -144,10 +160,21 @@ interface FormLine {
 const form = ref({
   destinationLocationId: '',
   expectedDate: '',
+  supplierId: '',
   supplierName: '',
   memo: '',
   lines: [] as FormLine[],
 })
+
+// 仕入先選択変更時 / 仕入先选择变更时
+const onSupplierChange = () => {
+  if (form.value.supplierId && form.value.supplierId !== '__manual__') {
+    const s = suppliers.value.find(s => s._id === form.value.supplierId)
+    form.value.supplierName = s?.name || ''
+  } else if (form.value.supplierId !== '__manual__') {
+    form.value.supplierName = ''
+  }
+}
 
 const physicalLocations = computed(() =>
   locations.value.filter(l => !l.type.startsWith('virtual/')),
@@ -179,9 +206,16 @@ const handleSubmit = async () => {
   if (!canSubmit.value) return
   isSubmitting.value = true
   try {
+    const selectedSupplier = form.value.supplierId && form.value.supplierId !== '__manual__'
+      ? suppliers.value.find(s => s._id === form.value.supplierId)
+      : null
+    const supplierData = selectedSupplier
+      ? { name: selectedSupplier.name, code: selectedSupplier.supplierCode }
+      : (form.value.supplierName ? { name: form.value.supplierName } : undefined)
+
     const payload = {
       destinationLocationId: form.value.destinationLocationId,
-      supplier: form.value.supplierName ? { name: form.value.supplierName } : undefined,
+      supplier: supplierData,
       expectedDate: form.value.expectedDate || undefined,
       memo: form.value.memo || undefined,
       lines: form.value.lines.map(l => ({
@@ -206,12 +240,14 @@ const handleSubmit = async () => {
 
 onMounted(async () => {
   try {
-    const [prods, locs] = await Promise.all([
+    const [prods, locs, supplierRes] = await Promise.all([
       fetchProducts(),
       fetchLocations({ isActive: true }),
+      fetchSuppliers({ isActive: 'true', limit: 500 }),
     ])
     products.value = prods
     locations.value = locs
+    suppliers.value = supplierRes.data || []
   } catch (e: any) {
     toast.showError(t('wms.inbound.masterDataError', 'マスタデータの取得に失敗しました'))
   }
