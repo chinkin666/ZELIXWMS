@@ -63,7 +63,11 @@ export async function generateMonthlyBilling(req: Request, res: Response) {
     const dashStart = `${period}-01`;
     const dashEnd = endDate.toISOString().slice(0, 10);
 
-    const aggregation = await ShipmentOrder.aggregate([
+    // orders コレクションを直接使用 / 直接使用 orders 集合
+    // ShipmentOrder モデルのコレクション名は 'shipmentorders' だが、実データは 'orders' に格納
+    const mongoose = await import('mongoose');
+    const orderCollection = mongoose.default.connection.collection('orders');
+    const aggregation = await orderCollection.aggregate([
       {
         $match: {
           $or: [
@@ -84,7 +88,7 @@ export async function generateMonthlyBilling(req: Request, res: Response) {
           totalShippingCost: { $sum: { $ifNull: ['$shippingCost', 0] } },
         },
       },
-    ]);
+    ]).toArray();
 
     // 荷主名・配送業者名のキャッシュ取得
     // 获取货主名・配送商名缓存
