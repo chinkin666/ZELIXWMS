@@ -162,6 +162,32 @@ export async function uploadProductImage(file: File): Promise<{ imageUrl: string
   return response.json()
 }
 
+// 商品別出荷統計 / 商品出荷统计
+export interface ProductShipmentStat {
+  _id: string // productSku
+  inputSku: string
+  productName: string
+  totalQuantity: number
+  totalAmount: number
+  orderCount: number
+}
+
+export async function fetchProductShipmentStats(params?: {
+  dateFrom?: string
+  dateTo?: string
+  limit?: number
+}): Promise<ProductShipmentStat[]> {
+  const url = new URL(`${API_BASE_URL}/products/shipment-stats`)
+  if (params?.dateFrom) url.searchParams.append('dateFrom', params.dateFrom)
+  if (params?.dateTo) url.searchParams.append('dateTo', params.dateTo)
+  if (params?.limit) url.searchParams.append('limit', String(params.limit))
+  const response = await fetch(url.toString())
+  if (!response.ok) {
+    throw new Error(`出荷統計の取得に失敗しました: ${response.statusText}`)
+  }
+  return response.json()
+}
+
 export async function bulkUpdateProducts(
   ids: string[],
   updates: Record<string, any>,

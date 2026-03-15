@@ -5,6 +5,7 @@ import fs from 'fs';
 import { randomUUID } from 'crypto';
 import sharp from 'sharp';
 import { Product, computeAllSku } from '@/models/product';
+import { ShipmentOrder } from '@/models/shipmentOrder';
 import { createProductSchema, updateProductSchema, type CreateProductInput } from '@/schemas/productSchema';
 import { loadEnv } from '@/config/env';
 import { logOperation } from '@/services/operationLogger';
@@ -867,6 +868,48 @@ export const uploadProductImage = async (req: Request, res: Response): Promise<v
     res.json({ imageUrl });
   } catch (error: any) {
     res.status(500).json({ message: '画像のアップロードに失敗しました', error: error.message });
+  }
+};
+
+/**
+ * 商品別出荷統計を取得 / 获取商品出荷统计
+ * GET /api/products/shipment-stats?dateFrom=YYYY-MM-DD&dateTo=YYYY-MM-DD&limit=50
+ */
+export const getProductShipmentStats = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { dateFrom, dateTo } = req.query;
+    const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 500);
+
+    // 日付フィルター構築 / 构建日期过滤器
+    const matchStage: Record<string, unknown> = {
+      'status.shipped.isShipped': true,
+    };
+
+    if (typeof dateFrom === 'string' && typeof dateTo === 'string' && dateFrom && dateTo) {
+      matchStage.shipPlanDate = { $gte: dateFrom, $lte: dateTo };
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+      { $unwind: '$products' },
+      {
+        $group: {
+          _id: '$products.productSku',
+          inputSku: { $first: '$products.inputSku' },
+          productName: { $first: '$products.productName' },
+          totalQuantity: { $sum: '$products.quantity' },
+          totalAmount: { $sum: '$products.subtotal' },
+          orderCount: { $sum: 1 },
+        },
+      },
+      { $sort: { totalQuantity: -1 as const } },
+      { $limit: limit },
+    ];
+
+    const results = await ShipmentOrder.aggregate(pipeline);
+    res.json(results);
+  } catch (error: any) {
+    res.status(500).json({ message: '出荷統計の取得に失敗しました', error: error.message });
   }
 };
 

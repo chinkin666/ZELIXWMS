@@ -91,6 +91,7 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
   '/products': [
     { label: '商品一覧', to: '/products/list' },
     { label: 'バーコード管理', to: '/products/barcodes' },
+    { label: '出荷統計', to: '/products/shipment-stats' },
   ],
   '/set-products': [
     { label: 'セット組一覧', to: '/set-products/list' },

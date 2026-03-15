@@ -7,6 +7,7 @@ import {
   createProduct,
   deleteProduct,
   getProduct,
+  getProductShipmentStats,
   importProductsBulk,
   importProductsWithStrategy,
   listProducts,
@@ -116,6 +117,37 @@ productRouter.post('/', createProduct);
  *       404:
  *         description: Product not found / 商品が見つかりません
  */
+/**
+ * @swagger
+ * /products/shipment-stats:
+ *   get:
+ *     tags: [Products]
+ *     summary: Get product shipment statistics / 商品別出荷統計取得
+ *     parameters:
+ *       - in: query
+ *         name: dateFrom
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date (YYYY-MM-DD) / 開始日
+ *       - in: query
+ *         name: dateTo
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date (YYYY-MM-DD) / 終了日
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Max results / 最大件数
+ *     responses:
+ *       200:
+ *         description: Shipment statistics by product / 商品別出荷統計
+ */
+productRouter.get('/shipment-stats', getProductShipmentStats);
+
 productRouter.get('/resolve/:sku', resolveSku);
 
 /**

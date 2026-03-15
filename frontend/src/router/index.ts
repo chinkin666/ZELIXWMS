@@ -60,6 +60,12 @@ const router = createRouter({
               component: () => import('@/views/settings/BarcodeManagement.vue'),
               meta: { title: 'バーコード管理', requiresAuth: true },
             },
+            {
+              path: 'shipment-stats',
+              name: 'ProductShipmentStats',
+              component: () => import('@/views/products/ProductShipmentStats.vue'),
+              meta: { title: '出荷統計', requiresAuth: true },
+            },
           ],
         },
         {
