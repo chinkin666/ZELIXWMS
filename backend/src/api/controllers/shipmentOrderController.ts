@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import { processOrderEventBulk } from '@/services/autoProcessingEngine';
 import { isBuiltInCarrierId, getBuiltInCarrier } from '@/data/builtInCarriers';
 import { AppError, ValidationError } from '@/lib/errors';
+import { logger } from '@/lib/logger';
 import {
   createOrders as createOrdersService,
   updateOrder as updateOrderService,
@@ -204,7 +205,7 @@ export const handleStatusBulk = async (req: Request, res: Response): Promise<voi
     });
   } catch (error: unknown) {
     if (error instanceof AppError) {
-      console.error('Error in handleStatusBulk:', error);
+      logger.error({ err: error }, 'Error in handleStatusBulk');
     }
     handleError(res, error, 'Failed to update order status');
   }
@@ -462,10 +463,10 @@ export const importCarrierReceiptRows = async (req: Request, res: Response): Pro
 
     // Auto-processing hook (fire-and-forget)
     if (carrierMatchedIds.length > 0) {
-      processOrderEventBulk(carrierMatchedIds, 'order.carrierReceived').catch(console.error);
+      processOrderEventBulk(carrierMatchedIds, 'order.carrierReceived').catch((err: unknown) => logger.error(err));
     }
   } catch (error: any) {
-    console.error('[importCarrierReceiptRows] error:', error);
+    logger.error({ err: error }, '[importCarrierReceiptRows] error');
     res.status(500).json({ message: 'Failed to import carrier receipt rows', error: error.message });
   }
 };

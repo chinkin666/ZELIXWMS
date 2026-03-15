@@ -102,7 +102,7 @@ export async function renderTemplateWithContextToPngBlob(
           try {
             value = String(await runTransformMapping(b.transformMapping, ctx, {}) ?? '')
           } catch (e) {
-            console.error('Error rendering barcode transform mapping:', e)
+            // バーコード変換マッピングレンダリングエラー / Barcode transform mapping render error
             value = ''
           }
         }
@@ -127,7 +127,7 @@ export async function renderTemplateWithContextToPngBlob(
             const imgEl = await dataUrlToImage(img.imageData)
             imageImageById.set(img.id, imgEl)
           } catch (e) {
-            console.error('Error loading image element:', e)
+            // 画像要素読み込みエラー / Image element load error
           }
         }
       }),
@@ -144,7 +144,7 @@ export async function renderTemplateWithContextToPngBlob(
           try {
             text = String(await runTransformMapping(t.transformMapping, ctx, {}) ?? '')
           } catch (e) {
-            console.error('Error rendering text transform mapping:', e)
+            // テキスト変換マッピングレンダリングエラー / Text transform mapping render error
             text = ''
           }
         }

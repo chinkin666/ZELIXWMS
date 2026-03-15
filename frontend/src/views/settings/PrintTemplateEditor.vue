@@ -625,7 +625,7 @@ async function parseTableFile(file: File) {
     scheduleRender()
   } catch (e: any) {
     showToast(e?.message || $t('wms.printTemplate.parseFileFailed', 'ファイル解析に失敗しました'), 'danger')
-    console.error('Table parsing error:', e)
+    // テーブル解析エラー / Table parsing error
   }
 }
 
@@ -735,7 +735,7 @@ async function barcodeToImage(b: PrintBarcodeElement, value: string): Promise<HT
       options: b.options,
     })
   } catch (error) {
-    console.error('Barcode generation error:', error)
+    // バーコード生成エラー / Barcode generation error
     throw error
   }
 
@@ -743,7 +743,7 @@ async function barcodeToImage(b: PrintBarcodeElement, value: string): Promise<HT
     const img = new Image()
     img.onload = () => resolve(img)
     img.onerror = (e) => {
-      console.error('Image load error:', e)
+      // 画像読み込みエラー / Image load error
       reject(new Error(`Failed to load barcode image for format ${b.format}`))
     }
     img.src = dataUrl

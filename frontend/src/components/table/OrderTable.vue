@@ -471,7 +471,7 @@ const ActionCell = defineComponent({
         const result = props.renderer({ rowData: props.rowData })
         return h('div', { class: 'action-cell-wrapper' }, [result])
       } catch (e) {
-        console.error('Error rendering action cell:', e)
+        // アクションセルレンダリングエラー / Action cell render error
         return null
       }
     }
@@ -497,7 +497,7 @@ const BundleCell = defineComponent({
         const result = props.renderer({ rowData: props.rowData })
         return result
       } catch (e) {
-        console.error('Error rendering bundle cell:', e)
+        // 同梱セルレンダリングエラー / Bundle cell render error
         return null
       }
     }
@@ -1124,7 +1124,7 @@ const loadSortConfig = () => {
       }
     }
   } catch (e) {
-    console.error('Failed to load sort config:', e)
+    // ソート設定読み込み失敗 / Failed to load sort config
   }
 }
 
@@ -1140,7 +1140,7 @@ const saveSortConfig = () => {
     }
     localStorage.setItem(key, JSON.stringify(config))
   } catch (e) {
-    console.error('Failed to save sort config:', e)
+    // ソート設定保存失敗 / Failed to save sort config
   }
 }
 
@@ -1458,7 +1458,7 @@ const formatFieldValue = (row: RowData, field: CategoryGroup['fields'][0]): stri
         return String(rendered)
       }
     } catch (e) {
-      console.warn('cellRenderer error:', e)
+      // セルレンダラーエラー / Cell renderer error
     }
   }
 
@@ -1586,12 +1586,12 @@ const applyBulkEdit = (payload: {
   if (!dataKey) return
 
   if (!rowSelectionEnabled.value) {
-    console.warn('行選択が有効ではありません')
+    // 行選択が有効ではありません / Row selection not enabled
     return
   }
 
   if (!innerSelectedKeys.value.length) {
-    console.warn('左側のチェックで編集対象の行を選択してください')
+    // 編集対象の行が未選択 / No rows selected for editing
     return
   }
 
@@ -1623,11 +1623,11 @@ const applyBulkEdit = (payload: {
 const handleBatchDeleteClick = () => {
   if (!batchDeleteEnabled.value) return
   if (!rowSelectionEnabled.value) {
-    console.warn('行選択が有効ではありません')
+    // 行選択が有効ではありません / Row selection not enabled
     return
   }
   if (!innerSelectedKeys.value.length) {
-    console.warn('削除する行を選択してください')
+    // 削除対象の行が未選択 / No rows selected for deletion
     return
   }
 
@@ -1843,7 +1843,7 @@ watch(
 defineExpose({
   openBulkEdit: () => {
     if (!showBulkEditButton.value) {
-      console.warn('一括修正は利用できません')
+      // 一括修正は利用できません / Bulk edit not available
       return
     }
     bulkEditVisible.value = true

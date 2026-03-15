@@ -146,7 +146,7 @@ async function loadTemplates() {
   try {
     templates.value = await fetchFormTemplates()
   } catch (e: any) {
-    console.error('Failed to load form templates:', e)
+    // フォームテンプレート読み込み失敗 / Failed to load form templates
   }
 }
 
@@ -207,7 +207,7 @@ async function handleGenerate() {
 
     alert('PDFを生成しました')
   } catch (e: any) {
-    console.error('PDF generation failed:', e)
+    // PDF生成失敗 / PDF generation failed
     alert(e?.message || 'PDF生成に失敗しました')
   } finally {
     generating.value = false
@@ -249,7 +249,7 @@ async function handlePrint() {
       alert('印刷ジョブを送信しました')
     }
   } catch (e: any) {
-    console.error('Print failed:', e)
+    // 印刷失敗 / Print failed
     alert(e?.message || '印刷に失敗しました')
   } finally {
     printing.value = false

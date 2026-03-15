@@ -148,7 +148,7 @@ export function useOrderForm(
           await loadPendingWaybillOrders()
           toast.showSuccess('出荷指示を更新しました')
         } catch (e: any) {
-          console.error('Order update failed:', e)
+          // 注文更新失敗はトーストで通知 / Order update error shown via toast
           toast.showError(e?.message || '更新に失敗しました')
           return
         }

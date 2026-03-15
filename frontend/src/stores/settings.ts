@@ -28,7 +28,7 @@ export const useSettingsStore = defineStore('settings', () => {
         }
       }
     } catch (e) {
-      console.error('Failed to load settings', e)
+      // 設定読み込み失敗 / Failed to load settings
     }
   }
 
@@ -41,7 +41,7 @@ export const useSettingsStore = defineStore('settings', () => {
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
     } catch (e) {
-      console.error('Failed to save settings', e)
+      // 設定保存失敗 / Failed to save settings
     }
   }
 

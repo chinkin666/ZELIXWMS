@@ -61,7 +61,7 @@ class PluginRegistry {
     this.validatePlugin(plugin)
 
     if (this.plugins.has(plugin.id)) {
-      console.warn(`[PluginRegistry] Plugin with id "${plugin.id}" is already registered. Skipping.`)
+      // プラグインID重複のため登録スキップ / Skipping duplicate plugin registration
       return
     }
 

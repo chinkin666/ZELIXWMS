@@ -55,8 +55,7 @@ const loadCarriers = async () => {
     emits('carriers-loaded', carriers.value)
     // 不自动选择第一个配送業者，让用户手动选择（不选择时不过滤）
   } catch (e) {
-    console.error(e)
-    console.warn('配送業者マスタの取得に失敗しました')
+    // 配送業者マスタ取得失敗 / Failed to fetch carriers
   }
 }
 

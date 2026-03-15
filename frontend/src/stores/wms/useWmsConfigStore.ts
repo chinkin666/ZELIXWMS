@@ -105,7 +105,7 @@ function createLocalStorageAdapter(): StorageAdapter {
       try {
         return localStorage.getItem(key)
       } catch {
-        console.error(`[WmsConfigStore] Failed to read key "${key}" from localStorage`)
+        // localStorage読み取り失敗 / Failed to read from localStorage
         return null
       }
     },
@@ -113,14 +113,14 @@ function createLocalStorageAdapter(): StorageAdapter {
       try {
         localStorage.setItem(key, value)
       } catch {
-        console.error(`[WmsConfigStore] Failed to write key "${key}" to localStorage`)
+        // localStorage書き込み失敗 / Failed to write to localStorage
       }
     },
     async removeItem(key: string): Promise<void> {
       try {
         localStorage.removeItem(key)
       } catch {
-        console.error(`[WmsConfigStore] Failed to remove key "${key}" from localStorage`)
+        // localStorage削除失敗 / Failed to remove from localStorage
       }
     },
   }
@@ -399,7 +399,7 @@ export const useWmsConfigStore = defineStore('wmsConfig', () => {
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e)
       error.value = `Failed to load config for environment "${envId}": ${message}`
-      console.error(`[WmsConfigStore] ${error.value}`)
+      // error.value に詳細が記録済み / Details already stored in error.value
     } finally {
       loading.value = false
     }
@@ -421,7 +421,7 @@ export const useWmsConfigStore = defineStore('wmsConfig', () => {
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e)
       error.value = `Failed to save env config for "${envId}": ${message}`
-      console.error(`[WmsConfigStore] ${error.value}`)
+      // error.value に詳細が記録済み / Details already stored in error.value
     } finally {
       loading.value = false
     }
@@ -443,7 +443,7 @@ export const useWmsConfigStore = defineStore('wmsConfig', () => {
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e)
       error.value = `Failed to save user config for "${envId}": ${message}`
-      console.error(`[WmsConfigStore] ${error.value}`)
+      // error.value に詳細が記録済み / Details already stored in error.value
     } finally {
       loading.value = false
     }

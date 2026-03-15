@@ -103,7 +103,7 @@ export function renderBarcodePngDataUrl(opts: RenderBarcodeOptions): string {
       ...opts.options,
     })
   } catch (error) {
-    console.error(`Barcode generation failed for type "${opts.bcid}" with text "${text}":`, error)
+    // バーコード生成失敗 / Barcode generation failed
     throw new Error(`Failed to generate ${opts.bcid} barcode: ${error instanceof Error ? error.message : String(error)}`)
   }
 

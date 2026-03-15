@@ -649,7 +649,7 @@ const loadPrintTemplates = async () => {
     printTemplatesCache.value = templates
     localStorage.setItem('allPrintTemplatesCache', JSON.stringify(templates))
   } catch (e) {
-    console.error('Failed to load print templates:', e)
+    // 印刷テンプレート読み込み失敗 / Failed to load print templates
     showToast('印刷テンプレートの読み込みに失敗しました', 'danger')
   }
 }
@@ -686,7 +686,7 @@ const handleCustomExportClick = async () => {
     selectedOrdersForCustomExport.value = orders
     customExportDialogVisible.value = true
   } catch (e: any) {
-    console.error('Failed to fetch orders for custom export:', e)
+    // カスタムエクスポート用注文取得失敗 / Failed to fetch orders for custom export
     showToast('注文データの取得に失敗しました', 'danger')
   }
 }
@@ -748,7 +748,7 @@ const openPrintPreview = async () => {
         printTemplatesCache.value = JSON.parse(storedTemplates) as PrintTemplate[]
       }
     } catch (e) {
-      console.error('Failed to load templates from localStorage:', e)
+      // テンプレートlocalStorage読み込み失敗 / Failed to load templates from localStorage
     }
   }
 
@@ -770,7 +770,7 @@ const openPrintPreview = async () => {
   try {
     orders = await fetchShipmentOrdersByIds<OrderDocument>(orderIds, { includeRawData: true })
   } catch (e: any) {
-    console.error('Failed to fetch orders for print:', e)
+    // 印刷用注文取得失敗 / Failed to fetch orders for print
     showToast(`注文データの取得に失敗しました: ${e?.message || String(e)}`, 'danger')
     return
   }
@@ -886,7 +886,7 @@ onMounted(async () => {
       try {
         products.value = await fetchProducts()
       } catch (e) {
-        console.error('Failed to load products:', e)
+        // 商品読み込み失敗 / Failed to load products
       }
     })(),
   ])

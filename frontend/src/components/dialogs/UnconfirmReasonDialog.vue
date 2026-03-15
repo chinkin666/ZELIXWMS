@@ -118,7 +118,7 @@ const saveTemplates = () => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(templates.value))
   } catch (e) {
-    console.error('Failed to save templates:', e)
+    // テンプレート保存失敗 / Failed to save templates
   }
 }
 

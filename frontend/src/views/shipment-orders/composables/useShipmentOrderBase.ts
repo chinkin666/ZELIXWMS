@@ -68,7 +68,7 @@ export function useShipmentOrderBase(
     try {
       carriers.value = await fetchCarriers({ enabled: true })
     } catch (e) {
-      console.error(e)
+      // 配送業者マスタ取得失敗 / Failed to fetch carriers
       showWarning('配送業者マスタの取得に失敗しました')
     }
   }
@@ -77,7 +77,7 @@ export function useShipmentOrderBase(
     try {
       products.value = await fetchProducts()
     } catch (e) {
-      console.error('Failed to load products:', e)
+      // 商品読み込み失敗 / Failed to load products
     }
   }
 

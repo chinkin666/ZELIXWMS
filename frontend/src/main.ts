@@ -16,8 +16,7 @@ app.use(ElementPlus)
 // 未処理のエラーをキャッチしてトースト通知を表示 / Catches unhandled errors and shows toast notification
 app.config.errorHandler = (err, _instance, info) => {
   const error = err instanceof Error ? err : new Error(String(err))
-  console.error('[Global Error Handler] エラー発生 / Error occurred:', error)
-  console.error('[Global Error Handler] コンポーネント情報 / Component info:', info)
+  // エラーハンドリングはトースト通知で処理 / Error handling via toast notification
 
   const { showError } = useToast()
   showError(`予期しないエラー: ${error.message}`, 5000)

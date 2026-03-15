@@ -198,7 +198,7 @@ const TableCell = defineComponent({
       try {
         return props.renderer({ rowData: props.rowData })
       } catch (e) {
-        console.error('Error rendering cell:', e)
+        // セルレンダリングエラー / Cell render error
         return null
       }
     }
@@ -218,7 +218,7 @@ const ActionCell = defineComponent({
         const result = props.renderer({ rowData: props.rowData })
         return h('div', { class: 'action-cell-wrapper' }, [result])
       } catch (e) {
-        console.error('Error rendering action cell:', e)
+        // アクションセルレンダリングエラー / Action cell render error
         return null
       }
     }
@@ -237,7 +237,7 @@ const BundleCell = defineComponent({
       try {
         return props.renderer({ rowData: props.rowData })
       } catch (e) {
-        console.error('Error rendering bundle cell:', e)
+        // 同梱セルレンダリングエラー / Bundle cell render error
         return null
       }
     }
@@ -620,11 +620,11 @@ const applyBulkEdit = (payload: {
   const { columnKey, dataKey, fieldType, value, overwrite } = payload
   if (!dataKey) return
   if (!rowSelectionEnabled.value) {
-    console.warn('行選択が有効ではありません')
+    // 行選択が有効ではありません / Row selection not enabled
     return
   }
   if (!innerSelectedKeys.value.length) {
-    console.warn('左側のチェックで編集対象の行を選択してください')
+    // 編集対象の行が未選択 / No rows selected for editing
     return
   }
 
@@ -654,11 +654,11 @@ const applyBulkEdit = (payload: {
 const handleBatchDeleteClick = () => {
   if (!batchDeleteEnabled.value) return
   if (!rowSelectionEnabled.value) {
-    console.warn('行選択が有効ではありません')
+    // 行選択が有効ではありません / Row selection not enabled
     return
   }
   if (!innerSelectedKeys.value.length) {
-    console.warn('削除する行を選択してください')
+    // 削除対象の行が未選択 / No rows selected for deletion
     return
   }
   const keySet = new Set(innerSelectedKeys.value)

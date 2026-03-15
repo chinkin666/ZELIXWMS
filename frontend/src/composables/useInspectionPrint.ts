@@ -182,7 +182,7 @@ export function useInspectionPrint() {
         try {
           orderSourceCompany.value = await fetchOrderSourceCompanyById(order.orderSourceCompanyId)
         } catch (e) {
-          console.error('Failed to load OrderSourceCompany:', e)
+          // ご依頼主情報読み込み失敗 / Failed to load OrderSourceCompany
           orderSourceCompany.value = null
         }
       } else {

@@ -141,7 +141,7 @@ watch(
         previewValue.value = '（結果なし）'
       }
     } catch (e) {
-      console.error('Preview error:', e)
+      // プレビューエラー / Preview error
       previewValue.value = `（エラー: ${e instanceof Error ? e.message : String(e)}）`
     }
   },

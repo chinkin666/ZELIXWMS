@@ -233,7 +233,7 @@ async function loadData() {
     const res = await fetchExpiryAlerts(daysAhead.value)
     alerts.value = res.alerts
   } catch (e: any) {
-    console.error(t('wms.inventory.alertFetchError', 'アラート取得エラー:'), e)
+    // アラート取得エラー / Alert fetch error
   } finally {
     isLoading.value = false
   }

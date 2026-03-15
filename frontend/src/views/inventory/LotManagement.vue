@@ -318,7 +318,7 @@ async function loadData() {
     lots.value = res.items
     total.value = res.total
   } catch (e: any) {
-    console.error(t('wms.inventory.lotListFetchError', 'ロット一覧取得エラー:'), e)
+    // ロット一覧取得エラー / Lot list fetch error
   } finally {
     isLoading.value = false
   }
@@ -333,7 +333,7 @@ async function loadProducts() {
       name: p.name,
     }))
   } catch (e: any) {
-    console.error(t('wms.inventory.productFetchError', '商品取得エラー:'), e)
+    // 商品取得エラー / Product fetch error
   }
 }
 

@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { ReturnOrder } from '@/models/returnOrder';
 import { ShipmentOrder } from '@/models/shipmentOrder';
 import { StockQuant } from '@/models/stockQuant';
@@ -9,6 +10,8 @@ import { extensionManager } from '@/core/extensions';
 import { HOOK_EVENTS } from '@/core/extensions/types';
 import { logOperation } from '@/services/operationLogger';
 import { createReturnOrderSchema, inspectLinesSchema } from '@/schemas/returnOrderSchema';
+import { checkTransactionSupport } from '@/config/database';
+import { logger } from '@/lib/logger';
 
 // ---------------------------------------------------------------------------
 // 番号生成
@@ -296,7 +299,7 @@ export async function completeReturnOrder(req: Request, res: Response) {
       return res.status(400).json({ error: '検品中の返品のみ完了できます' });
     }
 
-    // 全行が検品済みか確認
+    // 全行が検品済みか確認 / 检查所有行是否已检品
     const pendingLines = doc.lines.filter((l) => l.disposition === 'pending');
     if (pendingLines.length > 0) {
       return res.status(400).json({
@@ -304,48 +307,60 @@ export async function completeReturnOrder(req: Request, res: Response) {
       });
     }
 
-    // 仮想ロケーション取得
+    // 仮想ロケーション取得 / 获取虚拟位置
     const virtualCustomer = await Location.findOne({ type: 'virtual/customer' }).lean();
     if (!virtualCustomer) {
       return res.status(400).json({ error: '仮想ロケーション(VIRTUAL/CUSTOMER)が見つかりません' });
     }
 
-    const errors: string[] = [];
-    let restockedTotal = 0;
-    let disposedTotal = 0;
+    // トランザクション対応で在庫更新を実行 / 使用事务保护执行库存更新
+    const useTransaction = await checkTransactionSupport();
 
-    for (const line of doc.lines) {
-      const now = new Date();
+    // TypeScript制御フロー用の非null参照 / 为TypeScript控制流分析提供非null引用
+    const order = doc;
+    const virtualLoc = virtualCustomer;
 
-      // 再入庫処理
-      if (line.disposition === 'restock' && line.restockedQuantity > 0) {
-        const targetLocationId = line.locationId;
-        if (!targetLocationId) {
-          errors.push(`${line.productSku}: 入庫先ロケーションが未設定です`);
-          continue;
-        }
+    async function executeCompletion(opts: { session?: mongoose.ClientSession }) {
+      const errors: string[] = [];
+      let restockedTotal = 0;
+      let disposedTotal = 0;
 
-        try {
+      for (const line of order.lines) {
+        const now = new Date();
+
+        // 再入庫処理 / 重新入库处理
+        if (line.disposition === 'restock' && line.restockedQuantity > 0) {
+          const targetLocationId = line.locationId;
+          if (!targetLocationId) {
+            errors.push(`${line.productSku}: 入庫先ロケーションが未設定です`);
+            continue;
+          }
+
           const moveNumber = `SM${now.toISOString().slice(0, 10).replace(/-/g, '')}${Math.floor(10000000 + Math.random() * 90000000)}`;
-          await StockMove.create({
-            moveNumber,
-            moveType: 'return',
-            state: 'done',
-            productId: line.productId,
-            productSku: line.productSku,
-            productName: line.productName,
-            lotId: line.lotId,
-            fromLocationId: virtualCustomer._id,
-            toLocationId: targetLocationId,
-            quantity: line.restockedQuantity,
-            referenceType: 'return-order',
-            referenceId: String(doc._id),
-            referenceNumber: doc.orderNumber,
-            executedAt: now,
-            memo: `返品再入庫`,
-          });
+          await StockMove.create(
+            [
+              {
+                moveNumber,
+                moveType: 'return',
+                state: 'done',
+                productId: line.productId,
+                productSku: line.productSku,
+                productName: line.productName,
+                lotId: line.lotId,
+                fromLocationId: virtualLoc._id,
+                toLocationId: targetLocationId,
+                quantity: line.restockedQuantity,
+                referenceType: 'return-order',
+                referenceId: String(order._id),
+                referenceNumber: order.orderNumber,
+                executedAt: now,
+                memo: `返品再入庫`,
+              },
+            ],
+            opts,
+          );
 
-          // StockQuant増加
+          // StockQuant増加 / 增加StockQuant
           const quantFilter = {
             productId: line.productId,
             locationId: targetLocationId,
@@ -357,47 +372,68 @@ export async function completeReturnOrder(req: Request, res: Response) {
               $inc: { quantity: line.restockedQuantity },
               $setOnInsert: { productSku: line.productSku },
             },
-            { upsert: true },
+            { upsert: true, ...opts },
           );
 
           restockedTotal += line.restockedQuantity;
-        } catch (e: any) {
-          errors.push(`${line.productSku} 再入庫エラー: ${e.message}`);
         }
-      }
 
-      // 廃棄処理（StockMoveのみ記録、在庫は増やさない）
-      if (line.disposition === 'dispose' && line.disposedQuantity > 0) {
-        try {
+        // 廃棄処理（StockMoveのみ記録、在庫は増やさない） / 废弃处理（仅记录StockMove，不增加库存）
+        if (line.disposition === 'dispose' && line.disposedQuantity > 0) {
           const moveNumber = `SM${now.toISOString().slice(0, 10).replace(/-/g, '')}${Math.floor(10000000 + Math.random() * 90000000)}`;
-          await StockMove.create({
-            moveNumber,
-            moveType: 'return',
-            state: 'done',
-            productId: line.productId,
-            productSku: line.productSku,
-            productName: line.productName,
-            lotId: line.lotId,
-            fromLocationId: virtualCustomer._id,
-            toLocationId: virtualCustomer._id,
-            quantity: line.disposedQuantity,
-            referenceType: 'return-order',
-            referenceId: String(doc._id),
-            referenceNumber: doc.orderNumber,
-            executedAt: now,
-            memo: `返品廃棄`,
-          });
+          await StockMove.create(
+            [
+              {
+                moveNumber,
+                moveType: 'return',
+                state: 'done',
+                productId: line.productId,
+                productSku: line.productSku,
+                productName: line.productName,
+                lotId: line.lotId,
+                fromLocationId: virtualLoc._id,
+                toLocationId: virtualLoc._id,
+                quantity: line.disposedQuantity,
+                referenceType: 'return-order',
+                referenceId: String(order._id),
+                referenceNumber: order.orderNumber,
+                executedAt: now,
+                memo: `返品廃棄`,
+              },
+            ],
+            opts,
+          );
 
           disposedTotal += line.disposedQuantity;
-        } catch (e: any) {
-          errors.push(`${line.productSku} 廃棄記録エラー: ${e.message}`);
         }
       }
+
+      order.status = 'completed';
+      order.completedAt = new Date();
+      await order.save(opts);
+
+      return { errors, restockedTotal, disposedTotal };
     }
 
-    doc.status = 'completed';
-    doc.completedAt = new Date();
-    await doc.save();
+    let result: { errors: string[]; restockedTotal: number; disposedTotal: number };
+
+    if (useTransaction) {
+      const session = await mongoose.startSession();
+      session.startTransaction();
+      try {
+        result = await executeCompletion({ session });
+        await session.commitTransaction();
+      } catch (e) {
+        await session.abortTransaction();
+        throw e;
+      } finally {
+        session.endSession();
+      }
+    } else {
+      result = await executeCompletion({});
+    }
+
+    const { errors, restockedTotal, disposedTotal } = result;
 
     // 操作ログ記録 / 操作日志记录
     logOperation({
@@ -423,7 +459,7 @@ export async function completeReturnOrder(req: Request, res: Response) {
       orderNumber: doc.orderNumber,
       restockedTotal,
       disposedTotal,
-    }).catch(console.error);
+    }).catch((err: unknown) => logger.error(err));
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

@@ -284,7 +284,7 @@ export async function updateShipmentOrder(id: string, data: Record<string, any>)
     if (Array.isArray(errors) && errors.length > 0) {
       const details = errors.map((e: any) => `${e.field}: ${e.message}`).join(', ')
       message = `${message} (${details})`
-      console.error('updateShipmentOrder validation errors:', errors)
+      // バリデーションエラーはメッセージに含まれる / Validation errors included in message
     }
     throw new Error(message)
   }

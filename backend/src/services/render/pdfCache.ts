@@ -6,6 +6,7 @@
 
 import fs from 'fs'
 import path from 'path'
+import { logger } from '@/lib/logger'
 
 // PDF cache directory: /backend/tmp/pdf-render/
 const CACHE_DIR = path.join(process.cwd(), 'tmp', 'pdf-render')
@@ -14,7 +15,7 @@ const CACHE_DIR = path.join(process.cwd(), 'tmp', 'pdf-render')
 function ensureCacheDir(): void {
   if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true })
-    console.log(`[PDFCache] Created cache directory: ${CACHE_DIR}`)
+    logger.info(`[PDFCache] Created cache directory: ${CACHE_DIR}`)
   }
 }
 
@@ -52,11 +53,11 @@ export function checkPdfCache(
 
       // If order was updated after cache was created, cache is invalid
       if (orderTime > cacheTime) {
-        console.log(`[PDFCache] Cache invalid for ${orderNumber}: order updated after cache`)
+        logger.info(`[PDFCache] Cache invalid for ${orderNumber}: order updated after cache`)
         return null
       }
     } catch (error) {
-      console.error(`[PDFCache] Error checking cache for ${orderNumber}:`, error)
+      logger.error({ err: error }, `[PDFCache] Error checking cache for ${orderNumber}`)
       return null
     }
   }
@@ -78,7 +79,7 @@ export async function savePdfToCache(
     fs.writeFileSync(cachePath, pdfBuffer)
     return cachePath
   } catch (error) {
-    console.error(`[PDFCache] Failed to save cache for ${orderNumber}:`, error)
+    logger.error({ err: error }, `[PDFCache] Failed to save cache for ${orderNumber}`)
     throw error
   }
 }
@@ -120,15 +121,15 @@ export async function cleanupOldCache(): Promise<{ deleted: number; errors: numb
         }
       } catch (error) {
         errors++
-        console.error(`[PDFCache] Error processing ${file}:`, error)
+        logger.error({ err: error }, `[PDFCache] Error processing ${file}`)
       }
     }
 
     if (deleted > 0 || errors > 0) {
-      console.log(`[PDFCache] Cleanup: ${deleted} deleted, ${errors} errors`)
+      logger.info(`[PDFCache] Cleanup: ${deleted} deleted, ${errors} errors`)
     }
   } catch (error) {
-    console.error('[PDFCache] Cleanup error:', error)
+    logger.error({ err: error }, '[PDFCache] Cleanup error')
   }
 
   return { deleted, errors }

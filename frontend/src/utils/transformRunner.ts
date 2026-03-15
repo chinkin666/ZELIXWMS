@@ -162,7 +162,7 @@ export async function applyTransformMappings(
         result[mapping.targetField] = value
       }
     } catch (error) {
-      console.error(`Error applying mapping for ${mapping.targetField}:`, error)
+      // マッピング適用エラー / Error applying mapping for target field
       // Use default value or empty string on error
       const defaultVal = mapping.defaultValue ?? ''
       if (mapping.targetField.includes('.')) {

@@ -166,7 +166,7 @@ async function loadTemplates() {
   try {
     allTemplates.value = await fetchPrintTemplates()
   } catch (e: any) {
-    console.error('Failed to load print templates:', e)
+    // 印刷テンプレート読み込み失敗 / Failed to load print templates
     allTemplates.value = []
   } finally {
     loadingTemplates.value = false
@@ -230,7 +230,7 @@ async function handlePrint() {
     })
     toast.showSuccess(t('wms.product.printTriggered', '印刷を実行しました'))
   } catch (e: any) {
-    console.error('Print error:', e)
+    // 印刷エラー / Print error
     toast.showError(`${t('wms.product.printFailed', '印刷に失敗しました')}: ${e?.message || String(e)}`)
   }
 }

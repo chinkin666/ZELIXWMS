@@ -8,6 +8,7 @@ import { Router } from 'express'
 import type { KonvaRenderItem, BatchRenderOptions } from '@/services/render/renderService';
 import { renderBatch } from '@/services/render/renderService'
 import { getCacheStats, cleanupExpiredCache } from '@/services/render/renderCache'
+import { logger } from '@/lib/logger'
 
 const router = Router()
 
@@ -61,13 +62,13 @@ router.post('/batch', async (req: Request, res: Response) => {
       }
     }
 
-    console.log(`[Render] Starting batch render of ${body.items.length} items at ${options.exportDpi} DPI`)
+    logger.info(`[Render] Starting batch render of ${body.items.length} items at ${options.exportDpi} DPI`)
     const startTime = Date.now()
 
     const pdfBuffer = await renderBatch(body.items, options)
 
     const duration = Date.now() - startTime
-    console.log(`[Render] Batch render completed in ${duration}ms`)
+    logger.info(`[Render] Batch render completed in ${duration}ms`)
 
     // Set response headers
     res.set({
@@ -78,7 +79,7 @@ router.post('/batch', async (req: Request, res: Response) => {
 
     return res.send(pdfBuffer)
   } catch (error) {
-    console.error('[Render] Batch render error:', error)
+    logger.error({ err: error }, '[Render] Batch render error')
     return res.status(500).json({
       error: 'Rendering failed',
       message: error instanceof Error ? error.message : String(error),

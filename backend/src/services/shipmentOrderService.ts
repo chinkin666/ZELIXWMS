@@ -16,6 +16,7 @@ import { extensionManager } from '@/core/extensions';
 import { HOOK_EVENTS } from '@/core/extensions/types';
 import { ValidationError, NotFoundError } from '@/lib/errors';
 import { logOperation } from '@/services/operationLogger';
+import { logger } from '@/lib/logger';
 
 // ============================================================
 // 类型定义 / 型定義
@@ -1008,9 +1009,9 @@ export const createOrders = async (
   // Auto-processing hook (fire-and-forget) / 自動処理フック（fire-and-forget）
   const createdIds = successes.map((s) => s.insertedId).filter(Boolean);
   if (createdIds.length > 0) {
-    processOrderEventBulk(createdIds, 'order.created').catch(console.error);
+    processOrderEventBulk(createdIds, 'order.created').catch((err: unknown) => logger.error(err));
     for (const orderId of createdIds) {
-      extensionManager.emit(HOOK_EVENTS.ORDER_CREATED, { orderId }).catch(console.error);
+      extensionManager.emit(HOOK_EVENTS.ORDER_CREATED, { orderId }).catch((err: unknown) => logger.error(err));
     }
   }
 
@@ -1171,7 +1172,7 @@ export const deleteOrder = async (id: string): Promise<{ order: any }> => {
     orderId: id,
     reason: 'deleted',
     orderNumber: deleted.orderNumber,
-  }).catch(console.error);
+  }).catch((err: unknown) => logger.error(err));
 
   // 操作ログ / 操作日志 (fire-and-forget)
   logOperation({
@@ -1271,7 +1272,7 @@ const emitStatusSideEffects = (action: string, statusType: string | undefined, o
   };
   const triggerEvent = actionEventMap[action];
   if (triggerEvent) {
-    processOrderEventBulk(orderIds, triggerEvent as any).catch(console.error);
+    processOrderEventBulk(orderIds, triggerEvent as any).catch((err: unknown) => logger.error(err));
   }
 
   // Stock hooks (fire-and-forget)
@@ -1279,15 +1280,15 @@ const emitStatusSideEffects = (action: string, statusType: string | undefined, o
   if (action === 'mark-shipped') {
     (async () => {
       for (const id of orderIds) {
-        await completeStockForOrder(id).catch(console.error);
+        await completeStockForOrder(id).catch((err: unknown) => logger.error(err));
       }
-    })().catch(console.error);
+    })().catch((err: unknown) => logger.error(err));
   } else if (action === 'unconfirm' && statusType === 'confirm') {
     (async () => {
       for (const id of orderIds) {
-        await unreserveStockForOrder(id).catch(console.error);
+        await unreserveStockForOrder(id).catch((err: unknown) => logger.error(err));
       }
-    })().catch(console.error);
+    })().catch((err: unknown) => logger.error(err));
   }
 
   // 扩展系统事件 / 拡張システムイベント
@@ -1302,12 +1303,12 @@ const emitStatusSideEffects = (action: string, statusType: string | undefined, o
     for (let i = 0; i < orderIds.length; i++) {
       const orderId = orderIds[i];
       const order = updatedOrders?.[i];
-      extensionManager.emit(extEvent as any, { orderId, ...(order ? { order } : {}) }).catch(console.error);
+      extensionManager.emit(extEvent as any, { orderId, ...(order ? { order } : {}) }).catch((err: unknown) => logger.error(err));
     }
   }
   if (action === 'unconfirm' && statusType === 'confirm') {
     for (const orderId of orderIds) {
-      extensionManager.emit(HOOK_EVENTS.ORDER_CANCELLED, { orderId, reason: 'unconfirm' }).catch(console.error);
+      extensionManager.emit(HOOK_EVENTS.ORDER_CANCELLED, { orderId, reason: 'unconfirm' }).catch((err: unknown) => logger.error(err));
     }
   }
 };

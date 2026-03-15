@@ -7,6 +7,7 @@ import muhammara from 'muhammara'
 import fs from 'fs'
 import path from 'path'
 import os from 'os'
+import { logger } from '@/lib/logger'
 
 export interface PdfPage {
   pdfPath?: string
@@ -31,7 +32,7 @@ export async function assemblePdf(
   options: AssemblePdfOptions = {}
 ): Promise<Buffer> {
   const totalPages = pages.length
-  console.log(`[PDF] Starting direct Muhammara assembly of ${totalPages} pages...`)
+  logger.info(`[PDF] Starting direct Muhammara assembly of ${totalPages} pages...`)
 
   // Validate all PDF files exist
   for (let i = 0; i < pages.length; i++) {
@@ -60,7 +61,7 @@ export async function assemblePdf(
       infoDict.creator = 'Nexand Render Service'
       infoDict.producer = 'Muhammara'
     } catch (error) {
-      console.warn('[PDF] Failed to set metadata:', error)
+      logger.warn({ err: error }, '[PDF] Failed to set metadata')
     }
 
     // Direct merge: append each single-page PDF directly to final output
@@ -71,14 +72,14 @@ export async function assemblePdf(
 
       // Progress logging every 500 pages
       if ((i + 1) % 500 === 0 || i === pages.length - 1) {
-        console.log(`[PDF] Merged ${i + 1}/${totalPages} pages...`)
+        logger.info(`[PDF] Merged ${i + 1}/${totalPages} pages...`)
       }
     }
 
     pdfWriter.end()
 
     const totalTime = Date.now() - startTime
-    console.log(`[PDF] Assembly complete: ${totalPages} pages in ${totalTime}ms`)
+    logger.info(`[PDF] Assembly complete: ${totalPages} pages in ${totalTime}ms`)
 
     // Read final PDF into buffer
     const pdfBuffer = fs.readFileSync(finalPath)
@@ -93,7 +94,7 @@ export async function assemblePdf(
       try {
         fs.unlinkSync(finalPath)
       } catch (cleanupError) {
-        console.error(`[PDF] Failed to cleanup ${finalPath}:`, cleanupError)
+        logger.error({ err: cleanupError }, `[PDF] Failed to cleanup ${finalPath}`)
       }
     }
     throw error

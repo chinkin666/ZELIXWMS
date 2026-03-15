@@ -200,7 +200,7 @@ const loadProducts = async () => {
     const products = await fetchProducts()
     productMap.value = createProductMap(products)
   } catch (e: any) {
-    console.error('商品マスタの取得に失敗しました', e)
+    // 商品マスタ取得失敗 / Failed to fetch products
   }
 }
 
@@ -352,7 +352,7 @@ const handleFormSubmit = async (data: Record<string, any>) => {
     const errorMessage = error?.message || '出荷予定の更新に失敗しました'
     const errorDetails = error?.errors ? `\n詳細: ${JSON.stringify(error.errors, null, 2)}` : ''
     alert(errorMessage + errorDetails)
-    console.error('Update error:', error)
+    // 更新エラーはalertで通知済み / Update error already shown via alert
   }
 }
 

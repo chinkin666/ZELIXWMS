@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { logger } from '@/lib/logger';
 
 // ============================================
 // 共通: 住所インターフェース
@@ -525,7 +526,7 @@ shipmentOrderSchema.post(['find', 'findOne', 'findOneAndUpdate'], async function
     }));
 
     ShipmentOrder.bulkWrite(bulkOps).catch((error) => {
-      console.warn('Failed to update _productsMeta for some documents:', error);
+      logger.warn({ err: error }, 'Failed to update _productsMeta for some documents');
     });
   }
 });

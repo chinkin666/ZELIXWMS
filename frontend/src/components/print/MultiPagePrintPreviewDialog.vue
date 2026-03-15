@@ -185,7 +185,7 @@ async function initializePreviewItems() {
     carriersCache.value = carriers
     carrierAutomationConfigCache.value = automationConfig
   } catch (e) {
-    console.error('Failed to load carrier data:', e)
+    // 配送業者データ読み込み失敗 / Failed to load carrier data
     carriersCache.value = []
     carrierAutomationConfigCache.value = null
   }
@@ -250,7 +250,7 @@ async function initializePreviewItems() {
         const osc = await fetchOrderSourceCompanyById(oscId)
         orderSourceCompanyMap.set(oscId, osc)
       } catch (e) {
-        console.error('Failed to load OrderSourceCompany:', e)
+        // ご依頼主情報読み込み失敗 / Failed to load OrderSourceCompany
         orderSourceCompanyMap.set(oscId, null)
       }
     })
@@ -272,7 +272,7 @@ async function initializePreviewItems() {
       const fullTemplate = await fetchPrintTemplate(templateId)
       templateCache.value.set(templateId, fullTemplate)
     } catch (e: any) {
-      console.error(`Failed to load template ${templateId}:`, e)
+      // テンプレート読み込み失敗 / Failed to load template
     }
   })
 
@@ -299,7 +299,7 @@ async function renderWithBackend(localItems: PreviewItem[]) {
 
   const backendAvailable = await checkRenderHealth()
   if (!backendAvailable) {
-    console.warn('Backend render service unavailable, falling back to frontend rendering')
+    // バックエンドレンダリング利用不可、フロントエンドにフォールバック / Backend render unavailable, falling back
     await renderWithFrontend(localItems)
     return
   }
@@ -314,7 +314,7 @@ async function renderWithBackend(localItems: PreviewItem[]) {
       }))
 
     if (renderItems.length === 0) {
-      console.warn('No valid items to render on backend')
+      // バックエンドレンダリング対象なし / No valid items to render on backend
       return
     }
 
@@ -333,7 +333,7 @@ async function renderWithBackend(localItems: PreviewItem[]) {
 
     loadingProgress.value = 100
   } catch (error: any) {
-    console.error('Backend render failed, falling back to frontend:', error)
+    // バックエンドレンダリング失敗、フロントエンドにフォールバック / Backend render failed, falling back
     alert('サーバーレンダリングに失敗しました。フロントエンドで再試行します...')
     useBackendRendering.value = false
     await renderWithFrontend(localItems)
@@ -371,7 +371,7 @@ async function renderWithFrontend(localItems: PreviewItem[]) {
     } catch (e: any) {
       item.rendering = false
       item.error = e?.message || String(e)
-      console.error(`Failed to render preview for order ${item.order.orderNumber || item.order._id}:`, e)
+      // プレビューレンダリング失敗 / Failed to render preview
     }
 
     loadingProgress.value = Math.round((i + 1) / localItems.length * 50 + 50)
@@ -429,13 +429,13 @@ async function handlePrintAll() {
             try {
               await updateShipmentOrderStatus(String(item.order._id), 'mark-printed')
             } catch (e: any) {
-              console.error(`Failed to mark order as printed: ${item.order._id}`, e)
+              // 印刷済みステータス更新失敗 / Failed to mark as printed
             }
           }
         }
       }
     } catch (e: any) {
-      console.error('Failed to print b2-webapi items:', e)
+      // B2 WebAPI印刷失敗 / Failed to print b2-webapi items
       alert(`B2 Cloud PDF取得エラー: ${e?.message || e}`)
       failCount += b2WebapiItems.length
     }
@@ -458,12 +458,12 @@ async function handlePrintAll() {
             try {
               await updateShipmentOrderStatus(String(item.order._id), 'mark-printed')
             } catch (e: any) {
-              console.error(`Failed to mark order as printed: ${item.order._id}`, e)
+              // 印刷済みステータス更新失敗 / Failed to mark as printed
             }
           }
         }
       } catch (e: any) {
-        console.error('Failed to print backend-rendered PDF:', e)
+        // バックエンドレンダリングPDF印刷失敗 / Failed to print backend-rendered PDF
         alert(`印刷エラー: ${e?.message || e}`)
         failCount += localItems.length
       }
@@ -473,7 +473,7 @@ async function handlePrintAll() {
 
         const fullTemplate = templateCache.value.get(item.template.id)
         if (!fullTemplate) {
-          console.error(`Template ${item.template.id} not found in cache`)
+          // テンプレートがキャッシュにない / Template not found in cache
           failCount++
           continue
         }
@@ -491,7 +491,7 @@ async function handlePrintAll() {
             try {
               await updateShipmentOrderStatus(String(item.order._id), 'mark-printed')
             } catch (e: any) {
-              console.error(`Failed to mark order as printed: ${item.order._id}`, e)
+              // 印刷済みステータス更新失敗 / Failed to mark as printed
             }
           }
 
@@ -499,7 +499,7 @@ async function handlePrintAll() {
             await new Promise((resolve) => setTimeout(resolve, 500))
           }
         } catch (e: any) {
-          console.error(`Failed to print order ${item.order.orderNumber || item.order._id}:`, e)
+          // 注文印刷失敗 / Failed to print order
           alert(`注文 ${item.order.orderNumber || item.order._id} の印刷に失敗しました`)
           failCount++
         }

@@ -395,7 +395,7 @@ async function openOrderListDialog() {
     try {
       processedOrdersData.value = await fetchShipmentOrdersByIds<OrderDocument>(processedOrderIds.value)
     } catch (e) {
-      console.error('Failed to load processed orders:', e)
+      // 処理済み注文読み込み失敗 / Failed to load processed orders
       processedOrdersData.value = []
     } finally {
       loadingProcessedOrders.value = false
@@ -718,7 +718,7 @@ async function triggerAutoPrint() {
       }
     }
   } catch (e: any) {
-    console.error('Auto print failed:', e)
+    // 自動印刷失敗 / Auto print failed
     showToast(t('wms.inspection.autoPrintFailed', '自動印刷に失敗しました') + `: ${e?.message || String(e)}`, 'danger')
     completionDialogVisible.value = true
   }
@@ -770,7 +770,7 @@ async function handlePrint() {
     await inspPrint.markOrderCompleted(currentOrder.value)
     finishCurrentOrder()
   } catch (e: any) {
-    console.error('Print error:', e)
+    // 印刷エラー / Print error
     showToast(t('wms.inspection.printFailed', '印刷に失敗しました') + `: ${e?.message || String(e)}`, 'danger')
   }
 }
@@ -1027,7 +1027,7 @@ function saveOrdersToStorage() {
     localStorage.setItem('oneByOneSelectedOrderIds', JSON.stringify(pendingIds))
     localStorage.setItem('oneByOneProcessedOrderIds', JSON.stringify(processedOrderIds.value))
   } catch (e) {
-    console.error('Failed to save order IDs to storage:', e)
+    // 注文ID保存失敗 / Failed to save order IDs to storage
   }
 }
 
@@ -1047,7 +1047,7 @@ async function loadOrdersFromStorage(): Promise<void> {
       processedOrderIds.value = JSON.parse(processedStoredIds) as string[]
     }
   } catch (e) {
-    console.error('Failed to load orders from storage:', e)
+    // ストレージからの注文読み込み失敗 / Failed to load orders from storage
     showToast(t('wms.inspection.loadOrdersFailed', '保存された注文の読み込みに失敗しました'), 'danger')
   }
 }
@@ -1092,7 +1092,7 @@ onMounted(async () => {
         .catch(() => { carrierAutomationConfigCache.value = null }),
     ])
   } catch (e) {
-    console.error('Failed to load initial data:', e)
+    // 初期データ読み込み失敗 / Failed to load initial data
   }
 
   if (orderGroupId.value) {
@@ -1113,7 +1113,7 @@ onMounted(async () => {
       })
       pendingOrders.value = result.items
     } catch (e) {
-      console.error('Failed to load orders by group:', e)
+      // グループ別注文読み込み失敗 / Failed to load orders by group
       showToast(t('wms.inspection.loadOrdersFailed', '注文の読み込みに失敗しました'), 'danger')
     }
   } else {

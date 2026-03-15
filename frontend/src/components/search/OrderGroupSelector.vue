@@ -75,8 +75,7 @@ const loadGroups = async () => {
     groups.value = await fetchOrderGroups()
     emits('groups-loaded', groups.value)
   } catch (e) {
-    console.error(e)
-    console.warn('出荷グループの取得に失敗しました')
+    // 出荷グループ取得失敗 / Failed to fetch order groups
   }
 }
 
@@ -84,7 +83,7 @@ const loadCounts = async () => {
   try {
     counts.value = await fetchOrderGroupCounts()
   } catch (e) {
-    console.error(e)
+    // グループカウント取得失敗 / Failed to fetch group counts
   }
 }
 

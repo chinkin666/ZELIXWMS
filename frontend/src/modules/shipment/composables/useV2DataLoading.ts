@@ -17,7 +17,7 @@ export function useV2DataLoading(state: V2State) {
       state.backendRows.value = (orders || []).map((o: any) => ({ ...o, id: o._id }))
     } catch (err: any) {
       if (version !== loadVersion) return
-      console.error('注文の取得に失敗しました:', err)
+      // 注文取得失敗はElMessageで通知済み / Order fetch failure notified via ElMessage
       ElMessage.error('注文の取得に失敗しました')
     } finally {
       if (version === loadVersion) {
@@ -30,7 +30,7 @@ export function useV2DataLoading(state: V2State) {
     try {
       state.carriers.value = await fetchCarriers({ enabled: true })
     } catch (err) {
-      console.error('配送業者の取得に失敗しました:', err)
+      // 配送業者取得失敗 / Failed to fetch carriers
     }
   }
 
@@ -38,7 +38,7 @@ export function useV2DataLoading(state: V2State) {
     try {
       state.orderSourceCompanies.value = await fetchOrderSourceCompanies()
     } catch (err) {
-      console.error('ご依頼主リストの読み込みに失敗しました:', err)
+      // ご依頼主リスト読み込み失敗 / Failed to load order source companies
     }
   }
 
@@ -46,7 +46,7 @@ export function useV2DataLoading(state: V2State) {
     try {
       state.products.value = await fetchProducts()
     } catch (err) {
-      console.error('商品リストの読み込みに失敗しました:', err)
+      // 商品リスト読み込み失敗 / Failed to load products
     }
   }
 

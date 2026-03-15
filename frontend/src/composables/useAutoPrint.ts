@@ -24,7 +24,7 @@ export function useAutoPrint(storageKey: string, defaultValue = true) {
     try {
       localStorage.setItem(storageKey, String(autoPrintEnabled.value))
     } catch (e) {
-      console.error('Failed to save auto print setting:', e)
+      // 自動印刷設定保存失敗 / Failed to save auto print setting
     }
   }
 

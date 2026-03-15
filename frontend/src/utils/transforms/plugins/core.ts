@@ -561,7 +561,7 @@ export const regexExtractPlugin: TransformPlugin = {
       // グローバルフラグがある場合、全マッチを結合 / 有全局标志时，将所有匹配结合
       return matches.join(separator)
     } catch (e) {
-      console.error('regex.extract error:', e)
+      // 正規表現抽出エラー / Regex extract error
       return undefined
     }
   },

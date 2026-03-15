@@ -555,7 +555,7 @@ async function onFileSelect(file: File) {
     sampleRows.value = rows.slice(0, 5)
     showToast(t('wms.mapping.headersLoaded', 'アップロード済みのヘッダーを読み込みました'), 'success')
   } catch (e: any) {
-    console.error(e)
+    // ファイル解析失敗はトーストで通知 / File parse error shown via toast
     showToast(e?.message || t('wms.mapping.fileParseError', 'ファイルの解析に失敗しました'), 'danger')
   }
 }
@@ -613,7 +613,7 @@ const loadConfigForEdit = async (configId: string) => {
 
     showToast(t('wms.mapping.configLoaded', '設定を読み込みました'), 'success')
   } catch (e: any) {
-    console.error(e)
+    // 設定読み込み失敗はトーストで通知 / Config load error shown via toast
     showToast(e?.message || t('wms.mapping.configLoadError', '設定の読み込みに失敗しました'), 'danger')
   }
 }
@@ -655,7 +655,7 @@ onMounted(async () => {
             await loadConfigForEdit(existingConfig._id)
           }
         } catch (e) {
-          console.error('Failed to load existing mapping config:', e)
+          // 既存マッピング設定読み込み失敗 / Failed to load existing mapping config
         }
       }
     }
@@ -675,7 +675,7 @@ const loadCarriers = async () => {
   try {
     carrierOptions.value = await fetchCarriers()
   } catch (e: any) {
-    console.error(e)
+    // 配送業者一覧取得失敗はトーストで通知 / Carrier load error shown via toast
     showToast(e?.message || t('wms.mapping.carrierLoadError', '配送業者一覧の取得に失敗しました'), 'danger')
   }
 }
@@ -790,7 +790,7 @@ const loadSampleOrders = async () => {
     sampleRows.value = orders.slice(0, 5).map((o: any) => o)
     showToast(t('wms.mapping.sampleOrdersLoaded', '注文サンプルを読み込みました'), 'success')
   } catch (e: any) {
-    console.error(e)
+    // サンプル取得失敗はトーストで通知 / Sample load error shown via toast
     showToast(e?.message || t('wms.mapping.sampleLoadError', 'サンプル取得に失敗しました'), 'danger')
   }
 }
@@ -1081,7 +1081,7 @@ const handleSave = async () => {
       showToast(t('wms.mapping.configSaved', '設定を保存しました'), 'success')
     }
   } catch (e: any) {
-    console.error(e)
+    // 保存失敗はトーストで通知 / Save error shown via toast
     showToast(e?.message || t('wms.mapping.saveError', '保存に失敗しました'), 'danger')
   }
 }
@@ -1156,7 +1156,7 @@ const handleLoad = async () => {
     showToast(t('wms.mapping.configLoaded', '設定を読み込みました'), 'success')
   } catch (e: any) {
     if (e !== 'cancel') {
-      console.error(e)
+      // 読み込み失敗はトーストで通知 / Load error shown via toast
       showToast(e?.message || t('wms.mapping.loadError', '読み込みに失敗しました'), 'danger')
     }
   }

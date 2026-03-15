@@ -185,7 +185,7 @@ async function initialize() {
     carriersCache.value = carriers
     carrierAutomationConfigCache.value = automationConfig
   } catch (e) {
-    console.error('Failed to load carrier data:', e)
+    // 配送業者データ読み込み失敗 / Failed to load carrier data
     carriersCache.value = []
     carrierAutomationConfigCache.value = null
   }
@@ -282,7 +282,7 @@ async function handlePrint() {
         successCount += localItems.value.length
         printedOrderIds.push(...localItems.value.map((i) => String(i.order._id)))
       } catch (e: any) {
-        console.error('[BatchPrint] Failed to print local items:', e)
+        // ローカル印刷失敗 / Failed to print local items
         alert(`印刷エラー: ${e?.message || e}`)
         failCount += localItems.value.length
       }
@@ -321,7 +321,7 @@ async function handlePrint() {
           successCount += groupItems.length
           printedOrderIds.push(...groupItems.map((i) => String(i.order._id)))
         } catch (e: any) {
-          console.error(`Failed to print B2 items (invoiceType=${invoiceType}):`, e)
+          // B2印刷失敗 / Failed to print B2 items
           failCount += groupItems.length
         }
       }
@@ -335,7 +335,7 @@ async function handlePrint() {
       try {
         await updateShipmentOrderStatusBulk(printedOrderIds, 'mark-printed')
       } catch (e: any) {
-        console.error('Failed to mark orders as printed:', e)
+        // 印刷済みステータス更新失敗 / Failed to mark as printed
         // Don't count as fail - printing succeeded
       }
     }
@@ -365,7 +365,7 @@ async function handlePrint() {
       }
     }
   } catch (e: any) {
-    console.error('Print error:', e)
+    // 印刷エラー / Print error
     progressStatus.value = 'exception'
     printResult.value = {
       type: 'error',
@@ -444,7 +444,7 @@ async function handleSavePdf() {
       message: `${totalCount.value}件のPDFを保存しました`,
     }
   } catch (e: any) {
-    console.error('Save PDF error:', e)
+    // PDF保存エラー / Save PDF error
     progressStatus.value = 'exception'
     printResult.value = {
       type: 'error',

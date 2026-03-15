@@ -1243,7 +1243,7 @@ onMounted(async () => {
     const plugins = await getTransformPlugins()
     transformPlugins.value = plugins.transforms
   } catch (e) {
-    console.error('Failed to load plugins:', e)
+    // プラグイン読み込み失敗 / Failed to load plugins
   }
 })
 
@@ -1465,7 +1465,7 @@ watch(
         previewValue.value = String(result)
       }
     } catch (error) {
-      console.error('Preview error:', error)
+      // プレビューエラー / Preview error
       previewValue.value = `（エラー: ${error instanceof Error ? error.message : '不明なエラー'}）`
     }
   },

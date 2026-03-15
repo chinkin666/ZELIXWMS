@@ -7,6 +7,7 @@
 import type { PrintTemplate, RenderOptions } from './skiaRenderer';
 import { renderTemplateToPng } from './skiaRenderer'
 import { checkPdfCache, savePdfToCache } from '../pdfCache'
+import { logger } from '@/lib/logger'
 
 export interface WorkerTask {
   item: {
@@ -197,7 +198,7 @@ export default async function renderWorker(task: WorkerTask): Promise<WorkerResu
       },
     }
   } catch (error: any) {
-    console.error(`[RenderWorker] Error rendering item ${task.index}:`, error)
+    logger.error({ err: error }, `[RenderWorker] Error rendering item ${task.index}`)
     return {
       success: false,
       index: task.index,

@@ -342,7 +342,7 @@ function renderBarcodeImage(
       alignment: horizontalAlign || 'left',
     }
   } catch (e) {
-    console.warn('バーコード生成失敗:', e)
+    // バーコード生成失敗 / Barcode generation failed
     return null
   }
 }
@@ -703,7 +703,7 @@ export async function generateFormPdf(
   if (options?.preview) {
     const newWindow = window.open(url, '_blank')
     if (!newWindow) {
-      console.warn('ポップアップがブロックされました。ダウンロードします。')
+      // ポップアップブロック時はダウンロードにフォールバック / Popup blocked, falling back to download
       const a = document.createElement('a')
       a.href = url
       a.download = options?.filename || 'preview.pdf'

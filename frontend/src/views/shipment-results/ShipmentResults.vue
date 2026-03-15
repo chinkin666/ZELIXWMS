@@ -388,7 +388,7 @@ const handleCustomExportClick = async () => {
     selectedOrdersForCustomExport.value = orders
     customExportDialogVisible.value = true
   } catch (e: any) {
-    console.error('Failed to fetch orders for custom export:', e)
+    // カスタムエクスポート用注文取得失敗 / Failed to fetch orders for custom export
     showToast(t('wms.shipmentResult.fetchOrderError', '注文データの取得に失敗しました'), 'danger')
   }
 }
@@ -401,7 +401,7 @@ const handleFormExportClick = async () => {
     selectedOrdersForFormExport.value = orders as OrderDocument[]
     formExportDialogVisible.value = true
   } catch (e: any) {
-    console.error('Failed to fetch orders for form export:', e)
+    // フォームエクスポート用注文取得失敗 / Failed to fetch orders for form export
     showToast(t('wms.shipmentResult.fetchOrderError', '注文データの取得に失敗しました'), 'danger')
   }
 }
@@ -458,7 +458,7 @@ const loadCarriers = async () => {
   try {
     carriers.value = await fetchCarriers({ enabled: true })
   } catch (e: any) {
-    console.error('Failed to load carriers:', e)
+    // 配送業者読み込み失敗 / Failed to load carriers
   }
 }
 
@@ -476,7 +476,7 @@ onMounted(async () => {
   try {
     products.value = await fetchProducts()
   } catch (e) {
-    console.error('Failed to load products:', e)
+    // 商品読み込み失敗 / Failed to load products
   }
 })
 </script>

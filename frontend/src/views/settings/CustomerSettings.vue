@@ -533,7 +533,7 @@ const confirmImport = async () => {
     const result = await bulkImportCustomers(importPreviewData.value)
     showToast(`${result.successCount}件取り込みました${result.failCount > 0 ? ` (${result.failCount}件失敗)` : ''}`, result.failCount > 0 ? 'warning' : 'success')
     if (result.failCount > 0 && result.errors.length > 0) {
-      console.warn('Import errors:', result.errors)
+      // インポートエラーはトーストで通知済み / Import errors shown via toast
     }
     cancelImport()
     showImportPanel.value = false

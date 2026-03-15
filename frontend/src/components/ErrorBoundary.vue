@@ -7,7 +7,7 @@ const error = ref<Error | null>(null)
 
 onErrorCaptured((err: Error) => {
   error.value = err
-  console.error('[ErrorBoundary] キャプチャされたエラー / Captured error:', err)
+  // エラーをキャプチャ済み / Error captured and stored in ref
   // エラーの伝播を停止 / Stop error propagation
   return false
 })

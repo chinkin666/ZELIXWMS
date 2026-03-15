@@ -175,7 +175,7 @@ onMounted(async () => {
   try {
     templates.value = await fetchFormTemplates()
   } catch (error) {
-    console.error('Failed to fetch form templates:', error)
+    // フォームテンプレート取得失敗 / Failed to fetch form templates
   } finally {
     loading.value = false
   }

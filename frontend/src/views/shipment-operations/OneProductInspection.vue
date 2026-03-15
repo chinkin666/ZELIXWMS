@@ -439,7 +439,7 @@ async function triggerAutoPrint(order: OrderDocument) {
       }
     }
   } catch (e: any) {
-    console.error('Auto print failed:', e)
+    // 自動印刷失敗 / Auto print failed
     showToast(`自動印刷に失敗しました: ${e?.message || String(e)}`, 'danger')
     completionDialogVisible.value = true
   }
@@ -464,7 +464,7 @@ async function handlePrint() {
     markLocallyInspected(String(currentMatchedOrder.value._id))
     completionDialogVisible.value = false
   } catch (e: any) {
-    console.error('Print error:', e)
+    // 印刷エラー / Print error
     showToast(`印刷に失敗しました: ${e?.message || String(e)}`, 'danger')
   }
 }
@@ -614,7 +614,7 @@ function saveProcessedToStorage() {
   try {
     localStorage.setItem('nByOneProcessedOrderIds', JSON.stringify([...inspectedOrderIds.value]))
   } catch (e) {
-    console.error('Failed to save processed IDs:', e)
+    // 処理済みID保存失敗 / Failed to save processed IDs
   }
 }
 
@@ -624,7 +624,7 @@ function saveAllToStorage() {
     localStorage.setItem('nByOneSelectedOrderIds', JSON.stringify(orderIds))
     saveProcessedToStorage()
   } catch (e) {
-    console.error('Failed to save order data:', e)
+    // 注文データ保存失敗 / Failed to save order data
   }
 }
 
@@ -715,7 +715,7 @@ onMounted(async () => {
         .catch(() => { carrierAutomationConfigCache.value = null }),
     ])
   } catch (e) {
-    console.error('Failed to load initial data:', e)
+    // 初期データ読み込み失敗 / Failed to load initial data
   }
 
   let orderIds: string[] = []
@@ -735,7 +735,7 @@ onMounted(async () => {
   try {
     allOrders.value = await fetchShipmentOrdersByIds<OrderDocument>(orderIds)
   } catch (e) {
-    console.error('Failed to load orders:', e)
+    // 注文読み込み失敗 / Failed to load orders
     showToast('注文の読み込みに失敗しました', 'danger')
     return
   }

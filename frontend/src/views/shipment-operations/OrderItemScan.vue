@@ -242,7 +242,7 @@ const handleUnconfirmConfirm = async (reason: string, skipCarrierDelete = false)
           localStorage.setItem('oneByOneProcessedOrderIds', JSON.stringify(filteredIds))
         }
       } catch (e) {
-        console.error('Failed to update localStorage:', e)
+        // localStorage更新失敗 / Failed to update localStorage
       }
 
       router.push('/shipment-operations/one-by-one/scan')
@@ -306,7 +306,7 @@ const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrie
             localStorage.setItem('oneByOneProcessedOrderIds', JSON.stringify(filteredIds))
           }
         } catch (e) {
-          console.error('Failed to update localStorage:', e)
+          // localStorage更新失敗 / Failed to update localStorage
         }
         order.value = await fetchShipmentOrder(orderId)
         initializeItems()
@@ -329,7 +329,7 @@ const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrie
           localStorage.setItem('oneByOneProcessedOrderIds', JSON.stringify(filteredIds))
         }
       } catch (e) {
-        console.error('Failed to update localStorage:', e)
+        // localStorage更新失敗 / Failed to update localStorage
       }
 
       router.push('/shipment-operations/one-by-one/scan')
@@ -611,7 +611,7 @@ const initializeItems = () => {
     const orderId = String(order.value._id)
     localStorage.removeItem(`orderItemScan_${orderId}`)
   } catch (e) {
-    console.error('Failed to clear scan state cache:', e)
+    // スキャン状態キャッシュクリア失敗 / Failed to clear scan state cache
   }
 
   const items: ProductItem[] = []
@@ -662,7 +662,7 @@ const updateParentPageOrderState = () => {
       }
     }
   } catch (e) {
-    console.error('Failed to update parent page order state:', e)
+    // 親ページの注文状態更新失敗 / Failed to update parent page order state
   }
 }
 
@@ -684,7 +684,7 @@ const handlePrint = async () => {
           updateShipmentOrderStatus(String(orderId), 'mark-inspected'),
         ])
       } catch (statusError: any) {
-        console.error('Failed to update order status:', statusError)
+        // 注文ステータス更新失敗 / Failed to update order status
         toast.warning(t('wms.inspection.statusUpdateFailed', 'ステータス更新に失敗しました') + `: ${statusError?.message || String(statusError)}`)
       }
     }
@@ -707,7 +707,7 @@ const handlePrint = async () => {
       }, 10)
     }
   } catch (e: any) {
-    console.error('Print error:', e)
+    // 印刷エラー / Print error
     toast.error(t('wms.inspection.printFailed', '印刷に失敗しました') + `: ${e?.message || String(e)}`)
   }
 }
@@ -821,7 +821,7 @@ onMounted(async () => {
       }
     }, 100)
   } catch (e: any) {
-    console.error('Failed to load order:', e)
+    // 注文読み込み失敗 / Failed to load order
     toast.error(e?.message || t('wms.inspection.loadOrderFailed', '注文の読み込みに失敗しました'))
     router.push('/shipment-operations/one-by-one/scan')
   }

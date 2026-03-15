@@ -7,6 +7,7 @@ import { Canvas, loadImage } from 'skia-canvas'
 import type { ImageBuffer as BarcodeImageBuffer } from './skiaBarcode';
 import { generateBarcode } from './skiaBarcode'
 import { loadFonts } from './fontManager'
+import { logger } from '@/lib/logger'
 
 // Constants for unit conversion
 const MM_PER_INCH = 25.4
@@ -126,7 +127,7 @@ export async function renderTemplateToPng(
         try {
           value = String((await runTransformMapping(b.transformMapping, context)) ?? '')
         } catch (e) {
-          console.error('Error rendering barcode transform mapping:', e)
+          logger.error({ err: e }, 'Error rendering barcode transform mapping')
           value = ''
         }
       }
@@ -154,7 +155,7 @@ export async function renderTemplateToPng(
           const imgEl = await loadImage(img.imageData)
           imageDataById.set(img.id, imgEl)
         } catch (e) {
-          console.error('Error loading image element:', e)
+          logger.error({ err: e }, 'Error loading image element')
         }
       }
     })
@@ -171,7 +172,7 @@ export async function renderTemplateToPng(
         try {
           text = String((await runTransformMapping(t.transformMapping, context)) ?? '')
         } catch (e) {
-          console.error('Error rendering text transform mapping:', e)
+          logger.error({ err: e }, 'Error rendering text transform mapping')
           text = ''
         }
       }

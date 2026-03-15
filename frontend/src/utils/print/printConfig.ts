@@ -102,7 +102,7 @@ export function getPrintConfig(): PrintConfig {
       }
     }
   } catch (error) {
-    console.error('Failed to load print config from localStorage:', error)
+    // 印刷設定読み込み失敗 / Failed to load print config
   }
   return structuredClone(DEFAULT_CONFIG)
 }
@@ -114,7 +114,7 @@ export function savePrintConfig(config: PrintConfig): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
   } catch (error) {
-    console.error('Failed to save print config to localStorage:', error)
+    // 印刷設定保存失敗 / Failed to save print config
     throw new Error('設定の保存に失敗しました')
   }
 }
@@ -126,7 +126,7 @@ export function resetPrintConfig(): void {
   try {
     localStorage.removeItem(STORAGE_KEY)
   } catch (error) {
-    console.error('Failed to reset print config:', error)
+    // 印刷設定リセット失敗 / Failed to reset print config
   }
 }
 

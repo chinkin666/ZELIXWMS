@@ -173,7 +173,7 @@ async function handleRender() {
     imageUrl.value = url
   } catch (e: any) {
     error.value = e?.message || String(e)
-    console.error('Preview render error:', e)
+    // プレビューレンダリングエラー / Preview render error
   } finally {
     rendering.value = false
   }
@@ -187,7 +187,7 @@ async function loadOrderSourceCompany() {
   try {
     orderSourceCompany.value = await fetchOrderSourceCompanyById(currentOrder.value.orderSourceCompanyId)
   } catch (e) {
-    console.error('Failed to load OrderSourceCompany:', e)
+    // ご依頼主情報読み込み失敗 / Failed to load OrderSourceCompany
     orderSourceCompany.value = null
   }
 }
@@ -215,7 +215,7 @@ const loadTemplates = async () => {
     const fetched = await fetchPrintTemplates(params)
     templates.value = fetched
   } catch (e: any) {
-    console.error('Failed to load print templates:', e)
+    // 印刷テンプレート読み込み失敗 / Failed to load print templates
     alert(e?.message || 'テンプレートの読み込みに失敗しました')
     templates.value = []
   } finally {

@@ -249,7 +249,7 @@ export function useOrderBundle(
         const parsed = JSON.parse(savedFilter)
         if (Array.isArray(parsed)) bundleFilterKeys.value = parsed.filter((k) => typeof k === 'string')
       } catch (err) {
-        console.warn('バンドルフィルターCookieの解析に失敗しました', err)
+        // バンドルフィルターCookie解析失敗 / Failed to parse bundle filter cookie
       }
     }
     const savedMode = getCookie(BUNDLE_MODE_COOKIE_KEY)

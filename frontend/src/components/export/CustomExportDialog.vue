@@ -105,7 +105,7 @@ watch(
           await handleConfigChange()
         }
       } catch (e: any) {
-        console.error('Failed to load mapping configs:', e)
+        // マッピング設定読み込み失敗 / Failed to load mapping configs
         alert('出力レイアウトの読み込みに失敗しました')
       }
     }
@@ -140,7 +140,7 @@ const handleConfigChange = async () => {
     }
     outputRows.value = transformed
   } catch (e: any) {
-    console.error('Failed to transform orders:', e)
+    // データ変換失敗 / Failed to transform orders
     alert('データの変換に失敗しました')
   }
 }

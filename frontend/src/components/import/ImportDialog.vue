@@ -283,7 +283,7 @@ const loadMappingConfigs = async () => {
       selectedConfigId.value = defaultConfig._id
     }
   } catch (error) {
-    console.error('Failed to load mapping configs:', error)
+    // マッピング設定読み込み失敗 / Failed to load mapping configs
     alert('レイアウトの読み込みに失敗しました')
   } finally {
     loadingConfigs.value = false
@@ -317,7 +317,7 @@ const parseAndPreview = async () => {
       // 平铺嵌套对象用于预览显示
       previewRows.value = mappedRows.map(row => flattenForPreview(row))
   } catch (error) {
-    console.error('Failed to parse file:', error)
+    // ファイル解析失敗 / Failed to parse file
     alert('ファイルの解析に失敗しました')
     previewRows.value = []
   }
@@ -400,7 +400,7 @@ const parseCsvFile = async (file: File): Promise<Record<string, any>[]> => {
     const wb = XLSX.read(text, { type: 'string' })
     return parseSheetToRows(wb)
   } catch (error) {
-    console.error('CSV parsing failed:', error)
+    // CSV解析失敗 / CSV parsing failed
     alert('CSVファイルの解析に失敗しました。エンコーディング（UTF-8 または Shift-JIS）を確定してください。')
     throw error
   }
@@ -621,7 +621,7 @@ const handleImport = async () => {
     alert(`${importedRows.length}件のデータを取り込みしました`)
     handleClose()
   } catch (error) {
-    console.error('Failed to import:', error)
+    // インポート失敗 / Failed to import
     alert('取り込みに失敗しました')
   } finally {
     importing.value = false

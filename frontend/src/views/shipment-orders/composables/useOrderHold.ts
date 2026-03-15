@@ -94,7 +94,7 @@ export function useOrderHold(
         await updateShipmentOrderStatusBulk(backendIds, action)
         await loadPendingWaybillOrders()
       } catch (err) {
-        console.error('保留状態の更新に失敗しました:', err)
+        // 保留状態の更新失敗 / Failed to update hold status
         toast.showError('保留状態の更新に失敗しました')
       }
     }

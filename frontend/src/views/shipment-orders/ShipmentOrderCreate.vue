@@ -970,7 +970,7 @@ async function loadPendingWaybillOrders() {
       .map((o: any) => ({ ...o, id: o._id } as UserOrderRow))
   } catch (err: any) {
     if (version !== loadPendingWaybillVersion) return
-    console.error('注文の取得に失敗しました:', err)
+    // 注文取得失敗はトーストで通知済み / Order fetch failure notified via toast
     toast.showError(t('wms.shipmentOrder.fetchOrdersFailed', '注文の取得に失敗しました'))
   } finally {
     if (version === loadPendingWaybillVersion) {
@@ -992,7 +992,7 @@ const loadOrderSourceCompanies = async () => {
   try {
     orderSourceCompanies.value = await fetchOrderSourceCompanies()
   } catch (error) {
-    console.error('ご依頼主リストの読み込みに失敗しました:', error)
+    // ご依頼主リスト読み込み失敗 / Failed to load order source companies
     toast.showError(t('wms.shipmentOrder.fetchSendersFailed', 'ご依頼主リストの読み込みに失敗しました'))
   }
 }
@@ -1002,7 +1002,7 @@ const loadProductsCache = async () => {
     products.value = await fetchProducts()
     reapplyProductDefaults()
   } catch (error) {
-    console.error('商品マスタの取得に失敗しました:', error)
+    // 商品マスタ取得失敗 / Failed to fetch products
     toast.showError(t('wms.shipmentOrder.fetchProductsFailed', '商品マスタの取得に失敗しました'))
   }
 }
@@ -1011,7 +1011,7 @@ const loadCarriers = async () => {
   try {
     carriers.value = await fetchCarriers({ enabled: true })
   } catch (error) {
-    console.error('配送業者マスタの取得に失敗しました:', error)
+    // 配送業者マスタ取得失敗 / Failed to fetch carriers
     toast.showError(t('wms.shipmentOrder.fetchCarriersFailed', '配送業者マスタの取得に失敗しました'))
   }
 }

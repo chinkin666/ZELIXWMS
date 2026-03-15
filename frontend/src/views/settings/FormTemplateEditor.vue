@@ -1180,7 +1180,7 @@ async function updatePreview() {
       previewUrl.value = URL.createObjectURL(blob)
     }
   } catch (e: any) {
-    console.error('Preview generation failed', e)
+    // プレビュー生成失敗 / Preview generation failed
     previewError.value = e?.message || t('wms.formEditor.previewFailed', 'プレビューの生成に失敗しました')
     if (previewUrl.value) {
       URL.revokeObjectURL(previewUrl.value)

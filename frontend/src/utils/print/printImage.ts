@@ -104,7 +104,7 @@ function printImageViaIframe(blobUrl: string, opts: PrintImageOptions): Window |
     if (!data || data.id !== id) return
 
     if (data.type === 'print-image-error') {
-      console.error('Print image failed to load:', data.error)
+      // 印刷画像読み込み失敗 / Print image failed to load
       cleanup()
       return
     }
@@ -120,7 +120,7 @@ function printImageViaIframe(blobUrl: string, opts: PrintImageOptions): Window |
           w.print()
         }
       } catch (e) {
-        console.error('Failed to trigger print:', e)
+        // 印刷トリガー失敗 / Failed to trigger print
       } finally {
         setTimeout(cleanup, 3000)
       }
@@ -205,9 +205,7 @@ async function printImageViaLocalBridge(
 
     return null
   } catch (error: any) {
-    console.error('Failed to print via local bridge:', error)
-    // Fallback to browser print
-    console.warn('Falling back to browser print')
+    // ローカルブリッジ印刷失敗、ブラウザ印刷にフォールバック / Local bridge failed, falling back to browser print
     if (!opts.useNewWindow) {
       return printImageViaIframe(blobUrl, opts)
     }
@@ -246,7 +244,7 @@ export async function printPdfBlob(
       await printFile(config.localBridge.serviceUrl, pdfBlob, params, 'print.pdf')
       return
     } catch (error: any) {
-      console.error('Failed to print PDF via local bridge:', error)
+      // ローカルブリッジPDF印刷失敗 / Failed to print PDF via local bridge
       // Fall through to browser print
     }
   }
@@ -289,14 +287,14 @@ export async function printPdfBlob(
       // Fallback cleanup after 5 minutes
       setTimeout(cleanup, 300000)
     } catch (e) {
-      console.error('Failed to trigger print:', e)
+      // 印刷トリガー失敗 / Failed to trigger print
       window.open(blobUrl, '_blank')
       cleanup()
     }
   }
 
   iframe.onerror = () => {
-    console.error('Failed to load PDF in iframe')
+    // PDF iframe読み込み失敗 / Failed to load PDF in iframe
     window.open(blobUrl, '_blank')
     cleanup()
   }

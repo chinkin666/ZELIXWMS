@@ -50,7 +50,7 @@ export const saveTableDataToStorage = (
     localStorage.setItem(TABLE_DATA_STORAGE_KEY, JSON.stringify(serializeRows(rows)))
     localStorage.setItem(HELD_ROWS_STORAGE_KEY, JSON.stringify(heldRowIds))
   } catch (error) {
-    console.error('テーブルデータのlocalStorage保存に失敗しました:', error)
+    // テーブルデータ保存失敗 / Failed to save table data to localStorage
   }
 }
 
@@ -62,7 +62,7 @@ export const loadTableDataFromStorage = (): UserOrderRow[] => {
     const parsed = JSON.parse(saved)
     return Array.isArray(parsed) ? (parsed as UserOrderRow[]) : []
   } catch (error) {
-    console.error('テーブルデータのlocalStorage読み込みに失敗しました:', error)
+    // テーブルデータ読み込み失敗 / Failed to load table data from localStorage
     return []
   }
 }
@@ -85,6 +85,6 @@ export const clearTableDataStorage = () => {
     localStorage.removeItem(TABLE_DATA_STORAGE_KEY)
     localStorage.removeItem(HELD_ROWS_STORAGE_KEY)
   } catch (error) {
-    console.error('テーブルデータのlocalStorageクリアに失敗しました:', error)
+    // テーブルデータクリア失敗 / Failed to clear table data from localStorage
   }
 }

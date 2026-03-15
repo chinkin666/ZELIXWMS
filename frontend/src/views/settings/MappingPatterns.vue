@@ -223,7 +223,7 @@ const loadMappingConfigs = async () => {
       mappingsCount: config.mappings?.length || 0,
     }))
   } catch (error) {
-    console.error('Failed to load mapping configs:', error)
+    // マッピング設定読み込み失敗 / Failed to load mapping configs
     showToast(t('wms.settings.mapping.loadError', 'レイアウトの読み込みに失敗しました'), 'danger')
   } finally {
     loading.value = false

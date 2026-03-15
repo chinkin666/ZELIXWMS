@@ -6,6 +6,7 @@
 import { FontLibrary } from 'skia-canvas'
 import path from 'path'
 import fs from 'fs'
+import { logger } from '@/lib/logger'
 
 const FONT_DIR = process.env.FONT_DIR || path.join(__dirname, '../../../../fonts')
 
@@ -48,8 +49,8 @@ export async function loadFonts(): Promise<void> {
   // Create fonts directory if it doesn't exist
   if (!fs.existsSync(FONT_DIR)) {
     fs.mkdirSync(FONT_DIR, { recursive: true })
-    console.log(`Created fonts directory at ${FONT_DIR}`)
-    console.log('Please add Japanese fonts (e.g., NotoSansJP-Regular.ttf) to this directory')
+    logger.info(`Created fonts directory at ${FONT_DIR}`)
+    logger.info('Please add Japanese fonts (e.g., NotoSansJP-Regular.ttf) to this directory')
   }
 
   for (const fontConfig of REQUIRED_FONTS) {
@@ -58,9 +59,9 @@ export async function loadFonts(): Promise<void> {
       if (fs.existsSync(fontPath)) {
         try {
           FontLibrary.use(fontConfig.family, fontPath)
-          console.log(`Loaded font: ${fontConfig.family} from ${fontPath}`)
+          logger.info(`Loaded font: ${fontConfig.family} from ${fontPath}`)
         } catch (error) {
-          console.warn(`Failed to load font ${fontPath}:`, error)
+          logger.warn({ err: error }, `Failed to load font ${fontPath}`)
         }
       } else {
         // Font file not found - this is expected initially

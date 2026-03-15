@@ -175,7 +175,7 @@ function saveSettings(): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...settings }))
   } catch {
-    console.warn('Failed to save theme settings to localStorage')
+    // テーマ設定保存失敗 / Failed to save theme settings
   }
 }
 
@@ -187,7 +187,7 @@ function loadSavedTheme(): void {
       Object.assign(settings, { ...DEFAULT_SETTINGS, ...parsed })
     }
   } catch {
-    console.warn('Failed to load theme settings from localStorage')
+    // テーマ設定読み込み失敗 / Failed to load theme settings
   }
   applyTheme()
 }

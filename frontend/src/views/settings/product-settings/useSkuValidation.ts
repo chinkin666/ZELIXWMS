@@ -49,7 +49,7 @@ export function useSkuValidation() {
         }
       }
     } catch (error: any) {
-      console.error('SKU validation error:', error)
+      // SKUバリデーションエラー / SKU validation error
     }
   }
 
@@ -98,7 +98,7 @@ export function useSkuValidation() {
         }
       }
     } catch (error: any) {
-      console.error('SKU validation error:', error)
+      // SKUバリデーションエラー / SKU validation error
     }
     return null
   }

@@ -168,7 +168,7 @@ watch(
       try {
         orderSourceCompany.value = await fetchOrderSourceCompanyById(props.order.orderSourceCompanyId)
       } catch (e) {
-        console.error('Failed to load OrderSourceCompany:', e)
+        // ご依頼主情報読み込み失敗 / Failed to load OrderSourceCompany
         orderSourceCompany.value = null
       }
     } else {
@@ -257,7 +257,7 @@ async function handlePrint() {
     })
     alert('已触发打印（请在打印对话框选择100%缩放/无边距）')
   } catch (error: any) {
-    console.error('Print error:', error)
+    // 印刷エラー / Print error
     alert(`打印失败: ${error?.message || String(error)}`)
   }
 

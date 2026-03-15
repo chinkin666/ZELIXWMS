@@ -320,7 +320,7 @@ onMounted(async () => {
   try {
     templates.value = await fetchPrintTemplates()
   } catch (error) {
-    console.error('Failed to fetch print templates:', error)
+    // 印刷テンプレート取得失敗 / Failed to fetch print templates
   } finally {
     loading.value = false
   }
