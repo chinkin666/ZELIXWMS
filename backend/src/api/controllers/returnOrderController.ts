@@ -7,6 +7,8 @@ import { Location } from '@/models/location';
 import { Product } from '@/models/product';
 import { extensionManager } from '@/core/extensions';
 import { HOOK_EVENTS } from '@/core/extensions/types';
+import { logOperation } from '@/services/operationLogger';
+import { createReturnOrderSchema, inspectLinesSchema } from '@/schemas/returnOrderSchema';
 
 // ---------------------------------------------------------------------------
 // 番号生成
@@ -61,6 +63,12 @@ export async function getReturnOrder(req: Request, res: Response) {
 // ---------------------------------------------------------------------------
 export async function createReturnOrder(req: Request, res: Response) {
   try {
+    // Zodバリデーション / Zod验证
+    const parsed = createReturnOrderSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ') });
+    }
+
     const {
       shipmentOrderId,
       returnReason,
@@ -125,6 +133,17 @@ export async function createReturnOrder(req: Request, res: Response) {
       memo,
     });
 
+    // 操作ログ記録 / 操作日志记录
+    logOperation({
+      action: 'return_receive',
+      category: 'return',
+      description: `返品指示を作成: ${doc.orderNumber}（${enrichedLines.length}行）`,
+      referenceNumber: doc.orderNumber,
+      referenceType: 'returnOrder',
+      referenceId: String(doc._id),
+      quantity: enrichedLines.reduce((s, l) => s + (l.quantity || 0), 0),
+    }).catch(() => {});
+
     res.status(201).json(doc.toObject());
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -169,6 +188,17 @@ export async function startInspection(req: Request, res: Response) {
 
     doc.status = 'inspecting';
     await doc.save();
+
+    // 操作ログ記録 / 操作日志记录
+    logOperation({
+      action: 'return_inspect',
+      category: 'return',
+      description: `検品開始: ${doc.orderNumber}`,
+      referenceNumber: doc.orderNumber,
+      referenceType: 'returnOrder',
+      referenceId: String(doc._id),
+    }).catch(() => {});
+
     res.json(doc.toObject());
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -186,24 +216,70 @@ export async function inspectLines(req: Request, res: Response) {
       return res.status(400).json({ error: '検品中の返品のみ検品可能です' });
     }
 
-    const { inspections } = req.body;
-    // inspections: Array<{ lineIndex, inspectedQuantity, disposition, restockedQuantity, disposedQuantity, locationId? }>
-    if (!Array.isArray(inspections)) {
-      return res.status(400).json({ error: 'inspections配列が必要です' });
+    // Zodバリデーション / Zod验证
+    const parsed = inspectLinesSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ') });
+    }
+
+    const { lines: inspections } = parsed.data;
+    const warnings: string[] = [];
+
+    // 数量バリデーション / 数量验证
+    for (const insp of inspections) {
+      const line = doc.lines[insp.lineIndex];
+      if (!line) {
+        return res.status(400).json({ error: `lineIndex ${insp.lineIndex}: 該当する明細が存在しません` });
+      }
+
+      // inspectedQuantityは0以上かつ元数量以下 / inspectedQuantity必须>=0且<=原始数量
+      if (insp.inspectedQuantity > line.quantity) {
+        return res.status(400).json({
+          error: `lineIndex ${insp.lineIndex}: 検品数量(${insp.inspectedQuantity})が元数量(${line.quantity})を超えています`,
+        });
+      }
+
+      // restockedQuantity + disposedQuantity <= inspectedQuantity
+      const restocked = insp.restockedQuantity ?? 0;
+      const disposed = insp.disposedQuantity ?? 0;
+      if (restocked + disposed > insp.inspectedQuantity) {
+        return res.status(400).json({
+          error: `lineIndex ${insp.lineIndex}: 再入庫数(${restocked})+廃棄数(${disposed})が検品数量(${insp.inspectedQuantity})を超えています`,
+        });
+      }
+
+      // restockの場合、locationIdが設定されていることを推奨 / restock时建议设置locationId
+      if (insp.disposition === 'restock' && !insp.locationId) {
+        warnings.push(`lineIndex ${insp.lineIndex}: 再入庫の場合、入庫先ロケーション(locationId)の設定を推奨します`);
+      }
     }
 
     for (const insp of inspections) {
       const line = doc.lines[insp.lineIndex];
-      if (!line) continue;
-      if (insp.inspectedQuantity !== undefined) line.inspectedQuantity = insp.inspectedQuantity;
-      if (insp.disposition !== undefined) line.disposition = insp.disposition;
-      if (insp.restockedQuantity !== undefined) line.restockedQuantity = insp.restockedQuantity;
-      if (insp.disposedQuantity !== undefined) line.disposedQuantity = insp.disposedQuantity;
-      if (insp.locationId !== undefined) line.locationId = insp.locationId;
+      line.inspectedQuantity = insp.inspectedQuantity;
+      line.disposition = insp.disposition;
+      line.restockedQuantity = insp.restockedQuantity ?? 0;
+      line.disposedQuantity = insp.disposedQuantity ?? 0;
+      if (insp.locationId !== undefined) line.locationId = insp.locationId as any;
     }
 
     await doc.save();
-    res.json(doc.toObject());
+
+    // 操作ログ記録 / 操作日志记录
+    logOperation({
+      action: 'return_inspect',
+      category: 'return',
+      description: `検品結果登録: ${doc.orderNumber}（${inspections.length}行）`,
+      referenceNumber: doc.orderNumber,
+      referenceType: 'returnOrder',
+      referenceId: String(doc._id),
+    }).catch(() => {});
+
+    const result: Record<string, unknown> = { ...doc.toObject() };
+    if (warnings.length > 0) {
+      result.warnings = warnings;
+    }
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -323,6 +399,17 @@ export async function completeReturnOrder(req: Request, res: Response) {
     doc.completedAt = new Date();
     await doc.save();
 
+    // 操作ログ記録 / 操作日志记录
+    logOperation({
+      action: 'return_receive',
+      category: 'return',
+      description: `返品完了: ${doc.orderNumber}（再入庫${restockedTotal}個、廃棄${disposedTotal}個）`,
+      referenceNumber: doc.orderNumber,
+      referenceType: 'returnOrder',
+      referenceId: String(doc._id),
+      quantity: restockedTotal + disposedTotal,
+    }).catch(() => {});
+
     res.json({
       data: doc.toObject(),
       restockedTotal,
@@ -355,6 +442,17 @@ export async function cancelReturnOrder(req: Request, res: Response) {
 
     doc.status = 'cancelled';
     await doc.save();
+
+    // 操作ログ記録 / 操作日志记录
+    logOperation({
+      action: 'order_cancel',
+      category: 'return',
+      description: `返品キャンセル: ${doc.orderNumber}`,
+      referenceNumber: doc.orderNumber,
+      referenceType: 'returnOrder',
+      referenceId: String(doc._id),
+    }).catch(() => {});
+
     res.json(doc.toObject());
   } catch (err: any) {
     res.status(500).json({ error: err.message });

@@ -55,7 +55,12 @@
           <tbody>
             <tr v-for="(line, idx) in form.lines" :key="idx">
               <td class="o-table-td">
-                <input v-model="line.productSku" class="o-input o-input-sm" placeholder="SKU" style="width:100%;" />
+                <select v-model="line.productId" class="o-input o-input-sm" style="width:100%;" @change="onProductSelect(idx)">
+                  <option value="">{{ t('wms.returns.selectProduct', '商品を選択...') }}</option>
+                  <option v-for="p in products" :key="p._id" :value="p._id">
+                    {{ p.sku }} - {{ p.name }}
+                  </option>
+                </select>
               </td>
               <td class="o-table-td o-table-td--right">
                 <input v-model.number="line.quantity" type="number" min="1" class="o-input o-input-sm" style="width:70px;text-align:right;" />
@@ -82,19 +87,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { onMounted, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { createReturnOrder } from '@/api/returnOrder'
-import { http } from '@/api/http'
+import { fetchProducts } from '@/api/product'
+import type { Product } from '@/types/product'
 
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
 const isSubmitting = ref(false)
+const products = ref<Product[]>([])
+
+onMounted(async () => {
+  try {
+    products.value = await fetchProducts()
+  } catch (e: any) {
+    toast.showError(t('wms.returns.productLoadError', '商品マスタの取得に失敗しました'))
+  }
+})
 
 const form = reactive({
   returnReason: 'customer_request' as string,
@@ -102,32 +117,35 @@ const form = reactive({
   customerName: '',
   receivedDate: new Date().toISOString().slice(0, 10),
   shipmentOrderNumber: '',
-  lines: [{ productSku: '', quantity: 1, memo: '' }] as Array<{ productSku: string; quantity: number; memo: string }>,
+  lines: [{ productId: '', productSku: '', quantity: 1, memo: '' }] as Array<{ productId: string; productSku: string; quantity: number; memo: string }>,
 })
 
-const addLine = () => form.lines.push({ productSku: '', quantity: 1, memo: '' })
+// 商品選択時にSKUを自動設定 / 选择商品时自动设置SKU
+const onProductSelect = (idx: number) => {
+  const line = form.lines[idx]!
+  const product = products.value.find(p => p._id === line.productId)
+  line.productSku = product?.sku || ''
+}
+
+const addLine = () => form.lines.push({ productId: '', productSku: '', quantity: 1, memo: '' })
 
 const handleCreate = async () => {
-  const validLines = form.lines.filter(l => l.productSku.trim())
+  const validLines = form.lines.filter(l => l.productId)
   if (validLines.length === 0) { toast.showError(t('wms.returns.atLeastOneLine', '少なくとも1行の商品を入力してください')); return }
 
   isSubmitting.value = true
   try {
-    // SKUから商品IDを解決
-    const resolvedLines = []
-    for (const line of validLines) {
-      const data = await http.get<any>('/products', { search: line.productSku, limit: '1' })
-      const products = data.data || data || []
-      const product = Array.isArray(products) ? products[0] : null
-      if (!product) { toast.showError(t('wms.returns.productNotFound', `商品 ${line.productSku} が見つかりません`)); isSubmitting.value = false; return }
-      resolvedLines.push({
-        productId: product._id,
-        productSku: product.sku,
-        productName: product.name,
+    // 選択済み商品からライン情報を構築 / 从已选商品构建行信息
+    const resolvedLines = validLines.map(line => {
+      const product = products.value.find(p => p._id === line.productId)
+      return {
+        productId: line.productId,
+        productSku: product?.sku || line.productSku,
+        productName: product?.name || '',
         quantity: line.quantity,
         memo: line.memo || undefined,
-      })
-    }
+      }
+    })
 
     const result = await createReturnOrder({
       returnReason: form.returnReason,

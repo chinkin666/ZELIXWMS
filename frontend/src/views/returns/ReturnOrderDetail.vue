@@ -5,8 +5,8 @@
         <div style="display:flex;gap:6px;">
           <OButton variant="secondary" size="sm" @click="$router.push('/returns/list')">{{ t('wms.returns.toList', '一覧へ') }}</OButton>
           <OButton v-if="order?.status === 'draft'" variant="primary" size="sm" @click="handleStartInspection">{{ t('wms.returns.startInspection', '検品開始') }}</OButton>
-          <OButton v-if="order?.status === 'inspecting'" variant="success" size="sm" @click="handleSaveInspection">{{ t('wms.returns.saveInspection', '検品保存') }}</OButton>
-          <OButton v-if="order?.status === 'inspecting'" variant="primary" size="sm" @click="handleComplete">{{ t('wms.returns.complete', '完了（在庫反映）') }}</OButton>
+          <OButton v-if="order?.status === 'inspecting'" variant="success" size="sm" :disabled="hasValidationErrors" @click="handleSaveInspection">{{ t('wms.returns.saveInspection', '検品保存') }}</OButton>
+          <OButton v-if="order?.status === 'inspecting'" variant="primary" size="sm" :disabled="hasValidationErrors" @click="handleComplete">{{ t('wms.returns.complete', '完了（在庫反映）') }}</OButton>
         </div>
       </template>
     </ControlPanel>
@@ -37,17 +37,19 @@
               <th class="o-table-th" style="width:110px;">{{ t('wms.returns.disposition', '判定') }}</th>
               <th class="o-table-th o-table-th--right" style="width:80px;">{{ t('wms.returns.restock', '再入庫') }}</th>
               <th class="o-table-th o-table-th--right" style="width:80px;">{{ t('wms.returns.dispose', '廃棄') }}</th>
+              <th v-if="hasRestockLine" class="o-table-th" style="width:150px;">{{ t('wms.returns.restockLocation', '再入庫先') }}</th>
               <th class="o-table-th" style="width:100px;">{{ t('wms.returns.memo', 'メモ') }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(line, idx) in order.lines" :key="idx" class="o-table-row">
+            <template v-for="(line, idx) in order.lines" :key="idx">
+            <tr class="o-table-row" :class="{ 'row-error': lineErrors[idx]?.length }">
               <td class="o-table-td">{{ line.lineNumber }}</td>
               <td class="o-table-td" style="font-family:monospace;">{{ line.productSku }}</td>
               <td class="o-table-td">{{ line.productName || '-' }}</td>
               <td class="o-table-td o-table-td--right">{{ line.quantity }}</td>
               <td class="o-table-td o-table-td--right">
-                <input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.inspectedQuantity" type="number" min="0" class="o-input o-input-sm" style="width:60px;text-align:right;" />
+                <input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.inspectedQuantity" type="number" min="0" class="o-input o-input-sm" :class="{ 'input-error': lineErrors[idx]?.includes('inspected') }" style="width:60px;text-align:right;" />
                 <span v-else>{{ line.inspectedQuantity }}</span>
               </td>
               <td class="o-table-td">
@@ -67,8 +69,31 @@
                 <input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.disposedQuantity" type="number" min="0" class="o-input o-input-sm" style="width:60px;text-align:right;" />
                 <span v-else>{{ line.disposedQuantity }}</span>
               </td>
+              <td v-if="hasRestockLine" class="o-table-td">
+                <select
+                  v-if="order?.status === 'inspecting' && inspInputs[idx]!.disposition === 'restock'"
+                  v-model="inspInputs[idx]!.locationId"
+                  class="o-input o-input-sm"
+                  style="width:130px;"
+                >
+                  <option value="">{{ t('wms.common.pleaseSelect', '選択...') }}</option>
+                  <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
+                    {{ loc.code }}
+                  </option>
+                </select>
+                <span v-else-if="order?.status !== 'inspecting' && line.locationId">
+                  {{ locationName(line.locationId) }}
+                </span>
+                <span v-else>-</span>
+              </td>
               <td class="o-table-td">{{ line.memo || '-' }}</td>
             </tr>
+            <tr v-if="order?.status === 'inspecting' && lineErrorMessages[idx]?.length" class="error-row">
+              <td :colspan="hasRestockLine ? 10 : 9" class="o-table-td error-messages">
+                <span v-for="(msg, mi) in lineErrorMessages[idx]" :key="mi" class="error-msg">{{ msg }}</span>
+              </td>
+            </tr>
+            </template>
           </tbody>
         </table>
       </div>
@@ -90,6 +115,8 @@ import {
   completeReturnOrder,
 } from '@/api/returnOrder'
 import type { ReturnOrder } from '@/api/returnOrder'
+import { fetchLocations } from '@/api/location'
+import type { Location } from '@/types/inventory'
 
 const route = useRoute()
 const toast = useToast()
@@ -97,8 +124,70 @@ const { t } = useI18n()
 const isLoading = ref(true)
 const order = ref<ReturnOrder | null>(null)
 
-interface InspInput { inspectedQuantity: number; disposition: string; restockedQuantity: number; disposedQuantity: number }
+interface InspInput { inspectedQuantity: number; disposition: string; restockedQuantity: number; disposedQuantity: number; locationId: string }
 const inspInputs = ref<InspInput[]>([])
+const locations = ref<Location[]>([])
+
+// 物理ロケーションのみ（仮想ロケーション除外）/ 仅物理位置（排除虚拟位置）
+const physicalLocations = computed(() =>
+  locations.value.filter(l => !l.type.startsWith('virtual/')),
+)
+
+// 再入庫行が存在するか / 是否存在再入库行
+const hasRestockLine = computed(() => {
+  if (order.value?.status === 'inspecting') {
+    return inspInputs.value.some(inp => inp.disposition === 'restock')
+  }
+  return order.value?.lines.some(l => l.disposition === 'restock') ?? false
+})
+
+// ロケーション名を取得 / 获取位置名
+const locationName = (id: string) => {
+  const loc = locations.value.find(l => l._id === id)
+  return loc ? loc.code : id
+}
+
+// バリデーションエラー / 验证错误
+const lineErrors = computed(() => {
+  if (!order.value || order.value.status !== 'inspecting') return []
+  return inspInputs.value.map((inp, idx) => {
+    const errors: string[] = []
+    const originalQty = order.value!.lines[idx]!.quantity
+    if (inp.inspectedQuantity > originalQty) {
+      errors.push('inspected')
+    }
+    if ((inp.restockedQuantity + inp.disposedQuantity) > inp.inspectedQuantity) {
+      errors.push('subtotal')
+    }
+    if (inp.disposition === 'restock' && inp.restockedQuantity > 0 && !inp.locationId) {
+      errors.push('location')
+    }
+    return errors
+  })
+})
+
+// バリデーションエラーメッセージ / 验证错误消息
+const lineErrorMessages = computed(() => {
+  if (!order.value || order.value.status !== 'inspecting') return []
+  return inspInputs.value.map((inp, idx) => {
+    const msgs: string[] = []
+    const originalQty = order.value!.lines[idx]!.quantity
+    if (inp.inspectedQuantity > originalQty) {
+      msgs.push(t('wms.returns.errInspectedExceedsQty', `検品数(${inp.inspectedQuantity})が元数量(${originalQty})を超えています`))
+    }
+    if ((inp.restockedQuantity + inp.disposedQuantity) > inp.inspectedQuantity) {
+      msgs.push(t('wms.returns.errSubtotalExceedsInspected', `再入庫数+廃棄数(${inp.restockedQuantity + inp.disposedQuantity})が検品数(${inp.inspectedQuantity})を超えています`))
+    }
+    if (inp.disposition === 'restock' && inp.restockedQuantity > 0 && !inp.locationId) {
+      msgs.push(t('wms.returns.errLocationRequired', '再入庫先ロケーションを選択してください'))
+    }
+    return msgs
+  })
+})
+
+const hasValidationErrors = computed(() =>
+  lineErrors.value.some(errs => errs.length > 0),
+)
 
 const statusLabel = (s: string) => ({ draft: t('wms.returns.statusDraft', '下書き'), inspecting: t('wms.returns.statusInspecting', '検品中'), completed: t('wms.returns.statusCompleted', '完了'), cancelled: t('wms.returns.statusCancelled', 'キャンセル') }[s] || s)
 const statusClass = (s: string) => ({ draft: 'o-status-tag--draft', inspecting: 'o-status-tag--printed', completed: 'o-status-tag--confirmed', cancelled: 'o-status-tag--cancelled' }[s] || '')
@@ -109,13 +198,18 @@ const formatDate = (d: string) => new Date(d).toLocaleDateString('ja-JP')
 const loadData = async () => {
   isLoading.value = true
   try {
-    const data = await fetchReturnOrder(route.params.id as string)
+    const [data, locs] = await Promise.all([
+      fetchReturnOrder(route.params.id as string),
+      locations.value.length === 0 ? fetchLocations({ isActive: true }) : Promise.resolve(locations.value),
+    ])
     order.value = data
+    locations.value = locs
     inspInputs.value = data.lines.map(l => ({
       inspectedQuantity: l.inspectedQuantity,
       disposition: l.disposition,
       restockedQuantity: l.restockedQuantity,
       disposedQuantity: l.disposedQuantity,
+      locationId: l.locationId || '',
     }))
   } catch (e: any) { toast.showError(e?.message) } finally { isLoading.value = false }
 }
@@ -126,7 +220,15 @@ const handleStartInspection = async () => {
 }
 
 const handleSaveInspection = async () => {
-  const inspections = inspInputs.value.map((inp, idx) => ({ lineIndex: idx, ...inp }))
+  if (hasValidationErrors.value) return
+  const inspections = inspInputs.value.map((inp, idx) => ({
+    lineIndex: idx,
+    inspectedQuantity: inp.inspectedQuantity,
+    disposition: inp.disposition,
+    restockedQuantity: inp.restockedQuantity,
+    disposedQuantity: inp.disposedQuantity,
+    locationId: inp.locationId || undefined,
+  }))
   try {
     const data = await inspectReturnLines(route.params.id as string, inspections)
     order.value = data
@@ -163,4 +265,9 @@ onMounted(() => loadData())
 .disp-dispose { color: #f56c6c; font-weight: 600; }
 .disp-repair { color: #e6a23c; font-weight: 600; }
 .disp-pending { color: #909399; }
+.row-error { background: #fef0f0; }
+.error-row td { padding-top: 0 !important; padding-bottom: 4px !important; border-top: none !important; }
+.error-messages { display: flex; flex-wrap: wrap; gap: 8px; }
+.error-msg { color: #f56c6c; font-size: 11px; font-weight: 500; }
+.input-error { border-color: #f56c6c !important; background: #fef0f0 !important; }
 </style>
