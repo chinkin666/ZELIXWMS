@@ -56,3 +56,30 @@ export interface ClientPortalDashboard {
 export async function fetchClientDashboard(): Promise<ClientPortalDashboard> {
   return http.get<ClientPortalDashboard>('/client-portal/dashboard')
 }
+
+/** 荷主在庫照会 / 荷主库存查询 */
+export interface ClientStockItem {
+  readonly productSku: string
+  readonly productName: string
+  readonly quantity: number
+  readonly reservedQuantity: number
+  readonly availableQuantity: number
+}
+
+export async function fetchClientStock(): Promise<ClientStockItem[]> {
+  return http.get<ClientStockItem[]>('/client-portal/stock')
+}
+
+/** 追跡番号検索 / 追踪号查询 */
+export interface TrackingResult {
+  readonly orderNumber: string
+  readonly trackingId: string
+  readonly carrierName: string
+  readonly status: string
+  readonly shippedAt?: string
+  readonly recipient: string
+}
+
+export async function searchTracking(query: string): Promise<TrackingResult[]> {
+  return http.get<TrackingResult[]>('/client-portal/tracking', { q: query })
+}

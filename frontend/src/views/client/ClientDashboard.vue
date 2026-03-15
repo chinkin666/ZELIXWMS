@@ -151,6 +151,76 @@
           </tbody>
         </table>
       </div>
+      <!-- 追跡番号検索 / 追踪号查询 -->
+      <h2 class="section-title">{{ t('wms.clientPortal.trackingSearch', '出荷追跡') }}</h2>
+      <div class="o-card search-card">
+        <div class="tracking-search-row">
+          <input
+            v-model="trackingQuery"
+            type="text"
+            class="o-input tracking-input"
+            :placeholder="t('wms.clientPortal.trackingPlaceholder', '注文番号・追跡番号・管理番号で検索...')"
+            @keydown.enter="handleTrackingSearch"
+          />
+          <button class="search-btn" @click="handleTrackingSearch" :disabled="trackingLoading">
+            {{ trackingLoading ? '...' : t('wms.common.search', '検索') }}
+          </button>
+        </div>
+        <div v-if="trackingResults.length > 0" class="tracking-results">
+          <table class="o-table">
+            <thead>
+              <tr>
+                <th>{{ t('wms.ui.orderNumber', '注文番号') }}</th>
+                <th>{{ t('wms.clientPortal.trackingId', '追跡番号') }}</th>
+                <th>{{ t('wms.clientPortal.recipient', '届け先') }}</th>
+                <th>{{ t('wms.ui.status', 'ステータス') }}</th>
+                <th>{{ t('wms.clientPortal.shippedAt', '出荷日') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in trackingResults" :key="r.orderNumber">
+                <td>{{ r.orderNumber }}</td>
+                <td class="mono">{{ r.trackingId || '-' }}</td>
+                <td>{{ r.recipient }}</td>
+                <td><span :class="['status-badge', r.status === '出荷済' ? 'status-shipped' : 'status-pending']">{{ r.status }}</span></td>
+                <td>{{ r.shippedAt ? formatDate(r.shippedAt) : '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else-if="trackingSearched && !trackingLoading" class="empty-hint">
+          {{ t('wms.clientPortal.noTrackingResults', '該当する出荷情報が見つかりませんでした') }}
+        </div>
+      </div>
+
+      <!-- 在庫状況 / 库存状况 -->
+      <h2 class="section-title">{{ t('wms.clientPortal.stockStatus', '在庫状況') }}</h2>
+      <div class="o-card table-card">
+        <div v-if="stockLoading" class="loading-hint">{{ t('wms.ui.loading', '読み込み中...') }}</div>
+        <table v-else class="o-table">
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>{{ t('wms.clientPortal.productName', '商品名') }}</th>
+              <th class="text-right">{{ t('wms.clientPortal.totalStock', '在庫数') }}</th>
+              <th class="text-right">{{ t('wms.clientPortal.reserved', '引当済') }}</th>
+              <th class="text-right">{{ t('wms.clientPortal.available', '利用可能') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in stockItems" :key="item.productSku">
+              <td class="mono">{{ item.productSku }}</td>
+              <td>{{ item.productName }}</td>
+              <td class="text-right">{{ formatNumber(item.quantity) }}</td>
+              <td class="text-right">{{ formatNumber(item.reservedQuantity) }}</td>
+              <td class="text-right" style="font-weight:600;color:#67c23a;">{{ formatNumber(item.availableQuantity) }}</td>
+            </tr>
+            <tr v-if="stockItems.length === 0">
+              <td colspan="5" class="empty-row">{{ t('wms.ui.noData', 'データがありません') }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </template>
   </div>
 </template>
@@ -158,7 +228,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import { fetchClientDashboard, type ClientPortalDashboard } from '@/api/clientPortal'
+import { fetchClientDashboard, fetchClientStock, searchTracking, type ClientPortalDashboard, type ClientStockItem, type TrackingResult } from '@/api/clientPortal'
 
 const { t } = useI18n()
 
@@ -166,6 +236,16 @@ const dashboardData = ref<ClientPortalDashboard | null>(null)
 const loading = ref(false)
 const error = ref('')
 let refreshTimer: ReturnType<typeof setInterval> | null = null
+
+// 在庫照会 / 库存查询
+const stockItems = ref<ClientStockItem[]>([])
+const stockLoading = ref(false)
+
+// 追跡検索 / 追踪搜索
+const trackingQuery = ref('')
+const trackingResults = ref<TrackingResult[]>([])
+const trackingLoading = ref(false)
+const trackingSearched = ref(false)
 
 // 荷主名 / 货主名
 const clientName = computed(() => dashboardData.value?.clientName ?? '')
@@ -194,11 +274,30 @@ async function loadDashboard() {
   loading.value = true
   error.value = ''
   try {
-    dashboardData.value = await fetchClientDashboard()
+    const [dashboard, stock] = await Promise.all([
+      fetchClientDashboard(),
+      fetchClientStock().catch(() => []),
+    ])
+    dashboardData.value = dashboard
+    stockItems.value = stock
   } catch (err) {
     error.value = (err as Error).message
   } finally {
     loading.value = false
+  }
+}
+
+async function handleTrackingSearch() {
+  const q = trackingQuery.value.trim()
+  if (!q) return
+  trackingLoading.value = true
+  trackingSearched.value = true
+  try {
+    trackingResults.value = await searchTracking(q)
+  } catch {
+    trackingResults.value = []
+  } finally {
+    trackingLoading.value = false
   }
 }
 
@@ -577,5 +676,27 @@ onUnmounted(() => {
 :global([data-theme="dark"]) .skeleton-row {
   background: linear-gradient(90deg, #2a2622 25%, #3a3530 50%, #2a2622 75%);
   background-size: 200% 100%;
+}
+
+/* 追跡検索 / 追踪搜索 */
+.search-card { padding: 16px; }
+.tracking-search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.tracking-input { flex: 1; font-size: 15px; padding: 10px 14px; border: 2px solid var(--o-border-color, #e4e7ed); border-radius: 6px; transition: border-color 0.15s; }
+.tracking-input:focus { border-color: var(--o-brand-primary); outline: none; }
+.search-btn { padding: 10px 20px; background: var(--o-brand-primary, #0052A3); color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.search-btn:hover { opacity: 0.9; }
+.search-btn:disabled { opacity: 0.5; }
+.tracking-results { margin-top: 8px; }
+.mono { font-family: monospace; font-weight: 600; }
+.text-right { text-align: right; }
+.empty-hint { text-align: center; padding: 16px; color: var(--o-gray-400); font-size: 13px; }
+.loading-hint { text-align: center; padding: 24px; color: var(--o-gray-500); }
+
+.status-shipped { background: #f0f9eb; color: #67c23a; }
+.status-pending { background: #ecf5ff; color: #409eff; }
+
+@media (max-width: 768px) {
+  .tracking-search-row { flex-direction: column; }
+  .tracking-input { font-size: 16px; }
 }
 </style>

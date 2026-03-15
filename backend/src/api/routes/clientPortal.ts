@@ -10,7 +10,7 @@
 
 import { Router } from 'express';
 import { requireAuth, requireRole } from '@/api/middleware/auth';
-import { getClientDashboard } from '@/api/controllers/clientPortalController';
+import { getClientDashboard, getClientStock, searchTracking } from '@/api/controllers/clientPortalController';
 
 export const clientPortalRouter = Router();
 
@@ -21,3 +21,9 @@ clientPortalRouter.use(requireRole('client', 'admin', 'manager'));
 
 // ダッシュボード / 仪表板
 clientPortalRouter.get('/dashboard', getClientDashboard);
+
+// 在庫照会 / 库存查询
+clientPortalRouter.get('/stock', getClientStock);
+
+// 追跡番号検索 / 追踪号查询
+clientPortalRouter.get('/tracking', searchTracking);
