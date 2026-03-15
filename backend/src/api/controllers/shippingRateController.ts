@@ -2,15 +2,7 @@ import type { Request, Response } from 'express';
 import { ShippingRate } from '@/models/shippingRate';
 import type { IShippingRate } from '@/models/shippingRate';
 import { logger } from '@/lib/logger';
-
-/**
- * テナントIDを取得（将来的にはJWTなどから取得）
- * 获取租户ID（将来从JWT等获取）
- */
-function getTenantId(_req: Request): string {
-  // TODO: 認証ミドルウェアからテナントIDを取得
-  return 'default';
-}
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 /**
  * 运费率表一覧を取得

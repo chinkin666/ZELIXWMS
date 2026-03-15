@@ -20,14 +20,7 @@ import { isBuiltInCarrierId } from '@/data/builtInCarriers';
 import { logger } from '@/lib/logger';
 import { createApiLog, completeApiLog } from '@/services/apiLogger';
 import { logOperation } from '@/services/operationLogger';
-
-/**
- * テナントIDを取得（将来的にはJWTなどから取得）
- */
-function getTenantId(_req: Request): string {
-  // TODO: 認証ミドルウェアからテナントIDを取得
-  return 'default';
-}
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 /**
  * 全ての自動化設定を取得

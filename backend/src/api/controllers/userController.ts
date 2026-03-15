@@ -1,8 +1,6 @@
 import type { Request, Response } from 'express';
 import { User } from '@/models/user';
-
-// テナントID取得（将来マルチテナント対応） / 获取租户ID（将来多租户对应）
-function getTenantId(_req: Request): string { return 'default'; }
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 // 有効なロール一覧 / 有效角色列表
 const VALID_ROLES = ['admin', 'manager', 'operator', 'viewer', 'client'] as const;

@@ -2,15 +2,7 @@ import type { Request, Response } from 'express';
 import { WorkCharge, REFERENCE_TYPES } from '@/models/workCharge';
 import { CHARGE_TYPES } from '@/models/serviceRate';
 import { logger } from '@/lib/logger';
-
-/**
- * テナントIDを取得（将来的にはJWTなどから取得）
- * 获取租户ID（将来从JWT等获取）
- */
-function getTenantId(_req: Request): string {
-  // TODO: 認証ミドルウェアからテナントIDを取得
-  return 'default';
-}
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 /**
  * 作業チャージ一覧を取得

@@ -2,8 +2,7 @@ import type { Request, Response } from 'express';
 import { PackingRule } from '@/models/packingRule';
 import { Product } from '@/models/product';
 import { Material } from '@/models/material';
-
-function getTenantId(_req: Request): string { return 'default'; }
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 // ============================================
 // 梱包ルール CRUD / 梱包规则 CRUD

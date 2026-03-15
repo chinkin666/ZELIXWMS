@@ -4,8 +4,7 @@ import { Invoice } from '@/models/invoice';
 import { ShipmentOrder } from '@/models/shipmentOrder';
 import { OrderSourceCompany } from '@/models/orderSourceCompany';
 import { Carrier } from '@/models/carrier';
-
-function getTenantId(_req: Request): string { return 'default'; }
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 // ---------------------------------------------------------------------------
 // ヘルパー: 期間（YYYY-MM）から日付範囲を取得

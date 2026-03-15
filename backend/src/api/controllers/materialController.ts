@@ -1,10 +1,6 @@
 import type { Request, Response } from 'express';
 import { Material } from '@/models/material';
-
-/** テナントID取得 / 获取租户ID */
-function getTenantId(_req: Request): string {
-  return 'default';
-}
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 // ============================================
 // 耗材 CRUD / 耗材 CRUD
