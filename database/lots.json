@@ -1,0 +1,60 @@
+[
+  {
+    "_id": "69b2f93cd68e44a66862f462",
+    "lotNumber": "33667788",
+    "productId": "69b11c254ea5d8738a919635",
+    "productSku": "dumpling100",
+    "productName": "肉餃子50個＆野菜餃子50個",
+    "expiryDate": "2026-03-31T00:00:00.000Z",
+    "manufactureDate": "2026-03-13T00:00:00.000Z",
+    "status": "active",
+    "createdAt": "2026-03-12T17:34:52.828Z",
+    "updatedAt": "2026-03-12T17:34:52.828Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b6abf7cc442f8d910f17ca",
+    "lotNumber": "LOT-B001-2026A",
+    "productId": "69b6a114bc7b7540752b62fd",
+    "expiryDate": "2026-03-22T12:54:15.581Z",
+    "tenantId": "default",
+    "createdAt": "2026-03-15T12:54:15.581Z",
+    "updatedAt": "2026-03-15T12:54:15.581Z"
+  },
+  {
+    "_id": "69b6abf7cc442f8d910f17cc",
+    "lotNumber": "LOT-B001-2026B",
+    "productId": "69b6a114bc7b7540752b62fd",
+    "expiryDate": "2026-06-13T12:54:15.581Z",
+    "tenantId": "default",
+    "createdAt": "2026-03-15T12:54:15.581Z",
+    "updatedAt": "2026-03-15T12:54:15.581Z"
+  },
+  {
+    "_id": "69b6abf7cc442f8d910f17ce",
+    "lotNumber": "LOT-B002-2026A",
+    "productId": "69b6a114bc7b7540752b62fe",
+    "expiryDate": "2026-04-14T12:54:15.581Z",
+    "tenantId": "default",
+    "createdAt": "2026-03-15T12:54:15.581Z",
+    "updatedAt": "2026-03-15T12:54:15.581Z"
+  },
+  {
+    "_id": "69b6abf7cc442f8d910f17d0",
+    "lotNumber": "LOT-C001-EXP",
+    "productId": "69b6a114bc7b7540752b62ff",
+    "expiryDate": "2026-03-10T12:54:15.581Z",
+    "tenantId": "default",
+    "createdAt": "2026-03-15T12:54:15.581Z",
+    "updatedAt": "2026-03-15T12:54:15.581Z"
+  },
+  {
+    "_id": "69b6abf7cc442f8d910f17d2",
+    "lotNumber": "LOT-C001-2026B",
+    "productId": "69b6a114bc7b7540752b62ff",
+    "expiryDate": "2026-04-14T12:54:15.581Z",
+    "tenantId": "default",
+    "createdAt": "2026-03-15T12:54:15.581Z",
+    "updatedAt": "2026-03-15T12:54:15.581Z"
+  }
+]

@@ -1,0 +1,36 @@
+[
+  {
+    "_id": "69b4f5de7ec21b5f5379ad23",
+    "tenantCode": "0001",
+    "name": "CENTURY",
+    "plan": "free",
+    "status": "trial",
+    "contactName": "",
+    "contactEmail": "",
+    "contactPhone": "",
+    "maxUsers": 5,
+    "maxWarehouses": 1,
+    "maxClients": 10,
+    "features": [],
+    "isActive": true,
+    "memo": "",
+    "createdAt": "2026-03-14T05:45:02.489Z",
+    "updatedAt": "2026-03-14T05:45:02.489Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b68e48fcf8f02564f1e690",
+    "tenantCode": "default",
+    "name": "ZELIX WMS",
+    "plan": "free",
+    "status": "trial",
+    "maxUsers": 5,
+    "maxWarehouses": 1,
+    "maxClients": 10,
+    "features": [],
+    "isActive": true,
+    "createdAt": "2026-03-15T10:47:36.552Z",
+    "updatedAt": "2026-03-15T10:47:36.552Z",
+    "__v": 0
+  }
+]

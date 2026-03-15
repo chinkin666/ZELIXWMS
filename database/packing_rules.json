@@ -1,0 +1,22 @@
+[
+  {
+    "_id": "69b627d7a598414119b12b4d",
+    "tenantId": "default",
+    "name": "60 standard",
+    "priority": 10,
+    "isActive": true,
+    "conditions": {
+      "maxWeight": 2000
+    },
+    "materials": [
+      {
+        "materialSku": "BOX-60",
+        "quantity": 1,
+        "unitCost": 80
+      }
+    ],
+    "createdAt": "2026-03-15T03:30:31.103Z",
+    "updatedAt": "2026-03-15T03:30:31.103Z",
+    "__v": 0
+  }
+]

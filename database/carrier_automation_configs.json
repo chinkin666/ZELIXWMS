@@ -1,0 +1,94 @@
+[
+  {
+    "_id": "69b0ec7face34b2ebf7c9d1c",
+    "tenantId": "default",
+    "automationType": "yamato-b2",
+    "__v": 0,
+    "createdAt": "2026-03-11T04:15:59.367Z",
+    "enabled": true,
+    "updatedAt": "2026-03-14T15:45:50.787Z",
+    "yamatoB2": {
+      "apiEndpoint": "https://yamato-b2-webapi.nexand.org",
+      "apiKey": "test-api-key-12345",
+      "customerCode": "045315751803",
+      "customerPassword": "chen1987",
+      "customerClsCode": "",
+      "loginUserId": "",
+      "serviceTypeMapping": {
+        "0": {
+          "b2ServiceType": "0",
+          "printTemplateId": "69451945002314701ca2e9a8",
+          "pdfSource": "b2-webapi",
+          "enabled": true
+        },
+        "1": {
+          "b2ServiceType": "1",
+          "printTemplateId": "69451945002314701ca2e9a8",
+          "pdfSource": "b2-webapi",
+          "enabled": true
+        },
+        "2": {
+          "b2ServiceType": "2",
+          "printTemplateId": "69451945002314701ca2e9a8",
+          "pdfSource": "b2-webapi",
+          "enabled": false
+        },
+        "3": {
+          "b2ServiceType": "3",
+          "printTemplateId": "69451945002314701ca2e9a8",
+          "pdfSource": "b2-webapi",
+          "enabled": false
+        },
+        "4": {
+          "b2ServiceType": "4",
+          "printTemplateId": "69451945002314701ca2e9a8",
+          "pdfSource": "b2-webapi",
+          "enabled": false
+        },
+        "5": {
+          "b2ServiceType": "5",
+          "printTemplateId": "69451945002314701ca2e9a8",
+          "pdfSource": "b2-webapi",
+          "enabled": false
+        },
+        "6": {
+          "b2ServiceType": "6",
+          "printTemplateId": "69451945002314701ca2e9a8",
+          "pdfSource": "b2-webapi",
+          "enabled": false
+        },
+        "7": {
+          "b2ServiceType": "7",
+          "printTemplateId": "69451945002314701ca2e9a8",
+          "pdfSource": "b2-webapi",
+          "enabled": false
+        },
+        "8": {
+          "b2ServiceType": "8",
+          "printTemplateId": "69451945002314701ca2e9a8",
+          "pdfSource": "b2-webapi",
+          "enabled": true
+        },
+        "9": {
+          "b2ServiceType": "9",
+          "printTemplateId": "69451945002314701ca2e9a8",
+          "pdfSource": "b2-webapi",
+          "enabled": false
+        },
+        "A": {
+          "b2ServiceType": "A",
+          "printTemplateId": "6944f3460693b920920b6542",
+          "pdfSource": "b2-webapi",
+          "enabled": true
+        }
+      },
+      "invoiceCode": "045315751803",
+      "invoiceFreightNo": "01"
+    },
+    "autoValidation": {
+      "enabled": true,
+      "intervalMinutes": 1,
+      "maxRetries": 5
+    }
+  }
+]

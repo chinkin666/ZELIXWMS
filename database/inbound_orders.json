@@ -1,0 +1,603 @@
+[
+  {
+    "_id": "69b6a1736140a571b1ecf9f8",
+    "orderNumber": "INB-20260315-001",
+    "status": "confirmed",
+    "destinationLocationId": "69b6a114bc7b7540752b62d5",
+    "supplier": {
+      "name": "深圳テック工場",
+      "code": "SUP-001"
+    },
+    "expectedDate": "2026-03-15T00:00:00.000Z",
+    "flowType": "standard",
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b62fa",
+        "productSku": "SKU-A001",
+        "productName": "ワイヤレスイヤホン Pro",
+        "expectedQuantity": 200,
+        "receivedQuantity": 0,
+        "putawayQuantity": 0,
+        "stockCategory": "new",
+        "stockMoveIds": []
+      },
+      {
+        "lineNumber": 2,
+        "productId": "69b6a114bc7b7540752b62fb",
+        "productSku": "SKU-A002",
+        "productName": "USBケーブル Type-C 1m",
+        "expectedQuantity": 500,
+        "receivedQuantity": 0,
+        "putawayQuantity": 0,
+        "stockCategory": "new",
+        "stockMoveIds": []
+      },
+      {
+        "lineNumber": 3,
+        "productId": "69b6a114bc7b7540752b6300",
+        "productSku": "SKU-D001",
+        "productName": "ゲーミングマウス RGB",
+        "expectedQuantity": 100,
+        "receivedQuantity": 0,
+        "putawayQuantity": 0,
+        "stockCategory": "new",
+        "stockMoveIds": []
+      }
+    ],
+    "memo": "深圳工場からの定期入荷",
+    "createdBy": "admin",
+    "createdAt": "2026-03-15T12:09:23.750Z",
+    "updatedAt": "2026-03-15T12:09:23.750Z",
+    "tenantId": "default"
+  },
+  {
+    "_id": "69b6a1736140a571b1ecf9f9",
+    "orderNumber": "INB-20260315-002",
+    "status": "receiving",
+    "destinationLocationId": "69b6a114bc7b7540752b62d5",
+    "supplier": {
+      "name": "東京部材センター",
+      "code": "SUP-002"
+    },
+    "expectedDate": "2026-03-15T00:00:00.000Z",
+    "flowType": "standard",
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b62fd",
+        "productSku": "SKU-B001",
+        "productName": "プロテインバー チョコ味 12本入",
+        "expectedQuantity": 100,
+        "receivedQuantity": 60,
+        "putawayQuantity": 0,
+        "stockCategory": "new",
+        "stockMoveIds": []
+      },
+      {
+        "lineNumber": 2,
+        "productId": "69b6a114bc7b7540752b62fe",
+        "productSku": "SKU-B002",
+        "productName": "オーガニック青汁 30包",
+        "expectedQuantity": 80,
+        "receivedQuantity": 80,
+        "putawayQuantity": 0,
+        "stockCategory": "new",
+        "stockMoveIds": []
+      }
+    ],
+    "memo": "ロット管理品、期限チェック必要",
+    "createdBy": "admin",
+    "createdAt": "2026-03-15T12:09:23.750Z",
+    "updatedAt": "2026-03-15T12:09:23.750Z",
+    "tenantId": "default"
+  },
+  {
+    "_id": "69b6a1736140a571b1ecf9fa",
+    "orderNumber": "INB-20260316-001",
+    "status": "draft",
+    "destinationLocationId": "69b6a114bc7b7540752b62d5",
+    "supplier": {
+      "name": "Korea Electronics Co.",
+      "code": "SUP-003"
+    },
+    "expectedDate": "2026-03-16T12:09:23.750Z",
+    "flowType": "standard",
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b62ff",
+        "productSku": "SKU-C001",
+        "productName": "化粧水 保湿ローション 200ml",
+        "expectedQuantity": 150,
+        "receivedQuantity": 0,
+        "putawayQuantity": 0,
+        "stockCategory": "new",
+        "stockMoveIds": []
+      },
+      {
+        "lineNumber": 2,
+        "productId": "69b6a114bc7b7540752b62fc",
+        "productSku": "SKU-A003",
+        "productName": "スマホケース クリア (iPhone)",
+        "expectedQuantity": 300,
+        "receivedQuantity": 0,
+        "putawayQuantity": 0,
+        "stockCategory": "new",
+        "stockMoveIds": []
+      }
+    ],
+    "memo": "韓国発送、明日入荷予定",
+    "createdBy": "admin",
+    "createdAt": "2026-03-15T12:09:23.750Z",
+    "updatedAt": "2026-03-15T12:09:23.750Z",
+    "tenantId": "default"
+  },
+  {
+    "_id": "69b6a1736140a571b1ecf9fb",
+    "orderNumber": "INB-20260312-001",
+    "status": "confirmed",
+    "destinationLocationId": "69b6a114bc7b7540752b62d5",
+    "supplier": {
+      "name": "深圳テック工場",
+      "code": "SUP-001"
+    },
+    "expectedDate": "2026-03-12T12:09:23.750Z",
+    "flowType": "standard",
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b6301",
+        "productSku": "SKU-D002",
+        "productName": "メカニカルキーボード テンキーレス",
+        "expectedQuantity": 50,
+        "receivedQuantity": 0,
+        "putawayQuantity": 0,
+        "stockCategory": "new",
+        "stockMoveIds": []
+      }
+    ],
+    "memo": "納期遅延中",
+    "createdBy": "admin",
+    "createdAt": "2026-03-12T12:09:23.750Z",
+    "updatedAt": "2026-03-12T12:09:23.750Z",
+    "tenantId": "default"
+  },
+  {
+    "_id": "69b6a1736140a571b1ecf9fc",
+    "orderNumber": "INB-20260310-001",
+    "status": "done",
+    "destinationLocationId": "69b6a114bc7b7540752b62d5",
+    "supplier": {
+      "name": "東京部材センター",
+      "code": "SUP-002"
+    },
+    "expectedDate": "2026-03-10T00:00:00.000Z",
+    "completedAt": "2026-03-10T00:00:00.000Z",
+    "flowType": "standard",
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b6302",
+        "productSku": "SKU-E001",
+        "productName": "A4コピー用紙 500枚",
+        "expectedQuantity": 20,
+        "receivedQuantity": 20,
+        "putawayQuantity": 20,
+        "stockCategory": "new",
+        "stockMoveIds": []
+      },
+      {
+        "lineNumber": 2,
+        "productId": "69b6a114bc7b7540752b6303",
+        "productSku": "SKU-E002",
+        "productName": "OPP袋 A4サイズ 100枚",
+        "expectedQuantity": 50,
+        "receivedQuantity": 50,
+        "putawayQuantity": 50,
+        "stockCategory": "new",
+        "stockMoveIds": []
+      }
+    ],
+    "memo": "消耗品定期補充",
+    "createdBy": "admin",
+    "createdAt": "2026-03-10T00:00:00.000Z",
+    "updatedAt": "2026-03-10T00:00:00.000Z",
+    "tenantId": "default"
+  },
+  {
+    "_id": "69b6a1736140a571b1ecf9fd",
+    "orderNumber": "INB-20260315-003",
+    "status": "confirmed",
+    "destinationLocationId": "69b6a114bc7b7540752b62d5",
+    "supplier": {
+      "name": "Korea Electronics Co.",
+      "code": "SUP-003"
+    },
+    "expectedDate": "2026-03-15T00:00:00.000Z",
+    "flowType": "crossdock",
+    "linkedOrderIds": [],
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b62fa",
+        "productSku": "SKU-A001",
+        "productName": "ワイヤレスイヤホン Pro",
+        "expectedQuantity": 50,
+        "receivedQuantity": 0,
+        "putawayQuantity": 0,
+        "stockCategory": "new",
+        "stockMoveIds": []
+      }
+    ],
+    "memo": "通過型入庫 - 即時出荷",
+    "createdBy": "admin",
+    "createdAt": "2026-03-15T12:09:23.750Z",
+    "updatedAt": "2026-03-15T12:09:23.750Z",
+    "tenantId": "default"
+  },
+  {
+    "_id": "69b6b44d441d96db235f9163",
+    "orderNumber": "IN-20260315-00018",
+    "status": "done",
+    "destinationLocationId": "69b2d0a750b1306e8d2a59f4",
+    "supplier": {
+      "name": "E2Eテスト仕入先",
+      "code": "E2E-SUP"
+    },
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b62fa",
+        "productSku": "SKU-A001",
+        "productName": "ワイヤレスイヤホン Pro",
+        "expectedQuantity": 100,
+        "receivedQuantity": 100,
+        "stockMoveIds": [
+          "69b6b44d441d96db235f916c",
+          "69b6b44d441d96db235f9179",
+          "69b6b44d441d96db235f9195"
+        ],
+        "putawayQuantity": 100,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a8ce06833b6b79c4d867"
+      },
+      {
+        "lineNumber": 2,
+        "productId": "69b6a114bc7b7540752b62fb",
+        "productSku": "SKU-A002",
+        "productName": "USBケーブル Type-C 1m",
+        "expectedQuantity": 200,
+        "receivedQuantity": 200,
+        "stockMoveIds": [
+          "69b6b44d441d96db235f916f",
+          "69b6b44d441d96db235f9186",
+          "69b6b44d441d96db235f919f"
+        ],
+        "putawayQuantity": 200,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a96406833b6b79c4d8f1"
+      }
+    ],
+    "expectedDate": "2026-03-15T13:29:49.285Z",
+    "memo": "E2E自動テスト",
+    "flowType": "standard",
+    "linkedOrderIds": [],
+    "createdAt": "2026-03-15T13:29:49.291Z",
+    "updatedAt": "2026-03-15T13:29:49.338Z",
+    "__v": 5,
+    "completedAt": "2026-03-15T13:29:49.334Z"
+  },
+  {
+    "_id": "69b6b4fc441d96db235f9214",
+    "orderNumber": "IN-20260315-00019",
+    "status": "done",
+    "destinationLocationId": "69b2d0a750b1306e8d2a59f4",
+    "supplier": {
+      "name": "E2Eテスト仕入先",
+      "code": "E2E-SUP"
+    },
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b62fa",
+        "productSku": "SKU-A001",
+        "productName": "ワイヤレスイヤホン Pro",
+        "expectedQuantity": 100,
+        "receivedQuantity": 100,
+        "stockMoveIds": [
+          "69b6b4fc441d96db235f921d",
+          "69b6b4fc441d96db235f922a",
+          "69b6b4fc441d96db235f9246"
+        ],
+        "putawayQuantity": 100,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a8ce06833b6b79c4d867"
+      },
+      {
+        "lineNumber": 2,
+        "productId": "69b6a114bc7b7540752b62fb",
+        "productSku": "SKU-A002",
+        "productName": "USBケーブル Type-C 1m",
+        "expectedQuantity": 200,
+        "receivedQuantity": 200,
+        "stockMoveIds": [
+          "69b6b4fc441d96db235f9220",
+          "69b6b4fc441d96db235f9237",
+          "69b6b4fc441d96db235f9250"
+        ],
+        "putawayQuantity": 200,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a96406833b6b79c4d8f1"
+      }
+    ],
+    "expectedDate": "2026-03-15T13:32:44.268Z",
+    "memo": "E2E自動テスト",
+    "flowType": "standard",
+    "linkedOrderIds": [],
+    "createdAt": "2026-03-15T13:32:44.273Z",
+    "updatedAt": "2026-03-15T13:32:44.314Z",
+    "__v": 5,
+    "completedAt": "2026-03-15T13:32:44.311Z"
+  },
+  {
+    "_id": "69b6b559441d96db235f92b8",
+    "orderNumber": "IN-20260315-00020",
+    "status": "done",
+    "destinationLocationId": "69b2d0a750b1306e8d2a59f4",
+    "supplier": {
+      "name": "E2Eテスト仕入先",
+      "code": "E2E-SUP"
+    },
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b62fa",
+        "productSku": "SKU-A001",
+        "productName": "ワイヤレスイヤホン Pro",
+        "expectedQuantity": 100,
+        "receivedQuantity": 100,
+        "stockMoveIds": [
+          "69b6b559441d96db235f92c1",
+          "69b6b559441d96db235f92ce",
+          "69b6b559441d96db235f92ea"
+        ],
+        "putawayQuantity": 100,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a8ce06833b6b79c4d867"
+      },
+      {
+        "lineNumber": 2,
+        "productId": "69b6a114bc7b7540752b62fb",
+        "productSku": "SKU-A002",
+        "productName": "USBケーブル Type-C 1m",
+        "expectedQuantity": 200,
+        "receivedQuantity": 200,
+        "stockMoveIds": [
+          "69b6b559441d96db235f92c4",
+          "69b6b559441d96db235f92db",
+          "69b6b559441d96db235f92f4"
+        ],
+        "putawayQuantity": 200,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a96406833b6b79c4d8f1"
+      }
+    ],
+    "expectedDate": "2026-03-15T13:34:17.713Z",
+    "memo": "E2E自動テスト",
+    "flowType": "standard",
+    "linkedOrderIds": [],
+    "createdAt": "2026-03-15T13:34:17.717Z",
+    "updatedAt": "2026-03-15T13:34:17.759Z",
+    "__v": 5,
+    "completedAt": "2026-03-15T13:34:17.756Z"
+  },
+  {
+    "_id": "69b6b72f51425be54f2f6143",
+    "orderNumber": "IN-20260315-00021",
+    "status": "done",
+    "destinationLocationId": "69b2d0a750b1306e8d2a59f4",
+    "supplier": {
+      "name": "E2Eテスト仕入先",
+      "code": "E2E-SUP"
+    },
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b62fa",
+        "productSku": "SKU-A001",
+        "productName": "ワイヤレスイヤホン Pro",
+        "expectedQuantity": 100,
+        "receivedQuantity": 100,
+        "stockMoveIds": [
+          "69b6b72f51425be54f2f614c",
+          "69b6b72f51425be54f2f6159",
+          "69b6b72f51425be54f2f6175"
+        ],
+        "putawayQuantity": 100,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a8ce06833b6b79c4d867"
+      },
+      {
+        "lineNumber": 2,
+        "productId": "69b6a114bc7b7540752b62fb",
+        "productSku": "SKU-A002",
+        "productName": "USBケーブル Type-C 1m",
+        "expectedQuantity": 200,
+        "receivedQuantity": 200,
+        "stockMoveIds": [
+          "69b6b72f51425be54f2f614f",
+          "69b6b72f51425be54f2f6166",
+          "69b6b72f51425be54f2f617f"
+        ],
+        "putawayQuantity": 200,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a96406833b6b79c4d8f1"
+      }
+    ],
+    "expectedDate": "2026-03-15T13:42:07.452Z",
+    "memo": "E2E自動テスト",
+    "flowType": "standard",
+    "linkedOrderIds": [],
+    "createdAt": "2026-03-15T13:42:07.463Z",
+    "updatedAt": "2026-03-15T13:42:07.526Z",
+    "__v": 5,
+    "completedAt": "2026-03-15T13:42:07.522Z"
+  },
+  {
+    "_id": "69b6b7a451425be54f2f61e7",
+    "orderNumber": "IN-20260315-00022",
+    "status": "done",
+    "destinationLocationId": "69b2d0a750b1306e8d2a59f4",
+    "supplier": {
+      "name": "E2Eテスト仕入先",
+      "code": "E2E-SUP"
+    },
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b62fa",
+        "productSku": "SKU-A001",
+        "productName": "ワイヤレスイヤホン Pro",
+        "expectedQuantity": 100,
+        "receivedQuantity": 100,
+        "stockMoveIds": [
+          "69b6b7a451425be54f2f61f0",
+          "69b6b7a451425be54f2f61fd",
+          "69b6b7a451425be54f2f6219"
+        ],
+        "putawayQuantity": 100,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a8ce06833b6b79c4d867"
+      },
+      {
+        "lineNumber": 2,
+        "productId": "69b6a114bc7b7540752b62fb",
+        "productSku": "SKU-A002",
+        "productName": "USBケーブル Type-C 1m",
+        "expectedQuantity": 200,
+        "receivedQuantity": 200,
+        "stockMoveIds": [
+          "69b6b7a451425be54f2f61f3",
+          "69b6b7a451425be54f2f620a",
+          "69b6b7a451425be54f2f6223"
+        ],
+        "putawayQuantity": 200,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a96406833b6b79c4d8f1"
+      }
+    ],
+    "expectedDate": "2026-03-15T13:44:04.017Z",
+    "memo": "E2E自動テスト",
+    "flowType": "standard",
+    "linkedOrderIds": [],
+    "createdAt": "2026-03-15T13:44:04.021Z",
+    "updatedAt": "2026-03-15T13:44:04.069Z",
+    "__v": 5,
+    "completedAt": "2026-03-15T13:44:04.065Z"
+  },
+  {
+    "_id": "69b6b88f7488a331c88e6229",
+    "orderNumber": "IN-20260315-00023",
+    "status": "done",
+    "destinationLocationId": "69b2d0a750b1306e8d2a59f4",
+    "supplier": {
+      "name": "E2Eテスト仕入先",
+      "code": "E2E-SUP"
+    },
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b62fa",
+        "productSku": "SKU-A001",
+        "productName": "ワイヤレスイヤホン Pro",
+        "expectedQuantity": 100,
+        "receivedQuantity": 100,
+        "stockMoveIds": [
+          "69b6b88f7488a331c88e6232",
+          "69b6b88f7488a331c88e623f",
+          "69b6b88f7488a331c88e625b"
+        ],
+        "putawayQuantity": 100,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a8ce06833b6b79c4d867"
+      },
+      {
+        "lineNumber": 2,
+        "productId": "69b6a114bc7b7540752b62fb",
+        "productSku": "SKU-A002",
+        "productName": "USBケーブル Type-C 1m",
+        "expectedQuantity": 200,
+        "receivedQuantity": 200,
+        "stockMoveIds": [
+          "69b6b88f7488a331c88e6235",
+          "69b6b88f7488a331c88e624c",
+          "69b6b88f7488a331c88e6265"
+        ],
+        "putawayQuantity": 200,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a96406833b6b79c4d8f1"
+      }
+    ],
+    "expectedDate": "2026-03-15T13:47:59.019Z",
+    "memo": "E2E自動テスト",
+    "flowType": "standard",
+    "linkedOrderIds": [],
+    "createdAt": "2026-03-15T13:47:59.029Z",
+    "updatedAt": "2026-03-15T13:47:59.086Z",
+    "__v": 5,
+    "completedAt": "2026-03-15T13:47:59.082Z"
+  },
+  {
+    "_id": "69b6ba174fd9341b77c309b8",
+    "orderNumber": "IN-20260315-00024",
+    "status": "done",
+    "destinationLocationId": "69b2d0a750b1306e8d2a59f4",
+    "supplier": {
+      "name": "E2Eテスト仕入先",
+      "code": "E2E-SUP"
+    },
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6a114bc7b7540752b62fa",
+        "productSku": "SKU-A001",
+        "productName": "ワイヤレスイヤホン Pro",
+        "expectedQuantity": 100,
+        "receivedQuantity": 100,
+        "stockMoveIds": [
+          "69b6ba174fd9341b77c309c1",
+          "69b6ba174fd9341b77c309ce",
+          "69b6ba174fd9341b77c309ea"
+        ],
+        "putawayQuantity": 100,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a8ce06833b6b79c4d867"
+      },
+      {
+        "lineNumber": 2,
+        "productId": "69b6a114bc7b7540752b62fb",
+        "productSku": "SKU-A002",
+        "productName": "USBケーブル Type-C 1m",
+        "expectedQuantity": 200,
+        "receivedQuantity": 200,
+        "stockMoveIds": [
+          "69b6ba174fd9341b77c309c4",
+          "69b6ba174fd9341b77c309db",
+          "69b6ba174fd9341b77c309f4"
+        ],
+        "putawayQuantity": 200,
+        "stockCategory": "new",
+        "putawayLocationId": "69b6a96406833b6b79c4d8f1"
+      }
+    ],
+    "expectedDate": "2026-03-15T13:54:31.890Z",
+    "memo": "E2E自動テスト",
+    "flowType": "standard",
+    "linkedOrderIds": [],
+    "createdAt": "2026-03-15T13:54:31.901Z",
+    "updatedAt": "2026-03-15T13:54:31.961Z",
+    "__v": 5,
+    "completedAt": "2026-03-15T13:54:31.957Z"
+  }
+]

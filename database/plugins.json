@@ -1,0 +1,43 @@
+[
+  {
+    "_id": "69b4d8cf3b5863e010cea367",
+    "name": "inventory-alert",
+    "__v": 0,
+    "author": "ZELIX",
+    "createdAt": "2026-03-14T03:41:03.451Z",
+    "description": "库存预警插件 — 库存变化时检查是否低于阈值并记录日志 / 在庫アラートプラグイン — 在庫変動時に閾値を下回ったらログを記録",
+    "enabledAt": "2026-03-15T13:53:16.617Z",
+    "hooks": [
+      "inventory.changed",
+      "stock.released"
+    ],
+    "installedAt": "2026-03-14T03:41:03.452Z",
+    "permissions": [
+      "inventory.read"
+    ],
+    "status": "enabled",
+    "updatedAt": "2026-03-15T13:53:16.618Z",
+    "version": "1.0.0"
+  },
+  {
+    "_id": "69b54e975d682f276e48020b",
+    "name": "sagawa-express",
+    "__v": 0,
+    "author": "ZELIX",
+    "createdAt": "2026-03-14T12:03:35.029Z",
+    "description": "佐川急便 e飛伝Ⅲ CSV 连携插件 / 佐川急便 e飛伝Ⅲ CSV 連携プラグイン",
+    "enabledAt": "2026-03-15T13:53:16.657Z",
+    "hooks": [
+      "order.shipped",
+      "order.confirmed"
+    ],
+    "installedAt": "2026-03-14T12:03:35.029Z",
+    "permissions": [
+      "shipmentOrder.read",
+      "shipmentOrder.write"
+    ],
+    "status": "enabled",
+    "updatedAt": "2026-03-15T13:53:16.657Z",
+    "version": "1.0.0"
+  }
+]

@@ -1,0 +1,361 @@
+[
+  {
+    "_id": "69b2e0d7cce5a01293eec0e9",
+    "orderNumber": "ST20260312-22941024",
+    "type": "full",
+    "status": "adjusted",
+    "targetLocations": [
+      "69b2d0a750b1306e8d2a59f1"
+    ],
+    "targetProducts": [],
+    "lines": [
+      {
+        "locationId": "69b2d0a750b1306e8d2a59f1",
+        "locationName": "メイン倉庫",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 1000,
+        "status": "verified",
+        "countedQuantity": 1000,
+        "variance": 0
+      }
+    ],
+    "createdAt": "2026-03-12T15:50:47.957Z",
+    "updatedAt": "2026-03-14T04:43:51.011Z",
+    "__v": 0,
+    "startedAt": "2026-03-12T15:50:56.923Z",
+    "completedAt": "2026-03-14T04:43:48.393Z",
+    "adjustedAt": "2026-03-14T04:43:51.011Z"
+  },
+  {
+    "_id": "69b61134a83279b0589698fe",
+    "orderNumber": "ST20260315-19981082",
+    "type": "spot",
+    "status": "draft",
+    "targetLocations": [],
+    "targetProducts": [],
+    "lines": [
+      {
+        "locationId": "69b2d0a750b1306e8d2a59f7",
+        "locationName": "出荷準備エリア",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 9,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b2d0a750b1306e8d2a59f1",
+        "locationName": "メイン倉庫",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 1001001,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 5,
+        "status": "pending"
+      }
+    ],
+    "createdAt": "2026-03-15T01:53:56.023Z",
+    "updatedAt": "2026-03-15T01:53:56.023Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b635240ff3090fc52a79e5",
+    "orderNumber": "ST20260315-19111769",
+    "type": "spot",
+    "status": "draft",
+    "targetLocations": [],
+    "targetProducts": [],
+    "lines": [
+      {
+        "locationId": "69b2d0a750b1306e8d2a59f7",
+        "locationName": "出荷準備エリア",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 9,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b2d0a750b1306e8d2a59f1",
+        "locationName": "メイン倉庫",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 1001006,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 5,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b6205e7ddcb7290ca9fd74",
+        "productSku": "BOOK-001",
+        "productName": "WMS入門書",
+        "systemQuantity": 31,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b6205e7ddcb7290ca9fd71",
+        "productSku": "PET-001",
+        "productName": "ドッグフード 3kg",
+        "systemQuantity": 15,
+        "status": "pending"
+      }
+    ],
+    "createdAt": "2026-03-15T04:27:16.610Z",
+    "updatedAt": "2026-03-15T04:27:16.610Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b636010ff3090fc52a7ad0",
+    "orderNumber": "ST20260315-12932631",
+    "type": "spot",
+    "status": "draft",
+    "targetLocations": [],
+    "targetProducts": [],
+    "lines": [
+      {
+        "locationId": "69b2d0a750b1306e8d2a59f7",
+        "locationName": "出荷準備エリア",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 9,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b2d0a750b1306e8d2a59f1",
+        "locationName": "メイン倉庫",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 1001006,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 5,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b6205e7ddcb7290ca9fd74",
+        "productSku": "BOOK-001",
+        "productName": "WMS入門書",
+        "systemQuantity": 62,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b6205e7ddcb7290ca9fd71",
+        "productSku": "PET-001",
+        "productName": "ドッグフード 3kg",
+        "systemQuantity": 35,
+        "status": "pending"
+      }
+    ],
+    "createdAt": "2026-03-15T04:30:57.132Z",
+    "updatedAt": "2026-03-15T04:30:57.132Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b636420ff3090fc52a7be2",
+    "orderNumber": "ST20260315-47159985",
+    "type": "spot",
+    "status": "draft",
+    "targetLocations": [],
+    "targetProducts": [],
+    "lines": [
+      {
+        "locationId": "69b2d0a750b1306e8d2a59f7",
+        "locationName": "出荷準備エリア",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 9,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b2d0a750b1306e8d2a59f1",
+        "locationName": "メイン倉庫",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 1001006,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 5,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b6205e7ddcb7290ca9fd74",
+        "productSku": "BOOK-001",
+        "productName": "WMS入門書",
+        "systemQuantity": 93,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b6205e7ddcb7290ca9fd71",
+        "productSku": "PET-001",
+        "productName": "ドッグフード 3kg",
+        "systemQuantity": 55,
+        "status": "pending"
+      }
+    ],
+    "createdAt": "2026-03-15T04:32:02.020Z",
+    "updatedAt": "2026-03-15T04:32:02.020Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b6381a144233f9f7271f6e",
+    "orderNumber": "ST20260315-56643001",
+    "type": "spot",
+    "status": "draft",
+    "targetLocations": [],
+    "targetProducts": [],
+    "lines": [
+      {
+        "locationId": "69b2d0a750b1306e8d2a59f7",
+        "locationName": "出荷準備エリア",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 9,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b2d0a750b1306e8d2a59f1",
+        "locationName": "メイン倉庫",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 1001006,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b11c254ea5d8738a919635",
+        "productSku": "dumpling100",
+        "productName": "肉餃子50個＆野菜餃子50個",
+        "systemQuantity": 5,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b6205e7ddcb7290ca9fd74",
+        "productSku": "BOOK-001",
+        "productName": "WMS入門書",
+        "systemQuantity": 124,
+        "status": "pending"
+      },
+      {
+        "locationId": "69b5f97d002ba3ea0d43d47e",
+        "locationName": "5555-6666-5555-1111",
+        "productId": "69b6205e7ddcb7290ca9fd71",
+        "productSku": "PET-001",
+        "productName": "ドッグフード 3kg",
+        "systemQuantity": 75,
+        "status": "pending"
+      }
+    ],
+    "createdAt": "2026-03-15T04:39:54.027Z",
+    "updatedAt": "2026-03-15T04:39:54.027Z",
+    "__v": 0
+  },
+  {
+    "_id": "69b6abf7cc442f8d910f17df",
+    "orderNumber": "ST-20260315-001",
+    "tenantId": "default",
+    "type": "full",
+    "status": "draft",
+    "warehouseId": "69b63274a11a8f2e0629b6b3",
+    "targetLocationIds": [
+      "69b6a114bc7b7540752b62da",
+      "69b6a114bc7b7540752b62db",
+      "69b6a114bc7b7540752b62dc",
+      "69b6a114bc7b7540752b62dd"
+    ],
+    "memo": "A-1棚 定期棚卸",
+    "createdBy": "69b68e48fcf8f02564f1e692",
+    "lines": [],
+    "createdAt": "2026-03-15T12:54:15.581Z",
+    "updatedAt": "2026-03-15T12:54:15.581Z"
+  },
+  {
+    "_id": "69b6abf7cc442f8d910f17e1",
+    "orderNumber": "ST-20260314-001",
+    "tenantId": "default",
+    "type": "cycle",
+    "status": "completed",
+    "warehouseId": "69b63274a11a8f2e0629b6b3",
+    "targetLocationIds": [
+      "69b6a114bc7b7540752b62e9",
+      "69b6a114bc7b7540752b62ea",
+      "69b6a114bc7b7540752b62eb",
+      "69b6a114bc7b7540752b62ed",
+      "69b6a114bc7b7540752b62ee",
+      "69b6a114bc7b7540752b62ef"
+    ],
+    "completedAt": "2026-03-14T09:00:00.000Z",
+    "memo": "B区 循環棚卸",
+    "createdBy": "69b68e48fcf8f02564f1e692",
+    "lines": [
+      {
+        "productId": "69b6a114bc7b7540752b62fd",
+        "productSku": "SKU-B001",
+        "locationId": "69b6a114bc7b7540752b62e9",
+        "systemQuantity": 30,
+        "countedQuantity": 30,
+        "difference": 0
+      },
+      {
+        "productId": "69b6a114bc7b7540752b62fe",
+        "productSku": "SKU-B002",
+        "locationId": "69b6a114bc7b7540752b62eb",
+        "systemQuantity": 20,
+        "countedQuantity": 18,
+        "difference": -2
+      }
+    ],
+    "createdAt": "2026-03-14T00:00:00.000Z",
+    "updatedAt": "2026-03-14T00:00:00.000Z"
+  }
+]

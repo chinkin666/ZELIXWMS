@@ -1,0 +1,129 @@
+[
+  {
+    "_id": "69b635240ff3090fc52a79c7",
+    "orderNumber": "RT20260315-98303388",
+    "status": "completed",
+    "returnReason": "defective",
+    "reasonDetail": "E2Eテスト返品",
+    "receivedDate": "2026-03-15T04:27:16.593Z",
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6205e7ddcb7290ca9fd74",
+        "productSku": "BOOK-001",
+        "productName": "WMS入門書",
+        "quantity": 2,
+        "inspectedQuantity": 2,
+        "disposition": "restock",
+        "restockedQuantity": 1,
+        "disposedQuantity": 1,
+        "locationId": "69b5f97d002ba3ea0d43d47e"
+      }
+    ],
+    "createdAt": "2026-03-15T04:27:16.593Z",
+    "updatedAt": "2026-03-15T04:27:16.604Z",
+    "__v": 0,
+    "completedAt": "2026-03-15T04:27:16.603Z"
+  },
+  {
+    "_id": "69b636010ff3090fc52a7ab2",
+    "orderNumber": "RT20260315-72059399",
+    "status": "completed",
+    "returnReason": "defective",
+    "reasonDetail": "E2E",
+    "receivedDate": "2026-03-15T04:30:57.114Z",
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6205e7ddcb7290ca9fd74",
+        "productSku": "BOOK-001",
+        "productName": "WMS入門書",
+        "quantity": 2,
+        "inspectedQuantity": 2,
+        "disposition": "restock",
+        "restockedQuantity": 1,
+        "disposedQuantity": 1,
+        "locationId": "69b5f97d002ba3ea0d43d47e"
+      }
+    ],
+    "createdAt": "2026-03-15T04:30:57.115Z",
+    "updatedAt": "2026-03-15T04:30:57.126Z",
+    "__v": 0,
+    "completedAt": "2026-03-15T04:30:57.126Z"
+  },
+  {
+    "_id": "69b636420ff3090fc52a7bc4",
+    "orderNumber": "RT20260315-60274458",
+    "status": "completed",
+    "returnReason": "defective",
+    "reasonDetail": "E2E",
+    "receivedDate": "2026-03-15T04:32:02.002Z",
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6205e7ddcb7290ca9fd74",
+        "productSku": "BOOK-001",
+        "productName": "WMS入門書",
+        "quantity": 2,
+        "inspectedQuantity": 2,
+        "disposition": "restock",
+        "restockedQuantity": 1,
+        "disposedQuantity": 1,
+        "locationId": "69b5f97d002ba3ea0d43d47e"
+      }
+    ],
+    "createdAt": "2026-03-15T04:32:02.003Z",
+    "updatedAt": "2026-03-15T04:32:02.015Z",
+    "__v": 0,
+    "completedAt": "2026-03-15T04:32:02.015Z"
+  },
+  {
+    "_id": "69b6381a144233f9f7271f50",
+    "orderNumber": "RT20260315-20228746",
+    "status": "completed",
+    "returnReason": "defective",
+    "reasonDetail": "E2E",
+    "receivedDate": "2026-03-15T04:39:54.009Z",
+    "lines": [
+      {
+        "lineNumber": 1,
+        "productId": "69b6205e7ddcb7290ca9fd74",
+        "productSku": "BOOK-001",
+        "productName": "WMS入門書",
+        "quantity": 2,
+        "inspectedQuantity": 2,
+        "disposition": "restock",
+        "restockedQuantity": 1,
+        "disposedQuantity": 1,
+        "locationId": "69b5f97d002ba3ea0d43d47e"
+      }
+    ],
+    "createdAt": "2026-03-15T04:39:54.010Z",
+    "updatedAt": "2026-03-15T04:39:54.022Z",
+    "__v": 0,
+    "completedAt": "2026-03-15T04:39:54.021Z"
+  },
+  {
+    "_id": "69b6abf7cc442f8d910f17e3",
+    "returnNumber": "RET-20260315-001",
+    "tenantId": "default",
+    "status": "inspecting",
+    "originalOrderNumber": "SH20260312-95534473",
+    "reason": "商品不良",
+    "customerName": "山本京子",
+    "lines": [
+      {
+        "productId": "69b6a114bc7b7540752b62fa",
+        "productSku": "SKU-A001",
+        "productName": "ワイヤレスイヤホン Pro",
+        "quantity": 1,
+        "condition": "damaged",
+        "memo": "片耳から音が出ない"
+      }
+    ],
+    "memo": "顧客から返品依頼",
+    "createdBy": "69b68e48fcf8f02564f1e692",
+    "createdAt": "2026-03-15T12:54:15.581Z",
+    "updatedAt": "2026-03-15T12:54:15.581Z"
+  }
+]
