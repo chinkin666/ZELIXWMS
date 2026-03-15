@@ -132,7 +132,7 @@ const loadData = async () => {
       page: currentPage.value,
       limit: pageSize.value,
     })
-    rows.value = result.items
+    rows.value = result.data || result.items || []
     total.value = result.total
   } catch (error: any) {
     showToast(error?.message || '取得に失敗しました', 'danger')

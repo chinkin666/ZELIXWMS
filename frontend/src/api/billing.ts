@@ -78,9 +78,10 @@ export interface BillingDashboardKpi {
   recentRecords: BillingRecord[]
 }
 
-// ── 運賃マスタAPI / 運賃マスターAPI ──
+// ── 運賃マスタAPI / 運賃マスタAPI ──
+// 後端: /api/shipping-rates
 function buildShippingRateUrl(params?: ShippingRateFilters): string {
-  const url = new URL(`${API_BASE_URL}/billing/shipping-rates`)
+  const url = new URL(`${API_BASE_URL}/shipping-rates`)
   if (params) {
     if (params.search) url.searchParams.append('search', params.search)
     if (params.carrierCode) url.searchParams.append('carrierCode', params.carrierCode)
@@ -102,7 +103,7 @@ export async function fetchShippingRates(
 }
 
 export async function createShippingRate(data: Partial<ShippingRate>): Promise<ShippingRate> {
-  const response = await fetch(`${API_BASE_URL}/billing/shipping-rates`, {
+  const response = await fetch(`${API_BASE_URL}/shipping-rates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -115,7 +116,7 @@ export async function createShippingRate(data: Partial<ShippingRate>): Promise<S
 }
 
 export async function updateShippingRate(id: string, data: Partial<ShippingRate>): Promise<ShippingRate> {
-  const response = await fetch(`${API_BASE_URL}/billing/shipping-rates/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/shipping-rates/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -128,7 +129,7 @@ export async function updateShippingRate(id: string, data: Partial<ShippingRate>
 }
 
 export async function deleteShippingRate(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/billing/shipping-rates/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/shipping-rates/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -138,8 +139,9 @@ export async function deleteShippingRate(id: string): Promise<void> {
 }
 
 // ── 月次請求API / 月次請求API ──
+// 後端: /api/billing/*
 export async function generateMonthlyBilling(period: string): Promise<BillingRecord> {
-  const response = await fetch(`${API_BASE_URL}/billing/monthly/generate`, {
+  const response = await fetch(`${API_BASE_URL}/billing/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ period }),
@@ -156,8 +158,8 @@ export async function fetchBillingRecords(params?: {
   status?: string
   page?: number
   limit?: number
-}): Promise<{ items: BillingRecord[]; total: number }> {
-  const url = new URL(`${API_BASE_URL}/billing/records`)
+}): Promise<{ data: BillingRecord[]; total: number }> {
+  const url = new URL(`${API_BASE_URL}/billing`)
   if (params) {
     if (params.period) url.searchParams.append('period', params.period)
     if (params.status) url.searchParams.append('status', params.status)
@@ -172,7 +174,7 @@ export async function fetchBillingRecords(params?: {
 }
 
 export async function fetchBillingRecord(id: string): Promise<BillingRecord> {
-  const response = await fetch(`${API_BASE_URL}/billing/records/${id}`)
+  const response = await fetch(`${API_BASE_URL}/billing/${id}`)
   if (!response.ok) {
     throw new Error(`請求データの取得に失敗しました: ${response.statusText}`)
   }
@@ -180,7 +182,7 @@ export async function fetchBillingRecord(id: string): Promise<BillingRecord> {
 }
 
 export async function confirmBillingRecord(id: string): Promise<BillingRecord> {
-  const response = await fetch(`${API_BASE_URL}/billing/records/${id}/confirm`, {
+  const response = await fetch(`${API_BASE_URL}/billing/${id}/confirm`, {
     method: 'POST',
   })
   if (!response.ok) {
