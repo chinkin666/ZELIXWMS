@@ -3,6 +3,39 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-16] Phase 0-1 完整实装 / Phase 0-1 完全実装
+
+**变更类型 / 変更種別**: feat
+**影响范围 / 影響範囲**: backend/, portal/, admin/, frontend/
+
+### 内容 / 内容
+
+**Phase 0（基础）全部完成:**
+- 0.1 客户模型: Client 扩展(tenantId/clientType/信用额度/门户设定) + SubClient + Shop 新建 + CRUD API
+- 0.2 商品模型: Product 加 shopId/clientId/warehouseNotes
+- 0.3 权限模型: Role (7种仓库角色 + resource:action) + requirePermission 中间件
+- 0.4 照片存储: S3/MinIO config + PhotoService (本地降级)
+- 0.5 portal/ 骨架: 登录 + i18n(中日英) + 布局 + 路由
+- 0.6 admin/ 骨架: 登录 + 客户管理 + 价格管理
+- ServiceRate ChargeType 11→24 种 + WorkCharge 加层级字段
+- 数据迁移脚本
+
+**Phase 1（FBA 通过型）全部完成:**
+- 1.1 通过型入库预定 API: InboundOrder 扩展(11 种状态 + serviceOptions + fbaInfo + varianceReport) + PassthroughService(完整状态机 + 自动计费)
+- 1.2 FBA 标 PDF 拆分: pdf-lib 4-up/6-up/single + S3 存储 + multer 上传
+- 1.3 差异明细: 受付时自动生成 + 客户确认 API
+- 1.4 费用计算: ServiceRate 自动取价 + WorkCharge 自动计费
+- 1.5 门户商品列表: 真实 API + 搜索 + 分页
+- 1.6 门户入库预定: 5 步向导完整实现 + 详情页(进度/差异/FBA标/费用/追踪号)
+- 1.10 仓库受付扫码: 扫码→匹配→逐箱→差异→暂存
+- 1.11 仓库作业任务: 按预定显示作业选项→完成记录→自动计费
+- 1.12 仓库出货匹配: 待出货列表→追踪号输入→出货完成
+- 1.13 暂存区看板: 停留时间分布 + 客户别汇总 + 72h 超时预警
+- 1.14 Admin 价格管理: 费率添加 + 模板复制
+- 三端端口: frontend/:4001, portal/:4002, admin/:4003
+
+---
+
 ## [2026-03-16] 三端架构 + 权限 + 商品库存 + 最终开发计划 / 3アプリ構成 + 権限 + 商品在庫 + 最終開発計画
 
 **变更类型 / 変更種別**: docs
