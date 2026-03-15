@@ -34,8 +34,7 @@
     </div>
 
     <!-- 作成/編集ダイアログ / 创建/编辑对话框 -->
-    <ODialog v-model="dialogVisible" :title="isEditing ? '耗材を編集' : '耗材を追加'" size="lg" @close="closeDialog">
-      <template #default>
+    <ODialog :open="dialogVisible" :title="isEditing ? '耗材を編集' : '耗材を追加'" size="lg" @close="closeDialog">
         <form class="material-form" @submit.prevent="handleSubmit">
           <div class="form-grid">
             <div class="form-col">
@@ -121,7 +120,6 @@
             </OButton>
           </div>
         </form>
-      </template>
     </ODialog>
   </div>
 </template>
