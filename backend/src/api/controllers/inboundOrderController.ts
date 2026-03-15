@@ -9,6 +9,7 @@ import { generateSequenceNumber } from '@/utils/sequenceGenerator';
 import { findOrCreateLot } from '@/api/controllers/lotController';
 import { logOperation } from '@/services/operationLogger';
 import { createAutoCharge } from '@/services/chargeService';
+import { getWarehouseFilter } from '@/api/helpers/tenantHelper';
 
 /** 入庫指示一覧 */
 export const listInboundOrders = async (req: Request, res: Response): Promise<void> => {
@@ -18,6 +19,15 @@ export const listInboundOrders = async (req: Request, res: Response): Promise<vo
     const filter: Record<string, unknown> = {};
     if (typeof status === 'string' && status.trim()) {
       filter.status = status.trim();
+    }
+
+    // 倉庫フィルタ / 仓库过滤
+    const whFilter = getWarehouseFilter(req);
+    if (whFilter.length > 0) {
+      // destinationLocationId がある Location の warehouseId で絞る
+      // 通过 destinationLocationId 关联的 Location 的 warehouseId 过滤
+      const locIds = await Location.find({ warehouseId: { $in: whFilter } }).select('_id').lean();
+      filter.destinationLocationId = { $in: locIds.map(l => l._id) };
     }
 
     const page = Math.max(1, Number(pageStr) || 1);

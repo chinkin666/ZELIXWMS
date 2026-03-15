@@ -11,6 +11,8 @@ import { ShipmentOrder } from '@/models/shipmentOrder';
 import { reserveStockForOrder } from '@/services/stockService';
 import * as inventoryService from '@/services/inventoryService';
 import { AppError } from '@/lib/errors';
+import { getWarehouseFilter } from '@/api/helpers/tenantHelper';
+import { Location } from '@/models/location';
 
 /**
  * エラーレスポンスヘルパー / Error response helper
@@ -29,11 +31,21 @@ function handleError(res: Response, error: unknown, fallbackMessage: string): vo
 export const listStock = async (req: Request, res: Response): Promise<void> => {
   try {
     const { productId, productSku, locationId, showZero } = req.query;
+
+    // 倉庫フィルタ → ロケーションIDに変換 / 仓库过滤 → 转换为库位ID
+    let locationIds: string[] | undefined;
+    const whFilter = getWarehouseFilter(req);
+    if (whFilter.length > 0) {
+      const locs = await Location.find({ warehouseId: { $in: whFilter } }).select('_id').lean();
+      locationIds = locs.map(l => l._id.toString());
+    }
+
     const quants = await inventoryService.listStock({
       productId: typeof productId === 'string' ? productId.trim() : undefined,
       productSku: typeof productSku === 'string' ? productSku.trim() : undefined,
       locationId: typeof locationId === 'string' ? locationId.trim() : undefined,
       showZero: showZero === 'true',
+      locationIds,
     });
     res.json(quants);
   } catch (error) {

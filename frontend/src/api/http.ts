@@ -53,6 +53,16 @@ class HttpClient {
       // Store may not be available outside of Vue app context — skip auth header
     }
 
+    // 倉庫セレクターの値をヘッダーに付与 / 将仓库选择器的值附加到header
+    try {
+      const whId = localStorage.getItem('wms_selected_warehouse')
+      if (whId) {
+        headers['X-Warehouse-Id'] = whId
+      }
+    } catch {
+      // localStorage not available
+    }
+
     return headers
   }
 
@@ -229,6 +239,16 @@ export async function apiFetch(url: string, init?: RequestInit): Promise<Respons
   } catch {
     // Store が利用できない場合は認証ヘッダーをスキップ
     // Store 不可用时跳过认证头
+  }
+
+  // 倉庫セレクター / 仓库选择器
+  try {
+    const whId = localStorage.getItem('wms_selected_warehouse')
+    if (whId) {
+      headers['X-Warehouse-Id'] = whId
+    }
+  } catch {
+    // ignore
   }
 
   const response = await fetch(url, { ...init, headers })

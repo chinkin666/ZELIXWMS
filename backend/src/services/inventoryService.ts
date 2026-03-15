@@ -74,6 +74,8 @@ export interface StockListFilters {
   productSku?: string;
   locationId?: string;
   showZero?: boolean;
+  /** 倉庫フィルタで絞り込むロケーションIDリスト / 仓库过滤后的库位ID列表 */
+  locationIds?: string[];
 }
 
 /** 在庫集計フィルタ / Inventory summary filters */
@@ -160,6 +162,8 @@ export async function listStock(filters: StockListFilters): Promise<any[]> {
   }
   if (filters.locationId) {
     match.locationId = new mongoose.Types.ObjectId(filters.locationId);
+  } else if (filters.locationIds && filters.locationIds.length > 0) {
+    match.locationId = { $in: filters.locationIds.map(id => new mongoose.Types.ObjectId(id)) };
   }
   if (!filters.showZero) {
     match.quantity = { $gt: 0 };
