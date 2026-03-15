@@ -33,6 +33,7 @@ export const settingsGroups: SubMenuGroup[] = [
       { label: '応用設定', to: '/settings/system' },
       { label: 'テナント管理', to: '/settings/tenants' },
       { label: 'WMSスケジュール', to: '/settings/wms-schedules' },
+      { label: 'ユーザー管理', to: '/settings/users' },
     ],
   },
   {

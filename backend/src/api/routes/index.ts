@@ -45,6 +45,7 @@ import { packingRuleRouter } from './packingRules';
 import { materialRouter } from './materials';
 import { serviceRateRouter } from './serviceRates';
 import { workChargeRouter } from './workCharges';
+import { userRouter } from './users';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -107,6 +108,9 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // 作業チャージ / 作业费用
   api.use('/work-charges', workChargeRouter);
+
+  // ユーザー管理 / 用户管理
+  api.use('/users', userRouter);
 
   // 扩展系统 / 拡張システム
   api.use('/extensions', extensionRouter);

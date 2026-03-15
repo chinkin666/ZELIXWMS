@@ -615,6 +615,12 @@ const router = createRouter({
               meta: { title: 'フィーチャーフラグ', requiresAuth: true },
             },
             {
+              path: 'users',
+              name: 'UserManagement',
+              component: () => import('@/views/settings/UserManagement.vue'),
+              meta: { title: 'ユーザー管理', requiresAuth: true },
+            },
+            {
               path: 'system',
               name: 'SystemSettings',
               component: () => import('@/views/settings/SystemSettings.vue'),
