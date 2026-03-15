@@ -4,6 +4,8 @@ import { StockQuant } from '@/models/stockQuant';
 import { StockMove } from '@/models/stockMove';
 import { Location } from '@/models/location';
 import { Product } from '@/models/product';
+import { Lot } from '@/models/lot';
+import { logOperation } from '@/services/operationLogger';
 import mongoose from 'mongoose';
 
 // ---------------------------------------------------------------------------
@@ -84,6 +86,14 @@ export async function createStocktakingOrder(req: Request, res: Response) {
     const products = await Product.find({ _id: { $in: productIds } }).lean();
     const prodMap = new Map(products.map((p) => [String(p._id), { sku: p.sku, name: p.name }]));
 
+    // ロット番号を一括取得 / 批量获取批次号
+    const lotIds = quants.map(q => q.lotId).filter((id): id is mongoose.Types.ObjectId => !!id);
+    const lotMap = new Map<string, string>();
+    if (lotIds.length > 0) {
+      const lots = await Lot.find({ _id: { $in: lotIds } }).select('_id lotNumber').lean();
+      for (const l of lots) { lotMap.set(String(l._id), l.lotNumber); }
+    }
+
     const lines = quants.map((q) => {
       const prod = prodMap.get(String(q.productId));
       return {
@@ -93,7 +103,7 @@ export async function createStocktakingOrder(req: Request, res: Response) {
         productSku: prod?.sku || q.productSku || '',
         productName: prod?.name || '',
         lotId: q.lotId || undefined,
-        lotNumber: undefined as string | undefined,
+        lotNumber: q.lotId ? lotMap.get(String(q.lotId)) : undefined,
         systemQuantity: q.quantity,
         countedQuantity: undefined as number | undefined,
         variance: undefined as number | undefined,
@@ -111,6 +121,15 @@ export async function createStocktakingOrder(req: Request, res: Response) {
       lines,
       memo,
     });
+
+    logOperation({
+      action: 'stocktaking',
+      description: `棚卸を作成: ${doc.orderNumber}（${lines.length}行）`,
+      referenceNumber: doc.orderNumber,
+      referenceType: 'stocktakingOrder',
+      referenceId: String(doc._id),
+      quantity: lines.length,
+    }).catch(() => {});
 
     res.status(201).json(doc.toObject());
   } catch (err: any) {
@@ -278,18 +297,15 @@ export async function adjustStocktakingOrder(req: Request, res: Response) {
           ...(line.lotId ? { lotId: line.lotId } : { lotId: { $exists: false } }),
         };
 
-        if (variance > 0) {
-          await StockQuant.findOneAndUpdate(
-            quantFilter,
-            { $inc: { quantity: variance } },
-            { upsert: true },
-          );
-        } else {
-          await StockQuant.findOneAndUpdate(
-            quantFilter,
-            { $inc: { quantity: variance } },
-          );
-        }
+        // 正負どちらの差異でも upsert で安全に更新 / 正负差异都用upsert安全更新
+        await StockQuant.findOneAndUpdate(
+          quantFilter,
+          {
+            $inc: { quantity: variance },
+            $set: { lastMovedAt: new Date() },
+          },
+          { upsert: true },
+        );
 
         line.status = 'verified';
         adjustedCount++;
@@ -308,6 +324,15 @@ export async function adjustStocktakingOrder(req: Request, res: Response) {
     doc.status = 'adjusted';
     doc.adjustedAt = new Date();
     await doc.save();
+
+    logOperation({
+      action: 'stocktaking',
+      description: `棚卸調整完了: ${doc.orderNumber}（${adjustedCount}件調整${errors.length > 0 ? `, ${errors.length}件エラー` : ''}）`,
+      referenceNumber: doc.orderNumber,
+      referenceType: 'stocktakingOrder',
+      referenceId: String(doc._id),
+      quantity: adjustedCount,
+    }).catch(() => {});
 
     res.json({
       data: doc.toObject(),
