@@ -366,6 +366,12 @@ const router = createRouter({
               component: () => import('@/views/billing/BillingMonthly.vue'),
               meta: { title: '月次請求', requiresAuth: true },
             },
+            {
+              path: 'invoices/:id',
+              name: 'InvoiceDetail',
+              component: () => import('@/views/billing/InvoiceDetail.vue'),
+              meta: { title: '請求書詳細', requiresAuth: true },
+            },
           ],
         },
         {

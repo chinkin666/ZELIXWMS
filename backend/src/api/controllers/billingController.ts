@@ -448,6 +448,33 @@ export async function updateInvoiceStatus(req: Request, res: Response) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// GET /api/billing/invoices/:id/detail - 請求書詳細（関連BillingRecord含む）
+// 获取发票详情（包含关联的BillingRecord）
+// ---------------------------------------------------------------------------
+export async function getInvoiceDetail(req: Request, res: Response) {
+  try {
+    const invoice = await Invoice.findById(req.params.id).lean();
+    if (!invoice) {
+      return res.status(404).json({ error: '請求書が見つかりません / 未找到发票' });
+    }
+
+    // 関連BillingRecordを取得（存在する場合）
+    // 获取关联的BillingRecord（如果存在）
+    let billingRecord = null;
+    if (invoice.billingRecordId) {
+      billingRecord = await BillingRecord.findById(invoice.billingRecordId).lean();
+    }
+
+    res.json({
+      ...invoice,
+      billingRecord,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 /**
  * 請求ダッシュボードKPI / 请求仪表板KPI
  * GET /billing/dashboard

@@ -38,15 +38,19 @@ import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import Table from '@/components/table/Table.vue'
 import type { TableColumn } from '@/types/table'
+import { useRouter } from 'vue-router'
 import {
   fetchBillingRecords,
   generateMonthlyBilling,
   confirmBillingRecord,
+  createInvoice,
+  updateInvoiceStatus,
 } from '@/api/billing'
 import type { BillingRecord, BillingStatus } from '@/api/billing'
 
 const { t } = useI18n()
 const { show: showToast } = useToast()
+const router = useRouter()
 
 // ── 状態管理 / 状態管理 ──
 const rows = ref<BillingRecord[]>([])
@@ -105,17 +109,31 @@ const tableColumns: TableColumn[] = [
   {
     key: 'actions',
     title: t('wms.common.actions', '操作'),
-    width: 200,
+    width: 260,
     cellRenderer: ({ rowData }: { rowData: BillingRecord }) => {
       const buttons: any[] = []
+      // 下書き → 確定 / 草稿 → 确认
       if (rowData.status === 'draft') {
         buttons.push(
           h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleConfirm(rowData) }, () => '確定'),
         )
       }
+      // 確定済 → 請求書発行 / 已确认 → 生成发票
       if (rowData.status === 'confirmed') {
         buttons.push(
-          h(OButton, { variant: 'secondary', size: 'sm', onClick: () => handleCreateInvoice(rowData) }, () => '請求書生成'),
+          h(OButton, { variant: 'secondary', size: 'sm', onClick: () => handleCreateInvoice(rowData) }, () => '請求書発行'),
+        )
+      }
+      // 請求済 → 入金確認 / 已开票 → 确认入金
+      if (rowData.status === 'invoiced') {
+        buttons.push(
+          h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleMarkPaid(rowData) }, () => '入金確認'),
+        )
+      }
+      // 請求済・入金済 → 請求書詳細表示 / 已开票/已入金 → 查看发票
+      if (rowData.status === 'invoiced' || rowData.status === 'paid') {
+        buttons.push(
+          h(OButton, { variant: 'secondary', size: 'sm', onClick: () => handleViewInvoice(rowData) }, () => '請求書'),
         )
       }
       return h('div', { class: 'action-cell' }, buttons)
@@ -178,9 +196,67 @@ const handleConfirm = async (record: BillingRecord) => {
   }
 }
 
-// ── 請求書生成（将来拡張） / 請求書生成（将来拡張） ──
+// ── 請求書発行 / 生成发票 ──
 const handleCreateInvoice = async (record: BillingRecord) => {
-  showToast(`請求書生成: ${record.clientName} - ${record.period}（実装予定）`, 'info')
+  if (!confirm(`「${record.clientName} - ${record.period}」の請求書を発行しますか？`)) return
+  try {
+    const now = new Date()
+    const issueDate = now.toISOString().slice(0, 10)
+    // 支払期限: 翌月末 / 支付期限: 下月末
+    const dueDate = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString().slice(0, 10)
+
+    const invoice = await createInvoice({
+      billingRecordId: record._id,
+      clientId: record.clientId,
+      clientName: record.clientName,
+      period: record.period,
+      issueDate,
+      dueDate,
+    })
+    showToast(`請求書 ${invoice.invoiceNumber} を発行しました`, 'success')
+    await loadData()
+  } catch (error: any) {
+    showToast(error?.message || '請求書の発行に失敗しました', 'danger')
+  }
+}
+
+// ── 入金確認 / 确认入金 ──
+const handleMarkPaid = async (record: BillingRecord) => {
+  if (!confirm(`「${record.clientName} - ${record.period}」の入金を確認しますか？`)) return
+  try {
+    const invoice = await findInvoiceByBillingRecord(record._id)
+    if (invoice) {
+      await updateInvoiceStatus(invoice._id, 'paid')
+      showToast('入金を確認しました', 'success')
+      await loadData()
+    } else {
+      showToast('対応する請求書が見つかりません', 'danger')
+    }
+  } catch (error: any) {
+    showToast(error?.message || '入金確認に失敗しました', 'danger')
+  }
+}
+
+// ── 請求書表示 / 查看发票 ──
+const handleViewInvoice = async (record: BillingRecord) => {
+  try {
+    const invoice = await findInvoiceByBillingRecord(record._id)
+    if (invoice) {
+      router.push(`/billing/invoices/${invoice._id}`)
+    } else {
+      showToast('請求書が見つかりません', 'danger')
+    }
+  } catch (error: any) {
+    showToast(error?.message || '請求書の取得に失敗しました', 'danger')
+  }
+}
+
+// ── BillingRecordに紐づくInvoiceを検索 / 通过BillingRecord查找Invoice ──
+const findInvoiceByBillingRecord = async (billingRecordId: string) => {
+  const { fetchInvoices: fetchInv } = await import('@/api/billing')
+  const result = await fetchInv()
+  const invoices = result.data || (result as any).items || []
+  return invoices.find((inv: any) => inv.billingRecordId === billingRecordId) || null
 }
 
 // ── 初期化 / 初期化 ──

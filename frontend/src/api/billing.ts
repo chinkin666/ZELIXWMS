@@ -50,22 +50,41 @@ export interface BillingRecord {
 }
 
 // ── 請求書型定義 / 請求書型定義 ──
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'cancelled'
+export type InvoiceStatus = 'draft' | 'issued' | 'sent' | 'paid' | 'overdue' | 'cancelled'
+
+// 請求書明細行 / 发票明细行
+export interface InvoiceLineItem {
+  description: string
+  quantity: number
+  unitPrice: number
+  amount: number
+}
 
 export interface Invoice {
   _id: string
+  tenantId: string
   invoiceNumber: string
-  billingRecordIds: string[]
-  clientCode: string
-  clientName: string
-  totalAmount: number
-  status: InvoiceStatus
-  issuedDate: string
+  billingRecordId?: string
+  clientId?: string
+  clientName?: string
+  period: string
+  issueDate: string
   dueDate: string
-  paidDate?: string
+  subtotal: number
+  taxRate: number
+  taxAmount: number
+  totalAmount: number
+  lineItems: InvoiceLineItem[]
+  status: InvoiceStatus
+  paidAt?: string
   memo?: string
   createdAt: string
   updatedAt: string
+}
+
+// 請求書詳細（関連BillingRecord含む） / 发票详情（含关联BillingRecord）
+export interface InvoiceDetail extends Invoice {
+  billingRecord?: BillingRecord | null
 }
 
 // ── ダッシュボードKPI型定義 / ダッシュボードKPI型定義 ──
@@ -197,7 +216,7 @@ export async function fetchInvoices(params?: {
   status?: string
   page?: number
   limit?: number
-}): Promise<{ items: Invoice[]; total: number }> {
+}): Promise<{ data: Invoice[]; total: number }> {
   const url = new URL(`${API_BASE_URL}/billing/invoices`)
   if (params) {
     if (params.status) url.searchParams.append('status', params.status)
@@ -212,8 +231,14 @@ export async function fetchInvoices(params?: {
 }
 
 export async function createInvoice(data: {
-  billingRecordIds: string[]
+  billingRecordId?: string
+  clientId?: string
+  clientName?: string
+  period: string
+  issueDate: string
   dueDate: string
+  taxRate?: number
+  lineItems?: InvoiceLineItem[]
   memo?: string
 }): Promise<Invoice> {
   const response = await fetch(`${API_BASE_URL}/billing/invoices`, {
@@ -223,7 +248,7 @@ export async function createInvoice(data: {
   })
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
-    throw new Error(body.message || `請求書の作成に失敗しました: ${response.statusText}`)
+    throw new Error(body.error || body.message || `請求書の作成に失敗しました: ${response.statusText}`)
   }
   return response.json()
 }
@@ -236,7 +261,19 @@ export async function fetchInvoice(id: string): Promise<Invoice> {
   return response.json()
 }
 
-export async function updateInvoiceStatus(id: string, status: InvoiceStatus): Promise<Invoice> {
+// 請求書詳細取得（関連BillingRecord含む） / 获取发票详情（含关联BillingRecord）
+export async function fetchInvoiceDetail(id: string): Promise<InvoiceDetail> {
+  const response = await fetch(`${API_BASE_URL}/billing/invoices/${id}/detail`)
+  if (!response.ok) {
+    throw new Error(`請求書詳細の取得に失敗しました: ${response.statusText}`)
+  }
+  return response.json()
+}
+
+export async function updateInvoiceStatus(
+  id: string,
+  status: InvoiceStatus,
+): Promise<Invoice> {
   const response = await fetch(`${API_BASE_URL}/billing/invoices/${id}/status`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -244,7 +281,7 @@ export async function updateInvoiceStatus(id: string, status: InvoiceStatus): Pr
   })
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
-    throw new Error(body.message || `請求書ステータスの更新に失敗しました: ${response.statusText}`)
+    throw new Error(body.error || body.message || `請求書ステータスの更新に失敗しました: ${response.statusText}`)
   }
   return response.json()
 }

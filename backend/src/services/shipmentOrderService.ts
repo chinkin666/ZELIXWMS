@@ -1346,6 +1346,68 @@ export const updateOrderStatus = async (
   // 异步副作用 / 非同期副作用
   emitStatusSideEffects(input.action, input.statusType, [id], [updated]);
 
+  // 運賃自動計算 / 运费自动计算 (fire-and-forget)
+  if (input.action === 'mark-print-ready') {
+    (async () => {
+      try {
+        const { ShippingRate } = await import('@/models/shippingRate');
+
+        // 既にコストが設定済みならスキップ / 已有费用则跳过
+        const order = await ShipmentOrder.findById(id).lean();
+        if (!order || order.shippingCost) return;
+
+        // 商品から合計重量を算出 / 从商品计算总重量
+        let totalWeight = 0;
+        for (const prod of order.products || []) {
+          const product = await Product.findOne({ sku: prod.productSku || prod.inputSku }).lean();
+          if (product?.weight) totalWeight += product.weight * (prod.quantity || 1);
+        }
+
+        // マッチする料金プランを検索 / 搜索匹配的费率方案
+        const now = new Date();
+        const rates = await ShippingRate.find({
+          carrierId: order.carrierId,
+          isActive: true,
+        }).sort({ basePrice: 1 }).lean();
+
+        const matchedRate = rates.find((rate) => {
+          // 有効期間チェック / 有效期间检查
+          if (rate.validFrom && new Date(rate.validFrom) > now) return false;
+          if (rate.validTo && new Date(rate.validTo) < now) return false;
+
+          // サイズ条件チェック / 尺寸条件检查
+          if (rate.sizeType === 'weight') {
+            if (rate.sizeMin !== undefined && totalWeight < rate.sizeMin) return false;
+            if (rate.sizeMax !== undefined && totalWeight > rate.sizeMax) return false;
+          }
+          // flat タイプはサイズ条件なし / flat类型无尺寸条件
+
+          return true;
+        });
+
+        if (matchedRate) {
+          const isCool = order.coolType === '1' || order.coolType === '2';
+          const breakdown = {
+            base: matchedRate.basePrice,
+            cool: isCool ? matchedRate.coolSurcharge : 0,
+            cod: 0,
+            fuel: matchedRate.fuelSurcharge || 0,
+            other: 0,
+          };
+          const totalCost = breakdown.base + breakdown.cool + breakdown.cod + breakdown.fuel + breakdown.other;
+
+          await ShipmentOrder.updateOne(
+            { _id: id },
+            { $set: { shippingCost: totalCost, shippingCostBreakdown: breakdown, costSource: 'auto', costCalculatedAt: new Date() } },
+          );
+        }
+      } catch (e) {
+        // fire-and-forget: ログのみ / ログのみ
+        logger.warn({ err: e }, '運賃自動計算に失敗しました / 运费自动计算失败');
+      }
+    })();
+  }
+
   // 操作ログ / 操作日志 (fire-and-forget)
   const actionLabel = STATUS_ACTION_LABELS[input.action] || input.action;
   logOperation({

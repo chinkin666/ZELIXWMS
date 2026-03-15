@@ -7,6 +7,7 @@ import {
   createInvoice,
   listInvoices,
   getInvoice,
+  getInvoiceDetail,
   updateInvoiceStatus,
   getBillingDashboard,
 } from '@/api/controllers/billingController';
@@ -21,6 +22,7 @@ billingRouter.post('/generate', generateMonthlyBilling);
 // 請求書 / 发票（/:id より前に定義が必要 / 必须定义在 /:id 之前）
 billingRouter.get('/invoices', listInvoices);
 billingRouter.post('/invoices', createInvoice);
+billingRouter.get('/invoices/:id/detail', getInvoiceDetail);
 billingRouter.get('/invoices/:id', getInvoice);
 billingRouter.put('/invoices/:id/status', updateInvoiceStatus);
 
