@@ -431,3 +431,44 @@ export async function updateInvoiceStatus(req: Request, res: Response) {
     res.status(500).json({ error: err.message });
   }
 }
+
+/**
+ * 請求ダッシュボードKPI / 请求仪表板KPI
+ * GET /billing/dashboard
+ */
+export async function getBillingDashboard(_req: Request, res: Response) {
+  try {
+    const now = new Date();
+    const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // 当月集計 / 当月汇总
+    const currentMonthRecords = await BillingRecord.find({ period: currentPeriod }).lean();
+    const monthlyOrderCount = currentMonthRecords.reduce((s, r) => s + (r.orderCount || 0), 0);
+    const monthlyShippingCost = currentMonthRecords.reduce((s, r) => s + (r.totalShippingCost || 0), 0);
+
+    // 未請求額（draft + confirmed） / 未开票金额
+    const unbilledRecords = await BillingRecord.find({ status: { $in: ['draft', 'confirmed'] } }).lean();
+    const unbilledAmount = unbilledRecords.reduce((s, r) => s + (r.totalAmount || 0), 0);
+
+    // 未入金額（issued + sent + overdue） / 未收款金额
+    const unpaidInvoices = await Invoice.find({ status: { $in: ['issued', 'sent', 'overdue'] } }).lean();
+    const unpaidAmount = unpaidInvoices.reduce((s, r) => s + (r.totalAmount || 0), 0);
+
+    // 最近の請求明細 / 最近的请求明细
+    const recentRecords = await BillingRecord.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    res.json({
+      monthlyOrderCount,
+      monthlyShippingCost,
+      unbilledAmount,
+      unpaidAmount,
+      currentPeriod,
+      recentRecords,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+}
