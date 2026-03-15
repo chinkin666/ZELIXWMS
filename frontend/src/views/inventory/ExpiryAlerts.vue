@@ -20,15 +20,19 @@
       </template>
     </ControlPanel>
 
-    <!-- サマリーカード -->
+    <!-- サマリーカード / 摘要卡片 -->
     <div class="summary-cards">
       <div class="summary-card summary-card--danger">
         <div class="summary-value">{{ expiredCount }}</div>
         <div class="summary-label">{{ t('wms.inventory.expired', '期限切れ') }}</div>
       </div>
+      <div class="summary-card summary-card--critical">
+        <div class="summary-value">{{ criticalCount }}</div>
+        <div class="summary-label">{{ t('wms.inventory.within7Days', '7日以内') }}</div>
+      </div>
       <div class="summary-card summary-card--warning">
-        <div class="summary-value">{{ warningCount }}</div>
-        <div class="summary-label">{{ t('wms.inventory.nearExpiry', '期限間近') }}</div>
+        <div class="summary-value">{{ cautionCount }}</div>
+        <div class="summary-label">{{ t('wms.inventory.within30Days', '30日以内') }}</div>
       </div>
       <div class="summary-card summary-card--info">
         <div class="summary-value">{{ alerts.length }}</div>
@@ -80,7 +84,62 @@ const daysAhead = ref(30)
 const globalSearchText = ref('')
 
 const expiredCount = computed(() => alerts.value.filter(a => a.isExpired).length)
-const warningCount = computed(() => alerts.value.filter(a => !a.isExpired).length)
+// 7日以内（期限切れ除く） / 7日以内（已过期除外）
+const criticalCount = computed(() =>
+  alerts.value.filter(a => !a.isExpired && a.daysUntilExpiry !== null && a.daysUntilExpiry <= 7).length,
+)
+// 8〜30日 / 8~30天
+const cautionCount = computed(() =>
+  alerts.value.filter(a => !a.isExpired && a.daysUntilExpiry !== null && a.daysUntilExpiry > 7 && a.daysUntilExpiry <= 30).length,
+)
+
+/**
+ * 緊急度レベルを判定 / 判断紧急程度
+ * - 'expired': 期限切れ / 已过期
+ * - 'critical': 7日以内 / 7天以内
+ * - 'warning': 30日以内 / 30天以内
+ * - 'caution': それ以外 / 其他
+ */
+function getUrgencyLevel(alert: ExpiryAlert): 'expired' | 'critical' | 'warning' | 'caution' {
+  if (alert.isExpired) return 'expired'
+  if (alert.daysUntilExpiry === null) return 'caution'
+  if (alert.daysUntilExpiry <= 7) return 'critical'
+  if (alert.daysUntilExpiry <= 30) return 'warning'
+  return 'caution'
+}
+
+/** 緊急度に応じたCSSクラスを返す / 根据紧急程度返回CSS类 */
+function getUrgencyTagClass(level: string): string {
+  const map: Record<string, string> = {
+    expired: 'o-status-tag o-status-tag--error',
+    critical: 'o-status-tag expiry-tag--critical',
+    warning: 'o-status-tag expiry-tag--warning',
+    caution: 'o-status-tag expiry-tag--caution',
+  }
+  return map[level] ?? 'o-status-tag'
+}
+
+/** 緊急度に応じたテキスト色クラスを返す / 根据紧急程度返回文本颜色类 */
+function getUrgencyTextClass(level: string): string {
+  const map: Record<string, string> = {
+    expired: 'expiry-expired',
+    critical: 'expiry-critical',
+    warning: 'expiry-warning',
+    caution: 'expiry-caution',
+  }
+  return map[level] ?? ''
+}
+
+/** 緊急度に応じたラベルを返す / 根据紧急程度返回标签 */
+function getUrgencyLabel(level: string): string {
+  const map: Record<string, string> = {
+    expired: t('wms.inventory.expired', '期限切れ'),
+    critical: t('wms.inventory.critical', '緊急'),
+    warning: t('wms.inventory.nearExpiry', '期限間近'),
+    caution: t('wms.inventory.approaching', '注意'),
+  }
+  return map[level] ?? ''
+}
 
 function formatDate(d: string) {
   return d ? new Date(d).toLocaleDateString('ja-JP') : ''
@@ -134,12 +193,10 @@ const tableColumns = computed<TableColumn[]>(() => [
       { label: t('wms.inventory.expired', '期限切れ'), value: 'true' },
       { label: t('wms.inventory.nearExpiry', '期限間近'), value: 'false' },
     ],
-    cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) =>
-      h(
-        'span',
-        { class: `o-status-tag ${rowData.isExpired ? 'o-status-tag--error' : 'o-status-tag--pending'}` },
-        rowData.isExpired ? t('wms.inventory.expired', '期限切れ') : t('wms.inventory.nearExpiry', '期限間近'),
-      ),
+    cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) => {
+      const level = getUrgencyLevel(rowData)
+      return h('span', { class: getUrgencyTagClass(level) }, getUrgencyLabel(level))
+    },
   },
   {
     key: 'lotNumber',
@@ -176,12 +233,10 @@ const tableColumns = computed<TableColumn[]>(() => [
     title: t('wms.inventory.expiryDate', '賞味期限'),
     width: 120,
     fieldType: 'date',
-    cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) =>
-      h(
-        'span',
-        { class: rowData.isExpired ? 'expiry-expired' : 'expiry-warning' },
-        formatDate(rowData.expiryDate),
-      ),
+    cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) => {
+      const level = getUrgencyLevel(rowData)
+      return h('span', { class: getUrgencyTextClass(level) }, formatDate(rowData.expiryDate))
+    },
   },
   {
     key: 'daysUntilExpiry',
@@ -191,11 +246,11 @@ const tableColumns = computed<TableColumn[]>(() => [
     fieldType: 'number',
     cellRenderer: ({ rowData }: { rowData: ExpiryAlert }) => {
       if (rowData.daysUntilExpiry === null) return '-'
-      const cls = rowData.daysUntilExpiry < 0 ? 'expiry-expired' : 'expiry-warning'
+      const level = getUrgencyLevel(rowData)
       const text = rowData.daysUntilExpiry < 0
         ? `${Math.abs(rowData.daysUntilExpiry)}${t('wms.inventory.daysOverdue', '日超過')}`
         : `${rowData.daysUntilExpiry}${t('wms.inventory.days', '日')}`
-      return h('span', { class: cls, style: 'text-align:center;display:block;' }, text)
+      return h('span', { class: getUrgencyTextClass(level), style: 'text-align:center;display:block;' }, text)
     },
   },
   {
@@ -289,6 +344,7 @@ onMounted(loadData)
 }
 
 .summary-card--danger { border-left: 4px solid #f56c6c; }
+.summary-card--critical { border-left: 4px solid #e65100; }
 .summary-card--warning { border-left: 4px solid #e6a23c; }
 .summary-card--info { border-left: 4px solid #409eff; }
 
@@ -304,6 +360,14 @@ onMounted(loadData)
   margin-top: 4px;
 }
 
-:deep(.expiry-expired) { color: #f56c6c; font-weight: 600; }
-:deep(.expiry-warning) { color: #e6a23c; font-weight: 500; }
+/* 緊急度別テキスト色 / 按紧急程度区分文本颜色 */
+:deep(.expiry-expired) { color: #dc2626; font-weight: 600; }
+:deep(.expiry-critical) { color: #e65100; font-weight: 600; }
+:deep(.expiry-warning) { color: #d97706; font-weight: 500; }
+:deep(.expiry-caution) { color: #65a30d; font-weight: 500; }
+
+/* 緊急度別タグ / 按紧急程度区分标签 */
+:deep(.expiry-tag--critical) { background: #fff3e0; color: #e65100; }
+:deep(.expiry-tag--warning) { background: #fef3c7; color: #d97706; }
+:deep(.expiry-tag--caution) { background: #ecfccb; color: #65a30d; }
 </style>
