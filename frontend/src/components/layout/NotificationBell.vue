@@ -9,6 +9,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { http } from '@/api/http'
+import { cachedFetch } from '@/composables/useApiCache'
 
 interface AlertItem {
   id: string
@@ -34,8 +35,8 @@ async function loadAlerts() {
   const items: AlertItem[] = []
 
   try {
-    // 低在庫 / 低库存
-    const lowStock = await http.get<any[]>('/inventory/alerts/low-stock').catch(() => [])
+    // 低在庫（60秒キャッシュ）/ 低库存（60秒缓存）
+    const lowStock = await cachedFetch('ntf-low-stock', () => http.get<any[]>('/inventory/alerts/low-stock'), 60000).catch(() => [])
     if (Array.isArray(lowStock) && lowStock.length > 0) {
       items.push({
         id: 'low-stock',
