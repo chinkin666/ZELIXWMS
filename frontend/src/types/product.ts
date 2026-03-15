@@ -51,6 +51,9 @@ export interface Product {
   fnsku?: string
   asin?: string
   amazonSku?: string
+  // RSL設定 / RSL设置（楽天スーパーロジスティクス / 乐天超级物流）
+  rakutenSku?: string
+  rslEnabled?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -63,6 +66,7 @@ export interface ProductFilters {
   category?: ProductCategory
   mailCalcEnabled?: boolean
   fbaEnabled?: boolean
+  rslEnabled?: boolean
 }
 
 export interface UpsertProductDto {
@@ -103,6 +107,9 @@ export interface UpsertProductDto {
   fnsku?: string
   asin?: string
   amazonSku?: string
+  // RSL設定 / RSL设置（楽天スーパーロジスティクス / 乐天超级物流）
+  rakutenSku?: string
+  rslEnabled?: boolean
 }
 
 export function getProductFieldDefinitions(): TableColumn[] {

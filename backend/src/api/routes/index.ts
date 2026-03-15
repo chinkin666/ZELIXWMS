@@ -48,6 +48,7 @@ import { workChargeRouter } from './workCharges';
 import { userRouter } from './users';
 import { authRouter } from './auth';
 import { fbaRouter } from './fba';
+import { rslRouter } from './rsl';
 import { omsRouter } from './oms';
 import { marketplaceRouter } from './marketplace';
 import { erpRouter } from './erp';
@@ -122,6 +123,9 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // FBA入庫プラン / FBA入库计划
   api.use('/fba', fbaRouter);
+
+  // RSL入庫プラン / RSL入库计划（楽天スーパーロジスティクス / 乐天超级物流）
+  api.use('/rsl', rslRouter);
 
   // 扩展系统 / 拡張システム
   api.use('/extensions', extensionRouter);

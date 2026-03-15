@@ -361,6 +361,24 @@
                     </div>
                   </div>
                 </template>
+                <!-- RSL設定 / RSL设置（楽天スーパーロジスティクス / 乐天超级物流） -->
+                <div class="o-field-row">
+                  <label class="o-field-label">RSL対応</label>
+                  <div class="o-field-value">
+                    <select class="o-inline-input" :value="String(formData.rslEnabled)" @change="(e: Event) => formData.rslEnabled = (e.target as HTMLSelectElement).value === 'true'">
+                      <option value="false">しない</option>
+                      <option value="true">する</option>
+                    </select>
+                  </div>
+                </div>
+                <template v-if="formData.rslEnabled">
+                  <div class="o-field-row">
+                    <label class="o-field-label">楽天SKU</label>
+                    <div class="o-field-value">
+                      <input class="o-inline-input" :value="formData.rakutenSku" @input="(e: Event) => formData.rakutenSku = (e.target as HTMLInputElement).value" placeholder="楽天SKUコード" />
+                    </div>
+                  </div>
+                </template>
               </div>
             </template>
 
@@ -619,6 +637,8 @@ watch(
         fnsku: d.fnsku || '',
         asin: d.asin || '',
         amazonSku: d.amazonSku || '',
+        rslEnabled: d.rslEnabled ?? false,
+        rakutenSku: d.rakutenSku || '',
       }
       editImageUrl.value = d.imageUrl || ''
       activeTab.value = 'barcode'

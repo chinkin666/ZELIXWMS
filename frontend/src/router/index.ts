@@ -179,6 +179,32 @@ const router = createRouter({
             },
           ],
         },
+        // === RSL管理 / RSL管理（楽天スーパーロジスティクス / 乐天超级物流） ===
+        {
+          path: 'rsl',
+          meta: { title: 'RSL管理', requiresAuth: true },
+          redirect: '/rsl/plans',
+          children: [
+            {
+              path: 'plans',
+              name: 'RslPlanList',
+              component: () => import('@/views/rsl/RslPlanList.vue'),
+              meta: { title: 'RSLプラン一覧', requiresAuth: true },
+            },
+            {
+              path: 'plans/create',
+              name: 'RslPlanCreate',
+              component: () => import('@/views/rsl/RslPlanCreate.vue'),
+              meta: { title: 'RSLプラン作成', requiresAuth: true },
+            },
+            {
+              path: 'plans/:id/edit',
+              name: 'RslPlanEdit',
+              component: () => import('@/views/rsl/RslPlanCreate.vue'),
+              meta: { title: 'RSLプラン編集', requiresAuth: true },
+            },
+          ],
+        },
         // === 旧路径重定向（向后兼容）/ 旧パスリダイレクト（後方互換） ===
         { path: 'shipment-orders', redirect: '/shipment/orders/create' },
         { path: 'shipment-orders/create', redirect: '/shipment/orders/create' },

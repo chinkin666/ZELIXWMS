@@ -5,6 +5,27 @@
 
 ---
 
+## [2026-03-15] RSL管理モジュール追加 / 添加RSL管理模块（楽天スーパーロジスティクス / 乐天超级物流）
+
+**变更类型 / 変更種別**: feat
+**影响范围 / 影響範囲**: backend/src/models, backend/src/api, frontend/src/api, frontend/src/views/rsl, frontend/src/types, frontend/src/router, frontend/src/components/layout
+**关联文档 / 関連ドキュメント**: docs/devlog.md
+
+### 内容 / 内容
+FBAモジュールと同じ構造でRSL（楽天スーパーロジスティクス）管理モジュールを新規作成。
+按照FBA模块的相同结构新建RSL（乐天超级物流）管理模块。
+
+- バックエンド: RSLプランモデル、コントローラー（CRUD+状態遷移）、ルーター作成、/api/rsl に登録
+- 后端: 创建RSL计划模型、控制器（CRUD+状态转换）、路由，注册到 /api/rsl
+- フロントエンド: API クライアント、プラン一覧・作成/編集ページ、ルーター・ナビゲーション追加
+- 前端: API客户端、计划列表/创建编辑页面、路由和导航菜单添加
+- 商品マスタにrakutenSku、rslEnabledフィールドを追加（バックエンド・フロントエンド）
+- 商品主数据添加 rakutenSku、rslEnabled 字段（后端和前端）
+- 配送先倉庫: 市川FC, 八千代FC, 茨木FC, 小牧FC, 鳥栖FC
+- 配送目的仓库: 市川FC, 八千代FC, 茨木FC, 小牧FC, 鳥栖FC
+
+---
+
 ## [2026-03-15] 通過型入庫（クロスドック）基盤追加 / 添加通过型入库（交叉转运）基础
 
 **变更类型 / 変更種別**: feat

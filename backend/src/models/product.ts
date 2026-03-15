@@ -67,6 +67,9 @@ export interface IProduct {
   asin?: string;               // Amazon ASIN
   amazonSku?: string;          // Amazon出品者SKU / Amazon卖家SKU
   fbaEnabled?: boolean;        // FBA出荷対応商品か / 是否FBA出货对应商品
+  // 楽天RSL関連 / 乐天RSL相关
+  rakutenSku?: string;         // 楽天SKU / 乐天SKU
+  rslEnabled?: boolean;        // RSL出荷対応商品か / 是否RSL出货对应商品
   /** 自定义字段 / カスタムフィールド */
   customFields?: Record<string, unknown>;
   createdAt: Date;
@@ -250,6 +253,10 @@ const productSchema = new mongoose.Schema<IProduct>(
     asin: { type: String, trim: true },
     amazonSku: { type: String, trim: true },
     fbaEnabled: { type: Boolean, default: false },
+
+    // 楽天RSL関連 / 乐天RSL相关
+    rakutenSku: { type: String, trim: true },
+    rslEnabled: { type: Boolean, default: false },
 
     // 自定义字段 / カスタムフィールド（Phase 5）
     customFields: { type: mongoose.Schema.Types.Mixed, default: {} },
