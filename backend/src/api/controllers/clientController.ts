@@ -95,7 +95,7 @@ export const createClient = async (req: Request, res: Response): Promise<void> =
       address2: address2?.trim() || '',
       phone: phone?.trim() || '',
       email: email?.trim() || '',
-      plan: plan?.trim() || '',
+      plan: plan?.trim() || undefined,
       billingEnabled: billingEnabled !== undefined ? billingEnabled : false,
       creditTier: creditTier || 'new',
       creditLimit: creditLimit !== undefined ? creditLimit : 100000,
