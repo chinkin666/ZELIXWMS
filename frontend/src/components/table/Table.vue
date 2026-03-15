@@ -282,7 +282,7 @@ const props = withDefaults(
     globalSearchText?: string
   }>(),
   {
-    height: 400,
+    height: 0,
     rowKey: 'id',
     paginationEnabled: false,
     paginationMode: 'client' as PaginationMode,
