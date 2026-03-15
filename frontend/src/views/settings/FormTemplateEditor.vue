@@ -576,7 +576,7 @@ import { computed, onMounted, ref, watch, nextTick } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { FormTemplate, FormTemplateColumn, FormTemplateColumnChild, BarcodeConfig, HeaderFooterItem } from '@/types/formTemplate'
+import type { FormTemplate } from '@/types/formTemplate'
 import { fetchFormTemplate, updateFormTemplate } from '@/api/formTemplate'
 import { formTypeRegistry, getFormTypeFields, createDefaultColumns } from '@/utils/form-export/formFieldRegistry'
 import { generateFormPdf } from '@/utils/form-export/pdfGenerator'
@@ -584,6 +584,8 @@ import BasicSettingsTab from './form-template-editor/BasicSettingsTab.vue'
 import PageSettingsTab from './form-template-editor/PageSettingsTab.vue'
 import StylesTab from './form-template-editor/StylesTab.vue'
 import PreviewPanel from './form-template-editor/PreviewPanel.vue'
+import { useFormTemplateColumns } from './form-template-editor/useFormTemplateColumns'
+import { useHeaderFooterItems } from './form-template-editor/useHeaderFooterItems'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 
@@ -619,10 +621,47 @@ const availableFields = computed(() => {
   return getFormTypeFields(template.value.targetType)
 })
 
-// ユニークID生成
-function generateId(): string {
-  return `col_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-}
+// 列管理コンポーザブル / 列管理 composable
+const {
+  handleAddColumn,
+  removeColumn,
+  moveColumn,
+  moveColumnToTop,
+  moveColumnToBottom,
+  addChildContent,
+  removeChildContent,
+  moveChildContent,
+  onSingleFieldChange,
+  onChildFieldChange,
+  onRenderTypeChange,
+  onChildRenderTypeChange,
+  setBarcodeFormat,
+  setBarcodeSize,
+  setChildBarcodeFormat,
+  setChildBarcodeSize,
+  isAutoWidth,
+  setWidthMode,
+} = useFormTemplateColumns(template, availableFields)
+
+// ヘッダー・フッター管理コンポーザブル / 页眉页脚管理 composable
+const {
+  getPositionLabel,
+  getPositionBadgeClass,
+  getTypeLabel,
+  getShowOnLabel,
+  addHeaderFooterItem,
+  removeHFItem,
+  moveHFItem,
+  onHFTypeChange,
+  addHFColumn,
+  removeHFColumn,
+  addHFTableRow,
+  addHFTableCol,
+  removeHFTableRow,
+  removeHFTableCol,
+  updateTableCell,
+  setTableStyle,
+} = useHeaderFooterItems(template, t)
 
 // Handle field updates from sub-components
 function onUpdateField(field: string, value: any) {
@@ -670,372 +709,6 @@ function getFieldType(field?: string): string {
   const fields = getFormTypeFields(template.value.targetType)
   const f = fields.find((x) => x.key === field)
   return f?.fieldType || 'string'
-}
-
-function handleAddColumn(type: 'single' | 'multi') {
-  if (!template.value) return
-  const fields = availableFields.value
-  if (fields.length === 0) return
-
-  const defaultField = fields[0]
-  if (!defaultField) return
-
-  const newColumn: FormTemplateColumn = {
-    id: generateId(),
-    type,
-    label: defaultField.label,
-    width: 'auto',
-    order: template.value.columns.length,
-  }
-
-  if (type === 'single') {
-    newColumn.field = defaultField.key
-    newColumn.renderType = 'text'
-  } else {
-    newColumn.children = [
-      {
-        id: generateId(),
-        field: defaultField.key,
-        renderType: 'text',
-      },
-    ]
-  }
-
-  template.value.columns.push(newColumn)
-}
-
-function removeColumn(index: number) {
-  if (!template.value) return
-  template.value.columns.splice(index, 1)
-  template.value.columns.forEach((col, i) => {
-    col.order = i
-  })
-}
-
-function moveColumn(index: number, direction: number) {
-  if (!template.value) return
-  const newIndex = index + direction
-  if (newIndex < 0 || newIndex >= template.value.columns.length) return
-
-  const columns = template.value.columns
-  const temp = columns[index]
-  const newIndexColumn = columns[newIndex]
-  if (!temp || !newIndexColumn) return
-  columns[index] = newIndexColumn
-  columns[newIndex] = temp
-  columns.forEach((col, i) => {
-    col.order = i
-  })
-}
-
-function moveColumnToTop(index: number) {
-  if (!template.value || index === 0) return
-  const columns = template.value.columns
-  const [removed] = columns.splice(index, 1)
-  if (!removed) return
-  columns.unshift(removed)
-  columns.forEach((col, i) => {
-    col.order = i
-  })
-}
-
-function moveColumnToBottom(index: number) {
-  if (!template.value || index === template.value.columns.length - 1) return
-  const columns = template.value.columns
-  const [removed] = columns.splice(index, 1)
-  if (!removed) return
-  columns.push(removed)
-  columns.forEach((col, i) => {
-    col.order = i
-  })
-}
-
-function onSingleFieldChange(col: FormTemplateColumn) {
-  const field = availableFields.value.find((f) => f.key === col.field)
-  if (field) {
-    col.label = field.label
-    if (field.fieldType === 'date') {
-      col.renderType = 'date'
-      col.dateFormat = 'YYYY/MM/DD'
-    } else {
-      col.renderType = 'text'
-    }
-  }
-}
-
-function onChildFieldChange(child: FormTemplateColumnChild) {
-  const field = availableFields.value.find((f) => f.key === child.field)
-  if (field) {
-    child.label = field.label
-    if (field.fieldType === 'date') {
-      child.renderType = 'date'
-      child.dateFormat = 'YYYY/MM/DD'
-    } else if (!child.renderType || child.renderType === 'text') {
-      child.renderType = 'text'
-    }
-  }
-}
-
-function onRenderTypeChange(col: FormTemplateColumn) {
-  if (col.renderType === 'barcode') {
-    col.barcodeConfig = { format: 'code128', width: 120, height: 40 }
-  } else if (col.renderType === 'qrcode') {
-    col.barcodeConfig = { format: 'qrcode', width: 60, height: 60 }
-  } else {
-    col.barcodeConfig = undefined
-  }
-}
-
-function onChildRenderTypeChange(child: FormTemplateColumnChild) {
-  if (child.renderType === 'barcode') {
-    child.barcodeConfig = { format: 'code128', width: 120, height: 40 }
-  } else if (child.renderType === 'qrcode') {
-    child.barcodeConfig = { format: 'qrcode', width: 60, height: 60 }
-  } else {
-    child.barcodeConfig = undefined
-  }
-}
-
-function setBarcodeFormat(col: FormTemplateColumn, format: string) {
-  if (!col.barcodeConfig) {
-    const isBarcode = col.renderType === 'barcode'
-    col.barcodeConfig = {
-      format: format as BarcodeConfig['format'],
-      width: isBarcode ? 120 : 60,
-      height: isBarcode ? 40 : 60,
-    }
-  } else {
-    col.barcodeConfig.format = format as BarcodeConfig['format']
-  }
-}
-
-function setBarcodeSize(col: FormTemplateColumn, prop: 'width' | 'height', value: number) {
-  if (!col.barcodeConfig) {
-    col.barcodeConfig = {
-      format: col.renderType === 'barcode' ? 'code128' : 'qrcode',
-      width: prop === 'width' ? value : (col.renderType === 'barcode' ? 120 : 60),
-      height: prop === 'height' ? value : (col.renderType === 'barcode' ? 40 : 60),
-    }
-  } else {
-    col.barcodeConfig[prop] = value
-  }
-}
-
-function setChildBarcodeFormat(child: FormTemplateColumnChild, format: string) {
-  if (!child.barcodeConfig) {
-    const isBarcode = child.renderType === 'barcode'
-    child.barcodeConfig = {
-      format: format as BarcodeConfig['format'],
-      width: isBarcode ? 120 : 60,
-      height: isBarcode ? 40 : 60,
-    }
-  } else {
-    child.barcodeConfig.format = format as BarcodeConfig['format']
-  }
-}
-
-function setChildBarcodeSize(child: FormTemplateColumnChild, prop: 'width' | 'height', value: number) {
-  if (!child.barcodeConfig) {
-    child.barcodeConfig = {
-      format: child.renderType === 'barcode' ? 'code128' : 'qrcode',
-      width: prop === 'width' ? value : (child.renderType === 'barcode' ? 120 : 60),
-      height: prop === 'height' ? value : (child.renderType === 'barcode' ? 40 : 60),
-    }
-  } else {
-    child.barcodeConfig[prop] = value
-  }
-}
-
-function isAutoWidth(width: number | 'auto' | string | undefined): boolean {
-  return width === 'auto' || width === '*' || width === undefined
-}
-
-function setWidthMode(col: FormTemplateColumn, mode: string) {
-  col.width = mode === 'auto' ? 'auto' : 100
-}
-
-function addChildContent(col: FormTemplateColumn) {
-  if (!col.children) {
-    col.children = []
-  }
-  const defaultField = availableFields.value[0]
-  col.children.push({
-    id: generateId(),
-    field: defaultField?.key || '',
-    label: defaultField?.label || '',
-    renderType: 'text',
-  })
-}
-
-function removeChildContent(col: FormTemplateColumn, index: number) {
-  if (!col.children) return
-  col.children.splice(index, 1)
-}
-
-function moveChildContent(col: FormTemplateColumn, index: number, direction: number) {
-  if (!col.children) return
-  const newIndex = index + direction
-  if (newIndex < 0 || newIndex >= col.children.length) return
-
-  const temp = col.children[index]
-  const newIndexChild = col.children[newIndex]
-  if (!temp || !newIndexChild) return
-  col.children[index] = newIndexChild
-  col.children[newIndex] = temp
-}
-
-// ========== ヘッダー・フッター項目管理 ==========
-
-function getPositionLabel(position: string): string {
-  switch (position) {
-    case 'header': return t('wms.formEditor.header', 'ヘッダー')
-    case 'footer': return t('wms.formEditor.footer', 'フッター')
-    case 'title': return t('wms.formEditor.titleLabel', 'タイトル')
-    default: return position
-  }
-}
-
-function getPositionBadgeClass(position: string): string {
-  switch (position) {
-    case 'header': return 'success'
-    case 'footer': return 'warning'
-    case 'title': return 'primary'
-    default: return 'info'
-  }
-}
-
-function getTypeLabel(type: string): string {
-  switch (type) {
-    case 'text': return t('wms.formEditor.text', 'テキスト')
-    case 'columns': return t('wms.formEditor.columns', 'カラム')
-    case 'table': return t('wms.formEditor.table', 'テーブル')
-    default: return type
-  }
-}
-
-function getShowOnLabel(showOn: string): string {
-  switch (showOn) {
-    case 'all': return t('wms.formEditor.allPages', '全ページ')
-    case 'first': return t('wms.formEditor.firstOnly', '最初のみ')
-    case 'last': return t('wms.formEditor.lastOnly', '最後のみ')
-    default: return showOn
-  }
-}
-
-function addHeaderFooterItem() {
-  if (!template.value) return
-  if (!template.value.headerFooterItems) {
-    template.value.headerFooterItems = []
-  }
-
-  const newItem: HeaderFooterItem = {
-    id: generateId(),
-    position: 'header',
-    showOn: 'all',
-    type: 'text',
-    style: {
-      fontSize: 10,
-      alignment: 'center',
-    },
-    text: '',
-  }
-
-  template.value.headerFooterItems.push(newItem)
-}
-
-function removeHFItem(index: number) {
-  if (!template.value?.headerFooterItems) return
-  template.value.headerFooterItems.splice(index, 1)
-}
-
-function moveHFItem(index: number, direction: number) {
-  if (!template.value?.headerFooterItems) return
-  const items = template.value.headerFooterItems
-  const newIndex = index + direction
-  if (newIndex < 0 || newIndex >= items.length) return
-
-  const temp = items[index]
-  const other = items[newIndex]
-  if (!temp || !other) return
-  items[index] = other
-  items[newIndex] = temp
-}
-
-function onHFTypeChange(item: HeaderFooterItem) {
-  if (item.type === 'text') {
-    item.text = item.text || ''
-    item.columns = undefined
-    item.table = undefined
-  } else if (item.type === 'columns') {
-    item.columns = item.columns || [{ text: '', width: '*', alignment: 'left' }]
-    item.text = undefined
-    item.table = undefined
-  } else if (item.type === 'table') {
-    item.table = item.table || { widths: ['*', '*'], body: [['', '']] }
-    item.text = undefined
-    item.columns = undefined
-  }
-}
-
-function addHFColumn(item: HeaderFooterItem) {
-  if (!item.columns) {
-    item.columns = []
-  }
-  item.columns.push({ text: '', width: '*', alignment: 'left' })
-}
-
-function removeHFColumn(item: HeaderFooterItem, index: number) {
-  if (!item.columns) return
-  item.columns.splice(index, 1)
-}
-
-function addHFTableRow(item: HeaderFooterItem) {
-  if (!item.table) {
-    item.table = { widths: ['*'], body: [['']] }
-    return
-  }
-  const colCount = item.table.body[0]?.length || 1
-  item.table.body.push(Array(colCount).fill(''))
-}
-
-function addHFTableCol(item: HeaderFooterItem) {
-  if (!item.table) {
-    item.table = { widths: ['*'], body: [['']] }
-    return
-  }
-  item.table.widths = item.table.widths || []
-  item.table.widths.push('*')
-  for (const row of item.table.body) {
-    row.push('')
-  }
-}
-
-function removeHFTableRow(item: HeaderFooterItem, rowIndex: number) {
-  if (!item.table?.body) return
-  item.table.body.splice(rowIndex, 1)
-}
-
-function removeHFTableCol(item: HeaderFooterItem, colIndex: number) {
-  if (!item.table?.body) return
-  item.table.widths?.splice(colIndex, 1)
-  for (const row of item.table.body) {
-    row.splice(colIndex, 1)
-  }
-}
-
-function updateTableCell(item: HeaderFooterItem, rowIdx: number, cellIdx: number, value: string) {
-  if (!item.table?.body?.[rowIdx]) return
-  item.table.body[rowIdx][cellIdx] = value
-}
-
-function setTableStyle(item: HeaderFooterItem, key: string, value: any) {
-  if (!item.table) {
-    item.table = { widths: ['*'], body: [['']], tableStyle: {} }
-  }
-  if (!item.table.tableStyle) {
-    item.table.tableStyle = {}
-  }
-  ;(item.table.tableStyle as any)[key] = value
 }
 
 async function handleSave() {

@@ -583,14 +583,7 @@ import CustomExportDialog from '@/components/export/CustomExportDialog.vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import { useShipmentOrderDraftStore } from '@/stores/shipmentOrderDraft'
-import { fetchProducts } from '@/api/product'
-import type { Product } from '@/types/product'
-import { fetchCarriers } from '@/api/carrier'
-import type { Carrier } from '@/types/carrier'
 import type { UserOrderRow } from '@/types/orderRow'
-import { fetchOrderSourceCompanies } from '@/api/orderSourceCompany'
-import type { OrderSourceCompany } from '@/types/orderSourceCompany'
-import { fetchShipmentOrders } from '@/api/shipmentOrders'
 import { useOrderValidation } from './composables/useOrderValidation'
 import { useOrderHold } from './composables/useOrderHold'
 import { useOrderBulkActions } from './composables/useOrderBulkActions'
@@ -604,6 +597,8 @@ import { useOrderCarrierExport } from './composables/useOrderCarrierExport'
 import { useOrderDuplicateCheck } from './composables/useOrderDuplicateCheck'
 import { useColumnVisibility } from './composables/useColumnVisibility'
 import { useOrderKeyboard } from './composables/useOrderKeyboard'
+import { useOrderBatchBar } from './composables/useOrderBatchBar'
+import { useOrderDataLoader } from './composables/useOrderDataLoader'
 import { resolveImageUrl } from '@/utils/imageUrl'
 import noImageSrc from '@/assets/images/no_image.png'
 
@@ -617,20 +612,16 @@ const toast = useToast()
 const draftStore = useShipmentOrderDraftStore()
 const { allRows, heldRowIds } = storeToRefs(draftStore)
 
-// --- マスターデータ ---
-const orderSourceCompanies = ref<OrderSourceCompany[]>([])
-const products = ref<Product[]>([])
-const carriers = ref<Carrier[]>([])
-
 // --- ダイアログ状態 ---
 const showCarrierImportDialog = ref(false)
-const isLoadingPendingWaybill = ref(false)
-
-// --- 送り状未発行注文（バックエンドから取得） ---
-const pendingWaybillRows = ref<UserOrderRow[]>([])
 
 // --- フィルター・表示 ---
 const displayFilter = ref<'pending_confirm' | 'processing' | 'pending_waybill' | 'held'>('pending_confirm')
+
+// --- マスターデータ・バックエンド注文読み込み ---
+let _reapplyProductDefaults: () => void = () => {}
+const dataLoader = useOrderDataLoader(toast, t, () => _reapplyProductDefaults())
+const { orderSourceCompanies, products, carriers, pendingWaybillRows, isLoadingPendingWaybill, loadPendingWaybillOrders, loadAllMasterData } = dataLoader
 
 // --- 循環依存を解消するための遅延参照 ---
 let _isHeld: (id: string | number) => boolean = () => false
@@ -709,17 +700,43 @@ const {
   hasDeliverySpec,
 } = table
 
-// --- CSV/Excel出力ダイアログ ---
-const customExportDialogVisible = ref(false)
-const customExportOrders = computed(() => {
-  if (tableSelectedKeys.value.length > 0) {
-    return sortedRows.value.filter(r => tableSelectedKeys.value.includes(r.id))
-  }
-  return sortedRows.value
-})
-const openExportDialog = () => {
-  customExportDialogVisible.value = true
-}
+// --- バッチアクションバー composable ---
+const batchBar = useOrderBatchBar(
+  {
+    displayFilter,
+    tableSelectedKeys,
+    sortedRows,
+    bundleModeEnabled,
+    isSubmitting: computed(() => isSubmitting.value),
+    backendErrorCount: computed(() => backendErrorCount.value),
+    b2Validating: computed(() => b2Validating.value),
+    isAutoValidating: computed(() => isAutoValidating.value),
+    b2Exporting: computed(() => b2Exporting.value),
+    canSendToB2Cloud: computed(() => canSendToB2Cloud.value),
+  },
+  {
+    bundleMerge: () => handleBundleMergeAllSelected(),
+    unbundle: () => handleUnbundleSelected(),
+    shipPlanDate: () => { shipPlanDateDialogVisible.value = true },
+    senderBulk: () => { senderBulkDialogVisible.value = true },
+    carrierBulk: () => { carrierBulkDialogVisible.value = true },
+    submit: () => handleSubmitClick(),
+    clearSelected: () => handleBatchDeleteFromBar(),
+    holdToggle: () => toggleHoldSelected(),
+    showErrorDetail: () => { submitErrorDialogVisible.value = true },
+    deletePending: () => handleDeletePending(),
+    confirmPrintReady: () => handleConfirmPrintReady(),
+    reloadPending: () => loadPendingWaybillOrders(),
+    b2Export: () => handleB2Export(),
+    carrierExport: () => handleCarrierExport(),
+    clearBackendErrors: () => clearBackendErrors(),
+    releaseHold: () => handleReleaseHold(),
+    deleteHeld: () => handleDeleteHeld(),
+    exportCsv: () => { /* handled internally by composable */ },
+  },
+  t,
+)
+const { batchActions, handleBatchAction, handleSelectAll, customExportDialogVisible, customExportOrders } = batchBar
 
 // --- 列表示設定 composable ---
 const {
@@ -730,7 +747,7 @@ const {
   showColumnSettingsDialog,
 } = useColumnVisibility(displayColumns)
 
-// --- バリデーション composable ---
+// --- フォーム composable ---
 const form = useOrderForm(allRows, products, (row) => getRowErrorMessages(row), loadPendingWaybillOrders, toast)
 const {
   showDialog,
@@ -743,6 +760,7 @@ const {
   handleImportClick,
   reapplyProductDefaults,
 } = form
+_reapplyProductDefaults = reapplyProductDefaults
 
 // --- B2 Cloud composable ---
 const b2cloud = useOrderB2Cloud(
@@ -878,106 +896,6 @@ const {
 // --- 重複チェック composable ---
 const { isDuplicate, isDuplicateLocal, isDuplicateBackend } = useOrderDuplicateCheck(allRows, pendingWaybillRows)
 
-// --- バッチアクションバー ---
-const batchActions = computed(() => {
-  if (displayFilter.value === 'pending_confirm') {
-    if (bundleModeEnabled.value) {
-      return [
-        { id: 'bundle-merge', label: t('wms.shipmentOrder.bundle', '同梱する'), variant: 'primary' as const },
-        { id: 'unbundle', label: t('wms.shipmentOrder.unbundle', '同梱を解除する'), variant: 'warning' as const },
-      ]
-    }
-    const noSel = tableSelectedKeys.value.length === 0
-    const actions: Array<{ id: string; label: string; icon?: string; variant?: 'primary' | 'danger' | 'secondary' | 'warning'; position?: 'left' | 'right'; separated?: boolean; disabled?: boolean }> = [
-      { id: 'ship-plan-date', label: t('wms.shipmentOrder.shipPlanDateBulkSetting', '出荷予定日一括設定'), variant: 'primary', position: 'left', disabled: noSel },
-      { id: 'sender-bulk', label: t('wms.shipmentOrder.senderBulkSetting', 'ご依頼主情報の一括設定'), variant: 'primary', position: 'left', disabled: noSel },
-      { id: 'carrier-bulk', label: t('wms.shipmentOrder.carrierBulkSetting', '配送業者一括設定'), variant: 'primary', position: 'left', disabled: noSel },
-      { id: 'clear-selected', label: t('wms.common.delete', '削除'), variant: 'danger', position: 'left', disabled: noSel },
-      { id: 'export-csv', label: t('wms.shipmentOrder.csvExport', 'CSV出力'), variant: 'secondary', position: 'left' },
-      { id: 'hold-toggle', label: t('wms.shipmentOrder.holdToggle', '保留切替'), variant: 'secondary', disabled: noSel },
-      { id: 'submit', label: isSubmitting.value ? t('wms.shipmentOrder.confirming', '確認中...') : t('wms.shipmentOrder.confirmShipmentAction', '出荷確認する'), variant: 'primary', separated: true, disabled: noSel || isSubmitting.value },
-    ]
-    if (backendErrorCount.value > 0) {
-      actions.push({ id: 'show-error-detail', label: t('wms.shipmentOrder.errorDetail', 'エラー詳細'), variant: 'danger' })
-    }
-    return actions
-  }
-  if (displayFilter.value === 'processing') {
-    const noSel = tableSelectedKeys.value.length === 0
-    return [
-      { id: 'delete-pending', label: t('wms.common.delete', '削除'), variant: 'danger' as const, position: 'left' as const, disabled: noSel },
-      { id: 'export-csv', label: t('wms.shipmentOrder.csvExport', 'CSV出力'), variant: 'secondary' as const, position: 'left' as const },
-      { id: 'confirm-print-ready', label: (b2Validating.value || isAutoValidating.value) ? t('wms.shipmentOrder.confirming', '確定中...') : t('wms.shipmentOrder.revalidate', '再検証'), variant: 'success' as const, disabled: noSel || b2Validating.value || isAutoValidating.value },
-    ]
-  }
-  if (displayFilter.value === 'pending_waybill') {
-    const noSel = tableSelectedKeys.value.length === 0
-    return [
-      { id: 'delete-pending', label: t('wms.common.delete', '削除'), icon: 'delete', variant: 'danger' as const, position: 'left' as const, disabled: noSel },
-      { id: 'export-csv', label: t('wms.shipmentOrder.csvExport', 'CSV出力'), variant: 'secondary' as const, position: 'left' as const },
-      { id: 'b2-export', label: b2Exporting.value ? t('wms.shipmentOrder.processing', '処理中...') : t('wms.shipmentOrder.b2CloudCreateSlip', 'B2 Cloudで伝票作成'), variant: 'success' as const, disabled: !canSendToB2Cloud.value || b2Exporting.value },
-      { id: 'carrier-export', label: t('wms.shipmentOrder.carrierDataExport', '配送業者データ出力'), variant: 'primary' as const, disabled: noSel },
-    ]
-  }
-  if (displayFilter.value === 'held') {
-    const noSel = tableSelectedKeys.value.length === 0
-    return [
-      { id: 'delete-held', label: t('wms.common.delete', '削除'), variant: 'danger' as const, position: 'left' as const, disabled: noSel },
-      { id: 'export-csv', label: t('wms.shipmentOrder.csvExport', 'CSV出力'), variant: 'secondary' as const, position: 'left' as const },
-      { id: 'release-hold', label: t('wms.shipmentOrder.releaseHold', '保留解除'), variant: 'primary' as const, disabled: noSel },
-    ]
-  }
-  return []
-})
-
-const handleBatchAction = (actionId: string) => {
-  switch (actionId) {
-    case 'bundle-merge': handleBundleMergeAllSelected(); break
-    case 'unbundle': handleUnbundleSelected(); break
-    case 'ship-plan-date': shipPlanDateDialogVisible.value = true; break
-    case 'sender-bulk': senderBulkDialogVisible.value = true; break
-    case 'carrier-bulk': carrierBulkDialogVisible.value = true; break
-    case 'submit': handleSubmitClick(); break
-    case 'clear-selected': handleBatchDeleteFromBar(); break
-    case 'hold-toggle': toggleHoldSelected(); break
-    case 'show-error-detail': submitErrorDialogVisible.value = true; break
-    case 'delete-pending': handleDeletePending(); break
-    case 'confirm-print-ready': handleConfirmPrintReady(); break
-    case 'reload-pending': loadPendingWaybillOrders(); break
-    case 'b2-export': handleB2Export(); break
-    case 'carrier-export': handleCarrierExport(); break
-    case 'clear-backend-errors': clearBackendErrors(); break
-    case 'release-hold': handleReleaseHold(); break
-    case 'delete-held': handleDeleteHeld(); break
-    case 'export-csv': openExportDialog(); break
-  }
-}
-
-const handleSelectAll = () => {
-  tableSelectedKeys.value = sortedRows.value.map((r) => r.id)
-}
-
-// --- バックエンド注文の読み込み ---
-let loadPendingWaybillVersion = 0
-
-async function loadPendingWaybillOrders() {
-  const version = ++loadPendingWaybillVersion
-  try {
-    isLoadingPendingWaybill.value = true
-    const orders = await fetchShipmentOrders({ limit: 500 })
-    if (version !== loadPendingWaybillVersion) return
-    pendingWaybillRows.value = (orders || [])
-      .map((o: any) => ({ ...o, id: o._id } as UserOrderRow))
-  } catch (err: any) {
-    if (version !== loadPendingWaybillVersion) return
-    // 注文取得失敗はトーストで通知済み / Order fetch failure notified via toast
-    toast.showError(t('wms.shipmentOrder.fetchOrdersFailed', '注文の取得に失敗しました'))
-  } finally {
-    if (version === loadPendingWaybillVersion) {
-      isLoadingPendingWaybill.value = false
-    }
-  }
-}
 
 // --- フィルター変更時の処理 ---
 watch(displayFilter, (val) => {
@@ -987,34 +905,6 @@ watch(displayFilter, (val) => {
   }
 })
 
-// --- マスターデータ読み込み ---
-const loadOrderSourceCompanies = async () => {
-  try {
-    orderSourceCompanies.value = await fetchOrderSourceCompanies()
-  } catch (error) {
-    // ご依頼主リスト読み込み失敗 / Failed to load order source companies
-    toast.showError(t('wms.shipmentOrder.fetchSendersFailed', 'ご依頼主リストの読み込みに失敗しました'))
-  }
-}
-
-const loadProductsCache = async () => {
-  try {
-    products.value = await fetchProducts()
-    reapplyProductDefaults()
-  } catch (error) {
-    // 商品マスタ取得失敗 / Failed to fetch products
-    toast.showError(t('wms.shipmentOrder.fetchProductsFailed', '商品マスタの取得に失敗しました'))
-  }
-}
-
-const loadCarriers = async () => {
-  try {
-    carriers.value = await fetchCarriers({ enabled: true })
-  } catch (error) {
-    // 配送業者マスタ取得失敗 / Failed to fetch carriers
-    toast.showError(t('wms.shipmentOrder.fetchCarriersFailed', '配送業者マスタの取得に失敗しました'))
-  }
-}
 
 // --- キーボードショートカット ---
 useOrderKeyboard(tableSelectedKeys, sortedRows, {
@@ -1022,15 +912,12 @@ useOrderKeyboard(tableSelectedKeys, sortedRows, {
   deselectAll: () => { tableSelectedKeys.value = [] },
   deleteSelected: handleBatchDeleteFromBar,
   submitSelected: handleSubmitClick,
-  exportCsv: openExportDialog,
+  exportCsv: () => { customExportDialogVisible.value = true },
 })
 
 // --- 初期化 ---
 onMounted(() => {
-  loadOrderSourceCompanies()
-  loadProductsCache()
-  loadCarriers()
-  loadPendingWaybillOrders()
+  loadAllMasterData()
   restoreBundleCookies()
   draftStore.loadFromStorage()
 })
