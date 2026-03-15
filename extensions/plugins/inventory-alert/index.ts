@@ -1,8 +1,8 @@
 /**
  * inventory-alert 插件 / 在庫アラートプラグイン
  *
- * 监听 inventory.changed 事件，当库存低于阈值时记录警告日志。
- * inventory.changed イベントを監視し、在庫が閾値を下回ったら警告ログを記録する。
+ * 监听 inventory.changed / stock.released 事件，当库存低于阈值时记录警告日志。
+ * inventory.changed / stock.released イベントを監視し、在庫が閾値を下回ったら警告ログを記録する。
  *
  * 这是一个示例插件，演示插件开发规范。
  * これはサンプルプラグインで、プラグイン開発規範を示す。
@@ -27,7 +27,7 @@ const plugin = {
       'inventory.changed',
       async (hookCtx: any) => {
         const config = await ctx.getConfig(hookCtx.tenantId);
-        const threshold = (config.threshold as number) ?? 10;
+        const threshold = (config.threshold as number) ?? 5;
         const enabled = config.enabled !== false;
 
         if (!enabled) return;
@@ -40,6 +40,31 @@ const plugin = {
           ctx.logger.warn(
             { sku, currentStock, threshold },
             `[inventory-alert] Low stock detected / 低在庫検出: ${sku} = ${currentStock} (threshold: ${threshold})`,
+          );
+        }
+      },
+      { priority: 80, async: true },
+    );
+
+    // 注册 Hook: stock.released / Hook を登録: stock.released
+    // 库存释放时检查剩余库存 / 在庫リリース時に残り在庫をチェック
+    ctx.registerHook(
+      'stock.released',
+      async (hookCtx: any) => {
+        const config = await ctx.getConfig(hookCtx.tenantId);
+        const threshold = (config.threshold as number) ?? 5;
+        const enabled = config.enabled !== false;
+
+        if (!enabled) return;
+
+        const payload = hookCtx.payload;
+        const remainingStock = (payload.remainingStock ?? payload.currentStock) as number | undefined;
+        const sku = payload.sku as string | undefined;
+
+        if (remainingStock !== undefined && remainingStock < threshold) {
+          ctx.logger.warn(
+            { sku, remainingStock, threshold },
+            `[inventory-alert] Low stock after release / リリース後低在庫検出: ${sku} = ${remainingStock} (threshold: ${threshold})`,
           );
         }
       },

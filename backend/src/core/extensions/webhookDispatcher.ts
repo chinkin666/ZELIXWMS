@@ -16,6 +16,100 @@ import { logger } from '@/lib/logger';
 import { Webhook } from '@/models/webhook';
 import { WebhookLog } from '@/models/webhookLog';
 
+/**
+ * 各イベントのテスト用サンプルペイロード / 各事件的测试示例载荷
+ *
+ * 06-event-payloads.md に準拠した構造。
+ * 按照 06-event-payloads.md 的结构定义。
+ */
+const TEST_PAYLOADS: Record<string, Record<string, unknown>> = {
+  'order.created': {
+    orderId: 'test-order-001',
+    orderNumber: 'SH20260316-TEST001',
+  },
+  'order.confirmed': {
+    orderId: 'test-order-001',
+    order: { _id: 'test-order-001', orderNumber: 'SH20260316-TEST001', status: 'confirmed' },
+  },
+  'order.shipped': {
+    orderId: 'test-order-001',
+    order: { _id: 'test-order-001', orderNumber: 'SH20260316-TEST001', status: 'shipped' },
+  },
+  'order.cancelled': {
+    orderId: 'test-order-001',
+    reason: 'deleted',
+    orderNumber: 'SH20260316-TEST001',
+  },
+  'order.held': {
+    orderId: 'test-order-001',
+    order: { _id: 'test-order-001', orderNumber: 'SH20260316-TEST001', status: 'held' },
+  },
+  'order.unheld': {
+    orderId: 'test-order-001',
+    order: { _id: 'test-order-001', orderNumber: 'SH20260316-TEST001', status: 'confirmed' },
+  },
+  'inventory.changed': {
+    orderId: 'test-order-001',
+    type: 'outbound',
+    movedCount: 5,
+  },
+  'stock.reserved': {
+    orderId: 'test-order-001',
+    orderNumber: 'SH20260316-TEST001',
+    reservationCount: 3,
+    errors: [],
+  },
+  'stock.released': {
+    orderId: 'test-order-001',
+    cancelledCount: 3,
+  },
+  'wave.created': {
+    waveId: 'test-wave-001',
+    waveNumber: 'WV20260316-TEST001',
+    shipmentCount: 10,
+  },
+  'wave.completed': {
+    waveId: 'test-wave-001',
+    waveNumber: 'WV20260316-TEST001',
+  },
+  'task.created': {
+    taskId: 'test-task-001',
+    taskNumber: 'WT-20260316-TEST1',
+    type: 'picking',
+    productSku: 'SKU-TEST-001',
+    referenceNumber: 'REF-TEST-001',
+  },
+  'task.completed': {
+    taskId: 'test-task-001',
+    taskNumber: 'WT-20260316-TEST1',
+    type: 'picking',
+    completedQuantity: 10,
+    durationMs: 45000,
+    productSku: 'SKU-TEST-001',
+    referenceNumber: 'REF-TEST-001',
+  },
+  'inbound.received': {
+    orderId: 'test-inbound-001',
+    orderNumber: 'IN20260316-TEST001',
+  },
+  'inbound.putaway.completed': {
+    orderId: 'test-inbound-001',
+    orderNumber: 'IN20260316-TEST001',
+  },
+  'return.completed': {
+    returnOrderId: 'test-return-001',
+    returnNumber: 'RT20260316-TEST001',
+    restockedTotal: 5,
+    disposedTotal: 2,
+  },
+  'stocktaking.completed': {
+    orderId: 'test-stocktaking-001',
+    orderNumber: 'ST20260316-TEST001',
+    adjustedCount: 3,
+    errorCount: 0,
+  },
+};
+
 /** Webhook 请求体格式 / Webhook リクエストボディフォーマット */
 interface WebhookPayload {
   event: string;
@@ -152,11 +246,16 @@ export class WebhookDispatcher {
     const webhook = await Webhook.findById(webhookId).lean();
     if (!webhook) throw new Error('Webhook not found / Webhook が見つかりません');
 
+    // Webhook に設定されたイベントを使用し、対応するサンプルペイロードを送信
+    // 使用 Webhook 配置的事件，发送对应的示例载荷
+    const testEvent = webhook.event;
+    const sampleData = TEST_PAYLOADS[testEvent] ?? { test: true, message: 'Webhook test from ZELIX WMS' };
+
     const body: WebhookPayload = {
-      event: 'test',
+      event: testEvent,
       timestamp: new Date().toISOString(),
       deliveryId: crypto.randomUUID(),
-      data: { test: true, message: 'Webhook test from ZELIX WMS' },
+      data: { ...sampleData, _test: true },
     };
 
     const bodyStr = JSON.stringify(body);
@@ -169,7 +268,7 @@ export class WebhookDispatcher {
         headers: {
           'Content-Type': 'application/json',
           'X-Webhook-Signature': `sha256=${signature}`,
-          'X-Webhook-Event': 'test',
+          'X-Webhook-Event': testEvent,
           'X-Webhook-Delivery': body.deliveryId,
           ...(webhook.headers || {}),
         },
@@ -182,7 +281,7 @@ export class WebhookDispatcher {
 
       // 记录测试日志 / テストログを記録
       await this.writeLog(
-        webhook._id, 'test', body,
+        webhook._id, testEvent, body,
         response.ok ? 'success' : 'failed',
         response.status, responseBody.slice(0, 5000), 1, duration,
         response.ok ? undefined : `HTTP ${response.status}`,
