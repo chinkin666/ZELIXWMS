@@ -86,17 +86,17 @@ const tableColumns: TableColumn[] = [
   { key: 'period', dataKey: 'period', title: '期間', width: 100, fieldType: 'string' },
   { key: 'clientName', dataKey: 'clientName', title: '荷主', width: 160, fieldType: 'string' },
   { key: 'carrierName', dataKey: 'carrierName', title: '配送業者', width: 140, fieldType: 'string' },
-  { key: 'shipmentCount', dataKey: 'shipmentCount', title: '出荷件数', width: 100, fieldType: 'number',
+  { key: 'orderCount', dataKey: 'orderCount', title: '出荷件数', width: 100, fieldType: 'number',
     cellRenderer: ({ rowData }: { rowData: BillingRecord }) =>
-      h('span', { style: 'text-align:right;display:block;' }, rowData.shipmentCount.toLocaleString()),
+      h('span', { style: 'text-align:right;display:block;' }, (rowData.orderCount || 0).toLocaleString()),
   },
-  { key: 'shippingFee', dataKey: 'shippingFee', title: '配送料金', width: 120, fieldType: 'number',
+  { key: 'totalShippingCost', dataKey: 'totalShippingCost', title: '配送料金', width: 120, fieldType: 'number',
     cellRenderer: ({ rowData }: { rowData: BillingRecord }) =>
-      h('span', { style: 'text-align:right;display:block;' }, `\u00A5${rowData.shippingFee.toLocaleString()}`),
+      h('span', { style: 'text-align:right;display:block;' }, `\u00A5${(rowData.totalShippingCost || 0).toLocaleString()}`),
   },
   { key: 'totalAmount', dataKey: 'totalAmount', title: '合計', width: 120, fieldType: 'number',
     cellRenderer: ({ rowData }: { rowData: BillingRecord }) =>
-      h('span', { style: 'text-align:right;display:block;font-weight:600;' }, `\u00A5${rowData.totalAmount.toLocaleString()}`),
+      h('span', { style: 'text-align:right;display:block;font-weight:600;' }, `\u00A5${(rowData.totalAmount || 0).toLocaleString()}`),
   },
   { key: 'status', dataKey: 'status', title: 'ステータス', width: 100, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: BillingRecord }) =>

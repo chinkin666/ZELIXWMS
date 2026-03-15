@@ -12,19 +12,19 @@
       <!-- KPIカード / KPIカード -->
       <div class="kpi-grid">
         <div class="kpi-card">
-          <div class="kpi-value">{{ kpi.monthlyShipmentCount.toLocaleString() }}</div>
+          <div class="kpi-value">{{ (kpi.monthlyOrderCount || 0).toLocaleString() }}</div>
           <div class="kpi-label">当月出荷件数</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-value">&yen;{{ kpi.monthlyShippingFee.toLocaleString() }}</div>
+          <div class="kpi-value">&yen;{{ (kpi.monthlyShippingCost || 0).toLocaleString() }}</div>
           <div class="kpi-label">当月配送料金</div>
         </div>
         <div class="kpi-card kpi-card--warning">
-          <div class="kpi-value">&yen;{{ kpi.unbilledAmount.toLocaleString() }}</div>
+          <div class="kpi-value">&yen;{{ (kpi.unbilledAmount || 0).toLocaleString() }}</div>
           <div class="kpi-label">未請求額</div>
         </div>
         <div class="kpi-card kpi-card--danger">
-          <div class="kpi-value">&yen;{{ kpi.unpaidAmount.toLocaleString() }}</div>
+          <div class="kpi-value">&yen;{{ (kpi.unpaidAmount || 0).toLocaleString() }}</div>
           <div class="kpi-label">未入金額</div>
         </div>
       </div>
@@ -50,8 +50,8 @@
                 <td class="o-table-td">{{ row.period }}</td>
                 <td class="o-table-td">{{ row.clientName }}</td>
                 <td class="o-table-td">{{ row.carrierName }}</td>
-                <td class="o-table-td o-table-td--right">{{ row.shipmentCount.toLocaleString() }}</td>
-                <td class="o-table-td o-table-td--right">&yen;{{ row.totalAmount.toLocaleString() }}</td>
+                <td class="o-table-td o-table-td--right">{{ (row.orderCount || 0).toLocaleString() }}</td>
+                <td class="o-table-td o-table-td--right">&yen;{{ (row.totalAmount || 0).toLocaleString() }}</td>
                 <td class="o-table-td">
                   <span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span>
                 </td>

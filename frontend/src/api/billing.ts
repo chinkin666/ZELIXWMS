@@ -32,12 +32,16 @@ export type BillingStatus = 'draft' | 'confirmed' | 'invoiced' | 'paid'
 export interface BillingRecord {
   _id: string
   period: string
-  clientCode: string
-  clientName: string
-  carrierCode: string
-  carrierName: string
-  shipmentCount: number
-  shippingFee: number
+  clientId?: string
+  clientName?: string
+  carrierId?: string
+  carrierName?: string
+  orderCount: number
+  totalQuantity: number
+  totalShippingCost: number
+  handlingFee: number
+  storageFee: number
+  otherFees: number
   totalAmount: number
   status: BillingStatus
   confirmedAt?: string
@@ -66,10 +70,11 @@ export interface Invoice {
 
 // ── ダッシュボードKPI型定義 / ダッシュボードKPI型定義 ──
 export interface BillingDashboardKpi {
-  monthlyShipmentCount: number
-  monthlyShippingFee: number
+  monthlyOrderCount: number
+  monthlyShippingCost: number
   unbilledAmount: number
   unpaidAmount: number
+  currentPeriod: string
   recentRecords: BillingRecord[]
 }
 
