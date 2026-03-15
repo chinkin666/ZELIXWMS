@@ -8,40 +8,50 @@ export interface SubMenuGroup {
   readonly items: SubMenuItem[]
 }
 
+// 主菜单: 仓库业务流程顺序 / メインメニュー: 倉庫業務フロー順
 export const wmsMenuItems: Array<{ label: string; to: string }> = [
+  { label: '商品管理', to: '/products' },
   { label: '入庫管理', to: '/inbound' },
   { label: '在庫管理', to: '/inventory' },
-  { label: '商品管理', to: '/products' },
-  { label: 'セット組管理', to: '/set-products' },
   { label: '出荷管理', to: '/shipment' },
-  { label: '棚卸管理', to: '/stocktaking' },
   { label: '返品管理', to: '/returns' },
+  { label: '棚卸管理', to: '/stocktaking' },
+  { label: 'セット組管理', to: '/set-products' },
   { label: '倉庫オペレーション', to: '/warehouse-ops' },
   { label: '日次管理', to: '/daily' },
-  { label: '設定管理', to: '/settings' },
+  { label: '設定', to: '/settings' },
 ]
 
+// 設定サイドバー / 设置侧边栏
 export const settingsGroups: SubMenuGroup[] = [
+  {
+    groupLabel: '基本・システム',
+    items: [
+      { label: '基本設定', to: '/settings/basic' },
+      { label: '応用設定', to: '/settings/system' },
+      { label: 'テナント管理', to: '/settings/tenants' },
+      { label: 'WMSスケジュール', to: '/settings/wms-schedules' },
+    ],
+  },
   {
     groupLabel: '出荷設定',
     items: [
-      { label: '基本設定', to: '/settings/basic' },
       { label: 'ご依頼主設定', to: '/settings/orderSourceCompany' },
       { label: '配送業者設定', to: '/settings/carrier' },
       { label: '配送業者自動化', to: '/settings/carrier-automation' },
       { label: '佐川急便設定', to: '/settings/sagawa' },
       { label: '出荷グループ', to: '/settings/order-groups' },
-      { label: '自動処理', to: '/settings/auto-processing' },
+      { label: '自動処理ルール', to: '/settings/auto-processing' },
       { label: '出荷メール設定', to: '/settings/email-templates' },
     ],
   },
   {
-    groupLabel: 'テンプレート',
+    groupLabel: 'テンプレート・印刷',
     items: [
       { label: 'ファイルレイアウト', to: '/settings/mapping-patterns' },
       { label: '印刷テンプレート', to: '/settings/print-templates' },
-      { label: 'プリンター設定', to: '/settings/printer' },
       { label: '帳票テンプレート', to: '/settings/form-templates' },
+      { label: 'プリンター設定', to: '/settings/printer' },
     ],
   },
   {
@@ -49,9 +59,10 @@ export const settingsGroups: SubMenuGroup[] = [
     items: [
       { label: '得意先一覧', to: '/settings/customers' },
       { label: '顧客（3PL荷主）', to: '/settings/clients' },
-      { label: '倉庫管理', to: '/settings/warehouses' },
       { label: '仕入先一覧', to: '/settings/suppliers' },
+      { label: '倉庫管理', to: '/settings/warehouses' },
       { label: '在庫区分', to: '/settings/inventory-categories' },
+      { label: 'ルール設定', to: '/settings/rules' },
     ],
   },
   {
@@ -65,21 +76,18 @@ export const settingsGroups: SubMenuGroup[] = [
     ],
   },
   {
-    groupLabel: 'システム',
+    groupLabel: 'ログ・監視',
     items: [
-      { label: 'テナント管理', to: '/settings/tenants' },
-      { label: 'ルール設定', to: '/settings/rules' },
-      { label: 'WMSスケジュール', to: '/settings/wms-schedules' },
-      { label: '応用設定', to: '/settings/system' },
       { label: '操作ログ', to: '/settings/operation-logs' },
       { label: 'API連携ログ', to: '/settings/api-logs' },
     ],
   },
 ]
 
+// 各セクションのサブメニュー / 各模块子菜单
 export const subMenuMap: Record<string, SubMenuItem[]> = {
   '/products': [
-    { label: '商品設定', to: '/products/list' },
+    { label: '商品一覧', to: '/products/list' },
     { label: 'バーコード管理', to: '/products/barcodes' },
   ],
   '/set-products': [
@@ -96,20 +104,20 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '出荷実績', to: '/shipment/results' },
   ],
   '/inbound': [
-    { label: '入庫ダッシュボード', to: '/inbound/dashboard' },
+    { label: 'ダッシュボード', to: '/inbound/dashboard' },
     { label: '入庫指示一覧', to: '/inbound/orders' },
     { label: '入庫指示作成', to: '/inbound/create' },
     { label: 'CSV取込', to: '/inbound/import' },
-    { label: '入庫実績', to: '/inbound/history' },
+    { label: '入庫履歴', to: '/inbound/history' },
   ],
   '/inventory': [
+    { label: '在庫ダッシュボード', to: '/inventory/ledger' },
     { label: '在庫一覧', to: '/inventory/stock' },
     { label: '入出庫履歴', to: '/inventory/movements' },
     { label: '在庫調整', to: '/inventory/adjustments' },
     { label: 'ロット管理', to: '/inventory/lots' },
     { label: '賞味期限アラート', to: '/inventory/expiry-alerts' },
     { label: 'ロケーション', to: '/inventory/locations' },
-    { label: '在庫台帳', to: '/inventory/ledger' },
   ],
   '/stocktaking': [
     { label: '棚卸一覧', to: '/stocktaking/list' },
