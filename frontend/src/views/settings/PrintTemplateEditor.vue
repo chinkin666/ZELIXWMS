@@ -103,6 +103,7 @@ import FieldPanel from './print-template-editor/FieldPanel.vue'
 import CanvasPreview from './print-template-editor/CanvasPreview.vue'
 import ElementEditor from './print-template-editor/ElementEditor.vue'
 import ElementList from './print-template-editor/ElementList.vue'
+import { useElementManagement } from './print-template-editor/useElementManagement'
 
 const route = useRoute()
 const router = useRouter()
@@ -131,6 +132,39 @@ const selectedRowIndex = ref<number>(0)
 
 const selectedId = ref<string>('')
 const selectedEl = computed<PrintElement | null>(() => template.value.elements.find((e) => e.id === selectedId.value) || null)
+
+// 要素管理コンポーザブル / 元素管理组合式函数
+const {
+  select,
+  toggleVisible,
+  toggleLocked,
+  moveLayer,
+  duplicateLayer,
+  removeSelected,
+  addText,
+  addBarcode,
+  addImage,
+  insertField,
+  clearImage: clearImageBase,
+  onImageFileChange: onImageFileChangeBase,
+} = useElementManagement({
+  template,
+  selectedId,
+  scheduleRender,
+  showToast,
+  t: $t,
+  syncTransformer,
+})
+
+/** clearImage ラッパー: selectedEl を自動注入 / clearImage wrapper: 自动注入 selectedEl */
+function clearImage() {
+  clearImageBase(selectedEl.value)
+}
+
+/** onImageFileChange ラッパー: selectedEl を自動注入 / onImageFileChange wrapper: 自动注入 selectedEl */
+function onImageFileChange(e: Event) {
+  onImageFileChangeBase(e, selectedEl.value)
+}
 
 const barcodeOptionsJson = ref<string>('{}')
 
@@ -507,88 +541,6 @@ async function save() {
   }
 }
 
-function select(id: string) {
-  selectedId.value = id
-  syncTransformer()
-}
-
-function toggleVisible(e: PrintElement) {
-  e.visible = e.visible === false ? true : false
-  scheduleRender()
-}
-
-function toggleLocked(e: PrintElement) {
-  e.locked = !e.locked
-  scheduleRender()
-}
-
-function moveLayer(idx: number, delta: -1 | 1) {
-  const list = template.value.elements
-  const to = idx + delta
-  if (to < 0 || to >= list.length) return
-  const [it] = list.splice(idx, 1)
-  if (!it) return
-  list.splice(to, 0, it)
-  scheduleRender()
-}
-
-function duplicateLayer(idx: number) {
-  const src = template.value.elements[idx]
-  if (!src) return
-  const cloned = JSON.parse(JSON.stringify(src)) as PrintElement
-  cloned.id = crypto.randomUUID?.() || Math.random().toString(36).slice(2)
-  cloned.name = `${src.name} copy`
-  cloned.xMm = (cloned.xMm ?? 0) + 2
-  cloned.yMm = (cloned.yMm ?? 0) + 2
-  template.value.elements.splice(idx + 1, 0, cloned)
-  selectedId.value = cloned.id
-  scheduleRender()
-}
-
-function removeSelected() {
-  if (!selectedId.value) return
-  template.value.elements = template.value.elements.filter((e) => e.id !== selectedId.value)
-  selectedId.value = ''
-  scheduleRender()
-}
-
-function insertField(key: string) {
-  const id = crypto.randomUUID?.() || Math.random().toString(36).slice(2)
-
-  const transformMapping: TransformMapping = {
-    targetField: 'text',
-    inputs: [
-      {
-        id: crypto.randomUUID?.() || Math.random().toString(36).slice(2),
-        type: 'column',
-        column: key,
-      },
-    ],
-    combine: {
-      plugin: 'combine.first',
-    },
-  }
-
-  const newElement: PrintTextElement = {
-    id,
-    name: `Text: ${key}`,
-    type: 'text',
-    xMm: 10,
-    yMm: 10 + template.value.elements.length * 15,
-    visible: true,
-    locked: false,
-    transformMapping,
-    fontFamily: 'sans-serif',
-    fontSizePt: 12,
-    align: 'left',
-    letterSpacingPx: 0,
-  }
-
-  template.value.elements.push(newElement)
-  selectedId.value = id
-  scheduleRender()
-  showToast($t('wms.printTemplate.textLayerAdded', `テキストレイヤーを追加しました: ${key}`), 'success')
-}
 
 function clearTableData() {
   uploadedTableData.value = []
@@ -987,108 +939,6 @@ async function render(seq?: number) {
   layer.draw()
 }
 
-function addText() {
-  const id = crypto.randomUUID?.() || Math.random().toString(36).slice(2)
-  template.value.elements.push({
-    id,
-    name: 'Text',
-    type: 'text',
-    xMm: 10,
-    yMm: 10,
-    visible: true,
-    locked: false,
-    fontFamily: 'sans-serif',
-    fontSizePt: 12,
-    align: 'left',
-    letterSpacingPx: 0,
-  } as any)
-  selectedId.value = id
-  scheduleRender()
-}
-
-function addBarcode() {
-  const id = crypto.randomUUID?.() || Math.random().toString(36).slice(2)
-  template.value.elements.push({
-    id,
-    name: 'Barcode',
-    type: 'barcode',
-    xMm: 10,
-    yMm: 20,
-    visible: true,
-    locked: false,
-    format: 'code128',
-    widthMm: 60,
-    heightMm: 18,
-    options: { includetext: false },
-  } as any)
-  selectedId.value = id
-  scheduleRender()
-}
-
-function addImage() {
-  const id = crypto.randomUUID?.() || Math.random().toString(36).slice(2)
-  template.value.elements.push({
-    id,
-    name: 'Image',
-    type: 'image',
-    xMm: 10,
-    yMm: 30,
-    visible: true,
-    locked: false,
-    imageData: '',
-    widthMm: 50,
-    heightMm: 50,
-  } as any)
-  selectedId.value = id
-  scheduleRender()
-}
-
-function clearImage() {
-  const el = selectedEl.value
-  if (el && el.type === 'image') {
-    (el as PrintImageElement).imageData = ''
-    scheduleRender()
-  }
-}
-
-function onImageFileChange(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input?.files?.[0]
-  if (!file) return
-
-  const el = selectedEl.value
-  if (!el || el.type !== 'image') {
-    showToast($t('wms.printTemplate.selectImageFirst', '画像要素を先に選択してください'), 'warning')
-    return
-  }
-
-  const reader = new FileReader()
-  reader.onload = (event) => {
-    const result = event.target?.result
-    if (typeof result === 'string') {
-      (el as PrintImageElement).imageData = result
-      const img = new Image()
-      img.onload = () => {
-        const aspectRatio = img.width / img.height
-        const currentWidth = (el as PrintImageElement).widthMm || 50
-        if (currentWidth > 0) {
-          (el as PrintImageElement).heightMm = currentWidth / aspectRatio
-        }
-        scheduleRender()
-      }
-      img.onerror = () => {
-        showToast($t('wms.printTemplate.imageLoadFailed', '画像の読み込みに失敗しました'), 'danger')
-      }
-      img.src = result
-    }
-  }
-  reader.onerror = () => {
-    showToast($t('wms.printTemplate.fileReadFailed', 'ファイルの読み取りに失敗しました'), 'danger')
-  }
-  reader.readAsDataURL(file)
-
-  if (input) input.value = ''
-}
 
 watch(
   () => [template.value.canvas.widthMm, template.value.canvas.heightMm, template.value.canvas.pxPerMm],

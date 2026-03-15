@@ -133,12 +133,12 @@ import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import { useAutoPrint } from '@/composables/useAutoPrint'
 import { useInspectionPrint } from '@/composables/useInspectionPrint'
+import { useOrderItemScanLogic } from './composables/useOrderItemScanLogic'
+import type { ProductItem } from './composables/useOrderItemScanLogic'
 import type { OrderDocument } from '@/types/order'
 import type { Carrier } from '@/types/carrier'
-import type { Product } from '@/types/product'
 import type { TableColumn } from '@/types/table'
 import { fetchCarriers } from '@/api/carrier'
-import { fetchProducts } from '@/api/product'
 import { fetchShipmentOrder, updateShipmentOrderStatus } from '@/api/shipmentOrders'
 import { getPrintConfig } from '@/utils/print/printConfig'
 import { yamatoB2Unconfirm, changeInvoiceType, isCarrierDeleteError } from '@/api/carrierAutomation'
@@ -160,34 +160,17 @@ const { t } = useI18n()
 // Composables
 const { autoPrintEnabled, saveAutoPrintSetting } = useAutoPrint('orderItemScan_autoPrintEnabled')
 const inspPrint = useInspectionPrint()
+const scanLogic = useOrderItemScanLogic()
+const { pendingItems, scannedItems, lastScanSuccess } = scanLogic
 
 // 订单数据
 const order = ref<OrderDocument | null>(null)
 
 const carriers = ref<Carrier[]>([])
 
-// 商品缓存
-const productCache = new Map<string, Product>()
-
-// 商品项类型
-interface ProductItem {
-  id: string
-  sku: string
-  name: string
-  quantity: number
-  productData?: Product
-}
-
-// 待扫描和已扫描的商品
-const pendingItems = ref<ProductItem[]>([])
-const scannedItems = ref<ProductItem[]>([])
-
 // 输入框
 const inputValue = ref('')
 const mainInputRef = ref<HTMLInputElement | null>(null)
-
-// スキャン成功フラッシュ / 扫描成功闪烁
-const lastScanSuccess = ref(false)
 
 // 完成弹窗
 const completionDialogVisible = ref(false)
@@ -356,11 +339,6 @@ const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrie
   }
 }
 
-// 加载商品信息
-const loadProductBySku = (sku: string): Product | null => {
-  return productCache.get(sku) || null
-}
-
 // 配送業者名称
 const carrierName = computed(() => {
   const id = order.value?.carrierId
@@ -456,183 +434,59 @@ const tableColumns = computed<TableColumn[]>(() => {
   ]
 })
 
-// 获取商品的所有匹配值
-const getProductMatchingValues = (item: ProductItem): string[] => {
-  const values: string[] = []
-
-  if (item.sku) {
-    values.push(item.sku)
-  }
-
-  const productData = item.productData
-  if (productData) {
-    if (Array.isArray(productData.subSkus)) {
-      for (const sub of productData.subSkus) {
-        if (sub?.subSku && sub.isActive !== false) {
-          values.push(sub.subSku)
-        }
-      }
-    }
-
-    if (Array.isArray(productData.barcode)) {
-      for (const barcode of productData.barcode) {
-        if (barcode) {
-          values.push(String(barcode))
-        }
-      }
-    }
-  }
-
-  return values
-}
-
-// 处理输入
+// スキャン入力処理 / 扫描输入处理
 const handleInput = () => {
   const input = inputValue.value.trim()
-  if (!input) {
-    toast.warning(t('wms.inspection.pleaseEnter', '入力してください'))
-    return
-  }
+  const result = scanLogic.processScan(input)
 
-  if (pendingItems.value.length === 0) {
-    toast.info(t('wms.inspection.noPendingProducts', 'スキャン待ちの商品がありません'))
-    return
-  }
-
-  let matchedItem: ProductItem | null = null
-  let matchedIndex = -1
-
-  for (let i = 0; i < pendingItems.value.length; i++) {
-    const item = pendingItems.value[i]
-    if (!item) continue
-    const matchingValues = getProductMatchingValues(item)
-    if (matchingValues.includes(input)) {
-      matchedItem = item
-      matchedIndex = i
-      break
-    }
-  }
-
-  if (!matchedItem || matchedIndex === -1) {
-    // 既にスキャン済みか確認 / 检查是否已扫描完成
-    const alreadyScanned = scannedItems.value.some(item => {
-      const matchValues = getProductMatchingValues(item)
-      return matchValues.includes(input)
-    })
-    if (alreadyScanned) {
+  switch (result.status) {
+    case 'empty':
+      toast.warning(t('wms.inspection.pleaseEnter', '入力してください'))
+      return
+    case 'no-pending':
+      toast.info(t('wms.inspection.noPendingProducts', 'スキャン待ちの商品がありません'))
+      return
+    case 'already-scanned':
       toast.warning('この商品は既にスキャン済みです / 该商品已扫描完成')
-    } else {
+      inputValue.value = ''
+      return
+    case 'no-match':
       toast.warning(t('wms.inspection.noMatchingProduct', 'マッチする商品が見つかりません') + `: ${input}`)
-    }
-    inputValue.value = ''
-    return
-  }
-
-  const scannedItem: ProductItem = {
-    id: `${matchedItem.sku}_scanned_${Date.now()}_${Math.random()}`,
-    sku: matchedItem.sku,
-    name: matchedItem.name,
-    quantity: 1,
-    productData: matchedItem.productData,
-  }
-  scannedItems.value.push(scannedItem)
-
-  // スキャン成功フラッシュ / 扫描成功闪烁
-  lastScanSuccess.value = true
-  setTimeout(() => { lastScanSuccess.value = false }, 600)
-
-  matchedItem.quantity -= 1
-
-  if (matchedItem.quantity === 0) {
-    pendingItems.value.splice(matchedIndex, 1)
-
-    if (pendingItems.value.length === 0) {
+      inputValue.value = ''
+      return
+    case 'completed':
       completionDialogVisible.value = true
-    }
+      inputValue.value = ''
+      return
+    case 'matched':
+      inputValue.value = ''
+      return
   }
-
-  inputValue.value = ''
 }
 
 // 输入框变化时的处理
 const handleInputChange = () => {
-  // 可以在这里实现实时搜索提示等功能
+  // 可以在这里实现实时搜索提示等功能 / リアルタイム検索ヒント等の機能を実装可能
 }
 
-// 自动处理从上一页面传递的扫描值
+// 初期スキャン処理（前ページから引き継ぎ） / 初始扫描处理（从上一页面传递）
 const processInitialScan = (scanValue: string) => {
-  if (!scanValue || pendingItems.value.length === 0) return
+  const result = scanLogic.processInitialScan(scanValue)
+  if (!result) return
 
-  let matchedItem: ProductItem | null = null
-  let matchedIndex = -1
-
-  for (let i = 0; i < pendingItems.value.length; i++) {
-    const item = pendingItems.value[i]
-    if (!item) continue
-    const matchingValues = getProductMatchingValues(item)
-    if (matchingValues.includes(scanValue)) {
-      matchedItem = item
-      matchedIndex = i
-      break
-    }
+  if (result.status === 'completed') {
+    completionDialogVisible.value = true
   }
 
-  if (!matchedItem || matchedIndex === -1) {
-    return
+  if (result.matchedItem) {
+    toast.success(t('wms.inspection.autoInspection', '自動検品') + `: ${result.matchedItem.name} (${scanValue})`)
   }
-
-  const scannedItem: ProductItem = {
-    id: `${matchedItem.sku}_scanned_${Date.now()}_${Math.random()}`,
-    sku: matchedItem.sku,
-    name: matchedItem.name,
-    quantity: 1,
-    productData: matchedItem.productData,
-  }
-  scannedItems.value.push(scannedItem)
-
-  matchedItem.quantity -= 1
-
-  if (matchedItem.quantity === 0) {
-    pendingItems.value.splice(matchedIndex, 1)
-
-    if (pendingItems.value.length === 0) {
-      completionDialogVisible.value = true
-    }
-  }
-
-  toast.success(t('wms.inspection.autoInspection', '自動検品') + `: ${matchedItem.name} (${scanValue})`)
 }
 
-// 初始化商品列表
+// 商品リスト初期化 / 初始化商品列表
 const initializeItems = () => {
   if (!order.value) return
-
-  try {
-    const orderId = String(order.value._id)
-    localStorage.removeItem(`orderItemScan_${orderId}`)
-  } catch (e) {
-    // スキャン状態キャッシュクリア失敗 / Failed to clear scan state cache
-  }
-
-  const items: ProductItem[] = []
-  if (Array.isArray(order.value.products)) {
-    for (const prod of order.value.products) {
-      const p = prod as any
-      const sku = p.inputSku || p.sku || ''
-      if (sku) {
-        const productData = loadProductBySku(sku)
-        items.push({
-          id: `${sku}_${Date.now()}_${Math.random()}`,
-          sku: sku,
-          name: p.productName || p.name || sku,
-          quantity: p.quantity || 1,
-          productData: productData || undefined,
-        })
-      }
-    }
-  }
-  pendingItems.value = items
-  scannedItems.value = []
+  scanLogic.initializeItems(order.value)
 }
 
 // 更新上一级页面的订单状态
@@ -799,12 +653,7 @@ onMounted(async () => {
 
     carriers.value = await fetchCarriers()
 
-    const allProducts = await fetchProducts()
-    for (const product of allProducts) {
-      if (product.sku) {
-        productCache.set(product.sku, product)
-      }
-    }
+    await scanLogic.loadAllProducts()
 
     initializeItems()
 
