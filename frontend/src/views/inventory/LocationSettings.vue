@@ -110,7 +110,9 @@ import {
   updateLocation,
   deleteLocation as apiDeleteLocation,
   seedLocations,
+  fetchLocationUsage,
 } from '@/api/location'
+import type { LocationUsage } from '@/api/location'
 import type { Location } from '@/types/inventory'
 import type { TableColumn, Operator } from '@/types/table'
 
@@ -121,6 +123,7 @@ const isSeeding = ref(false)
 const isSaving = ref(false)
 const locations = ref<Location[]>([])
 const globalSearchText = ref('')
+const locationUsageMap = ref<Map<string, LocationUsage>>(new Map())
 
 const dialogVisible = ref(false)
 const editingId = ref<string | null>(null)
@@ -224,6 +227,31 @@ const tableColumns = computed<TableColumn[]>(() => [
     cellRenderer: ({ rowData }: { rowData: Location }) => rowData.memo || '-',
   },
   {
+    key: 'usageStatus', dataKey: 'usageStatus', title: t('wms.inventory.usageStatus', '使用状況'), width: 150, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Location }) => {
+      const usage = locationUsageMap.value.get(rowData._id)
+      const skuCount = usage?.skuCount ?? 0
+      const totalQty = usage?.totalQuantity ?? 0
+      const isActive = rowData.isActive
+
+      // 色分け: 無効→赤、在庫あり→緑、空→灰色
+      // 颜色: 无效→红、有库存→绿、空→灰
+      const color = !isActive ? '#f56c6c' : skuCount > 0 ? '#67c23a' : '#909399'
+      const bgColor = !isActive ? '#fef0f0' : skuCount > 0 ? '#e1f3d8' : '#f4f4f5'
+
+      const label = !isActive
+        ? t('wms.inventory.activeNo', '無効')
+        : skuCount > 0
+          ? `${skuCount} SKU / ${totalQty} ${t('wms.inventory.pcs', '個')}`
+          : t('wms.inventory.empty', '空')
+
+      return h('span', {
+        class: 'usage-badge',
+        style: { color, background: bgColor, padding: '2px 8px', borderRadius: '3px', fontSize: '12px', fontWeight: '500' },
+      }, label)
+    },
+  },
+  {
     key: 'actions', title: t('wms.common.actions', '操作'), width: 120, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: Location }) =>
       h('div', { style: 'display:inline-flex;gap:4px;' }, [
@@ -249,7 +277,18 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
 const loadLocations = async () => {
   isLoading.value = true
   try {
-    locations.value = await fetchLocations()
+    // ロケーション一覧と使用状況を並行取得 / 并行获取位置列表和使用情况
+    const [locs, usageList] = await Promise.all([
+      fetchLocations(),
+      fetchLocationUsage().catch(() => [] as LocationUsage[]),
+    ])
+    locations.value = locs
+
+    const newMap = new Map<string, LocationUsage>()
+    for (const u of usageList) {
+      newMap.set(u.locationId, u)
+    }
+    locationUsageMap.value = newMap
   } catch (e: any) {
     toast.showError(e?.message || t('wms.inventory.locationFetchFailed', 'ロケーションの取得に失敗しました'))
   } finally {

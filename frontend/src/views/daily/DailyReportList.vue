@@ -11,6 +11,35 @@
       </template>
     </ControlPanel>
 
+    <!-- KPI概況カード（最新レポート） / KPI概览卡片（最新报表） -->
+    <div v-if="latestReport" class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-value">{{ latestReport.summary.shipments.shippedOrders }} / {{ latestReport.summary.shipments.totalOrders }}</div>
+        <div class="kpi-label">出荷</div>
+        <div class="kpi-sub">完了率: {{ shipmentRate }}%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ latestReport.summary.inbound.receivedOrders }} / {{ latestReport.summary.inbound.totalOrders }}</div>
+        <div class="kpi-label">入庫</div>
+        <div class="kpi-sub">完了率: {{ inboundRate }}%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ latestReport.summary.returns.completedOrders }}</div>
+        <div class="kpi-label">返品</div>
+        <div class="kpi-sub">全 {{ latestReport.summary.returns.totalOrders }} 件</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ latestReport.summary.inventory.totalSkus.toLocaleString() }}</div>
+        <div class="kpi-label">在庫SKU</div>
+        <div class="kpi-sub">総数: {{ latestReport.summary.inventory.totalQuantity.toLocaleString() }}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-value">{{ latestReport.summary.stocktaking.totalSessions }}</div>
+        <div class="kpi-label">棚卸</div>
+        <div class="kpi-sub">差異: {{ latestReport.summary.stocktaking.varianceCount }} 件</div>
+      </div>
+    </div>
+
     <SearchForm
       class="search-section"
       :columns="searchColumns"
@@ -67,6 +96,17 @@ const currentPage = ref(1)
 const pageSize = ref(30)
 const globalSearchText = ref('')
 const generateDate = ref(new Date().toISOString().slice(0, 10))
+
+// 最新レポートのKPIデータ / 最新报表的KPI数据
+const latestReport = computed(() => rows.value.length > 0 ? rows.value[0] : null)
+const shipmentRate = computed(() => {
+  const s = latestReport.value?.summary.shipments
+  return s && s.totalOrders > 0 ? Math.round((s.shippedOrders / s.totalOrders) * 100) : 0
+})
+const inboundRate = computed(() => {
+  const s = latestReport.value?.summary.inbound
+  return s && s.totalOrders > 0 ? Math.round((s.receivedOrders / s.totalOrders) * 100) : 0
+})
 
 const dailyStatusLabel = (s: string) => ({
   open: t('wms.daily.statusOpen', '営業中'),
@@ -293,4 +333,11 @@ onMounted(() => loadData())
   display: inline-flex;
   gap: 4px;
 }
+
+/* KPI概況カード / KPI概览卡片 */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.kpi-card { background: #fff; border: 1px solid var(--o-border-color, #e4e7ed); border-radius: 8px; padding: 16px; text-align: center; }
+.kpi-value { font-size: 28px; font-weight: 700; color: var(--o-gray-800, #303133); }
+.kpi-label { font-size: 12px; color: var(--o-gray-500, #909399); margin-top: 2px; }
+.kpi-sub { font-size: 11px; color: var(--o-gray-400, #c0c4cc); margin-top: 2px; }
 </style>

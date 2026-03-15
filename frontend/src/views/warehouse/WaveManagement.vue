@@ -112,6 +112,10 @@
           <input v-model="form.waveNumber" type="text" class="o-input" />
         </div>
         <div class="form-field">
+          <label class="form-label">{{ t('wms.warehouse.warehouseId', '倉庫ID') }} <span class="required-badge">必須</span></label>
+          <input v-model="form.warehouseId" type="text" class="o-input" />
+        </div>
+        <div class="form-field">
           <label class="form-label">{{ t('wms.warehouse.priority', '優先度') }}</label>
           <select v-model="form.priority" class="o-input">
             <option value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</option>
@@ -174,6 +178,7 @@ const isEditing = computed(() => !!editingId.value)
 
 const emptyForm = () => ({
   waveNumber: '',
+  warehouseId: '',
   priority: 'normal' as Wave['priority'],
   assignedTo: '',
   assignedName: '',
@@ -285,6 +290,7 @@ const openEdit = (w: Wave) => {
   editingId.value = w._id
   form.value = {
     waveNumber: w.waveNumber,
+    warehouseId: w.warehouseId || '',
     priority: w.priority,
     assignedTo: w.assignedTo || '',
     assignedName: w.assignedName || '',
@@ -296,6 +302,10 @@ const openEdit = (w: Wave) => {
 const handleSave = async () => {
   if (!form.value.waveNumber.trim()) {
     showToast(t('wms.warehouse.waveNumberRequired', 'ウェーブ番号は必須です'), 'danger')
+    return
+  }
+  if (!form.value.warehouseId.trim()) {
+    showToast(t('wms.warehouse.warehouseIdRequired', '倉庫IDは必須です'), 'danger')
     return
   }
 
@@ -436,5 +446,19 @@ onMounted(() => {
 
 .form-textarea {
   resize: vertical;
+}
+
+.required-badge {
+  display: inline-block;
+  background: #dc3545;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  vertical-align: middle;
+  margin-left: 4px;
 }
 </style>

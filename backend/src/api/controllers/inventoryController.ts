@@ -300,6 +300,71 @@ export const getInventoryOverview = async (_req: Request, res: Response): Promis
   }
 };
 
+/**
+ * ロケーション別使用状況 / 各位置使用情况
+ * 各ロケーションの SKU 数と合計数量を返す
+ * 返回每个位置的 SKU 数和合计数量
+ */
+export const getLocationUsage = async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const { StockQuant } = await import('@/models/stockQuant');
+    const { Location } = await import('@/models/location');
+
+    // 全物理ロケーション取得 / 获取所有物理位置
+    const allLocations = await Location.find({
+      type: { $not: /^virtual\// },
+    })
+      .sort({ sortOrder: 1, code: 1 })
+      .lean();
+
+    // StockQuant をロケーション単位で集計 / 按位置聚合库存
+    const usageAgg = await StockQuant.aggregate([
+      { $match: { quantity: { $gt: 0 } } },
+      {
+        $group: {
+          _id: '$locationId',
+          skuCount: { $addToSet: '$productSku' },
+          totalQuantity: { $sum: '$quantity' },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          skuCount: { $size: '$skuCount' },
+          totalQuantity: 1,
+        },
+      },
+    ]);
+
+    // Map に変換 / 转换为 Map
+    const usageMap = new Map<string, { skuCount: number; totalQuantity: number }>();
+    for (const item of usageAgg) {
+      usageMap.set(String(item._id), {
+        skuCount: item.skuCount,
+        totalQuantity: item.totalQuantity,
+      });
+    }
+
+    // ロケーション情報と結合 / 合并位置信息和使用数据
+    const result = allLocations.map((loc) => {
+      const usage = usageMap.get(String(loc._id));
+      return {
+        locationId: String(loc._id),
+        locationCode: loc.code,
+        locationName: loc.name,
+        locationType: loc.type,
+        isActive: loc.isActive,
+        skuCount: usage?.skuCount ?? 0,
+        totalQuantity: usage?.totalQuantity ?? 0,
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    handleError(res, error, 'ロケーション使用状況の取得に失敗しました');
+  }
+};
+
 /** 0在庫レコードのクリーンアップ / Cleanup zero-stock records */
 export const cleanupZeroStock = async (_req: Request, res: Response): Promise<void> => {
   try {

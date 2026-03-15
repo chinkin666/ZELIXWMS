@@ -29,6 +29,8 @@ export interface IWave {
   totalQuantity: number;
   /** 担当者 */
   assignedTo?: string;
+  /** 担当者名 */
+  assignedName?: string;
   /** 開始日時 */
   startedAt?: Date;
   /** 完了日時 */
@@ -87,6 +89,11 @@ const waveSchema = new mongoose.Schema<IWave>(
       default: 0,
     },
     assignedTo: {
+      type: String,
+      trim: true,
+    },
+    /** 担当者名 / 担当者名 */
+    assignedName: {
       type: String,
       trim: true,
     },

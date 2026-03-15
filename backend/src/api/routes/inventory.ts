@@ -11,6 +11,7 @@ import {
   bulkAdjustStock,
   cleanupZeroStock,
   getInventoryOverview,
+  getLocationUsage,
 } from '@/api/controllers/inventoryController';
 
 export const inventoryRouter = Router();
@@ -46,6 +47,7 @@ export const inventoryRouter = Router();
  *         description: Paginated stock list / ページネーション付き在庫一覧
  */
 inventoryRouter.get('/overview', getInventoryOverview);
+inventoryRouter.get('/location-usage', getLocationUsage);
 inventoryRouter.get('/stock', listStock);
 
 /**

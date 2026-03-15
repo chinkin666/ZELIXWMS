@@ -3,6 +3,23 @@ import type { Location } from '@/types/inventory'
 
 const API_BASE_URL = getApiBaseUrl()
 
+/** ロケーション別使用状況 / 各位置使用情况 */
+export interface LocationUsage {
+  locationId: string
+  locationCode: string
+  locationName: string
+  locationType: string
+  isActive: boolean
+  skuCount: number
+  totalQuantity: number
+}
+
+export async function fetchLocationUsage(): Promise<LocationUsage[]> {
+  const res = await fetch(`${API_BASE_URL}/inventory/location-usage`)
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch location usage')
+  return res.json()
+}
+
 export async function fetchLocations(params?: {
   type?: string
   warehouseId?: string
