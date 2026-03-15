@@ -200,6 +200,7 @@ import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { fetchInboundOrder, receiveInboundLine, bulkReceiveInbound, fetchInboundVariance } from '@/api/inboundOrder'
 import type { InboundOrder, InboundOrderLine } from '@/types/inventory'
 import type { InboundVarianceReport } from '@/api/inboundOrder'
+import { beepSuccess, beepError, beepComplete } from '@/utils/scanBeep'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -274,9 +275,11 @@ const handleScan = () => {
 
   if (matchLine) {
     handleReceiveLine(matchLine.lineNumber, scanQuantity.value)
+    beepSuccess()
     scanInput.value = ''
     scanQuantity.value = 1
   } else {
+    beepError()
     scanMessage.value = t('wms.inbound.skuNotFound', `SKU "${input}" に該当する未入庫行が見つかりません`)
     scanIsError.value = true
   }
@@ -299,6 +302,7 @@ const handleReceiveLine = async (lineNumber: number, qty: number) => {
     order.value.status = result.orderStatus as any
 
     if (result.orderStatus === 'received') {
+      beepComplete()
       toast.showSuccess(t('wms.inbound.allInspectionComplete', '検品が全て完了しました。棚入れを行ってください。'))
       setTimeout(() => router.push(`/inbound/putaway/${order.value!._id}`), 1500)
     }
@@ -478,8 +482,26 @@ onMounted(() => loadOrder())
 
 .scan-input {
   flex: 1;
-  font-size: 16px;
-  padding: 10px 14px;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 12px 16px;
+  border: 2px solid #e6a23c;
+  border-radius: 6px;
+  background: #fffef5;
+  letter-spacing: 0.5px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.scan-input:focus {
+  border-color: #409eff;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.15);
+}
+
+.scan-input::placeholder {
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
 .scan-message {

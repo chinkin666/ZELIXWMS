@@ -162,6 +162,7 @@ import { useAutoPrint } from '@/composables/useAutoPrint'
 import { useInspectionPrint } from '@/composables/useInspectionPrint'
 import { useToast } from '@/composables/useToast'
 import { useInspectionScanHistory } from './composables/useInspectionScanHistory'
+import { beepSuccess, beepError, beepComplete } from '@/utils/scanBeep'
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
@@ -354,6 +355,7 @@ function handleScan() {
 
   if (!matchedOrder) {
     addScanHistory(input, 'error', 'not found')
+    beepError()
     wrongScanValue.value = input
     wrongScanDialogVisible.value = true
     focusScanInput()
@@ -378,6 +380,7 @@ function handleScan() {
   }
 
   addScanHistory(input, 'ok', `${prod?.productName || sku} #${matchedRowNo}`)
+  beepSuccess()
 
   rightPanelRef.value?.scrollToRow(matchedRowNo! - 1)
   handleOrderCompletion(matchedOrder)
@@ -390,6 +393,7 @@ function handleScan() {
 // ─── Order Completion ─────────────────────────────────────────────────
 
 async function handleOrderCompletion(order: OrderDocument) {
+  beepComplete()
   const alreadyPrinted = !!(order as any)?.status?.printed?.isPrinted
 
   if (alreadyPrinted) {

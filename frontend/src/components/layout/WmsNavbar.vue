@@ -80,10 +80,10 @@ const visibleMenuItems = computed(() => {
   if (!role || role === 'admin' || role === 'super_admin') return props.menuItems
 
   const roleMenus: Record<string, string[]> = {
-    manager: ['/products', '/materials', '/inbound', '/inventory', '/shipment', '/fba', '/returns', '/stocktaking', '/set-products', '/warehouse-ops', '/daily', '/billing', '/settings'],
+    manager: ['/products', '/materials', '/inbound', '/inventory', '/shipment', '/fba', '/returns', '/stocktaking', '/set-products', '/warehouse-ops', '/daily', '/reports', '/billing', '/settings'],
     operator: ['/inbound', '/inventory', '/shipment', '/returns', '/stocktaking', '/warehouse-ops'],
-    viewer: ['/products', '/inventory', '/shipment', '/returns', '/daily', '/billing'],
-    client: ['/shipment', '/inventory', '/billing', '/daily'],
+    viewer: ['/products', '/inventory', '/shipment', '/returns', '/daily', '/reports', '/billing'],
+    client: ['/shipment', '/inventory', '/billing', '/daily', '/reports'],
   }
 
   const allowed = roleMenus[role] || []
