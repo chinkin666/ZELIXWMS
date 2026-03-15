@@ -1,0 +1,55 @@
+{
+  "indexes": [
+    {
+      "v": 2,
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_"
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1
+      },
+      "name": "tenantId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1,
+        "chargeDate": -1
+      },
+      "name": "tenantId_1_chargeDate_-1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1,
+        "clientId": 1,
+        "isBilled": 1
+      },
+      "name": "tenantId_1_clientId_1_isBilled_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1,
+        "billingPeriod": 1
+      },
+      "name": "tenantId_1_billingPeriod_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "referenceId": 1
+      },
+      "name": "referenceId_1",
+      "background": true
+    }
+  ]
+}

@@ -105,31 +105,35 @@ export const getStockLevels = async (req: Request, res: Response): Promise<void>
   try {
     const { warehouseId, page, limit } = req.query;
 
-    if (!warehouseId || typeof warehouseId !== 'string' || !warehouseId.trim()) {
-      res.status(400).json({ message: '倉庫IDは必須です' });
-      return;
-    }
-
-    const warehouseOid = new mongoose.Types.ObjectId(warehouseId.trim());
-
     const pageNum = Math.max(1, parseInt(String(page || '1'), 10) || 1);
     const limitNum = Math.min(200, Math.max(1, parseInt(String(limit || '50'), 10) || 50));
     const skip = (pageNum - 1) * limitNum;
 
+    // warehouseId はオプション / warehouseId 可选
+    const matchFilter: Record<string, unknown> = {};
+    if (typeof warehouseId === 'string' && warehouseId.trim()) {
+      matchFilter.warehouseId = new mongoose.Types.ObjectId(warehouseId.trim());
+    }
+
+    const reservationFilter: Record<string, unknown> = { status: 'active' };
+    if (matchFilter.warehouseId) {
+      reservationFilter.warehouseId = matchFilter.warehouseId;
+    }
+
     const [stockData, reservedData, totalProducts] = await Promise.all([
       InventoryLedger.aggregate([
-        { $match: { warehouseId: warehouseOid } },
+        { $match: matchFilter },
         { $group: { _id: '$productId', totalStock: { $sum: '$quantity' }, productSku: { $first: '$productSku' } } },
         { $sort: { productSku: 1 } },
         { $skip: skip },
         { $limit: limitNum },
       ]),
       InventoryReservation.aggregate([
-        { $match: { warehouseId: warehouseOid, status: 'active' } },
+        { $match: reservationFilter },
         { $group: { _id: '$productId', reservedStock: { $sum: '$quantity' } } },
       ]),
       InventoryLedger.aggregate([
-        { $match: { warehouseId: warehouseOid } },
+        { $match: matchFilter },
         { $group: { _id: '$productId' } },
         { $count: 'total' },
       ]),
