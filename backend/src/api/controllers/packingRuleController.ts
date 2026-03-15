@@ -3,6 +3,8 @@ import { PackingRule } from '@/models/packingRule';
 import { Product } from '@/models/product';
 import { Material } from '@/models/material';
 
+function getTenantId(_req: Request): string { return 'default'; }
+
 // ============================================
 // 梱包ルール CRUD / 梱包规则 CRUD
 // ============================================
@@ -34,10 +36,11 @@ export const listPackingRules = async (req: Request, res: Response): Promise<voi
  */
 export const createPackingRule = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { tenantId, name, priority, isActive, conditions, materials, memo } = req.body;
+    const tenantId = getTenantId(req);
+    const { name, priority, isActive, conditions, materials, memo } = req.body;
 
     // バリデーション / 验证
-    if (!tenantId || typeof tenantId !== 'string' || !tenantId.trim()) {
+    if (!tenantId || typeof tenantId !== 'string' || !tenantId) {
       res.status(400).json({ message: 'tenantIdは必須です / tenantId为必填项' });
       return;
     }
@@ -51,7 +54,7 @@ export const createPackingRule = async (req: Request, res: Response): Promise<vo
     }
 
     const rule = await PackingRule.create({
-      tenantId: tenantId.trim(),
+      tenantId: tenantId,
       name: name.trim(),
       priority: typeof priority === 'number' ? priority : 100,
       isActive: isActive !== false,
@@ -144,7 +147,8 @@ export const deletePackingRule = async (req: Request, res: Response): Promise<vo
  */
 export const evaluatePackingRules = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { tenantId, products, coolType, invoiceType } = req.body;
+    const tenantId = getTenantId(req);
+    const { products, coolType, invoiceType } = req.body;
 
     if (!tenantId || typeof tenantId !== 'string') {
       res.status(400).json({ message: 'tenantIdは必須です / tenantId为必填项' });

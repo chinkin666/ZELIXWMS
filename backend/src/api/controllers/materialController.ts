@@ -1,6 +1,11 @@
 import type { Request, Response } from 'express';
 import { Material } from '@/models/material';
 
+/** テナントID取得 / 获取租户ID */
+function getTenantId(_req: Request): string {
+  return 'default';
+}
+
 // ============================================
 // 耗材 CRUD / 耗材 CRUD
 // ============================================
@@ -12,14 +17,10 @@ import { Material } from '@/models/material';
  */
 export const listMaterials = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { tenantId, category, search, isActive, page, limit } = req.query;
+    const { category, search, isActive, page, limit } = req.query;
+    const tenantId = getTenantId(req);
 
-    const filter: Record<string, unknown> = {};
-
-    // テナントフィルター / 租户过滤
-    if (typeof tenantId === 'string' && tenantId.trim()) {
-      filter.tenantId = tenantId.trim();
-    }
+    const filter: Record<string, unknown> = { tenantId };
     // カテゴリフィルター / 类别过滤
     if (typeof category === 'string' && category.trim()) {
       filter.category = category.trim();
@@ -77,15 +78,12 @@ export const getMaterial = async (req: Request, res: Response): Promise<void> =>
  */
 export const createMaterial = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { tenantId, sku, name, category, unitCost, inventoryEnabled,
+    const tenantId = getTenantId(req);
+    const { sku, name, category, unitCost, inventoryEnabled,
             currentStock, safetyStock, widthMm, depthMm, heightMm,
             supplierCode, caseQuantity, leadTime, isActive, memo } = req.body;
 
     // バリデーション / 验证
-    if (!tenantId || typeof tenantId !== 'string' || !tenantId.trim()) {
-      res.status(400).json({ message: 'tenantIdは必須です / tenantId为必填项' });
-      return;
-    }
     if (!sku || typeof sku !== 'string' || !sku.trim()) {
       res.status(400).json({ message: 'SKUは必須です / SKU为必填项' });
       return;
@@ -105,7 +103,7 @@ export const createMaterial = async (req: Request, res: Response): Promise<void>
     }
 
     // SKUユニーク検証 / SKU唯一性验证
-    const existing = await Material.findOne({ tenantId: tenantId.trim(), sku: sku.trim() }).lean();
+    const existing = await Material.findOne({ tenantId, sku: sku.trim() }).lean();
     if (existing) {
       res.status(409).json({
         message: `SKU「${sku.trim()}」は既に存在します / SKU「${sku.trim()}」已存在`,
@@ -115,7 +113,7 @@ export const createMaterial = async (req: Request, res: Response): Promise<void>
     }
 
     const created = await Material.create({
-      tenantId: tenantId.trim(),
+      tenantId,
       sku: sku.trim(),
       name: name.trim(),
       category,

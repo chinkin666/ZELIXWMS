@@ -5,6 +5,8 @@ import { ShipmentOrder } from '@/models/shipmentOrder';
 import { OrderSourceCompany } from '@/models/orderSourceCompany';
 import { Carrier } from '@/models/carrier';
 
+function getTenantId(_req: Request): string { return 'default'; }
+
 // ---------------------------------------------------------------------------
 // ヘルパー: 期間（YYYY-MM）から日付範囲を取得
 // 辅助: 从期间（YYYY-MM）获取日期范围
@@ -42,13 +44,11 @@ async function generateInvoiceNumber(tenantId: string, period: string): Promise<
 // ---------------------------------------------------------------------------
 export async function generateMonthlyBilling(req: Request, res: Response) {
   try {
-    const { period, tenantId } = req.body;
+    const tenantId = getTenantId(req);
+    const { period } = req.body;
 
     if (!period || !/^\d{4}-\d{2}$/.test(period)) {
       return res.status(400).json({ error: '期間(YYYY-MM)が必要です / 需要期间(YYYY-MM)' });
-    }
-    if (!tenantId) {
-      return res.status(400).json({ error: 'tenantIdが必要です / 需要tenantId' });
     }
 
     const { startDate, endDate } = periodToDateRange(period);
@@ -219,8 +219,8 @@ export async function confirmBillingRecord(req: Request, res: Response) {
 // ---------------------------------------------------------------------------
 export async function createInvoice(req: Request, res: Response) {
   try {
+    const tenantId = getTenantId(req);
     const {
-      tenantId,
       billingRecordId,
       clientId,
       clientName,
@@ -231,10 +231,6 @@ export async function createInvoice(req: Request, res: Response) {
       lineItems = [],
       memo,
     } = req.body;
-
-    if (!tenantId) {
-      return res.status(400).json({ error: 'tenantIdが必要です / 需要tenantId' });
-    }
     if (!period || !/^\d{4}-\d{2}$/.test(period)) {
       return res.status(400).json({ error: '期間(YYYY-MM)が必要です / 需要期间(YYYY-MM)' });
     }
@@ -349,7 +345,8 @@ export async function createInvoice(req: Request, res: Response) {
 // ---------------------------------------------------------------------------
 export async function listInvoices(req: Request, res: Response) {
   try {
-    const { tenantId, period, clientId, status, page = '1', limit = '50' } = req.query;
+    const tenantId = getTenantId(req);
+    const { period, clientId, status, page = '1', limit = '50' } = req.query;
     const filter: Record<string, unknown> = {};
 
     if (tenantId) filter.tenantId = tenantId;
