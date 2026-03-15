@@ -50,6 +50,38 @@ const router = createRouter({
           component: Welcome,
           meta: { title: 'ホーム' },
         },
+        // === 通過型受付 / 通过型受付 ===
+        {
+          path: 'passthrough',
+          meta: { title: '通過型受付', requiresAuth: true },
+          redirect: '/passthrough/receive',
+          children: [
+            {
+              path: 'receive',
+              name: 'PassthroughReceive',
+              component: () => import('@/views/passthrough/ReceiveScan.vue'),
+              meta: { title: '受付スキャン', requiresAuth: true },
+            },
+            {
+              path: 'tasks',
+              name: 'PassthroughTasks',
+              component: () => import('@/views/passthrough/TaskList.vue'),
+              meta: { title: '作業タスク', requiresAuth: true },
+            },
+            {
+              path: 'ship',
+              name: 'PassthroughShip',
+              component: () => import('@/views/passthrough/ShipMatch.vue'),
+              meta: { title: '出荷マッチング', requiresAuth: true },
+            },
+            {
+              path: 'staging',
+              name: 'PassthroughStaging',
+              component: () => import('@/views/passthrough/StagingBoard.vue'),
+              meta: { title: '暫存エリア', requiresAuth: true },
+            },
+          ],
+        },
         // === 荷主ポータル / 货主门户 ===
         {
           path: 'client/dashboard',

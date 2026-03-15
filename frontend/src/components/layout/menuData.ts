@@ -13,6 +13,7 @@ export const wmsMenuItems: Array<{ label: string; to: string }> = [
   { label: '商品管理', to: '/products' },
   { label: '耗材管理', to: '/materials' },
   { label: '入庫管理', to: '/inbound' },
+  { label: '通過型受付', to: '/passthrough' },
   { label: '在庫管理', to: '/inventory' },
   { label: '出荷管理', to: '/shipment' },
   { label: 'FBA管理', to: '/fba' },
