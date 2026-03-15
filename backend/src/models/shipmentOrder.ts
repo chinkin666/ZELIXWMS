@@ -100,6 +100,26 @@ export interface ICarrierData {
   // yupack?: IYupackCarrierData;
 }
 
+// ============================================
+// 耗材項目インターフェース / 耗材项目接口
+// ============================================
+export interface IShipmentOrderMaterial {
+  materialSku: string;         // 耗材SKU
+  materialName?: string;       // 耗材名
+  quantity: number;            // 数量
+  unitCost?: number;           // 単価 / 单价
+  totalCost?: number;          // 合計コスト / 总成本
+  auto?: boolean;              // true = 自動追加（ルールベース）/ 自动追加（规则匹配）
+}
+
+// コスト集計インターフェース / 成本汇总接口
+export interface ICostSummary {
+  productCost?: number;        // 商品原価合計 / 商品成本合计
+  materialCost?: number;       // 耗材費合計 / 耗材费用合计
+  shippingCost?: number;       // 配送料（既存フィールドの参照用）/ 配送费（引用现有字段）
+  totalCost?: number;          // 総コスト / 总成本
+}
+
 export interface IShipmentOrder {
   _id: mongoose.Types.ObjectId;
   tenantId?: string;
@@ -156,6 +176,12 @@ export interface IShipmentOrder {
 
   // 商品
   products: IShipmentOrderProduct[];
+
+  // 耗材 / 耗材（梱包材・作業用品）
+  materials?: IShipmentOrderMaterial[];
+
+  // コスト集計 / 成本汇总
+  costSummary?: ICostSummary;
 
   // 商品聚合字段（用于搜索、过滤、索引优化）
   _productsMeta?: {
@@ -313,6 +339,30 @@ const yamatoCarrierDataSchema = new mongoose.Schema<IYamatoCarrierData>(
   { _id: false },
 );
 
+// 耗材項目スキーマ / 耗材项目 Schema
+const materialSchema = new mongoose.Schema<IShipmentOrderMaterial>(
+  {
+    materialSku: { type: String, required: true, trim: true },
+    materialName: { type: String, trim: true },
+    quantity: { type: Number, required: true, min: 1 },
+    unitCost: { type: Number, min: 0 },
+    totalCost: { type: Number, min: 0 },
+    auto: { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
+// コスト集計スキーマ / 成本汇总 Schema
+const costSummarySchema = new mongoose.Schema<ICostSummary>(
+  {
+    productCost: { type: Number, min: 0 },
+    materialCost: { type: Number, min: 0 },
+    shippingCost: { type: Number, min: 0 },
+    totalCost: { type: Number, min: 0 },
+  },
+  { _id: false },
+);
+
 // 配送業者固有データ用スキーマ
 const carrierDataSchema = new mongoose.Schema<ICarrierData>(
   {
@@ -338,6 +388,12 @@ const shipmentOrderSchema = new mongoose.Schema<IShipmentOrder>(
     honorific: { type: String, trim: true, default: '様' },
 
     products: { type: [productSchema], required: true, default: [] },
+
+    // 耗材 / 耗材（梱包材・作業用品）
+    materials: { type: [materialSchema], default: undefined },
+
+    // コスト集計 / 成本汇总
+    costSummary: { type: costSummarySchema, default: undefined },
 
     _productsMeta: {
       skus: { type: [String], default: [] },

@@ -41,6 +41,7 @@ import { dashboardRouter } from './dashboard';
 import { sagawaRouter } from './sagawa';
 import { shippingRateRouter } from './shippingRates';
 import { billingRouter } from './billing';
+import { packingRuleRouter } from './packingRules';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -91,6 +92,9 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // 佐川急便 / 佐川急便
   api.use('/carriers/sagawa', sagawaRouter);
+
+  // 梱包ルール / 梱包规则
+  api.use('/packing-rules', packingRuleRouter);
 
   // 扩展系统 / 拡張システム
   api.use('/extensions', extensionRouter);

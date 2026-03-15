@@ -45,6 +45,7 @@ export const settingsGroups: SubMenuGroup[] = [
       { label: '自動処理ルール', to: '/settings/auto-processing' },
       { label: '出荷メール設定', to: '/settings/email-templates' },
       { label: '運賃マスタ', to: '/settings/shipping-rates' },
+      { label: '梱包ルール', to: '/settings/packing-rules' },
     ],
   },
   {

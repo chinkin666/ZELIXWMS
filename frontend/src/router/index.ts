@@ -499,6 +499,12 @@ const router = createRouter({
               meta: { title: '運賃マスタ', requiresAuth: true },
             },
             {
+              path: 'packing-rules',
+              name: 'PackingRuleSettings',
+              component: () => import('@/views/settings/PackingRuleSettings.vue'),
+              meta: { title: '梱包ルール', requiresAuth: true },
+            },
+            {
               path: 'operation-logs',
               name: 'OperationLogView',
               component: () => import('@/views/settings/OperationLogView.vue'),

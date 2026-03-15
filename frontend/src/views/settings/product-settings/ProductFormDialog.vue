@@ -13,6 +13,16 @@
         <!-- Top fields (2-column grid) -->
         <div class="o-top-fields">
           <div class="o-top-col">
+            <!-- 商品タイプ / 商品类型 -->
+            <div class="o-field-row">
+              <label class="o-field-label">商品タイプ</label>
+              <div class="o-field-value">
+                <select class="o-inline-input" :value="formData.productType" @change="(e: Event) => formData.productType = (e.target as HTMLSelectElement).value">
+                  <option value="product">商品</option>
+                  <option value="material">耗材（梱包材）</option>
+                </select>
+              </div>
+            </div>
             <!-- SKU -->
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.skuCode', 'SKU管理番号') }} <span class="required-badge">{{ t('wms.common.required', '必須') }}</span></label>
@@ -105,6 +115,20 @@
                   :value="formData.price"
                   @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.price = v === '' ? undefined : Number(v) }"
                   :placeholder="t('wms.product.pricePlaceholder', '金額')"
+                />
+              </div>
+            </div>
+            <!-- 原価（仕入単価）/ 成本价（采购单价） -->
+            <div class="o-field-row">
+              <label class="o-field-label">原価（仕入単価）</label>
+              <div class="o-field-value">
+                <input
+                  class="o-inline-input"
+                  type="number"
+                  :value="formData.costPrice"
+                  @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.costPrice = v === '' ? undefined : Number(v) }"
+                  placeholder="仕入原価"
+                  min="0"
                 />
               </div>
             </div>
@@ -536,6 +560,7 @@ watch(
     if (isOpen) {
       const d = props.initialData || {}
       formData.value = {
+        productType: d.productType || 'product',
         sku: d.sku || '',
         name: d.name || '',
         nameFull: d.nameFull || '',
@@ -544,6 +569,7 @@ watch(
         mailCalcEnabled: d.mailCalcEnabled ?? false,
         mailCalcMaxQuantity: d.mailCalcMaxQuantity ?? undefined,
         price: d.price ?? undefined,
+        costPrice: d.costPrice ?? undefined,
         memo: d.memo || '',
         barcode: Array.isArray(d.barcode) ? [...d.barcode] : [],
         handlingTypes: Array.isArray(d.handlingTypes) ? [...d.handlingTypes] : [],
