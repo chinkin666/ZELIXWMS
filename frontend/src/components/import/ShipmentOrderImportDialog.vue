@@ -130,19 +130,46 @@
         </div>
       </div>
 
-      <!-- 预览区域 -->
+      <!-- 验证结果摘要 / バリデーション結果サマリー -->
+      <div v-if="previewRows.length > 0 && validationSummary.total > 0" class="validation-summary" :class="{ 'has-errors': validationSummary.errorCount > 0 }">
+        <span v-if="validationSummary.errorCount > 0" class="summary-error">
+          {{ validationSummary.errorCount }}件エラー
+        </span>
+        <span v-if="validationSummary.errorCount > 0 && validationSummary.validCount > 0"> / </span>
+        <span class="summary-valid">{{ validationSummary.validCount }}件正常</span>
+        <span class="summary-total">（全{{ validationSummary.total }}件）</span>
+      </div>
+
+      <!-- 预览区域 / プレビューエリア -->
       <div v-if="previewRows.length > 0" class="preview-section">
         <h3>プレビュー（最初の5行）</h3>
-        <div style="max-height: 200px; overflow: auto; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px">
+        <div style="max-height: 240px; overflow: auto; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px">
           <table class="o-list-table" style="font-size: 12px">
             <thead>
               <tr>
+                <th style="min-width: 60px">#</th>
                 <th v-for="key in Object.keys(previewRows[0] || {})" :key="key" style="min-width: 120px">{{ key }}</th>
+                <th style="min-width: 200px">検証結果</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(row, idx) in previewRows" :key="idx">
+              <tr
+                v-for="(row, idx) in previewRows"
+                :key="idx"
+                :class="{ 'row-error': rowValidationErrors[idx] && rowValidationErrors[idx].length > 0 }"
+              >
+                <td>{{ idx + 1 }}</td>
                 <td v-for="key in Object.keys(previewRows[0] || {})" :key="key">{{ row[key] }}</td>
+                <td class="validation-cell">
+                  <template v-if="rowValidationErrors[idx] && rowValidationErrors[idx].length > 0">
+                    <span
+                      v-for="(err, errIdx) in rowValidationErrors[idx]"
+                      :key="errIdx"
+                      class="validation-error-tag"
+                    >{{ err }}</span>
+                  </template>
+                  <span v-else class="validation-ok">OK</span>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -156,7 +183,7 @@
         <OButton
           type="button"
           variant="primary"
-          :disabled="!canImport || importing"
+          :disabled="!canImport || importing || hasCriticalErrors"
           @click="handleImport"
         >
           <span v-if="importing" class="spinner"></span>
@@ -216,6 +243,10 @@ const loadingConfigs = ref(false)
 const importing = ref(false)
 const fileEncoding = ref<'auto' | 'utf-8' | 'utf-8-sig' | 'shift_jis' | 'gbk'>(props.defaultFileEncoding || 'shift_jis')
 const previewRows = ref<Record<string, any>[]>([])
+/** 各行のバリデーションエラーリスト / 每行的验证错误列表 */
+const rowValidationErrors = ref<string[][]>([])
+/** 全行数のバリデーション結果（プレビュー外含む） / 全行验证结果（包括预览外的行） */
+const allRowValidationErrors = ref<string[][]>([])
 
 const encodingOptions = [
   { label: '自動判定 (推奨)', value: 'auto' },
@@ -273,6 +304,66 @@ const canImport = computed(() => {
     formData.carrierId !== '' &&
     selectedFile.value !== null
   )
+})
+
+/**
+ * 行バリデーション：必須フィールド・数量・日付をチェック
+ * 行验证：检查必填字段、数量、日期
+ */
+const validateRow = (row: Record<string, any>): string[] => {
+  const errors: string[] = []
+
+  // 必須: 顧客管理番号またはSKU / 必填：客户管理编号或SKU
+  const customerManagementNumber = getRowValue(row, 'customerManagementNumber', '')
+  const sku = getRowValue(row, 'products.0.sku', '')
+  const hasProducts = Array.isArray(row.products) && row.products.length > 0 && row.products[0]?.sku
+  if (!customerManagementNumber && !sku && !hasProducts) {
+    errors.push('顧客管理番号またはSKUが必要です')
+  }
+
+  // 数量チェック / 数量检查
+  const qty = getRowValue(row, 'products.0.quantity', undefined)
+  const productsArray = Array.isArray(row.products) ? row.products : []
+  if (qty !== undefined) {
+    const numQty = Number(qty)
+    if (isNaN(numQty) || numQty <= 0) {
+      errors.push('数量が不正です')
+    }
+  }
+  for (const p of productsArray) {
+    if (p?.quantity !== undefined) {
+      const numQty = Number(p.quantity)
+      if (isNaN(numQty) || numQty <= 0) {
+        errors.push('数量が不正です')
+        break
+      }
+    }
+  }
+
+  // 配送希望日の形式チェック / 配送希望日格式检查
+  const deliveryDate = getRowValue(row, 'deliveryDatePreference', '')
+  if (deliveryDate) {
+    const normalized = normalizeDateOnly(String(deliveryDate))
+    if (!normalized) {
+      errors.push('配送希望日の形式が不正です')
+    }
+  }
+
+  return errors
+}
+
+/** バリデーション結果サマリー / 验证结果摘要 */
+const validationSummary = computed(() => {
+  const total = allRowValidationErrors.value.length
+  const errorCount = allRowValidationErrors.value.filter(errs => errs.length > 0).length
+  const validCount = total - errorCount
+  return { total, errorCount, validCount }
+})
+
+/** 重大エラーがあるか（全行エラーの場合） / 是否有严重错误（全行都有错误时） */
+const hasCriticalErrors = computed(() => {
+  if (allRowValidationErrors.value.length === 0) return false
+  return allRowValidationErrors.value.every(errs => errs.length > 0)
 })
 
 const triggerFileInput = () => {
@@ -340,16 +431,24 @@ const parseAndPreview = async () => {
     const rows = await parseFile(selectedFile.value)
     const config = selectedConfig.value
     const transformMappings = config.mappings as TransformMapping[]
-    const mappedRows = []
-    for (const row of rows.slice(0, 5)) {
+
+    // 全行をマッピングしてバリデーション / 映射全部行并验证
+    const allMappedRows = []
+    for (const row of rows) {
       const mapped = await applyTransformMappings(transformMappings, row)
-      mappedRows.push(mapped)
+      allMappedRows.push(mapped)
     }
-    // Flatten nested objects for preview display
-    previewRows.value = mappedRows.map(row => flattenForPreview(row))
+    allRowValidationErrors.value = allMappedRows.map(row => validateRow(row))
+
+    // プレビューは最初の5行のみ / 预览仅显示前5行
+    const previewMapped = allMappedRows.slice(0, 5)
+    previewRows.value = previewMapped.map(row => flattenForPreview(row))
+    rowValidationErrors.value = allRowValidationErrors.value.slice(0, 5)
   } catch (error) {
     // ファイル解析失敗 / Failed to parse file
     previewRows.value = []
+    rowValidationErrors.value = []
+    allRowValidationErrors.value = []
   }
 }
 
@@ -640,6 +739,8 @@ const handleClose = () => {
   fileName.value = ''
   fileList.value = []
   previewRows.value = []
+  rowValidationErrors.value = []
+  allRowValidationErrors.value = []
   fileEncoding.value = props.defaultFileEncoding || 'shift_jis'
   formData.shipPlanDate = ''
   formData.configId = ''
@@ -788,5 +889,75 @@ watch(visible, (newVal) => {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* バリデーション結果サマリー / 验证结果摘要 */
+.validation-summary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+.validation-summary.has-errors {
+  background: #fff3cd;
+  border-color: #ffc107;
+  color: #856404;
+}
+
+.summary-error {
+  color: #dc3545;
+  font-weight: 700;
+}
+
+.summary-valid {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.summary-total {
+  color: #6c757d;
+  font-weight: 400;
+}
+
+/* エラー行ハイライト / 错误行高亮 */
+.row-error {
+  background: #fff5f5 !important;
+}
+
+.row-error td {
+  border-bottom-color: #f5c6cb !important;
+}
+
+/* バリデーション結果セル / 验证结果单元格 */
+.validation-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.validation-error-tag {
+  display: inline-block;
+  background: #dc3545;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.validation-ok {
+  color: #28a745;
+  font-weight: 600;
+  font-size: 11px;
 }
 </style>

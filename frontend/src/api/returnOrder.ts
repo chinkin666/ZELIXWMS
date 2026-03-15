@@ -36,6 +36,21 @@ export interface ReturnOrder {
   updatedAt: string
 }
 
+// ダッシュボード統計型 / 仪表盘统计类型
+export interface ReturnDashboardStats {
+  statusCounts: { draft: number; inspecting: number; completed: number; cancelled: number }
+  reasonBreakdown: Record<string, number>
+  totalRestocked: number
+  totalDisposed: number
+  recentReturns: ReturnOrder[]
+}
+
+export async function fetchReturnDashboardStats(): Promise<ReturnDashboardStats> {
+  const res = await fetch(`${API_BASE_URL}/return-orders/dashboard-stats`)
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch dashboard stats')
+  return res.json()
+}
+
 export async function fetchReturnOrders(params?: {
   status?: string
   page?: number

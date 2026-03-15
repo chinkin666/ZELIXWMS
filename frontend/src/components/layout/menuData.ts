@@ -124,6 +124,7 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '棚卸作成', to: '/stocktaking/create' },
   ],
   '/returns': [
+    { label: 'ダッシュボード', to: '/returns/dashboard' },
     { label: '返品一覧', to: '/returns/list' },
     { label: '返品作成', to: '/returns/create' },
   ],

@@ -23,20 +23,30 @@
         <OButton
           variant="primary"
           size="sm"
-          :disabled="!imageUrl || rendering"
+          :disabled="!selectedTemplate || rendering || effectiveProducts.length === 0"
           @click="handlePrint"
         >
-          {{ t('wms.product.print', '印刷') }}
+          {{ isBulkMode ? t('wms.product.bulkPrint', '一括印刷') : t('wms.product.print', '印刷') }}
         </OButton>
+      </div>
+    </div>
+
+    <!-- 一括印刷ヘッダー / 批量打印标题 -->
+    <div v-if="isBulkMode" class="bulk-info">
+      <span class="bulk-info-count">{{ effectiveProducts.length }}{{ t('wms.product.itemsLabel', '件') }}</span>
+      <div class="bulk-nav">
+        <OButton variant="secondary" size="sm" :disabled="currentPreviewIndex <= 0" @click="currentPreviewIndex--">&lt;</OButton>
+        <span class="bulk-nav-pos">{{ currentPreviewIndex + 1 }} / {{ effectiveProducts.length }}</span>
+        <OButton variant="secondary" size="sm" :disabled="currentPreviewIndex >= effectiveProducts.length - 1" @click="currentPreviewIndex++">&gt;</OButton>
       </div>
     </div>
 
     <!-- 商品情報 / 商品信息 -->
     <div class="product-info">
       <span class="product-info-label">SKU:</span>
-      <span class="product-info-value">{{ product?.sku || '-' }}</span>
+      <span class="product-info-value">{{ currentProduct?.sku || '-' }}</span>
       <span class="product-info-label">{{ t('wms.product.printName', '商品名') }}:</span>
-      <span class="product-info-value">{{ product?.name || '-' }}</span>
+      <span class="product-info-value">{{ currentProduct?.name || '-' }}</span>
     </div>
 
     <div class="preview">
@@ -71,7 +81,10 @@ const toast = useToast()
 
 const props = defineProps<{
   modelValue: boolean
-  product: Product | null
+  /** 単一商品（後方互換）/ 单个商品（向后兼容） */
+  product?: Product | null
+  /** 複数商品の一括印刷 / 多个商品批量打印 */
+  products?: Product[]
 }>()
 
 const emit = defineEmits<{
@@ -82,6 +95,25 @@ const visible = computed({
   get: () => props.modelValue,
   set: (v) => emit('update:modelValue', v),
 })
+
+/**
+ * 有効な商品リスト（単一 or 複数）を統一的に取得する
+ * 统一获取有效的商品列表（单个或多个）
+ */
+const effectiveProducts = computed<Product[]>(() => {
+  if (props.products && props.products.length > 0) return props.products
+  if (props.product) return [props.product]
+  return []
+})
+
+/** 一括印刷モードかどうか / 是否为批量打印模式 */
+const isBulkMode = computed(() => effectiveProducts.value.length > 1)
+
+/** プレビュー用の現在のインデックス / 预览用的当前索引 */
+const currentPreviewIndex = ref(0)
+
+/** プレビュー中の商品 / 正在预览的商品 */
+const currentProduct = computed(() => effectiveProducts.value[currentPreviewIndex.value] ?? null)
 
 // ラベルテンプレートの最大キャンバス幅 (mm)
 // 标签模板的最大画布宽度 (mm)
@@ -191,14 +223,15 @@ function queueAutoRender() {
 
 async function handleRender() {
   const tpl = selectedTemplate.value
-  if (!tpl || !props.product) return
+  const product = currentProduct.value
+  if (!tpl || !product) return
 
   rendering.value = true
   error.value = ''
 
   try {
     cleanupImage()
-    const ctx = buildProductContext(props.product)
+    const ctx = buildProductContext(product)
     // PrintTemplateApiModel → PrintTemplate への変換（型互換）
     // PrintTemplateApiModel 到 PrintTemplate 的转换（类型兼容）
     const printTemplate = tpl as unknown as PrintTemplate
@@ -218,17 +251,38 @@ async function handleRender() {
 
 async function handlePrint() {
   const tpl = selectedTemplate.value
-  if (!imageUrl.value || !tpl || !props.product) return
+  if (!tpl) return
+
+  const products = effectiveProducts.value
+  if (products.length === 0) return
 
   try {
-    await printImage(imageUrl.value, {
-      widthMm: tpl.canvas.widthMm,
-      heightMm: tpl.canvas.heightMm,
-      title: `Label ${props.product.sku}`,
-      templateId: tpl.id,
-      templateType: 'print',
-    })
-    toast.showSuccess(t('wms.product.printTriggered', '印刷を実行しました'))
+    // 全商品分のラベル画像を生成して順次印刷する
+    // 生成所有商品的标签图片并依次打印
+    const printTemplate = tpl as unknown as PrintTemplate
+    for (const product of products) {
+      const ctx = buildProductContext(product)
+      const blob = await renderTemplateWithContextToPngBlob(printTemplate, ctx, {
+        exportDpi: exportDpi.value,
+        background: 'white',
+      })
+      const url = URL.createObjectURL(blob)
+      try {
+        await printImage(url, {
+          widthMm: tpl.canvas.widthMm,
+          heightMm: tpl.canvas.heightMm,
+          title: `Label ${product.sku}`,
+          templateId: tpl.id,
+          templateType: 'print',
+        })
+      } finally {
+        URL.revokeObjectURL(url)
+      }
+    }
+    const msg = products.length > 1
+      ? t('wms.product.bulkPrintTriggered', `${products.length}件のラベル印刷を実行しました`)
+      : t('wms.product.printTriggered', '印刷を実行しました')
+    toast.showSuccess(msg)
   } catch (e: any) {
     // 印刷エラー / Print error
     toast.showError(`${t('wms.product.printFailed', '印刷に失敗しました')}: ${e?.message || String(e)}`)
@@ -243,8 +297,10 @@ watch(
       cleanupImage()
       selectedTemplateId.value = ''
       error.value = ''
+      currentPreviewIndex.value = 0
       return
     }
+    currentPreviewIndex.value = 0
     await loadTemplates()
     // テンプレートが1つだけなら自動選択 / 如果只有一个模板则自动选择
     if (labelTemplates.value.length === 1) {
@@ -261,6 +317,12 @@ watch(
     queueAutoRender()
   },
 )
+
+// プレビュー対象の商品が変わったら再レンダリング / 预览商品切换时重新渲染
+watch(currentPreviewIndex, () => {
+  if (!visible.value || !selectedTemplate.value) return
+  queueAutoRender()
+})
 
 onBeforeUnmount(() => cleanupImage())
 </script>
@@ -284,6 +346,32 @@ onBeforeUnmount(() => cleanupImage())
   font-size: 13px;
   color: #606266;
   white-space: nowrap;
+}
+.bulk-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: #ecf5ff;
+  border: 1px solid #b3d8ff;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.bulk-info-count {
+  color: #409eff;
+  font-weight: 600;
+}
+.bulk-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bulk-nav-pos {
+  color: #606266;
+  font-size: 13px;
+  min-width: 60px;
+  text-align: center;
 }
 .product-info {
   display: flex;

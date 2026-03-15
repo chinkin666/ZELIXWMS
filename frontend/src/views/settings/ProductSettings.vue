@@ -55,6 +55,9 @@
       <OButton variant="secondary" size="sm" :disabled="isBulkBarcode" @click="handleBulkBarcodeGenerate">
         {{ isBulkBarcode ? t('wms.product.generating', '生成中...') : t('wms.product.bulkBarcodeGenerate', 'バーコード一括生成') }}
       </OButton>
+      <OButton variant="secondary" size="sm" @click="handleBulkLabelPrint">
+        {{ t('wms.product.bulkLabelPrint', '一括ラベル印刷') }}
+      </OButton>
       <OButton variant="secondary" size="sm" @click="selectedKeys = []">{{ t('wms.product.deselectItems', '選択解除') }}</OButton>
     </div>
 
@@ -115,6 +118,7 @@
     <LabelPrintDialog
       v-model="labelPrintDialogVisible"
       :product="labelPrintProduct"
+      :products="labelPrintProducts"
     />
   </div>
 </template>
@@ -368,9 +372,24 @@ const productFormDialogRef = ref<InstanceType<typeof ProductFormDialog> | null>(
 // ラベル印刷ダイアログ / 标签打印对话框
 const labelPrintDialogVisible = ref(false)
 const labelPrintProduct = ref<Product | null>(null)
+const labelPrintProducts = ref<Product[]>([])
 
 const openLabelPrint = (product: Product) => {
   labelPrintProduct.value = product
+  labelPrintProducts.value = []
+  labelPrintDialogVisible.value = true
+}
+
+/**
+ * 一括ラベル印刷：選択された商品をまとめてラベル印刷ダイアログに渡す
+ * 批量标签打印：将选中的商品传递给标签打印对话框
+ */
+const handleBulkLabelPrint = () => {
+  if (selectedKeys.value.length === 0) return
+  const selected = list.value.filter((r) => selectedKeys.value.includes(r._id))
+  if (selected.length === 0) return
+  labelPrintProduct.value = null
+  labelPrintProducts.value = selected
   labelPrintDialogVisible.value = true
 }
 

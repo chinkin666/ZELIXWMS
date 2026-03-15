@@ -275,8 +275,14 @@ const router = createRouter({
         {
           path: 'returns',
           meta: { title: '返品管理', requiresAuth: true },
-          redirect: '/returns/list',
+          redirect: '/returns/dashboard',
           children: [
+            {
+              path: 'dashboard',
+              name: 'ReturnDashboard',
+              component: () => import('@/views/returns/ReturnDashboard.vue'),
+              meta: { title: '返品ダッシュボード', requiresAuth: true },
+            },
             {
               path: 'list',
               name: 'ReturnOrderList',

@@ -10,6 +10,7 @@ import {
   cancelReturnOrder,
   deleteReturnOrder,
   bulkCreateReturns,
+  getDashboardStats,
 } from '@/api/controllers/returnOrderController';
 
 export const returnOrderRouter = Router();
@@ -17,6 +18,7 @@ export const returnOrderRouter = Router();
 returnOrderRouter.get('/', listReturnOrders);
 returnOrderRouter.post('/', createReturnOrder);
 returnOrderRouter.post('/bulk-create', bulkCreateReturns);
+returnOrderRouter.get('/dashboard-stats', getDashboardStats);
 returnOrderRouter.get('/:id', getReturnOrder);
 returnOrderRouter.put('/:id', updateReturnOrder);
 returnOrderRouter.delete('/:id', deleteReturnOrder);

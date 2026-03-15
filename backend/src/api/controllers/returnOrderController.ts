@@ -571,6 +571,72 @@ export async function bulkCreateReturns(req: Request, res: Response) {
 }
 
 // ---------------------------------------------------------------------------
+// GET /api/return-orders/dashboard-stats - ダッシュボード統計 / 仪表盘统计
+// ---------------------------------------------------------------------------
+export async function getDashboardStats(_req: Request, res: Response) {
+  try {
+    // ステータス別件数集計 / 按状态统计件数
+    const statusAgg = await ReturnOrder.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]);
+    const statusCounts = { draft: 0, inspecting: 0, completed: 0, cancelled: 0 };
+    for (const row of statusAgg) {
+      if (row._id in statusCounts) {
+        statusCounts[row._id as keyof typeof statusCounts] = row.count;
+      }
+    }
+
+    // 返品理由別集計 / 按退货理由统计
+    const reasonAgg = await ReturnOrder.aggregate([
+      { $group: { _id: '$returnReason', count: { $sum: 1 } } },
+    ]);
+    const reasonBreakdown: Record<string, number> = {
+      customer_request: 0,
+      defective: 0,
+      wrong_item: 0,
+      damaged: 0,
+      other: 0,
+    };
+    for (const row of reasonAgg) {
+      if (row._id in reasonBreakdown) {
+        reasonBreakdown[row._id] = row.count;
+      }
+    }
+
+    // 再入庫合計・廃棄合計 / 再入库合计・废弃合计
+    const dispositionAgg = await ReturnOrder.aggregate([
+      { $match: { status: 'completed' } },
+      { $unwind: '$lines' },
+      {
+        $group: {
+          _id: null,
+          totalRestocked: { $sum: '$lines.restockedQuantity' },
+          totalDisposed: { $sum: '$lines.disposedQuantity' },
+        },
+      },
+    ]);
+    const totalRestocked = dispositionAgg[0]?.totalRestocked ?? 0;
+    const totalDisposed = dispositionAgg[0]?.totalDisposed ?? 0;
+
+    // 最近の返品（10件） / 最近的退货（10件）
+    const recentReturns = await ReturnOrder.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    res.json({
+      statusCounts,
+      reasonBreakdown,
+      totalRestocked,
+      totalDisposed,
+      recentReturns,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // DELETE /api/return-orders/:id
 // ---------------------------------------------------------------------------
 export async function deleteReturnOrder(req: Request, res: Response) {
