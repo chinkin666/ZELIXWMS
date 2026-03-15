@@ -1539,21 +1539,21 @@ export const searchOrders = async (params: SearchOrdersParams): Promise<SearchOr
   const page = params.page ?? 1;
   const limit = params.limit ?? 10;
 
-  if (isOrderNumberSort) {
-    const allItems = await ShipmentOrder.find(mongoQuery).select(LIGHT_PROJECTION).lean();
-    allItems.sort((a, b) => {
-      const result = naturalSort(a.orderNumber, b.orderNumber);
-      return sortOrder === 1 ? result : -result;
-    });
-    const skip = (page - 1) * limit;
-    const items = allItems.slice(skip, skip + limit);
-    const total = allItems.length;
-    return { mode: 'paginated', items, total, page, limit };
-  }
-
+  // orderNumber の自然順ソートは MongoDB の numericOrdering collation を使用
+  // 全量ロード不要で、DB側でページネーション可能
+  // orderNumber自然排序使用MongoDB的numericOrdering collation，无需全量加载
   const skip = (page - 1) * limit;
+  const sortField = isOrderNumberSort ? 'orderNumber' : sortBy;
+  const collation = isOrderNumberSort ? { locale: 'ja', numericOrdering: true } : undefined;
+
   const [items, total] = await Promise.all([
-    ShipmentOrder.find(mongoQuery).select(LIGHT_PROJECTION).sort({ [sortBy]: sortOrder }).skip(skip).limit(limit).lean(),
+    ShipmentOrder.find(mongoQuery)
+      .select(LIGHT_PROJECTION)
+      .sort({ [sortField]: sortOrder })
+      .collation(collation || { locale: 'ja' })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
     ShipmentOrder.countDocuments(mongoQuery),
   ]);
 

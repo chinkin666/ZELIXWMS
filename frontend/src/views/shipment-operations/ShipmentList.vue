@@ -204,7 +204,7 @@
 
     <!-- Pagination -->
     <div class="o-table-pagination">
-      <span class="o-table-pagination__info">{{ displayRows.length }} {{ t('wms.common.items', '件') }}</span>
+      <span class="o-table-pagination__info">{{ totalRows }} {{ t('wms.common.items', '件') }}</span>
       <div class="o-table-pagination__controls">
         <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;">
           <option :value="10">10</option>
@@ -213,15 +213,15 @@
           <option :value="100">100</option>
           <option :value="500">500</option>
         </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--">&lsaquo;</OButton>
+        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--; loadOrders(false)">&lsaquo;</OButton>
         <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">&rsaquo;</OButton>
+        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++; loadOrders(false)">&rsaquo;</OButton>
       </div>
     </div>
 
     <!-- Bottom bar -->
     <OrderBottomBar
-      :total-count="displayRows.length"
+      :total-count="totalRows"
       :selected-count="tableSelectedKeys.length"
       :total-label="t('wms.shipment.displayCount', '表示件数')"
     >
@@ -503,6 +503,7 @@ const searchFormRef = ref<{ addFilter: (fieldKey: string, value: any) => boolean
 
 const currentPage = ref(1)
 const pageSize = ref(25)
+const totalRows = ref(0)
 const sortBy = ref<string | null>('orderNumber')
 const sortOrder = ref<SortOrder>('asc')
 
@@ -582,12 +583,10 @@ const effectiveSearchPayload = computed(() => {
 
 const displayRows = computed(() => [...rows.value])
 
-const totalPages = computed(() => Math.max(1, Math.ceil(displayRows.value.length / pageSize.value)))
+const totalPages = computed(() => Math.max(1, Math.ceil(totalRows.value / pageSize.value)))
 
-const paginatedRows = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return displayRows.value.slice(start, start + pageSize.value)
-})
+// サーバーサイドページネーション: rows は既に現在ページのデータのみ / 服务端分页: rows已经只有当前页数据
+const paginatedRows = computed(() => displayRows.value)
 
 const isAllCurrentPageSelected = computed(() => {
   if (paginatedRows.value.length === 0) return false
@@ -822,43 +821,28 @@ const handleSchemaFilter = (fieldPath: string, value: any) => {
   }
 }
 
-const loadOrders = async () => {
+const loadOrders = async (resetPage = true) => {
   if (isLoadingOrders.value) return
   isLoadingOrders.value = true
 
   try {
     const tzOffsetMinutes = new Date().getTimezoneOffset()
-    const limit = 1000
-    const all: OrderRow[] = []
-    let page = 1
-    let total = Infinity
-
     const q = effectiveSearchPayload.value || undefined
-    const currentSortBy = sortBy.value
-    const currentSortOrder = sortOrder.value
 
-    while (all.length < total) {
-      const res = await fetchShipmentOrdersPage<OrderRow>({
-        page,
-        limit,
-        q,
-        sortBy: currentSortBy,
-        sortOrder: currentSortOrder,
-        tzOffsetMinutes,
-      })
-      const items = Array.isArray(res?.items) ? res.items : []
-      const resTotal = typeof res?.total === 'number' ? res.total : undefined
-      if (typeof resTotal === 'number') total = resTotal
+    if (resetPage) currentPage.value = 1
 
-      if (!items.length) break
-      all.push(...items)
+    // サーバーサイドページネーション: 現在ページのみ取得 / 服务端分页: 只获取当前页
+    const res = await fetchShipmentOrdersPage<OrderRow>({
+      page: currentPage.value,
+      limit: pageSize.value,
+      q,
+      sortBy: sortBy.value,
+      sortOrder: sortOrder.value,
+      tzOffsetMinutes,
+    })
 
-      if (items.length < limit) break
-      page += 1
-    }
-
-    rows.value = all
-    currentPage.value = 1
+    rows.value = Array.isArray(res?.items) ? res.items : []
+    totalRows.value = typeof res?.total === 'number' ? res.total : rows.value.length
     orderGroupSelectorRef.value?.reloadCounts()
   } catch (e: any) {
     showToast(e?.message || '出荷予定の取得に失敗しました', 'danger')
@@ -889,6 +873,11 @@ watch(
     void loadOrders()
   },
 )
+
+// ページサイズ変更時に再取得 / 页大小变更时重新获取
+watch(pageSize, () => {
+  void loadOrders()
+})
 
 onMounted(async () => {
   await Promise.all([
