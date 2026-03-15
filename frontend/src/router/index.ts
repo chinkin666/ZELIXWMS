@@ -446,6 +446,13 @@ const router = createRouter({
             },
           ],
         },
+        // 業績レポート / 业绩报表
+        {
+          path: 'reports',
+          name: 'BusinessReport',
+          component: () => import('@/views/reports/BusinessReport.vue'),
+          meta: { title: '業績レポート', requiresAuth: true },
+        },
         {
           path: 'daily',
           meta: { title: '日次管理', requiresAuth: true },

@@ -22,6 +22,7 @@ export const wmsMenuItems: Array<{ label: string; to: string }> = [
   { label: 'セット組管理', to: '/set-products' },
   { label: '倉庫オペレーション', to: '/warehouse-ops' },
   { label: '日次管理', to: '/daily' },
+  { label: '業績レポート', to: '/reports' },
   { label: '請求管理', to: '/billing' },
   { label: '設定', to: '/settings' },
 ]

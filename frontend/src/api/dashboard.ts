@@ -74,3 +74,52 @@ export function fetchShipmentStats(from?: string, to?: string): Promise<Shipment
   const qs = params.toString()
   return http.get<ShipmentStatsResult>(`/dashboard/shipment-stats${qs ? `?${qs}` : ''}`)
 }
+
+/** 荷主別業績レポート / 荷主别业绩报表 */
+export interface ClientReportResult {
+  from: string
+  to: string
+  shipments: Array<{
+    clientId: string
+    orderCount: number
+    totalQuantity: number
+    totalAmount: number
+    shippingCost: number
+  }>
+  inbound: Array<{
+    supplierName: string
+    inboundCount: number
+    totalLines: number
+  }>
+}
+
+export function fetchClientReport(from?: string, to?: string): Promise<ClientReportResult> {
+  const params = new URLSearchParams()
+  if (from) params.set('from', from)
+  if (to) params.set('to', to)
+  const qs = params.toString()
+  return http.get<ClientReportResult>(`/dashboard/client-report${qs ? `?${qs}` : ''}`)
+}
+
+/** 在庫回転率レポート / 库存周转率报表 */
+export interface InventoryTurnoverResult {
+  period: { days: number; from: string }
+  summary: {
+    totalOutbound: number
+    currentStock: number
+    skuCount: number
+    turnoverRate: number
+    turnoverDays: number
+  }
+  topSkus: Array<{
+    sku: string
+    productName: string
+    outboundQty: number
+    currentStock: number
+    turnover: number
+  }>
+}
+
+export function fetchInventoryTurnover(days?: number): Promise<InventoryTurnoverResult> {
+  return http.get<InventoryTurnoverResult>(`/dashboard/inventory-turnover${days ? `?days=${days}` : ''}`)
+}

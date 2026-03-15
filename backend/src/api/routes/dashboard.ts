@@ -3,7 +3,7 @@
  */
 
 import { Router } from 'express';
-import { getDashboardOverview, getShipmentTrend, getShipmentResultStats } from '@/api/controllers/dashboardController';
+import { getDashboardOverview, getShipmentTrend, getShipmentResultStats, getClientReport, getInventoryTurnover } from '@/api/controllers/dashboardController';
 
 export const dashboardRouter = Router();
 
@@ -55,3 +55,9 @@ dashboardRouter.get('/trend', getShipmentTrend);
 
 // 出荷实绩统计 / 出荷実績統計
 dashboardRouter.get('/shipment-stats', getShipmentResultStats);
+
+// 荷主別業績レポート / 荷主别业绩报表
+dashboardRouter.get('/client-report', getClientReport);
+
+// 在庫回転率レポート / 库存周转率报表
+dashboardRouter.get('/inventory-turnover', getInventoryTurnover);

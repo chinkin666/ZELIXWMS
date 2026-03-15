@@ -309,6 +309,189 @@ export async function getShipmentResultStats(req: Request, res: Response) {
   }
 }
 
+/**
+ * 荷主別業績レポート / 荷主别业绩报表
+ * GET /api/dashboard/client-report?from=YYYY-MM-DD&to=YYYY-MM-DD
+ */
+export async function getClientReport(req: Request, res: Response) {
+  try {
+    const fromStr = (req.query.from as string) || '';
+    const toStr = (req.query.to as string) || '';
+
+    const to = toStr ? new Date(toStr + 'T23:59:59') : new Date();
+    const from = fromStr ? new Date(fromStr + 'T00:00:00') : new Date(to.getTime() - 29 * 86400000);
+    from.setHours(0, 0, 0, 0);
+    const toEnd = new Date(to);
+    toEnd.setHours(23, 59, 59, 999);
+
+    // 荷主別出荷集計 / 荷主别出货汇总
+    const clientShipments = await ShipmentOrder.aggregate([
+      {
+        $match: {
+          'status.shipped.isShipped': true,
+          'status.shipped.shippedAt': { $gte: from, $lte: toEnd },
+        },
+      },
+      {
+        $group: {
+          _id: '$orderSourceCompanyId',
+          orderCount: { $sum: 1 },
+          totalQuantity: { $sum: { $ifNull: ['$_productsMeta.totalQuantity', 0] } },
+          totalAmount: { $sum: { $ifNull: ['$_productsMeta.totalPrice', 0] } },
+          shippingCost: { $sum: { $ifNull: ['$shippingCost', 0] } },
+        },
+      },
+      { $sort: { orderCount: -1 } },
+    ]);
+
+    // 荷主別入庫集計 / 荷主别入库汇总
+    const clientInbound = await InboundOrder.aggregate([
+      {
+        $match: {
+          status: 'done',
+          completedAt: { $gte: from, $lte: toEnd },
+        },
+      },
+      {
+        $group: {
+          _id: '$supplier.name',
+          inboundCount: { $sum: 1 },
+          totalLines: { $sum: { $size: '$lines' } },
+        },
+      },
+      { $sort: { inboundCount: -1 } },
+    ]);
+
+    res.json({
+      from: from.toISOString().slice(0, 10),
+      to: toEnd.toISOString().slice(0, 10),
+      shipments: clientShipments.map((c: any) => ({
+        clientId: c._id || 'direct',
+        orderCount: c.orderCount,
+        totalQuantity: c.totalQuantity,
+        totalAmount: c.totalAmount,
+        shippingCost: c.shippingCost,
+      })),
+      inbound: clientInbound.map((c: any) => ({
+        supplierName: c._id || 'unknown',
+        inboundCount: c.inboundCount,
+        totalLines: c.totalLines,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+}
+
+/**
+ * 在庫回転率レポート / 库存周转率报表
+ * GET /api/dashboard/inventory-turnover?days=30
+ */
+export async function getInventoryTurnover(req: Request, res: Response) {
+  try {
+    const days = Math.min(365, Math.max(7, Number(req.query.days) || 30));
+    const from = new Date();
+    from.setDate(from.getDate() - days);
+    from.setHours(0, 0, 0, 0);
+
+    // 期間内の出庫数量（出荷済み注文の商品数量合計）/ 期间内的出库数量
+    const outboundResult = await ShipmentOrder.aggregate([
+      {
+        $match: {
+          'status.shipped.isShipped': true,
+          'status.shipped.shippedAt': { $gte: from },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalOutbound: { $sum: { $ifNull: ['$_productsMeta.totalQuantity', 0] } },
+        },
+      },
+    ]);
+
+    // 現在の在庫 / 现在库存
+    const stockResult = await StockQuant.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalStock: { $sum: '$quantity' },
+          totalReserved: { $sum: '$reservedQuantity' },
+          skuCount: { $addToSet: '$productId' },
+        },
+      },
+      {
+        $project: {
+          totalStock: 1,
+          totalReserved: 1,
+          skuCount: { $size: '$skuCount' },
+        },
+      },
+    ]);
+
+    // SKU 別在庫回転率（上位20件）/ SKU别库存周转率（前20名）
+    const skuTurnover = await ShipmentOrder.aggregate([
+      {
+        $match: {
+          'status.shipped.isShipped': true,
+          'status.shipped.shippedAt': { $gte: from },
+        },
+      },
+      { $unwind: '$products' },
+      {
+        $group: {
+          _id: '$products.productSku',
+          productName: { $first: '$products.productName' },
+          outboundQty: { $sum: '$products.quantity' },
+        },
+      },
+      { $sort: { outboundQty: -1 } },
+      { $limit: 20 },
+    ]);
+
+    // 各SKUの在庫を追加 / 各SKUの在庫を追加
+    const skuList = skuTurnover.map((s: any) => s._id).filter(Boolean);
+    const stockBySku = await StockQuant.aggregate([
+      { $match: { productSku: { $in: skuList } } },
+      {
+        $group: {
+          _id: '$productSku',
+          currentStock: { $sum: '$quantity' },
+        },
+      },
+    ]);
+    const stockMap = new Map(stockBySku.map((s: any) => [s._id, s.currentStock]));
+
+    const totalOutbound = outboundResult[0]?.totalOutbound || 0;
+    const totalStock = stockResult[0]?.totalStock || 0;
+    const avgStock = totalStock; // 简化：使用当前在库作为平均 / 簡略化：現在在庫を平均として使用
+    const turnoverRate = avgStock > 0 ? Math.round((totalOutbound / avgStock) * 100) / 100 : 0;
+    const turnoverDays = totalOutbound > 0 ? Math.round((avgStock / (totalOutbound / days)) * 10) / 10 : 0;
+
+    res.json({
+      period: { days, from: from.toISOString().slice(0, 10) },
+      summary: {
+        totalOutbound,
+        currentStock: totalStock,
+        skuCount: stockResult[0]?.skuCount || 0,
+        turnoverRate,
+        turnoverDays,
+      },
+      topSkus: skuTurnover.map((s: any) => ({
+        sku: s._id,
+        productName: s.productName,
+        outboundQty: s.outboundQty,
+        currentStock: stockMap.get(s._id) || 0,
+        turnover: (stockMap.get(s._id) || 0) > 0
+          ? Math.round((s.outboundQty / (stockMap.get(s._id) || 1)) * 100) / 100
+          : 0,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+}
+
 function formatDate(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
