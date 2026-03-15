@@ -17,6 +17,8 @@ function normalizePathPrefix(prefix: string): string {
  * 2) VITE_BACKEND_ORIGIN + VITE_BACKEND_API_PREFIX (e.g. https://example.com + /api)
  * 3) defaults: http://localhost:4000 + /api
  */
+export { apiFetch } from './http'
+
 export function getApiBaseUrl(): string {
   const explicit = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim()
   if (explicit) return trimTrailingSlashes(explicit)

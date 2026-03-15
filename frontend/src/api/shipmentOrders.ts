@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -41,7 +42,7 @@ export type CreateShipmentOrdersBulkResult = {
 export async function createShipmentOrdersBulk(
   payload: CreateShipmentOrdersBulkPayload,
 ): Promise<CreateShipmentOrdersBulkResult> {
-  const response = await fetch(`${API_BASE_URL}/shipment-orders/manual/bulk`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipment-orders/manual/bulk`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -68,7 +69,7 @@ export async function fetchShipmentOrders(params?: { limit?: number }): Promise<
   // デフォルトはorderNumberでソート / 默认使用 orderNumber 排序
   url.searchParams.set('sortBy', 'orderNumber')
   url.searchParams.set('sortOrder', 'asc')
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`出荷予定の取得に失敗しました: ${response.statusText}`)
   }
@@ -80,7 +81,7 @@ export async function fetchShipmentOrders(params?: { limit?: number }): Promise<
 }
 
 export async function fetchShipmentOrder(id: string): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/shipment-orders/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/shipment-orders/${id}`)
   if (!response.ok) {
     const message = (await response.json().catch(() => ({}))).message || response.statusText
     throw new Error(`出荷予定の取得に失敗しました: ${message}`)
@@ -119,7 +120,7 @@ export async function fetchShipmentOrdersPage<T = any>(query: FetchShipmentOrder
     url.searchParams.set('q', JSON.stringify(query.q))
   }
 
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`出荷予定の取得に失敗しました: ${response.statusText}`)
   }
@@ -150,7 +151,7 @@ export type ImportCarrierReceiptRowsResult = {
 export async function importCarrierReceiptRows(
   payload: ImportCarrierReceiptRowsPayload,
 ): Promise<ImportCarrierReceiptRowsResult> {
-  const response = await fetch(`${API_BASE_URL}/shipment-orders/carrier-receipts/import`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipment-orders/carrier-receipts/import`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -180,7 +181,7 @@ export async function updateShipmentOrderStatus(
     body.statusType = statusType
   }
 
-  const response = await fetch(`${API_BASE_URL}/shipment-orders/${encodeURIComponent(id)}/status`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipment-orders/${encodeURIComponent(id)}/status`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -208,7 +209,7 @@ export async function markShipmentOrderPrintReady(id: string): Promise<any> {
  * @param updates Object with fields to update (e.g., { 'status.confirm.isConfirmed': true, 'status.confirm.confirmedAt': '...' })
  */
 export async function bulkUpdateShipmentOrders(ids: string[], updates: Record<string, any>): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/shipment-orders/bulk`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipment-orders/bulk`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ids, updates }),
@@ -238,7 +239,7 @@ export async function updateShipmentOrderStatusBulk(
     body.statusType = statusType
   }
 
-  const response = await fetch(`${API_BASE_URL}/shipment-orders/status/bulk`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipment-orders/status/bulk`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -272,7 +273,7 @@ export async function markShipmentOrderPrinted(id: string): Promise<any> {
  * Backend route: PUT /api/shipment-orders/:id
  */
 export async function updateShipmentOrder(id: string, data: Record<string, any>): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/shipment-orders/${encodeURIComponent(id)}`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipment-orders/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -296,7 +297,7 @@ export async function updateShipmentOrder(id: string, data: Record<string, any>)
  * Backend route: DELETE /api/shipment-orders/:id
  */
 export async function deleteShipmentOrder(id: string): Promise<any> {
-  const response = await fetch(`${API_BASE_URL}/shipment-orders/${encodeURIComponent(id)}`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipment-orders/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   })
   const json = await response.json().catch(() => ({}))
@@ -317,7 +318,7 @@ export async function deleteShipmentOrdersBulk(ids: string[]): Promise<{ deleted
     return { deletedCount: 0, requestedCount: 0 }
   }
 
-  const response = await fetch(`${API_BASE_URL}/shipment-orders/delete/bulk`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipment-orders/delete/bulk`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ids }),
@@ -369,7 +370,7 @@ export async function fetchShipmentOrdersByIds<T = any>(
     return []
   }
 
-  const response = await fetch(`${API_BASE_URL}/shipment-orders/by-ids`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipment-orders/by-ids`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

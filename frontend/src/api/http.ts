@@ -189,3 +189,31 @@ class HttpClient {
 // ─── Singleton Export / シングルトンエクスポート ─────────────────────────────
 
 export const http = new HttpClient(getApiBaseUrl())
+
+// ─── apiFetch: fetch() のドロップイン置換 / fetch() 的直接替代 ──────────────
+// 既存の API ファイルで fetch() → apiFetch() に差し替えるだけで JWT 認証が付く
+// 在现有 API 文件中将 fetch() 替换为 apiFetch() 即可自动附加 JWT 认证
+
+export async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
+  const headers: Record<string, string> = {
+    ...(init?.headers as Record<string, string> || {}),
+  }
+
+  // Content-Type がなければ JSON デフォルト / 如果没有 Content-Type 则默认为 JSON
+  if (!headers['Content-Type'] && init?.body && typeof init.body === 'string') {
+    headers['Content-Type'] = 'application/json'
+  }
+
+  // トークンをストアから取得 / 从 Store 获取令牌
+  try {
+    const store = useWmsUserStore()
+    if (store.token) {
+      headers['Authorization'] = `Bearer ${store.token}`
+    }
+  } catch {
+    // Store が利用できない場合は認証ヘッダーをスキップ
+    // Store 不可用时跳过认证头
+  }
+
+  return fetch(url, { ...init, headers })
+}

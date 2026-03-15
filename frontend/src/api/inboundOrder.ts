@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 import type { InboundOrder, InboundHistoryLine } from '@/types/inventory'
 
 const API_BASE_URL = getApiBaseUrl()
@@ -12,13 +13,13 @@ export async function fetchInboundOrders(params?: {
   if (params?.status) url.searchParams.append('status', params.status)
   if (params?.page) url.searchParams.append('page', String(params.page))
   if (params?.limit) url.searchParams.append('limit', String(params.limit))
-  const res = await fetch(url.toString())
+  const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch inbound orders')
   return res.json()
 }
 
 export async function fetchInboundOrder(id: string): Promise<InboundOrder> {
-  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}`)
+  const res = await apiFetch(`${API_BASE_URL}/inbound-orders/${id}`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch inbound order')
   return res.json()
 }
@@ -39,7 +40,7 @@ export async function createInboundOrder(data: {
   expectedDate?: string
   memo?: string
 }): Promise<InboundOrder> {
-  const res = await fetch(`${API_BASE_URL}/inbound-orders`, {
+  const res = await apiFetch(`${API_BASE_URL}/inbound-orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -63,7 +64,7 @@ export async function updateInboundOrder(id: string, data: Partial<{
   expectedDate: string
   memo: string
 }>): Promise<InboundOrder> {
-  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}`, {
+  const res = await apiFetch(`${API_BASE_URL}/inbound-orders/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -73,7 +74,7 @@ export async function updateInboundOrder(id: string, data: Partial<{
 }
 
 export async function confirmInboundOrder(id: string): Promise<{ message: string; order: InboundOrder }> {
-  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}/confirm`, { method: 'POST' })
+  const res = await apiFetch(`${API_BASE_URL}/inbound-orders/${id}/confirm`, { method: 'POST' })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to confirm')
   return res.json()
 }
@@ -82,7 +83,7 @@ export async function receiveInboundLine(id: string, data: {
   lineNumber: number
   receiveQuantity: number
 }): Promise<{ message: string; line: { lineNumber: number; receivedQuantity: number; expectedQuantity: number }; orderStatus: string }> {
-  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}/receive`, {
+  const res = await apiFetch(`${API_BASE_URL}/inbound-orders/${id}/receive`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -92,7 +93,7 @@ export async function receiveInboundLine(id: string, data: {
 }
 
 export async function bulkReceiveInbound(id: string): Promise<{ message: string; order: InboundOrder }> {
-  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}/bulk-receive`, { method: 'POST' })
+  const res = await apiFetch(`${API_BASE_URL}/inbound-orders/${id}/bulk-receive`, { method: 'POST' })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to bulk receive')
   return res.json()
 }
@@ -102,7 +103,7 @@ export async function putawayInboundLine(id: string, data: {
   locationId: string
   quantity?: number
 }): Promise<{ message: string; line: { lineNumber: number; putawayLocationId: string; putawayQuantity: number }; allPutaway: boolean }> {
-  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}/putaway`, {
+  const res = await apiFetch(`${API_BASE_URL}/inbound-orders/${id}/putaway`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -112,19 +113,19 @@ export async function putawayInboundLine(id: string, data: {
 }
 
 export async function completeInboundOrder(id: string): Promise<{ message: string }> {
-  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}/complete`, { method: 'POST' })
+  const res = await apiFetch(`${API_BASE_URL}/inbound-orders/${id}/complete`, { method: 'POST' })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to complete')
   return res.json()
 }
 
 export async function cancelInboundOrder(id: string): Promise<{ message: string }> {
-  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}/cancel`, { method: 'POST' })
+  const res = await apiFetch(`${API_BASE_URL}/inbound-orders/${id}/cancel`, { method: 'POST' })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to cancel')
   return res.json()
 }
 
 export async function deleteInboundOrder(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}`, { method: 'DELETE' })
+  const res = await apiFetch(`${API_BASE_URL}/inbound-orders/${id}`, { method: 'DELETE' })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to delete')
 }
 
@@ -150,7 +151,7 @@ export async function searchInboundHistory(params?: {
       if (v !== undefined && v !== '' && v !== null) url.searchParams.append(k, String(v))
     }
   }
-  const res = await fetch(url.toString())
+  const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to search history')
   return res.json()
 }
@@ -181,7 +182,7 @@ export interface InboundVarianceReport {
 }
 
 export async function fetchInboundVariance(id: string): Promise<InboundVarianceReport> {
-  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}/variance`)
+  const res = await apiFetch(`${API_BASE_URL}/inbound-orders/${id}/variance`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch variance')
   return res.json()
 }
@@ -198,7 +199,7 @@ export interface LocationSuggestion {
 }
 
 export async function fetchPutawaySuggestions(id: string): Promise<{ suggestions: LocationSuggestion[] }> {
-  const res = await fetch(`${API_BASE_URL}/inbound-orders/${id}/suggest-locations`)
+  const res = await apiFetch(`${API_BASE_URL}/inbound-orders/${id}/suggest-locations`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch suggestions')
   return res.json()
 }

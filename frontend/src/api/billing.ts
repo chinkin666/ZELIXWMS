@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -114,7 +115,7 @@ function buildShippingRateUrl(params?: ShippingRateFilters): string {
 export async function fetchShippingRates(
   params?: ShippingRateFilters,
 ): Promise<{ data: ShippingRate[]; total: number }> {
-  const response = await fetch(buildShippingRateUrl(params))
+  const response = await apiFetch(buildShippingRateUrl(params))
   if (!response.ok) {
     throw new Error(`運賃マスタの取得に失敗しました: ${response.statusText}`)
   }
@@ -122,7 +123,7 @@ export async function fetchShippingRates(
 }
 
 export async function createShippingRate(data: Partial<ShippingRate>): Promise<ShippingRate> {
-  const response = await fetch(`${API_BASE_URL}/shipping-rates`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipping-rates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -135,7 +136,7 @@ export async function createShippingRate(data: Partial<ShippingRate>): Promise<S
 }
 
 export async function updateShippingRate(id: string, data: Partial<ShippingRate>): Promise<ShippingRate> {
-  const response = await fetch(`${API_BASE_URL}/shipping-rates/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipping-rates/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -148,7 +149,7 @@ export async function updateShippingRate(id: string, data: Partial<ShippingRate>
 }
 
 export async function deleteShippingRate(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/shipping-rates/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipping-rates/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -160,7 +161,7 @@ export async function deleteShippingRate(id: string): Promise<void> {
 // ── 月次請求API / 月次請求API ──
 // 後端: /api/billing/*
 export async function generateMonthlyBilling(period: string): Promise<BillingRecord> {
-  const response = await fetch(`${API_BASE_URL}/billing/generate`, {
+  const response = await apiFetch(`${API_BASE_URL}/billing/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ period }),
@@ -185,7 +186,7 @@ export async function fetchBillingRecords(params?: {
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`請求データの取得に失敗しました: ${response.statusText}`)
   }
@@ -193,7 +194,7 @@ export async function fetchBillingRecords(params?: {
 }
 
 export async function fetchBillingRecord(id: string): Promise<BillingRecord> {
-  const response = await fetch(`${API_BASE_URL}/billing/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/billing/${id}`)
   if (!response.ok) {
     throw new Error(`請求データの取得に失敗しました: ${response.statusText}`)
   }
@@ -201,7 +202,7 @@ export async function fetchBillingRecord(id: string): Promise<BillingRecord> {
 }
 
 export async function confirmBillingRecord(id: string): Promise<BillingRecord> {
-  const response = await fetch(`${API_BASE_URL}/billing/${id}/confirm`, {
+  const response = await apiFetch(`${API_BASE_URL}/billing/${id}/confirm`, {
     method: 'POST',
   })
   if (!response.ok) {
@@ -223,7 +224,7 @@ export async function fetchInvoices(params?: {
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`請求書の取得に失敗しました: ${response.statusText}`)
   }
@@ -241,7 +242,7 @@ export async function createInvoice(data: {
   lineItems?: InvoiceLineItem[]
   memo?: string
 }): Promise<Invoice> {
-  const response = await fetch(`${API_BASE_URL}/billing/invoices`, {
+  const response = await apiFetch(`${API_BASE_URL}/billing/invoices`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -254,7 +255,7 @@ export async function createInvoice(data: {
 }
 
 export async function fetchInvoice(id: string): Promise<Invoice> {
-  const response = await fetch(`${API_BASE_URL}/billing/invoices/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/billing/invoices/${id}`)
   if (!response.ok) {
     throw new Error(`請求書の取得に失敗しました: ${response.statusText}`)
   }
@@ -263,7 +264,7 @@ export async function fetchInvoice(id: string): Promise<Invoice> {
 
 // 請求書詳細取得（関連BillingRecord含む） / 获取发票详情（含关联BillingRecord）
 export async function fetchInvoiceDetail(id: string): Promise<InvoiceDetail> {
-  const response = await fetch(`${API_BASE_URL}/billing/invoices/${id}/detail`)
+  const response = await apiFetch(`${API_BASE_URL}/billing/invoices/${id}/detail`)
   if (!response.ok) {
     throw new Error(`請求書詳細の取得に失敗しました: ${response.statusText}`)
   }
@@ -274,7 +275,7 @@ export async function updateInvoiceStatus(
   id: string,
   status: InvoiceStatus,
 ): Promise<Invoice> {
-  const response = await fetch(`${API_BASE_URL}/billing/invoices/${id}/status`, {
+  const response = await apiFetch(`${API_BASE_URL}/billing/invoices/${id}/status`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
@@ -290,7 +291,7 @@ export async function updateInvoiceStatus(
 export async function fetchBillingDashboard(period?: string): Promise<BillingDashboardKpi> {
   const url = new URL(`${API_BASE_URL}/billing/dashboard`)
   if (period) url.searchParams.append('period', period)
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`ダッシュボードの取得に失敗しました: ${response.statusText}`)
   }

@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 import type { StockQuant, StockSummary, StockMove, LowStockAlert } from '@/types/inventory'
 
 const API_BASE_URL = getApiBaseUrl()
@@ -14,7 +15,7 @@ export async function fetchStock(params?: {
   if (params?.productSku) url.searchParams.append('productSku', params.productSku)
   if (params?.locationId) url.searchParams.append('locationId', params.locationId)
   if (params?.showZero) url.searchParams.append('showZero', 'true')
-  const res = await fetch(url.toString())
+  const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch stock')
   return res.json()
 }
@@ -22,13 +23,13 @@ export async function fetchStock(params?: {
 export async function fetchStockSummary(params?: { search?: string }): Promise<StockSummary[]> {
   const url = new URL(`${API_BASE_URL}/inventory/stock/summary`)
   if (params?.search) url.searchParams.append('search', params.search)
-  const res = await fetch(url.toString())
+  const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch stock summary')
   return res.json()
 }
 
 export async function fetchProductStock(productId: string): Promise<StockQuant[]> {
-  const res = await fetch(`${API_BASE_URL}/inventory/stock/${productId}`)
+  const res = await apiFetch(`${API_BASE_URL}/inventory/stock/${productId}`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch product stock')
   return res.json()
 }
@@ -40,7 +41,7 @@ export async function adjustStock(data: {
   adjustQuantity: number
   memo?: string
 }): Promise<{ message: string; moveNumber: string }> {
-  const res = await fetch(`${API_BASE_URL}/inventory/adjust`, {
+  const res = await apiFetch(`${API_BASE_URL}/inventory/adjust`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -62,13 +63,13 @@ export async function fetchMovements(params?: {
   if (params?.state) url.searchParams.append('state', params.state)
   if (params?.page) url.searchParams.append('page', String(params.page))
   if (params?.limit) url.searchParams.append('limit', String(params.limit))
-  const res = await fetch(url.toString())
+  const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch movements')
   return res.json()
 }
 
 export async function fetchLowStockAlerts(): Promise<LowStockAlert[]> {
-  const res = await fetch(`${API_BASE_URL}/inventory/alerts/low-stock`)
+  const res = await apiFetch(`${API_BASE_URL}/inventory/alerts/low-stock`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch low stock alerts')
   return res.json()
 }
@@ -84,7 +85,7 @@ export async function reserveOrdersStock(ids: string[]): Promise<{
   totalReserved: number
   errors: string[]
 }> {
-  const res = await fetch(`${API_BASE_URL}/inventory/reserve-orders`, {
+  const res = await apiFetch(`${API_BASE_URL}/inventory/reserve-orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ids }),
@@ -101,7 +102,7 @@ export async function transferStock(data: {
   lotId?: string
   memo?: string
 }): Promise<{ message: string; moveNumber: string }> {
-  const res = await fetch(`${API_BASE_URL}/inventory/transfer`, {
+  const res = await apiFetch(`${API_BASE_URL}/inventory/transfer`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -122,7 +123,7 @@ export async function bulkAdjustStock(adjustments: Array<{
   failCount: number
   errors: string[]
 }> {
-  const res = await fetch(`${API_BASE_URL}/inventory/bulk-adjust`, {
+  const res = await apiFetch(`${API_BASE_URL}/inventory/bulk-adjust`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ adjustments }),
@@ -145,13 +146,13 @@ export interface InventoryOverview {
 }
 
 export async function fetchInventoryOverview(): Promise<InventoryOverview> {
-  const res = await fetch(`${API_BASE_URL}/inventory/overview`)
+  const res = await apiFetch(`${API_BASE_URL}/inventory/overview`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch overview')
   return res.json()
 }
 
 export async function cleanupZeroStock(): Promise<{ message: string; deletedCount: number }> {
-  const res = await fetch(`${API_BASE_URL}/inventory/cleanup-zero`, {
+  const res = await apiFetch(`${API_BASE_URL}/inventory/cleanup-zero`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   })

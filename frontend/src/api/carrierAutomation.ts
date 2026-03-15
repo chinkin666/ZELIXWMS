@@ -14,6 +14,7 @@ import type {
 } from '@/types/carrierAutomation'
 
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -21,7 +22,7 @@ const API_BASE_URL = getApiBaseUrl()
  * 全ての自動化設定を取得
  */
 export async function fetchCarrierAutomationConfigs(): Promise<CarrierAutomationConfig[]> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/configs`)
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/configs`)
   if (!response.ok) {
     throw new Error(`設定の取得に失敗しました: ${response.statusText}`)
   }
@@ -34,7 +35,7 @@ export async function fetchCarrierAutomationConfigs(): Promise<CarrierAutomation
 export async function fetchCarrierAutomationConfig(
   type: string
 ): Promise<CarrierAutomationConfig> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/configs/${type}`)
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/configs/${type}`)
   if (!response.ok) {
     throw new Error(`設定の取得に失敗しました: ${response.statusText}`)
   }
@@ -48,7 +49,7 @@ export async function saveCarrierAutomationConfig(
   type: string,
   payload: UpsertCarrierAutomationConfigDto
 ): Promise<CarrierAutomationConfig> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/configs/${type}`, {
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/configs/${type}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -64,7 +65,7 @@ export async function saveCarrierAutomationConfig(
  * 自動化設定を削除
  */
 export async function deleteCarrierAutomationConfig(type: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/configs/${type}`, {
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/configs/${type}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -77,7 +78,7 @@ export async function deleteCarrierAutomationConfig(type: string): Promise<void>
  * 接続テスト
  */
 export async function testCarrierAutomationConnection(type: string): Promise<ConnectionTestResult> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/configs/${type}/test`, {
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/configs/${type}/test`, {
     method: 'POST',
   })
   if (!response.ok) {
@@ -91,7 +92,7 @@ export async function testCarrierAutomationConnection(type: string): Promise<Con
  * Yamato B2: 配送データを検証（エクスポート前のフォーマットチェック）
  */
 export async function yamatoB2Validate(orderIds: string[]): Promise<YamatoB2ValidateResult> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/yamato-b2/validate`, {
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/yamato-b2/validate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ orderIds }),
@@ -109,7 +110,7 @@ export async function yamatoB2Validate(orderIds: string[]): Promise<YamatoB2Vali
  * Yamato B2: 配送データをエクスポート
  */
 export async function yamatoB2Export(orderIds: string[]): Promise<YamatoB2ExportResult> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/yamato-b2/export`, {
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/yamato-b2/export`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ orderIds }),
@@ -127,7 +128,7 @@ export async function yamatoB2Export(orderIds: string[]): Promise<YamatoB2Export
  * Yamato B2: ラベル印刷
  */
 export async function yamatoB2Print(trackingNumbers: string[]): Promise<YamatoB2PrintResult> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/yamato-b2/print`, {
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/yamato-b2/print`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ trackingNumbers }),
@@ -147,7 +148,7 @@ export async function yamatoB2Import(options?: {
   shipmentDateFrom?: string  // YYYY-MM-DD format
   shipmentDateTo?: string    // YYYY-MM-DD format
 }): Promise<YamatoB2ImportResult> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/yamato-b2/import`, {
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/yamato-b2/import`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(options || {}),
@@ -184,7 +185,7 @@ export async function yamatoB2Unconfirm(
   reason: string,
   options?: { skipCarrierDelete?: boolean }
 ): Promise<YamatoB2UnconfirmResult> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/yamato-b2/unconfirm`, {
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/yamato-b2/unconfirm`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ orderIds, reason, skipCarrierDelete: options?.skipCarrierDelete }),
@@ -212,7 +213,7 @@ export async function changeInvoiceType(
   newInvoiceType: string,
   options?: { skipCarrierDelete?: boolean }
 ): Promise<ChangeInvoiceTypeResult> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/change-invoice-type`, {
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/change-invoice-type`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ orderIds, newInvoiceType, skipCarrierDelete: options?.skipCarrierDelete }),
@@ -239,7 +240,7 @@ export async function splitOrder(
   request: SplitOrderRequest,
   options?: { skipCarrierDelete?: boolean }
 ): Promise<SplitOrderResult> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/split-order`, {
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/split-order`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -264,7 +265,7 @@ export async function splitOrder(
  * @returns PDFのBlobデータ
  */
 export async function yamatoB2FetchBatchPdf(trackingNumbers: string[]): Promise<Blob> {
-  const response = await fetch(`${API_BASE_URL}/carrier-automation/yamato-b2/pdf/batch`, {
+  const response = await apiFetch(`${API_BASE_URL}/carrier-automation/yamato-b2/pdf/batch`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ trackingNumbers }),

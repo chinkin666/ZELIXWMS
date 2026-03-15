@@ -1,6 +1,7 @@
 import type { Product, ProductFilters, UpsertProductDto } from '@/types/product'
 
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -22,7 +23,7 @@ const buildQueryUrl = (filters?: ProductFilters): string => {
 }
 
 export async function fetchProducts(filters?: ProductFilters): Promise<Product[]> {
-  const response = await fetch(buildQueryUrl(filters))
+  const response = await apiFetch(buildQueryUrl(filters))
   if (!response.ok) {
     throw new Error(`商品の取得に失敗しました: ${response.statusText}`)
   }
@@ -30,7 +31,7 @@ export async function fetchProducts(filters?: ProductFilters): Promise<Product[]
 }
 
 export async function createProduct(payload: UpsertProductDto): Promise<Product> {
-  const response = await fetch(`${API_BASE_URL}/products`, {
+  const response = await apiFetch(`${API_BASE_URL}/products`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -43,7 +44,7 @@ export async function createProduct(payload: UpsertProductDto): Promise<Product>
 }
 
 export async function updateProduct(id: string, payload: Partial<UpsertProductDto>): Promise<Product> {
-  const response = await fetch(`${API_BASE_URL}/products/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/products/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -56,7 +57,7 @@ export async function updateProduct(id: string, payload: Partial<UpsertProductDt
 }
 
 export async function deleteProduct(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/products/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/products/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -73,7 +74,7 @@ export type ImportRowError = {
 }
 
 export async function validateProductImport(rows: any[]): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/products/validate-import`, {
+  const response = await apiFetch(`${API_BASE_URL}/products/validate-import`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ rows }),
@@ -87,7 +88,7 @@ export async function validateProductImport(rows: any[]): Promise<void> {
 }
 
 export async function importProductsBulk(rows: any[]): Promise<{ insertedCount: number }> {
-  const response = await fetch(`${API_BASE_URL}/products/import-bulk`, {
+  const response = await apiFetch(`${API_BASE_URL}/products/import-bulk`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ rows }),
@@ -115,7 +116,7 @@ export async function importProductsWithStrategy(
   rows: any[],
   strategy: ImportStrategy,
 ): Promise<ImportResult> {
-  const response = await fetch(`${API_BASE_URL}/products/import-with-strategy`, {
+  const response = await apiFetch(`${API_BASE_URL}/products/import-with-strategy`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ rows, strategy }),
@@ -139,7 +140,7 @@ export async function checkSkuAvailability(
   skus: string[],
   excludeProductId?: string,
 ): Promise<Record<string, SkuAvailabilityResult>> {
-  const response = await fetch(`${API_BASE_URL}/products/check-sku-availability`, {
+  const response = await apiFetch(`${API_BASE_URL}/products/check-sku-availability`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ skus, excludeProductId }),
@@ -154,7 +155,7 @@ export async function checkSkuAvailability(
 export async function uploadProductImage(file: File): Promise<{ imageUrl: string }> {
   const formData = new FormData()
   formData.append('image', file)
-  const response = await fetch(`${API_BASE_URL}/products/upload-image`, {
+  const response = await apiFetch(`${API_BASE_URL}/products/upload-image`, {
     method: 'POST',
     body: formData,
   })
@@ -184,7 +185,7 @@ export async function fetchProductShipmentStats(params?: {
   if (params?.dateFrom) url.searchParams.append('dateFrom', params.dateFrom)
   if (params?.dateTo) url.searchParams.append('dateTo', params.dateTo)
   if (params?.limit) url.searchParams.append('limit', String(params.limit))
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`出荷統計の取得に失敗しました: ${response.statusText}`)
   }
@@ -195,7 +196,7 @@ export async function bulkUpdateProducts(
   ids: string[],
   updates: Record<string, any>,
 ): Promise<{ message: string; matchedCount: number; modifiedCount: number }> {
-  const response = await fetch(`${API_BASE_URL}/products/bulk`, {
+  const response = await apiFetch(`${API_BASE_URL}/products/bulk`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ids, updates }),
