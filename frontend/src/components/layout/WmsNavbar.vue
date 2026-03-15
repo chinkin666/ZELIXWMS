@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '../../composables/useI18n'
 import { useAuth } from '@/stores/auth'
 
-defineProps<{
+const props = defineProps<{
   menuItems: Array<{ label: string; to: string }>
   mobileSidebarOpen: boolean
 }>()
@@ -49,6 +49,22 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', 'dark')
   }
 })()
+
+// ロールベースのメニュー表示制御 / 基于角色的菜单显示控制
+const visibleMenuItems = computed(() => {
+  const role = user.value?.role
+  if (!role || role === 'admin' || role === 'super_admin') return props.menuItems
+
+  const roleMenus: Record<string, string[]> = {
+    manager: ['/products', '/materials', '/inbound', '/inventory', '/shipment', '/fba', '/returns', '/stocktaking', '/set-products', '/warehouse-ops', '/daily', '/billing', '/settings'],
+    operator: ['/inbound', '/inventory', '/shipment', '/returns', '/stocktaking', '/warehouse-ops'],
+    viewer: ['/products', '/inventory', '/shipment', '/returns', '/daily', '/billing'],
+    client: ['/shipment', '/inventory', '/billing', '/daily'],
+  }
+
+  const allowed = roleMenus[role] || []
+  return props.menuItems.filter(item => allowed.some(path => item.to.startsWith(path)))
+})
 
 function isActive(to: string) {
   if (to === '/home') return route.path === '/home' || route.path === '/'
@@ -106,7 +122,7 @@ function closeMenus(e: MouseEvent) {
     <!-- Menu entries -->
     <div class="o-navbar-menu" :class="{ 'o-mobile-open': mobileSidebarOpen }">
       <button
-        v-for="item in menuItems"
+        v-for="item in visibleMenuItems"
         :key="item.to"
         class="o-navbar-entry"
         :class="{ active: isActive(item.to) }"

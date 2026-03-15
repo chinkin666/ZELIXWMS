@@ -24,6 +24,18 @@
                 </div>
               </div>
             </template>
+            <!-- 出荷先タイプ選択 / 出货目的地类型选择 -->
+            <div class="o-field-row">
+              <label class="o-field-label">出荷先タイプ</label>
+              <div class="o-field-value">
+                <select class="o-inline-input" :value="getNestedValue(formData, 'destinationType')" @change="handleFieldUpdate('destinationType', ($event.target as HTMLSelectElement).value)">
+                  <option value="B2C">B2C（個人宅配）</option>
+                  <option value="B2B">B2B（法人配送）</option>
+                  <option value="FBA">FBA（Amazon倉庫）</option>
+                  <option value="RSL">RSL（楽天倉庫）</option>
+                </select>
+              </div>
+            </div>
           </div>
           <div class="o-top-col">
             <template v-for="col in topRightFields" :key="col.key">
@@ -821,6 +833,11 @@ const handleSubmit = async () => {
         setNestedValue(submitData, key, value)
       }
     })
+    // 出荷先タイプを含める / 出货目的地类型を含める
+    const destType = getNestedValue(formData.value, 'destinationType')
+    if (destType) {
+      setNestedValue(submitData, 'destinationType', destType)
+    }
     emit('submit', submitData)
     handleClose()
   } catch {

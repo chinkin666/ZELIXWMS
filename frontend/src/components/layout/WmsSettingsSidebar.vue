@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { SubMenuGroup } from './menuData'
+import { useAuth } from '@/stores/auth'
 
 const props = defineProps<{
   groups: SubMenuGroup[]
@@ -10,6 +12,18 @@ const emit = defineEmits<{
   navigate: [to: string]
 }>()
 
+const { user } = useAuth()
+
+// ロールベースの設定メニュー表示制御 / 基于角色的设置菜单显示控制
+const MANAGER_GROUPS = new Set(['出荷設定', 'テンプレート・印刷'])
+
+const visibleGroups = computed<SubMenuGroup[]>(() => {
+  const role = user.value?.role
+  if (!role || role === 'admin' || role === 'super_admin') return props.groups
+  if (role === 'manager') return props.groups.filter(g => MANAGER_GROUPS.has(g.groupLabel))
+  return []
+})
+
 function isSubActive(to: string) {
   return props.currentPath === to || props.currentPath.startsWith(to + '/')
 }
@@ -18,7 +32,7 @@ function isSubActive(to: string) {
 <template>
   <aside class="o-settings-sidebar">
     <div class="o-settings-sidebar-inner">
-      <template v-for="group in groups" :key="group.groupLabel">
+      <template v-for="group in visibleGroups" :key="group.groupLabel">
         <div class="o-settings-group-label">{{ group.groupLabel }}</div>
         <button
           v-for="item in group.items"
