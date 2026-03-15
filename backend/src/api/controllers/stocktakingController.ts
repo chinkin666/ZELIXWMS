@@ -6,6 +6,9 @@ import { Location } from '@/models/location';
 import { Product } from '@/models/product';
 import { Lot } from '@/models/lot';
 import { logOperation } from '@/services/operationLogger';
+import { extensionManager } from '@/core/extensions';
+import { HOOK_EVENTS } from '@/core/extensions/types';
+import { logger } from '@/lib/logger';
 import mongoose from 'mongoose';
 
 // ---------------------------------------------------------------------------
@@ -333,6 +336,14 @@ export async function adjustStocktakingOrder(req: Request, res: Response) {
       referenceId: String(doc._id),
       quantity: adjustedCount,
     }).catch(() => {});
+
+    // 棚卸完了イベント / 盘点完成事件 (fire-and-forget)
+    extensionManager.emit(HOOK_EVENTS.STOCKTAKING_COMPLETED, {
+      orderNumber: doc.orderNumber,
+      orderId: String(doc._id),
+      adjustedCount,
+      errorCount: errors.length,
+    }).catch((err: unknown) => logger.warn({ err }, 'STOCKTAKING_COMPLETED hook failed'));
 
     res.json({
       data: doc.toObject(),

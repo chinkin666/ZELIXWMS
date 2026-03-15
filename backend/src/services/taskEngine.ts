@@ -6,6 +6,9 @@ import {
   WarehouseTaskPriority,
 } from '../models/warehouseTask';
 import { InventoryLedger, LedgerType } from '../models/inventoryLedger';
+import { extensionManager } from '@/core/extensions';
+import { HOOK_EVENTS } from '@/core/extensions/types';
+import { logger } from '@/lib/logger';
 
 const PRIORITY_ORDER: Record<WarehouseTaskPriority, number> = {
   urgent: 0,
@@ -69,6 +72,16 @@ export class TaskEngine {
       taskNumber: TaskEngine.generateTaskNumber(),
       status: 'created' as WarehouseTaskStatus,
     });
+
+    // タスク作成イベント / 任务创建事件 (fire-and-forget)
+    extensionManager.emit(HOOK_EVENTS.TASK_CREATED, {
+      taskId: String(task._id),
+      taskNumber: task.taskNumber,
+      type: task.type,
+      productSku: task.productSku,
+      referenceNumber: task.referenceNumber,
+    }).catch((err: unknown) => logger.warn({ err }, 'TASK_CREATED hook failed'));
+
     return task;
   }
 
@@ -150,6 +163,17 @@ export class TaskEngine {
 
     // Write InventoryLedger entries based on task type
     await TaskEngine.writeLedgerEntries(task, completedQuantity, executedBy);
+
+    // タスク完了イベント / 任务完成事件 (fire-and-forget)
+    extensionManager.emit(HOOK_EVENTS.TASK_COMPLETED, {
+      taskId: String(task._id),
+      taskNumber: task.taskNumber,
+      type: task.type,
+      completedQuantity,
+      durationMs: task.durationMs,
+      productSku: task.productSku,
+      referenceNumber: task.referenceNumber,
+    }).catch((err: unknown) => logger.warn({ err }, 'TASK_COMPLETED hook failed'));
 
     return task;
   }
