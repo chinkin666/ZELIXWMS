@@ -56,6 +56,10 @@ import { clientPortalRouter } from './clientPortal';
 import { subClientRouter } from './subClients';
 import { shopRouter } from './shops';
 import { passthroughRouter } from './passthrough';
+import { inspectionRouter } from './inspections';
+import { exceptionRouter } from './exceptions';
+import { labelingTaskRouter } from './labelingTasks';
+import { fbaBoxRouter } from './fbaBoxes';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -145,6 +149,12 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // 通過型入庫予約 / 通过型入库预定
   api.use('/passthrough', passthroughRouter);
+
+  // Phase 2: 検品・異常・ラベル・FBA箱 / 检品、异常、贴标、FBA箱
+  api.use('/inspections', inspectionRouter);
+  api.use('/exceptions', exceptionRouter);
+  api.use('/labeling-tasks', labelingTaskRouter);
+  api.use('/fba-boxes', fbaBoxRouter);
 
   // 子顧客 / 子客户
   api.use('/sub-clients', subClientRouter);
