@@ -3,6 +3,24 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-16] Phase 2-3 検品・異常・ラベル・FBA箱・盘点・库龄 / Phase 2-3 検品・異常・ラベル・FBA箱・棚卸・エイジング
+
+**变更类型 / 変更種別**: feat
+**影响范围 / 影響範囲**: backend/, frontend/
+
+### Phase 2: 4 模型 + 4 CRUD API + 4 仓库端页面
+- InspectionRecord: 6维度检品 + 抽检/全检 + 异常自动关联 ExceptionReport
+- ExceptionReport: ABC级别 + SLA(A:4h/B:2h/C:30min) + open→notified→acknowledged→resolved→closed
+- LabelingTask: 6种标签 + pending→printing→labeling→verifying→completed + 批量生成
+- FbaBox: 箱内容 + 重量尺寸 + Amazon箱规校验 + packing→labeled→sealed→shipped
+- 仓库端: 检品操作 + 贴标看板 + 异常列表(SLA倒计时) + FBA箱管理(规格校验)
+
+### Phase 3: 循环盘点 + 库龄预警
+- CycleCountPlan: 月度自动生成(20% SKU随机) + 差异率 + >0.5%预警 + 盘点覆盖率统计
+- AgingAlert: 60/90/180天阶梯预警 + 按客户筛选
+
+---
+
 ## [2026-03-16] Phase 0-1 完整实装 / Phase 0-1 完全実装
 
 **变更类型 / 変更種別**: feat

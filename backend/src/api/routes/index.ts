@@ -60,6 +60,7 @@ import { inspectionRouter } from './inspections';
 import { exceptionRouter } from './exceptions';
 import { labelingTaskRouter } from './labelingTasks';
 import { fbaBoxRouter } from './fbaBoxes';
+import { cycleCountRouter } from './cycleCounts';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -155,6 +156,9 @@ export const registerCoreRoutes = (app: Application): void => {
   api.use('/exceptions', exceptionRouter);
   api.use('/labeling-tasks', labelingTaskRouter);
   api.use('/fba-boxes', fbaBoxRouter);
+
+  // Phase 3: 循環棚卸・エイジング / 循环盘点、库龄预警
+  api.use('/cycle-counts', cycleCountRouter);
 
   // 子顧客 / 子客户
   api.use('/sub-clients', subClientRouter);
