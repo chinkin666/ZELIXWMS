@@ -717,7 +717,18 @@ const router = createRouter({
 // 認証が必要なルートへのアクセスを制御 / Controls access to routes requiring authentication
 // 現在はモック認証のため、トークンの存在のみチェック / Currently lenient — only checks token existence
 router.beforeEach((to, _from, next) => {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, setAuth } = useAuth()
+
+  // 开发环境跳过认证 / 開発環境で認証をスキップ
+  if (import.meta.env.DEV && !isAuthenticated.value) {
+    setAuth('dev-token', {
+      id: 'dev-admin',
+      email: 'dev@zelix.local',
+      displayName: 'Dev Admin',
+      role: 'admin',
+      warehouseIds: [],
+    })
+  }
 
   // ログインページ：認証済みならホームへリダイレクト / 登录页：已认证则重定向到首页
   if (to.path === '/login') {

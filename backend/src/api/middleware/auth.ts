@@ -65,6 +65,20 @@ export function verifyToken(token: string): AuthUser {
  * Authorization: Bearer <token> ヘッダーを検証し、ユーザー情報を req.user に注入する。
  */
 export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
+  // 开发环境跳过认证，注入默认管理员用户 / 開発環境で認証をスキップし、デフォルト管理者ユーザーを注入
+  if (process.env.NODE_ENV === 'development' && !extractBearerToken(req)) {
+    req.user = {
+      id: 'dev-admin',
+      email: 'dev@zelix.local',
+      displayName: 'Dev Admin',
+      role: 'admin' as any,
+      warehouseIds: [],
+      tenantId: 'default',
+    }
+    next()
+    return
+  }
+
   const token = extractBearerToken(req)
 
   if (!token) {
