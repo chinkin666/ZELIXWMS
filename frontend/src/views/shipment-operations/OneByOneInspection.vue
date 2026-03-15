@@ -30,7 +30,7 @@
       @update:input-value="inputValue = $event"
       @submit="handleInput"
       @toggle-auto-print="toggleAutoPrint"
-      @toggle-auto-advance="autoAdvanceEnabled = !autoAdvanceEnabled"
+      @toggle-auto-advance="toggleAutoAdvance"
     />
 
     <!-- 右侧面板 -->
@@ -280,6 +280,9 @@ import { useAutoPrint } from '@/composables/useAutoPrint'
 import { useInspectionPrint } from '@/composables/useInspectionPrint'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
+import { useInspectionScanHistory } from './composables/useInspectionScanHistory'
+import { useInspectionStorage } from './composables/useInspectionStorage'
+import { useAutoAdvance } from './composables/useAutoAdvance'
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
@@ -351,7 +354,7 @@ const carrierAutomationConfigCache = ref<CarrierAutomationConfig | null>(null)
 const completionDialogVisible = ref(false)
 
 // 検品後自動次注文移動 / 检品后自动切换到下一个订单
-const autoAdvanceEnabled = ref(true)
+const { autoAdvanceEnabled, toggleAutoAdvance } = useAutoAdvance(true)
 
 // Adjust dialog
 const adjustDialogVisible = ref(false)
@@ -381,13 +384,7 @@ const wrongScanValue = ref('')
 const scanSuccessFlash = ref(false)
 
 // スキャン履歴 / 扫描历史
-const scanHistory = ref<{ time: string; value: string; result: 'ok' | 'error'; detail: string }[]>([])
-
-function addScanHistory(value: string, result: 'ok' | 'error', detail: string) {
-  const now = new Date()
-  const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
-  scanHistory.value = [...scanHistory.value, { time, value, result, detail }].slice(-5)
-}
+const { scanHistory, addScanHistory } = useInspectionScanHistory()
 
 // Split order auto-chain queue
 const splitOrderQueue = ref<string[]>([])
@@ -1055,36 +1052,7 @@ async function handleSplitOrderConfirm(request: SplitOrderRequest, skipCarrierDe
 
 // ─── LocalStorage ─────────────────────────────────────────────────────
 
-function saveOrdersToStorage() {
-  try {
-    const pendingIds = pendingOrders.value.map(o => String(o._id)).filter(Boolean)
-    localStorage.setItem('oneByOneSelectedOrderIds', JSON.stringify(pendingIds))
-    localStorage.setItem('oneByOneProcessedOrderIds', JSON.stringify(processedOrderIds.value))
-  } catch (e) {
-    // 注文ID保存失敗 / Failed to save order IDs to storage
-  }
-}
-
-async function loadOrdersFromStorage(): Promise<void> {
-  try {
-    const storedIds = localStorage.getItem('oneByOneSelectedOrderIds')
-    const processedStoredIds = localStorage.getItem('oneByOneProcessedOrderIds')
-
-    if (storedIds) {
-      const orderIds = JSON.parse(storedIds) as string[]
-      if (orderIds.length > 0) {
-        pendingOrders.value = await fetchShipmentOrdersByIds<OrderDocument>(orderIds)
-      }
-    }
-
-    if (processedStoredIds) {
-      processedOrderIds.value = JSON.parse(processedStoredIds) as string[]
-    }
-  } catch (e) {
-    // ストレージからの注文読み込み失敗 / Failed to load orders from storage
-    showToast(t('wms.inspection.loadOrdersFailed', '保存された注文の読み込みに失敗しました'), 'danger')
-  }
-}
+const { saveOrdersToStorage, loadOrdersFromStorage } = useInspectionStorage(pendingOrders, processedOrderIds)
 
 // ─── Navigation ───────────────────────────────────────────────────────
 
@@ -1151,7 +1119,11 @@ onMounted(async () => {
       showToast(t('wms.inspection.loadOrdersFailed', '注文の読み込みに失敗しました'), 'danger')
     }
   } else {
-    await loadOrdersFromStorage()
+    try {
+      await loadOrdersFromStorage()
+    } catch (e: any) {
+      showToast(t('wms.inspection.loadOrdersFailed', '保存された注文の読み込みに失敗しました'), 'danger')
+    }
   }
 
   totalOrderCount.value = pendingOrders.value.length + processedOrderIds.value.length

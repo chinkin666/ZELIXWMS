@@ -161,6 +161,7 @@ import { resolveImageUrl } from '@/utils/imageUrl'
 import { useAutoPrint } from '@/composables/useAutoPrint'
 import { useInspectionPrint } from '@/composables/useInspectionPrint'
 import { useToast } from '@/composables/useToast'
+import { useInspectionScanHistory } from './composables/useInspectionScanHistory'
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
@@ -228,13 +229,7 @@ const wrongScanValue = ref('')
 const scanSuccessFlash = ref(false)
 
 // スキャン履歴 / 扫描历史
-const scanHistory = ref<{ time: string; value: string; result: 'ok' | 'error'; detail: string }[]>([])
-
-function addScanHistory(value: string, result: 'ok' | 'error', detail: string) {
-  const now = new Date()
-  const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
-  scanHistory.value = [...scanHistory.value, { time, value, result, detail }].slice(-5)
-}
+const { scanHistory, addScanHistory } = useInspectionScanHistory()
 
 // ─── Computed ─────────────────────────────────────────────────────────
 
