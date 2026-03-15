@@ -10,8 +10,35 @@ export interface ISubSku {
   isActive?: boolean;    // 是否啟用 (默認 true)
 }
 
+export interface IProductWarehouseNotes {
+  /** 推奨ロケーション / 库位偏好 */
+  preferredLocation?: string;
+  /** 特殊取扱注意 / 特殊处理备注 */
+  handlingNotes?: string;
+  /** 壊れ物 / 易碎 */
+  isFragile?: boolean;
+  /** 液体 / 液体 */
+  isLiquid?: boolean;
+  /** OPP袋要 / 需要OPP袋 */
+  requiresOppBag?: boolean;
+  /** 窒息防止ラベル要 / 需要防窒息标 */
+  requiresSuffocationLabel?: boolean;
+  /** 保管温度帯 / 保管温度带 */
+  storageType?: 'ambient' | 'chilled' | 'frozen';
+}
+
 export interface IProduct {
   _id: mongoose.Types.ObjectId;
+  /** テナントID / 租户ID */
+  tenantId?: string;
+  /** 所属顧客ID / 所属客户ID */
+  clientId?: mongoose.Types.ObjectId;
+  /** 所属子顧客ID / 所属子客户ID */
+  subClientId?: mongoose.Types.ObjectId;
+  /** 所属店舗ID / 所属店铺ID */
+  shopId?: mongoose.Types.ObjectId;
+  /** 倉庫側メモ / 仓库侧备注（仓库维护，客户不可改） */
+  warehouseNotes?: IProductWarehouseNotes;
   sku: string;
   name: string;
   nameFull?: string;
@@ -100,6 +127,29 @@ const subSkuSchema = new mongoose.Schema<ISubSku>(
 
 const productSchema = new mongoose.Schema<IProduct>(
   {
+    // 所属関連 / 归属关联
+    tenantId: { type: String, trim: true },
+    clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' },
+    subClientId: { type: mongoose.Schema.Types.ObjectId, ref: 'SubClient' },
+    shopId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop' },
+
+    // 倉庫側メモ / 仓库侧备注
+    warehouseNotes: {
+      type: new mongoose.Schema(
+        {
+          preferredLocation: { type: String, trim: true },
+          handlingNotes: { type: String, trim: true },
+          isFragile: { type: Boolean, default: false },
+          isLiquid: { type: Boolean, default: false },
+          requiresOppBag: { type: Boolean, default: false },
+          requiresSuffocationLabel: { type: Boolean, default: false },
+          storageType: { type: String, enum: ['ambient', 'chilled', 'frozen'], default: 'ambient' },
+        },
+        { _id: false },
+      ),
+      default: undefined,
+    },
+
     sku: {
       type: String,
       required: true,
@@ -269,6 +319,11 @@ const productSchema = new mongoose.Schema<IProduct>(
 
 // unique index on _allSku: MongoDB multikey unique index ensures no two documents share the same SKU/sub-SKU value
 productSchema.index({ _allSku: 1 }, { unique: true });
+
+// 客户/店铺归属索引 / 顧客・店舗帰属インデックス
+productSchema.index({ tenantId: 1, clientId: 1 });
+productSchema.index({ tenantId: 1, shopId: 1 });
+productSchema.index({ tenantId: 1, shopId: 1, sku: 1 });
 
 // Pre-save hook: auto-compute _allSku from sku + subSkus
 productSchema.pre('save', function () {

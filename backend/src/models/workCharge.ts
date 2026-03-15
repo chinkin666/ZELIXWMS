@@ -37,6 +37,14 @@ export interface IWorkCharge {
   clientId?: string;
   /** 荷主名（表示用キャッシュ）/ 货主名（显示用缓存） */
   clientName?: string;
+  /** 子顧客ID（費用明細の分類用）/ 子客户ID（费用明细按子客户拆分） */
+  subClientId?: string;
+  /** 子顧客名 / 子客户名 */
+  subClientName?: string;
+  /** 店舗ID（費用明細の分類用）/ 店铺ID（费用明细按店铺拆分） */
+  shopId?: string;
+  /** 店舗名 / 店铺名 */
+  shopName?: string;
   /** チャージ種別 / 费用类型 */
   chargeType: ChargeType;
   /** チャージ発生日 / 费用发生日 */
@@ -87,6 +95,22 @@ const workChargeSchema = new mongoose.Schema<IWorkCharge>(
       trim: true,
     },
     clientName: {
+      type: String,
+      trim: true,
+    },
+    subClientId: {
+      type: String,
+      trim: true,
+    },
+    subClientName: {
+      type: String,
+      trim: true,
+    },
+    shopId: {
+      type: String,
+      trim: true,
+    },
+    shopName: {
       type: String,
       trim: true,
     },
@@ -168,6 +192,9 @@ workChargeSchema.index({ tenantId: 1, chargeDate: -1 });
 workChargeSchema.index({ tenantId: 1, clientId: 1, isBilled: 1 });
 workChargeSchema.index({ tenantId: 1, billingPeriod: 1 });
 workChargeSchema.index({ referenceId: 1 });
+// 按子客户/店铺查费用明细 / サブ顧客・店舗別費用明細用
+workChargeSchema.index({ tenantId: 1, subClientId: 1 });
+workChargeSchema.index({ tenantId: 1, shopId: 1 });
 
 export const WorkCharge = mongoose.model<IWorkCharge>(
   'WorkCharge',

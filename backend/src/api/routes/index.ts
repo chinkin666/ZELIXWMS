@@ -53,6 +53,8 @@ import { omsRouter } from './oms';
 import { marketplaceRouter } from './marketplace';
 import { erpRouter } from './erp';
 import { clientPortalRouter } from './clientPortal';
+import { subClientRouter } from './subClients';
+import { shopRouter } from './shops';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -139,6 +141,12 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // ERP/会計連携 / ERP/会计连接
   api.use('/erp', erpRouter);
+
+  // 子顧客 / 子客户
+  api.use('/sub-clients', subClientRouter);
+
+  // 店舗 / 店铺
+  api.use('/shops', shopRouter);
 
   // 荷主ポータル / 货主门户
   api.use('/client-portal', clientPortalRouter);

@@ -18,6 +18,19 @@ export type ChargeType =
   | 'material'           // 梱包材料費 / 包装材料费
   | 'return_handling'    // 返品処理料 / 退货处理费
   | 'labeling'           // ラベル貼付料 / 贴标费
+  | 'opp_bagging'        // OPP袋入れ料 / 套OPP袋费
+  | 'suffocation_label'  // 窒息防止ラベル料 / 防窒息标签费
+  | 'fragile_label'      // 壊れ物ラベル料 / 易碎标签费
+  | 'bubble_wrap'        // 緩衝梱包料 / 气泡膜包装费
+  | 'set_assembly'       // セット組み料 / 组合套装费
+  | 'box_splitting'      // 分箱料 / 分箱费
+  | 'box_merging'        // 合箱料 / 合箱费
+  | 'box_replacement'    // 箱替え料 / 换箱费
+  | 'photo_documentation' // 撮影記録料 / 拍照留档费
+  | 'rush_processing'    // 特急対応料 / 加急处理费
+  | 'multi_fc_surcharge' // 複数FC追加料 / 多仓纳品附加费
+  | 'overdue_storage'    // 長期保管料 / 超期仓储费
+  | 'fba_delivery'       // FBA配送料 / FBA出库配送费
   | 'other';             // その他 / 其他
 
 /** チャージ種別の有効値一覧 / 费用类型有效值列表 */
@@ -32,6 +45,19 @@ export const CHARGE_TYPES: readonly ChargeType[] = [
   'material',
   'return_handling',
   'labeling',
+  'opp_bagging',
+  'suffocation_label',
+  'fragile_label',
+  'bubble_wrap',
+  'set_assembly',
+  'box_splitting',
+  'box_merging',
+  'box_replacement',
+  'photo_documentation',
+  'rush_processing',
+  'multi_fc_surcharge',
+  'overdue_storage',
+  'fba_delivery',
   'other',
 ] as const;
 
@@ -46,6 +72,7 @@ export type ChargeUnit =
   | 'per_pallet'         // パレットあたり / 每托盘
   | 'per_location_day'   // ロケーション・日あたり / 每库位・天
   | 'per_sheet'          // 枚あたり / 每张
+  | 'per_set'            // セットあたり / 每套
   | 'flat';              // 一律 / 统一
 
 /** チャージ単位の有効値一覧 / 费用单位有效值列表 */
@@ -57,6 +84,7 @@ export const CHARGE_UNITS: readonly ChargeUnit[] = [
   'per_pallet',
   'per_location_day',
   'per_sheet',
+  'per_set',
   'flat',
 ] as const;
 

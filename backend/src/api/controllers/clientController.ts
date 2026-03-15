@@ -52,21 +52,29 @@ export const getClient = async (req: Request, res: Response): Promise<void> => {
 
 export const createClient = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { clientCode, name, name2, contactName, postalCode, prefecture, city, address, address2, phone, email, plan, billingEnabled, memo, isActive } = req.body;
+    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const {
+      clientCode, name, name2, clientType, contactName,
+      postalCode, prefecture, city, address, address2, phone, email,
+      plan, billingEnabled,
+      creditTier, creditLimit, paymentTermDays,
+      portalEnabled, portalLanguage,
+      memo, isActive,
+    } = req.body;
 
     if (!clientCode || typeof clientCode !== 'string' || !clientCode.trim()) {
-      res.status(400).json({ message: '顧客コードは必須です' });
+      res.status(400).json({ message: '顧客コードは必須です / 客户编号必填' });
       return;
     }
     if (!name || typeof name !== 'string' || !name.trim()) {
-      res.status(400).json({ message: '顧客名は必須です' });
+      res.status(400).json({ message: '顧客名は必須です / 客户名称必填' });
       return;
     }
 
-    const existing = await Client.findOne({ clientCode: clientCode.trim() }).lean();
+    const existing = await Client.findOne({ tenantId, clientCode: clientCode.trim() }).lean();
     if (existing) {
       res.status(409).json({
-        message: `顧客コード「${clientCode.trim()}」は既に存在します`,
+        message: `顧客コード「${clientCode.trim()}」は既に存在します / 客户编号已存在`,
         duplicateField: 'clientCode',
         duplicateValue: clientCode.trim(),
       });
@@ -74,9 +82,11 @@ export const createClient = async (req: Request, res: Response): Promise<void> =
     }
 
     const created = await Client.create({
+      tenantId,
       clientCode: clientCode.trim(),
       name: name.trim(),
       name2: name2?.trim() || '',
+      clientType: clientType || undefined,
       contactName: contactName?.trim() || '',
       postalCode: postalCode?.trim() || '',
       prefecture: prefecture?.trim() || '',
@@ -87,6 +97,11 @@ export const createClient = async (req: Request, res: Response): Promise<void> =
       email: email?.trim() || '',
       plan: plan?.trim() || '',
       billingEnabled: billingEnabled !== undefined ? billingEnabled : false,
+      creditTier: creditTier || 'new',
+      creditLimit: creditLimit !== undefined ? creditLimit : 100000,
+      paymentTermDays: paymentTermDays !== undefined ? paymentTermDays : 30,
+      portalEnabled: portalEnabled ?? false,
+      portalLanguage: portalLanguage || 'ja',
       memo: memo?.trim() || '',
       isActive: isActive !== undefined ? isActive : true,
     });
@@ -109,20 +124,28 @@ export const createClient = async (req: Request, res: Response): Promise<void> =
 
 export const updateClient = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { clientCode, name, name2, contactName, postalCode, prefecture, city, address, address2, phone, email, plan, billingEnabled, memo, isActive } = req.body;
+    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const {
+      clientCode, name, name2, clientType, contactName,
+      postalCode, prefecture, city, address, address2, phone, email,
+      plan, billingEnabled,
+      creditTier, creditLimit, currentBalance, paymentTermDays,
+      portalEnabled, portalLanguage,
+      memo, isActive,
+    } = req.body;
 
     const existing = await Client.findById(req.params.id).lean();
     if (!existing) {
-      res.status(404).json({ message: '顧客が見つかりません' });
+      res.status(404).json({ message: '顧客が見つかりません / 客户不存在' });
       return;
     }
 
-    // If clientCode is changing, verify uniqueness
+    // コード変更時の重複チェック / 编号变更时的重复校验
     if (clientCode && clientCode.trim() !== existing.clientCode) {
-      const duplicate = await Client.findOne({ clientCode: clientCode.trim(), _id: { $ne: existing._id } }).lean();
+      const duplicate = await Client.findOne({ tenantId, clientCode: clientCode.trim(), _id: { $ne: existing._id } }).lean();
       if (duplicate) {
         res.status(409).json({
-          message: `顧客コード「${clientCode.trim()}」は既に存在します`,
+          message: `顧客コード「${clientCode.trim()}」は既に存在します / 客户编号已存在`,
           duplicateField: 'clientCode',
           duplicateValue: clientCode.trim(),
         });
@@ -134,6 +157,7 @@ export const updateClient = async (req: Request, res: Response): Promise<void> =
     if (clientCode !== undefined) updateData.clientCode = clientCode.trim();
     if (name !== undefined) updateData.name = name.trim();
     if (name2 !== undefined) updateData.name2 = name2.trim();
+    if (clientType !== undefined) updateData.clientType = clientType;
     if (contactName !== undefined) updateData.contactName = contactName.trim();
     if (postalCode !== undefined) updateData.postalCode = postalCode.trim();
     if (prefecture !== undefined) updateData.prefecture = prefecture.trim();
@@ -144,6 +168,12 @@ export const updateClient = async (req: Request, res: Response): Promise<void> =
     if (email !== undefined) updateData.email = email.trim();
     if (plan !== undefined) updateData.plan = plan.trim();
     if (billingEnabled !== undefined) updateData.billingEnabled = billingEnabled;
+    if (creditTier !== undefined) updateData.creditTier = creditTier;
+    if (creditLimit !== undefined) updateData.creditLimit = creditLimit;
+    if (currentBalance !== undefined) updateData.currentBalance = currentBalance;
+    if (paymentTermDays !== undefined) updateData.paymentTermDays = paymentTermDays;
+    if (portalEnabled !== undefined) updateData.portalEnabled = portalEnabled;
+    if (portalLanguage !== undefined) updateData.portalLanguage = portalLanguage;
     if (memo !== undefined) updateData.memo = memo.trim();
     if (isActive !== undefined) updateData.isActive = isActive;
 
