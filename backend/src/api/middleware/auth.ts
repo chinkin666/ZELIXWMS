@@ -1,28 +1,26 @@
 /**
  * 认证与授权中间件 / 認証・認可ミドルウェア
  *
- * 提供 JWT 令牌验证、角色检查等安全中间件。
  * JWT トークン検証、ロールチェックなどのセキュリティミドルウェアを提供する。
- *
- * NOTE / 注意:
- *   `jsonwebtoken` 包尚未安装，需要执行:
- *   `jsonwebtoken` パッケージは未インストール。以下を実行してください:
- *     npm install jsonwebtoken
- *     npm install -D @types/jsonwebtoken
+ * 提供 JWT 令牌验证、角色检查等安全中间件。
  */
 import type { NextFunction, Request, Response } from 'express'
+import jwt from 'jsonwebtoken'
 import type { AuthUser } from '@/types/express'
+import type { UserRole } from '@/models/user'
 import { AppError, UnauthorizedError, ForbiddenError } from '@/lib/errors'
 import { logger } from '@/lib/logger'
-
-// TODO: jsonwebtoken 安装后取消以下注释 / インストール後に以下のコメントを解除
-// import jwt from 'jsonwebtoken'
 
 /**
  * JWT 密钥（从环境变量读取） / JWT シークレット（環境変数から取得）
  * 生产环境必须设置 JWT_SECRET / 本番環境では JWT_SECRET の設定が必須
  */
-const JWT_SECRET = process.env.JWT_SECRET || ''
+const JWT_SECRET = process.env.JWT_SECRET || 'zelix-wms-dev-secret-change-in-production'
+
+/**
+ * JWT 有效期 / JWT 有効期間
+ */
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h'
 
 /**
  * 从 Authorization 头提取 Bearer 令牌 / Authorization ヘッダーから Bearer トークンを抽出
@@ -36,38 +34,28 @@ function extractBearerToken(req: Request): string | null {
 }
 
 /**
- * 验证 JWT 令牌并返回解码后的用户信息 / JWT トークンを検証しデコードしたユーザー情報を返す
- *
- * TODO: jsonwebtoken 安装后实现真正的验证逻辑
- * TODO: jsonwebtoken インストール後に実際の検証ロジックを実装
+ * 生成 JWT 令牌 / JWT トークンを生成する
  */
-function verifyToken(token: string): AuthUser {
-  // TODO: jsonwebtoken 安装后替换为以下实现 / インストール後に以下の実装に置き換え:
-  //
-  // if (!JWT_SECRET) {
-  //   throw new AppError('JWT_SECRET is not configured', 500, 'CONFIG_ERROR')
-  // }
-  // try {
-  //   const decoded = jwt.verify(token, JWT_SECRET) as AuthUser
-  //   return decoded
-  // } catch (err) {
-  //   if (err instanceof jwt.TokenExpiredError) {
-  //     throw new UnauthorizedError('Token expired / トークンの有効期限切れ')
-  //   }
-  //   if (err instanceof jwt.JsonWebTokenError) {
-  //     throw new UnauthorizedError('Invalid token / 無効なトークン')
-  //   }
-  //   throw new UnauthorizedError('Token verification failed / トークン検証に失敗')
-  // }
+export function generateToken(payload: Omit<AuthUser, 'iat' | 'exp'>): string {
+  return jwt.sign(payload as object, JWT_SECRET as jwt.Secret, { expiresIn: '24h' })
+}
 
-  // 临时占位：始终拒绝（安全默认值） / 一時的プレースホルダー：常に拒否（安全なデフォルト）
-  void token
-  void JWT_SECRET
-  throw new AppError(
-    'Auth not configured: install jsonwebtoken / 認証未設定: jsonwebtoken をインストールしてください',
-    501,
-    'NOT_IMPLEMENTED',
-  )
+/**
+ * 验证 JWT 令牌并返回解码后的用户信息 / JWT トークンを検証しデコードしたユーザー情報を返す
+ */
+export function verifyToken(token: string): AuthUser {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as AuthUser
+    return decoded
+  } catch (err) {
+    if (err instanceof jwt.TokenExpiredError) {
+      throw new UnauthorizedError('Token expired / トークンの有効期限切れ')
+    }
+    if (err instanceof jwt.JsonWebTokenError) {
+      throw new UnauthorizedError('Invalid token / 無効なトークン')
+    }
+    throw new UnauthorizedError('Token verification failed / トークン検証に失敗')
+  }
 }
 
 /**
@@ -105,7 +93,7 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
  *
  * @param roles - 允许的角色列表 / 許可されるロール一覧
  */
-export function requireRole(...roles: string[]) {
+export function requireRole(...roles: UserRole[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     const user = req.user
 
@@ -114,10 +102,9 @@ export function requireRole(...roles: string[]) {
       return
     }
 
-    const hasRole = user.roles.some((r) => roles.includes(r))
-    if (!hasRole) {
+    if (!roles.includes(user.role)) {
       logger.warn(
-        { userId: user.id, required: roles, actual: user.roles },
+        { userId: user.id, required: roles, actual: user.role },
         'Insufficient role / ロール不足',
       )
       next(new ForbiddenError('Insufficient permissions / 権限が不足しています'))

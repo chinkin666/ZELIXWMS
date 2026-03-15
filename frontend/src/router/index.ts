@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import WmsLayout from '@/layouts/WmsLayout.vue'
 import Welcome from '@/views/Welcome.vue'
+import { useAuth } from '@/stores/auth'
 
 // ルートメタ型拡張 / Route meta type augmentation
 declare module 'vue-router' {
@@ -14,6 +15,12 @@ declare module 'vue-router' {
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    {
+      path: '/login',
+      name: 'Login',
+      component: () => import('@/views/Login.vue'),
+      meta: { requiresAuth: false, title: 'ログイン' },
+    },
     {
       path: '/inbound/print/inspection/:id',
       name: 'InboundInspectionSheet',
@@ -644,8 +651,24 @@ const router = createRouter({
 // 認証が必要なルートへのアクセスを制御 / Controls access to routes requiring authentication
 // 現在はモック認証のため、トークンの存在のみチェック / Currently lenient — only checks token existence
 router.beforeEach((to, _from, next) => {
-  // TODO: ログインページ実装後に認証ガードを有効化する
-  // 現在はモック認証のためスキップ
+  const { isAuthenticated } = useAuth()
+
+  // ログインページ：認証済みならホームへリダイレクト / 登录页：已认证则重定向到首页
+  if (to.path === '/login') {
+    if (isAuthenticated.value) return next('/')
+    return next()
+  }
+
+  // 認証不要のルートはそのまま通過 / 不需要认证的路由直接通过
+  if (to.meta.requiresAuth === false) {
+    return next()
+  }
+
+  // 認証が必要なルート：未認証ならログインページへ / 需要认证的路由：未认证则重定向到登录页
+  if (!isAuthenticated.value) {
+    return next('/login')
+  }
+
   next()
 })
 

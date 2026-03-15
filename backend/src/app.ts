@@ -10,8 +10,7 @@ import { extensionManager } from '@/core/extensions';
 import { errorHandler, notFoundHandler } from '@/api/middleware/errorHandler';
 import { paginationGuard } from '@/api/middleware/paginationGuard';
 import { swaggerSpec } from '@/config/swagger';
-// NOTE: auth 中间件已就绪，可按路由单独使用 / auth ミドルウェアは準備完了、ルート単位で使用可能
-// import { requireAuth, requireRole, optionalAuth } from '@/api/middleware/auth';
+import { optionalAuth } from '@/api/middleware/auth';
 
 loadEnv();
 
@@ -47,6 +46,10 @@ export const createApp = () => {
     }),
   );
   app.use(morgan('dev'));
+
+  // 可选认证（全局）：提取 JWT 用户信息但不阻止未认证请求
+  // オプション認証（グローバル）：JWT ユーザー情報を抽出するが未認証リクエストは阻止しない
+  app.use(optionalAuth);
 
   // 分页参数守卫（全局） / ページネーションガード（グローバル）
   app.use(paginationGuard);

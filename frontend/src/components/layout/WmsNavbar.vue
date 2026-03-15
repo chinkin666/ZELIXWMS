@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '../../composables/useI18n'
+import { useAuth } from '@/stores/auth'
 
 defineProps<{
   menuItems: Array<{ label: string; to: string }>
@@ -17,9 +18,22 @@ const route = useRoute()
 const router = useRouter()
 const { locale, setLocale, availableLocales } = useI18n()
 
+const { user, isAuthenticated, clearAuth } = useAuth()
+
 const showUserMenu = ref(false)
 const showLangMenu = ref(false)
 const isDark = ref(document.documentElement.getAttribute('data-theme') === 'dark')
+
+// ユーザー表示情報 / 用户显示信息
+const userDisplayName = computed(() => user.value?.displayName ?? 'User')
+const userInitial = computed(() => userDisplayName.value.charAt(0).toUpperCase())
+const userRole = computed(() => user.value?.role ?? '')
+
+function handleLogout() {
+  showUserMenu.value = false
+  clearAuth()
+  router.push('/login')
+}
 
 function toggleTheme() {
   isDark.value = !isDark.value
@@ -148,24 +162,28 @@ function closeMenus(e: MouseEvent) {
         </svg>
       </button>
 
-      <!-- User menu -->
+      <!-- ユーザーメニュー / 用户菜单 -->
       <div class="o-user-menu" @click.stop>
         <button class="o-navbar-entry o-user-btn" @click="showUserMenu = !showUserMenu">
-          <span class="o-user-avatar">N</span>
-          <span class="o-user-name">Nexand</span>
+          <span class="o-user-avatar">{{ userInitial }}</span>
+          <span class="o-user-name">{{ userDisplayName }}</span>
           <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" style="opacity:0.7">
             <path d="M2 3.5L5 7l3-3.5H2z"/>
           </svg>
         </button>
         <div v-if="showUserMenu" class="o-user-dropdown">
           <div class="o-user-dropdown-header">
-            <strong>Nexand Admin</strong>
-            <span class="o-user-dropdown-role">admin</span>
+            <strong>{{ userDisplayName }}</strong>
+            <span class="o-user-dropdown-role">{{ userRole }}</span>
           </div>
           <div class="o-dropdown-divider" />
           <button class="o-dropdown-item" @click="router.push('/settings/basic'); showUserMenu = false">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.421 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.421-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/></svg>
             設定
+          </button>
+          <button class="o-dropdown-item o-logout-item" @click="handleLogout">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
+            ログアウト
           </button>
         </div>
       </div>
@@ -335,6 +353,8 @@ function closeMenus(e: MouseEvent) {
   transition: background 0.1s; text-align: left;
 }
 .o-dropdown-item:hover { background: var(--o-gray-100); }
+.o-logout-item { color: #c62828; }
+.o-logout-item:hover { background: #fef2f2; }
 
 .o-mobile-hamburger {
   display: none;

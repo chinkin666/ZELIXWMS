@@ -6,11 +6,17 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 import { useToast } from './composables/useToast'
+import { useWmsUserStore } from './stores/wms/useWmsUserStore'
 
+const pinia = createPinia()
 const app = createApp(App)
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
 app.use(ElementPlus)
+
+// ストレージから認証状態を復元 / 从存储恢复认证状态
+const userStore = useWmsUserStore()
+userStore.loadFromStorage()
 
 // グローバルエラーハンドラー / Global error handler
 // 未処理のエラーをキャッチしてトースト通知を表示 / Catches unhandled errors and shows toast notification

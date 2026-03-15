@@ -46,9 +46,13 @@ import { materialRouter } from './materials';
 import { serviceRateRouter } from './serviceRates';
 import { workChargeRouter } from './workCharges';
 import { userRouter } from './users';
+import { authRouter } from './auth';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
+
+  // 认证路由（登录・注册等，无需全局认证） / 認証ルート（ログイン・登録等、グローバル認証不要）
+  api.use('/auth', authRouter);
 
   api.use('/dashboard', dashboardRouter);
   api.use('/shipment-orders', shipmentOrderRouter);
