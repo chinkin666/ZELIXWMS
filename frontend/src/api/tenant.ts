@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -54,7 +55,7 @@ export async function fetchTenants(params?: TenantListParams): Promise<TenantLis
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`テナントの取得に失敗しました: ${response.statusText}`)
   }
@@ -62,7 +63,7 @@ export async function fetchTenants(params?: TenantListParams): Promise<TenantLis
 }
 
 export async function fetchTenant(id: string): Promise<Tenant> {
-  const response = await fetch(`${API_BASE_URL}/tenants/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/tenants/${id}`)
   if (!response.ok) {
     throw new Error(`テナントの取得に失敗しました: ${response.statusText}`)
   }
@@ -70,7 +71,7 @@ export async function fetchTenant(id: string): Promise<Tenant> {
 }
 
 export async function createTenant(data: Partial<Tenant>): Promise<Tenant> {
-  const response = await fetch(`${API_BASE_URL}/tenants`, {
+  const response = await apiFetch(`${API_BASE_URL}/tenants`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -83,7 +84,7 @@ export async function createTenant(data: Partial<Tenant>): Promise<Tenant> {
 }
 
 export async function updateTenant(id: string, data: Partial<Tenant>): Promise<Tenant> {
-  const response = await fetch(`${API_BASE_URL}/tenants/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/tenants/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -96,7 +97,7 @@ export async function updateTenant(id: string, data: Partial<Tenant>): Promise<T
 }
 
 export async function deleteTenant(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/tenants/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/tenants/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -106,7 +107,7 @@ export async function deleteTenant(id: string): Promise<void> {
 }
 
 export async function updateTenantStatus(id: string, status: string): Promise<Tenant> {
-  const response = await fetch(`${API_BASE_URL}/tenants/${id}/status`, {
+  const response = await apiFetch(`${API_BASE_URL}/tenants/${id}/status`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),

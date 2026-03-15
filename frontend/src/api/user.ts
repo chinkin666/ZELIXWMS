@@ -2,6 +2,7 @@
  * ユーザー管理 API クライアント / 用户管理 API 客户端
  */
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -109,7 +110,7 @@ function buildQueryUrl(params?: UserListParams): string {
 // ─── API 関数 / API 函数 ──────────────────────────────────────────────────
 
 export async function fetchUsers(params?: UserListParams): Promise<UserListResponse> {
-  const response = await fetch(buildQueryUrl(params))
+  const response = await apiFetch(buildQueryUrl(params))
   if (!response.ok) {
     throw new Error(`ユーザーの取得に失敗しました: ${response.statusText}`)
   }
@@ -117,7 +118,7 @@ export async function fetchUsers(params?: UserListParams): Promise<UserListRespo
 }
 
 export async function createUser(data: CreateUserDto): Promise<User> {
-  const response = await fetch(`${API_BASE_URL}/users`, {
+  const response = await apiFetch(`${API_BASE_URL}/users`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -130,7 +131,7 @@ export async function createUser(data: CreateUserDto): Promise<User> {
 }
 
 export async function updateUser(id: string, data: UpdateUserDto): Promise<User> {
-  const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/users/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -143,7 +144,7 @@ export async function updateUser(id: string, data: UpdateUserDto): Promise<User>
 }
 
 export async function deleteUser(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/users/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -153,7 +154,7 @@ export async function deleteUser(id: string): Promise<void> {
 }
 
 export async function fetchSubUsers(parentUserId: string): Promise<User[]> {
-  const response = await fetch(`${API_BASE_URL}/users/${parentUserId}/sub-users`)
+  const response = await apiFetch(`${API_BASE_URL}/users/${parentUserId}/sub-users`)
   if (!response.ok) {
     throw new Error(`サブユーザーの取得に失敗しました: ${response.statusText}`)
   }
@@ -161,7 +162,7 @@ export async function fetchSubUsers(parentUserId: string): Promise<User[]> {
 }
 
 export async function changePassword(id: string, data: ChangePasswordDto): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/users/${id}/change-password`, {
+  const response = await apiFetch(`${API_BASE_URL}/users/${id}/change-password`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),

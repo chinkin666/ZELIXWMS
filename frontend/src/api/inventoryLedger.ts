@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -74,7 +75,7 @@ export async function fetchStockLevels(params?: {
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`在庫水準の取得に失敗しました: ${response.statusText}`)
   }
@@ -88,7 +89,7 @@ export async function fetchStockLevel(params: {
   const url = new URL(`${API_BASE_URL}/inventory-ledger/stock`)
   url.searchParams.append('productId', params.productId)
   if (params.warehouseId) url.searchParams.append('warehouseId', params.warehouseId)
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`在庫水準の取得に失敗しました: ${response.statusText}`)
   }
@@ -114,7 +115,7 @@ export async function fetchLedgerEntries(params?: {
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`台帳の取得に失敗しました: ${response.statusText}`)
   }
@@ -134,7 +135,7 @@ export async function fetchReservations(params?: {
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`引当の取得に失敗しました: ${response.statusText}`)
   }
@@ -149,7 +150,7 @@ export async function createLedgerEntry(data: {
   reason?: string
   memo?: string
 }): Promise<LedgerEntry> {
-  const response = await fetch(`${API_BASE_URL}/inventory-ledger/ledger`, {
+  const response = await apiFetch(`${API_BASE_URL}/inventory-ledger/ledger`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -162,7 +163,7 @@ export async function createLedgerEntry(data: {
 }
 
 export async function releaseReservation(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/inventory-ledger/reservations/${id}/release`, {
+  const response = await apiFetch(`${API_BASE_URL}/inventory-ledger/reservations/${id}/release`, {
     method: 'PUT',
   })
   if (!response.ok) {

@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -33,7 +34,7 @@ export async function fetchCustomFieldDefinitions(params?: {
   const url = new URL(`${API_BASE_URL}/extensions/custom-fields`)
   if (params?.entityType) url.searchParams.append('entityType', params.entityType)
   if (params?.tenantId) url.searchParams.append('tenantId', params.tenantId)
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) throw new Error(`カスタムフィールド定義の取得に失敗しました: ${response.statusText}`)
   return response.json()
 }
@@ -44,7 +45,7 @@ export async function fetchActiveDefinitions(
 ): Promise<CustomFieldListResponse> {
   const url = new URL(`${API_BASE_URL}/extensions/custom-fields/${entityType}/active`)
   if (tenantId) url.searchParams.append('tenantId', tenantId)
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) throw new Error(`カスタムフィールド定義の取得に失敗しました: ${response.statusText}`)
   return response.json()
 }
@@ -52,7 +53,7 @@ export async function fetchActiveDefinitions(
 export async function createCustomFieldDefinition(
   data: Partial<CustomFieldDefinition>,
 ): Promise<CustomFieldDefinition> {
-  const response = await fetch(`${API_BASE_URL}/extensions/custom-fields`, {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/custom-fields`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -68,7 +69,7 @@ export async function updateCustomFieldDefinition(
   id: string,
   data: Partial<CustomFieldDefinition>,
 ): Promise<CustomFieldDefinition> {
-  const response = await fetch(`${API_BASE_URL}/extensions/custom-fields/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/custom-fields/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -81,7 +82,7 @@ export async function updateCustomFieldDefinition(
 }
 
 export async function deleteCustomFieldDefinition(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/extensions/custom-fields/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/custom-fields/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {

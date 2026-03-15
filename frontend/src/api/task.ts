@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -53,7 +54,7 @@ export async function fetchTasks(params?: TaskListParams): Promise<TaskListRespo
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`タスクの取得に失敗しました: ${response.statusText}`)
   }
@@ -61,7 +62,7 @@ export async function fetchTasks(params?: TaskListParams): Promise<TaskListRespo
 }
 
 export async function fetchTask(id: string): Promise<WarehouseTask> {
-  const response = await fetch(`${API_BASE_URL}/tasks/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/tasks/${id}`)
   if (!response.ok) {
     throw new Error(`タスクの取得に失敗しました: ${response.statusText}`)
   }
@@ -69,7 +70,7 @@ export async function fetchTask(id: string): Promise<WarehouseTask> {
 }
 
 export async function createTask(data: Partial<WarehouseTask>): Promise<WarehouseTask> {
-  const response = await fetch(`${API_BASE_URL}/tasks`, {
+  const response = await apiFetch(`${API_BASE_URL}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -82,7 +83,7 @@ export async function createTask(data: Partial<WarehouseTask>): Promise<Warehous
 }
 
 export async function assignTask(id: string, data: { assignedTo: string; assignedName?: string }): Promise<WarehouseTask> {
-  const response = await fetch(`${API_BASE_URL}/tasks/${id}/assign`, {
+  const response = await apiFetch(`${API_BASE_URL}/tasks/${id}/assign`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -95,7 +96,7 @@ export async function assignTask(id: string, data: { assignedTo: string; assigne
 }
 
 export async function startTask(id: string): Promise<WarehouseTask> {
-  const response = await fetch(`${API_BASE_URL}/tasks/${id}/start`, {
+  const response = await apiFetch(`${API_BASE_URL}/tasks/${id}/start`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
   })
@@ -107,7 +108,7 @@ export async function startTask(id: string): Promise<WarehouseTask> {
 }
 
 export async function completeTask(id: string, data: { completedQuantity: number; executedBy?: string }): Promise<WarehouseTask> {
-  const response = await fetch(`${API_BASE_URL}/tasks/${id}/complete`, {
+  const response = await apiFetch(`${API_BASE_URL}/tasks/${id}/complete`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -120,7 +121,7 @@ export async function completeTask(id: string, data: { completedQuantity: number
 }
 
 export async function cancelTask(id: string, data: { reason?: string }): Promise<WarehouseTask> {
-  const response = await fetch(`${API_BASE_URL}/tasks/${id}/cancel`, {
+  const response = await apiFetch(`${API_BASE_URL}/tasks/${id}/cancel`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -133,7 +134,7 @@ export async function cancelTask(id: string, data: { reason?: string }): Promise
 }
 
 export async function holdTask(id: string, data: { reason?: string }): Promise<WarehouseTask> {
-  const response = await fetch(`${API_BASE_URL}/tasks/${id}/hold`, {
+  const response = await apiFetch(`${API_BASE_URL}/tasks/${id}/hold`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -149,7 +150,7 @@ export async function fetchNextTask(params: { warehouseId: string; assignedTo: s
   const url = new URL(`${API_BASE_URL}/tasks/next`)
   url.searchParams.append('warehouseId', params.warehouseId)
   url.searchParams.append('assignedTo', params.assignedTo)
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`次のタスクの取得に失敗しました: ${response.statusText}`)
   }
@@ -163,7 +164,7 @@ export async function fetchTaskQueue(params: { warehouseId?: string; type?: stri
   if (params.type) url.searchParams.append('type', params.type)
   if (params.status) url.searchParams.append('status', params.status)
   if (params.limit) url.searchParams.append('limit', String(params.limit))
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`タスクキューの取得に失敗しました: ${response.statusText}`)
   }

@@ -1,10 +1,11 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch as rawApiFetch } from '@/api/http'
 import type { Lot, LotDetail, ExpiryAlert } from '@/types/inventory'
 
 const getBase = () => `${getApiBaseUrl()}/lots`
 
 async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init)
+  const res = await rawApiFetch(url, init)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Request failed')
   return res.json()
 }
@@ -58,7 +59,7 @@ export async function updateLot(id: string, payload: {
 }
 
 export async function deleteLot(id: string) {
-  const res = await fetch(`${getBase()}/${id}`, { method: 'DELETE' })
+  const res = await rawApiFetch(`${getBase()}/${id}`, { method: 'DELETE' })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to delete')
 }
 

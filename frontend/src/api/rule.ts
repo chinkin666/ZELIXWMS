@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -66,7 +67,7 @@ export async function fetchRules(params?: RuleListParams): Promise<RuleListRespo
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`ルールの取得に失敗しました: ${response.statusText}`)
   }
@@ -74,7 +75,7 @@ export async function fetchRules(params?: RuleListParams): Promise<RuleListRespo
 }
 
 export async function fetchRule(id: string): Promise<RuleDefinition> {
-  const response = await fetch(`${API_BASE_URL}/rules/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/rules/${id}`)
   if (!response.ok) {
     throw new Error(`ルールの取得に失敗しました: ${response.statusText}`)
   }
@@ -82,7 +83,7 @@ export async function fetchRule(id: string): Promise<RuleDefinition> {
 }
 
 export async function createRule(data: Partial<RuleDefinition>): Promise<RuleDefinition> {
-  const response = await fetch(`${API_BASE_URL}/rules`, {
+  const response = await apiFetch(`${API_BASE_URL}/rules`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -95,7 +96,7 @@ export async function createRule(data: Partial<RuleDefinition>): Promise<RuleDef
 }
 
 export async function updateRule(id: string, data: Partial<RuleDefinition>): Promise<RuleDefinition> {
-  const response = await fetch(`${API_BASE_URL}/rules/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/rules/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -108,7 +109,7 @@ export async function updateRule(id: string, data: Partial<RuleDefinition>): Pro
 }
 
 export async function deleteRule(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/rules/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/rules/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -118,7 +119,7 @@ export async function deleteRule(id: string): Promise<void> {
 }
 
 export async function toggleRule(id: string): Promise<RuleDefinition> {
-  const response = await fetch(`${API_BASE_URL}/rules/${id}/toggle`, {
+  const response = await apiFetch(`${API_BASE_URL}/rules/${id}/toggle`, {
     method: 'PUT',
   })
   if (!response.ok) {
@@ -129,7 +130,7 @@ export async function toggleRule(id: string): Promise<RuleDefinition> {
 }
 
 export async function testRule(data: { module: string; context: Record<string, any> }): Promise<RuleTestResult[]> {
-  const response = await fetch(`${API_BASE_URL}/rules/test`, {
+  const response = await apiFetch(`${API_BASE_URL}/rules/test`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),

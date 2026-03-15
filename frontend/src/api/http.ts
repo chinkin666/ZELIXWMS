@@ -60,6 +60,16 @@ class HttpClient {
    * 統一レスポンス処理 / Unified response handling
    */
   private async handleResponse<T>(response: Response): Promise<T> {
+    // 401 = トークン期限切れまたは無効 → 自動ログアウト
+    // 401 = 令牌过期或无效 → 自动登出
+    if (response.status === 401) {
+      localStorage.removeItem('wms_auth_token')
+      localStorage.removeItem('wms_auth_user')
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login'
+      }
+    }
+
     if (response.ok) {
       // 204 No Content など body がないケース
       const text = await response.text()
@@ -215,5 +225,18 @@ export async function apiFetch(url: string, init?: RequestInit): Promise<Respons
     // Store 不可用时跳过认证头
   }
 
-  return fetch(url, { ...init, headers })
+  const response = await fetch(url, { ...init, headers })
+
+  // 401 = トークン期限切れまたは無効 → 自動ログアウト
+  // 401 = 令牌过期或无效 → 自动登出
+  if (response.status === 401) {
+    localStorage.removeItem('wms_auth_token')
+    localStorage.removeItem('wms_auth_user')
+    // ログインページにいない場合はリダイレクト / 如果不在登录页则重定向
+    if (!window.location.pathname.includes('/login')) {
+      window.location.href = '/login'
+    }
+  }
+
+  return response
 }

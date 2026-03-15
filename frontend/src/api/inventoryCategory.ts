@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -30,7 +31,7 @@ export interface InventoryCategoryListResponse {
 }
 
 export async function fetchInventoryCategories(): Promise<InventoryCategoryListResponse> {
-  const response = await fetch(`${API_BASE_URL}/inventory-categories`)
+  const response = await apiFetch(`${API_BASE_URL}/inventory-categories`)
   if (!response.ok) {
     const json = await response.json().catch(() => ({}))
     throw new Error(json?.message || '在庫区分の取得に失敗しました')
@@ -39,7 +40,7 @@ export async function fetchInventoryCategories(): Promise<InventoryCategoryListR
 }
 
 export async function fetchInventoryCategory(id: string): Promise<InventoryCategory> {
-  const response = await fetch(`${API_BASE_URL}/inventory-categories/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/inventory-categories/${id}`)
   if (!response.ok) {
     const json = await response.json().catch(() => ({}))
     throw new Error(json?.message || '在庫区分の取得に失敗しました')
@@ -48,7 +49,7 @@ export async function fetchInventoryCategory(id: string): Promise<InventoryCateg
 }
 
 export async function createInventoryCategory(data: InventoryCategoryFormData): Promise<InventoryCategory> {
-  const response = await fetch(`${API_BASE_URL}/inventory-categories`, {
+  const response = await apiFetch(`${API_BASE_URL}/inventory-categories`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -64,7 +65,7 @@ export async function updateInventoryCategory(
   id: string,
   data: Partial<InventoryCategoryFormData>,
 ): Promise<InventoryCategory> {
-  const response = await fetch(`${API_BASE_URL}/inventory-categories/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/inventory-categories/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -77,7 +78,7 @@ export async function updateInventoryCategory(
 }
 
 export async function deleteInventoryCategory(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/inventory-categories/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/inventory-categories/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -87,7 +88,7 @@ export async function deleteInventoryCategory(id: string): Promise<void> {
 }
 
 export async function seedInventoryCategories(): Promise<{ message: string; results: Array<{ code: string; status: string }> }> {
-  const response = await fetch(`${API_BASE_URL}/inventory-categories/seed`, {
+  const response = await apiFetch(`${API_BASE_URL}/inventory-categories/seed`, {
     method: 'POST',
   })
   if (!response.ok) {

@@ -4,6 +4,7 @@
  */
 
 import { getApiBaseUrl } from './base'
+import { apiFetch } from '@/api/http'
 
 export interface KonvaRenderItem {
   templateId: string
@@ -26,7 +27,7 @@ export interface RenderRequest {
  * Render batch of items on backend and return PDF blob
  */
 export async function renderBatch(request: RenderRequest): Promise<Blob> {
-  const response = await fetch(`${getApiBaseUrl()}/render/batch`, {
+  const response = await apiFetch(`${getApiBaseUrl()}/render/batch`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -67,7 +68,7 @@ export async function renderKonvaOnBackend(
  */
 export async function checkRenderHealth(): Promise<boolean> {
   try {
-    const response = await fetch(`${getApiBaseUrl()}/render/health`, {
+    const response = await apiFetch(`${getApiBaseUrl()}/render/health`, {
       method: 'GET',
     })
     return response.ok

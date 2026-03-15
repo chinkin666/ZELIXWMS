@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -60,7 +61,7 @@ function buildQueryUrl(params?: MaterialFilters): string {
 
 // 耗材一覧取得 / 获取耗材列表
 export async function fetchMaterials(params?: MaterialFilters): Promise<MaterialListResponse> {
-  const response = await fetch(buildQueryUrl(params))
+  const response = await apiFetch(buildQueryUrl(params))
   if (!response.ok) {
     throw new Error(`耗材の取得に失敗しました: ${response.statusText}`)
   }
@@ -69,7 +70,7 @@ export async function fetchMaterials(params?: MaterialFilters): Promise<Material
 
 // 耗材作成 / 创建耗材
 export async function createMaterial(data: Partial<Material>): Promise<Material> {
-  const response = await fetch(`${API_BASE_URL}/materials`, {
+  const response = await apiFetch(`${API_BASE_URL}/materials`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -83,7 +84,7 @@ export async function createMaterial(data: Partial<Material>): Promise<Material>
 
 // 耗材更新 / 更新耗材
 export async function updateMaterial(id: string, data: Partial<Material>): Promise<Material> {
-  const response = await fetch(`${API_BASE_URL}/materials/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/materials/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -97,7 +98,7 @@ export async function updateMaterial(id: string, data: Partial<Material>): Promi
 
 // 耗材削除 / 删除耗材
 export async function deleteMaterial(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/materials/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/materials/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -108,7 +109,7 @@ export async function deleteMaterial(id: string): Promise<void> {
 
 // 耗材在庫調整 / 耗材库存调整
 export async function adjustMaterialStock(id: string, data: StockAdjustmentRequest): Promise<Material> {
-  const response = await fetch(`${API_BASE_URL}/materials/${id}/adjust-stock`, {
+  const response = await apiFetch(`${API_BASE_URL}/materials/${id}/adjust-stock`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),

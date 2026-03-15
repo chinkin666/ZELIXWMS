@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -109,7 +110,7 @@ export async function fetchServiceRates(
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`料金マスタの取得に失敗しました: ${response.statusText}`)
   }
@@ -117,7 +118,7 @@ export async function fetchServiceRates(
 }
 
 export async function createServiceRate(data: Partial<ServiceRate>): Promise<ServiceRate> {
-  const response = await fetch(`${API_BASE_URL}/service-rates`, {
+  const response = await apiFetch(`${API_BASE_URL}/service-rates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -130,7 +131,7 @@ export async function createServiceRate(data: Partial<ServiceRate>): Promise<Ser
 }
 
 export async function updateServiceRate(id: string, data: Partial<ServiceRate>): Promise<ServiceRate> {
-  const response = await fetch(`${API_BASE_URL}/service-rates/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/service-rates/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -143,7 +144,7 @@ export async function updateServiceRate(id: string, data: Partial<ServiceRate>):
 }
 
 export async function deleteServiceRate(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/service-rates/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/service-rates/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -166,7 +167,7 @@ export async function fetchWorkCharges(
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`作業チャージの取得に失敗しました: ${response.statusText}`)
   }
@@ -181,7 +182,7 @@ export async function fetchWorkChargeSummary(
     if (params.period) url.searchParams.append('period', params.period)
     if (params.clientId) url.searchParams.append('clientId', params.clientId)
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`作業チャージ集計の取得に失敗しました: ${response.statusText}`)
   }
@@ -189,7 +190,7 @@ export async function fetchWorkChargeSummary(
 }
 
 export async function createWorkCharge(data: Partial<WorkCharge>): Promise<WorkCharge> {
-  const response = await fetch(`${API_BASE_URL}/work-charges`, {
+  const response = await apiFetch(`${API_BASE_URL}/work-charges`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -202,7 +203,7 @@ export async function createWorkCharge(data: Partial<WorkCharge>): Promise<WorkC
 }
 
 export async function deleteWorkCharge(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/work-charges/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/work-charges/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {

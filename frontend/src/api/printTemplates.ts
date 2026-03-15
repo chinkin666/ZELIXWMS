@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -31,7 +32,7 @@ export async function fetchPrintTemplates(params?: {
   if (params?.name) url.searchParams.set('name', params.name)
   if (params?.carrierId) url.searchParams.set('carrierId', params.carrierId)
 
-  const res = await fetch(url.toString())
+  const res = await apiFetch(url.toString())
   if (!res.ok) {
     throw new Error(`Failed to fetch print templates: ${res.statusText}`)
   }
@@ -43,14 +44,14 @@ export async function fetchPrintTemplate(id: string, includeSampleData = false):
   if (includeSampleData) {
     url.searchParams.set('includeSampleData', 'true')
   }
-  const res = await fetch(url.toString())
+  const res = await apiFetch(url.toString())
   const json = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(json?.message || res.statusText || 'Failed to fetch print template')
   return json
 }
 
 export async function createPrintTemplate(payload: Omit<PrintTemplateApiModel, 'id'>): Promise<PrintTemplateApiModel> {
-  const res = await fetch(`${API_BASE_URL}/print-templates`, {
+  const res = await apiFetch(`${API_BASE_URL}/print-templates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -61,7 +62,7 @@ export async function createPrintTemplate(payload: Omit<PrintTemplateApiModel, '
 }
 
 export async function updatePrintTemplate(id: string, payload: Partial<PrintTemplateApiModel>): Promise<PrintTemplateApiModel> {
-  const res = await fetch(`${API_BASE_URL}/print-templates/${encodeURIComponent(id)}`, {
+  const res = await apiFetch(`${API_BASE_URL}/print-templates/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -72,7 +73,7 @@ export async function updatePrintTemplate(id: string, payload: Partial<PrintTemp
 }
 
 export async function deletePrintTemplate(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/print-templates/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  const res = await apiFetch(`${API_BASE_URL}/print-templates/${encodeURIComponent(id)}`, { method: 'DELETE' })
   if (!res.ok) {
     const json = await res.json().catch(() => ({}))
     throw new Error(json?.message || res.statusText || 'Failed to delete print template')

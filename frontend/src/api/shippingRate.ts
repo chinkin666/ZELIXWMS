@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -75,7 +76,7 @@ function buildQueryUrl(params?: ShippingRateFilters): string {
  * 运费率表一覧を取得 / 获取运费率表列表
  */
 export async function fetchShippingRates(params?: ShippingRateFilters): Promise<ShippingRateListResponse> {
-  const response = await fetch(buildQueryUrl(params))
+  const response = await apiFetch(buildQueryUrl(params))
   if (!response.ok) {
     throw new Error(`運賃率表の取得に失敗しました: ${response.statusText}`)
   }
@@ -86,7 +87,7 @@ export async function fetchShippingRates(params?: ShippingRateFilters): Promise<
  * 运费率表を1件取得 / 获取单个运费率表
  */
 export async function fetchShippingRate(id: string): Promise<ShippingRateData> {
-  const response = await fetch(`${API_BASE_URL}/shipping-rates/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/shipping-rates/${id}`)
   if (!response.ok) {
     throw new Error(`運賃率表の取得に失敗しました: ${response.statusText}`)
   }
@@ -97,7 +98,7 @@ export async function fetchShippingRate(id: string): Promise<ShippingRateData> {
  * 运费率表を作成 / 创建运费率表
  */
 export async function createShippingRate(data: Partial<ShippingRateData>): Promise<ShippingRateData> {
-  const response = await fetch(`${API_BASE_URL}/shipping-rates`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipping-rates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -113,7 +114,7 @@ export async function createShippingRate(data: Partial<ShippingRateData>): Promi
  * 运费率表を更新 / 更新运费率表
  */
 export async function updateShippingRate(id: string, data: Partial<ShippingRateData>): Promise<ShippingRateData> {
-  const response = await fetch(`${API_BASE_URL}/shipping-rates/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipping-rates/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -129,7 +130,7 @@ export async function updateShippingRate(id: string, data: Partial<ShippingRateD
  * 运费率表を削除（論理削除）/ 删除运费率表（逻辑删除）
  */
 export async function deleteShippingRate(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/shipping-rates/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipping-rates/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -150,7 +151,7 @@ export async function calculateShippingCost(params: {
   isCool?: boolean
   isCod?: boolean
 }): Promise<CalculateResult> {
-  const response = await fetch(`${API_BASE_URL}/shipping-rates/calculate`, {
+  const response = await apiFetch(`${API_BASE_URL}/shipping-rates/calculate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),

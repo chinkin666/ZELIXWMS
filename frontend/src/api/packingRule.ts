@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -53,7 +54,7 @@ export interface PackingRuleListResponse {
  * 梱包ルール一覧を取得 / 获取梱包规则列表
  */
 export async function fetchPackingRules(): Promise<PackingRuleListResponse> {
-  const response = await fetch(`${API_BASE_URL}/packing-rules`)
+  const response = await apiFetch(`${API_BASE_URL}/packing-rules`)
   if (!response.ok) {
     throw new Error(`梱包ルールの取得に失敗しました: ${response.statusText}`)
   }
@@ -64,7 +65,7 @@ export async function fetchPackingRules(): Promise<PackingRuleListResponse> {
  * 梱包ルールを作成 / 创建梱包规则
  */
 export async function createPackingRule(data: Partial<PackingRule>): Promise<PackingRule> {
-  const response = await fetch(`${API_BASE_URL}/packing-rules`, {
+  const response = await apiFetch(`${API_BASE_URL}/packing-rules`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -80,7 +81,7 @@ export async function createPackingRule(data: Partial<PackingRule>): Promise<Pac
  * 梱包ルールを更新 / 更新梱包规则
  */
 export async function updatePackingRule(id: string, data: Partial<PackingRule>): Promise<PackingRule> {
-  const response = await fetch(`${API_BASE_URL}/packing-rules/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/packing-rules/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -96,7 +97,7 @@ export async function updatePackingRule(id: string, data: Partial<PackingRule>):
  * 梱包ルールを削除 / 删除梱包规则
  */
 export async function deletePackingRule(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/packing-rules/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/packing-rules/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -110,7 +111,7 @@ export async function deletePackingRule(id: string): Promise<void> {
  * 评估梱包规则（根据订单数据判定最优梱包方案）
  */
 export async function evaluatePackingRules(orderData: Record<string, unknown>): Promise<EvaluateResult> {
-  const response = await fetch(`${API_BASE_URL}/packing-rules/evaluate`, {
+  const response = await apiFetch(`${API_BASE_URL}/packing-rules/evaluate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(orderData),

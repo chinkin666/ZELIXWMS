@@ -3,6 +3,7 @@
  */
 
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 // Transform pipeline schema
 export interface TransformContext {
@@ -130,7 +131,7 @@ export async function getAllMappingConfigs(
     }
   }
 
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`Failed to fetch mapping configs: ${response.statusText}`)
   }
@@ -141,7 +142,7 @@ export async function getAllMappingConfigs(
  * IDでマッピング設定を取得 / 根据ID获取映射配置
  */
 export async function getMappingConfigById(id: string): Promise<MappingConfig> {
-  const response = await fetch(`${API_BASE_URL}/mapping-configs/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/mapping-configs/${id}`)
   if (!response.ok) {
     throw new Error(`Failed to fetch mapping config: ${response.statusText}`)
   }
@@ -152,7 +153,7 @@ export async function getMappingConfigById(id: string): Promise<MappingConfig> {
  * マッピング設定を作成 / 创建映射配置
  */
 export async function createMappingConfig(dto: CreateMappingConfigDto): Promise<MappingConfig> {
-  const response = await fetch(`${API_BASE_URL}/mapping-configs`, {
+  const response = await apiFetch(`${API_BASE_URL}/mapping-configs`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -172,7 +173,7 @@ export async function updateMappingConfig(
   id: string,
   dto: Partial<CreateMappingConfigDto>,
 ): Promise<MappingConfig> {
-  const response = await fetch(`${API_BASE_URL}/mapping-configs/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/mapping-configs/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -189,7 +190,7 @@ export async function updateMappingConfig(
  * マッピング設定削除 / 删除映射配置
  */
 export async function deleteMappingConfig(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/mapping-configs/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/mapping-configs/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -201,7 +202,7 @@ export async function deleteMappingConfig(id: string): Promise<void> {
  * 変換プラグイン一覧を取得 / 获取 transform plugins 列表
  */
 export async function getTransformPlugins(): Promise<TransformPluginsResponse> {
-  const response = await fetch(`${API_BASE_URL}/mapping-configs/transform-plugins`)
+  const response = await apiFetch(`${API_BASE_URL}/mapping-configs/transform-plugins`)
   if (!response.ok) {
     throw new Error(`Failed to fetch transform plugins: ${response.statusText}`)
   }

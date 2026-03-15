@@ -6,6 +6,7 @@
  */
 
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 // 插件 API 路径 / プラグイン API パス
@@ -39,7 +40,7 @@ export interface SagawaTrackingImportResult {
  * POST /api/carriers/sagawa/export
  */
 export async function exportSagawaCsv(params: SagawaExportParams): Promise<Blob> {
-  const response = await fetch(`${SAGAWA_API}/export`, {
+  const response = await apiFetch(`${SAGAWA_API}/export`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -56,7 +57,7 @@ export async function exportSagawaCsv(params: SagawaExportParams): Promise<Blob>
  * POST /api/carriers/sagawa/import-tracking
  */
 export async function importSagawaTracking(csvContent: string): Promise<SagawaTrackingImportResult> {
-  const response = await fetch(`${SAGAWA_API}/import-tracking`, {
+  const response = await apiFetch(`${SAGAWA_API}/import-tracking`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ csvContent }),
@@ -73,7 +74,7 @@ export async function importSagawaTracking(csvContent: string): Promise<SagawaTr
  * GET /api/carriers/sagawa/invoice-types
  */
 export async function fetchSagawaInvoiceTypes(): Promise<SagawaInvoiceType[]> {
-  const response = await fetch(`${SAGAWA_API}/invoice-types`)
+  const response = await apiFetch(`${SAGAWA_API}/invoice-types`)
   if (!response.ok) {
     throw new Error(`送り状種類の取得に失敗しました: ${response.statusText}`)
   }
@@ -92,7 +93,7 @@ export interface SagawaPluginConfig {
  * GET /api/plugins/sagawa-express/config
  */
 export async function fetchSagawaConfig(): Promise<SagawaPluginConfig> {
-  const response = await fetch(`${SAGAWA_API}/config`)
+  const response = await apiFetch(`${SAGAWA_API}/config`)
   if (!response.ok) {
     return { billingCode: '', defaultInvoiceType: '0', defaultSize: '80' }
   }

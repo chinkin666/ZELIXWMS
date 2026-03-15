@@ -1,10 +1,11 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch as rawApiFetch } from '@/api/http'
 import type { SetProduct, SetOrder } from '@/types/setProduct'
 
 const getBase = () => `${getApiBaseUrl()}/set-products`
 
 async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init)
+  const res = await rawApiFetch(url, init)
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
     throw new Error(data.message || 'Request failed')

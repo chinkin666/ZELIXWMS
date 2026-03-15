@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -46,7 +47,7 @@ export async function fetchEmailTemplates(params?: EmailTemplateListParams): Pro
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`メールテンプレートの取得に失敗しました: ${response.statusText}`)
   }
@@ -54,7 +55,7 @@ export async function fetchEmailTemplates(params?: EmailTemplateListParams): Pro
 }
 
 export async function fetchEmailTemplate(id: string): Promise<EmailTemplate> {
-  const response = await fetch(`${API_BASE_URL}/email-templates/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/email-templates/${id}`)
   if (!response.ok) {
     throw new Error(`メールテンプレートの取得に失敗しました: ${response.statusText}`)
   }
@@ -62,7 +63,7 @@ export async function fetchEmailTemplate(id: string): Promise<EmailTemplate> {
 }
 
 export async function createEmailTemplate(data: Partial<EmailTemplate>): Promise<EmailTemplate> {
-  const response = await fetch(`${API_BASE_URL}/email-templates`, {
+  const response = await apiFetch(`${API_BASE_URL}/email-templates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -75,7 +76,7 @@ export async function createEmailTemplate(data: Partial<EmailTemplate>): Promise
 }
 
 export async function updateEmailTemplate(id: string, data: Partial<EmailTemplate>): Promise<EmailTemplate> {
-  const response = await fetch(`${API_BASE_URL}/email-templates/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/email-templates/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -88,7 +89,7 @@ export async function updateEmailTemplate(id: string, data: Partial<EmailTemplat
 }
 
 export async function deleteEmailTemplate(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/email-templates/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/email-templates/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -101,7 +102,7 @@ export async function previewEmailTemplate(
   templateId: string,
   sampleData?: Record<string, string>,
 ): Promise<EmailPreviewResponse> {
-  const response = await fetch(`${API_BASE_URL}/email-templates/preview`, {
+  const response = await apiFetch(`${API_BASE_URL}/email-templates/preview`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ templateId, sampleData }),

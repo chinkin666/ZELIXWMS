@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -51,7 +52,7 @@ export async function fetchSerialNumbers(params?: SerialNumberListParams): Promi
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`シリアル番号の取得に失敗しました: ${response.statusText}`)
   }
@@ -59,7 +60,7 @@ export async function fetchSerialNumbers(params?: SerialNumberListParams): Promi
 }
 
 export async function fetchSerialNumber(id: string): Promise<SerialNumber> {
-  const response = await fetch(`${API_BASE_URL}/serial-numbers/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/serial-numbers/${id}`)
   if (!response.ok) {
     throw new Error(`シリアル番号の取得に失敗しました: ${response.statusText}`)
   }
@@ -67,7 +68,7 @@ export async function fetchSerialNumber(id: string): Promise<SerialNumber> {
 }
 
 export async function createSerialNumber(data: Partial<SerialNumber>): Promise<SerialNumber> {
-  const response = await fetch(`${API_BASE_URL}/serial-numbers`, {
+  const response = await apiFetch(`${API_BASE_URL}/serial-numbers`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -80,7 +81,7 @@ export async function createSerialNumber(data: Partial<SerialNumber>): Promise<S
 }
 
 export async function bulkCreateSerialNumbers(data: { serialNumbers: Partial<SerialNumber>[] }): Promise<BulkCreateResult> {
-  const response = await fetch(`${API_BASE_URL}/serial-numbers/bulk`, {
+  const response = await apiFetch(`${API_BASE_URL}/serial-numbers/bulk`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -93,7 +94,7 @@ export async function bulkCreateSerialNumbers(data: { serialNumbers: Partial<Ser
 }
 
 export async function updateSerialNumber(id: string, data: Partial<SerialNumber>): Promise<SerialNumber> {
-  const response = await fetch(`${API_BASE_URL}/serial-numbers/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/serial-numbers/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -106,7 +107,7 @@ export async function updateSerialNumber(id: string, data: Partial<SerialNumber>
 }
 
 export async function updateSerialNumberStatus(id: string, data: { status: string }): Promise<SerialNumber> {
-  const response = await fetch(`${API_BASE_URL}/serial-numbers/${id}/status`, {
+  const response = await apiFetch(`${API_BASE_URL}/serial-numbers/${id}/status`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -122,7 +123,7 @@ export async function lookupSerialNumber(params: { serialNumber: string; product
   const url = new URL(`${API_BASE_URL}/serial-numbers/lookup`)
   url.searchParams.append('serialNumber', params.serialNumber)
   if (params.productId) url.searchParams.append('productId', params.productId)
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`シリアル番号の検索に失敗しました: ${response.statusText}`)
   }

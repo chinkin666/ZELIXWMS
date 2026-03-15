@@ -1,9 +1,10 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch as rawApiFetch } from '@/api/http'
 
 const getBase = () => `${getApiBaseUrl()}/system-settings`
 
 async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init)
+  const res = await rawApiFetch(url, init)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Request failed')
   return res.json()
 }

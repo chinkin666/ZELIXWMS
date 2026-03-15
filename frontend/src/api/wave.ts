@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -43,7 +44,7 @@ export async function fetchWaves(params?: WaveListParams): Promise<WaveListRespo
     if (params.page) url.searchParams.append('page', String(params.page))
     if (params.limit) url.searchParams.append('limit', String(params.limit))
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`ウェーブの取得に失敗しました: ${response.statusText}`)
   }
@@ -51,7 +52,7 @@ export async function fetchWaves(params?: WaveListParams): Promise<WaveListRespo
 }
 
 export async function fetchWave(id: string): Promise<Wave> {
-  const response = await fetch(`${API_BASE_URL}/waves/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/waves/${id}`)
   if (!response.ok) {
     throw new Error(`ウェーブの取得に失敗しました: ${response.statusText}`)
   }
@@ -59,7 +60,7 @@ export async function fetchWave(id: string): Promise<Wave> {
 }
 
 export async function createWave(data: Partial<Wave>): Promise<Wave> {
-  const response = await fetch(`${API_BASE_URL}/waves`, {
+  const response = await apiFetch(`${API_BASE_URL}/waves`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -72,7 +73,7 @@ export async function createWave(data: Partial<Wave>): Promise<Wave> {
 }
 
 export async function updateWave(id: string, data: Partial<Wave>): Promise<Wave> {
-  const response = await fetch(`${API_BASE_URL}/waves/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/waves/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -85,7 +86,7 @@ export async function updateWave(id: string, data: Partial<Wave>): Promise<Wave>
 }
 
 export async function deleteWave(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/waves/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/waves/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -95,7 +96,7 @@ export async function deleteWave(id: string): Promise<void> {
 }
 
 export async function startWave(id: string): Promise<Wave> {
-  const response = await fetch(`${API_BASE_URL}/waves/${id}/start`, {
+  const response = await apiFetch(`${API_BASE_URL}/waves/${id}/start`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
   })
@@ -107,7 +108,7 @@ export async function startWave(id: string): Promise<Wave> {
 }
 
 export async function completeWave(id: string): Promise<Wave> {
-  const response = await fetch(`${API_BASE_URL}/waves/${id}/complete`, {
+  const response = await apiFetch(`${API_BASE_URL}/waves/${id}/complete`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
   })

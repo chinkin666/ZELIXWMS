@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -49,7 +50,7 @@ function buildQueryUrl(params?: SupplierFilters): string {
 }
 
 export async function fetchSuppliers(params?: SupplierFilters): Promise<SupplierListResponse> {
-  const response = await fetch(buildQueryUrl(params))
+  const response = await apiFetch(buildQueryUrl(params))
   if (!response.ok) {
     throw new Error(`仕入先の取得に失敗しました: ${response.statusText}`)
   }
@@ -57,7 +58,7 @@ export async function fetchSuppliers(params?: SupplierFilters): Promise<Supplier
 }
 
 export async function fetchSupplier(id: string): Promise<SupplierData> {
-  const response = await fetch(`${API_BASE_URL}/suppliers/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/suppliers/${id}`)
   if (!response.ok) {
     throw new Error(`仕入先の取得に失敗しました: ${response.statusText}`)
   }
@@ -65,7 +66,7 @@ export async function fetchSupplier(id: string): Promise<SupplierData> {
 }
 
 export async function createSupplier(data: Partial<SupplierData>): Promise<SupplierData> {
-  const response = await fetch(`${API_BASE_URL}/suppliers`, {
+  const response = await apiFetch(`${API_BASE_URL}/suppliers`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -78,7 +79,7 @@ export async function createSupplier(data: Partial<SupplierData>): Promise<Suppl
 }
 
 export async function updateSupplier(id: string, data: Partial<SupplierData>): Promise<SupplierData> {
-  const response = await fetch(`${API_BASE_URL}/suppliers/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/suppliers/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -91,7 +92,7 @@ export async function updateSupplier(id: string, data: Partial<SupplierData>): P
 }
 
 export async function deleteSupplier(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/suppliers/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/suppliers/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -101,7 +102,7 @@ export async function deleteSupplier(id: string): Promise<void> {
 }
 
 export async function bulkImportSuppliers(suppliers: Array<Partial<SupplierData>>): Promise<BulkImportResult> {
-  const response = await fetch(`${API_BASE_URL}/suppliers/bulk-import`, {
+  const response = await apiFetch(`${API_BASE_URL}/suppliers/bulk-import`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ suppliers }),
@@ -114,7 +115,7 @@ export async function bulkImportSuppliers(suppliers: Array<Partial<SupplierData>
 }
 
 export async function exportSuppliers(): Promise<SupplierData[]> {
-  const response = await fetch(`${API_BASE_URL}/suppliers/export`)
+  const response = await apiFetch(`${API_BASE_URL}/suppliers/export`)
   if (!response.ok) {
     throw new Error(`仕入先のエクスポートに失敗しました: ${response.statusText}`)
   }

@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -46,7 +47,7 @@ export interface ReturnDashboardStats {
 }
 
 export async function fetchReturnDashboardStats(): Promise<ReturnDashboardStats> {
-  const res = await fetch(`${API_BASE_URL}/return-orders/dashboard-stats`)
+  const res = await apiFetch(`${API_BASE_URL}/return-orders/dashboard-stats`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch dashboard stats')
   return res.json()
 }
@@ -60,13 +61,13 @@ export async function fetchReturnOrders(params?: {
   if (params?.status) url.searchParams.append('status', params.status)
   if (params?.page) url.searchParams.append('page', String(params.page))
   if (params?.limit) url.searchParams.append('limit', String(params.limit))
-  const res = await fetch(url.toString())
+  const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch')
   return res.json()
 }
 
 export async function fetchReturnOrder(id: string): Promise<ReturnOrder> {
-  const res = await fetch(`${API_BASE_URL}/return-orders/${id}`)
+  const res = await apiFetch(`${API_BASE_URL}/return-orders/${id}`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch')
   return res.json()
 }
@@ -89,7 +90,7 @@ export async function createReturnOrder(data: {
   }>
   memo?: string
 }): Promise<ReturnOrder> {
-  const res = await fetch(`${API_BASE_URL}/return-orders`, {
+  const res = await apiFetch(`${API_BASE_URL}/return-orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -99,7 +100,7 @@ export async function createReturnOrder(data: {
 }
 
 export async function updateReturnOrder(id: string, data: Record<string, unknown>): Promise<ReturnOrder> {
-  const res = await fetch(`${API_BASE_URL}/return-orders/${id}`, {
+  const res = await apiFetch(`${API_BASE_URL}/return-orders/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -109,7 +110,7 @@ export async function updateReturnOrder(id: string, data: Record<string, unknown
 }
 
 export async function startReturnInspection(id: string): Promise<ReturnOrder> {
-  const res = await fetch(`${API_BASE_URL}/return-orders/${id}/start-inspection`, { method: 'POST' })
+  const res = await apiFetch(`${API_BASE_URL}/return-orders/${id}/start-inspection`, { method: 'POST' })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to start')
   return res.json()
 }
@@ -122,7 +123,7 @@ export async function inspectReturnLines(id: string, inspections: Array<{
   disposedQuantity?: number
   locationId?: string
 }>): Promise<ReturnOrder> {
-  const res = await fetch(`${API_BASE_URL}/return-orders/${id}/inspect`, {
+  const res = await apiFetch(`${API_BASE_URL}/return-orders/${id}/inspect`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ inspections }),
@@ -132,13 +133,13 @@ export async function inspectReturnLines(id: string, inspections: Array<{
 }
 
 export async function completeReturnOrder(id: string): Promise<{ data: ReturnOrder; restockedTotal: number; disposedTotal: number; errors: string[] }> {
-  const res = await fetch(`${API_BASE_URL}/return-orders/${id}/complete`, { method: 'POST' })
+  const res = await apiFetch(`${API_BASE_URL}/return-orders/${id}/complete`, { method: 'POST' })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to complete')
   return res.json()
 }
 
 export async function cancelReturnOrder(id: string): Promise<ReturnOrder> {
-  const res = await fetch(`${API_BASE_URL}/return-orders/${id}/cancel`, { method: 'POST' })
+  const res = await apiFetch(`${API_BASE_URL}/return-orders/${id}/cancel`, { method: 'POST' })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to cancel')
   return res.json()
 }
@@ -151,7 +152,7 @@ export async function bulkCreateReturns(returns: Array<{
   receivedDate?: string
   memo?: string
 }>): Promise<{ message: string; successCount: number; failCount: number; errors: string[] }> {
-  const res = await fetch(`${API_BASE_URL}/return-orders/bulk-create`, {
+  const res = await apiFetch(`${API_BASE_URL}/return-orders/bulk-create`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ returns }),
@@ -161,6 +162,6 @@ export async function bulkCreateReturns(returns: Array<{
 }
 
 export async function deleteReturnOrder(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/return-orders/${id}`, { method: 'DELETE' })
+  const res = await apiFetch(`${API_BASE_URL}/return-orders/${id}`, { method: 'DELETE' })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to delete')
 }

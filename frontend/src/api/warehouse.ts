@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -43,7 +44,7 @@ export async function fetchWarehouses(params?: WarehouseListParams): Promise<War
     if (params.limit) url.searchParams.append('limit', String(params.limit))
     if (params.isActive !== undefined) url.searchParams.append('isActive', params.isActive)
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`倉庫の取得に失敗しました: ${response.statusText}`)
   }
@@ -51,7 +52,7 @@ export async function fetchWarehouses(params?: WarehouseListParams): Promise<War
 }
 
 export async function fetchWarehouse(id: string): Promise<Warehouse> {
-  const response = await fetch(`${API_BASE_URL}/warehouses/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/warehouses/${id}`)
   if (!response.ok) {
     throw new Error(`倉庫の取得に失敗しました: ${response.statusText}`)
   }
@@ -59,7 +60,7 @@ export async function fetchWarehouse(id: string): Promise<Warehouse> {
 }
 
 export async function createWarehouse(data: Partial<Warehouse>): Promise<Warehouse> {
-  const response = await fetch(`${API_BASE_URL}/warehouses`, {
+  const response = await apiFetch(`${API_BASE_URL}/warehouses`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -72,7 +73,7 @@ export async function createWarehouse(data: Partial<Warehouse>): Promise<Warehou
 }
 
 export async function updateWarehouse(id: string, data: Partial<Warehouse>): Promise<Warehouse> {
-  const response = await fetch(`${API_BASE_URL}/warehouses/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/warehouses/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -85,7 +86,7 @@ export async function updateWarehouse(id: string, data: Partial<Warehouse>): Pro
 }
 
 export async function deleteWarehouse(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/warehouses/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/warehouses/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -95,7 +96,7 @@ export async function deleteWarehouse(id: string): Promise<void> {
 }
 
 export async function exportWarehouses(): Promise<Warehouse[]> {
-  const response = await fetch(`${API_BASE_URL}/warehouses/export`)
+  const response = await apiFetch(`${API_BASE_URL}/warehouses/export`)
   if (!response.ok) {
     throw new Error(`倉庫のエクスポートに失敗しました: ${response.statusText}`)
   }

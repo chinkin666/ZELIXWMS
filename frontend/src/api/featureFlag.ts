@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -26,7 +27,7 @@ export interface FeatureFlagStatusResponse {
 }
 
 export async function fetchFeatureFlags(): Promise<FeatureFlagListResponse> {
-  const response = await fetch(`${API_BASE_URL}/extensions/feature-flags`)
+  const response = await apiFetch(`${API_BASE_URL}/extensions/feature-flags`)
   if (!response.ok) throw new Error(`フィーチャーフラグの取得に失敗しました: ${response.statusText}`)
   return response.json()
 }
@@ -36,13 +37,13 @@ export async function fetchFeatureFlagStatus(
 ): Promise<FeatureFlagStatusResponse> {
   const url = new URL(`${API_BASE_URL}/extensions/feature-flags/status`)
   if (tenantId) url.searchParams.append('tenantId', tenantId)
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) throw new Error(`フィーチャーフラグ状態の取得に失敗しました: ${response.statusText}`)
   return response.json()
 }
 
 export async function createFeatureFlag(data: Partial<FeatureFlag>): Promise<FeatureFlag> {
-  const response = await fetch(`${API_BASE_URL}/extensions/feature-flags`, {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/feature-flags`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -58,7 +59,7 @@ export async function updateFeatureFlag(
   id: string,
   data: Partial<FeatureFlag>,
 ): Promise<FeatureFlag> {
-  const response = await fetch(`${API_BASE_URL}/extensions/feature-flags/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/feature-flags/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -71,7 +72,7 @@ export async function updateFeatureFlag(
 }
 
 export async function deleteFeatureFlag(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/extensions/feature-flags/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/feature-flags/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -83,7 +84,7 @@ export async function deleteFeatureFlag(id: string): Promise<void> {
 export async function toggleFeatureFlag(
   id: string,
 ): Promise<{ _id: string; key: string; defaultEnabled: boolean }> {
-  const response = await fetch(`${API_BASE_URL}/extensions/feature-flags/${id}/toggle`, {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/feature-flags/${id}/toggle`, {
     method: 'POST',
   })
   if (!response.ok) {
@@ -98,7 +99,7 @@ export async function setTenantOverride(
   tenantId: string,
   enabled: boolean,
 ): Promise<FeatureFlag> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/extensions/feature-flags/${flagId}/tenant-override`,
     {
       method: 'POST',
@@ -117,7 +118,7 @@ export async function removeTenantOverride(
   flagId: string,
   tenantId: string,
 ): Promise<FeatureFlag> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE_URL}/extensions/feature-flags/${flagId}/tenant-override/${tenantId}`,
     { method: 'DELETE' },
   )

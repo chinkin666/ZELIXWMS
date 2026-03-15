@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -43,7 +44,7 @@ export async function fetchClients(params?: ClientListParams): Promise<ClientLis
     if (params.limit) url.searchParams.append('limit', String(params.limit))
     if (params.isActive !== undefined) url.searchParams.append('isActive', params.isActive)
   }
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) {
     throw new Error(`顧客の取得に失敗しました: ${response.statusText}`)
   }
@@ -51,7 +52,7 @@ export async function fetchClients(params?: ClientListParams): Promise<ClientLis
 }
 
 export async function fetchClient(id: string): Promise<Client> {
-  const response = await fetch(`${API_BASE_URL}/clients/${id}`)
+  const response = await apiFetch(`${API_BASE_URL}/clients/${id}`)
   if (!response.ok) {
     throw new Error(`顧客の取得に失敗しました: ${response.statusText}`)
   }
@@ -59,7 +60,7 @@ export async function fetchClient(id: string): Promise<Client> {
 }
 
 export async function createClient(data: Partial<Client>): Promise<Client> {
-  const response = await fetch(`${API_BASE_URL}/clients`, {
+  const response = await apiFetch(`${API_BASE_URL}/clients`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -72,7 +73,7 @@ export async function createClient(data: Partial<Client>): Promise<Client> {
 }
 
 export async function updateClient(id: string, data: Partial<Client>): Promise<Client> {
-  const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/clients/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -85,7 +86,7 @@ export async function updateClient(id: string, data: Partial<Client>): Promise<C
 }
 
 export async function deleteClient(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/clients/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/clients/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -95,7 +96,7 @@ export async function deleteClient(id: string): Promise<void> {
 }
 
 export async function exportClients(): Promise<Client[]> {
-  const response = await fetch(`${API_BASE_URL}/clients/export`)
+  const response = await apiFetch(`${API_BASE_URL}/clients/export`)
   if (!response.ok) {
     throw new Error(`顧客のエクスポートに失敗しました: ${response.statusText}`)
   }

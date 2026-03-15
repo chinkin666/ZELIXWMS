@@ -5,6 +5,7 @@ import type {
 } from '@/types/orderSourceCompany'
 
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -21,7 +22,7 @@ const buildQueryUrl = (filters?: OrderSourceCompanyFilters): string => {
 export async function fetchOrderSourceCompanies(
   filters?: OrderSourceCompanyFilters,
 ): Promise<OrderSourceCompany[]> {
-  const response = await fetch(buildQueryUrl(filters))
+  const response = await apiFetch(buildQueryUrl(filters))
   if (!response.ok) {
     throw new Error(`ご依頼主の取得に失敗しました: ${response.statusText}`)
   }
@@ -29,7 +30,7 @@ export async function fetchOrderSourceCompanies(
 }
 
 export async function fetchOrderSourceCompanyById(id: string): Promise<OrderSourceCompany | null> {
-  const response = await fetch(`${API_BASE_URL}/order-source-companies/${encodeURIComponent(id)}`)
+  const response = await apiFetch(`${API_BASE_URL}/order-source-companies/${encodeURIComponent(id)}`)
   if (!response.ok) {
     if (response.status === 404) return null
     throw new Error(`ご依頼主の取得に失敗しました: ${response.statusText}`)
@@ -40,7 +41,7 @@ export async function fetchOrderSourceCompanyById(id: string): Promise<OrderSour
 export async function createOrderSourceCompany(
   payload: UpsertOrderSourceCompanyDto,
 ): Promise<OrderSourceCompany> {
-  const response = await fetch(`${API_BASE_URL}/order-source-companies`, {
+  const response = await apiFetch(`${API_BASE_URL}/order-source-companies`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -56,7 +57,7 @@ export async function updateOrderSourceCompany(
   id: string,
   payload: Partial<UpsertOrderSourceCompanyDto>,
 ): Promise<OrderSourceCompany> {
-  const response = await fetch(`${API_BASE_URL}/order-source-companies/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/order-source-companies/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -69,7 +70,7 @@ export async function updateOrderSourceCompany(
 }
 
 export async function deleteOrderSourceCompany(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/order-source-companies/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/order-source-companies/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -86,7 +87,7 @@ export type ImportRowError = {
 }
 
 export async function validateOrderSourceCompanyImport(rows: any[]): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/order-source-companies/validate-import`, {
+  const response = await apiFetch(`${API_BASE_URL}/order-source-companies/validate-import`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ rows }),
@@ -100,7 +101,7 @@ export async function validateOrderSourceCompanyImport(rows: any[]): Promise<voi
 }
 
 export async function importOrderSourceCompaniesBulk(rows: any[]): Promise<{ insertedCount: number }> {
-  const response = await fetch(`${API_BASE_URL}/order-source-companies/import-bulk`, {
+  const response = await apiFetch(`${API_BASE_URL}/order-source-companies/import-bulk`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ rows }),

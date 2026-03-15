@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -35,19 +36,19 @@ export async function fetchDailyReports(params?: {
   if (params?.to) url.searchParams.append('to', params.to)
   if (params?.page) url.searchParams.append('page', String(params.page))
   if (params?.limit) url.searchParams.append('limit', String(params.limit))
-  const res = await fetch(url.toString())
+  const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch')
   return res.json()
 }
 
 export async function fetchDailyReport(date: string): Promise<DailyReport> {
-  const res = await fetch(`${API_BASE_URL}/daily-reports/${date}`)
+  const res = await apiFetch(`${API_BASE_URL}/daily-reports/${date}`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch')
   return res.json()
 }
 
 export async function generateDailyReport(date: string): Promise<DailyReport> {
-  const res = await fetch(`${API_BASE_URL}/daily-reports/generate`, {
+  const res = await apiFetch(`${API_BASE_URL}/daily-reports/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ date }),
@@ -57,13 +58,13 @@ export async function generateDailyReport(date: string): Promise<DailyReport> {
 }
 
 export async function closeDailyReport(date: string): Promise<DailyReport> {
-  const res = await fetch(`${API_BASE_URL}/daily-reports/${date}/close`, { method: 'POST' })
+  const res = await apiFetch(`${API_BASE_URL}/daily-reports/${date}/close`, { method: 'POST' })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to close')
   return res.json()
 }
 
 export async function lockDailyReport(date: string): Promise<DailyReport> {
-  const res = await fetch(`${API_BASE_URL}/daily-reports/${date}/lock`, { method: 'POST' })
+  const res = await apiFetch(`${API_BASE_URL}/daily-reports/${date}/lock`, { method: 'POST' })
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to lock')
   return res.json()
 }

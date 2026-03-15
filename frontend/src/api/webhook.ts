@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -56,13 +57,13 @@ export async function fetchWebhooks(params?: { event?: string; enabled?: string 
   const url = new URL(`${API_BASE_URL}/extensions/webhooks`)
   if (params?.event) url.searchParams.append('event', params.event)
   if (params?.enabled) url.searchParams.append('enabled', params.enabled)
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) throw new Error(`Webhook の取得に失敗しました: ${response.statusText}`)
   return response.json()
 }
 
 export async function createWebhook(data: Partial<Webhook>): Promise<Webhook> {
-  const response = await fetch(`${API_BASE_URL}/extensions/webhooks`, {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/webhooks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -75,7 +76,7 @@ export async function createWebhook(data: Partial<Webhook>): Promise<Webhook> {
 }
 
 export async function updateWebhook(id: string, data: Partial<Webhook>): Promise<Webhook> {
-  const response = await fetch(`${API_BASE_URL}/extensions/webhooks/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/webhooks/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -88,7 +89,7 @@ export async function updateWebhook(id: string, data: Partial<Webhook>): Promise
 }
 
 export async function deleteWebhook(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/extensions/webhooks/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/webhooks/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {
@@ -98,7 +99,7 @@ export async function deleteWebhook(id: string): Promise<void> {
 }
 
 export async function testWebhook(id: string): Promise<WebhookTestResult> {
-  const response = await fetch(`${API_BASE_URL}/extensions/webhooks/${id}/test`, {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/webhooks/${id}/test`, {
     method: 'POST',
   })
   if (!response.ok) {
@@ -109,7 +110,7 @@ export async function testWebhook(id: string): Promise<WebhookTestResult> {
 }
 
 export async function toggleWebhook(id: string): Promise<{ _id: string; enabled: boolean; message: string }> {
-  const response = await fetch(`${API_BASE_URL}/extensions/webhooks/${id}/toggle`, {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/webhooks/${id}/toggle`, {
     method: 'POST',
   })
   if (!response.ok) {
@@ -127,7 +128,7 @@ export async function fetchWebhookLogs(
   if (params?.status) url.searchParams.append('status', params.status)
   if (params?.page) url.searchParams.append('page', String(params.page))
   if (params?.limit) url.searchParams.append('limit', String(params.limit))
-  const response = await fetch(url.toString())
+  const response = await apiFetch(url.toString())
   if (!response.ok) throw new Error(`Webhook ログの取得に失敗しました: ${response.statusText}`)
   return response.json()
 }
