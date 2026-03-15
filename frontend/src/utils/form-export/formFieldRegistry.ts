@@ -648,6 +648,26 @@ const productLabelFields: FormFieldDefinition[] = [
 ]
 
 /**
+ * 納品書用フィールド定義
+ * B2B出荷用の納品書（配送明細書）を出力する
+ * B2B出货用的交货单（配送明细单）
+ */
+const deliveryNoteFields: FormFieldDefinition[] = [
+  { key: 'orderNumber', label: '出荷管理No', fieldType: 'string', defaultEnabled: true, supportBarcode: true },
+  { key: 'customerManagementNumber', label: 'お客様管理番号', fieldType: 'string', defaultEnabled: true, supportBarcode: false },
+  { key: 'deliveryDate', label: '納品日', fieldType: 'date', defaultEnabled: true, supportBarcode: false },
+  { key: 'recipientName', label: 'お届け先名', fieldType: 'string', defaultEnabled: true, supportBarcode: false },
+  { key: 'recipientAddress', label: 'お届け先住所', fieldType: 'string', defaultEnabled: true, supportBarcode: false },
+  { key: 'senderName', label: 'ご依頼主名', fieldType: 'string', defaultEnabled: true, supportBarcode: false },
+  { key: 'senderAddress', label: 'ご依頼主住所', fieldType: 'string', defaultEnabled: false, supportBarcode: false },
+  { key: 'products', label: '商品明細', fieldType: 'array', defaultEnabled: true, supportBarcode: false },
+  { key: 'productTotalQuantity', label: '商品総数', fieldType: 'number', defaultEnabled: true, supportBarcode: false },
+  { key: 'totalAmount', label: '合計金額', fieldType: 'number', defaultEnabled: false, supportBarcode: false },
+  { key: 'taxAmount', label: '消費税', fieldType: 'number', defaultEnabled: false, supportBarcode: false },
+  { key: 'memo', label: '備考', fieldType: 'string', defaultEnabled: false, supportBarcode: false },
+]
+
+/**
  * フォームタイプ登録表 / 帳票タイプ登録表
  */
 export const formTypeRegistry: FormTypeDefinition[] = [
@@ -676,6 +696,13 @@ export const formTypeRegistry: FormTypeDefinition[] = [
     label: '入庫検品シート',
     description: '入庫検品用のチェックリストを商品集計で出力します',
     fields: inboundInspectionFields,
+  },
+  // 納品書系 / 交货单系
+  {
+    type: 'delivery-note',
+    label: '納品書',
+    description: 'B2B出荷用の納品書を出力します',
+    fields: deliveryNoteFields,
   },
   // 商品系 / 产品系
   {

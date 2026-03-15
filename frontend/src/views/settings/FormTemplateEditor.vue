@@ -765,6 +765,13 @@ function generateSampleData(type: string): Record<string, any>[] {
     ]
   }
 
+  // 納品書 / 交货单
+  if (type === 'delivery-note') {
+    return [
+      { orderNumber: 'ORD-2026-0001', customerManagementNumber: 'B2B-001', deliveryDate: '2026/03/15', recipientName: '株式会社テスト', recipientAddress: '東京都千代田区丸の内1-1-1', senderName: 'ZELIX倉庫', senderAddress: '東京都江東区有明1-1-1', products: 'サンプル商品A x10, サンプル商品B x5', productTotalQuantity: 15, totalAmount: 25000, taxAmount: 2500, memo: 'ご査収ください' },
+    ]
+  }
+
   // 商品ラベル / 产品标签
   if (type === 'product-label') {
     return [

@@ -10,10 +10,101 @@ import { requireAuth } from '@/api/middleware/auth'
 
 export const authRouter = Router()
 
-// 公开路由（无需认证） / 公開ルート（認証不要）
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: ログイン / Login
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: ログイン成功 / Login successful
+ *       401:
+ *         description: 認証失敗 / Authentication failed
+ */
 authRouter.post('/login', login)
+
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: ユーザー登録 / Register
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password, name]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: 登録成功 / Registration successful
+ *       400:
+ *         description: バリデーションエラー / Validation error
+ */
 authRouter.post('/register', register)
 
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     tags: [Auth]
+ *     summary: 現在ユーザー取得 / Get current user
+ *     responses:
+ *       200:
+ *         description: ユーザー情報 / User info
+ *       401:
+ *         description: 未認証 / Unauthorized
+ */
 // 认证必须路由 / 認証必須ルート
 authRouter.get('/me', requireAuth, me)
+
+/**
+ * @swagger
+ * /auth/change-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: パスワード変更 / Change password
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword]
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 変更成功 / Password changed
+ *       401:
+ *         description: 未認証 / Unauthorized
+ */
 authRouter.post('/change-password', requireAuth, changePassword)

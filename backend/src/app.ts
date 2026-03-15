@@ -65,7 +65,9 @@ export const createApp = () => {
   registerCoreRoutes(app);
 
   // Swagger UI / API ドキュメント
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'ZELIX WMS API Docs',
+  }));
   app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
 
   // 插件自定义 API 路由 / プラグインカスタム API ルート

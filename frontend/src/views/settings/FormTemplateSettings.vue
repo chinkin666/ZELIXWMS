@@ -96,6 +96,7 @@ const presetTemplates = [
   { type: 'shipment-detail-list', name: '出荷明細リスト', description: '出荷指示の詳細一覧' },
   { type: 'inbound-detail-list', name: '入庫リスト', description: '入庫指示のライン明細' },
   { type: 'inbound-inspection-sheet', name: '入庫検品シート', description: '入庫検品チェックリスト' },
+  { type: 'delivery-note', name: '納品書', description: 'B2B出荷用の納品書' },
   { type: 'product-label', name: '商品ラベル', description: '商品小標籤・外箱ラベル' },
 ]
 
