@@ -61,9 +61,14 @@ import { exceptionRouter } from './exceptions';
 import { labelingTaskRouter } from './labelingTasks';
 import { fbaBoxRouter } from './fbaBoxes';
 import { cycleCountRouter } from './cycleCounts';
+import { kpiRouter } from './kpi';
+import { auditLogger } from '@/api/middleware/auditLogger';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
+
+  // 操作監査 / 操作审计（全 POST/PUT/DELETE 自動記録）
+  api.use(auditLogger);
 
   // 认证路由（登录・注册等，无需全局认证） / 認証ルート（ログイン・登録等、グローバル認証不要）
   api.use('/auth', authRouter);
@@ -159,6 +164,9 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // Phase 3: 循環棚卸・エイジング / 循环盘点、库龄预警
   api.use('/cycle-counts', cycleCountRouter);
+
+  // Phase 4: KPI / KPI 仪表板
+  api.use('/kpi', kpiRouter);
 
   // 子顧客 / 子客户
   api.use('/sub-clients', subClientRouter);
