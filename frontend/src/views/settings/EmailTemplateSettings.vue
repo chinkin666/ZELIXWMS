@@ -405,7 +405,6 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
       <Table
         :columns="tableColumns"
         :data="templates"
-        :height="560"
         row-key="_id"
         pagination-enabled
         pagination-mode="client"

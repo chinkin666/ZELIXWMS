@@ -16,7 +16,6 @@
       :columns="tableColumns"
       :data="displayRows"
       :global-search-text="globalSearchText"
-      :height="560"
       row-key="_id"
       highlight-columns-on-hover
       pagination-enabled

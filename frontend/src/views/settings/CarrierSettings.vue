@@ -18,7 +18,6 @@
       <Table
         :columns="tableColumns"
         :data="list"
-        :height="560"
         row-key="_id"
         highlight-columns-on-hover
         pagination-enabled

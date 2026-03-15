@@ -16,7 +16,6 @@
       <Table
         :columns="tableColumns"
         :data="rows"
-        :height="520"
         row-key="_id"
         pagination-enabled
         pagination-mode="server"

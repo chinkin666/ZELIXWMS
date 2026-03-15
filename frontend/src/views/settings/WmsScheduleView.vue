@@ -40,7 +40,6 @@
         <Table
           :columns="scheduleTableColumns"
           :data="schedules"
-          :height="520"
           row-key="_id"
           highlight-columns-on-hover
           pagination-enabled
@@ -67,7 +66,6 @@
         <Table
           :columns="taskTableColumns"
           :data="tasks"
-          :height="520"
           row-key="_id"
           highlight-columns-on-hover
           pagination-enabled
@@ -97,7 +95,6 @@
         <Table
           :columns="logTableColumns"
           :data="logs"
-          :height="520"
           row-key="_id"
           highlight-columns-on-hover
           pagination-enabled

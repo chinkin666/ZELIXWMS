@@ -19,7 +19,6 @@
       <Table
         :columns="tableColumns"
         :data="rules"
-        :height="520"
         row-key="_id"
         highlight-columns-on-hover
         pagination-enabled

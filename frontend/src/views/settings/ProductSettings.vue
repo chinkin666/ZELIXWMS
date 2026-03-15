@@ -85,7 +85,6 @@
       <Table
         :columns="tableColumns"
         :data="filteredList"
-        :height="520"
         row-key="_id"
         pagination-enabled
         pagination-mode="client"

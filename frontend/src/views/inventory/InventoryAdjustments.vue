@@ -60,7 +60,6 @@
       <Table
         :columns="historyTableColumns"
         :data="historyRows"
-        :height="400"
         row-key="_id"
         highlight-columns-on-hover
         pagination-enabled

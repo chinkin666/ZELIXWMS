@@ -21,7 +21,6 @@
       <Table
         :columns="tableColumns"
         :data="filtered"
-        :height="520"
         row-key="_id"
         pagination-enabled
         pagination-mode="client"

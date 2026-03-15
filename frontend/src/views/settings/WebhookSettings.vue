@@ -18,7 +18,6 @@
       <Table
         :columns="tableColumns"
         :data="webhooks"
-        :height="520"
         row-key="_id"
         pagination-enabled
         pagination-mode="client"

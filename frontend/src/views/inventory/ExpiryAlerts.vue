@@ -52,7 +52,6 @@
       <Table
         :columns="tableColumns"
         :data="alerts"
-        :height="520"
         row-key="lotId"
         pagination-enabled
         pagination-mode="client"

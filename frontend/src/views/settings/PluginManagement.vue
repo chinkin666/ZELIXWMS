@@ -14,7 +14,6 @@
       <Table
         :columns="tableColumns"
         :data="plugins"
-        :height="520"
         row-key="name"
         pagination-enabled
         pagination-mode="client"

@@ -10,7 +10,6 @@
       <Table
         :columns="tableColumns"
         :data="templates"
-        :height="560"
         row-key="id"
         highlight-columns-on-hover
         pagination-enabled

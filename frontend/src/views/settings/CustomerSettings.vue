@@ -65,7 +65,6 @@
       <Table
         :columns="tableColumns"
         :data="customers"
-        :height="520"
         row-key="_id"
         pagination-enabled
         pagination-mode="server"

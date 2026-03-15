@@ -18,7 +18,6 @@
       <Table
         :columns="tableColumns"
         :data="rows"
-        :height="520"
         row-key="_id"
         highlight-columns-on-hover
         pagination-enabled

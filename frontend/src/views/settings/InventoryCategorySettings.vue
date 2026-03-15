@@ -19,7 +19,6 @@
       <Table
         :columns="tableColumns"
         :data="categories"
-        :height="520"
         row-key="_id"
         pagination-enabled
         pagination-mode="client"

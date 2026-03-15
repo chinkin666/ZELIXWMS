@@ -33,7 +33,6 @@
           <Table
             :columns="importTableColumns"
             :data="importPreview.slice(0, 10)"
-            :height="300"
             row-key="productSku"
             pagination-enabled
             pagination-mode="client"
@@ -65,7 +64,6 @@
       <Table
         :columns="summaryTableColumns"
         :data="summaryRows"
-        :height="520"
         row-key="productId"
         highlight-columns-on-hover
         pagination-enabled
@@ -81,7 +79,6 @@
       <Table
         :columns="detailTableColumns"
         :data="detailRows"
-        :height="520"
         row-key="_id"
         highlight-columns-on-hover
         pagination-enabled

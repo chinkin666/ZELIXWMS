@@ -1,6 +1,6 @@
 <template>
   <div ref="tableContainerRef" class="nex-table">
-    <div class="nex-table__wrapper" :style="{ maxHeight: tableHeight + 'px', overflow: 'auto' }">
+    <div class="nex-table__wrapper" :style="tableHeight ? { maxHeight: tableHeight + 'px', overflow: 'auto' } : {}">
       <table class="o-list-table">
         <thead>
           <tr>
