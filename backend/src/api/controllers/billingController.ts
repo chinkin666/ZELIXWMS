@@ -55,13 +55,21 @@ export async function generateMonthlyBilling(req: Request, res: Response) {
 
     // 出荷オーダーを荷主・配送業者別に集計
     // 按货主・配送商分组汇总出货订单
+    // shipPlanDate はスラッシュ形式（YYYY/MM/DD）で保存されている場合がある
+    // shipPlanDate 可能以斜杠格式存储
+    const [year, month] = period.split('-').map(Number);
+    const slashStart = `${year}/${String(month).padStart(2, '0')}/01`;
+    const slashEnd = month === 12 ? `${year + 1}/01/01` : `${year}/${String(month + 1).padStart(2, '0')}/01`;
+    const dashStart = `${period}-01`;
+    const dashEnd = endDate.toISOString().slice(0, 10);
+
     const aggregation = await ShipmentOrder.aggregate([
       {
         $match: {
-          shipPlanDate: {
-            $gte: `${period}-01`,
-            $lt: endDate.toISOString().slice(0, 10),
-          },
+          $or: [
+            { shipPlanDate: { $gte: dashStart, $lt: dashEnd } },
+            { shipPlanDate: { $gte: slashStart, $lt: slashEnd } },
+          ],
           'status.shipped.isShipped': true,
         },
       },
@@ -73,7 +81,7 @@ export async function generateMonthlyBilling(req: Request, res: Response) {
           },
           orderCount: { $sum: 1 },
           totalQuantity: { $sum: { $ifNull: ['$_productsMeta.totalQuantity', 0] } },
-          totalShippingCost: { $sum: { $ifNull: ['$_productsMeta.totalPrice', 0] } },
+          totalShippingCost: { $sum: { $ifNull: ['$shippingCost', 0] } },
         },
       },
     ]);
@@ -83,17 +91,28 @@ export async function generateMonthlyBilling(req: Request, res: Response) {
     const clientIds = [...new Set(aggregation.map((r) => r._id.clientId).filter(Boolean))];
     const carrierIds = [...new Set(aggregation.map((r) => r._id.carrierId).filter(Boolean))];
 
+    // ObjectId でないID（__builtin_*）を除外 / 非ObjectIDを除外
+    const isObjectId = (id: string) => /^[0-9a-fA-F]{24}$/.test(id);
+    const validClientIds = clientIds.filter(isObjectId);
+    const validCarrierIds = carrierIds.filter(isObjectId);
+
     const [clients, carriers] = await Promise.all([
-      clientIds.length > 0
-        ? OrderSourceCompany.find({ _id: { $in: clientIds } }, { _id: 1, senderName: 1 }).lean()
+      validClientIds.length > 0
+        ? OrderSourceCompany.find({ _id: { $in: validClientIds } }, { _id: 1, senderName: 1 }).lean()
         : Promise.resolve([]),
-      carrierIds.length > 0
-        ? Carrier.find({ _id: { $in: carrierIds } }, { _id: 1, name: 1 }).lean()
+      validCarrierIds.length > 0
+        ? Carrier.find({ _id: { $in: validCarrierIds } }, { _id: 1, name: 1 }).lean()
         : Promise.resolve([]),
     ]);
 
-    const clientMap = new Map(clients.map((c) => [String(c._id), c.senderName]));
+    const clientMap = new Map(clients.map((c) => [String(c._id), (c as any).senderName]));
     const carrierMap = new Map(carriers.map((c) => [String(c._id), c.name]));
+    // 内蔵配送業者名のフォールバック / 内置配送商名回退
+    for (const cid of carrierIds) {
+      if (!carrierMap.has(cid) && cid.startsWith('__builtin_')) {
+        carrierMap.set(cid, cid.replace('__builtin_', '').replace(/_/g, ' '));
+      }
+    }
 
     // 請求明細を作成/更新
     // 创建/更新请求明细
