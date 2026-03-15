@@ -20,8 +20,7 @@
     </div>
 
     <!-- 作成/編集ダイアログ / 创建/编辑对话框 -->
-    <ODialog v-model="dialogVisible" :title="isEditing ? '梱包ルールを編集' : '梱包ルールを追加'" size="lg" @close="closeDialog">
-      <template #default>
+    <ODialog :open="dialogVisible" :title="isEditing ? '梱包ルールを編集' : '梱包ルールを追加'" size="lg" @close="closeDialog">
         <form class="rule-form" @submit.prevent="handleSubmit">
           <div class="form-row-inline">
             <div class="form-row">
@@ -120,7 +119,6 @@
             </OButton>
           </div>
         </form>
-      </template>
     </ODialog>
   </div>
 </template>
@@ -197,7 +195,7 @@ const form = ref<FormData>(emptyForm())
 // ---------------------------------------------------------------------------
 const conditionSummary = (rule: PackingRule): string => {
   const parts: string[] = []
-  const c = rule.conditions
+  const c = rule.conditions || {}
   if (c.maxWeight) parts.push(`重量<=${c.maxWeight}g`)
   if (c.maxDimension) parts.push(`サイズ<=${c.maxDimension}mm`)
   if (c.coolType) {
@@ -278,7 +276,7 @@ const loadList = async () => {
   loading.value = true
   try {
     const result = await fetchPackingRules()
-    list.value = result.data
+    list.value = Array.isArray(result) ? result : (result.data || [])
   } catch (error: any) {
     showToast(error?.message || '取得に失敗しました', 'danger')
   } finally {
