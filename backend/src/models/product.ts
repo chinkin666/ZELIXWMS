@@ -62,6 +62,11 @@ export interface IProduct {
   defaultHandlingTags?: string[];
   // 主仕入先コード / 主要仕入先コード
   supplierCode?: string;
+  // Amazon FBA関連 / Amazon FBA相关
+  fnsku?: string;              // Amazon FNSKU
+  asin?: string;               // Amazon ASIN
+  amazonSku?: string;          // Amazon出品者SKU / Amazon卖家SKU
+  fbaEnabled?: boolean;        // FBA出荷対応商品か / 是否FBA出货对应商品
   /** 自定义字段 / カスタムフィールド */
   customFields?: Record<string, unknown>;
   createdAt: Date;
@@ -239,6 +244,12 @@ const productSchema = new mongoose.Schema<IProduct>(
     defaultHandlingTags: { type: [String], default: [] },
     // 主仕入先コード / 主要仕入先コード
     supplierCode: { type: String, trim: true },
+
+    // Amazon FBA関連 / Amazon FBA相关
+    fnsku: { type: String, trim: true },
+    asin: { type: String, trim: true },
+    amazonSku: { type: String, trim: true },
+    fbaEnabled: { type: Boolean, default: false },
 
     // 自定义字段 / カスタムフィールド（Phase 5）
     customFields: { type: mongoose.Schema.Types.Mixed, default: {} },

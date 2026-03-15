@@ -15,6 +15,7 @@ export const wmsMenuItems: Array<{ label: string; to: string }> = [
   { label: '入庫管理', to: '/inbound' },
   { label: '在庫管理', to: '/inventory' },
   { label: '出荷管理', to: '/shipment' },
+  { label: 'FBA管理', to: '/fba' },
   { label: '返品管理', to: '/returns' },
   { label: '棚卸管理', to: '/stocktaking' },
   { label: 'セット組管理', to: '/set-products' },
@@ -132,6 +133,10 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
   '/stocktaking': [
     { label: '棚卸一覧', to: '/stocktaking/list' },
     { label: '棚卸作成', to: '/stocktaking/create' },
+  ],
+  '/fba': [
+    { label: 'FBAプラン一覧', to: '/fba/plans' },
+    { label: 'FBAプラン作成', to: '/fba/plans/create' },
   ],
   '/returns': [
     { label: 'ダッシュボード', to: '/returns/dashboard' },

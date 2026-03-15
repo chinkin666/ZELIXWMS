@@ -14,6 +14,9 @@ const buildQueryUrl = (filters?: ProductFilters): string => {
     if (filters.mailCalcEnabled !== undefined) {
       url.searchParams.append('mailCalcEnabled', String(filters.mailCalcEnabled))
     }
+    if (filters.fbaEnabled !== undefined) {
+      url.searchParams.append('fbaEnabled', String(filters.fbaEnabled))
+    }
   }
   return url.toString()
 }

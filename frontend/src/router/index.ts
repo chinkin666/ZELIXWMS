@@ -153,6 +153,32 @@ const router = createRouter({
             },
           ],
         },
+        // === FBA管理 / FBA管理 ===
+        {
+          path: 'fba',
+          meta: { title: 'FBA管理', requiresAuth: true },
+          redirect: '/fba/plans',
+          children: [
+            {
+              path: 'plans',
+              name: 'FbaPlanList',
+              component: () => import('@/views/fba/FbaPlanList.vue'),
+              meta: { title: 'FBAプラン一覧', requiresAuth: true },
+            },
+            {
+              path: 'plans/create',
+              name: 'FbaPlanCreate',
+              component: () => import('@/views/fba/FbaPlanCreate.vue'),
+              meta: { title: 'FBAプラン作成', requiresAuth: true },
+            },
+            {
+              path: 'plans/:id/edit',
+              name: 'FbaPlanEdit',
+              component: () => import('@/views/fba/FbaPlanCreate.vue'),
+              meta: { title: 'FBAプラン編集', requiresAuth: true },
+            },
+          ],
+        },
         // === 旧路径重定向（向后兼容）/ 旧パスリダイレクト（後方互換） ===
         { path: 'shipment-orders', redirect: '/shipment/orders/create' },
         { path: 'shipment-orders/create', redirect: '/shipment/orders/create' },

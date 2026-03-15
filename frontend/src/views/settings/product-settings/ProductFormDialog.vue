@@ -331,6 +331,36 @@
                     <input class="o-inline-input" type="number" :value="formData.alertDaysBeforeExpiry" @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.alertDaysBeforeExpiry = v === '' ? undefined : Number(v) }" placeholder="期限切れの何日前に警告" min="1" />
                   </div>
                 </div>
+                <!-- FBA設定 / FBA设置 -->
+                <div class="o-field-row">
+                  <label class="o-field-label">FBA対応</label>
+                  <div class="o-field-value">
+                    <select class="o-inline-input" :value="String(formData.fbaEnabled)" @change="(e: Event) => formData.fbaEnabled = (e.target as HTMLSelectElement).value === 'true'">
+                      <option value="false">しない</option>
+                      <option value="true">する</option>
+                    </select>
+                  </div>
+                </div>
+                <template v-if="formData.fbaEnabled">
+                  <div class="o-field-row">
+                    <label class="o-field-label">FNSKU</label>
+                    <div class="o-field-value">
+                      <input class="o-inline-input" :value="formData.fnsku" @input="(e: Event) => formData.fnsku = (e.target as HTMLInputElement).value" placeholder="X00XXXXXXX" />
+                    </div>
+                  </div>
+                  <div class="o-field-row">
+                    <label class="o-field-label">ASIN</label>
+                    <div class="o-field-value">
+                      <input class="o-inline-input" :value="formData.asin" @input="(e: Event) => formData.asin = (e.target as HTMLInputElement).value" placeholder="B0XXXXXXXX" />
+                    </div>
+                  </div>
+                  <div class="o-field-row">
+                    <label class="o-field-label">Amazon出品者SKU</label>
+                    <div class="o-field-value">
+                      <input class="o-inline-input" :value="formData.amazonSku" @input="(e: Event) => formData.amazonSku = (e.target as HTMLInputElement).value" />
+                    </div>
+                  </div>
+                </template>
               </div>
             </template>
 
@@ -585,6 +615,10 @@ watch(
         expiryTrackingEnabled: d.expiryTrackingEnabled ?? false,
         safetyStock: d.safetyStock ?? undefined,
         alertDaysBeforeExpiry: d.alertDaysBeforeExpiry ?? undefined,
+        fbaEnabled: d.fbaEnabled ?? false,
+        fnsku: d.fnsku || '',
+        asin: d.asin || '',
+        amazonSku: d.amazonSku || '',
       }
       editImageUrl.value = d.imageUrl || ''
       activeTab.value = 'barcode'

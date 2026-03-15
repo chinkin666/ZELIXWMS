@@ -46,6 +46,11 @@ export interface Product {
   alertDaysBeforeExpiry: number
   defaultLocationId?: string
   safetyStock: number
+  // FBA設定 / FBA设置
+  fbaEnabled?: boolean
+  fnsku?: string
+  asin?: string
+  amazonSku?: string
   createdAt: string
   updatedAt: string
 }
@@ -57,6 +62,7 @@ export interface ProductFilters {
   coolType?: '0' | '1' | '2'
   category?: ProductCategory
   mailCalcEnabled?: boolean
+  fbaEnabled?: boolean
 }
 
 export interface UpsertProductDto {
@@ -92,6 +98,11 @@ export interface UpsertProductDto {
   expiryTrackingEnabled?: boolean
   alertDaysBeforeExpiry?: number
   safetyStock?: number
+  // FBA設定 / FBA设置
+  fbaEnabled?: boolean
+  fnsku?: string
+  asin?: string
+  amazonSku?: string
 }
 
 export function getProductFieldDefinitions(): TableColumn[] {

@@ -47,6 +47,7 @@ import { serviceRateRouter } from './serviceRates';
 import { workChargeRouter } from './workCharges';
 import { userRouter } from './users';
 import { authRouter } from './auth';
+import { fbaRouter } from './fba';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -115,6 +116,9 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // ユーザー管理 / 用户管理
   api.use('/users', userRouter);
+
+  // FBA入庫プラン / FBA入库计划
+  api.use('/fba', fbaRouter);
 
   // 扩展系统 / 拡張システム
   api.use('/extensions', extensionRouter);

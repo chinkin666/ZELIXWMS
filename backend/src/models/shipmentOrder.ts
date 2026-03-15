@@ -124,6 +124,13 @@ export interface IShipmentOrder {
   _id: mongoose.Types.ObjectId;
   tenantId?: string;
 
+  // 出荷先タイプ / 出货目的地类型
+  destinationType?: 'B2C' | 'B2B' | 'FBA' | 'RSL';
+  // FBA入庫プランID / FBA入库计划ID
+  fbaShipmentId?: string;
+  // FBA倉庫コード（例: NRT5, KIX2）/ FBA仓库代码（例: NRT5, KIX2）
+  fbaDestination?: string;
+
   status?: {
     /**
      * 配送業者へデータ送信し、回执（受付/レスポンス）を取得済みかどうか
@@ -374,6 +381,17 @@ const carrierDataSchema = new mongoose.Schema<ICarrierData>(
 const shipmentOrderSchema = new mongoose.Schema<IShipmentOrder>(
   {
     tenantId: { type: String, trim: true },
+
+    // 出荷先タイプ / 出货目的地类型
+    destinationType: {
+      type: String,
+      enum: ['B2C', 'B2B', 'FBA', 'RSL'],
+      default: 'B2C',
+    },
+    // FBA入庫プランID / FBA入库计划ID
+    fbaShipmentId: { type: String, trim: true },
+    // FBA倉庫コード / FBA仓库代码
+    fbaDestination: { type: String, trim: true },
 
     orderNumber: { type: String, required: true, trim: true, unique: true },
     sourceOrderAt: { type: Date, required: false },
