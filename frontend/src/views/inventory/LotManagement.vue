@@ -333,7 +333,8 @@ async function loadProducts() {
       name: p.name,
     }))
   } catch (e: any) {
-    // 商品取得エラー / Product fetch error
+    // 商品マスタ読み込み失敗時にユーザーへ通知 / Notify user when product master fails to load
+    showToast(t('wms.inventory.productLoadFailed', '商品マスタの読み込みに失敗しました'), 'warning')
   }
 }
 

@@ -112,10 +112,9 @@ const canSubmit = computed(() =>
 )
 
 const handleProductChange = () => {
-  const product = products.value.find(p => p._id === form.value.productId)
-  if (product && !form.value.locationId) {
-    // default location selection if available
-  }
+  // 商品変更時の処理（将来的にデフォルトロケーション自動選択等を実装可能）
+  // 商品切替时的处理（未来可实现默认库位自动选择等功能）
+  // Currently no-op: location must be selected manually by the user.
 }
 
 const isIncrease = (row: StockMove) => {
