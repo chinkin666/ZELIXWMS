@@ -8,6 +8,7 @@ import {
   shipOrder,
   acknowledgeVariance,
 } from '@/services/passthroughService';
+import { processOrderFbaLabel } from '@/services/fbaLabelService';
 
 /**
  * 通過型入庫予約一覧 / 通过型入库预定列表
@@ -203,5 +204,31 @@ export const stagingDashboard = async (req: Request, res: Response): Promise<voi
     res.json(summary);
   } catch (error: any) {
     res.status(500).json({ message: 'ダッシュボード取得に失敗 / 获取看板失败', error: error.message });
+  }
+};
+
+/**
+ * FBA/RSLラベルPDFアップロード＋分割 / FBA/RSL标PDF上传+拆分
+ *
+ * multipart/form-data: file + format(4up/6up/single)
+ */
+export const uploadAndSplitLabel = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const file = (req as any).file;
+    if (!file) {
+      res.status(400).json({ message: 'PDFファイルが必要です / 需要PDF文件' });
+      return;
+    }
+
+    const format = (req.body.format || '6up') as '4up' | '6up' | 'single';
+    if (!['4up', '6up', 'single'].includes(format)) {
+      res.status(400).json({ message: 'format は 4up/6up/single のいずれか / format 必须是 4up/6up/single' });
+      return;
+    }
+
+    const splitLabels = await processOrderFbaLabel(req.params.id, file.buffer, format);
+    res.json({ splitLabels, count: splitLabels.length });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
 };
