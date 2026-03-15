@@ -28,55 +28,55 @@ export const wmsMenuItems: Array<{ label: string; to: string }> = [
 ]
 
 // 設定サイドバー / 设置侧边栏
+// 整理済み: 頻度別4グループ、名称統一
+// 已整理: 按使用频率分4组，名称统一
 export const settingsGroups: SubMenuGroup[] = [
   {
-    groupLabel: '基本・システム',
+    groupLabel: '基本設定',
     items: [
-      { label: '基本設定', to: '/settings/basic' },
-      { label: '応用設定', to: '/settings/system' },
-      { label: 'テナント管理', to: '/settings/tenants' },
-      { label: 'WMSスケジュール', to: '/settings/wms-schedules' },
+      { label: 'システム設定', to: '/settings/basic' },
+      { label: '詳細設定', to: '/settings/system' },
       { label: 'ユーザー管理', to: '/settings/users' },
+      { label: '倉庫管理', to: '/settings/warehouses' },
     ],
   },
   {
-    groupLabel: '出荷設定',
+    groupLabel: '出荷・配送',
     items: [
-      { label: 'ご依頼主設定', to: '/settings/orderSourceCompany' },
-      { label: '配送業者設定', to: '/settings/carrier' },
-      { label: '配送業者自動化', to: '/settings/carrier-automation' },
-      { label: '佐川急便設定', to: '/settings/sagawa' },
+      { label: '依頼主（発送元）', to: '/settings/orderSourceCompany' },
+      { label: '配送業者', to: '/settings/carrier' },
+      { label: '配送自動化', to: '/settings/carrier-automation' },
+      { label: '佐川急便', to: '/settings/sagawa' },
       { label: '出荷グループ', to: '/settings/order-groups' },
       { label: '自動処理ルール', to: '/settings/auto-processing' },
-      { label: '出荷メール設定', to: '/settings/email-templates' },
-      { label: '運賃マスタ', to: '/settings/shipping-rates' },
-      { label: '料金マスタ', to: '/settings/service-rates' },
+      { label: 'メールテンプレート', to: '/settings/email-templates' },
       { label: '梱包ルール', to: '/settings/packing-rules' },
+    ],
+  },
+  {
+    groupLabel: 'マスタ・料金',
+    items: [
+      { label: '得意先（配送先）', to: '/settings/customers' },
+      { label: '荷主（3PL委託元）', to: '/settings/clients' },
+      { label: '仕入先', to: '/settings/suppliers' },
+      { label: '在庫区分', to: '/settings/inventory-categories' },
+      { label: '運賃設定', to: '/settings/shipping-rates' },
+      { label: 'サービス料金', to: '/settings/service-rates' },
     ],
   },
   {
     groupLabel: 'テンプレート・印刷',
     items: [
       { label: 'ファイルレイアウト', to: '/settings/mapping-patterns' },
-      { label: '印刷テンプレート', to: '/settings/print-templates' },
+      { label: '送り状テンプレート', to: '/settings/print-templates' },
       { label: '帳票テンプレート', to: '/settings/form-templates' },
-      { label: 'プリンター設定', to: '/settings/printer' },
+      { label: 'プリンター', to: '/settings/printer' },
     ],
   },
   {
-    groupLabel: 'マスタ管理',
+    groupLabel: '拡張・開発',
     items: [
-      { label: '得意先一覧', to: '/settings/customers' },
-      { label: '顧客（3PL荷主）', to: '/settings/clients' },
-      { label: '仕入先一覧', to: '/settings/suppliers' },
-      { label: '倉庫管理', to: '/settings/warehouses' },
-      { label: '在庫区分', to: '/settings/inventory-categories' },
-      { label: 'ルール設定', to: '/settings/rules' },
-    ],
-  },
-  {
-    groupLabel: '拡張機能',
-    items: [
+      { label: 'ルールエンジン', to: '/settings/rules' },
       { label: 'Webhook', to: '/settings/webhooks' },
       { label: 'プラグイン', to: '/settings/plugins' },
       { label: 'スクリプト', to: '/settings/scripts' },
@@ -85,8 +85,10 @@ export const settingsGroups: SubMenuGroup[] = [
     ],
   },
   {
-    groupLabel: 'ログ・監視',
+    groupLabel: '管理・ログ',
     items: [
+      { label: 'テナント管理', to: '/settings/tenants' },
+      { label: 'スケジュール', to: '/settings/wms-schedules' },
       { label: '操作ログ', to: '/settings/operation-logs' },
       { label: 'API連携ログ', to: '/settings/api-logs' },
     ],
