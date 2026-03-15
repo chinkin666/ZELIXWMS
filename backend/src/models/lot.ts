@@ -12,6 +12,12 @@ export interface ILot {
   manufactureDate?: Date;
   status: LotStatus;
   memo?: string;
+  // 仕入先ロット番号
+  supplierLotNumber?: string;
+  // 入庫日
+  inboundDate?: Date;
+  // 入庫指示番号
+  inboundOrderNumber?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,6 +59,12 @@ const lotSchema = new mongoose.Schema<ILot>(
       type: String,
       trim: true,
     },
+    // 仕入先ロット番号
+    supplierLotNumber: { type: String, trim: true },
+    // 入庫日
+    inboundDate: { type: Date },
+    // 入庫指示番号
+    inboundOrderNumber: { type: String, trim: true },
   },
   {
     timestamps: true,

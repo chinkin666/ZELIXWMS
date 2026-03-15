@@ -22,6 +22,22 @@ export interface ISupplier {
   isActive: boolean;
   /** メモ */
   memo?: string;
+  // 都道府県
+  prefecture?: string;
+  // 市区町村
+  city?: string;
+  // 番地
+  street?: string;
+  // 建物名
+  building?: string;
+  // メールアドレス
+  email?: string;
+  // 担当者名
+  contactPerson?: string;
+  // リードタイム（日数）
+  leadTime?: number;
+  // 最小発注数量（MOQ）
+  minimumOrder?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -71,6 +87,22 @@ const supplierSchema = new mongoose.Schema<ISupplier>(
       type: String,
       trim: true,
     },
+    // 都道府県
+    prefecture: { type: String, trim: true },
+    // 市区町村
+    city: { type: String, trim: true },
+    // 番地
+    street: { type: String, trim: true },
+    // 建物名
+    building: { type: String, trim: true },
+    // メールアドレス
+    email: { type: String, trim: true },
+    // 担当者名
+    contactPerson: { type: String, trim: true },
+    // リードタイム（日数）
+    leadTime: { type: Number },
+    // 最小発注数量（MOQ）
+    minimumOrder: { type: Number },
   },
   {
     timestamps: true,

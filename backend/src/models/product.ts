@@ -53,6 +53,14 @@ export interface IProduct {
   alertDaysBeforeExpiry: number;
   defaultLocationId?: mongoose.Types.ObjectId;
   safetyStock: number;
+  // JAN码 / JANコード（GS1-128）
+  janCode?: string;
+  // 箱入数 / ケース入数（1ケースあたりの個数）
+  caseQuantity?: number;
+  // デフォルト荷扱い / 默认荷扱いタグ（出荷時に自動適用）
+  defaultHandlingTags?: string[];
+  // 主仕入先コード / 主要仕入先コード
+  supplierCode?: string;
   /** 自定义字段 / カスタムフィールド */
   customFields?: Record<string, unknown>;
   createdAt: Date;
@@ -219,6 +227,15 @@ const productSchema = new mongoose.Schema<IProduct>(
       type: Number,
       default: 0,
     },
+
+    // JAN码 / JANコード（GS1-128）
+    janCode: { type: String, trim: true },
+    // 箱入数 / ケース入数（1ケースあたりの個数）
+    caseQuantity: { type: Number, min: 1 },
+    // デフォルト荷扱い / 默认荷扱いタグ（出荷時に自動適用）
+    defaultHandlingTags: { type: [String], default: [] },
+    // 主仕入先コード / 主要仕入先コード
+    supplierCode: { type: String, trim: true },
 
     // 自定义字段 / カスタムフィールド（Phase 5）
     customFields: { type: mongoose.Schema.Types.Mixed, default: {} },

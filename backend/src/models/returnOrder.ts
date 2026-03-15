@@ -34,6 +34,12 @@ export interface IReturnOrder {
   lines: IReturnOrderLine[];
   memo?: string;
   createdBy?: string;
+  // RMA番号（返品承認番号）
+  rmaNumber?: string;
+  // 返品配送伝票番号
+  returnTrackingId?: string;
+  // 顧客注文番号
+  customerOrderNumber?: string;
   /** 自定义字段 / カスタムフィールド */
   customFields?: Record<string, unknown>;
   createdAt: Date;
@@ -160,6 +166,13 @@ const returnOrderSchema = new mongoose.Schema<IReturnOrder>(
       type: String,
       trim: true,
     },
+
+    // RMA番号（返品承認番号）
+    rmaNumber: { type: String, trim: true },
+    // 返品配送伝票番号
+    returnTrackingId: { type: String, trim: true },
+    // 顧客注文番号
+    customerOrderNumber: { type: String, trim: true },
 
     // 自定义字段 / カスタムフィールド（Phase 5）
     customFields: { type: mongoose.Schema.Types.Mixed, default: {} },

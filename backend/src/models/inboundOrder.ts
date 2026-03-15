@@ -37,6 +37,10 @@ export interface IInboundOrder {
   completedAt?: Date;
   memo?: string;
   createdBy?: string;
+  // PO番号 / 発注番号（仕入照合用）
+  purchaseOrderNumber?: string;
+  // PO日付 / 発注日
+  purchaseOrderDate?: Date;
   /** 自定义字段 / カスタムフィールド */
   customFields?: Record<string, unknown>;
   createdAt: Date;
@@ -94,6 +98,11 @@ const inboundOrderSchema = new mongoose.Schema<IInboundOrder>(
     completedAt: { type: Date },
     memo: { type: String, trim: true },
     createdBy: { type: String, trim: true },
+
+    // PO番号 / 発注番号（仕入照合用）
+    purchaseOrderNumber: { type: String, trim: true },
+    // PO日付 / 発注日
+    purchaseOrderDate: { type: Date },
 
     // 自定义字段 / カスタムフィールド（Phase 5）
     customFields: { type: mongoose.Schema.Types.Mixed, default: {} },
