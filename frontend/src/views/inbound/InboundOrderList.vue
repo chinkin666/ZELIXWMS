@@ -212,8 +212,16 @@ const baseColumns = computed<TableColumn[]>(() => [
       { label: t('wms.inbound.statusDone', '完了'), value: 'done' },
       { label: t('wms.inbound.statusCancelled', 'キャンセル'), value: 'cancelled' },
     ],
-    cellRenderer: ({ rowData }: { rowData: InboundOrder }) =>
-      h('span', { class: `o-status-tag ${statusClass(rowData.status)}` }, statusLabel(rowData.status)),
+    cellRenderer: ({ rowData }: { rowData: InboundOrder }) => {
+      const tags = [
+        h('span', { class: `o-status-tag ${statusClass(rowData.status)}` }, statusLabel(rowData.status)),
+      ]
+      // 通過型バッジ表示 / 通过型标签显示
+      if ((rowData as any).flowType === 'crossdock') {
+        tags.push(h('span', { class: 'o-status-tag o-status-tag--crossdock' }, t('wms.inbound.crossdock', '通過')))
+      }
+      return h('div', { style: 'display:flex;gap:4px;align-items:center;flex-wrap:wrap;' }, tags)
+    },
   },
   {
     key: 'supplier',
@@ -701,6 +709,7 @@ onUnmounted(() => {
 <style>
 .o-status-tag--draft { background: #f4f4f5; color: #909399; }
 .o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
+.o-status-tag--crossdock { background: #fdf2e9; color: #e67e22; font-size: 11px; }
 </style>
 
 <style scoped>

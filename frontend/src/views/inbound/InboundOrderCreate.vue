@@ -46,6 +46,17 @@
           <label class="form-label">{{ t('wms.product.memo', 'メモ') }}</label>
           <input v-model="form.memo" type="text" class="o-input" :placeholder="t('wms.inbound.memoPlaceholder', '入庫メモ...')" />
         </div>
+
+        <div class="form-field">
+          <label class="form-label">{{ t('wms.inbound.flowType', '入庫タイプ') }}</label>
+          <select v-model="form.flowType" class="o-input">
+            <option value="standard">{{ t('wms.inbound.flowTypeStandard', '在庫型（通常）') }}</option>
+            <option value="crossdock">{{ t('wms.inbound.flowTypeCrossdock', '通過型（クロスドック）') }}</option>
+          </select>
+          <p v-if="form.flowType === 'crossdock'" class="crossdock-hint">
+            {{ t('wms.inbound.crossdockHint', '通過型: 検品後に棚入れをスキップし、直接出荷ステージングに移動します') }}
+          </p>
+        </div>
       </div>
     </div>
 
@@ -163,6 +174,7 @@ const form = ref({
   supplierId: '',
   supplierName: '',
   memo: '',
+  flowType: 'standard' as 'standard' | 'crossdock',
   lines: [] as FormLine[],
 })
 
@@ -218,6 +230,7 @@ const handleSubmit = async () => {
       supplier: supplierData,
       expectedDate: form.value.expectedDate || undefined,
       memo: form.value.memo || undefined,
+      flowType: form.value.flowType,
       lines: form.value.lines.map(l => ({
         productId: l.productId,
         expectedQuantity: l.expectedQuantity,
@@ -328,6 +341,17 @@ onMounted(async () => {
 .o-input-sm {
   padding: 4px 8px;
   font-size: 13px;
+}
+
+.crossdock-hint {
+  margin: 4px 0 0;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #e67e22;
+  background: #fef9e7;
+  border: 1px solid #f9e79f;
+  border-radius: 4px;
+  line-height: 1.4;
 }
 
 .btn-remove {

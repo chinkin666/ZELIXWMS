@@ -61,7 +61,7 @@ export const getInboundOrder = async (req: Request, res: Response): Promise<void
 /** 入庫指示作成 */
 export const createInboundOrder = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { destinationLocationId, supplier, lines, expectedDate, memo } = req.body;
+    const { destinationLocationId, supplier, lines, expectedDate, memo, flowType, linkedOrderIds } = req.body;
 
     if (!destinationLocationId || !lines || !Array.isArray(lines) || lines.length === 0) {
       res.status(400).json({ message: 'destinationLocationId と lines（1行以上）は必須です' });
@@ -107,6 +107,9 @@ export const createInboundOrder = async (req: Request, res: Response): Promise<v
 
     const orderNumber = await generateSequenceNumber('IN');
 
+    // flowType バリデーション / flowType 验证
+    const validFlowType = flowType === 'crossdock' ? 'crossdock' : 'standard';
+
     const order = await InboundOrder.create({
       orderNumber,
       status: 'draft',
@@ -115,6 +118,8 @@ export const createInboundOrder = async (req: Request, res: Response): Promise<v
       lines: processedLines,
       expectedDate: expectedDate ? new Date(expectedDate) : undefined,
       memo: memo || undefined,
+      flowType: validFlowType,
+      linkedOrderIds: Array.isArray(linkedOrderIds) ? linkedOrderIds : [],
     });
 
     // 操作ログ / 操作日志 (fire-and-forget)
@@ -346,10 +351,36 @@ export const receiveInboundLine = async (req: Request, res: Response): Promise<v
     // 全行入庫完了チェック → received（棚入れ待ち）
     const allReceived = order.lines.every(l => l.receivedQuantity >= l.expectedQuantity);
     if (allReceived) {
-      order.status = 'received';
+      // 通過型: 棚入れスキップし直接完了 / 通过型: 跳过上架直接完成
+      if (order.flowType === 'crossdock') {
+        order.status = 'done';
+        order.completedAt = new Date();
+        // 未完了の draft StockMove をキャンセル / 取消未完成的draft库存移动
+        for (const l of order.lines) {
+          for (const moveId of l.stockMoveIds) {
+            await StockMove.updateOne(
+              { _id: moveId, state: 'draft' },
+              { $set: { state: 'cancelled' } },
+            );
+          }
+        }
+      } else {
+        order.status = 'received';
+      }
     }
 
     await order.save();
+
+    // 通過型完了ログ / 通过型完成日志
+    if (allReceived && order.flowType === 'crossdock') {
+      logOperation({
+        action: 'inbound_putaway',
+        description: `通過型入庫完了: ${order.orderNumber}（棚入れスキップ）`,
+        referenceNumber: order.orderNumber,
+        referenceType: 'inboundOrder',
+        referenceId: String(order._id),
+      }).catch(() => {});
+    }
 
     logOperation({
       action: 'inbound_receive',
@@ -399,6 +430,9 @@ export const completeInboundOrder = async (req: Request, res: Response): Promise
     order.status = 'done';
     order.completedAt = new Date();
 
+    // 通過型完了ログ / 通过型完成日志
+    const isCrossdock = order.flowType === 'crossdock';
+
     // 未完了の draft StockMove をキャンセル
     for (const line of order.lines) {
       for (const moveId of line.stockMoveIds) {
@@ -412,13 +446,15 @@ export const completeInboundOrder = async (req: Request, res: Response): Promise
     await order.save();
     logOperation({
       action: 'inbound_putaway',
-      description: `入庫完了: ${order.orderNumber}`,
+      description: isCrossdock
+        ? `通過型入庫完了: ${order.orderNumber}（棚入れスキップ）`
+        : `入庫完了: ${order.orderNumber}`,
       referenceNumber: order.orderNumber,
       referenceType: 'inboundOrder',
       referenceId: String(order._id),
     }).catch(() => {});
 
-    res.json({ message: '入庫指示を完了にしました', order });
+    res.json({ message: isCrossdock ? '通過型入庫を完了にしました' : '入庫指示を完了にしました', order });
   } catch (error: any) {
     res.status(500).json({ message: '入庫完了に失敗しました', error: error.message });
   }
@@ -658,10 +694,7 @@ export const bulkReceiveInbound = async (req: Request, res: Response): Promise<v
       totalProcessed += remaining;
     }
 
-    // 全行受入完了の場合
-    order.status = 'received';
-
-    // 未完了の draft StockMove をキャンセル
+    // 未完了の draft StockMove をキャンセル / 取消未完成的draft库存移动
     for (const line of order.lines) {
       for (const moveId of line.stockMoveIds) {
         await StockMove.updateOne(
@@ -671,11 +704,22 @@ export const bulkReceiveInbound = async (req: Request, res: Response): Promise<v
       }
     }
 
+    // 通過型: 棚入れスキップし直接完了 / 通过型: 跳过上架直接完成
+    if (order.flowType === 'crossdock') {
+      order.status = 'done';
+      order.completedAt = new Date();
+    } else {
+      // 全行受入完了の場合 / 所有行接收完成
+      order.status = 'received';
+    }
+
     await order.save();
 
     logOperation({
       action: 'inbound_receive',
-      description: `一括検品: ${order.orderNumber} ${totalProcessed}個`,
+      description: order.flowType === 'crossdock'
+        ? `通過型一括検品完了: ${order.orderNumber} ${totalProcessed}個（棚入れスキップ）`
+        : `一括検品: ${order.orderNumber} ${totalProcessed}個`,
       referenceNumber: order.orderNumber,
       referenceType: 'inboundOrder',
       referenceId: String(order._id),
@@ -683,7 +727,9 @@ export const bulkReceiveInbound = async (req: Request, res: Response): Promise<v
     }).catch(() => {});
 
     res.json({
-      message: `一括検品完了: ${totalProcessed}個を入庫しました`,
+      message: order.flowType === 'crossdock'
+        ? `通過型一括検品完了: ${totalProcessed}個を入庫しました（棚入れスキップ）`
+        : `一括検品完了: ${totalProcessed}個を入庫しました`,
       order,
     });
   } catch (error: any) {

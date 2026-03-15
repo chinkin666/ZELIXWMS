@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 
 export type InboundOrderStatus = 'draft' | 'confirmed' | 'receiving' | 'received' | 'done' | 'cancelled';
 export type StockCategory = 'new' | 'damaged';
+/** 入庫フロータイプ / 入库流程类型: standard=在庫型, crossdock=通過型 */
+export type InboundFlowType = 'standard' | 'crossdock';
 
 export interface IInboundOrderLine {
   lineNumber: number;
@@ -41,6 +43,10 @@ export interface IInboundOrder {
   purchaseOrderNumber?: string;
   // PO日付 / 発注日
   purchaseOrderDate?: Date;
+  /** 入庫フロータイプ / 入库流程类型: standard=在庫型, crossdock=通過型（クロスドック） */
+  flowType?: InboundFlowType;
+  /** 通過型: 紐付く出荷指示IDs / 通过型: 关联的出库指示IDs */
+  linkedOrderIds?: string[];
   /** 自定义字段 / カスタムフィールド */
   customFields?: Record<string, unknown>;
   createdAt: Date;
@@ -103,6 +109,11 @@ const inboundOrderSchema = new mongoose.Schema<IInboundOrder>(
     purchaseOrderNumber: { type: String, trim: true },
     // PO日付 / 発注日
     purchaseOrderDate: { type: Date },
+
+    // 入庫フロータイプ / 入库流程类型: standard=在庫型, crossdock=通過型
+    flowType: { type: String, enum: ['standard', 'crossdock'], default: 'standard' },
+    // 通過型: 紐付く出荷指示IDs / 通过型: 关联的出库指示IDs
+    linkedOrderIds: [{ type: String }],
 
     // 自定义字段 / カスタムフィールド（Phase 5）
     customFields: { type: mongoose.Schema.Types.Mixed, default: {} },

@@ -12,6 +12,8 @@ import {
   cleanupZeroStock,
   getInventoryOverview,
   getLocationUsage,
+  rebuildInventory,
+  releaseExpiredReservations,
 } from '@/api/controllers/inventoryController';
 
 export const inventoryRouter = Router();
@@ -274,3 +276,50 @@ inventoryRouter.post('/bulk-adjust', bulkAdjustStock);
  *                   type: integer
  */
 inventoryRouter.post('/cleanup-zero', cleanupZeroStock);
+
+/**
+ * @swagger
+ * /inventory/rebuild:
+ *   post:
+ *     tags: [Inventory]
+ *     summary: Rebuild inventory from StockMove records / 在庫リビルド（整合性チェック）
+ *     description: |
+ *       StockMove の完了済みレコードから在庫を再計算し、StockQuant との差異を報告する。
+ *       デフォルトはレポートのみ（安全）。?fix=true で差異を修正する。
+ *       Recalculates stock from done StockMove records. Report-only by default. Use ?fix=true to correct.
+ *     parameters:
+ *       - in: query
+ *         name: fix
+ *         schema:
+ *           type: string
+ *           enum: ['true', 'false']
+ *           default: 'false'
+ *         description: Set to 'true' to actually fix discrepancies / 'true'で差異を修正
+ *     responses:
+ *       200:
+ *         description: Rebuild result with discrepancies / リビルド結果（差異一覧）
+ */
+inventoryRouter.post('/rebuild', rebuildInventory);
+
+/**
+ * @swagger
+ * /inventory/release-expired-reservations:
+ *   post:
+ *     tags: [Inventory]
+ *     summary: Release expired stock reservations / 期限切れ引当の解放
+ *     description: |
+ *       指定分数以上 confirmed のまま放置された引当を自動解放する。
+ *       Releases reservations in 'confirmed' state older than timeoutMinutes.
+ *       TODO: スケジュールジョブ（WMS Schedule）から定期的に呼び出すこと。
+ *     parameters:
+ *       - in: query
+ *         name: timeoutMinutes
+ *         schema:
+ *           type: integer
+ *           default: 30
+ *         description: Timeout in minutes / タイムアウト（分）
+ *     responses:
+ *       200:
+ *         description: Released reservations count / 解放された引当数
+ */
+inventoryRouter.post('/release-expired-reservations', releaseExpiredReservations);

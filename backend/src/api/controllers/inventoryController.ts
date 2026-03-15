@@ -374,3 +374,44 @@ export const cleanupZeroStock = async (_req: Request, res: Response): Promise<vo
     handleError(res, error, '0在庫の削除に失敗しました');
   }
 };
+
+/**
+ * 在庫リビルド（整合性チェック＆修復） / 库存重建（一致性检查与修复）
+ * StockMove から在庫を再計算し、StockQuant との差異を報告する。
+ * ?fix=true で差異を修正する。デフォルトはレポートのみ（安全）。
+ *
+ * Recalculates stock from StockMove records and reports discrepancies.
+ * Use ?fix=true to actually correct StockQuant values. Default is report-only (safe).
+ */
+export const rebuildInventory = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const fix = req.query.fix === 'true';
+    const result = await inventoryService.rebuildInventory(fix);
+    res.json(result);
+  } catch (error) {
+    handleError(res, error, '在庫リビルドに失敗しました / 库存重建失败');
+  }
+};
+
+/**
+ * 期限切れ引当の解放 / 过期预留释放
+ * 指定分数（デフォルト30分）以上 confirmed のまま放置された引当を自動解放する。
+ *
+ * Releases reservations that have been in 'confirmed' state longer than
+ * the specified timeout (default: 30 minutes).
+ *
+ * TODO: スケジュールジョブ（WMS Schedule）から定期的に呼び出すこと
+ * TODO: 应该从定时任务（WMS Schedule）定期调用此函数
+ */
+export const releaseExpiredReservations = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const timeoutMinutes = Number(req.query.timeoutMinutes) || 30;
+    const result = await inventoryService.releaseExpiredReservations(timeoutMinutes);
+    res.json({
+      message: `${result.releasedCount}件の期限切れ引当を解放しました / 已释放${result.releasedCount}条过期预留`,
+      ...result,
+    });
+  } catch (error) {
+    handleError(res, error, '期限切れ引当の解放に失敗しました / 过期预留释放失败');
+  }
+};
