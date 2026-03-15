@@ -47,25 +47,62 @@ export async function reserveStockForOrder(
     return result;
   }
 
+  // ── 一括で商品マスタを取得（N+1解消）/ 批量获取商品主数据 ──
+  const allSkus = products.map(p => p.productSku || p.inputSku).filter(Boolean);
+  const allProductIds = products.map(p => p.productId).filter(Boolean);
+  const [productsByIdResult, productsBySkuResult] = await Promise.all([
+    allProductIds.length > 0
+      ? Product.find({ _id: { $in: allProductIds } }).lean()
+      : Promise.resolve([]),
+    allSkus.length > 0
+      ? Product.find({ $or: [{ sku: { $in: allSkus } }, { _allSku: { $in: allSkus } }] }).lean()
+      : Promise.resolve([]),
+  ]);
+  const productByIdMap = new Map(productsByIdResult.map(p => [String(p._id), p]));
+  const productBySkuMap = new Map<string, any>();
+  for (const p of productsBySkuResult) {
+    productBySkuMap.set(p.sku, p);
+    if (Array.isArray((p as any)._allSku)) {
+      for (const s of (p as any)._allSku) { productBySkuMap.set(s, p); }
+    }
+  }
+
+  // ── 一括で在庫と期限情報を取得 / 批量获取库存和期限 ──
+  const resolvedProductIds: string[] = [];
+  for (const prod of products) {
+    const sku = prod.productSku || prod.inputSku;
+    const p = (prod.productId && productByIdMap.get(prod.productId)) || productBySkuMap.get(sku);
+    if (p && p.inventoryEnabled) resolvedProductIds.push(String(p._id));
+  }
+
+  const [allQuants, allActiveLots] = await Promise.all([
+    resolvedProductIds.length > 0
+      ? StockQuant.find({
+          productId: { $in: resolvedProductIds.map(id => new mongoose.Types.ObjectId(id)) },
+          $expr: { $gt: [{ $subtract: ['$quantity', '$reservedQuantity'] }, 0] },
+        }).lean()
+      : Promise.resolve([]),
+    Lot.find({ status: 'active' }).select('_id lotNumber expiryDate').lean(),
+  ]);
+
+  // インデックス構築 / 构建索引
+  const quantsByProduct = new Map<string, (typeof allQuants)[number][]>();
+  for (const q of allQuants) {
+    const pid = String(q.productId);
+    if (!quantsByProduct.has(pid)) quantsByProduct.set(pid, []);
+    quantsByProduct.get(pid)!.push(q);
+  }
+  const lotsMap = new Map<string, { lotNumber?: string; expiryDate: Date | null }>();
+  for (const l of allActiveLots) {
+    lotsMap.set(String(l._id), { lotNumber: l.lotNumber, expiryDate: l.expiryDate || null });
+  }
+
   for (const prod of products) {
     const sku = prod.productSku || prod.inputSku;
 
-    // productId がない場合、SKU で商品マスタを検索して自動解決
-    let productId = prod.productId;
-    let product = productId ? await Product.findById(productId).lean() : null;
-
-    if (!product && sku) {
-      // メインSKU or サブSKU で検索
-      product = await Product.findOne({
-        $or: [
-          { sku: sku },
-          { _allSku: sku },
-        ],
-      }).lean();
-      if (product) {
-        productId = String(product._id);
-      }
-    }
+    // 事前取得済みマップから商品を解決 / 从预加载map解析商品
+    const product = (prod.productId && productByIdMap.get(prod.productId)) || productBySkuMap.get(sku);
+    const productId = product ? String(product._id) : undefined;
 
     if (!product) {
       result.errors.push(`${sku}: 商品マスタ未登録（在庫管理対象外）`);
@@ -79,29 +116,16 @@ export async function reserveStockForOrder(
     const qty = prod.quantity;
     if (!qty || qty <= 0) continue;
 
-    // FEFO: 賞味期限が近い順で引当。lotId なしの在庫は後ろに回す。
-    const quantDocs = await StockQuant.find({
-      productId: new mongoose.Types.ObjectId(productId!),
-      $expr: { $gt: [{ $subtract: ['$quantity', '$reservedQuantity'] }, 0] },
-    })
-      .lean();
-
-    // lotId → expiryDate マップ構築
-    const lotIds = quantDocs.map(q => q.lotId).filter((id): id is mongoose.Types.ObjectId => !!id);
-    const lotsMap = new Map<string, Date | null>();
-    if (lotIds.length > 0) {
-      const lots = await Lot.find({ _id: { $in: lotIds }, status: 'active' }).lean();
-      for (const l of lots) {
-        lotsMap.set(String(l._id), l.expiryDate || null);
-      }
-    }
+    // FEFO: 賞味期限が近い順で引当 / FEFO: 按保质期近的先出
+    const quantDocs = quantsByProduct.get(productId!) || [];
 
     // FEFO ソート：有期限（近い順） → 無期限 → ロットなし（lastMovedAt 早い順）
     const quants = [...quantDocs].sort((a, b) => {
-      const aExpiry = a.lotId ? lotsMap.get(String(a.lotId)) : null;
-      const bExpiry = b.lotId ? lotsMap.get(String(b.lotId)) : null;
+      const aLot = a.lotId ? lotsMap.get(String(a.lotId)) : null;
+      const bLot = b.lotId ? lotsMap.get(String(b.lotId)) : null;
+      const aExpiry = aLot?.expiryDate || null;
+      const bExpiry = bLot?.expiryDate || null;
 
-      // 期限切れ or recalled のロットは除外済み（active のみ lotsMap に入っている）
       // lotId はあるが lotsMap にない = non-active ロット → 引当しない
       if (a.lotId && !lotsMap.has(String(a.lotId))) return 1;
       if (b.lotId && !lotsMap.has(String(b.lotId))) return -1;
@@ -138,7 +162,7 @@ export async function reserveStockForOrder(
         productSku: prod.productSku || product.sku,
         productName: prod.productName || product.name,
         lotId: quant.lotId || undefined,
-        lotNumber: quant.lotId ? (await Lot.findById(quant.lotId).lean())?.lotNumber : undefined,
+        lotNumber: quant.lotId ? lotsMap.get(String(quant.lotId))?.lotNumber : undefined,
         fromLocationId: quant.locationId,
         toLocationId: virtualCustomer._id,
         quantity: reserve,
@@ -190,32 +214,34 @@ export async function completeStockForOrder(orderId: string): Promise<{ movedCou
     moveType: 'outbound',
   });
 
-  let movedCount = 0;
+  if (moves.length === 0) return { movedCount: 0 };
 
-  for (const move of moves) {
-    // StockQuant を消込
-    await StockQuant.updateOne(
-      {
+  const now = new Date();
+
+  // 一括でStockQuantを更新 / 批量更新StockQuant
+  const quantOps = moves.map(move => ({
+    updateOne: {
+      filter: {
         productId: move.productId,
         locationId: move.fromLocationId,
-        lotId: move.lotId || undefined,
+        ...(move.lotId ? { lotId: move.lotId } : { lotId: undefined }),
       },
-      {
-        $inc: {
-          quantity: -move.quantity,
-          reservedQuantity: -move.quantity,
-        },
-        $set: { lastMovedAt: new Date() },
+      update: {
+        $inc: { quantity: -move.quantity, reservedQuantity: -move.quantity },
+        $set: { lastMovedAt: now },
       },
-    );
+    },
+  }));
+  await StockQuant.bulkWrite(quantOps);
 
-    // StockMove を完了
-    move.state = 'done';
-    move.executedAt = new Date();
-    await move.save();
+  // 一括でStockMoveを完了 / 批量完成StockMove
+  const moveIds = moves.map(m => m._id);
+  await StockMove.updateMany(
+    { _id: { $in: moveIds } },
+    { $set: { state: 'done', executedAt: now } },
+  );
 
-    movedCount++;
-  }
+  const movedCount = moves.length;
 
   // 扩展系统事件 / 拡張システムイベント
   if (movedCount > 0) {
@@ -241,27 +267,31 @@ export async function unreserveStockForOrder(orderId: string): Promise<{ cancell
     moveType: 'outbound',
   });
 
-  let cancelledCount = 0;
+  if (moves.length === 0) return { cancelledCount: 0 };
 
-  for (const move of moves) {
-    // StockQuant の reservedQuantity を戻す
-    await StockQuant.updateOne(
-      {
+  // 一括でStockQuantの引当戻し / 批量释放StockQuant引当
+  const quantOps = moves.map(move => ({
+    updateOne: {
+      filter: {
         productId: move.productId,
         locationId: move.fromLocationId,
-        lotId: move.lotId || undefined,
+        ...(move.lotId ? { lotId: move.lotId } : { lotId: undefined }),
       },
-      {
+      update: {
         $inc: { reservedQuantity: -move.quantity },
       },
-    );
+    },
+  }));
+  await StockQuant.bulkWrite(quantOps);
 
-    // StockMove をキャンセル
-    move.state = 'cancelled';
-    await move.save();
+  // 一括でStockMoveをキャンセル / 批量取消StockMove
+  const moveIds = moves.map(m => m._id);
+  await StockMove.updateMany(
+    { _id: { $in: moveIds } },
+    { $set: { state: 'cancelled' } },
+  );
 
-    cancelledCount++;
-  }
+  const cancelledCount = moves.length;
 
   // 扩展系统事件 / 拡張システムイベント
   if (cancelledCount > 0) {
