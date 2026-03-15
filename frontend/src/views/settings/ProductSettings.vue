@@ -111,6 +111,11 @@
     />
 
     <ImportResultDialog v-model="importResultDialogVisible" :result="importResult" />
+
+    <LabelPrintDialog
+      v-model="labelPrintDialogVisible"
+      :product="labelPrintProduct"
+    />
   </div>
 </template>
 
@@ -131,6 +136,7 @@ import { bulkUpdateProducts, checkSkuAvailability, createProduct, deleteProduct,
 import type { Product, ProductFilters, UpsertProductDto, SubSku } from '@/types/product'
 import ImportResultDialog, { type ImportResultData } from '@/components/import/ImportResultDialog.vue'
 import SubSkuDialog from './product-settings/SubSkuDialog.vue'
+import LabelPrintDialog from './product-settings/LabelPrintDialog.vue'
 import { useSkuValidation } from './product-settings/useSkuValidation'
 
 const toast = useToast()
@@ -358,6 +364,15 @@ const savingSubSkus = ref(false)
 
 // Product form dialog ref
 const productFormDialogRef = ref<InstanceType<typeof ProductFormDialog> | null>(null)
+
+// ラベル印刷ダイアログ / 标签打印对话框
+const labelPrintDialogVisible = ref(false)
+const labelPrintProduct = ref<Product | null>(null)
+
+const openLabelPrint = (product: Product) => {
+  labelPrintProduct.value = product
+  labelPrintDialogVisible.value = true
+}
 
 // Sub-SKU management (edit dialog inline)
 const editDialogSubSkus = ref<SubSku[]>([])
@@ -626,10 +641,11 @@ const tableColumns: TableColumn[] = [
   {
     key: 'actions',
     title: t('wms.common.actions', '操作'),
-    width: 180,
+    width: 240,
     cellRenderer: ({ rowData }: { rowData: Product }) =>
       h('div', { style: 'display:inline-flex;gap:4px;flex-wrap:wrap;' }, [
         h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => t('wms.common.edit', '編集')),
+        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openLabelPrint(rowData) }, () => t('wms.product.labelPrint', 'ラベル')),
         h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateProduct(rowData) }, () => t('wms.product.duplicate', '複製')),
         h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => t('wms.common.delete', '削除')),
       ]),

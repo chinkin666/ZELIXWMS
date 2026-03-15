@@ -44,6 +44,21 @@ export async function renderTemplateToPngBlob(
   opts: RenderTemplateToPngOptions,
   orderSourceCompany?: OrderSourceCompany | null,
 ): Promise<Blob> {
+  const ctx = buildPrintContext(order, template.requiresYamatoSortCode, orderSourceCompany)
+  return renderTemplateWithContextToPngBlob(template, ctx, opts)
+}
+
+/**
+ * 任意のコンテキストデータでテンプレートをPNG Blobにレンダリングする
+ * 任意のコンテキストデータ（商品ラベル等）でテンプレートをレンダリングする汎用関数
+ *
+ * 使用任意上下文数据（如商品标签等）将模板渲染为 PNG Blob 的通用函数
+ */
+export async function renderTemplateWithContextToPngBlob(
+  template: PrintTemplate,
+  ctx: Record<string, any>,
+  opts: RenderTemplateToPngOptions,
+): Promise<Blob> {
   const exportPxPerMm = dpiToPxPerMm(opts.exportDpi)
   const editorPxPerMm = template.canvas.pxPerMm || 1
   const letterSpacingScale = exportPxPerMm / editorPxPerMm
@@ -76,8 +91,6 @@ export async function renderTemplateToPngBlob(
         }),
       )
     }
-
-    const ctx = buildPrintContext(order, template.requiresYamatoSortCode, orderSourceCompany)
 
     // Pre-render barcodes to images (async) so we can keep z-order correct afterwards.
     const barcodeImageById = new Map<string, HTMLImageElement>()

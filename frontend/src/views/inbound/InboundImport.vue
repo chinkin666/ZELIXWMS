@@ -110,6 +110,22 @@
       </div>
 
       <div style="display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap;">
+        <label style="font-size:13px;color:var(--o-gray-600);">{{ t('wms.inbound.supplier', '仕入先') }}:</label>
+        <select v-model="selectedSupplierId" class="o-input o-input-sm" style="width:240px;" @change="onSupplierChange">
+          <option value="__csv__">{{ t('wms.inbound.useCSVSupplier', 'CSVの仕入先を使用') }}</option>
+          <option v-for="s in suppliers" :key="s._id" :value="s._id">
+            {{ s.supplierCode ? `[${s.supplierCode}] ` : '' }}{{ s.name }}
+          </option>
+          <option value="__manual__">{{ t('wms.inbound.manualInput', '手動入力...') }}</option>
+        </select>
+        <input
+          v-if="selectedSupplierId === '__manual__'"
+          v-model="manualSupplierName"
+          type="text"
+          class="o-input o-input-sm"
+          style="width:200px;"
+          :placeholder="t('wms.inbound.supplierNamePlaceholder', '仕入先名を入力...')"
+        />
         <label style="font-size:13px;color:var(--o-gray-600);">{{ t('wms.inbound.destination', '入庫先') }}:</label>
         <select v-model="selectedLocationId" class="o-input o-input-sm" style="width:200px;">
           <option value="">{{ t('wms.inbound.selectLocation', 'ロケーション選択') }}</option>
@@ -151,6 +167,7 @@ import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { createInboundOrder } from '@/api/inboundOrder'
 import { fetchLocations } from '@/api/location'
+import { fetchSuppliers, type SupplierData } from '@/api/supplier'
 import type { Location } from '@/types/inventory'
 
 interface ParsedRow {
@@ -197,6 +214,9 @@ const csvDataLines = ref<string[][]>([])
 const csvSampleValues = ref<string[]>([])
 const parsedRows = ref<ParsedRow[]>([])
 const physicalLocations = ref<Location[]>([])
+const suppliers = ref<SupplierData[]>([])
+const selectedSupplierId = ref('')
+const manualSupplierName = ref('')
 const selectedLocationId = ref('')
 const expectedDate = ref(new Date().toISOString().slice(0, 10))
 const isCreating = ref(false)
@@ -219,6 +239,24 @@ const columnMapping = reactive<Record<string, number | ''>>({
 })
 
 const validRows = computed(() => parsedRows.value.filter(r => r.matched && !r.error))
+
+// 仕入先選択の変更ハンドラ / 供应商选择变更处理
+const onSupplierChange = () => {
+  if (selectedSupplierId.value && selectedSupplierId.value !== '__manual__' && selectedSupplierId.value !== '__csv__') {
+    const s = suppliers.value.find(s => s._id === selectedSupplierId.value)
+    manualSupplierName.value = s?.name || ''
+  } else if (selectedSupplierId.value !== '__manual__') {
+    manualSupplierName.value = ''
+  }
+}
+
+// 実際に使用する仕入先名を決定 / 実際に使用するサプライヤー名を決定
+const resolvedSupplierName = computed(() => {
+  if (!selectedSupplierId.value || selectedSupplierId.value === '__csv__') return null
+  if (selectedSupplierId.value === '__manual__') return manualSupplierName.value || null
+  const s = suppliers.value.find(s => s._id === selectedSupplierId.value)
+  return s?.name || null
+})
 
 const groupCount = computed(() => {
   const suppliers = new Set(validRows.value.map(r => r.supplier || '__none__'))
@@ -435,9 +473,15 @@ const handleCreate = async () => {
   createError.value = false
 
   try {
+    // 仕入先マスタから選択された場合は全行に適用 / サプライヤーマスタから選択時は全行に適用
+    const overrideSupplier = resolvedSupplierName.value
+    const overrideSupplierCode = (selectedSupplierId.value && selectedSupplierId.value !== '__manual__' && selectedSupplierId.value !== '__csv__')
+      ? suppliers.value.find(s => s._id === selectedSupplierId.value)?.supplierCode
+      : undefined
+
     const groups = new Map<string, ParsedRow[]>()
     for (const row of validRows.value) {
-      const key = row.supplier || '__none__'
+      const key = overrideSupplier || row.supplier || '__none__'
       const list = groups.get(key) || []
       list.push(row)
       groups.set(key, list)
@@ -447,7 +491,9 @@ const handleCreate = async () => {
     for (const [supplier, groupRows] of groups) {
       await createInboundOrder({
         destinationLocationId: selectedLocationId.value,
-        supplier: supplier !== '__none__' ? { name: supplier } : undefined,
+        supplier: supplier !== '__none__'
+          ? { name: supplier, ...(overrideSupplierCode ? { code: overrideSupplierCode } : {}) }
+          : undefined,
         expectedDate: expectedDate.value,
         lines: groupRows.map(r => ({
           productId: r.productId!,
@@ -489,8 +535,12 @@ const downloadTemplate = () => {
 onMounted(async () => {
   loadSavedPresets()
   try {
-    const all = await fetchLocations({ isActive: true })
+    const [all, supplierRes] = await Promise.all([
+      fetchLocations({ isActive: true }),
+      fetchSuppliers({ isActive: 'true', limit: 500 }),
+    ])
     physicalLocations.value = all.filter(l => !l.type.startsWith('virtual/'))
+    suppliers.value = supplierRes.data || []
   } catch {
     // ignore
   }
