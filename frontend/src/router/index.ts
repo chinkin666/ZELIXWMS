@@ -367,6 +367,12 @@ const router = createRouter({
               meta: { title: '月次請求', requiresAuth: true },
             },
             {
+              path: 'charges',
+              name: 'WorkChargeList',
+              component: () => import('@/views/billing/WorkChargeList.vue'),
+              meta: { title: '作業チャージ', requiresAuth: true },
+            },
+            {
               path: 'invoices/:id',
               name: 'InvoiceDetail',
               component: () => import('@/views/billing/InvoiceDetail.vue'),
@@ -517,6 +523,12 @@ const router = createRouter({
               name: 'ShippingRateSettings',
               component: () => import('@/views/settings/ShippingRateSettings.vue'),
               meta: { title: '運賃マスタ', requiresAuth: true },
+            },
+            {
+              path: 'service-rates',
+              name: 'ServiceRateSettings',
+              component: () => import('@/views/settings/ServiceRateSettings.vue'),
+              meta: { title: '料金マスタ', requiresAuth: true },
             },
             {
               path: 'packing-rules',

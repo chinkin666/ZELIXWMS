@@ -8,6 +8,7 @@ import { StockMove } from '@/models/stockMove';
 import { generateSequenceNumber } from '@/utils/sequenceGenerator';
 import { findOrCreateLot } from '@/api/controllers/lotController';
 import { logOperation } from '@/services/operationLogger';
+import { createAutoCharge } from '@/services/chargeService';
 
 /** 入庫指示一覧 */
 export const listInboundOrders = async (req: Request, res: Response): Promise<void> => {
@@ -359,6 +360,17 @@ export const receiveInboundLine = async (req: Request, res: Response): Promise<v
       productSku: line.productSku,
       productName: line.productName,
       quantity: qty,
+    }).catch(() => {});
+
+    // 自動チャージ: 入庫作業料 / 自动收费: 入库作业费 (fire-and-forget)
+    createAutoCharge({
+      tenantId: 'default',
+      chargeType: 'inbound_handling',
+      referenceType: 'inboundOrder',
+      referenceId: String(order._id),
+      referenceNumber: order.orderNumber,
+      quantity: qty,
+      description: `入庫作業料: ${order.orderNumber} ${line.productSku} x${qty}`,
     }).catch(() => {});
 
     res.json({

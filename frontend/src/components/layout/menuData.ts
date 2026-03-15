@@ -46,6 +46,7 @@ export const settingsGroups: SubMenuGroup[] = [
       { label: '自動処理ルール', to: '/settings/auto-processing' },
       { label: '出荷メール設定', to: '/settings/email-templates' },
       { label: '運賃マスタ', to: '/settings/shipping-rates' },
+      { label: '料金マスタ', to: '/settings/service-rates' },
       { label: '梱包ルール', to: '/settings/packing-rules' },
     ],
   },
@@ -148,6 +149,7 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
   '/billing': [
     { label: 'ダッシュボード', to: '/billing/dashboard' },
     { label: '月次請求', to: '/billing/monthly' },
+    { label: '作業チャージ', to: '/billing/charges' },
   ],
   '/settings': settingsGroups.flatMap((g) => g.items),
 }

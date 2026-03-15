@@ -16,6 +16,7 @@ import { extensionManager } from '@/core/extensions';
 import { HOOK_EVENTS } from '@/core/extensions/types';
 import { ValidationError, NotFoundError } from '@/lib/errors';
 import { logOperation } from '@/services/operationLogger';
+import { createAutoCharge } from '@/services/chargeService';
 import { logger } from '@/lib/logger';
 
 // ============================================================
@@ -1417,6 +1418,33 @@ export const updateOrderStatus = async (
     referenceType: 'shipmentOrder',
     referenceId: id,
   }).catch(() => {});
+
+  // 自動チャージ: 出荷確認 / 自动收费: 出货确认 (fire-and-forget)
+  if (input.action === 'mark-print-ready') {
+    createAutoCharge({
+      tenantId: 'default',
+      clientId: updated.orderSourceCompanyId,
+      chargeType: 'outbound_handling',
+      referenceType: 'shipmentOrder',
+      referenceId: id,
+      referenceNumber: updated.orderNumber,
+      quantity: 1,
+      description: `出荷作業料: ${updated.orderNumber}`,
+    }).catch(() => {});
+  }
+
+  // 自動チャージ: 検品完了 / 自动收费: 检品完了 (fire-and-forget)
+  if (input.action === 'mark-inspected') {
+    createAutoCharge({
+      tenantId: 'default',
+      chargeType: 'inspection',
+      referenceType: 'shipmentOrder',
+      referenceId: id,
+      referenceNumber: updated.orderNumber,
+      quantity: updated.products?.length || 1,
+      description: `検品料: ${updated.orderNumber}`,
+    }).catch(() => {});
+  }
 
   return updated;
 };

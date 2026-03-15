@@ -43,6 +43,8 @@ import { shippingRateRouter } from './shippingRates';
 import { billingRouter } from './billing';
 import { packingRuleRouter } from './packingRules';
 import { materialRouter } from './materials';
+import { serviceRateRouter } from './serviceRates';
+import { workChargeRouter } from './workCharges';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -99,6 +101,12 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // 耗材マスター / 耗材主数据
   api.use('/materials', materialRouter);
+
+  // サービス料金マスタ / 服务费率主数据
+  api.use('/service-rates', serviceRateRouter);
+
+  // 作業チャージ / 作业费用
+  api.use('/work-charges', workChargeRouter);
 
   // 扩展系统 / 拡張システム
   api.use('/extensions', extensionRouter);

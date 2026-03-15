@@ -9,6 +9,7 @@ import { Product } from '@/models/product';
 import { extensionManager } from '@/core/extensions';
 import { HOOK_EVENTS } from '@/core/extensions/types';
 import { logOperation } from '@/services/operationLogger';
+import { createAutoCharge } from '@/services/chargeService';
 import { createReturnOrderSchema, inspectLinesSchema } from '@/schemas/returnOrderSchema';
 import { checkTransactionSupport } from '@/config/database';
 import { logger } from '@/lib/logger';
@@ -444,6 +445,17 @@ export async function completeReturnOrder(req: Request, res: Response) {
       referenceType: 'returnOrder',
       referenceId: String(doc._id),
       quantity: restockedTotal + disposedTotal,
+    }).catch(() => {});
+
+    // 自動チャージ: 返品処理料 / 自动收费: 退货处理费 (fire-and-forget)
+    createAutoCharge({
+      tenantId: 'default',
+      chargeType: 'return_handling',
+      referenceType: 'returnOrder',
+      referenceId: String(doc._id),
+      referenceNumber: doc.orderNumber,
+      quantity: 1,
+      description: `返品処理料: ${doc.orderNumber}`,
     }).catch(() => {});
 
     res.json({
