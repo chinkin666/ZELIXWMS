@@ -48,6 +48,9 @@ import { workChargeRouter } from './workCharges';
 import { userRouter } from './users';
 import { authRouter } from './auth';
 import { fbaRouter } from './fba';
+import { omsRouter } from './oms';
+import { marketplaceRouter } from './marketplace';
+import { erpRouter } from './erp';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -122,6 +125,15 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // 扩展系统 / 拡張システム
   api.use('/extensions', extensionRouter);
+
+  // OMS/EC 連携 / OMS/EC 连接
+  api.use('/oms', omsRouter);
+
+  // マーケットプレイス連携 / 电商平台连接
+  api.use('/marketplace', marketplaceRouter);
+
+  // ERP/会計連携 / ERP/会计连接
+  api.use('/erp', erpRouter);
 
   app.use('/api', api);
 };
