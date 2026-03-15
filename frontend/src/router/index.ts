@@ -80,6 +80,30 @@ const router = createRouter({
               component: () => import('@/views/passthrough/StagingBoard.vue'),
               meta: { title: '暫存エリア', requiresAuth: true },
             },
+            {
+              path: 'inspection/:orderId',
+              name: 'PassthroughInspection',
+              component: () => import('@/views/passthrough/InspectionForm.vue'),
+              meta: { title: '検品', requiresAuth: true },
+            },
+            {
+              path: 'labeling',
+              name: 'PassthroughLabeling',
+              component: () => import('@/views/passthrough/LabelingBoard.vue'),
+              meta: { title: 'ラベル貼付', requiresAuth: true },
+            },
+            {
+              path: 'exceptions',
+              name: 'PassthroughExceptions',
+              component: () => import('@/views/passthrough/ExceptionList.vue'),
+              meta: { title: '異常報告', requiresAuth: true },
+            },
+            {
+              path: 'boxes/:orderId',
+              name: 'PassthroughBoxes',
+              component: () => import('@/views/passthrough/FbaBoxManagement.vue'),
+              meta: { title: 'FBA箱管理', requiresAuth: true },
+            },
           ],
         },
         // === 荷主ポータル / 货主门户 ===
