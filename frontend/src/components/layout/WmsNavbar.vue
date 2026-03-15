@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '../../composables/useI18n'
 import { useAuth } from '@/stores/auth'
+import { useWarehouseStore } from '@/stores/warehouse'
+import { fetchWarehouses, type Warehouse } from '@/api/warehouse'
 
 const props = defineProps<{
   menuItems: Array<{ label: string; to: string }>
@@ -19,6 +21,24 @@ const router = useRouter()
 const { locale, setLocale, availableLocales } = useI18n()
 
 const { user, isAuthenticated, clearAuth } = useAuth()
+
+// 倉庫選択 / 仓库选择
+const { selectedWarehouseId, setWarehouse } = useWarehouseStore()
+const warehouses = ref<Warehouse[]>([])
+const localWarehouseId = ref(selectedWarehouseId.value)
+
+function onWarehouseChange() {
+  setWarehouse(localWarehouseId.value)
+}
+
+onMounted(async () => {
+  try {
+    const res = await fetchWarehouses({ isActive: 'true', limit: 100 })
+    warehouses.value = Array.isArray(res) ? res : res.data || []
+  } catch {
+    // 倉庫取得失敗は無視 / 仓库获取失败时忽略
+  }
+})
 
 const showUserMenu = ref(false)
 const showLangMenu = ref(false)
@@ -130,6 +150,16 @@ function closeMenus(e: MouseEvent) {
       >
         {{ item.label }}
       </button>
+    </div>
+
+    <!-- 倉庫セレクター / 仓库选择器 -->
+    <div class="o-warehouse-selector" v-if="warehouses.length > 0">
+      <select class="o-warehouse-select" v-model="localWarehouseId" @change="onWarehouseChange">
+        <option value="">全倉庫</option>
+        <option v-for="wh in warehouses" :key="wh._id" :value="wh._id">
+          {{ wh.code }} - {{ wh.name }}
+        </option>
+      </select>
     </div>
 
     <!-- Systray -->
@@ -263,11 +293,41 @@ function closeMenus(e: MouseEvent) {
   box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.8);
 }
 
+/* 倉庫セレクター / 仓库选择器 */
+.o-warehouse-selector {
+  margin-left: auto;
+  margin-right: 4px;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.o-warehouse-select {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  max-width: 200px;
+}
+.o-warehouse-select:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+.o-warehouse-select:focus {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+.o-warehouse-select option {
+  background: #1a2332;
+  color: #fff;
+}
+
 .o-navbar-systray {
   display: flex;
   align-items: center;
   height: 100%;
-  margin-left: auto;
+  margin-left: 0;
   gap: 0;
 }
 .o-systray-btn {
@@ -402,5 +462,6 @@ function closeMenus(e: MouseEvent) {
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
   .o-user-name { display: none; }
+  .o-warehouse-select { max-width: 140px; font-size: 11px; }
 }
 </style>

@@ -35,7 +35,7 @@ export function useAuth() {
         id: newUser.id,
         username: newUser.email,
         displayName: newUser.displayName,
-        role: newUser.role as 'admin' | 'operator' | 'viewer' | 'super_admin',
+        role: newUser.role as 'admin' | 'operator' | 'viewer' | 'super_admin' | 'client',
         warehouseIds: newUser.warehouseIds ?? [],
         clientIds: newUser.clientId ? [newUser.clientId] : [],
         permissions: [],

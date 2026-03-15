@@ -52,6 +52,7 @@ import { rslRouter } from './rsl';
 import { omsRouter } from './oms';
 import { marketplaceRouter } from './marketplace';
 import { erpRouter } from './erp';
+import { clientPortalRouter } from './clientPortal';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -138,6 +139,9 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // ERP/会計連携 / ERP/会计连接
   api.use('/erp', erpRouter);
+
+  // 荷主ポータル / 货主门户
+  api.use('/client-portal', clientPortalRouter);
 
   app.use('/api', api);
 };

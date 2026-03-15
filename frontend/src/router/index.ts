@@ -50,6 +50,13 @@ const router = createRouter({
           component: Welcome,
           meta: { title: 'ホーム' },
         },
+        // === 荷主ポータル / 货主门户 ===
+        {
+          path: 'client/dashboard',
+          name: 'ClientDashboard',
+          component: () => import('@/views/client/ClientDashboard.vue'),
+          meta: { title: '荷主ポータル', requiresAuth: true },
+        },
         {
           path: 'products',
           meta: { title: '商品管理', requiresAuth: true },
@@ -703,11 +710,15 @@ const router = createRouter({
 // 認証が必要なルートへのアクセスを制御 / Controls access to routes requiring authentication
 // 現在はモック認証のため、トークンの存在のみチェック / Currently lenient — only checks token existence
 router.beforeEach((to, _from, next) => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
 
   // ログインページ：認証済みならホームへリダイレクト / 登录页：已认证则重定向到首页
   if (to.path === '/login') {
-    if (isAuthenticated.value) return next('/')
+    if (isAuthenticated.value) {
+      // 荷主ロールは荷主ポータルへリダイレクト / 货主角色重定向到货主门户
+      if (user.value?.role === 'client') return next('/client/dashboard')
+      return next('/')
+    }
     return next()
   }
 
@@ -719,6 +730,16 @@ router.beforeEach((to, _from, next) => {
   // 認証が必要なルート：未認証ならログインページへ / 需要认证的路由：未认证则重定向到登录页
   if (!isAuthenticated.value) {
     return next('/login')
+  }
+
+  // 荷主ロールがホームにアクセスした場合、荷主ポータルへリダイレクト
+  // 货主角色访问首页时重定向到货主门户
+  if (
+    user.value?.role === 'client' &&
+    (to.path === '/' || to.path === '/home') &&
+    to.name !== 'ClientDashboard'
+  ) {
+    return next('/client/dashboard')
   }
 
   next()

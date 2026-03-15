@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type UserRole = 'super_admin' | 'admin' | 'operator' | 'viewer'
+export type UserRole = 'super_admin' | 'admin' | 'operator' | 'viewer' | 'client'
 
 export interface WmsUser {
   readonly id: string
