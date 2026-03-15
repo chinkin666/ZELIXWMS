@@ -45,8 +45,7 @@
     </div>
 
     <!-- サブユーザーダイアログ / 子用户对话框 -->
-    <ODialog v-model="subUserDialogVisible" title="サブユーザー一覧" size="lg" @close="subUserDialogVisible = false">
-      <template #default>
+    <ODialog :open="subUserDialogVisible" title="サブユーザー一覧" size="lg" @close="subUserDialogVisible = false">
         <div v-if="subUsers.length === 0" class="empty-message">サブユーザーはいません。</div>
         <div v-else class="sub-user-list">
           <div v-for="sub in subUsers" :key="sub._id" class="sub-user-item">
@@ -62,17 +61,16 @@
             </div>
           </div>
         </div>
-      </template>
+      <template #footer><span></span></template>
     </ODialog>
 
     <!-- 作成/編集ダイアログ / 创建/编辑对话框 -->
     <ODialog
-      v-model="dialogVisible"
+      :open="dialogVisible"
       :title="isEditing ? 'ユーザーを編集' : 'ユーザーを追加'"
       size="lg"
       @close="closeDialog"
     >
-      <template #default>
         <form class="user-form" @submit.prevent="handleSubmit">
           <div class="form-row">
             <label class="form-label">メールアドレス <span class="required-badge">必須</span></label>
@@ -186,7 +184,7 @@
             </OButton>
           </div>
         </form>
-      </template>
+      <template #footer><span></span></template>
     </ODialog>
   </div>
 </template>
