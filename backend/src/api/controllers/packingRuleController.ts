@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { PackingRule } from '@/models/packingRule';
 import { Product } from '@/models/product';
+import { Material } from '@/models/material';
 
 // ============================================
 // 梱包ルール CRUD / 梱包规则 CRUD
@@ -211,12 +212,24 @@ export const evaluatePackingRules = async (req: Request, res: Response): Promise
 
       if (matched) {
         // マッチしたルールの耗材を返す / 返回匹配规则的耗材
-        const resultMaterials = rule.materials.map((m) => ({
-          materialSku: m.productSku,
-          materialName: m.productName,
-          quantity: m.quantity,
-          unitCost: m.unitCost,
-        }));
+        // Materialマスターからコスト情報を取得 / 从耗材主数据获取成本信息
+        const materialSkus = rule.materials.map((m) => m.materialSku);
+        const materialMasters = await Material.find({
+          tenantId,
+          sku: { $in: materialSkus },
+          isActive: true,
+        }).lean();
+        const materialMap = new Map(materialMasters.map((m) => [m.sku, m]));
+
+        const resultMaterials = rule.materials.map((m) => {
+          const master = materialMap.get(m.materialSku);
+          return {
+            materialSku: m.materialSku,
+            materialName: m.materialName ?? master?.name,
+            quantity: m.quantity,
+            unitCost: m.unitCost ?? master?.unitCost,
+          };
+        });
 
         res.json({
           materials: resultMaterials,

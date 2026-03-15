@@ -155,6 +155,20 @@ const router = createRouter({
         { path: 'shipment-operations/one-by-one/inspection', redirect: '/shipment/operations/one-by-one/inspection' },
         { path: 'shipment-operations/n-by-one/inspection', redirect: '/shipment/operations/n-by-one/inspection' },
         { path: 'shipment-results', redirect: '/shipment/results' },
+        // === 耗材管理 / 耗材管理 ===
+        {
+          path: 'materials',
+          meta: { title: '耗材管理', requiresAuth: true },
+          redirect: '/materials/list',
+          children: [
+            {
+              path: 'list',
+              name: 'MaterialList',
+              component: () => import('@/views/materials/MaterialList.vue'),
+              meta: { title: '耗材一覧', requiresAuth: true },
+            },
+          ],
+        },
         {
           path: 'inbound',
           meta: { title: '入庫管理', requiresAuth: true },

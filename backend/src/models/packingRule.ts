@@ -17,8 +17,8 @@ export interface IPackingRuleConditions {
 
 // 適用耗材インターフェース / 应用耗材接口
 export interface IPackingRuleMaterial {
-  productSku: string;          // 耗材SKU / 耗材SKU
-  productName?: string;        // 耗材名 / 耗材名
+  materialSku: string;         // 耗材SKU / 耗材SKU
+  materialName?: string;       // 耗材名 / 耗材名
   quantity: number;            // 数量 / 数量
   unitCost?: number;           // 単価 / 单价
 }
@@ -53,8 +53,8 @@ const packingRuleConditionsSchema = new mongoose.Schema<IPackingRuleConditions>(
 // 耗材サブドキュメント / 耗材子文档
 const packingRuleMaterialSchema = new mongoose.Schema<IPackingRuleMaterial>(
   {
-    productSku: { type: String, required: true, trim: true },
-    productName: { type: String, trim: true },
+    materialSku: { type: String, required: true, trim: true },
+    materialName: { type: String, trim: true },
     quantity: { type: Number, required: true, min: 1 },
     unitCost: { type: Number, min: 0 },
   },

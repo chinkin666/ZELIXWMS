@@ -11,6 +11,7 @@ export interface SubMenuGroup {
 // 主菜单: 仓库业务流程顺序 / メインメニュー: 倉庫業務フロー順
 export const wmsMenuItems: Array<{ label: string; to: string }> = [
   { label: '商品管理', to: '/products' },
+  { label: '耗材管理', to: '/materials' },
   { label: '入庫管理', to: '/inbound' },
   { label: '在庫管理', to: '/inventory' },
   { label: '出荷管理', to: '/shipment' },
@@ -93,6 +94,9 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '商品一覧', to: '/products/list' },
     { label: 'バーコード管理', to: '/products/barcodes' },
     { label: '出荷統計', to: '/products/shipment-stats' },
+  ],
+  '/materials': [
+    { label: '耗材一覧', to: '/materials/list' },
   ],
   '/set-products': [
     { label: 'セット組一覧', to: '/set-products/list' },

@@ -3,9 +3,6 @@ import mongoose from 'mongoose';
 export type CoolType = '0' | '1' | '2';
 export type ProductCategory = '0' | '1' | '2' | '3' | '4';  // 0:商品 1:消耗品 2:作業 3:おまけ 4:部材
 export type AllocationRule = 'FIFO' | 'FEFO' | 'LIFO';  // FIFO:先入先出 FEFO:先期限先出 LIFO:後入先出
-// 商品タイプ / 商品类型: product=商品, material=耗材（梱包材/作業用品）
-export type ProductType = 'product' | 'material';
-
 export interface ISubSku {
   subSku: string;        // 子SKU編碼 (必填，全局唯一)
   price?: number;        // 価格 (可選，不填時使用父商品価格)
@@ -29,8 +26,6 @@ export interface IProduct {
   imageUrl?: string;
   subSkus?: ISubSku[];
   category?: ProductCategory;
-  // 商品タイプ / 商品类型: product=商品, material=耗材（梱包材/作業用品）
-  productType: ProductType;
   // 原価/仕入単価（コスト計算用）/ 成本价/进货单价（用于成本计算）
   costPrice?: number;
   customField1?: string;
@@ -173,12 +168,6 @@ const productSchema = new mongoose.Schema<IProduct>(
       type: String,
       enum: ['0', '1', '2', '3', '4'],
       default: '0',
-    },
-    // 商品タイプ / 商品类型: product=商品, material=耗材（梱包材/作業用品）
-    productType: {
-      type: String,
-      enum: ['product', 'material'],
-      default: 'product',
     },
     // 原価/仕入単価（コスト計算用）/ 成本价/进货单价（用于成本计算）
     costPrice: { type: Number, min: 0 },

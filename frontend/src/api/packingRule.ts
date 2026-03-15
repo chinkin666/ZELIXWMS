@@ -6,8 +6,8 @@ const API_BASE_URL = getApiBaseUrl()
  * 梱包ルール耗材データ型 / 梱包规则耗材数据类型
  */
 export interface PackingRuleMaterial {
-  productSku: string
-  productName?: string
+  materialSku: string
+  materialName?: string
   quantity: number
   unitCost?: number
 }

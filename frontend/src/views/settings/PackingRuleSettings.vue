@@ -76,8 +76,8 @@
           <table class="materials-table">
             <thead>
               <tr>
-                <th>商品SKU</th>
-                <th>商品名</th>
+                <th>耗材SKU</th>
+                <th>耗材名</th>
                 <th style="width:80px;">数量</th>
                 <th style="width:100px;">単価</th>
                 <th style="width:50px;"></th>
@@ -85,8 +85,8 @@
             </thead>
             <tbody>
               <tr v-for="(mat, index) in form.materials" :key="index">
-                <td><input class="o-input" v-model="mat.productSku" placeholder="SKU" /></td>
-                <td><input class="o-input" v-model="mat.productName" placeholder="商品名" /></td>
+                <td><input class="o-input" v-model="mat.materialSku" placeholder="SKU" /></td>
+                <td><input class="o-input" v-model="mat.materialName" placeholder="耗材名" /></td>
                 <td><input class="o-input" type="number" v-model.number="mat.quantity" min="1" /></td>
                 <td><input class="o-input" type="number" v-model.number="mat.unitCost" min="0" step="0.01" placeholder="0" /></td>
                 <td style="text-align:center;">
@@ -154,8 +154,8 @@ const dialogVisible = ref(false)
 const editingId = ref<string | null>(null)
 
 interface FormMaterial {
-  productSku: string
-  productName: string
+  materialSku: string
+  materialName: string
   quantity: number
   unitCost: number | undefined
 }
@@ -292,7 +292,7 @@ const loadList = async () => {
 const addMaterial = () => {
   form.value = {
     ...form.value,
-    materials: [...form.value.materials, { productSku: '', productName: '', quantity: 1, unitCost: undefined }],
+    materials: [...form.value.materials, { materialSku: '', materialName: '', quantity: 1, unitCost: undefined }],
   }
 }
 
@@ -326,8 +326,8 @@ const openEdit = (item: PackingRule) => {
       maxProductCount: item.conditions.maxProductCount ?? undefined,
     },
     materials: (item.materials || []).map((m) => ({
-      productSku: m.productSku,
-      productName: m.productName || '',
+      materialSku: m.materialSku,
+      materialName: m.materialName || '',
       quantity: m.quantity,
       unitCost: m.unitCost ?? undefined,
     })),
@@ -357,10 +357,10 @@ const handleSubmit = async () => {
         maxProductCount: form.value.conditions.maxProductCount || undefined,
       },
       materials: form.value.materials
-        .filter((m) => m.productSku.trim())
+        .filter((m) => m.materialSku.trim())
         .map((m) => ({
-          productSku: m.productSku.trim(),
-          productName: m.productName?.trim() || undefined,
+          materialSku: m.materialSku.trim(),
+          materialName: m.materialName?.trim() || undefined,
           quantity: m.quantity,
           unitCost: m.unitCost ?? undefined,
         })),

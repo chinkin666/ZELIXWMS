@@ -47,26 +47,6 @@
       @search="handleSearch"
     />
 
-    <!-- 商品タイプフィルター / 商品类型过滤器 -->
-    <div class="stock-filter-bar">
-      <span class="stock-filter-label">タイプ:</span>
-      <button
-        class="stock-filter-btn"
-        :class="{ 'stock-filter-btn--active': typeFilter === 'all' }"
-        @click="typeFilter = 'all'"
-      >全て</button>
-      <button
-        class="stock-filter-btn"
-        :class="{ 'stock-filter-btn--active': typeFilter === 'product' }"
-        @click="typeFilter = 'product'"
-      >商品</button>
-      <button
-        class="stock-filter-btn"
-        :class="{ 'stock-filter-btn--active': typeFilter === 'material' }"
-        @click="typeFilter = 'material'"
-      >耗材</button>
-    </div>
-
     <!-- 在庫クイックフィルター / 库存快速过滤器 -->
     <div class="stock-filter-bar">
       <span class="stock-filter-label">{{ t('wms.product.stockFilter', '在庫:') }}</span>
@@ -404,9 +384,6 @@ const selectedKeys = ref<string[]>([])
 const stockMap = ref<Map<string, number>>(new Map())
 // 在庫フィルター / 库存过滤器: '' = 全て, 'inStock' = 在庫あり, 'noStock' = 在庫なし
 const stockFilter = ref<'' | 'inStock' | 'noStock'>('')
-// 商品タイプフィルター / 商品类型过滤器: 'all' = 全て, 'product' = 商品, 'material' = 耗材
-const typeFilter = ref<'all' | 'product' | 'material'>('all')
-
 // (Pagination & sorting handled by Table component)
 
 // Sub-SKU management (separate dialog)
@@ -599,12 +576,6 @@ const filteredList = computed(() => {
       const searchable = [r.sku, r.name, r.nameFull, ...(r.barcode || [])].filter(Boolean).join(' ').toLowerCase()
       return searchable.includes(q)
     })
-  }
-  // 商品タイプフィルター / 商品类型过滤器
-  if (typeFilter.value === 'product') {
-    rows = rows.filter((r) => (r as any).productType !== 'material')
-  } else if (typeFilter.value === 'material') {
-    rows = rows.filter((r) => (r as any).productType === 'material')
   }
   // 在庫フィルター / 库存过滤器
   if (stockFilter.value === 'inStock') {

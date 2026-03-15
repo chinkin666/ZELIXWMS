@@ -13,16 +13,6 @@
         <!-- Top fields (2-column grid) -->
         <div class="o-top-fields">
           <div class="o-top-col">
-            <!-- 商品タイプ / 商品类型 -->
-            <div class="o-field-row">
-              <label class="o-field-label">商品タイプ</label>
-              <div class="o-field-value">
-                <select class="o-inline-input" :value="formData.productType" @change="(e: Event) => formData.productType = (e.target as HTMLSelectElement).value">
-                  <option value="product">商品</option>
-                  <option value="material">耗材（梱包材）</option>
-                </select>
-              </div>
-            </div>
             <!-- SKU -->
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.skuCode', 'SKU管理番号') }} <span class="required-badge">{{ t('wms.common.required', '必須') }}</span></label>
@@ -560,7 +550,6 @@ watch(
     if (isOpen) {
       const d = props.initialData || {}
       formData.value = {
-        productType: d.productType || 'product',
         sku: d.sku || '',
         name: d.name || '',
         nameFull: d.nameFull || '',
