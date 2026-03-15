@@ -31,13 +31,28 @@ const FORBIDDEN_KEYWORDS = [
 
 /** 白名单可修改字段 / ホワイトリストの変更可能フィールド */
 const ALLOWED_MODIFY_FIELDS = [
+  // 出荷指示 / 出荷指示
   'order.orderGroup',
   'order.invoiceType',
   'order.coolType',
   'order.handlingTags',
   'order.customFields',
   'order.memo',
+  'order.deliveryTimeSlot',
+  'order.deliveryDatePreference',
+  'order.shipPlanDate',
+  // 商品 / 商品
   'product.customFields',
+  'product.memo',
+  'product.category',
+  // 入庫 / 入庫
+  'inbound.memo',
+  'inbound.customFields',
+  // 返品 / 返品
+  'return.memo',
+  'return.customFields',
+  // 棚卸 / 棚卸
+  'stocktaking.memo',
 ];
 
 export class ScriptRunner {
@@ -80,12 +95,20 @@ export class ScriptRunner {
 
     try {
       // 创建沙箱上下文 / サンドボックスコンテキストを作成
+      const deepCopy = (v: unknown) => v ? JSON.parse(JSON.stringify(v)) : {};
       const sandbox = {
         // 只读数据注入 / 読み取り専用データ注入
-        order: payload.order ? JSON.parse(JSON.stringify(payload.order)) : {},
-        product: payload.product ? JSON.parse(JSON.stringify(payload.product)) : {},
-        inventory: payload.inventory ? JSON.parse(JSON.stringify(payload.inventory)) : {},
+        order: deepCopy(payload.order),
+        product: deepCopy(payload.product),
+        inventory: deepCopy(payload.inventory),
+        inbound: deepCopy(payload.inbound),
+        return: deepCopy(payload.return || payload.returnOrder),
+        wave: deepCopy(payload.wave),
+        task: deepCopy(payload.task),
+        stocktaking: deepCopy(payload.stocktaking),
+        // イベント情報 / 事件信息
         event: script.event,
+        payload: deepCopy(payload),
 
         // 修改收集器 / 変更コレクター
         setField: (path: string, value: unknown) => {
