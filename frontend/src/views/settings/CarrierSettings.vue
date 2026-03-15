@@ -654,7 +654,7 @@ textarea.o-input { resize: vertical; }
 .o-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
 .o-toggle-slider { width: 40px; height: 20px; background: var(--o-toggle-off, #c0c4cc); border-radius: 10px; transition: 0.2s; position: relative; }
 .o-toggle-slider::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: 0.2s; }
-.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #D97756); }
+.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #0052A3); }
 .o-toggle input:checked + .o-toggle-slider::after { left: 22px; }
 
 .carrier-form {

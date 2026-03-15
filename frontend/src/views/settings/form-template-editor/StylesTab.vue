@@ -87,11 +87,11 @@ function updateStyle(key: string, value: any) {
 .o-form-group { display: flex; gap: 8px; margin-bottom: 12px; align-items: flex-start; }
 .o-form-group > label { width: 140px; flex-shrink: 0; font-size: 13px; color: #606266; padding-top: 6px; }
 .o-input { padding: 6px 10px; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px; font-size: 13px; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
-.o-input:focus { border-color: var(--o-primary, #714B67); }
+.o-input:focus { border-color: var(--o-primary, #0052A3); }
 .o-divider { border: none; border-top: 1px solid #ebeef5; margin: 16px 0; }
 .o-segmented { display: inline-flex; border: 1px solid #dcdfe6; border-radius: 4px; overflow: hidden; }
 .o-segmented button { padding: 6px 14px; border: none; background: #fff; cursor: pointer; font-size: 13px; color: #606266; border-right: 1px solid #dcdfe6; }
 .o-segmented button:last-child { border-right: none; }
-.o-segmented button.active { background: var(--o-primary, #714B67); color: #fff; }
+.o-segmented button.active { background: var(--o-primary, #0052A3); color: #fff; }
 .o-segmented button:hover:not(.active) { background: #f5f7fa; }
 </style>

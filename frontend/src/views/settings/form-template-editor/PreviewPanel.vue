@@ -55,11 +55,11 @@ defineEmits<{
 .preview-iframe { width: 100%; height: 100%; border: none; }
 .preview-placeholder { display: flex; align-items: center; justify-content: center; height: 100%; color: #909399; font-size: 14px; text-align: center; padding: 20px; }
 .preview-loading-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: rgba(255,255,255,0.85); z-index: 10; font-size: 13px; color: #606266; }
-.preview-spinner { width: 24px; height: 24px; border: 3px solid #dcdfe6; border-top-color: #D97756; border-radius: 50%; animation: spin 0.8s linear infinite; }
+.preview-spinner { width: 24px; height: 24px; border: 3px solid #dcdfe6; border-top-color: #0052A3; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .preview-error { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; color: #f56c6c; }
 .preview-error p { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
 .preview-error .error-message { max-width: 100%; padding: 12px; background: #fef0f0; border: 1px solid #fbc4c4; border-radius: 4px; font-size: 12px; color: #c45656; white-space: pre-wrap; word-break: break-all; overflow: auto; max-height: 200px; }
 .o-input { padding: 6px 10px; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px; font-size: 13px; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
-.o-input:focus { border-color: var(--o-primary, #714B67); }
+.o-input:focus { border-color: var(--o-primary, #0052A3); }
 </style>

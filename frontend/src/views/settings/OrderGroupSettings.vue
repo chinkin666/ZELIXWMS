@@ -214,7 +214,7 @@ onMounted(() => {
 .o-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
 .o-toggle-slider { width: 40px; height: 20px; background: var(--o-toggle-off, #c0c4cc); border-radius: 10px; transition: 0.2s; position: relative; }
 .o-toggle-slider::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: 0.2s; }
-.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #D97756); }
+.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #0052A3); }
 .o-toggle input:checked + .o-toggle-slider::after { left: 22px; }
 
 .groups-list {
@@ -284,7 +284,7 @@ onMounted(() => {
 .drag-ghost {
   opacity: 0.4;
   background: var(--o-brand-lighter, #FAF0EA);
-  border: 1px dashed var(--o-brand-primary, #D97756);
+  border: 1px dashed var(--o-brand-primary, #0052A3);
 }
 
 .group-info {
@@ -330,7 +330,7 @@ onMounted(() => {
 .group-stats {
   margin-top: 2px;
   font-size: 12px;
-  color: var(--o-brand-primary, #D97756);
+  color: var(--o-brand-primary, #0052A3);
   font-weight: 500;
 }
 

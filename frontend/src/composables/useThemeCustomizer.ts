@@ -30,9 +30,9 @@ const STORAGE_KEY = 'odoo-theme-settings'
 
 const DEFAULT_SETTINGS: Readonly<ThemeSettings> = Object.freeze({
   presetName: 'Claude Warm',
-  primaryColor: '#D97756',
+  primaryColor: '#0052A3',
   secondaryColor: '#8B7E74',
-  actionColor: '#D97756',
+  actionColor: '#0052A3',
   sidebarWidth: 240,
   navbarHeight: 46,
   fontSize: 14,
@@ -43,8 +43,8 @@ const DEFAULT_SETTINGS: Readonly<ThemeSettings> = Object.freeze({
 })
 
 export const THEME_PRESETS: readonly ThemePreset[] = Object.freeze([
-  { name: 'Claude Warm', primary: '#D97756', secondary: '#8B7E74', action: '#D97756' },
-  { name: 'Odoo Classic', primary: '#714B67', secondary: '#8f8f8f', action: '#00A09D' },
+  { name: 'Claude Warm', primary: '#0052A3', secondary: '#8B7E74', action: '#0052A3' },
+  { name: 'Odoo Classic', primary: '#0052A3', secondary: '#8f8f8f', action: '#00A09D' },
   { name: 'Ocean Blue', primary: '#2196F3', secondary: '#607D8B', action: '#03A9F4' },
   { name: 'Forest Green', primary: '#4CAF50', secondary: '#795548', action: '#8BC34A' },
   { name: 'Sunset Orange', primary: '#FF5722', secondary: '#9E9E9E', action: '#FF9800' },

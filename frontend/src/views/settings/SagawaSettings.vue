@@ -219,7 +219,7 @@ onMounted(async () => {
 .guide-step__num {
   width: 28px; height: 28px;
   display: flex; align-items: center; justify-content: center;
-  background: var(--o-brand-primary, #D97756);
+  background: var(--o-brand-primary, #0052A3);
   color: #fff;
   font-size: 14px;
   font-weight: 700;

@@ -256,14 +256,14 @@ function selectFromDropdown(stage: Stage) {
 }
 
 .o-stage.done {
-  background: color-mix(in srgb, var(--o-brand-primary, #714B67) 15%, transparent);
-  border-color: color-mix(in srgb, var(--o-brand-primary, #714B67) 30%, transparent);
-  color: var(--o-brand-primary, #714B67);
+  background: color-mix(in srgb, var(--o-brand-primary, #0052A3) 15%, transparent);
+  border-color: color-mix(in srgb, var(--o-brand-primary, #0052A3) 30%, transparent);
+  color: var(--o-brand-primary, #0052A3);
 }
 
 .o-stage.current {
-  background: var(--o-brand-primary, #714B67);
-  border-color: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
+  border-color: var(--o-brand-primary, #0052A3);
   color: #fff;
   font-weight: 600;
 }
@@ -307,9 +307,9 @@ function selectFromDropdown(stage: Stage) {
   padding: 0.375rem 0.75rem;
   font-size: var(--o-font-size-small, 0.8125rem);
   font-weight: 600;
-  border: 1px solid var(--o-brand-primary, #714B67);
+  border: 1px solid var(--o-brand-primary, #0052A3);
   border-radius: var(--o-border-radius, 4px);
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
   color: #fff;
   cursor: pointer;
 }
@@ -346,12 +346,12 @@ function selectFromDropdown(stage: Stage) {
 }
 
 .o-statusbar-dropdown-item.current {
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
   font-weight: 600;
 }
 
 .o-statusbar-dropdown-item.done {
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
 }
 
 .o-statusbar-dropdown-item.o-stage--cancel.current {
@@ -362,7 +362,7 @@ function selectFromDropdown(stage: Stage) {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
 }
 
 /* ---------- Confirm dialog ---------- */

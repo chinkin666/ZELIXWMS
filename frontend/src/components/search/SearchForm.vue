@@ -289,7 +289,7 @@ defineExpose({
 }
 
 .search-field .o-input-sm:focus {
-  border-color: var(--o-brand-primary, #D97756);
+  border-color: var(--o-brand-primary, #0052A3);
 }
 
 .search-field--daterange .daterange-inputs {
@@ -324,9 +324,9 @@ defineExpose({
 }
 
 .o-btn-primary {
-  background: var(--o-brand-primary, #D97756);
+  background: var(--o-brand-primary, #0052A3);
   color: white;
-  border-color: var(--o-brand-primary, #D97756);
+  border-color: var(--o-brand-primary, #0052A3);
 }
 
 .o-btn-primary:hover {

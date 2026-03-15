@@ -325,7 +325,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 24px 28px;
-  background: linear-gradient(135deg, #D97756 0%, #B85D3A 100%);
+  background: linear-gradient(135deg, #0052A3 0%, #B85D3A 100%);
   border-radius: 8px;
   margin-bottom: 28px;
   color: white;
@@ -389,7 +389,7 @@ onUnmounted(() => {
 
 .progress-bar {
   height: 100%;
-  background: linear-gradient(90deg, #D97756, #67c23a);
+  background: linear-gradient(90deg, #0052A3, #67c23a);
   transition: width 0.6s ease;
 }
 
@@ -496,7 +496,7 @@ onUnmounted(() => {
   transition: height 0.5s ease;
 }
 .trend-bar--created {
-  background: var(--o-brand-primary, #D97756);
+  background: var(--o-brand-primary, #0052A3);
   opacity: 0.6;
 }
 .trend-bar--shipped {
@@ -527,7 +527,7 @@ onUnmounted(() => {
   display: inline-block;
 }
 .trend-dot--created {
-  background: var(--o-brand-primary, #D97756);
+  background: var(--o-brand-primary, #0052A3);
   opacity: 0.6;
 }
 .trend-dot--shipped {

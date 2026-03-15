@@ -462,7 +462,7 @@ onMounted(() => loadOrder())
 }
 
 .mode-tab--active {
-  background: var(--o-brand-primary, #D97756);
+  background: var(--o-brand-primary, #0052A3);
   color: #fff;
 }
 

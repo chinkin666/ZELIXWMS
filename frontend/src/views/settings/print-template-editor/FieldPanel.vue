@@ -166,7 +166,7 @@ function onTableFileChange(e: Event) {
   outline: none;
   transition: border-color 0.15s;
 }
-.o-input:focus { border-color: var(--o-brand-primary, #D97756); }
+.o-input:focus { border-color: var(--o-brand-primary, #0052A3); }
 .o-toggle {
   position: relative;
   display: inline-flex;
@@ -194,7 +194,7 @@ function onTableFileChange(e: Event) {
   transition: transform 0.2s;
 }
 .o-toggle input:checked + .o-toggle-slider {
-  background: var(--o-brand-primary, #D97756);
+  background: var(--o-brand-primary, #0052A3);
 }
 .o-toggle input:checked + .o-toggle-slider::after {
   transform: translateX(16px);

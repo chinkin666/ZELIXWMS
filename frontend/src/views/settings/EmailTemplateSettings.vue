@@ -581,8 +581,8 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
 }
 .form-input:focus {
   outline: none;
-  border-color: var(--o-brand-primary, #D97756);
-  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.15);
+  border-color: var(--o-brand-primary, #0052A3);
+  box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.15);
 }
 .form-textarea { resize: vertical; font-family: monospace; line-height: 1.6; }
 .form-textarea-sm { resize: vertical; }
@@ -599,7 +599,7 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
   background: var(--o-gray-100, #f1f3f5);
   padding: 2px 6px;
   font-size: 11px;
-  color: var(--o-brand-primary, #D97756);
+  color: var(--o-brand-primary, #0052A3);
   cursor: pointer;
   user-select: all;
 }

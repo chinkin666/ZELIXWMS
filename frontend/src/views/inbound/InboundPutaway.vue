@@ -345,7 +345,7 @@ onMounted(() => {
 
 .order-number {
   font-family: monospace;
-  color: var(--o-brand-primary, #D97756);
+  color: var(--o-brand-primary, #0052A3);
 }
 
 .sku-text {
@@ -388,7 +388,7 @@ onMounted(() => {
 
 .suggestion-hint {
   font-size: 11px;
-  color: var(--o-brand-primary, #D97756);
+  color: var(--o-brand-primary, #0052A3);
   white-space: nowrap;
 }
 

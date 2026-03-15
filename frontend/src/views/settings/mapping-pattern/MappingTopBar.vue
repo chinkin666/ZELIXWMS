@@ -162,5 +162,5 @@ function onNativeFileSelect(event: Event) {
   outline: none;
   transition: border-color 0.15s;
 }
-.o-input:focus { border-color: var(--o-primary, #714B67); }
+.o-input:focus { border-color: var(--o-primary, #0052A3); }
 </style>

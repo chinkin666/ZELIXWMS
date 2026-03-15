@@ -441,7 +441,7 @@ onMounted(() => {
 .order-number {
   font-family: monospace;
   font-weight: 600;
-  color: var(--o-brand-primary, #D97756);
+  color: var(--o-brand-primary, #0052A3);
 }
 
 .sku-text {

@@ -244,8 +244,8 @@ onMounted(async () => {
   transition: all 0.15s;
 }
 .stats-preset-btn:hover {
-  border-color: var(--o-brand-primary, #D97756);
-  color: var(--o-brand-primary, #D97756);
+  border-color: var(--o-brand-primary, #0052A3);
+  color: var(--o-brand-primary, #0052A3);
 }
 
 .stats-loading { text-align: center; padding: 40px; color: var(--o-gray-500); }
@@ -315,7 +315,7 @@ onMounted(async () => {
   min-height: 2px;
   transition: height 0.4s ease;
 }
-.stats-chart-bar--count { background: var(--o-brand-primary, #D97756); }
+.stats-chart-bar--count { background: var(--o-brand-primary, #0052A3); }
 .stats-chart-bar--qty { background: var(--o-success, #3D8B37); }
 
 .stats-chart-value {

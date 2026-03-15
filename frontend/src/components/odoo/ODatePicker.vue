@@ -275,7 +275,7 @@ onUnmounted(() => {
   transition: border-color 0.15s;
 }
 .o-datepicker-trigger:hover {
-  border-color: var(--o-brand-primary, #714B67);
+  border-color: var(--o-brand-primary, #0052A3);
 }
 .o-datepicker-icon {
   color: var(--o-gray-500, #adb5bd);
@@ -383,15 +383,15 @@ onUnmounted(() => {
   cursor: not-allowed;
 }
 .o-datepicker-day--selected {
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
   color: #fff;
 }
 .o-datepicker-day--selected:hover {
-  background: var(--o-brand-primary, #714B67) !important;
+  background: var(--o-brand-primary, #0052A3) !important;
 }
 .o-datepicker-day--today:not(.o-datepicker-day--selected) {
   font-weight: 700;
-  box-shadow: inset 0 0 0 1px var(--o-brand-primary, #714B67);
+  box-shadow: inset 0 0 0 1px var(--o-brand-primary, #0052A3);
 }
 .o-datepicker-footer {
   display: flex;
@@ -403,7 +403,7 @@ onUnmounted(() => {
 .o-datepicker-today-btn {
   background: none;
   border: none;
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
   font-size: var(--o-font-size-small, 0.8125rem);
   font-weight: 500;
   cursor: pointer;

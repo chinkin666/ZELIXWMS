@@ -221,7 +221,7 @@ onMounted(loadSettings)
   color: var(--o-gray-500, #6c757d);
   padding: 8px 12px;
   background: var(--o-gray-100, #f5f7fa);
-  border-left: 3px solid var(--o-brand-primary, #D97756);
+  border-left: 3px solid var(--o-brand-primary, #0052A3);
 }
 
 .settings-body {
@@ -297,8 +297,8 @@ onMounted(loadSettings)
 }
 
 .o-input:focus {
-  border-color: var(--o-brand-primary, #D97756);
-  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.15);
+  border-color: var(--o-brand-primary, #0052A3);
+  box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.15);
 }
 
 select.o-input { cursor: pointer; }
@@ -330,7 +330,7 @@ select.o-input { cursor: pointer; }
   transition: transform 0.2s;
 }
 .toggle-switch input:checked + .toggle-slider {
-  background-color: var(--o-brand-primary, #D97756);
+  background-color: var(--o-brand-primary, #0052A3);
 }
 .toggle-switch input:checked + .toggle-slider::before {
   transform: translateX(20px);

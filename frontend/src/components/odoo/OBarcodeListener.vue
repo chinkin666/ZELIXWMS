@@ -340,7 +340,7 @@ watch(() => props.enabled, (enabled) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(217, 119, 86, 0.08);
+  background: rgba(0, 82, 163, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -352,7 +352,7 @@ watch(() => props.enabled, (enabled) => {
   font-size: 32px;
   font-weight: 700;
   font-family: monospace;
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
   background: var(--o-view-background);
   padding: 16px 32px;
   border-radius: 12px;
@@ -466,13 +466,13 @@ watch(() => props.enabled, (enabled) => {
 }
 
 .o-barcode-manual__input:focus {
-  border-color: var(--o-brand-primary, #714B67);
-  box-shadow: 0 0 0 3px rgba(217, 119, 86, 0.1);
+  border-color: var(--o-brand-primary, #0052A3);
+  box-shadow: 0 0 0 3px rgba(0, 82, 163, 0.1);
 }
 
 .o-barcode-manual__submit {
   padding: 8px 16px;
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
   color: var(--o-view-background);
   border: none;
   border-radius: 6px;

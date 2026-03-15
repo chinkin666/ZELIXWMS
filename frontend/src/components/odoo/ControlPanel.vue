@@ -269,8 +269,8 @@ function navigateBreadcrumb(route?: string) {
   transition: border-color 0.15s;
 }
 .o-searchview:focus-within {
-  border-color: var(--o-brand-primary, #D97756);
-  box-shadow: 0 0 0 1px rgba(217, 119, 86, 0.15);
+  border-color: var(--o-brand-primary, #0052A3);
+  box-shadow: 0 0 0 1px rgba(0, 82, 163, 0.15);
 }
 .o-searchview-input-container {
   display: flex;

@@ -192,7 +192,7 @@ function getIconSvg(icon: string | undefined): string {
   left: 0;
   right: 0;
   z-index: 1040;
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
   color: #fff;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
 }

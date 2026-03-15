@@ -487,7 +487,7 @@ onUnmounted(() => {
 }
 
 .o-date-range-inputs:hover {
-  border-color: var(--o-brand-primary, #714B67);
+  border-color: var(--o-brand-primary, #0052A3);
 }
 
 .o-date-range-field {
@@ -575,12 +575,12 @@ onUnmounted(() => {
 }
 
 .o-date-range-preset-btn--active {
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
   color: #fff;
 }
 
 .o-date-range-preset-btn--active:hover {
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
 }
 
 .o-date-range-calendars {
@@ -666,7 +666,7 @@ onUnmounted(() => {
 
 .o-date-range-day--start,
 .o-date-range-day--end {
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
   color: #fff;
 }
 
@@ -684,7 +684,7 @@ onUnmounted(() => {
 
 .o-date-range-day--today {
   font-weight: 700;
-  box-shadow: inset 0 0 0 1px var(--o-brand-primary, #714B67);
+  box-shadow: inset 0 0 0 1px var(--o-brand-primary, #0052A3);
 }
 
 .o-date-range-footer {
@@ -706,7 +706,7 @@ onUnmounted(() => {
 }
 
 .o-date-range-comparison-check {
-  accent-color: var(--o-brand-primary, #714B67);
+  accent-color: var(--o-brand-primary, #0052A3);
 }
 
 .o-date-range-comparison-label {

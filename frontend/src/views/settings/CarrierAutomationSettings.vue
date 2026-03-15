@@ -487,7 +487,7 @@ onMounted(() => {
   margin-bottom: -2px;
   display: flex; align-items: center; gap: 6px;
 }
-.o-tab.active { color: var(--o-brand-primary, #D97756); border-bottom-color: var(--o-brand-primary, #D97756); font-weight: 500; }
+.o-tab.active { color: var(--o-brand-primary, #0052A3); border-bottom-color: var(--o-brand-primary, #0052A3); font-weight: 500; }
 
 .tab-status { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .tab-status--ok { background: var(--o-success, #3D8B37); }
@@ -543,7 +543,7 @@ onMounted(() => {
 .o-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
 .o-toggle-slider { width: 40px; height: 20px; background: var(--o-toggle-off, #c0c4cc); border-radius: 10px; transition: 0.2s; position: relative; }
 .o-toggle-slider::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; left: 2px; transition: 0.2s; }
-.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #D97756); }
+.o-toggle input:checked + .o-toggle-slider { background: var(--o-brand-primary, #0052A3); }
 .o-toggle input:checked + .o-toggle-slider::after { left: 22px; }
 
 .o-divider { border: none; border-top: 1px solid var(--o-border-color, #ebeef5); margin: 20px 0 12px; }

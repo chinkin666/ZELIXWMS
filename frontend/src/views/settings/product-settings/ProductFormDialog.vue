@@ -595,7 +595,7 @@ defineExpose({ resetImageUpload, submitting })
 }
 
 .o-inline-input:focus {
-  border-color: var(--o-brand-primary, #714B67);
+  border-color: var(--o-brand-primary, #0052A3);
   box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.12);
 }
 
@@ -646,13 +646,13 @@ select.o-inline-input {
 
 .o-notebook-tabs button:hover { color: var(--o-gray-900, #212529); }
 .o-notebook-tabs button.active {
-  color: var(--o-brand-primary, #714B67);
-  border-bottom-color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
+  border-bottom-color: var(--o-brand-primary, #0052A3);
 }
 
 .o-tab-count-badge {
   display: inline-block;
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
   color: #fff;
   font-size: 10px;
   font-weight: 700;
@@ -705,13 +705,13 @@ select.o-inline-input {
   background: none;
   border: 1px dashed #999;
   border-radius: var(--o-border-radius, 4px);
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
 }
 .o-add-line-btn:hover {
-  border-color: var(--o-brand-primary, #714B67);
+  border-color: var(--o-brand-primary, #0052A3);
   background: rgba(113, 75, 103, 0.04);
 }
 

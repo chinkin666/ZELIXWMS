@@ -235,7 +235,7 @@ onUnmounted(() => document.removeEventListener('keydown', onGlobalKeydown))
   background: var(--o-brand-lighter, #FAF0EA);
 }
 .cmd-item.active {
-  color: var(--o-brand-primary, #D97756);
+  color: var(--o-brand-primary, #0052A3);
 }
 
 .cmd-item-label {

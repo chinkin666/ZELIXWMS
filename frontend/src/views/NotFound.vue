@@ -43,7 +43,7 @@ function goHome() {
 .not-found__code {
   font-size: 6rem;
   font-weight: 700;
-  color: var(--o-brand-primary, #D97756);
+  color: var(--o-brand-primary, #0052A3);
   margin: 0;
   line-height: 1;
   opacity: 0.8;
@@ -62,7 +62,7 @@ function goHome() {
 
 .not-found__button {
   padding: 0.75rem 2rem;
-  background: var(--o-brand-primary, #D97756);
+  background: var(--o-brand-primary, #0052A3);
   color: #fff;
   border: none;
   font-size: 1rem;

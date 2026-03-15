@@ -696,7 +696,7 @@ watch(visible, (newVal) => {
 .upload-drop-zone:hover,
 .upload-drop-zone.drag-over {
   border-color: var(--o-brand-primary, #714b67);
-  background: var(--o-brand-primary-light, rgba(217, 119, 86, 0.05));
+  background: var(--o-brand-primary-light, rgba(0, 82, 163, 0.05));
 }
 
 .upload-text {
@@ -765,7 +765,7 @@ watch(visible, (newVal) => {
 
 .strategy-option.selected {
   border-color: var(--o-brand-primary, #714b67);
-  background-color: rgba(217, 119, 86, 0.05);
+  background-color: rgba(0, 82, 163, 0.05);
 }
 
 .strategy-option input[type="radio"] {

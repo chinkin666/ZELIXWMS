@@ -56,11 +56,11 @@ defineEmits<{
 .o-form-group > label { width: 140px; flex-shrink: 0; font-size: 13px; color: #606266; padding-top: 6px; }
 .o-form-group > input, .o-form-group > select, .o-form-group > textarea { flex: 1; min-width: 0; }
 .o-input { padding: 6px 10px; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px; font-size: 13px; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
-.o-input:focus { border-color: var(--o-primary, #714B67); }
+.o-input:focus { border-color: var(--o-primary, #0052A3); }
 .o-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
 .o-toggle input { display: none; }
 .o-toggle-slider { width: 36px; height: 20px; background: #ccc; border-radius: 10px; position: relative; transition: background 0.2s; }
 .o-toggle-slider::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: transform 0.2s; }
-.o-toggle input:checked + .o-toggle-slider { background: var(--o-primary, #714B67); }
+.o-toggle input:checked + .o-toggle-slider { background: var(--o-primary, #0052A3); }
 .o-toggle input:checked + .o-toggle-slider::after { transform: translateX(16px); }
 </style>

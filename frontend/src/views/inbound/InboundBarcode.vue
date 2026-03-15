@@ -167,9 +167,9 @@ onMounted(async () => {
 }
 
 .toolbar-btn:first-child {
-  background: #D97756;
+  background: #0052A3;
   color: #fff;
-  border-color: #D97756;
+  border-color: #0052A3;
 }
 
 .toolbar-options {

@@ -158,8 +158,8 @@ function focusInput() {
 }
 
 .o-tag-input--focused {
-  border-color: var(--o-brand-primary, #714B67);
-  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.15);
+  border-color: var(--o-brand-primary, #0052A3);
+  box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.15);
 }
 
 .o-tag-chip {
@@ -167,7 +167,7 @@ function focusInput() {
   align-items: center;
   gap: 0.125rem;
   background: var(--o-brand-lightest, #e8dfe6);
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
   border-radius: var(--o-border-radius-sm, 3px);
   padding: 0.125rem 0.375rem;
   font-size: var(--o-font-size-small, 0.8125rem);
@@ -188,7 +188,7 @@ function focusInput() {
   justify-content: center;
   background: none;
   border: none;
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
   font-size: 1rem;
   line-height: 1;
   padding: 0 0.125rem;
@@ -254,7 +254,7 @@ function focusInput() {
 
 .o-tag-suggestion-item:hover {
   background: var(--o-brand-light, #f0e6ed);
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
 }
 
 [data-theme="dark"] .o-tag-input {
@@ -264,7 +264,7 @@ function focusInput() {
 
 [data-theme="dark"] .o-tag-input--focused {
   border-color: var(--o-brand-primary);
-  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.25);
+  box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.25);
 }
 
 [data-theme="dark"] .o-tag-chip {

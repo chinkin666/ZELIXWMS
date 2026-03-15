@@ -203,7 +203,7 @@ const isActiveGroup = (group: string) => {
   top: 100%;
   left: 0;
   min-width: 200px;
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
   z-index: 1000;
   padding: 4px 0;

@@ -9,29 +9,29 @@
 }
 
 :root {
-  /* Brand Colors — Claude / Anthropic warm palette */
-  --o-brand-odoo: #D97756;
-  --o-brand-primary: #D97756;
-  --o-brand-secondary: #8B7E74;
-  --o-brand-lightsecondary: #FAF7F5;
-  --o-action: #D97756;
+  /* Brand Colors — Corporate Blue (佐川スタイル) */
+  --o-brand-odoo: #0052A3;
+  --o-brand-primary: #0052A3;
+  --o-brand-secondary: #6B7B8D;
+  --o-brand-lightsecondary: #F4F7FA;
+  --o-action: #0052A3;
 
   /* Semantic */
-  --o-success: #3D8B37;
-  --o-info: #4A90A4;
-  --o-warning: #D4A017;
-  --o-danger: #C0392B;
+  --o-success: #2E7D32;
+  --o-info: #0277BD;
+  --o-warning: #F57F17;
+  --o-danger: #C62828;
 
-  /* Grayscale — warm neutral */
-  --o-gray-100: #FAF7F5;
-  --o-gray-200: #F0EBE6;
-  --o-gray-300: #E2DBD5;
-  --o-gray-400: #C8BEB6;
-  --o-gray-500: #A69B91;
-  --o-gray-600: #7A706A;
-  --o-gray-700: #4A433D;
-  --o-gray-800: #2D2926;
-  --o-gray-900: #1A1613;
+  /* Grayscale — cool neutral */
+  --o-gray-100: #F8F9FA;
+  --o-gray-200: #E9ECEF;
+  --o-gray-300: #DEE2E6;
+  --o-gray-400: #CED4DA;
+  --o-gray-500: #ADB5BD;
+  --o-gray-600: #6C757D;
+  --o-gray-700: #495057;
+  --o-gray-800: #343A40;
+  --o-gray-900: #212529;
 
   /* Layout */
   --o-navbar-height: 46px;
@@ -39,21 +39,21 @@
   --o-font-size-small: 0.8125rem;
   --o-font-size-smaller: 0.75rem;
   --o-spacer: 1rem;
-  --o-border-color: #E2DBD5;
+  --o-border-color: #DEE2E6;
   --o-border-radius: 0;
   --o-border-radius-sm: 0;
   --o-border-radius-lg: 0;
 
-  --o-webclient-background: #FAF7F5;
+  --o-webclient-background: #F4F6F9;
   --o-view-background: #ffffff;
 
   /* Hover & Selection */
-  --o-list-hover: #FDF5F0;
-  --o-list-selected: #FAEEE7;
-  --o-brand-light: #F5E1D8;
-  --o-brand-lighter: #FAF0EA;
-  --o-brand-lightest: #FDF7F4;
-  --o-brand-hover-dark: #B85D3A;
+  --o-list-hover: #EBF2FA;
+  --o-list-selected: #D6E4F5;
+  --o-brand-light: #B3D1F0;
+  --o-brand-lighter: #D6E8F7;
+  --o-brand-lightest: #EBF2FA;
+  --o-brand-hover-dark: #003D7A;
 
   /* Danger light */
   --o-danger-light: #FDF2F0;
@@ -106,7 +106,7 @@
   --text-muted: var(--o-gray-500);
   --odoo-brand: var(--o-brand-primary);
   --odoo-purple: var(--o-brand-primary);
-  --odoo-purple-dark: #B85D3A;
+  --odoo-purple-dark: #003D7A;
   --success: var(--o-success);
   --danger: var(--o-danger);
   --warning: var(--o-warning);
@@ -115,9 +115,9 @@
   --shadow-md: var(--o-shadow-md);
   --shadow-lg: var(--o-shadow-lg);
   --topbar-height: var(--o-navbar-height);
-  --bg-sidebar: #2D2926;
-  --bg-sidebar-hover: rgba(255, 255, 255, 0.06);
-  --bg-sidebar-active: rgba(217, 119, 86, 0.3);
+  --bg-sidebar: #1A2332;
+  --bg-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --bg-sidebar-active: rgba(0, 82, 163, 0.4);
   --text-sidebar: rgba(255, 255, 255, 0.7);
   --text-sidebar-active: #fff;
 }
@@ -139,11 +139,11 @@
   --o-view-background: #1E1B18;
 
   /* Hover & Selection */
-  --o-list-hover: rgba(217, 119, 86, 0.12);
-  --o-list-selected: rgba(217, 119, 86, 0.18);
-  --o-brand-light: rgba(217, 119, 86, 0.15);
-  --o-brand-lighter: rgba(217, 119, 86, 0.12);
-  --o-brand-lightest: rgba(217, 119, 86, 0.2);
+  --o-list-hover: rgba(0, 82, 163, 0.12);
+  --o-list-selected: rgba(0, 82, 163, 0.18);
+  --o-brand-light: rgba(0, 82, 163, 0.15);
+  --o-brand-lighter: rgba(0, 82, 163, 0.12);
+  --o-brand-lightest: rgba(0, 82, 163, 0.2);
   --o-brand-hover-dark: #E8946E;
 
   /* Danger light */
@@ -303,7 +303,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   line-height: 0;
   transition: color 0.15s, background 0.15s;
 }
-.o-btn-icon:hover { color: var(--o-brand-primary, #714B67); background: var(--o-gray-100, #f1f3f5); }
+.o-btn-icon:hover { color: var(--o-brand-primary, #0052A3); background: var(--o-gray-100, #f1f3f5); }
 .o-btn-icon--danger:hover { color: #dc3545; background: #fef0f0; }
 
 /* ===== Filter Tabs ===== */
@@ -327,8 +327,8 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   transition: all 0.15s;
   white-space: nowrap;
 }
-.o-filter-tab:hover { border-color: var(--o-brand-primary, #714B67); color: var(--o-brand-primary, #714B67); }
-.o-filter-tab.active { background: var(--o-brand-primary, #714B67); color: #fff; border-color: var(--o-brand-primary, #714B67); }
+.o-filter-tab:hover { border-color: var(--o-brand-primary, #0052A3); color: var(--o-brand-primary, #0052A3); }
+.o-filter-tab.active { background: var(--o-brand-primary, #0052A3); color: #fff; border-color: var(--o-brand-primary, #0052A3); }
 .o-tab-count {
   font-size: 0.6875rem;
   background: rgba(0,0,0,0.1);
@@ -372,7 +372,7 @@ select.o-input {
 .o-input:focus {
   border-color: var(--o-brand-primary);
   outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(217, 119, 86, 0.25);
+  box-shadow: 0 0 0 0.2rem rgba(0, 82, 163, 0.25);
 }
 
 /* ===== Odoo Badge ===== */

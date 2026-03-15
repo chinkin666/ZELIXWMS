@@ -197,11 +197,11 @@ const activeFilterCount = computed(() => Object.keys(activeFilters.value).length
 }
 .o-sp-tab:hover { color: var(--o-gray-900, #212529); }
 .o-sp-tab.active {
-  color: var(--o-brand-primary, #714B67);
-  border-bottom-color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
+  border-bottom-color: var(--o-brand-primary, #0052A3);
 }
 .o-sp-badge {
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
   color: #fff;
   font-size: 0.625rem;
   padding: 0.0625rem 0.375rem;
@@ -239,13 +239,13 @@ const activeFilterCount = computed(() => Object.keys(activeFilters.value).length
   transition: background 0.1s;
 }
 .o-sp-option:hover { background: var(--o-gray-100, #f8f9fa); }
-.o-sp-option.active { background: var(--o-brand-light); color: var(--o-brand-primary, #714B67); font-weight: 500; }
+.o-sp-option.active { background: var(--o-brand-light); color: var(--o-brand-primary, #0052A3); font-weight: 500; }
 
 .o-sp-check {
   width: 1rem;
   text-align: center;
   font-size: 0.75rem;
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
 }
 
 .o-sp-empty {
@@ -295,7 +295,7 @@ const activeFilterCount = computed(() => Object.keys(activeFilters.value).length
   align-items: center;
   gap: 0.25rem;
   padding: 0.1875rem 0.5rem;
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
   color: #fff;
   font-size: var(--o-font-size-smaller, 0.75rem);
   border-radius: 10rem;

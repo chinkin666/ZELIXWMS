@@ -101,8 +101,8 @@ async function lookup() {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid var(--o-brand-primary, #D97756);
-  background: var(--o-brand-primary, #D97756);
+  border: 1px solid var(--o-brand-primary, #0052A3);
+  background: var(--o-brand-primary, #0052A3);
   color: #fff;
   cursor: pointer;
   flex-shrink: 0;

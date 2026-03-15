@@ -955,7 +955,7 @@ const handleLoad = async () => {
 .target-description-box {
   background: var(--o-view-background, #fff);
   border: 1px solid var(--o-border-color, #e4e7ed);
-  border-left: 3px solid var(--o-brand-primary, #D97756);
+  border-left: 3px solid var(--o-brand-primary, #0052A3);
   padding: 12px 16px;
   margin-top: 8px;
   max-height: 200px;

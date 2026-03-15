@@ -315,7 +315,7 @@ const fromDateInput = (val: string): string => {
 .o-add-tag-btn {
   background: none;
   border: none;
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
   font-size: 12px;
   cursor: pointer;
   padding: 2px 0;

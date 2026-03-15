@@ -267,7 +267,7 @@ onMounted(() => {
 }
 
 .radio-option input[type="radio"] {
-  accent-color: var(--o-brand-primary, #D97756);
+  accent-color: var(--o-brand-primary, #0052A3);
 }
 
 .method-card {
@@ -295,8 +295,8 @@ onMounted(() => {
 }
 
 .o-tab.active {
-  color: var(--o-brand-primary, #D97756);
-  border-bottom-color: var(--o-brand-primary, #D97756);
+  color: var(--o-brand-primary, #0052A3);
+  border-bottom-color: var(--o-brand-primary, #0052A3);
   font-weight: 500;
 }
 
@@ -320,8 +320,8 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.15s;
 }
-.scale-btn:hover { border-color: var(--o-brand-primary, #D97756); color: var(--o-brand-primary); }
-.scale-btn.active { background: var(--o-brand-primary, #D97756); color: #fff; border-color: var(--o-brand-primary); }
+.scale-btn:hover { border-color: var(--o-brand-primary, #0052A3); color: var(--o-brand-primary); }
+.scale-btn.active { background: var(--o-brand-primary, #0052A3); color: #fff; border-color: var(--o-brand-primary); }
 .params-actions { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
 .params-saved { font-size: 12px; color: var(--o-success, #3D8B37); }
 

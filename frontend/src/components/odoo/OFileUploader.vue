@@ -253,12 +253,12 @@ function onFileChange(event: Event) {
 }
 
 .o-file-dropzone:hover {
-  border-color: var(--o-brand-primary, #714B67);
+  border-color: var(--o-brand-primary, #0052A3);
   background: var(--o-brand-light, #f0e6ed);
 }
 
 .o-file-dropzone--over {
-  border-color: var(--o-brand-primary, #714B67);
+  border-color: var(--o-brand-primary, #0052A3);
   background: var(--o-brand-lighter, #ede8eb);
 }
 
@@ -381,7 +381,7 @@ function onFileChange(event: Event) {
 
 .o-file-progress-bar {
   height: 100%;
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
   border-radius: 2px;
   transition: width 0.2s ease;
 }

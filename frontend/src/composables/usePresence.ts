@@ -13,7 +13,7 @@ export interface PresenceUser {
 }
 
 const AVATAR_COLORS = [
-  '#714B67',
+  '#0052A3',
   '#017E84',
   '#E07C24',
   '#2196F3',

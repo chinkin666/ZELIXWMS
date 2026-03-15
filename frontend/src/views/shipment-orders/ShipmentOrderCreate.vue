@@ -1009,8 +1009,8 @@ onBeforeUnmount(() => {
   cursor: pointer;
   transition: all 0.15s;
 }
-.o-filter-tab:hover { border-color: var(--o-brand-primary, #714B67); color: var(--o-brand-primary, #714B67); }
-.o-filter-tab.active { background: var(--o-brand-primary, #714B67); color: #fff; border-color: var(--o-brand-primary, #714B67); }
+.o-filter-tab:hover { border-color: var(--o-brand-primary, #0052A3); color: var(--o-brand-primary, #0052A3); }
+.o-filter-tab.active { background: var(--o-brand-primary, #0052A3); color: #fff; border-color: var(--o-brand-primary, #0052A3); }
 
 .o-tab-count {
   font-size: 0.6875rem;
@@ -1052,14 +1052,14 @@ onBeforeUnmount(() => {
 
 /* Column resize handle */
 .o-resize-handle { position: absolute; top: 0; right: 0; bottom: 0; width: 5px; cursor: col-resize; background: transparent; transition: background 0.15s; z-index: 1; }
-.o-resize-handle:hover, .o-table--resizing .o-resize-handle { background: var(--o-brand-primary, #714B67); }
+.o-resize-handle:hover, .o-table--resizing .o-resize-handle { background: var(--o-brand-primary, #0052A3); }
 
 /* Page-specific cell styles */
 .o-table-td--error { background: #fff0f0; }
 .o-cell-sub { font-size: 11px; color: var(--o-gray-500, #909399); }
 .product-item__img--empty { background: var(--o-gray-100, #f5f5f5); }
 .o-cool-tag { font-size: 11px; padding: 1px 5px; border-radius: 3px; display: inline-block; }
-.customer-mgmt-link { color: var(--o-brand-primary, #714B67); text-decoration: none; font-weight: 500; }
+.customer-mgmt-link { color: var(--o-brand-primary, #0052A3); text-decoration: none; font-weight: 500; }
 .customer-mgmt-link:hover { text-decoration: underline; }
 
 /* Bulk Dialogs */
@@ -1080,7 +1080,7 @@ onBeforeUnmount(() => {
   width: fit-content;
 }
 .bulk-dialog__badge strong {
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
   font-size: 0.9375rem;
 }
 .bulk-dialog__field {
@@ -1108,7 +1108,7 @@ onBeforeUnmount(() => {
 }
 .bulk-dialog__select:focus,
 .bulk-dialog__input:focus {
-  border-color: var(--o-brand-primary, #714B67);
+  border-color: var(--o-brand-primary, #0052A3);
   box-shadow: 0 0 0 2px rgba(113, 75, 103, 0.12);
 }
 .bulk-dialog__checkbox {
@@ -1122,7 +1122,7 @@ onBeforeUnmount(() => {
 .bulk-dialog__checkbox input[type="checkbox"] {
   width: 1rem;
   height: 1rem;
-  accent-color: var(--o-brand-primary, #714B67);
+  accent-color: var(--o-brand-primary, #0052A3);
   cursor: pointer;
 }
 .bulk-dialog__hint {
@@ -1155,5 +1155,5 @@ onBeforeUnmount(() => {
 .column-settings__actions { display: flex; justify-content: flex-end; }
 .column-settings__list { display: flex; flex-direction: column; gap: 6px; max-height: 400px; overflow-y: auto; }
 .column-settings__item { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; padding: 4px 0; }
-.column-settings__item input { accent-color: var(--o-brand-primary, #714B67); }
+.column-settings__item input { accent-color: var(--o-brand-primary, #0052A3); }
 </style>

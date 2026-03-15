@@ -904,9 +904,9 @@ const handleSubmit = async () => {
 
 .o-field-value :deep(.o-input:focus),
 .o-field-value :deep(select.o-input:focus) {
-  border-color: var(--o-brand-primary, #714B67);
+  border-color: var(--o-brand-primary, #0052A3);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.12);
+  box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.12);
 }
 
 /* ── Notebook ── */
@@ -935,8 +935,8 @@ const handleSubmit = async () => {
 
 .o-notebook-tabs button:hover { color: var(--o-gray-900, #212529); }
 .o-notebook-tabs button.active {
-  color: var(--o-brand-primary, #714B67);
-  border-bottom-color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
+  border-bottom-color: var(--o-brand-primary, #0052A3);
 }
 
 .o-tab-error {
@@ -994,9 +994,9 @@ const handleSubmit = async () => {
 
 .o-form-field :deep(.o-input:focus),
 .o-form-field :deep(select.o-input:focus) {
-  border-color: var(--o-brand-primary, #714B67);
+  border-color: var(--o-brand-primary, #0052A3);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.12);
+  box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.12);
 }
 
 .required-badge {
@@ -1048,8 +1048,8 @@ const handleSubmit = async () => {
 }
 
 .o-inline-input:focus {
-  border-color: var(--o-brand-primary, #714B67);
-  box-shadow: 0 0 0 2px rgba(217, 119, 86, 0.12);
+  border-color: var(--o-brand-primary, #0052A3);
+  box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.12);
 }
 .o-inline-input--error {
   border-color: var(--o-danger);
@@ -1078,14 +1078,14 @@ const handleSubmit = async () => {
   background: none;
   border: 1px dashed var(--o-gray-500);
   border-radius: var(--o-border-radius, 4px);
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
 }
 .o-add-line-btn:hover {
-  border-color: var(--o-brand-primary, #714B67);
-  background: rgba(217, 119, 86, 0.04);
+  border-color: var(--o-brand-primary, #0052A3);
+  background: rgba(0, 82, 163, 0.04);
 }
 
 /* ── Footer ── */
@@ -1205,9 +1205,9 @@ const handleSubmit = async () => {
 }
 
 .o-handling-chip--active {
-  background: var(--o-brand-primary, #714B67);
+  background: var(--o-brand-primary, #0052A3);
   color: var(--o-view-background);
-  border-color: var(--o-brand-primary, #714B67);
+  border-color: var(--o-brand-primary, #0052A3);
 }
 
 .o-handling-chip--disabled {
@@ -1216,8 +1216,8 @@ const handleSubmit = async () => {
 }
 
 .o-handling-chip:not(.o-handling-chip--active):not(.o-handling-chip--disabled):hover {
-  border-color: var(--o-brand-primary, #714B67);
-  color: var(--o-brand-primary, #714B67);
+  border-color: var(--o-brand-primary, #0052A3);
+  color: var(--o-brand-primary, #0052A3);
 }
 
 /* ── Sender search ── */
@@ -1242,7 +1242,7 @@ const handleSubmit = async () => {
   font-size: 12px;
 }
 .o-btn-text:hover {
-  color: var(--o-brand-primary, #714B67);
+  color: var(--o-brand-primary, #0052A3);
 }
 
 .o-sender-search-panel {
@@ -1274,7 +1274,7 @@ const handleSubmit = async () => {
 }
 
 .o-sender-search-item:hover {
-  background: rgba(217, 119, 86, 0.08);
+  background: rgba(0, 82, 163, 0.08);
 }
 
 .o-sender-search-name {
@@ -1301,8 +1301,8 @@ const handleSubmit = async () => {
   transition: all 0.15s;
 }
 .o-product-search-btn:hover {
-  border-color: var(--o-brand-primary, #714B67);
-  color: var(--o-brand-primary, #714B67);
+  border-color: var(--o-brand-primary, #0052A3);
+  color: var(--o-brand-primary, #0052A3);
 }
 
 .o-product-dialog {

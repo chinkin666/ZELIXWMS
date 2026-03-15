@@ -298,8 +298,8 @@ onMounted(() => {
   padding: 10px 12px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: 6px;
   background: #fff; cursor: pointer; text-align: left; transition: all 0.15s;
 }
-.preset-card:hover { border-color: var(--o-brand-primary, #D97756); background: #fdf8f6; }
-.preset-card--selected { border-color: var(--o-brand-primary, #D97756); background: #fdf8f6; box-shadow: 0 0 0 2px rgba(217,119,86,0.2); }
+.preset-card:hover { border-color: var(--o-brand-primary, #0052A3); background: #fdf8f6; }
+.preset-card--selected { border-color: var(--o-brand-primary, #0052A3); background: #fdf8f6; box-shadow: 0 0 0 2px rgba(0,82,163,0.2); }
 .preset-name { font-size: 13px; font-weight: 600; color: #303133; }
 .preset-desc { font-size: 11px; color: #909399; }
 .preset-divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; color: #909399; font-size: 12px; }

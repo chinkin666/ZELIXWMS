@@ -272,7 +272,7 @@ onMounted(() => loadData())
   text-align: center;
 }
 
-.summary-card--primary { border-left: 4px solid var(--o-brand-primary, #D97756); }
+.summary-card--primary { border-left: 4px solid var(--o-brand-primary, #0052A3); }
 .summary-card--warning { border-left: 4px solid var(--o-warning); }
 .summary-card--info { border-left: 4px solid var(--o-info); }
 .summary-card--success { border-left: 4px solid var(--o-success); }
@@ -340,7 +340,7 @@ onMounted(() => loadData())
 .order-number {
   font-family: monospace;
   font-weight: 600;
-  color: var(--o-brand-primary, #D97756);
+  color: var(--o-brand-primary, #0052A3);
 }
 
 .today-info {

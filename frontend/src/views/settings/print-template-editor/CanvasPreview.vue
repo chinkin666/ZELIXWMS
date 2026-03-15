@@ -150,5 +150,5 @@ defineExpose({ stageEl })
   outline: none;
   transition: border-color 0.15s;
 }
-.o-input:focus { border-color: var(--o-brand-primary, #D97756); }
+.o-input:focus { border-color: var(--o-brand-primary, #0052A3); }
 </style>
