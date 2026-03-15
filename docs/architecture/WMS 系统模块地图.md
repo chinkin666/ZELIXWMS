@@ -1,3 +1,6 @@
+> **状态: 产品路线图参考** — OMS + WMS + TMS + Billing + Analytics + Platform 分层与当前三端设计(admin/frontend/portal)一致。作为长期产品规划参考。
+> **ステータス: プロダクトロードマップ参考** — 6層構造は現行の3アプリ設計と整合。長期プロダクト計画の参考として保持。
+
 《ZELIX WMS 系统模块地图（像 SAP 那样的产品地图）》。
 这种 Product Map（产品地图） 是很多企业软件都会做的，比如：
 

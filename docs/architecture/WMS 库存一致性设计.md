@@ -1,3 +1,6 @@
+> **状态: 已实现** — StockQuant(available/reserved) + InventoryLedger + 原子更新($inc) + rebuildInventory() + releaseExpiredReservations() 已在系统中运行。无需额外开发。
+> **ステータス: 実装済** — StockQuant + InventoryLedger + アトミック更新 + 在庫再構築 + 期限切れ予約解放が稼働中。追加開発不要。
+
 《ZELIX WMS 库存一致性设计（Consistency Model）》。
 这个设计解决的是 仓库系统在高并发情况下如何保证库存正确。
 

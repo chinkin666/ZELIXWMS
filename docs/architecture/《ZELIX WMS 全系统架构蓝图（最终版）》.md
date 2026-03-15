@@ -1,3 +1,6 @@
+> **状态: 远期目标（2-3年）** — 描述的是 Kafka + Redis Cluster + MongoDB Sharding + 微服务架构。当前单体 Express + MongoDB 对现阶段业务量完全够用。等日均订单过万再逐步演进。
+> **ステータス: 長期目標（2-3年）** — Kafka + Redis + MongoDB Sharding + マイクロサービス構成。現行のモノリス Express + MongoDB は現段階の業務量に十分対応。日次1万注文超過時に段階的に進化。
+
 《ZELIX WMS 全系统架构蓝图（最终版）》。
 这张图把我们前面所有设计 统一到一个完整系统架构，适合：
 
