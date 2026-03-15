@@ -229,25 +229,35 @@ defineExpose({ focus, scanInputRef })
 
 .scan-input {
   width: 100%;
-  font-size: 18px;
-  padding: 12px 40px 12px 16px;
+  font-size: 22px;
+  font-weight: 600;
+  padding: 14px 44px 14px 16px;
   border: 2px solid #e6a23c;
-  border-radius: 4px;
+  border-radius: 6px;
   background: #fffef5;
   outline: none;
   box-sizing: border-box;
+  letter-spacing: 0.5px;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .scan-input:focus {
   border-color: #409eff;
   background: #fff;
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.15);
+}
+
+.scan-input::placeholder {
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
 .scan-input-icon {
   position: absolute;
-  right: 12px;
+  right: 14px;
   color: #909399;
-  font-size: 16px;
+  font-size: 18px;
   pointer-events: none;
 }
 
@@ -340,4 +350,69 @@ defineExpose({ focus, scanInputRef })
 .scan-history-time { color: #909399; min-width: 50px; }
 .scan-history-value { font-family: monospace; font-weight: 600; min-width: 80px; }
 .scan-history-detail { flex: 1; }
+
+/* タブレット / 平板 */
+@media (max-width: 1024px) {
+  .left-panel {
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    gap: 8px;
+  }
+
+  .left-panel__header {
+    width: 100%;
+  }
+
+  .order-info-section {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .scan-input-section {
+    flex: 1;
+    min-width: 280px;
+    padding: 0;
+  }
+
+  .product-image-section {
+    display: flex;
+    align-items: center;
+  }
+
+  .auto-print-section {
+    padding: 4px 0;
+  }
+
+  .scanned-product-section {
+    flex: 1;
+    min-width: 200px;
+    min-height: auto;
+  }
+
+  .scan-history {
+    width: 100%;
+    max-height: 80px;
+  }
+}
+
+/* モバイル / 手机 */
+@media (max-width: 768px) {
+  .left-panel {
+    flex-direction: column;
+    padding: 10px 12px;
+  }
+
+  .product-image-section {
+    display: none;
+  }
+
+  .scan-input {
+    font-size: 18px !important;
+    padding: 12px 40px 12px 14px !important;
+  }
+}
 </style>

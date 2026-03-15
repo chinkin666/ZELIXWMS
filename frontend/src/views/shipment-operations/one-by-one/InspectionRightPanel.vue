@@ -193,4 +193,62 @@ function getRowClassName(row: InspectionItem): string {
 
 .row-completed { background-color: #f0f9eb !important; }
 .row-completed:hover td { background-color: #e1f3d8 !important; }
+
+/* タブレット / 平板 */
+@media (max-width: 1024px) {
+  .right-panel {
+    padding: 12px;
+    overflow-x: auto;
+  }
+
+  .stats-bar {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stat-item {
+    padding: 8px 16px;
+    min-width: 80px;
+    flex: 1;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .product-table-section {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* モバイル / 手机 */
+@media (max-width: 768px) {
+  .right-panel {
+    padding: 8px;
+  }
+
+  .stats-bar {
+    gap: 6px;
+  }
+
+  .stat-item {
+    padding: 6px 10px;
+    min-width: 60px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .cell-inspected,
+  .cell-remaining {
+    min-height: 44px;
+    font-size: 14px;
+  }
+}
 </style>

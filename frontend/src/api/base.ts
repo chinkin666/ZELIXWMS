@@ -20,11 +20,15 @@ function normalizePathPrefix(prefix: string): string {
 export { apiFetch } from './http'
 
 export function getApiBaseUrl(): string {
-  const explicit = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim()
+  // import.meta.env が未定義の場合はデフォルト値を返す / import.meta.env 未定义时返回默认值
+  const env = typeof import.meta !== 'undefined' ? import.meta.env : undefined
+  if (!env) return `${DEFAULT_BACKEND_ORIGIN}${DEFAULT_API_PREFIX}`
+
+  const explicit = (env.VITE_API_BASE_URL as string | undefined)?.trim()
   if (explicit) return trimTrailingSlashes(explicit)
 
-  const origin = (import.meta.env.VITE_BACKEND_ORIGIN as string | undefined)?.trim() || DEFAULT_BACKEND_ORIGIN
-  const prefix = (import.meta.env.VITE_BACKEND_API_PREFIX as string | undefined)?.trim() || DEFAULT_API_PREFIX
+  const origin = (env.VITE_BACKEND_ORIGIN as string | undefined)?.trim() || DEFAULT_BACKEND_ORIGIN
+  const prefix = (env.VITE_BACKEND_API_PREFIX as string | undefined)?.trim() || DEFAULT_API_PREFIX
 
   return `${trimTrailingSlashes(origin)}${normalizePathPrefix(prefix)}`
 }

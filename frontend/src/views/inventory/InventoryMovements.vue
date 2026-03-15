@@ -14,22 +14,24 @@
       @search="handleSearch"
     />
 
-    <div class="table-section">
-      <Table
-        :columns="tableColumns"
-        :data="rows"
-        row-key="_id"
-        highlight-columns-on-hover
-        pagination-enabled
-        pagination-mode="server"
-        :page-size="pageSize"
-        :page-sizes="[25, 50, 100]"
-        :total="total"
-        :current-page="currentPage"
-        :global-search-text="globalSearchText"
-        @page-change="onPageChange"
-      />
-    </div>
+    <OLoadingState :loading="isLoading" :empty="!isLoading && rows.length === 0" :empty-text="t('wms.inventory.noMovements', '在庫移動データがありません')">
+      <div class="table-section">
+        <Table
+          :columns="tableColumns"
+          :data="rows"
+          row-key="_id"
+          highlight-columns-on-hover
+          pagination-enabled
+          pagination-mode="server"
+          :page-size="pageSize"
+          :page-sizes="[25, 50, 100]"
+          :total="total"
+          :current-page="currentPage"
+          :global-search-text="globalSearchText"
+          @page-change="onPageChange"
+        />
+      </div>
+    </OLoadingState>
   </div>
 </template>
 
@@ -38,6 +40,7 @@ import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
+import OLoadingState from '@/components/odoo/OLoadingState.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import SearchForm from '@/components/search/SearchForm.vue'
 import Table from '@/components/table/Table.vue'

@@ -198,7 +198,13 @@ class HttpClient {
 
 // ─── Singleton Export / シングルトンエクスポート ─────────────────────────────
 
-export const http = new HttpClient(getApiBaseUrl())
+let _http: HttpClient | null = null
+export const http = new Proxy({} as HttpClient, {
+  get(_target, prop) {
+    if (!_http) _http = new HttpClient(getApiBaseUrl())
+    return (_http as any)[prop]
+  },
+})
 
 // ─── apiFetch: fetch() のドロップイン置換 / fetch() 的直接替代 ──────────────
 // 既存の API ファイルで fetch() → apiFetch() に差し替えるだけで JWT 認証が付く

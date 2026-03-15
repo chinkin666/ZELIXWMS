@@ -59,35 +59,37 @@
       @search="handleSearch"
     />
 
-    <!-- 集計表示 -->
-    <div v-if="viewMode === 'summary'" class="table-section">
-      <Table
-        :columns="summaryTableColumns"
-        :data="summaryRows"
-        row-key="productId"
-        highlight-columns-on-hover
-        pagination-enabled
-        pagination-mode="client"
-        :page-size="20"
-        :page-sizes="[20, 50, 100]"
-        :global-search-text="globalSearchText"
-      />
-    </div>
+    <OLoadingState :loading="isLoading" :empty="!isLoading && (viewMode === 'summary' ? summaryRows.length === 0 : detailRows.length === 0)">
+      <!-- 集計表示 -->
+      <div v-if="viewMode === 'summary'" class="table-section">
+        <Table
+          :columns="summaryTableColumns"
+          :data="summaryRows"
+          row-key="productId"
+          highlight-columns-on-hover
+          pagination-enabled
+          pagination-mode="client"
+          :page-size="20"
+          :page-sizes="[20, 50, 100]"
+          :global-search-text="globalSearchText"
+        />
+      </div>
 
-    <!-- 詳細表示 -->
-    <div v-else class="table-section">
-      <Table
-        :columns="detailTableColumns"
-        :data="detailRows"
-        row-key="_id"
-        highlight-columns-on-hover
-        pagination-enabled
-        pagination-mode="client"
-        :page-size="20"
-        :page-sizes="[20, 50, 100]"
-        :global-search-text="globalSearchText"
-      />
-    </div>
+      <!-- 詳細表示 -->
+      <div v-else class="table-section">
+        <Table
+          :columns="detailTableColumns"
+          :data="detailRows"
+          row-key="_id"
+          highlight-columns-on-hover
+          pagination-enabled
+          pagination-mode="client"
+          :page-size="20"
+          :page-sizes="[20, 50, 100]"
+          :global-search-text="globalSearchText"
+        />
+      </div>
+    </OLoadingState>
 
     <!-- Transfer Dialog -->
     <StockTransferDialog
@@ -108,6 +110,7 @@ import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import SearchForm from '@/components/search/SearchForm.vue'
 import Table from '@/components/table/Table.vue'
+import OLoadingState from '@/components/odoo/OLoadingState.vue'
 import StockTransferDialog from '@/components/inventory/StockTransferDialog.vue'
 import { fetchStock, fetchStockSummary, bulkAdjustStock } from '@/api/inventory'
 import { fetchProducts } from '@/api/product'

@@ -12,20 +12,22 @@
       </template>
     </ControlPanel>
 
-    <div class="table-section">
-      <Table
-        :columns="tableColumns"
-        :data="rows"
-        row-key="_id"
-        pagination-enabled
-        pagination-mode="server"
-        :page-size="pageSize"
-        :page-sizes="[10, 20, 50]"
-        :total="total"
-        :current-page="currentPage"
-        @page-change="handlePageChange"
-      />
-    </div>
+    <OLoadingState :loading="loading" :empty="!loading && rows.length === 0">
+      <div class="table-section">
+        <Table
+          :columns="tableColumns"
+          :data="rows"
+          row-key="_id"
+          pagination-enabled
+          pagination-mode="server"
+          :page-size="pageSize"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
+          :current-page="currentPage"
+          @page-change="handlePageChange"
+        />
+      </div>
+    </OLoadingState>
   </div>
 </template>
 
@@ -36,6 +38,7 @@ import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import Table from '@/components/table/Table.vue'
+import OLoadingState from '@/components/odoo/OLoadingState.vue'
 import type { TableColumn } from '@/types/table'
 import { useRouter } from 'vue-router'
 import {

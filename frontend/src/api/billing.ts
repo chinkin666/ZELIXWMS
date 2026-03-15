@@ -3,30 +3,6 @@ import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 
-// ── 運賃マスタ型定義 / 運賃マスター型定義 ──
-export interface ShippingRate {
-  _id: string
-  planName: string
-  carrierCode: string
-  carrierName: string
-  sizeCondition: string
-  baseRate: number
-  coolSurcharge: number
-  codSurcharge: number
-  isActive: boolean
-  memo?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface ShippingRateFilters {
-  search?: string
-  carrierCode?: string
-  isActive?: string
-  page?: number
-  limit?: number
-}
-
 // ── 請求レコード型定義 / 請求レコード型定義 ──
 export type BillingStatus = 'draft' | 'confirmed' | 'invoiced' | 'paid'
 
@@ -96,66 +72,6 @@ export interface BillingDashboardKpi {
   unpaidAmount: number
   currentPeriod: string
   recentRecords: BillingRecord[]
-}
-
-// ── 運賃マスタAPI / 運賃マスタAPI ──
-// 後端: /api/shipping-rates
-function buildShippingRateUrl(params?: ShippingRateFilters): string {
-  const url = new URL(`${API_BASE_URL}/shipping-rates`)
-  if (params) {
-    if (params.search) url.searchParams.append('search', params.search)
-    if (params.carrierCode) url.searchParams.append('carrierCode', params.carrierCode)
-    if (params.isActive) url.searchParams.append('isActive', params.isActive)
-    if (params.page) url.searchParams.append('page', String(params.page))
-    if (params.limit) url.searchParams.append('limit', String(params.limit))
-  }
-  return url.toString()
-}
-
-export async function fetchShippingRates(
-  params?: ShippingRateFilters,
-): Promise<{ data: ShippingRate[]; total: number }> {
-  const response = await apiFetch(buildShippingRateUrl(params))
-  if (!response.ok) {
-    throw new Error(`運賃マスタの取得に失敗しました: ${response.statusText}`)
-  }
-  return response.json()
-}
-
-export async function createShippingRate(data: Partial<ShippingRate>): Promise<ShippingRate> {
-  const response = await apiFetch(`${API_BASE_URL}/shipping-rates`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}))
-    throw new Error(body.message || `運賃マスタの作成に失敗しました: ${response.statusText}`)
-  }
-  return response.json()
-}
-
-export async function updateShippingRate(id: string, data: Partial<ShippingRate>): Promise<ShippingRate> {
-  const response = await apiFetch(`${API_BASE_URL}/shipping-rates/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}))
-    throw new Error(body.message || `運賃マスタの更新に失敗しました: ${response.statusText}`)
-  }
-  return response.json()
-}
-
-export async function deleteShippingRate(id: string): Promise<void> {
-  const response = await apiFetch(`${API_BASE_URL}/shipping-rates/${id}`, {
-    method: 'DELETE',
-  })
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}))
-    throw new Error(body.message || `運賃マスタの削除に失敗しました: ${response.statusText}`)
-  }
 }
 
 // ── 月次請求API / 月次請求API ──

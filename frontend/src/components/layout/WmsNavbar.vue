@@ -5,6 +5,7 @@ import { useI18n } from '../../composables/useI18n'
 import { useAuth } from '@/stores/auth'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { fetchWarehouses, type Warehouse } from '@/api/warehouse'
+import NotificationBell from './NotificationBell.vue'
 
 const props = defineProps<{
   menuItems: Array<{ label: string; to: string }>
@@ -49,8 +50,11 @@ const userDisplayName = computed(() => user.value?.displayName ?? 'User')
 const userInitial = computed(() => userDisplayName.value.charAt(0).toUpperCase())
 const userRole = computed(() => user.value?.role ?? '')
 
-function handleLogout() {
+async function handleLogout() {
   showUserMenu.value = false
+  // ログアウト確認 / 退出确认
+  const ok = await (window.confirm('ログアウトしますか？') as unknown as Promise<boolean>)
+  if (!ok) return
   clearAuth()
   router.push('/login')
 }
@@ -198,6 +202,9 @@ function closeMenus(e: MouseEvent) {
         <kbd class="o-nav-kbd">Ctrl K</kbd>
       </button>
 
+      <!-- 通知ベル / 通知铃铛 -->
+      <NotificationBell />
+
       <!-- Theme toggle / テーマ切替 -->
       <button class="o-systray-btn" :title="isDark ? 'ライトモード' : 'ダークモード'" @click="toggleTheme">
         <svg v-if="isDark" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -335,7 +342,9 @@ function closeMenus(e: MouseEvent) {
   height: 100%;
   display: flex;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 12px;
+  min-width: 40px;
+  justify-content: center;
   color: var(--NavBar-entry-color);
   background: none;
   border: none;

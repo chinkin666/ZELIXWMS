@@ -37,20 +37,22 @@
       </div>
     </div>
 
-    <div class="table-section">
-      <Table
-        :columns="tableColumns"
-        :data="rows"
-        row-key="_id"
-        pagination-enabled
-        pagination-mode="server"
-        :page-size="pageSize"
-        :page-sizes="[10, 20, 50]"
-        :total="total"
-        :current-page="currentPage"
-        @page-change="handlePageChange"
-      />
-    </div>
+    <OLoadingState :loading="loading" :empty="!loading && rows.length === 0">
+      <div class="table-section">
+        <Table
+          :columns="tableColumns"
+          :data="rows"
+          row-key="_id"
+          pagination-enabled
+          pagination-mode="server"
+          :page-size="pageSize"
+          :page-sizes="[10, 20, 50]"
+          :total="total"
+          :current-page="currentPage"
+          @page-change="handlePageChange"
+        />
+      </div>
+    </OLoadingState>
 
     <!-- 手動チャージ作成ダイアログ / 手动创建对话框 -->
     <ODialog v-model="createDialogVisible" title="作業チャージを追加" size="lg" @close="closeCreateDialog">
@@ -114,6 +116,7 @@ import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import Table from '@/components/table/Table.vue'
+import OLoadingState from '@/components/odoo/OLoadingState.vue'
 import type { TableColumn } from '@/types/table'
 import {
   fetchWorkCharges,

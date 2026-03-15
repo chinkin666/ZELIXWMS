@@ -14,21 +14,23 @@
       @search="handleSearch"
     />
 
-    <div class="table-section">
-      <Table
-        :columns="tableColumns"
-        :data="rows"
-        row-key="_id"
-        pagination-enabled
-        pagination-mode="server"
-        :total="total"
-        :current-page="currentPage"
-        :page-size="pageSize"
-        :page-sizes="[25, 50, 100]"
-        :global-search-text="globalSearchText"
-        @page-change="handlePageChange"
-      />
-    </div>
+    <OLoadingState :loading="isLoading" :empty="!isLoading && rows.length === 0">
+      <div class="table-section">
+        <Table
+          :columns="tableColumns"
+          :data="rows"
+          row-key="_id"
+          pagination-enabled
+          pagination-mode="server"
+          :total="total"
+          :current-page="currentPage"
+          :page-size="pageSize"
+          :page-sizes="[25, 50, 100]"
+          :global-search-text="globalSearchText"
+          @page-change="handlePageChange"
+        />
+      </div>
+    </OLoadingState>
   </div>
 </template>
 
@@ -41,6 +43,7 @@ import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import SearchForm from '@/components/search/SearchForm.vue'
 import Table from '@/components/table/Table.vue'
+import OLoadingState from '@/components/odoo/OLoadingState.vue'
 import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchStocktakingOrders,

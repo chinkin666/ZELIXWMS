@@ -283,6 +283,7 @@ import { useI18n } from '@/composables/useI18n'
 import { useInspectionScanHistory } from './composables/useInspectionScanHistory'
 import { useInspectionStorage } from './composables/useInspectionStorage'
 import { useAutoAdvance } from './composables/useAutoAdvance'
+import { beepSuccess, beepError, beepComplete } from '@/utils/scanBeep'
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
@@ -638,6 +639,7 @@ function tryAutoProductMatch(input: string) {
       item.remainingQuantity--
       lastScannedProduct.value = { sku: item.sku, name: item.name, barcodes: item.barcodes, imageUrl: item.productData?.imageUrl }
       addScanHistory(input, 'ok', `${item.name} x${item.inspectedQuantity}`)
+      beepSuccess()
       scanSuccessFlash.value = true
       setTimeout(() => { scanSuccessFlash.value = false }, 600)
       checkCompletion()
@@ -659,6 +661,7 @@ function handleProductMatch(input: string) {
 
   if (!matched) {
     addScanHistory(input, 'error', 'not found')
+    beepError()
     wrongScanValue.value = input
     wrongScanDialogVisible.value = true
     focusScanInput()
@@ -669,6 +672,7 @@ function handleProductMatch(input: string) {
   matched.remainingQuantity--
   lastScannedProduct.value = { sku: matched.sku, name: matched.name, barcodes: matched.barcodes, imageUrl: matched.productData?.imageUrl }
   addScanHistory(input, 'ok', `${matched.name} x${matched.inspectedQuantity}`)
+  beepSuccess()
   scanSuccessFlash.value = true
   setTimeout(() => { scanSuccessFlash.value = false }, 600)
   focusScanInput()
@@ -680,6 +684,9 @@ function handleProductMatch(input: string) {
 function checkCompletion() {
   const allDone = inspectionItems.value.every(item => item.remainingQuantity === 0)
   if (!allDone) return
+
+  // 検品完了チャイム / 检品完成提示音
+  beepComplete()
 
   const alreadyPrinted = !!(currentOrder.value as any)?.status?.printed?.isPrinted
 
@@ -1190,6 +1197,49 @@ function fkeyUnconfirm() {
   openUnconfirmDialog()
 }
 
+/**
+ * F3: 現在の注文をスキップして次の未検品注文へ移動
+ * F3: 跳过当前订单，移动到下一个未检品订单
+ */
+function fkeySkipToNext() {
+  if (pendingOrders.value.length <= 1) {
+    showToast(t('wms.inspection.noMoreOrders', '次の未検品注文がありません'), 'warning')
+    return
+  }
+  // 現在の注文を末尾に移動して次へ / 将当前订单移到末尾并切换到下一个
+  if (currentOrder.value) {
+    const currentId = String(currentOrder.value._id)
+    const idx = pendingOrders.value.findIndex(o => String(o._id) === currentId)
+    if (idx >= 0) {
+      const [skipped] = pendingOrders.value.splice(idx, 1)
+      pendingOrders.value.push(skipped)
+    }
+  }
+  const next = pendingOrders.value[0]
+  currentOrder.value = next
+  mode.value = 'product'
+  initializeInspectionItems()
+  showToast(t('wms.inspection.skippedToNext', 'スキップしました') + `: ${next.orderNumber || ''}`, 'info')
+  focusScanInput()
+}
+
+/**
+ * F8: 現在の注文を手動で検品完了にする（バーコード読めない場合等）
+ * F8: 手动将当前订单标记为检品完了（条码无法读取时等）
+ */
+async function fkeyManualComplete() {
+  if (!currentOrder.value) return
+  const ok = await (window.confirm(
+    t('wms.inspection.confirmManualComplete', `${currentOrder.value.orderNumber} を手動で検品完了にしますか？\n（バーコードが読めない場合等にご使用ください）`)
+  ) as unknown as Promise<boolean>)
+  if (!ok) return
+  // 全商品を検品済みにする / 将所有商品标记为已检品
+  for (const item of inspectionItems.value) {
+    item.inspectedQuantity = item.quantity
+  }
+  handleInspectionComplete()
+}
+
 function fkeyChangeInvoiceType() {
   if (!currentOrder.value) return
   openChangeInvoiceTypeDialogFn()
@@ -1199,12 +1249,12 @@ const fKeyDefs: FKeyDef[] = [
   { key: 'ESC', code: 'Escape', label: t('wms.inspection.goBack', '戻る'), action: handleGoBack },
   { key: 'F1', code: 'F1', label: t('wms.inspection.undoLast', '直前取消'), action: fkeyUndoLastScan },
   { key: 'F2', code: 'F2', label: t('wms.inspection.clearOrder', '注文クリア'), action: fkeyClearCurrentOrder },
-  { key: 'F3', code: 'F3', label: '' },
+  { key: 'F3', code: 'F3', label: t('wms.inspection.skipToNext', '次へスキップ'), action: fkeySkipToNext },
   { key: 'F4', code: 'F4', label: '' },
   { key: 'F5', code: 'F5', label: t('wms.inspection.adjustQty', '数量修正'), action: fkeyAdjustQuantity },
   { key: 'F6', code: 'F6', label: t('wms.inspection.splitOrder', '注文分割'), action: fkeySplitOrder },
   { key: 'F7', code: 'F7', label: '' },
-  { key: 'F8', code: 'F8', label: '' },
+  { key: 'F8', code: 'F8', label: t('wms.inspection.markComplete', '手動完了'), action: fkeyManualComplete },
   { key: 'F9', code: 'F9', label: t('wms.inspection.unconfirm', '確認取消'), action: fkeyUnconfirm },
   { key: 'F10', code: 'F10', label: '', labelOnly: t('wms.inspection.printInvoice', '納品書印刷') },
   { key: 'F11', code: 'F11', label: t('wms.inspection.changeInvoiceType', '送り状種類変更'), action: fkeyChangeInvoiceType },
@@ -1445,5 +1495,112 @@ onBeforeUnmount(() => {
   0% { background-color: inherit; }
   30% { background-color: #f0f9eb; border-color: #67c23a; }
   100% { background-color: inherit; }
+}
+
+/* ─── タブレット対応 / 平板适配 (768-1024px) ─────── */
+@media (max-width: 1024px) {
+  .inspection-page {
+    flex-direction: column;
+    height: auto;
+    padding-bottom: 64px;
+  }
+
+  .inspection-page :deep(.left-panel) {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .inspection-page :deep(.right-panel) {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .inspection-page :deep(.product-image) {
+    width: 120px;
+    height: 120px;
+  }
+
+  .inspection-progress-bar {
+    position: relative;
+  }
+
+  .fkey-bar {
+    gap: 3px;
+    padding: 6px 8px;
+  }
+
+  .fkey-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .fkey-btn .fkey-key {
+    font-size: 10px;
+    padding: 2px 6px;
+    min-width: 24px;
+  }
+}
+
+/* ─── モバイル対応 / 手机适配 (<768px) ─────────────── */
+@media (max-width: 768px) {
+  .inspection-page {
+    padding-bottom: 56px;
+  }
+
+  .inspection-page :deep(.left-panel) {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .inspection-page :deep(.scan-input) {
+    font-size: 18px;
+    padding: 12px 40px 12px 14px;
+  }
+
+  .inspection-page :deep(.product-image) {
+    width: 100px;
+    height: 100px;
+  }
+
+  .inspection-page :deep(.product-image-section) {
+    display: none;
+  }
+
+  .fkey-bar {
+    gap: 2px;
+    padding: 4px 6px;
+  }
+
+  .fkey-btn {
+    padding: 8px 8px;
+    font-size: 11px;
+  }
+
+  .fkey-btn .fkey-label {
+    display: none;
+  }
+
+  .fkey-btn .fkey-key {
+    font-size: 11px;
+    min-width: 32px;
+  }
+
+  .wrong-scan-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 32px;
+  }
+
+  .wrong-scan-title {
+    font-size: 18px;
+  }
+
+  .print-preview-section {
+    height: 300px;
+  }
 }
 </style>

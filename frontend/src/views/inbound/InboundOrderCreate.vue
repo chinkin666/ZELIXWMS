@@ -88,12 +88,18 @@
           <tr v-for="(line, i) in form.lines" :key="i" class="o-table-row">
             <td class="o-table-td" style="text-align:center;">{{ i + 1 }}</td>
             <td class="o-table-td">
-              <select v-model="line.productId" class="o-input o-input-sm">
-                <option value="">{{ t('wms.inbound.selectProduct', '商品を選択...') }}</option>
-                <option v-for="p in products" :key="p._id" :value="p._id">
-                  {{ p.sku }} - {{ p.name }}
-                </option>
-              </select>
+              <input
+                type="text"
+                class="o-input o-input-sm"
+                :placeholder="t('wms.inbound.searchProduct', 'SKU / 商品名で検索...')"
+                :value="getProductLabel(line.productId)"
+                :list="'product-datalist-' + i"
+                @input="(e) => handleProductSearch(e, line)"
+                @change="(e) => handleProductSelect(e, line)"
+              />
+              <datalist :id="'product-datalist-' + i">
+                <option v-for="p in products" :key="p._id" :value="p.sku + ' - ' + p.name" />
+              </datalist>
             </td>
             <td class="o-table-td">
               <input v-model.number="line.expectedQuantity" type="number" min="1" class="o-input o-input-sm" style="text-align:right;" />
@@ -119,6 +125,16 @@
             <td class="o-table-td" style="text-align:center;">
               <button class="btn-remove" @click="removeLine(i)">&times;</button>
             </td>
+          </tr>
+          <!-- 合計行 / 合计行 -->
+          <tr v-if="form.lines.length > 0" class="o-table-row total-row">
+            <td class="o-table-td" colspan="2" style="text-align:right;font-weight:600;">
+              {{ t('wms.common.total', '合計') }}: {{ form.lines.length }} {{ t('wms.inbound.lines', '行') }}
+            </td>
+            <td class="o-table-td" style="text-align:right;font-weight:600;">
+              {{ form.lines.reduce((s, l) => s + (l.expectedQuantity || 0), 0) }}
+            </td>
+            <td class="o-table-td" colspan="6"></td>
           </tr>
         </tbody>
       </table>
@@ -212,6 +228,34 @@ const addLine = () => {
 
 const removeLine = (i: number) => {
   form.value.lines.splice(i, 1)
+}
+
+// 商品検索・選択ヘルパー / 商品搜索选择辅助函数
+const getProductLabel = (productId: string): string => {
+  if (!productId) return ''
+  const p = products.value.find(p => p._id === productId)
+  return p ? `${p.sku} - ${p.name}` : ''
+}
+
+const handleProductSearch = (_e: Event, _line: any) => {
+  // datalist が自動的にフィルタリングするため、追加処理不要
+  // datalist 会自动过滤，无需额外处理
+}
+
+const handleProductSelect = (e: Event, line: any) => {
+  const input = (e.target as HTMLInputElement).value
+  // "SKU - Name" 形式から SKU を抽出し、商品を特定
+  // 从 "SKU - Name" 格式中提取 SKU 并匹配商品
+  const matched = products.value.find(p => input.startsWith(p.sku + ' - ') || input === p.sku)
+  if (matched) {
+    line.productId = matched._id
+    line.productSku = matched.sku
+    line.productName = matched.name
+  } else {
+    line.productId = ''
+    line.productSku = ''
+    line.productName = ''
+  }
 }
 
 const handleSubmit = async () => {
