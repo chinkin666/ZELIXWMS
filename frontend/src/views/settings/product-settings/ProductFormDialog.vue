@@ -54,6 +54,20 @@
                 </select>
               </div>
             </div>
+            <!-- JANコード / JAN码 -->
+            <div class="o-field-row">
+              <label class="o-field-label">JANコード</label>
+              <div class="o-field-value">
+                <input class="o-inline-input" :value="formData.janCode" @input="(e: Event) => formData.janCode = (e.target as HTMLInputElement).value" placeholder="4901234567890" />
+              </div>
+            </div>
+            <!-- 仕入先コード / 仕入先代码 -->
+            <div class="o-field-row">
+              <label class="o-field-label">仕入先コード</label>
+              <div class="o-field-value">
+                <input class="o-inline-input" :value="formData.supplierCode" @input="(e: Event) => formData.supplierCode = (e.target as HTMLInputElement).value" placeholder="仕入先コード" />
+              </div>
+            </div>
           </div>
           <div class="o-top-col">
             <!-- メール便計算 -->
@@ -121,6 +135,33 @@
                 </select>
               </div>
             </div>
+            <!-- ロット管理 / 批次管理 -->
+            <div class="o-field-row">
+              <label class="o-field-label">ロット管理</label>
+              <div class="o-field-value">
+                <select class="o-inline-input" :value="String(formData.lotTrackingEnabled)" @change="(e: Event) => formData.lotTrackingEnabled = (e.target as HTMLSelectElement).value === 'true'">
+                  <option value="false">しない</option>
+                  <option value="true">する</option>
+                </select>
+              </div>
+            </div>
+            <!-- 賞味期限管理 / 保质期管理 -->
+            <div class="o-field-row">
+              <label class="o-field-label">賞味期限管理</label>
+              <div class="o-field-value">
+                <select class="o-inline-input" :value="String(formData.expiryTrackingEnabled)" @change="(e: Event) => formData.expiryTrackingEnabled = (e.target as HTMLSelectElement).value === 'true'">
+                  <option value="false">しない</option>
+                  <option value="true">する</option>
+                </select>
+              </div>
+            </div>
+            <!-- 安全在庫数 / 安全库存 -->
+            <div class="o-field-row">
+              <label class="o-field-label">安全在庫数</label>
+              <div class="o-field-value">
+                <input class="o-inline-input" type="number" :value="formData.safetyStock" @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.safetyStock = v === '' ? undefined : Number(v) }" placeholder="最小在庫数" min="0" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -134,7 +175,7 @@
               {{ t('wms.product.tabSubSku', '子SKU') }}
               <span v-if="editDialogSubSkus.length > 0" class="o-tab-count-badge">{{ editDialogSubSkus.length }}</span>
             </button>
-            <button :class="{ active: activeTab === 'dimensions' }" @click="activeTab = 'dimensions'">{{ t('wms.product.tabDimensions', '寸法・重量') }}</button>
+            <button :class="{ active: activeTab === 'dimensions' }" @click="activeTab = 'dimensions'">{{ t('wms.product.tabDimensions', '物流情報') }}</button>
             <button :class="{ active: activeTab === 'custom' }" @click="activeTab = 'custom'">{{ t('wms.product.tabCustomFields', '独自フィールド') }}</button>
             <button :class="{ active: activeTab === 'advanced' }" @click="activeTab = 'advanced'">{{ t('wms.product.tabAdvanced', '詳細設定') }}</button>
           </div>
@@ -253,6 +294,27 @@
                   <label class="o-field-label">{{ t('wms.product.weight', '重量') }} (g)</label>
                   <div class="o-field-value">
                     <input class="o-inline-input" type="number" :value="formData.weight" @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.weight = v === '' ? undefined : Number(v) }" :placeholder="t('wms.product.weight', '重量')" min="0" step="0.1" />
+                  </div>
+                </div>
+                <div class="o-field-row">
+                  <label class="o-field-label">箱入数 (ケース)</label>
+                  <div class="o-field-value">
+                    <input class="o-inline-input" type="number" :value="formData.caseQuantity" @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.caseQuantity = v === '' ? undefined : Number(v) }" placeholder="1ケースあたりの個数" min="1" />
+                  </div>
+                </div>
+                <!-- デフォルト荷扱い / 默认荷扱い -->
+                <div class="o-field-row">
+                  <label class="o-field-label">デフォルト荷扱い</label>
+                  <div class="o-field-value">
+                    <input class="o-inline-input" :value="(formData.defaultHandlingTags || []).join(', ')" @input="(e: Event) => formData.defaultHandlingTags = (e.target as HTMLInputElement).value.split(',').map((s: string) => s.trim()).filter(Boolean)" placeholder="ワレモノ, 天地無用" />
+                    <div style="font-size:11px;color:#909399;margin-top:2px;">カンマ区切りで入力</div>
+                  </div>
+                </div>
+                <!-- 賞味期限アラート日数 / 保质期预警天数 -->
+                <div class="o-field-row" v-if="formData.expiryTrackingEnabled">
+                  <label class="o-field-label">期限アラート日数</label>
+                  <div class="o-field-value">
+                    <input class="o-inline-input" type="number" :value="formData.alertDaysBeforeExpiry" @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.alertDaysBeforeExpiry = v === '' ? undefined : Number(v) }" placeholder="期限切れの何日前に警告" min="1" />
                   </div>
                 </div>
               </div>
@@ -500,6 +562,14 @@ watch(
         allocationRule: d.allocationRule || 'FIFO',
         serialTrackingEnabled: d.serialTrackingEnabled ?? false,
         inboundExpiryDays: d.inboundExpiryDays ?? undefined,
+        janCode: d.janCode || '',
+        supplierCode: d.supplierCode || '',
+        caseQuantity: d.caseQuantity ?? undefined,
+        defaultHandlingTags: Array.isArray(d.defaultHandlingTags) ? [...d.defaultHandlingTags] : [],
+        lotTrackingEnabled: d.lotTrackingEnabled ?? false,
+        expiryTrackingEnabled: d.expiryTrackingEnabled ?? false,
+        safetyStock: d.safetyStock ?? undefined,
+        alertDaysBeforeExpiry: d.alertDaysBeforeExpiry ?? undefined,
       }
       editImageUrl.value = d.imageUrl || ''
       activeTab.value = 'barcode'

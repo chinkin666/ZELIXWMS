@@ -1,0 +1,58 @@
+{
+  "indexes": [
+    {
+      "v": 2,
+      "key": {
+        "_id": 1
+      },
+      "name": "_id_"
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1,
+        "period": 1
+      },
+      "name": "tenantId_1_period_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1,
+        "clientId": 1
+      },
+      "name": "tenantId_1_clientId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1,
+        "carrierId": 1
+      },
+      "name": "tenantId_1_carrierId_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "status": 1
+      },
+      "name": "status_1",
+      "background": true
+    },
+    {
+      "v": 2,
+      "key": {
+        "tenantId": 1,
+        "period": 1,
+        "clientId": 1,
+        "carrierId": 1
+      },
+      "name": "tenantId_1_period_1_clientId_1_carrierId_1",
+      "background": true,
+      "unique": true
+    }
+  ]
+}
