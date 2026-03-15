@@ -37,7 +37,7 @@ function extractBearerToken(req: Request): string | null {
  * 生成 JWT 令牌 / JWT トークンを生成する
  */
 export function generateToken(payload: Omit<AuthUser, 'iat' | 'exp'>): string {
-  return jwt.sign(payload as object, JWT_SECRET as jwt.Secret, { expiresIn: '24h' })
+  return jwt.sign(payload as object, JWT_SECRET as jwt.Secret, { expiresIn: JWT_EXPIRES_IN as any })
 }
 
 /**
