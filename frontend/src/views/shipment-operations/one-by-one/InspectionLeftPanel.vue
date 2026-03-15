@@ -36,12 +36,35 @@
       </div>
     </div>
 
+    <!-- スキャン履歴 / 扫描历史 -->
+    <div v-if="scanHistory.length > 0" class="scan-history">
+      <div
+        v-for="(h, i) in scanHistory"
+        :key="i"
+        class="scan-history-item"
+        :class="{ 'scan-history-item--error': h.result === 'error' }"
+      >
+        <span class="scan-history-time">{{ h.time }}</span>
+        <span class="scan-history-value">{{ h.value }}</span>
+        <span class="scan-history-detail">{{ h.detail }}</span>
+      </div>
+    </div>
+
     <!-- 自动印刷开关 -->
     <div class="auto-print-section">
       <label class="o-toggle">
         <input type="checkbox" :checked="autoPrintEnabled" @change="$emit('toggle-auto-print')" />
         <span class="o-toggle-slider"></span>
         <span class="o-toggle-label">{{ t('wms.inspection.autoPrintOnComplete', '検品完了時 送り状自動出力') }}</span>
+      </label>
+    </div>
+
+    <!-- 自動次注文移動開関 / 自动切换下一订单开关 -->
+    <div class="auto-print-section">
+      <label class="o-toggle">
+        <input type="checkbox" :checked="autoAdvanceEnabled" @change="$emit('toggle-auto-advance')" />
+        <span class="o-toggle-slider"></span>
+        <span class="o-toggle-label">{{ t('wms.inspection.autoAdvanceOnComplete', '検品後 自動で次の注文へ') }}</span>
       </label>
     </div>
 
@@ -79,6 +102,13 @@ import OButton from '@/components/odoo/OButton.vue'
 import noImageSrc from '@/assets/images/no_image.png'
 import type { OrderDocument } from '@/types/order'
 
+interface ScanHistoryEntry {
+  time: string
+  value: string
+  result: 'ok' | 'error'
+  detail: string
+}
+
 interface ScannedProductInfo {
   sku: string
   name: string
@@ -101,8 +131,10 @@ const props = defineProps<{
   inputValue: string
   mode: 'order' | 'product'
   autoPrintEnabled: boolean
+  autoAdvanceEnabled: boolean
   productImageSrc: string
   lastScannedProduct: ScannedProductInfo | null
+  scanHistory: ScanHistoryEntry[]
 }>()
 
 defineEmits<{
@@ -111,6 +143,7 @@ defineEmits<{
   'update:inputValue': [value: string]
   'submit': []
   'toggle-auto-print': []
+  'toggle-auto-advance': []
 }>()
 
 const scanInputRef = ref<HTMLInputElement | null>(null)
@@ -299,4 +332,12 @@ defineExpose({ focus, scanInputRef })
   color: #606266;
   margin-top: 4px;
 }
+
+/* スキャン履歴 / 扫描历史 */
+.scan-history { margin-top: 8px; max-height: 120px; overflow-y: auto; }
+.scan-history-item { display: flex; gap: 8px; padding: 3px 8px; font-size: 11px; color: #606266; border-left: 3px solid #67c23a; margin-bottom: 2px; }
+.scan-history-item--error { border-left-color: #f56c6c; color: #f56c6c; }
+.scan-history-time { color: #909399; min-width: 50px; }
+.scan-history-value { font-family: monospace; font-weight: 600; min-width: 80px; }
+.scan-history-detail { flex: 1; }
 </style>

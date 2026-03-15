@@ -28,6 +28,20 @@
       </div>
     </div>
 
+    <!-- スキャン履歴 / 扫描历史 -->
+    <div v-if="scanHistory.length > 0" class="scan-history">
+      <div
+        v-for="(h, i) in scanHistory"
+        :key="i"
+        class="scan-history-item"
+        :class="{ 'scan-history-item--error': h.result === 'error' }"
+      >
+        <span class="scan-history-time">{{ h.time }}</span>
+        <span class="scan-history-value">{{ h.value }}</span>
+        <span class="scan-history-detail">{{ h.detail }}</span>
+      </div>
+    </div>
+
     <!-- 自动印刷开关 -->
     <div class="auto-print-section">
       <label class="o-toggle">
@@ -37,8 +51,9 @@
       </label>
     </div>
 
-    <!-- 大数字（当前匹配行号） -->
+    <!-- 行番号表示（当前匹配行号） -->
     <div class="row-number-display">
+      <span class="row-number-label">{{ t('wms.inspection.rowNo', '行No') }}:</span>
       <span class="row-number-value">{{ currentMatchedRowNo ?? '-' }}</span>
     </div>
 
@@ -86,6 +101,13 @@ import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import noImageSrc from '@/assets/images/no_image.png'
 
+interface ScanHistoryEntry {
+  time: string
+  value: string
+  result: 'ok' | 'error'
+  detail: string
+}
+
 interface ProductInfo {
   sku: string
   name: string
@@ -102,6 +124,7 @@ defineProps<{
   currentMatchedRowNo: number | null
   productImageSrc: string
   currentMatchedProduct: ProductInfo | null
+  scanHistory: ScanHistoryEntry[]
 }>()
 
 defineEmits<{
@@ -255,11 +278,18 @@ defineExpose({ focus, scanInputRef })
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 16px 0;
+  padding: 6px 0;
+  gap: 8px;
+}
+
+.row-number-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
 }
 
 .row-number-value {
-  font-size: 96px;
+  font-size: 36px;
   font-weight: 900;
   color: #2a3474;
   line-height: 1;
@@ -329,4 +359,12 @@ defineExpose({ focus, scanInputRef })
   font-weight: 700;
   color: #81B337;
 }
+
+/* スキャン履歴 / 扫描历史 */
+.scan-history { margin-top: 8px; max-height: 120px; overflow-y: auto; }
+.scan-history-item { display: flex; gap: 8px; padding: 3px 8px; font-size: 11px; color: #606266; border-left: 3px solid #67c23a; margin-bottom: 2px; }
+.scan-history-item--error { border-left-color: #f56c6c; color: #f56c6c; }
+.scan-history-time { color: #909399; min-width: 50px; }
+.scan-history-value { font-family: monospace; font-weight: 600; min-width: 80px; }
+.scan-history-detail { flex: 1; }
 </style>

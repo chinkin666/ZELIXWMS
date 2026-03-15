@@ -21,6 +21,7 @@
       :current-matched-row-no="currentMatchedRowNo"
       :product-image-src="currentProductImageSrc"
       :current-matched-product="currentMatchedProduct"
+      :scan-history="scanHistory"
       @go-back="handleGoBack"
       @clear="handleClear"
       @update:input-value="inputValue = $event"
@@ -37,18 +38,18 @@
       :current-matched-order-id="currentMatchedOrder ? String(currentMatchedOrder._id) : null"
     />
 
-    <!-- F-key 操作バー -->
+    <!-- F-key 操作バー / Fキー操作バー -->
     <div class="fkey-bar">
       <button
         v-for="fk in fKeyDefs"
         :key="fk.key"
+        v-show="!!fk.label"
         class="fkey-btn"
-        :class="{ 'fkey-btn--disabled': !fk.label }"
-        :disabled="!fk.label"
+        :class="{ 'fkey-btn--danger': fk.key === 'F9' }"
         @click="fk.action?.()"
       >
-        <span class="fkey-btn__key">{{ fk.key }}</span>
-        <span class="fkey-btn__label">{{ fk.label || '' }}</span>
+        <span class="fkey-key">{{ fk.key }}</span>
+        <span class="fkey-label">{{ fk.label }}</span>
       </button>
     </div>
 
@@ -226,6 +227,15 @@ const wrongScanDialogVisible = ref(false)
 const wrongScanValue = ref('')
 const scanSuccessFlash = ref(false)
 
+// スキャン履歴 / 扫描历史
+const scanHistory = ref<{ time: string; value: string; result: 'ok' | 'error'; detail: string }[]>([])
+
+function addScanHistory(value: string, result: 'ok' | 'error', detail: string) {
+  const now = new Date()
+  const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+  scanHistory.value = [...scanHistory.value, { time, value, result, detail }].slice(-5)
+}
+
 // ─── Computed ─────────────────────────────────────────────────────────
 
 const inspectedCount = computed(() => inspectedOrderIds.value.size)
@@ -348,6 +358,7 @@ function handleScan() {
   }
 
   if (!matchedOrder) {
+    addScanHistory(input, 'error', 'not found')
     wrongScanValue.value = input
     wrongScanDialogVisible.value = true
     focusScanInput()
@@ -370,6 +381,8 @@ function handleScan() {
     barcodes,
     imageUrl: prod?.imageUrl || pd?.imageUrl,
   }
+
+  addScanHistory(input, 'ok', `${prod?.productName || sku} #${matchedRowNo}`)
 
   rightPanelRef.value?.scrollToRow(matchedRowNo! - 1)
   handleOrderCompletion(matchedOrder)
@@ -787,46 +800,45 @@ onBeforeUnmount(() => {
   left: 0;
   right: 0;
   display: flex;
-  height: 44px;
-  background: #102040;
-  border-top: 1px solid #0a1630;
+  gap: 4px;
+  padding: 8px 12px;
+  background: #1a1a2e;
   z-index: 100;
-}
-
-.fkey-btn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 2px;
-  background: transparent;
-  color: #c8d6e5;
-  border: none;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+.fkey-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid #3a3a5c;
+  border-radius: 6px;
+  background: #2a2a4a;
+  color: #e0e0e0;
+  font-size: 13px;
   cursor: pointer;
-  padding: 2px 0;
-  transition: background 0.15s;
-  font-family: inherit;
-}
-
-.fkey-btn:last-child { border-right: none; }
-.fkey-btn:hover:not(.fkey-btn--disabled) { background: rgba(255, 255, 255, 0.1); }
-.fkey-btn:active:not(.fkey-btn--disabled) { background: rgba(255, 255, 255, 0.18); }
-.fkey-btn--disabled { cursor: default; opacity: 0.3; }
-.fkey-btn__key { font-size: 10px; font-weight: 700; color: rgba(255, 255, 255, 0.5); line-height: 1; }
-
-.fkey-btn__label {
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.2;
+  transition: all 0.15s;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  padding: 0 4px;
-  color: #e0e8f0;
 }
+.fkey-btn:hover { background: #3a3a6a; border-color: #5a5a8c; }
+.fkey-btn:active { background: #4a4a7a; }
+.fkey-btn .fkey-key {
+  background: #4a4a7a;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 28px;
+  text-align: center;
+}
+.fkey-btn .fkey-label {
+  font-size: 13px;
+}
+.fkey-btn--danger { border-color: #f56c6c; }
+.fkey-btn--danger .fkey-key { background: #f56c6c; }
+.fkey-btn--danger:hover { background: #4a2a2a; }
 
 /* ─── Wrong scan warning dialog ──────────── */
 .wrong-scan-content {
