@@ -561,4 +561,34 @@ onMounted(() => loadOrder())
 .variance-row--pending { background: #fdf6ec; }
 .text-danger { color: #f56c6c; }
 .mono { font-family: monospace; }
+
+/* モバイルレスポンシブ対応 / 移动端响应式适配 */
+@media (max-width: 768px) {
+  /* 全体パディング縮小 / 整体内边距缩小 */
+  .inbound-receive { padding: 0 12px 12px; }
+
+  /* 情報カード縦積み / 信息卡片纵向排列 */
+  .info-grid { flex-direction: column; gap: 8px; }
+
+  /* カードパディング縮小 / 卡片内边距缩小 */
+  .o-card { padding: 12px; margin-bottom: 0.5rem; }
+
+  /* テーブル横スクロール / 表格横向滚动 */
+  .o-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* 入力フィールド全幅 / 输入框全宽 */
+  .o-input, select.o-input { width: 100% !important; }
+
+  /* スキャン行縦積み・全幅化 / 扫描行纵向排列・全宽化 */
+  .scan-row { flex-direction: column; }
+  .scan-input { width: 100%; font-size: 18px; }
+
+  /* 検品モード縦積み / 检品模式纵向排列 */
+  .mode-row { flex-direction: column; align-items: flex-start; }
+  .mode-tabs { width: 100%; }
+  .mode-tab { flex: 1; text-align: center; }
+
+  /* 差異サマリー縦積み / 差异摘要纵向排列 */
+  .variance-summary { flex-direction: column; gap: 4px; }
+}
 </style>

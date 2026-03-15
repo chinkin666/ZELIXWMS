@@ -391,4 +391,25 @@ onMounted(() => {
   color: var(--o-brand-primary, #D97756);
   white-space: nowrap;
 }
+
+/* モバイルレスポンシブ対応 / 移动端响应式适配 */
+@media (max-width: 768px) {
+  /* 全体パディング縮小 / 整体内边距缩小 */
+  .inbound-putaway { padding: 0 12px 12px; }
+
+  /* 情報カード縦積み / 信息卡片纵向排列 */
+  .info-grid { flex-direction: column; gap: 8px; }
+
+  /* カードパディング縮小 / 卡片内边距缩小 */
+  .o-card { padding: 12px; margin-bottom: 0.5rem; }
+
+  /* テーブル横スクロール / 表格横向滚动 */
+  .o-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* 入力フィールド全幅 / 输入框全宽 */
+  .o-input, select.o-input { width: 100% !important; }
+
+  /* 一括棚入れセクション縦積み / 批量上架区域纵向排列 */
+  .bulk-putaway-card { padding: 12px; }
+}
 </style>

@@ -30,6 +30,9 @@
             <div class="summary-item"><span>{{ t('wms.daily.totalItems', '商品点数') }}</span><strong>{{ report.summary.shipments.totalItems }}</strong></div>
             <div class="summary-item"><span>{{ t('wms.daily.shippedItems', '出荷済点数') }}</span><strong>{{ report.summary.shipments.shippedItems }}</strong></div>
           </div>
+          <div class="progress-bar-mini" v-if="report.summary.shipments.totalOrders > 0">
+            <div class="progress-bar-mini-fill" :style="{ width: (report.summary.shipments.shippedOrders / report.summary.shipments.totalOrders * 100) + '%' }"></div>
+          </div>
         </div>
 
         <!-- 入庫 -->
@@ -41,6 +44,9 @@
             <div class="summary-item"><span>{{ t('wms.daily.scheduledItems', '予定点数') }}</span><strong>{{ report.summary.inbound.totalItems }}</strong></div>
             <div class="summary-item"><span>{{ t('wms.daily.receivedItems', '入庫済点数') }}</span><strong>{{ report.summary.inbound.receivedItems }}</strong></div>
           </div>
+          <div class="progress-bar-mini" v-if="report.summary.inbound.totalOrders > 0">
+            <div class="progress-bar-mini-fill" :style="{ width: (report.summary.inbound.receivedOrders / report.summary.inbound.totalOrders * 100) + '%' }"></div>
+          </div>
         </div>
 
         <!-- 返品 -->
@@ -51,6 +57,9 @@
             <div class="summary-item"><span>{{ t('wms.daily.completedReturns', '完了') }}</span><strong class="text-success">{{ report.summary.returns.completedOrders }}</strong></div>
             <div class="summary-item"><span>{{ t('wms.daily.restockedItems', '再入庫点数') }}</span><strong>{{ report.summary.returns.restockedItems }}</strong></div>
             <div class="summary-item"><span>{{ t('wms.daily.disposedItems', '廃棄点数') }}</span><strong class="text-danger">{{ report.summary.returns.disposedItems }}</strong></div>
+          </div>
+          <div class="progress-bar-mini" v-if="report.summary.returns.totalOrders > 0">
+            <div class="progress-bar-mini-fill" :style="{ width: (report.summary.returns.completedOrders / report.summary.returns.totalOrders * 100) + '%' }"></div>
           </div>
         </div>
 
@@ -150,4 +159,6 @@ onMounted(() => loadData())
 .text-success { color: #67c23a; }
 .text-danger { color: #f56c6c; }
 .text-warning { color: #e6a23c; }
+.progress-bar-mini { height: 4px; background: #ebeef5; border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.progress-bar-mini-fill { height: 100%; background: #67c23a; border-radius: 2px; transition: width 0.3s; }
 </style>

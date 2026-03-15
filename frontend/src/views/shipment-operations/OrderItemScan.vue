@@ -1007,4 +1007,25 @@ onMounted(async () => {
   30% { background-color: #f0f9eb; border-color: #67c23a; }
   100% { background-color: inherit; }
 }
+
+/* モバイルレスポンシブ対応 / 移动端响应式适配 */
+@media (max-width: 768px) {
+  /* 全体パディング縮小 / 整体内边距缩小 */
+  .order-item-scan { padding: 0 8px 12px; gap: 10px; }
+
+  /* 注文情報グリッド1列化 / 订单信息网格单列化 */
+  .order-info-grid { grid-template-columns: 120px 1fr; }
+  .order-info-section { padding: 10px; margin-bottom: 12px; }
+
+  /* スキャン入力エリア全幅・目立たせる / 扫描输入区域全宽・突出显示 */
+  .input-section { padding: 12px; margin-bottom: 12px; }
+  .main-input { font-size: 18px; padding: 12px; }
+
+  /* テーブルセクション縮小 / 表格区域缩小 */
+  .table-section { margin-bottom: 12px; }
+  .table-header { padding: 6px 8px; }
+
+  /* 検品進捗バー縮小 / 检品进度条缩小 */
+  .inspection-progress { padding: 6px 10px; }
+}
 </style>
