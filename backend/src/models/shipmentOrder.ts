@@ -213,6 +213,21 @@ export interface IShipmentOrder {
   /** 自定义字段 / カスタムフィールド */
   customFields?: Record<string, unknown>;
 
+  /** 配送料金 / 配送费用 */
+  shippingCost?: number;
+  /** 配送料金内訳 / 配送费用明细 */
+  shippingCostBreakdown?: {
+    base?: number;
+    cool?: number;
+    cod?: number;
+    fuel?: number;
+    other?: number;
+  };
+  /** 料金ソース（auto=自動計算, manual=手動入力, import=取込）/ 费用来源 */
+  costSource?: 'auto' | 'manual' | 'import';
+  /** 料金計算日時 / 费用计算日期 */
+  costCalculatedAt?: Date;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -361,6 +376,24 @@ const shipmentOrderSchema = new mongoose.Schema<IShipmentOrder>(
 
     // 自定义字段 / カスタムフィールド（Phase 5）
     customFields: { type: mongoose.Schema.Types.Mixed, default: {} },
+
+    // 配送料金 / 配送费用
+    shippingCost: { type: Number, min: 0 },
+    shippingCostBreakdown: {
+      type: new mongoose.Schema(
+        {
+          base: { type: Number, min: 0 },
+          cool: { type: Number, min: 0 },
+          cod: { type: Number, min: 0 },
+          fuel: { type: Number, min: 0 },
+          other: { type: Number, min: 0 },
+        },
+        { _id: false },
+      ),
+      default: undefined,
+    },
+    costSource: { type: String, enum: ['auto', 'manual', 'import'] },
+    costCalculatedAt: { type: Date },
 
     status: {
       carrierReceipt: {

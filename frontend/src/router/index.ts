@@ -328,6 +328,26 @@ const router = createRouter({
             },
           ],
         },
+        // === 請求管理 / 請求管理 ===
+        {
+          path: 'billing',
+          meta: { title: '請求管理', requiresAuth: true },
+          redirect: '/billing/dashboard',
+          children: [
+            {
+              path: 'dashboard',
+              name: 'BillingDashboard',
+              component: () => import('@/views/billing/BillingDashboard.vue'),
+              meta: { title: '請求ダッシュボード', requiresAuth: true },
+            },
+            {
+              path: 'monthly',
+              name: 'BillingMonthly',
+              component: () => import('@/views/billing/BillingMonthly.vue'),
+              meta: { title: '月次請求', requiresAuth: true },
+            },
+          ],
+        },
         {
           path: 'daily',
           meta: { title: '日次管理', requiresAuth: true },
@@ -465,6 +485,12 @@ const router = createRouter({
               name: 'SupplierSettings',
               component: () => import('@/views/settings/SupplierSettings.vue'),
               meta: { title: '仕入先一覧', requiresAuth: true },
+            },
+            {
+              path: 'shipping-rates',
+              name: 'ShippingRateSettings',
+              component: () => import('@/views/settings/ShippingRateSettings.vue'),
+              meta: { title: '運賃マスタ', requiresAuth: true },
             },
             {
               path: 'operation-logs',

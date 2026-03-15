@@ -39,6 +39,8 @@ import { workflowRouter } from './workflows';
 import { extensionRouter } from './extensions';
 import { dashboardRouter } from './dashboard';
 import { sagawaRouter } from './sagawa';
+import { shippingRateRouter } from './shippingRates';
+import { billingRouter } from './billing';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -80,6 +82,12 @@ export const registerCoreRoutes = (app: Application): void => {
   api.use('/clients', clientRouter);
   api.use('/warehouses', warehouseRouter);
   api.use('/workflows', workflowRouter);
+
+  // 运费率表 / 運賃率表
+  api.use('/shipping-rates', shippingRateRouter);
+
+  // 請求・請求書 / 账单・发票
+  api.use('/billing', billingRouter);
 
   // 佐川急便 / 佐川急便
   api.use('/carriers/sagawa', sagawaRouter);

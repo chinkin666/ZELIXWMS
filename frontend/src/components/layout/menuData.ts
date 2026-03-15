@@ -19,6 +19,7 @@ export const wmsMenuItems: Array<{ label: string; to: string }> = [
   { label: 'セット組管理', to: '/set-products' },
   { label: '倉庫オペレーション', to: '/warehouse-ops' },
   { label: '日次管理', to: '/daily' },
+  { label: '請求管理', to: '/billing' },
   { label: '設定', to: '/settings' },
 ]
 
@@ -43,6 +44,7 @@ export const settingsGroups: SubMenuGroup[] = [
       { label: '出荷グループ', to: '/settings/order-groups' },
       { label: '自動処理ルール', to: '/settings/auto-processing' },
       { label: '出荷メール設定', to: '/settings/email-templates' },
+      { label: '運賃マスタ', to: '/settings/shipping-rates' },
     ],
   },
   {
@@ -136,6 +138,10 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
   '/daily': [
     { label: '日次レポート', to: '/daily/list' },
     { label: '出荷統計', to: '/daily/statistics' },
+  ],
+  '/billing': [
+    { label: 'ダッシュボード', to: '/billing/dashboard' },
+    { label: '月次請求', to: '/billing/monthly' },
   ],
   '/settings': settingsGroups.flatMap((g) => g.items),
 }
