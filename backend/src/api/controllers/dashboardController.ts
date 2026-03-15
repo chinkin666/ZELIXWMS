@@ -207,7 +207,7 @@ export async function getShipmentResultStats(req: Request, res: Response) {
     toEnd.setHours(23, 59, 59, 999);
 
     // 并行查询 / 並列クエリ
-    const [totalShipped, totalQuantity, dailyBreakdown, carrierBreakdown] = await Promise.all([
+    const [totalShipped, totalQuantity, dailyBreakdown, carrierBreakdown, invoiceTypeBreakdown] = await Promise.all([
       // 出荷件数 / 出荷件数
       ShipmentOrder.countDocuments({
         'status.shipped.isShipped': true,
@@ -264,6 +264,22 @@ export async function getShipmentResultStats(req: Request, res: Response) {
         },
         { $sort: { count: -1 } },
       ]),
+      // 送り状種類別分布 / 送り状種類別分布
+      ShipmentOrder.aggregate([
+        {
+          $match: {
+            'status.shipped.isShipped': true,
+            'status.shipped.shippedAt': { $gte: from, $lte: toEnd },
+          },
+        },
+        {
+          $group: {
+            _id: '$invoiceType',
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { count: -1 } },
+      ]),
     ]);
 
     const qtyResult = totalQuantity[0] || { totalQuantity: 0, totalSkus: 0 };
@@ -282,6 +298,10 @@ export async function getShipmentResultStats(req: Request, res: Response) {
       carriers: carrierBreakdown.map((c: any) => ({
         carrierId: c._id || 'unknown',
         count: c.count,
+      })),
+      invoiceTypes: invoiceTypeBreakdown.map((it: any) => ({
+        invoiceType: it._id || 'unknown',
+        count: it.count,
       })),
     });
   } catch (err) {

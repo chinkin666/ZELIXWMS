@@ -63,6 +63,7 @@ export interface ShipmentStatsResult {
   totalSkus: number
   daily: Array<{ date: string; count: number; quantity: number }>
   carriers: Array<{ carrierId: string; count: number }>
+  invoiceTypes: Array<{ invoiceType: string; count: number }>
 }
 
 /** 出荷実績統計を取得 / Fetch shipment statistics */

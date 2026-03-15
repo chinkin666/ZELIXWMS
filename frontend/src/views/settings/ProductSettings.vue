@@ -47,6 +47,26 @@
       @search="handleSearch"
     />
 
+    <!-- 在庫クイックフィルター / 库存快速过滤器 -->
+    <div class="stock-filter-bar">
+      <span class="stock-filter-label">{{ t('wms.product.stockFilter', '在庫:') }}</span>
+      <button
+        class="stock-filter-btn"
+        :class="{ 'stock-filter-btn--active': stockFilter === '' }"
+        @click="stockFilter = ''"
+      >{{ t('wms.product.stockAll', '全て') }}</button>
+      <button
+        class="stock-filter-btn stock-filter-btn--in"
+        :class="{ 'stock-filter-btn--active': stockFilter === 'inStock' }"
+        @click="stockFilter = 'inStock'"
+      >{{ t('wms.product.stockInStock', '在庫あり') }}</button>
+      <button
+        class="stock-filter-btn stock-filter-btn--out"
+        :class="{ 'stock-filter-btn--active': stockFilter === 'noStock' }"
+        @click="stockFilter = 'noStock'"
+      >{{ t('wms.product.stockNoStock', '在庫なし') }}</button>
+    </div>
+
     <div v-if="selectedKeys.length > 0" class="o-list-toolbar o-toolbar-active">
       <span class="o-selected-count">{{ selectedKeys.length }}{{ t('wms.product.itemsSelected', '件選択中') }}</span>
       <OButton variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;" :disabled="isBulkDeleting" @click="handleBulkDelete">
@@ -137,6 +157,8 @@ import ProductFormDialog from './product-settings/ProductFormDialog.vue'
 import ImportDialog from '@/components/import/ImportDialog.vue'
 import type { TableColumn, Operator } from '@/types/table'
 import { bulkUpdateProducts, checkSkuAvailability, createProduct, deleteProduct, fetchProducts, importProductsWithStrategy, updateProduct, type ImportStrategy } from '@/api/product'
+import { fetchStockSummary } from '@/api/inventory'
+import type { StockSummary } from '@/types/inventory'
 import type { Product, ProductFilters, UpsertProductDto, SubSku } from '@/types/product'
 import ImportResultDialog, { type ImportResultData } from '@/components/import/ImportResultDialog.vue'
 import SubSkuDialog from './product-settings/SubSkuDialog.vue'
@@ -173,6 +195,7 @@ const allExportColumns: ExportColumn[] = [
   { key: 'handlingTypes', label: t('wms.product.handlingTypes', '荷扱い'), getValue: r => (r.handlingTypes || []).join(' / ') },
   { key: 'memo', label: t('wms.product.memo', 'メモ'), getValue: r => r.memo || '' },
   { key: 'subSkus', label: t('wms.product.subSkus', '子SKU'), getValue: r => (r.subSkus || []).map(s => s.subSku).join(' / ') },
+  { key: 'stockQuantity', label: t('wms.product.stockQuantity', '在庫数'), getValue: r => stockMap.value.get(r._id) ?? 0 },
   { key: 'customField1', label: t('wms.product.customField1', '独自1'), getValue: r => r.customField1 || '' },
   { key: 'customField2', label: t('wms.product.customField2', '独自2'), getValue: r => r.customField2 || '' },
   { key: 'customField3', label: t('wms.product.customField3', '独自3'), getValue: r => r.customField3 || '' },
@@ -357,6 +380,11 @@ const showImportDialog = ref(false)
 const editingRow = ref<Product | null>(null)
 const globalSearchText = ref('')
 const selectedKeys = ref<string[]>([])
+
+// 在庫数マップ（productId → totalQuantity） / 库存数量映射
+const stockMap = ref<Map<string, number>>(new Map())
+// 在庫フィルター / 库存过滤器: '' = 全て, 'inStock' = 在庫あり, 'noStock' = 在庫なし
+const stockFilter = ref<'' | 'inStock' | 'noStock'>('')
 
 // (Pagination & sorting handled by Table component)
 
@@ -631,6 +659,19 @@ const tableColumns: TableColumn[] = [
       rowData.price != null ? `\u00A5${rowData.price.toLocaleString()}` : '-',
   },
   {
+    key: 'stockQuantity',
+    dataKey: '_id',
+    title: t('wms.product.stockQuantity', '在庫数'),
+    width: 100,
+    fieldType: 'number',
+    formEditable: false,
+    cellRenderer: ({ rowData }: { rowData: Product }) => {
+      const qty = stockMap.value.get(rowData._id) ?? 0
+      const color = qty > 0 ? '#67c23a' : '#909399'
+      return h('span', { style: { fontWeight: 600, color } }, qty > 0 ? qty.toLocaleString() : '0')
+    },
+  },
+  {
     key: 'inventoryEnabled',
     dataKey: 'inventoryEnabled',
     title: t('wms.product.inventoryManagement', '在庫管理'),
@@ -681,6 +722,12 @@ const filteredList = computed(() => {
       const searchable = [r.sku, r.name, r.nameFull, ...(r.barcode || [])].filter(Boolean).join(' ').toLowerCase()
       return searchable.includes(q)
     })
+  }
+  // 在庫フィルター / 库存过滤器
+  if (stockFilter.value === 'inStock') {
+    rows = rows.filter((r) => (stockMap.value.get(r._id) ?? 0) > 0)
+  } else if (stockFilter.value === 'noStock') {
+    rows = rows.filter((r) => (stockMap.value.get(r._id) ?? 0) <= 0)
   }
   return rows
 })
@@ -869,10 +916,29 @@ const loadList = async () => {
   loading.value = true
   try {
     list.value = await fetchProducts(currentFilters.value)
+    // 在庫数を非同期で取得 / 非同步获取库存数量
+    loadStockData()
   } catch (error: any) {
     toast.showError(error?.message || t('wms.product.fetchFailed', '取得に失敗しました'))
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 在庫サマリーを取得して stockMap を更新する
+ * 获取库存汇总并更新 stockMap
+ */
+const loadStockData = async () => {
+  try {
+    const summaries: StockSummary[] = await fetchStockSummary()
+    const newMap = new Map<string, number>()
+    for (const s of summaries) {
+      newMap.set(s.productId, s.totalQuantity)
+    }
+    stockMap.value = newMap
+  } catch {
+    // 在庫取得失敗は致命的ではない、無視する / 库存获取失败非致命，忽略
   }
 }
 
@@ -1211,4 +1277,40 @@ onMounted(() => {
 .cat-2 { background: #e3f2fd; color: #1565c0; }
 .cat-3 { background: #fce4ec; color: #c62828; }
 .cat-4 { background: #f3e5f5; color: #6a1b9a; }
+
+/* 在庫クイックフィルター / 库存快速过滤器 */
+.stock-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.stock-filter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--o-gray-600, #606266);
+  margin-right: 4px;
+}
+.stock-filter-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: 4px;
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-600, #606266);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.stock-filter-btn:hover {
+  border-color: var(--o-primary, #714b67);
+  color: var(--o-primary, #714b67);
+}
+.stock-filter-btn--active {
+  background: var(--o-primary, #714b67);
+  border-color: var(--o-primary, #714b67);
+  color: #fff;
+}
+.stock-filter-btn--active:hover {
+  color: #fff;
+}
 </style>

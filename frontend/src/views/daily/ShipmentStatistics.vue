@@ -42,6 +42,10 @@
           <div class="stats-kpi__value">{{ avgDaily }}</div>
           <div class="stats-kpi__label">{{ t('wms.daily.dailyAverage', '日平均出荷') }}</div>
         </div>
+        <div class="stats-kpi" v-if="peakDay">
+          <div class="stats-kpi__value">{{ peakDay.count.toLocaleString() }}</div>
+          <div class="stats-kpi__label">{{ t('wms.daily.peakDay', 'ピーク日') }} ({{ peakDay.date.slice(5) }})</div>
+        </div>
       </div>
 
       <!-- 日别趋势 / 日別トレンド -->
@@ -95,6 +99,21 @@
         </div>
       </div>
 
+      <!-- 送り状種類別分布 / 送り状種類別分布 -->
+      <div class="stats-section" v-if="stats.invoiceTypes && stats.invoiceTypes.length > 0">
+        <h3 class="stats-section-title">{{ t('wms.daily.invoiceTypeBreakdown', '送り状種類別出荷') }}</h3>
+        <div class="stats-carrier-list">
+          <div v-for="it in stats.invoiceTypes" :key="it.invoiceType" class="stats-carrier-row">
+            <span class="stats-carrier-name">{{ getInvoiceTypeName(it.invoiceType) }}</span>
+            <div class="stats-carrier-bar-wrap">
+              <div class="stats-carrier-bar stats-carrier-bar--invoice" :style="{ width: barHeight(it.count, maxInvoiceType) }" />
+            </div>
+            <span class="stats-carrier-count">{{ it.count }}{{ t('wms.daily.items', '件') }}</span>
+            <span class="stats-carrier-pct">{{ stats.totalShipped > 0 ? Math.round(it.count / stats.totalShipped * 100) : 0 }}%</span>
+          </div>
+        </div>
+      </div>
+
       <!-- 无数据 / データなし -->
       <div v-if="stats.totalShipped === 0" class="stats-empty">
         {{ t('wms.daily.noShipmentData', 'この期間の出荷データがありません') }}
@@ -130,6 +149,13 @@ const avgDaily = computed(() => {
 const maxCount = computed(() => stats.value ? Math.max(1, ...stats.value.daily.map(d => d.count)) : 1)
 const maxQty = computed(() => stats.value ? Math.max(1, ...stats.value.daily.map(d => d.quantity)) : 1)
 const maxCarrier = computed(() => stats.value ? Math.max(1, ...stats.value.carriers.map(c => c.count)) : 1)
+const maxInvoiceType = computed(() => stats.value?.invoiceTypes ? Math.max(1, ...stats.value.invoiceTypes.map(it => it.count)) : 1)
+
+// ピーク日（最も出荷件数が多い日）/ 峰值日（出荷件数最多的一天）
+const peakDay = computed(() => {
+  if (!stats.value || stats.value.daily.length === 0) return null
+  return stats.value.daily.reduce((peak, day) => day.count > peak.count ? day : peak, stats.value.daily[0])
+})
 
 function barHeight(value: number, max: number): string {
   return `${Math.max(4, (value / max) * 100)}%`
@@ -146,6 +172,25 @@ function getCarrierName(id: string): string {
   if (id === '__builtin_sagawa__') return '佐川急便'
   const c = carriers.value.find(cr => String(cr._id) === id)
   return c?.name || id || '不明'
+}
+
+// 送り状種類名マッピング / 送り状种类名映射
+const INVOICE_TYPE_NAMES: Record<string, string> = {
+  '0': '発払い',
+  '1': 'EAZY',
+  '2': 'コレクト',
+  '3': 'クロネコゆうメール',
+  '4': 'タイム',
+  '5': '着払い',
+  '6': '発払い複数口',
+  '7': 'クロネコゆうパケット',
+  '8': '宅急便コンパクト',
+  '9': 'コンパクトコレクト',
+  'A': 'ネコポス',
+}
+
+function getInvoiceTypeName(type: string): string {
+  return INVOICE_TYPE_NAMES[type] || type || '不明'
 }
 
 async function loadStats() {
@@ -312,6 +357,9 @@ onMounted(async () => {
   height: 100%;
   background: var(--o-info, #4A90A4);
   transition: width 0.4s ease;
+}
+.stats-carrier-bar--invoice {
+  background: var(--o-warning, #C4943D);
 }
 .stats-carrier-count {
   min-width: 50px;
