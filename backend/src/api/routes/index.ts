@@ -55,6 +55,7 @@ import { erpRouter } from './erp';
 import { clientPortalRouter } from './clientPortal';
 import { subClientRouter } from './subClients';
 import { shopRouter } from './shops';
+import { passthroughRouter } from './passthrough';
 
 export const registerCoreRoutes = (app: Application): void => {
   const api = Router();
@@ -141,6 +142,9 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // ERP/会計連携 / ERP/会计连接
   api.use('/erp', erpRouter);
+
+  // 通過型入庫予約 / 通过型入库预定
+  api.use('/passthrough', passthroughRouter);
 
   // 子顧客 / 子客户
   api.use('/sub-clients', subClientRouter);
