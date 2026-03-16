@@ -49,6 +49,38 @@ async function submitInvite() {
   }
 }
 
+// 客户创建对话框 / 顧客作成ダイアログ
+const showCreateDialog = ref(false)
+const createForm = ref({
+  clientCode: '',
+  name: '',
+  clientType: 'logistics_company',
+  creditTier: 'new',
+  creditLimit: 100000,
+  paymentTermDays: 30,
+  email: '',
+  phone: '',
+  portalLanguage: 'ja',
+})
+const creating = ref(false)
+
+async function submitCreate() {
+  if (!createForm.value.clientCode || !createForm.value.name) {
+    ElMessage.warning('客户编号和名称必填')
+    return
+  }
+  creating.value = true
+  try {
+    await http.post('/clients', createForm.value)
+    ElMessage.success('客户已创建')
+    showCreateDialog.value = false
+    createForm.value = { clientCode: '', name: '', clientType: 'logistics_company', creditTier: 'new', creditLimit: 100000, paymentTermDays: 30, email: '', phone: '', portalLanguage: 'ja' }
+    await loadClients()
+  } catch (e: any) {
+    ElMessage.error(e.body?.message || e.message || '创建失败')
+  } finally { creating.value = false }
+}
+
 onMounted(loadClients)
 </script>
 
@@ -56,7 +88,10 @@ onMounted(loadClients)
   <div>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
       <h2 style="margin: 0">客户管理</h2>
-      <el-input v-model="search" placeholder="搜索客户..." style="width: 300px" @keyup.enter="loadClients" clearable />
+      <div style="display: flex; gap: 8px">
+        <el-input v-model="search" placeholder="搜索客户..." style="width: 250px" @keyup.enter="loadClients" clearable />
+        <el-button type="primary" @click="showCreateDialog = true">+ 新增客户</el-button>
+      </div>
     </div>
 
     <el-table :data="clients" v-loading="loading" stripe>
@@ -102,6 +137,42 @@ onMounted(loadClients)
       <template #footer>
         <el-button @click="showInviteDialog = false">取消</el-button>
         <el-button type="primary" :loading="inviting" @click="submitInvite">创建并邀请</el-button>
+      </template>
+    </el-dialog>
+    <!-- 客户创建对话框 / 顧客作成ダイアログ -->
+    <el-dialog v-model="showCreateDialog" title="新增客户 / 顧客作成" width="550px">
+      <el-form label-width="100px">
+        <el-form-item label="客户编号"><el-input v-model="createForm.clientCode" placeholder="如 CLT-001" /></el-form-item>
+        <el-form-item label="客户名称"><el-input v-model="createForm.name" /></el-form-item>
+        <el-form-item label="类型">
+          <el-select v-model="createForm.clientType" style="width: 100%">
+            <el-option label="跨境物流公司" value="logistics_company" />
+            <el-option label="日本本土公司" value="domestic_company" />
+            <el-option label="独立卖家" value="individual_seller" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="信用等级">
+          <el-select v-model="createForm.creditTier" style="width: 100%">
+            <el-option label="新客户" value="new" />
+            <el-option label="标准" value="standard" />
+            <el-option label="VIP" value="vip" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="信用额度(¥)"><el-input-number v-model="createForm.creditLimit" :min="0" :step="100000" /></el-form-item>
+        <el-form-item label="结算周期(天)"><el-input-number v-model="createForm.paymentTermDays" :min="0" /></el-form-item>
+        <el-form-item label="邮箱"><el-input v-model="createForm.email" /></el-form-item>
+        <el-form-item label="电话"><el-input v-model="createForm.phone" /></el-form-item>
+        <el-form-item label="门户语言">
+          <el-select v-model="createForm.portalLanguage" style="width: 100%">
+            <el-option label="日本語" value="ja" />
+            <el-option label="中文" value="zh" />
+            <el-option label="English" value="en" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showCreateDialog = false">取消</el-button>
+        <el-button type="primary" :loading="creating" @click="submitCreate">创建</el-button>
       </template>
     </el-dialog>
   </div>

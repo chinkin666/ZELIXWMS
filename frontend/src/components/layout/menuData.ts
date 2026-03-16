@@ -129,6 +129,7 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'N-1検品', to: '/shipment/operations/n-by-one/inspection' },
     { label: '出荷実績', to: '/shipment/results' },
   ],
+  '/passthrough': passthroughSubMenu,
   '/inbound': [
     { label: 'ダッシュボード', to: '/inbound/dashboard' },
     { label: '入庫指示一覧', to: '/inbound/orders' },
