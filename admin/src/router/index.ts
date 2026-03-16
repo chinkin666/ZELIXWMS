@@ -16,6 +16,8 @@ const router = createRouter({
         { path: 'clients', name: 'clients', component: () => import('@/views/clients/ClientListPage.vue') },
         { path: 'clients/:id/pricing', name: 'client-pricing', component: () => import('@/views/pricing/PricingPage.vue') },
         { path: 'clients/:id/sub-clients', name: 'client-sub-clients', component: () => import('@/views/clients/SubClientPage.vue') },
+        { path: 'orders', name: 'orders', component: () => import('@/views/orders/OrderListPage.vue') },
+        { path: 'kpi', name: 'kpi', component: () => import('@/views/kpi/KpiPage.vue') },
       ],
     },
   ],
