@@ -116,7 +116,8 @@ onMounted(loadClients)
       <el-table-column label="操作" width="200">
         <template #default="{ row }">
           <el-button text type="primary" size="small" @click="router.push(`/clients/${row._id}/pricing`)">价格</el-button>
-          <el-button text type="success" size="small" @click="openInvite(row._id)">邀请门户</el-button>
+          <el-button text size="small" @click="router.push(`/clients/${row._id}/sub-clients`)">子客户/店铺</el-button>
+          <el-button text type="success" size="small" @click="openInvite(row._id)">邀请</el-button>
         </template>
       </el-table-column>
     </el-table>

@@ -15,6 +15,7 @@ const router = createRouter({
         { path: '', name: 'home', component: () => import('@/views/DashboardPage.vue') },
         { path: 'clients', name: 'clients', component: () => import('@/views/clients/ClientListPage.vue') },
         { path: 'clients/:id/pricing', name: 'client-pricing', component: () => import('@/views/pricing/PricingPage.vue') },
+        { path: 'clients/:id/sub-clients', name: 'client-sub-clients', component: () => import('@/views/clients/SubClientPage.vue') },
       ],
     },
   ],
