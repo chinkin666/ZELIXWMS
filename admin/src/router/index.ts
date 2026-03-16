@@ -22,7 +22,14 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
-  const token = localStorage.getItem('admin_token')
+  let token = localStorage.getItem('admin_token')
+
+  // 開発環境で未認証 → 自動ログイン / 开发环境自动登录
+  if (!token && import.meta.env.DEV) {
+    token = 'dev-token'
+    localStorage.setItem('admin_token', token)
+  }
+
   if (to.path !== '/login' && !token) {
     next('/login')
     return

@@ -44,6 +44,9 @@ function logout() {
         <el-menu-item index="/billing">
           <span>{{ t('nav.billing') }}</span>
         </el-menu-item>
+        <el-menu-item index="/sub-clients">
+          <span>{{ t('nav.subClients') }} & {{ t('nav.shops') }}</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 

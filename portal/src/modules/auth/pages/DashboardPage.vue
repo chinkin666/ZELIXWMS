@@ -15,7 +15,9 @@ const dashboard = ref<any>(null)
 async function load() {
   loading.value = true
   try {
-    dashboard.value = await http.get('/portal/dashboard')
+    const clientId = auth.user?.clientId || ''
+    const qs = clientId ? `?clientId=${clientId}` : ''
+    dashboard.value = await http.get(`/portal/dashboard${qs}`)
   } catch (e) {
     console.error(e)
   } finally {

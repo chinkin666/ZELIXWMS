@@ -44,6 +44,11 @@ const router = createRouter({
           name: 'billing',
           component: () => import('@/modules/billing/pages/BillingOverviewPage.vue'),
         },
+        {
+          path: 'sub-clients',
+          name: 'sub-clients',
+          component: () => import('@/modules/settings/pages/SubClientShopPage.vue'),
+        },
       ],
     },
     {
@@ -67,6 +72,19 @@ router.beforeEach((to, _from, next) => {
     }
     next()
     return
+  }
+
+  // 開発環境で未認証 → 自動ログイン / 开发环境未认证 → 自动登录
+  if (!store.isAuthenticated && import.meta.env.DEV) {
+    store.setAuth('dev-token', {
+      id: 'dev-portal-user',
+      email: 'dev-client@zelix.local',
+      displayName: 'Dev Client',
+      clientId: '',
+      clientName: 'Dev Client Co.',
+      role: 'client_admin',
+      language: 'zh',
+    })
   }
 
   if (!store.isAuthenticated) {
