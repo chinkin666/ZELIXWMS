@@ -88,6 +88,11 @@ onMounted(load)
               <span style="color: #f56c6c; font-weight: bold">{{ row.hours }}h</span>
             </template>
           </el-table-column>
+          <el-table-column label="操作" width="100">
+            <template #default="{ row }">
+              <el-button text type="primary" size="small" @click="$router.push('/passthrough/tasks')">対応</el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </el-card>
 

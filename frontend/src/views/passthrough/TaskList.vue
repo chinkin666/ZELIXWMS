@@ -6,10 +6,12 @@
  * 显示已受付的入库预定的作业选项，记录作业完成。
  */
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getApiBaseUrl } from '@/api/base'
 import { useWmsUserStore } from '@/stores/wms/useWmsUserStore'
 
+const router = useRouter()
 const userStore = useWmsUserStore()
 const baseUrl = getApiBaseUrl()
 
@@ -89,7 +91,11 @@ onMounted(loadOrders)
         <template #header>
           <div style="display: flex; justify-content: space-between; align-items: center">
             <span>{{ order.orderNumber }} — {{ (order.destinationType || '').toUpperCase() }}</span>
-            <el-tag size="small">{{ order.status }}</el-tag>
+            <div style="display: flex; gap: 4px; align-items: center">
+              <el-button text size="small" @click.stop="router.push(`/passthrough/inspection/${order._id}`)">検品</el-button>
+              <el-button text size="small" @click.stop="router.push(`/passthrough/boxes/${order._id}`)">FBA箱</el-button>
+              <el-tag size="small">{{ order.status }}</el-tag>
+            </div>
           </div>
         </template>
 
