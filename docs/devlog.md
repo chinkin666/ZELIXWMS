@@ -3,6 +3,35 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-17] 保管型出库+用户旅程+Admin/Portal完善 / 保管型出庫+ユーザージャーニー+Admin・ポータル完善
+
+**变更类型 / 変更種別**: feat
+**影响范围 / 影響範囲**: backend/, portal/, admin/
+
+### 保管型出库申请 / 保管型出庫申請
+- POST /api/outbound-requests: 客户从门户提交出库请求（收件人+商品+数量）
+- 状态机: pending→approved→picking→packed→shipped→completed
+- 承认 + 出货完成 API
+- 门户出库申请页面（列表+创建对话框）+ 菜单入口
+
+### Admin 完善
+- Dashboard 真实数据 API（客户数/仓库/营收¥28,690/活跃预定/客户排名/状态分布）
+- 预定管理页（全通过型预定列表+客户名显示+状态筛选）
+- KPI 仪表板页（4指标+达成/未达成+数据汇总）
+- 侧边栏子菜单（客户管理/预定管理/报告）
+
+### 门户完善
+- Step4 价格: ServiceRate 自动取价+实时预估+选中绿色高亮+Step5 费用汇总
+- Layout: 待处理 badge+客户名+背景色
+- InboundOrder clientName 反查（denormalize）
+
+### 测试
+- 用户旅程测试 16 步全通过（Admin创建客户→Portal登录→注册商品→创建预定→仓库受付→作业→出货→Portal查看费用¥12,940）
+- E2E 23/23 全通过
+- 三端编译全通过
+
+---
+
 ## [2026-03-17] Admin仪表板+预定管理+KPI+门户UX / Admin ダッシュボード+予定管理+KPI+ポータルUX
 
 **变更类型 / 変更種別**: feat
