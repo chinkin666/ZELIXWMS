@@ -3,6 +3,18 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-17] 门户/Admin 完善 + E2E 23项全通过 / ポータル・Admin 完善 + E2E 23項全通過
+
+**变更类型 / 変更種別**: feat
+**影响范围 / 影響範囲**: backend/, portal/, admin/, frontend/
+
+- 门户认证打通(portalLogin+invite) + 仪表板真实数据 + 费用真实数据 + 商品CRUD
+- Admin 客户创建/子客户/店铺管理完整 + 门户邀请
+- 仓库端通过型6项子导航 + PhotoService S3运行时修复
+- E2E 23/23 全通过验证
+
+---
+
 ## [2026-03-16] Phase 4 KPI + 操作审计 / Phase 4 KPI + 操作監査
 
 **变更类型 / 変更種別**: feat
