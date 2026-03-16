@@ -28,6 +28,16 @@ export const wmsMenuItems: Array<{ label: string; to: string }> = [
   { label: '設定', to: '/settings' },
 ]
 
+// 通過型サブメニュー / 通过型子菜单
+export const passthroughSubMenu: SubMenuItem[] = [
+  { label: '受付スキャン', to: '/passthrough/receive' },
+  { label: '作業タスク', to: '/passthrough/tasks' },
+  { label: '出荷マッチング', to: '/passthrough/ship' },
+  { label: '暫存エリア', to: '/passthrough/staging' },
+  { label: 'ラベル貼付', to: '/passthrough/labeling' },
+  { label: '異常報告', to: '/passthrough/exceptions' },
+]
+
 // 設定サイドバー / 设置侧边栏
 // 整理済み: 頻度別4グループ、名称統一
 // 已整理: 按使用频率分4组，名称统一

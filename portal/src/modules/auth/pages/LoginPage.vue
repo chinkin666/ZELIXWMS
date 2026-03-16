@@ -20,7 +20,7 @@ async function handleLogin() {
   errorMsg.value = ''
 
   try {
-    const res: any = await http.post('/auth/login', {
+    const res: any = await http.post('/portal/auth/login', {
       email: email.value,
       password: password.value,
     })

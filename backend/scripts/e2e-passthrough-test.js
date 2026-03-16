@@ -353,6 +353,34 @@ async function main() {
     console.log(`   作業費用レコード: ${count}件`);
   });
 
+  // === Portal Auth ===
+
+  await test('21. ポータルユーザー招待', async () => {
+    const res = await api('POST', '/portal/auth/invite', {
+      email: 'e2e-client@test.com',
+      password: 'test12345678',
+      displayName: '张三门户',
+      clientId,
+    });
+    if (!res.id) throw new Error('No user id');
+    console.log(`   ポータルユーザー: ${res.email} (ID: ${res.id})`);
+  });
+
+  await test('22. ポータルログイン', async () => {
+    const res = await api('POST', '/portal/auth/login', {
+      email: 'e2e-client@test.com',
+      password: 'test12345678',
+    });
+    if (!res.token) throw new Error('No token');
+    console.log(`   ログイン成功: ${res.user.displayName} (clientId: ${res.user.clientId})`);
+  });
+
+  await test('23. ポータルダッシュボード', async () => {
+    const res = await api('GET', `/portal/dashboard?clientId=${clientId}`);
+    console.log(`   進行中: ${res.stats?.inProgress}, 本月費用: ¥${(res.stats?.monthlyFee || 0).toLocaleString()}`);
+    console.log(`   最近予約: ${res.recentOrders?.length || 0}件, 要対応: ${res.needsAttention?.length || 0}件`);
+  });
+
   // === 清理测试数据 ===
   console.log('\n📋 クリーンアップはスキップ（手動で確認用にデータ保持）');
   console.log('\n✨ E2E テスト完了!\n');

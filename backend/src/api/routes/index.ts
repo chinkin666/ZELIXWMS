@@ -62,6 +62,7 @@ import { labelingTaskRouter } from './labelingTasks';
 import { fbaBoxRouter } from './fbaBoxes';
 import { cycleCountRouter } from './cycleCounts';
 import { kpiRouter } from './kpi';
+import { portalAuthRouter } from './portalAuth';
 import { auditLogger } from '@/api/middleware/auditLogger';
 
 export const registerCoreRoutes = (app: Application): void => {
@@ -176,6 +177,9 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // 荷主ポータル / 货主门户
   api.use('/client-portal', clientPortalRouter);
+
+  // 顧客ポータル認証 + ダッシュボード / 客户门户认证 + 仪表板
+  api.use('/portal', portalAuthRouter);
 
   app.use('/api', api);
 };
