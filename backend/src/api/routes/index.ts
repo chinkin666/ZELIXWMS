@@ -64,6 +64,7 @@ import { cycleCountRouter } from './cycleCounts';
 import { kpiRouter } from './kpi';
 import { portalAuthRouter } from './portalAuth';
 import { adminDashboardRouter } from './adminDashboard';
+import { outboundRequestRouter } from './outboundRequests';
 import { auditLogger } from '@/api/middleware/auditLogger';
 
 export const registerCoreRoutes = (app: Application): void => {
@@ -172,6 +173,9 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // Admin ダッシュボード / Admin 仪表板
   api.use('/admin/dashboard', adminDashboardRouter);
+
+  // 保管型出庫申請 / 保管型出库申请
+  api.use('/outbound-requests', outboundRequestRouter);
 
   // 子顧客 / 子客户
   api.use('/sub-clients', subClientRouter);

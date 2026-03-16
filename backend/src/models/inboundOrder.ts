@@ -145,10 +145,16 @@ export interface IInboundOrder {
   // --- 客户关联（Phase 0.1 追加）/ 顧客関連 ---
   /** 顧客ID / 客户ID */
   clientId?: mongoose.Types.ObjectId;
+  /** 顧客名キャッシュ / 客户名缓存 */
+  clientName?: string;
   /** 子顧客ID / 子客户ID */
   subClientId?: mongoose.Types.ObjectId;
+  /** 子顧客名 / 子客户名 */
+  subClientName?: string;
   /** 店舗ID / 店铺ID */
   shopId?: mongoose.Types.ObjectId;
+  /** 店舗名 / 店铺名 */
+  shopName?: string;
 
   // --- 通过型扩展（Phase 1）/ 通過型拡張 ---
   /** 出荷先タイプ / 出货目的地 */
@@ -343,8 +349,11 @@ const inboundOrderSchema = new mongoose.Schema<IInboundOrder>(
 
     // 顧客関連 / 客户关联
     clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' },
+    clientName: { type: String, trim: true },
     subClientId: { type: mongoose.Schema.Types.ObjectId, ref: 'SubClient' },
+    subClientName: { type: String, trim: true },
     shopId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop' },
+    shopName: { type: String, trim: true },
 
     // 通過型拡張 / 通过型扩展
     destinationType: { type: String, enum: ['fba', 'rsl', 'b2b'] },

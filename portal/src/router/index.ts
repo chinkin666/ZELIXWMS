@@ -40,6 +40,11 @@ const router = createRouter({
           component: () => import('@/modules/inbound/pages/InboundDetailPage.vue'),
         },
         {
+          path: 'outbound',
+          name: 'outbound',
+          component: () => import('@/modules/outbound/pages/OutboundRequestPage.vue'),
+        },
+        {
           path: 'billing',
           name: 'billing',
           component: () => import('@/modules/billing/pages/BillingOverviewPage.vue'),

@@ -3,6 +3,7 @@ import type { IInboundOrder, IServiceOption, IVarianceReport } from '@/models/in
 import { ServiceRate } from '@/models/serviceRate';
 import { WorkCharge } from '@/models/workCharge';
 import { Product } from '@/models/product';
+import { Client } from '@/models/client';
 import type { HydratedDocument } from 'mongoose';
 
 /**
@@ -75,6 +76,13 @@ export async function createPassthroughOrder(
     }
   }
 
+  // 顧客名反査 / 客户名反查
+  let clientName = data.clientName;
+  if (!clientName && data.clientId) {
+    const c = await Client.findById(data.clientId).lean();
+    clientName = c?.name;
+  }
+
   const order = await InboundOrder.create({
     tenantId: data.tenantId,
     orderNumber,
@@ -82,6 +90,7 @@ export async function createPassthroughOrder(
     flowType: 'passthrough',
     destinationType: data.destinationType,
     clientId: data.clientId,
+    clientName,
     subClientId: data.subClientId,
     shopId: data.shopId,
     lines,

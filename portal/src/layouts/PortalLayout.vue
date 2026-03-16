@@ -62,6 +62,9 @@ function logout() {
         <el-menu-item index="/inbound">
           <span>{{ t('nav.inbound') }}</span>
         </el-menu-item>
+        <el-menu-item index="/outbound">
+          <span>出库申请</span>
+        </el-menu-item>
         <el-menu-item index="/billing">
           <span>{{ t('nav.billing') }}</span>
         </el-menu-item>

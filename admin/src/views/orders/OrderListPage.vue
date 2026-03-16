@@ -62,8 +62,8 @@ onMounted(load)
           ¥{{ (row.serviceOptions?.reduce((s: number, o: any) => s + (o.actualCost || o.estimatedCost || 0), 0) || 0).toLocaleString() }}
         </template>
       </el-table-column>
-      <el-table-column label="客户" width="120">
-        <template #default="{ row }">{{ row.clientId ? '...' + String(row.clientId).slice(-6) : '--' }}</template>
+      <el-table-column label="客户" width="160">
+        <template #default="{ row }">{{ row.clientName || '--' }}</template>
       </el-table-column>
       <el-table-column label="创建日" width="100">
         <template #default="{ row }">{{ new Date(row.createdAt).toLocaleDateString() }}</template>
