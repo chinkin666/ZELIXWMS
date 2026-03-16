@@ -63,6 +63,7 @@ import { fbaBoxRouter } from './fbaBoxes';
 import { cycleCountRouter } from './cycleCounts';
 import { kpiRouter } from './kpi';
 import { portalAuthRouter } from './portalAuth';
+import { adminDashboardRouter } from './adminDashboard';
 import { auditLogger } from '@/api/middleware/auditLogger';
 
 export const registerCoreRoutes = (app: Application): void => {
@@ -168,6 +169,9 @@ export const registerCoreRoutes = (app: Application): void => {
 
   // Phase 4: KPI / KPI 仪表板
   api.use('/kpi', kpiRouter);
+
+  // Admin ダッシュボード / Admin 仪表板
+  api.use('/admin/dashboard', adminDashboardRouter);
 
   // 子顧客 / 子客户
   api.use('/sub-clients', subClientRouter);

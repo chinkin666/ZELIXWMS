@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
@@ -73,21 +73,47 @@ const b2bInfo = ref({ recipientName: '', postalCode: '', prefecture: '', city: '
 const fcOptions = ['NRT5', 'KIX2', 'HND3', 'NGO2', 'FUK3', 'NRT1', 'KIX4', 'HND9', 'TPF6', 'FSZ1']
 
 // Step 4: 作業オプション / 作业选项
-const availableOptions = [
-  { code: 'inbound_handling', name: '数量点数', required: true },
-  { code: 'inspection', name: '开箱全检' },
-  { code: 'labeling', name: '贴 FNSKU' },
-  { code: 'opp_bagging', name: '套 OPP 袋' },
-  { code: 'suffocation_label', name: '贴防窒息标' },
-  { code: 'fragile_label', name: '贴易碎标' },
-  { code: 'bubble_wrap', name: '气泡膜包装' },
-  { code: 'set_assembly', name: '组合套装' },
-  { code: 'box_splitting', name: '分箱' },
-  { code: 'box_replacement', name: '换箱' },
-  { code: 'photo_documentation', name: '拍照留档' },
-]
+const availableOptions = ref([
+  { code: 'inbound_handling', name: '数量点数', required: true, unitPrice: 0, unit: '件' },
+  { code: 'inspection', name: '开箱全检', required: false, unitPrice: 0, unit: '件' },
+  { code: 'labeling', name: '贴 FNSKU', required: false, unitPrice: 0, unit: '件' },
+  { code: 'opp_bagging', name: '套 OPP 袋', required: false, unitPrice: 0, unit: '件' },
+  { code: 'suffocation_label', name: '贴防窒息标', required: false, unitPrice: 0, unit: '件' },
+  { code: 'fragile_label', name: '贴易碎标', required: false, unitPrice: 0, unit: '件' },
+  { code: 'bubble_wrap', name: '气泡膜包装', required: false, unitPrice: 0, unit: '件' },
+  { code: 'set_assembly', name: '组合套装', required: false, unitPrice: 0, unit: '套' },
+  { code: 'box_splitting', name: '分箱', required: false, unitPrice: 0, unit: '箱' },
+  { code: 'box_replacement', name: '换箱', required: false, unitPrice: 0, unit: '箱' },
+  { code: 'photo_documentation', name: '拍照留档', required: false, unitPrice: 0, unit: '次' },
+])
 
 const selectedOptions = ref<string[]>(['inbound_handling'])
+
+// 加载客户价格 / 顧客価格をロード
+async function loadPrices() {
+  try {
+    const clientId = auth.user?.clientId || ''
+    const res = await http.get<any>(`/service-rates?clientId=${clientId}&limit=50`)
+    const rates = res.data || res || []
+    for (const opt of availableOptions.value) {
+      const rate = rates.find((r: any) => r.chargeType === opt.code)
+      if (rate) {
+        opt.unitPrice = rate.unitPrice
+        const unitMap: Record<string, string> = { per_item: '件', per_case: '箱', per_set: '套', per_sheet: '张', per_order: '单', flat: '固定' }
+        opt.unit = unitMap[rate.unit] || rate.unit
+      }
+    }
+  } catch { /* ignore */ }
+}
+
+// 预估费用计算 / 概算費用計算
+const estimatedTotal = computed(() => {
+  return selectedOptions.value.reduce((sum, code) => {
+    const opt = availableOptions.value.find(o => o.code === code)
+    if (!opt) return sum
+    return sum + opt.unitPrice * totalQuantity.value
+  }, 0)
+})
 
 const totalQuantity = computed(() => lines.value.reduce((s, l) => s + (l.expectedQuantity || 0), 0))
 
@@ -96,7 +122,7 @@ async function handleSubmit() {
   submitting.value = true
   try {
     const serviceOptions = selectedOptions.value.map((code) => {
-      const opt = availableOptions.find((o) => o.code === code)!
+      const opt = availableOptions.value.find((o) => o.code === code)!
       return {
         optionCode: code,
         optionName: opt.name,
@@ -143,6 +169,8 @@ async function handleSubmit() {
     submitting.value = false
   }
 }
+
+onMounted(loadPrices)
 </script>
 
 <template>
@@ -250,11 +278,25 @@ async function handleSubmit() {
     <!-- Step 4: 作业选项 -->
     <el-card v-show="currentStep === 3">
       <el-checkbox-group v-model="selectedOptions">
-        <div v-for="opt in availableOptions" :key="opt.code" style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px">
-          <el-checkbox :value="opt.code" :disabled="opt.required">{{ opt.name }}</el-checkbox>
-          <span v-if="opt.required" style="color: #909399; font-size: 12px">(必选)</span>
+        <div v-for="opt in availableOptions" :key="opt.code"
+          style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-radius: 6px"
+          :style="{ background: selectedOptions.includes(opt.code) ? '#f0f9eb' : '#fafafa' }">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <el-checkbox :value="opt.code" :disabled="opt.required">{{ opt.name }}</el-checkbox>
+            <el-tag v-if="opt.required" size="small" type="info">必选</el-tag>
+          </div>
+          <div style="text-align: right; min-width: 180px">
+            <span style="color: #606266; font-size: 13px">¥{{ opt.unitPrice }}/{{ opt.unit }}</span>
+            <span v-if="selectedOptions.includes(opt.code)" style="margin-left: 12px; font-weight: bold; color: #67c23a">
+              = ¥{{ (opt.unitPrice * totalQuantity).toLocaleString() }}
+            </span>
+          </div>
         </div>
       </el-checkbox-group>
+      <div style="margin-top: 16px; padding: 12px; background: #f5f7fa; border-radius: 6px; display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 14px; color: #606266">预估总费用 / 概算合計</span>
+        <span style="font-size: 24px; font-weight: bold; color: #409eff">¥{{ estimatedTotal.toLocaleString() }}</span>
+      </div>
     </el-card>
 
     <!-- Step 5: 确认 -->
@@ -264,6 +306,9 @@ async function handleSubmit() {
         <el-descriptions-item label="箱数">{{ form.totalBoxCount }}</el-descriptions-item>
         <el-descriptions-item label="商品">{{ lines.filter(l => l.productSku).length }} SKU, {{ totalQuantity }} 件</el-descriptions-item>
         <el-descriptions-item label="作业项">{{ selectedOptions.length }} 项</el-descriptions-item>
+        <el-descriptions-item label="预估费用">
+          <span style="font-size: 18px; font-weight: bold; color: #409eff">¥{{ estimatedTotal.toLocaleString() }}</span>
+        </el-descriptions-item>
       </el-descriptions>
     </el-card>
 
