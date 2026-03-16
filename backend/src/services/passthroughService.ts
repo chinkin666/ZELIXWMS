@@ -2,6 +2,7 @@ import { InboundOrder } from '@/models/inboundOrder';
 import type { IInboundOrder, IServiceOption, IVarianceReport } from '@/models/inboundOrder';
 import { ServiceRate } from '@/models/serviceRate';
 import { WorkCharge } from '@/models/workCharge';
+import { Product } from '@/models/product';
 import type { HydratedDocument } from 'mongoose';
 
 /**
@@ -55,6 +56,25 @@ export async function createPassthroughOrder(
     }
   }
 
+  // SKU → productId 自動マッチング / SKU → productId 自动匹配
+  const lines = data.lines || [];
+  for (const line of lines) {
+    if (!line.productId || line.productId.toString() === '000000000000000000000000') {
+      // SKU / FNSKU / JAN で商品を検索 / 按 SKU/FNSKU/JAN 搜索商品
+      const product = await Product.findOne({
+        $or: [
+          { sku: line.productSku },
+          { fnsku: line.productSku },
+          { janCode: line.productSku },
+        ],
+      }).lean();
+      if (product) {
+        line.productId = product._id;
+        line.productName = line.productName || product.name;
+      }
+    }
+  }
+
   const order = await InboundOrder.create({
     tenantId: data.tenantId,
     orderNumber,
@@ -64,7 +84,7 @@ export async function createPassthroughOrder(
     clientId: data.clientId,
     subClientId: data.subClientId,
     shopId: data.shopId,
-    lines: data.lines || [],
+    lines,
     expectedDate: data.expectedDate,
     totalBoxCount: data.totalBoxCount,
     memo: data.memo,

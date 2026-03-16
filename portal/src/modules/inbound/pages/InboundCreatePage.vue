@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { usePortalAuthStore } from '@/stores/auth'
 import { createOrder } from '@/api/passthrough'
+import { http } from '@/api/http'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -23,12 +24,42 @@ const form = ref({
 })
 
 // Step 2: 商品明细 / 商品明細
-const lines = ref<Array<{ productSku: string; productName: string; expectedQuantity: number }>>([
-  { productSku: '', productName: '', expectedQuantity: 0 },
+const lines = ref<Array<{ productId: string; productSku: string; productName: string; fnsku: string; expectedQuantity: number }>>([
+  { productId: '', productSku: '', productName: '', fnsku: '', expectedQuantity: 0 },
 ])
 
+// 商品搜索 / 商品検索
+const productSearchResults = ref<any[]>([])
+const searchingProduct = ref(false)
+
+async function searchProduct(query: string, lineIdx: number) {
+  if (!query || query.length < 2) { productSearchResults.value = []; return }
+  searchingProduct.value = true
+  try {
+    const params: Record<string, string> = { search: query, limit: '10' }
+    if (auth.user?.clientId) params.clientId = auth.user.clientId
+    const res = await http.get<any>(`/products?${new URLSearchParams(params)}`)
+    productSearchResults.value = (res.data || []).map((p: any) => ({
+      ...p,
+      _lineIdx: lineIdx,
+    }))
+  } catch { productSearchResults.value = [] }
+  finally { searchingProduct.value = false }
+}
+
+function selectProduct(product: any) {
+  const idx = product._lineIdx
+  if (idx !== undefined && lines.value[idx]) {
+    lines.value[idx].productId = product._id
+    lines.value[idx].productSku = product.sku
+    lines.value[idx].productName = product.name
+    lines.value[idx].fnsku = product.fnsku || ''
+  }
+  productSearchResults.value = []
+}
+
 function addLine() {
-  lines.value.push({ productSku: '', productName: '', expectedQuantity: 0 })
+  lines.value.push({ productId: '', productSku: '', productName: '', fnsku: '', expectedQuantity: 0 })
 }
 function removeLine(idx: number) {
   lines.value.splice(idx, 1)
@@ -87,7 +118,7 @@ async function handleSubmit() {
         .filter((l) => l.productSku)
         .map((l, i) => ({
           lineNumber: i + 1,
-          productId: '000000000000000000000000', // 后续匹配 / 後でマッチング
+          productId: l.productId || '000000000000000000000000',
           productSku: l.productSku,
           productName: l.productName,
           expectedQuantity: l.expectedQuantity,
@@ -151,7 +182,22 @@ async function handleSubmit() {
     <el-card v-show="currentStep === 1">
       <el-table :data="lines">
         <el-table-column label="SKU" width="200">
-          <template #default="{ row }"><el-input v-model="row.productSku" size="small" /></template>
+          <template #default="{ row, $index }">
+            <el-autocomplete
+              v-model="row.productSku"
+              :fetch-suggestions="(_q: string, cb: any) => {
+                searchProduct(row.productSku, $index)
+                cb(productSearchResults.map((p: any) => ({ value: p.sku, ...p })))
+              }"
+              :trigger-on-focus="false"
+              size="small"
+              placeholder="SKU 搜索"
+              @select="(item: any) => selectProduct({ ...item, _lineIdx: $index })"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column label="FNSKU" width="140">
+          <template #default="{ row }"><span style="font-size: 12px; color: #909399">{{ row.fnsku || '--' }}</span></template>
         </el-table-column>
         <el-table-column label="商品名">
           <template #default="{ row }"><el-input v-model="row.productName" size="small" /></template>
