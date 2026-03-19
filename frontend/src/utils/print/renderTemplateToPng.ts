@@ -106,7 +106,7 @@ export async function renderTemplateWithContextToPngBlob(
             value = ''
           }
         }
-        const dataUrl = renderBarcodePngDataUrl({
+        const dataUrl = await renderBarcodePngDataUrl({
           bcid: b.format,
           text: value,
           width: mmToPx(b.widthMm, exportPxPerMm),

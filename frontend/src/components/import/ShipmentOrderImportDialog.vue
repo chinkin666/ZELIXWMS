@@ -199,7 +199,8 @@ import { computed, reactive, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ODatePicker from '@/components/odoo/ODatePicker.vue'
-import * as XLSX from 'xlsx'
+// XLSX动态导入，减少初始包大小 / XLSXを動的インポートし初期バンドルサイズを削減
+const loadXLSX = () => import('xlsx')
 import { getAllMappingConfigs, type MappingConfig, type TransformMapping } from '@/api/mappingConfig'
 import { generateTempId } from '@/types/orderRow'
 import { applyTransformMappings } from '@/utils/transformRunner'
@@ -511,13 +512,15 @@ const parseFile = async (file: File): Promise<Record<string, any>[]> => {
 }
 
 const parseExcelFile = async (file: File): Promise<Record<string, any>[]> => {
+  const XLSX = await loadXLSX()
   const buf = await file.arrayBuffer()
   const wb = XLSX.read(buf, { type: 'array' })
-  return parseSheetToRows(wb)
+  return parseSheetToRows(XLSX, wb)
 }
 
 const parseCsvFile = async (file: File): Promise<Record<string, any>[]> => {
   try {
+    const XLSX = await loadXLSX()
     const buf = await file.arrayBuffer()
     const encoding = fileEncoding.value === 'auto' ? detectCsvEncoding(buf) : fileEncoding.value
     let text = decodeWithEncoding(buf, encoding)
@@ -525,7 +528,7 @@ const parseCsvFile = async (file: File): Promise<Record<string, any>[]> => {
       text = text.slice(1)
     }
     const wb = XLSX.read(text, { type: 'string' })
-    return parseSheetToRows(wb)
+    return parseSheetToRows(XLSX, wb)
   } catch (error) {
     // CSV解析失敗 / CSV parsing failed
     alert('CSVファイルの解析に失敗しました')
@@ -533,7 +536,7 @@ const parseCsvFile = async (file: File): Promise<Record<string, any>[]> => {
   }
 }
 
-const parseSheetToRows = (wb: any): Record<string, any>[] => {
+const parseSheetToRows = (XLSX: any, wb: any): Record<string, any>[] => {
   if (!wb.SheetNames || wb.SheetNames.length === 0) {
     return []
   }

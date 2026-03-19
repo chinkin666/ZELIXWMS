@@ -122,7 +122,8 @@ import { fetchShipmentOrders } from '@/api/shipmentOrders'
 import { getOrderFieldDefinitions } from '@/types/order'
 import { getProductFieldDefinitions } from '@/types/product'
 import { fetchCarriers } from '@/api/carrier'
-import * as XLSX from 'xlsx'
+// XLSX动态导入，减少初始包大小 / XLSXを動的インポートし初期バンドルサイズを削減
+const loadXLSX = () => import('xlsx')
 import {
   createMappingConfig,
   getMappingConfigById,
@@ -714,7 +715,7 @@ watch(
 
 // --- File parsing ---
 
-const parseSheetToRows = (wb: any): Record<string, any>[] => {
+const parseSheetToRows = (XLSX: any, wb: any): Record<string, any>[] => {
   if (!wb.SheetNames || wb.SheetNames.length === 0) return []
   const sheet = wb.Sheets[wb.SheetNames[0]]
 
@@ -757,17 +758,19 @@ const decodeWithEncoding = (buf: ArrayBuffer, enc: string): string => {
 }
 
 const parseExcelFile = async (file: File): Promise<Record<string, any>[]> => {
+  const XLSX = await loadXLSX()
   const buf = await file.arrayBuffer()
   const wb = XLSX.read(buf, { type: 'array' })
-  return parseSheetToRows(wb)
+  return parseSheetToRows(XLSX, wb)
 }
 
 const parseCsvFile = async (file: File): Promise<Record<string, any>[]> => {
+  const XLSX = await loadXLSX()
   const buf = await file.arrayBuffer()
   let text = decodeWithEncoding(buf, encoding.value)
   if (text.charCodeAt(0) === 0xfeff) text = text.slice(1)
   const wb = XLSX.read(text, { type: 'string' })
-  return parseSheetToRows(wb)
+  return parseSheetToRows(XLSX, wb)
 }
 
 const parseFileForPreview = async (file: File): Promise<Record<string, any>[]> => {

@@ -95,7 +95,8 @@ import { fetchPrintTemplate, updatePrintTemplate } from '@/api/printTemplates'
 import { renderBarcodePngDataUrl } from '@/utils/print/renderBarcodeDataUrl'
 import { createEmptyPrintTemplate } from '@/utils/print/templateStorage'
 import { ptToMm } from '@/utils/printUnits'
-import * as XLSX from 'xlsx'
+// XLSX动态导入，减少初始包大小 / XLSXを動的インポートし初期バンドルサイズを削減
+const loadXLSX = () => import('xlsx')
 import MappingDetailDialog from '@/components/mapping/MappingDetailDialog.vue'
 import type { TransformMapping } from '@/api/mappingConfig'
 import { runTransformMapping } from '@/utils/transformRunner'
@@ -583,9 +584,10 @@ async function parseTableFile(file: File) {
 }
 
 async function parseExcelFileInternal(file: File): Promise<{ headers: string[]; rows: Record<string, any>[] }> {
+  const XLSX = await loadXLSX()
   const buf = await file.arrayBuffer()
   const wb = XLSX.read(buf, { type: 'array' })
-  return parseSheetToRows(wb)
+  return parseSheetToRows(XLSX, wb)
 }
 
 async function parseCsvFileInternal(file: File): Promise<{ headers: string[]; rows: Record<string, any>[] }> {
@@ -618,11 +620,12 @@ async function parseCsvFileInternal(file: File): Promise<{ headers: string[]; ro
     text = text.slice(1)
   }
 
+  const XLSX = await loadXLSX()
   const wb = XLSX.read(text, { type: 'string' })
-  return parseSheetToRows(wb)
+  return parseSheetToRows(XLSX, wb)
 }
 
-function parseSheetToRows(wb: any): { headers: string[]; rows: Record<string, any>[] } {
+function parseSheetToRows(XLSX: any, wb: any): { headers: string[]; rows: Record<string, any>[] } {
   if (!wb.SheetNames || wb.SheetNames.length === 0) {
     return { headers: [], rows: [] }
   }
@@ -680,7 +683,7 @@ async function barcodeToImage(b: PrintBarcodeElement, value: string): Promise<HT
 
   let dataUrl: string
   try {
-    dataUrl = renderBarcodePngDataUrl({
+    dataUrl = await renderBarcodePngDataUrl({
       bcid: b.format,
       text: value,
       width: widthPx,

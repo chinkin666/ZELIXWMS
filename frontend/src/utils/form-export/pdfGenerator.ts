@@ -288,12 +288,12 @@ function formatTextValue(value: any, renderType?: string, dateFormat?: string): 
 /**
  * バーコード/QRコード画像を生成
  */
-function renderBarcodeImage(
+async function renderBarcodeImage(
   value: any,
   renderType: 'barcode' | 'qrcode',
   barcodeConfig?: BarcodeConfig,
   horizontalAlign?: string,
-): any {
+): Promise<any> {
   // 値が存在しない場合は null を返す
   if (!value) return null
   
@@ -323,7 +323,7 @@ function renderBarcodeImage(
     const renderWidth = displayWidth * renderScale
     const renderHeight = displayHeight * renderScale
     
-    const dataUrl = renderBarcodePngDataUrl({
+    const dataUrl = await renderBarcodePngDataUrl({
       bcid: format,
       text: textValue,
       width: renderWidth,
@@ -350,7 +350,7 @@ function renderBarcodeImage(
 /**
  * 単一のセル内容を生成
  */
-function renderCellContent(
+async function renderCellContent(
   value: any,
   renderType: string | undefined,
   barcodeConfig: BarcodeConfig | undefined,
@@ -360,7 +360,7 @@ function renderCellContent(
   label?: string,
   rowData?: Record<string, any>, // 行全体のデータ（原始データ取得用）
   fieldKey?: string, // フィールドキー（原始データ取得用）
-): any {
+): Promise<any> {
   const labelPrefix = label ? `${label}: ` : ''
 
   // バーコード/QRコード の場合
@@ -376,7 +376,7 @@ function renderCellContent(
       }
     }
     
-    const barcodeImg = renderBarcodeImage(barcodeValue, renderType, barcodeConfig, horizontalAlign)
+    const barcodeImg = await renderBarcodeImage(barcodeValue, renderType, barcodeConfig, horizontalAlign)
     if (barcodeImg) {
       // ラベルがある場合は stack で縦に並べる
       if (label) {
@@ -408,12 +408,12 @@ function renderCellContent(
 /**
  * multi 列の内容を stack として生成（1セル内に縦並び）
  */
-function renderMultiColumnContent(
+async function renderMultiColumnContent(
   row: Record<string, any>,
   col: FormTemplateColumn,
   fontSize: number,
   horizontalAlign: string,
-): any {
+): Promise<any> {
   if (!col.children || col.children.length === 0) {
     return { text: '-', fontSize, alignment: horizontalAlign }
   }
@@ -423,7 +423,7 @@ function renderMultiColumnContent(
 
   for (const child of col.children) {
     const value = child.field ? row[child.field] : null
-    const cellContent = renderCellContent(
+    const cellContent = await renderCellContent(
       value,
       child.renderType,
       child.barcodeConfig,
@@ -492,7 +492,7 @@ export async function generateFormPdf(
       if (col.type === 'single') {
         // single 列: 通常のセル
         const value = col.field ? row[col.field] : null
-        const cellContent = renderCellContent(
+        const cellContent = await renderCellContent(
           value,
           col.renderType,
           col.barcodeConfig,
@@ -506,7 +506,7 @@ export async function generateFormPdf(
         dataRow.push(cellContent)
       } else {
         // multi 列: stack で縦に並べる
-        const cellContent = renderMultiColumnContent(row, col, fontSize, horizontalAlign)
+        const cellContent = await renderMultiColumnContent(row, col, fontSize, horizontalAlign)
         dataRow.push(cellContent)
       }
     }

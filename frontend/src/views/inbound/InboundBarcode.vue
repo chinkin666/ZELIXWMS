@@ -60,7 +60,8 @@ import { useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { fetchInboundOrder } from '@/api/inboundOrder'
 import type { InboundOrder } from '@/types/inventory'
-import JsBarcode from 'jsbarcode'
+// JsBarcode动态导入，减少初始包大小 / JsBarcodeを動的インポートし初期バンドルサイズを削減
+const loadJsBarcode = () => import('jsbarcode')
 
 const { t } = useI18n()
 const route = useRoute()
@@ -95,8 +96,9 @@ const barcodeFontSize = () => {
   return map[labelSize.value]
 }
 
-const renderBarcode = (el: SVGElement, value: string) => {
+const renderBarcode = async (el: SVGElement, value: string) => {
   try {
+    const JsBarcode = (await loadJsBarcode()).default
     JsBarcode(el, value, {
       format: 'CODE128',
       width: 1.5,

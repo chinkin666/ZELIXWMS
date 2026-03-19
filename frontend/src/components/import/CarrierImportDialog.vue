@@ -166,7 +166,8 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import * as XLSX from 'xlsx'
+// XLSX动态导入，减少初始包大小 / XLSXを動的インポートし初期バンドルサイズを削減
+const loadXLSX = () => import('xlsx')
 import ODialog from '@/components/odoo/ODialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import { importCarrierReceiptRows, type ImportCarrierReceiptRowsResult } from '@/api/shipmentOrders'
@@ -316,7 +317,7 @@ const decodeWithEncoding = (buf: ArrayBuffer, enc: string): string => {
   }
 }
 
-const parseSheetToRows = (wb: any): Record<string, any>[] => {
+const parseSheetToRows = (XLSX: any, wb: any): Record<string, any>[] => {
   if (!wb?.SheetNames || wb.SheetNames.length === 0) return []
   const sheet = wb.Sheets[wb.SheetNames[0]]
   if (!sheet) return []
@@ -354,11 +355,12 @@ const parseSheetToRows = (wb: any): Record<string, any>[] => {
 }
 
 const parseFile = async (file: File): Promise<Record<string, any>[]> => {
+  const XLSX = await loadXLSX()
   const isExcel = file.type.includes('sheet') || file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')
   if (isExcel) {
     const buf = await file.arrayBuffer()
     const wb = XLSX.read(buf, { type: 'array' })
-    return parseSheetToRows(wb)
+    return parseSheetToRows(XLSX, wb)
   }
   const buf = await file.arrayBuffer()
   const enc = fileEncoding.value === 'auto' ? detectCsvEncoding(buf) : (fileEncoding.value as any)
@@ -367,7 +369,7 @@ const parseFile = async (file: File): Promise<Record<string, any>[]> => {
     text = text.slice(1)
   }
   const wb = XLSX.read(text, { type: 'string' })
-  return parseSheetToRows(wb)
+  return parseSheetToRows(XLSX, wb)
 }
 
 const MAX_FILE_SIZE_MB = 10

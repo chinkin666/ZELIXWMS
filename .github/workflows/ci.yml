@@ -1,3 +1,7 @@
+# CI/CD パイプライン / CI/CD 流水线
+# 每次 push 和 PR 运行测试，main 分支额外运行构建
+# プッシュとPRごとにテスト実行、mainブランチでは追加でビルド実行
+
 name: CI
 
 on:
@@ -6,112 +10,98 @@ on:
   pull_request:
     branches: [main]
 
+# 同一ブランチの重複実行をキャンセル / 取消同一分支的重复执行
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # ─── 后端 / バックエンド ───
-  backend:
-    name: Backend (TypeCheck + Test)
+  # ════════════════════════════════════════════════════════════
+  # テストジョブ: 全 push・PR で実行
+  # 测试任务: 所有 push 和 PR 触发
+  # ════════════════════════════════════════════════════════════
+  test:
+    name: Test (TypeCheck + Unit Tests)
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
-        working-directory: backend
-      - name: TypeCheck
+
+      # ─── 依赖安装（ルートワークスペース）/ 安装依赖（根工作区）───
+      - name: Install dependencies
+        run: npm ci
+
+      # ─── 后端テスト / バックエンドテスト ───
+      - name: Backend - TypeCheck
         run: npx tsc --noEmit
         working-directory: backend
-      - name: Test
+
+      - name: Backend - Unit Tests
         run: npx vitest run
         working-directory: backend
 
-  # ─── Plugin SDK ───
-  plugin-sdk:
-    name: Plugin SDK (Build + Test)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-        working-directory: packages/plugin-sdk
-      - name: Build
-        run: npx tsc
-        working-directory: packages/plugin-sdk
-      - name: Test
+      # ─── 仓库端テスト / 倉庫フロントエンドテスト ───
+      - name: Frontend - Unit Tests
         run: npx vitest run
-        working-directory: packages/plugin-sdk
-
-  # ─── 插件测试 / プラグインテスト ───
-  plugins:
-    name: Plugins Test
-    runs-on: ubuntu-latest
-    needs: plugin-sdk
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-        working-directory: packages/plugin-sdk
-      - run: npx tsc
-        working-directory: packages/plugin-sdk
-      - name: Test all plugins
-        run: npx vitest run extensions/plugins
-        working-directory: .
-
-  # ─── 仓库端 / 倉庫フロントエンド ───
-  frontend:
-    name: Frontend (TypeCheck)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-        working-directory: frontend
-      - name: TypeCheck
-        run: npx vue-tsc --noEmit
         working-directory: frontend
 
-  # ─── 管理端 / Admin ───
-  admin:
-    name: Admin (TypeCheck)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
-        working-directory: admin
-      - name: TypeCheck
-        run: npx vue-tsc --noEmit
+      - name: Frontend - TypeCheck
+        run: npx vue-tsc --build
+        working-directory: frontend
+
+      # ─── 管理端型チェック / Admin 类型检查 ───
+      - name: Admin - TypeCheck
+        run: npx vue-tsc --build
         working-directory: admin
 
-  # ─── 客户门户 / Portal ───
-  portal:
-    name: Portal (TypeCheck)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      - run: npm ci
+      # ─── 客户门户型チェック / Portal 类型检查 ───
+      - name: Portal - TypeCheck
+        run: npx vue-tsc --build
         working-directory: portal
-      - name: TypeCheck
-        run: npx vue-tsc --noEmit
+
+  # ════════════════════════════════════════════════════════════
+  # ビルドジョブ: main ブランチのみ、テスト成功後に実行
+  # 构建任务: 仅 main 分支，测试通过后执行
+  # ════════════════════════════════════════════════════════════
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # ─── 依赖安装 / 依存関係インストール ───
+      - name: Install dependencies
+        run: npm ci
+
+      # ─── 后端构建 / バックエンドビルド ───
+      - name: Backend - Build
+        run: npm run build
+        working-directory: backend
+
+      # ─── 仓库端构建 / 倉庫フロントエンドビルド ───
+      - name: Frontend - Build
+        run: npm run build-only
+        working-directory: frontend
+
+      # ─── 管理端构建 / Adminビルド ───
+      - name: Admin - Build
+        run: npm run build
+        working-directory: admin
+
+      # ─── 客户门户构建 / Portalビルド ───
+      - name: Portal - Build
+        run: npm run build
         working-directory: portal

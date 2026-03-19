@@ -57,7 +57,8 @@
 import { computed, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
-import * as XLSX from 'xlsx'
+// XLSX动态导入，减少初始包大小 / XLSXを動的インポートし初期バンドルサイズを削減
+const loadXLSX = () => import('xlsx')
 import { getAllMappingConfigs, type MappingConfig } from '@/api/mappingConfig'
 import { applyTransformMappings } from '@/utils/transformRunner'
 
@@ -145,7 +146,8 @@ const handleConfigChange = async () => {
   }
 }
 
-const buildSheet = () => {
+const buildSheet = async () => {
+  const XLSX = await loadXLSX()
   const headers = outputHeaders.value
   const aoa = [
     headers,
@@ -173,8 +175,9 @@ const getFileName = () => {
   return `${configName}_${date}`
 }
 
-const downloadCsv = () => {
-  const ws = buildSheet()
+const downloadCsv = async () => {
+  const XLSX = await loadXLSX()
+  const ws = await buildSheet()
   const csv = XLSX.utils.sheet_to_csv(ws, { FS: ',', RS: '\r\n' })
   const bom = '\uFEFF'
   const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8' })
@@ -182,8 +185,9 @@ const downloadCsv = () => {
   emit('exported')
 }
 
-const downloadExcel = () => {
-  const ws = buildSheet()
+const downloadExcel = async () => {
+  const XLSX = await loadXLSX()
+  const ws = await buildSheet()
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'export')
   XLSX.writeFile(wb, `${getFileName()}.xlsx`)

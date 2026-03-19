@@ -83,7 +83,7 @@
             <button
               v-for="m in inspectionModes" :key="m.key"
               class="mode-tab" :class="{ 'mode-tab--active': inspectionMode === m.key }"
-              @click="inspectionMode = m.key; scanMessage = ''; scanIsError = false"
+              @click="inspectionMode = m.key; scanMessage = ''; scanIsError = false; scanQuantity = 1"
             >{{ m.label }}</button>
           </div>
         </div>

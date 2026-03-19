@@ -1,4 +1,5 @@
-import bwipjs from 'bwip-js'
+// bwip-js动态导入，减少初始包大小(~880KB) / bwip-jsを動的インポートし初期バンドルサイズを削減(~880KB)
+const loadBwipJs = () => import('bwip-js')
 
 export type RenderBarcodeOptions = {
   /** Output width in px */
@@ -86,7 +87,8 @@ function formatBarcodeText(bcid: string, text: string, options?: Record<string, 
  * - This eliminates the intermediate canvas resize step for better performance.
  * - The width/height params are kept for API compatibility but not used for resizing.
  */
-export function renderBarcodePngDataUrl(opts: RenderBarcodeOptions): string {
+export async function renderBarcodePngDataUrl(opts: RenderBarcodeOptions): Promise<string> {
+  const bwipjs = (await loadBwipJs()).default
   const bcid = mapBarcodeFormatToBcid(opts.bcid)
   const text = formatBarcodeText(bcid, opts.text, opts.options)
 

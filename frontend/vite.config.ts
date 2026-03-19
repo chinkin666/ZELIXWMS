@@ -17,6 +17,18 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-vue': ['vue', 'vue-router', 'pinia'],
+          'vendor-element-plus': ['element-plus'],
+          'vendor-charts': ['chart.js'],
+          'vendor-pdf': ['pdf-lib'],
+        },
+      },
+    },
+  },
   server: {
     host: 'localhost',
     port: 4001,

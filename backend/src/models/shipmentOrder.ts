@@ -594,6 +594,19 @@ shipmentOrderSchema.index({ 'status.shipped.isShipped': 1 });
 shipmentOrderSchema.index({ createdAt: -1 });
 // 複合インデックス：配送業者×確認状態 / 复合索引：配送业者×确认状态
 shipmentOrderSchema.index({ carrierId: 1, 'status.confirm.isConfirmed': 1 });
+// 依頼主IDフィルタ用 / 依赖主ID过滤用索引（searchOrders でフィルタ対象）
+shipmentOrderSchema.index({ orderSourceCompanyId: 1 });
+// 追跡番号検索用 / 追踪号搜索用索引（sparse: 未設定ドキュメントを除外しサイズ削減）
+shipmentOrderSchema.index({ trackingId: 1 }, { sparse: true });
+// 受取人郵便番号フィルタ用 / 受取人郵便番号过滤用索引
+shipmentOrderSchema.index({ 'recipient.postalCode': 1 });
+// テナント×作成日時の複合インデックス：リスト取得の主要クエリパターン
+// 租户×创建日期复合索引：列表查询主要模式
+shipmentOrderSchema.index({ tenantId: 1, createdAt: -1 });
+// テナント×出荷確認状態：未確認注文の一覧表示に使用 / 租户×出货确认状态：未确认订单列表
+shipmentOrderSchema.index({ tenantId: 1, 'status.confirm.isConfirmed': 1, createdAt: -1 });
+// テナント×出荷済み状態：出荷済み一覧に使用 / 租户×出货状态：出货列表
+shipmentOrderSchema.index({ tenantId: 1, 'status.shipped.isShipped': 1, createdAt: -1 });
 
 export const ShipmentOrder = mongoose.model<IShipmentOrder>('ShipmentOrder', shipmentOrderSchema);
 

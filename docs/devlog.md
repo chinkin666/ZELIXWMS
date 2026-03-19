@@ -8,7 +8,7 @@
 **变更类型 / 変更種別**: test + quality + security + ux + feat
 **影响范围 / 影響範囲**: backend全般, frontend全般, admin, portal
 
-### テスト数: 240 → 848(後端) + 78(前端) = 926 (+286% 增幅) / 测试数合计926
+### テスト数: 240 → 978+(後端) + 189+(前端) = 1167+ (+370%+ 增幅) / 测试数合计1167+
 
 テストスイート: 33 → 38（新規: apiLogger, naturalSort, japaneseCharWidth, productNameFormatter, idGenerator）
 全848テスト合格、失敗0件、TypeScript 0エラー。

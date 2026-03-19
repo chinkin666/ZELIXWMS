@@ -142,7 +142,8 @@
 import { computed, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
-import * as XLSX from 'xlsx'
+// XLSX动态导入，减少初始包大小 / XLSXを動的インポートし初期バンドルサイズを削減
+const loadXLSX = () => import('xlsx')
 import { getAllMappingConfigs, type MappingConfig, type TransformMapping } from '@/api/mappingConfig'
 import { generateTempId } from '@/types/orderRow'
 import { applyTransformMappings } from '@/utils/transformRunner'
@@ -336,9 +337,10 @@ const parseFile = async (file: File): Promise<Record<string, any>[]> => {
 
 // Excelファイル解析 / 解析 Excel 文件
 const parseExcelFile = async (file: File): Promise<Record<string, any>[]> => {
+  const XLSX = await loadXLSX()
   const buf = await file.arrayBuffer()
   const wb = XLSX.read(buf, { type: 'array' })
-  return parseSheetToRows(wb)
+  return parseSheetToRows(XLSX, wb)
 }
 
 // エンコーディング検出関数（wizardと同一） / 编码检测函数（与 wizard 保持一致）
@@ -397,8 +399,9 @@ const parseCsvFile = async (file: File): Promise<Record<string, any>[]> => {
       text = text.slice(1)
     }
     // XLSXでCSVテキストを解析 / 使用 XLSX 解析 CSV 文本
+    const XLSX = await loadXLSX()
     const wb = XLSX.read(text, { type: 'string' })
-    return parseSheetToRows(wb)
+    return parseSheetToRows(XLSX, wb)
   } catch (error) {
     // CSV解析失敗 / CSV parsing failed
     alert('CSVファイルの解析に失敗しました。エンコーディング（UTF-8 または Shift-JIS）を確定してください。')
@@ -417,7 +420,7 @@ const handleEncodingChange = () => {
 // ヘルパー関数：XLSXシートを行配列に変換 / 辅助函数：将 XLSX sheet 转换为行数组
 // NOTE: some xlsx typings don't expose WorkBook type consistently; keep it permissive here.
 // 使用原始显示值（cell.w），避免 XLSX 自动格式化日期，纯粹根据 transform 配置来转换
-const parseSheetToRows = (wb: any): Record<string, any>[] => {
+const parseSheetToRows = (XLSX: any, wb: any): Record<string, any>[] => {
   if (!wb.SheetNames || wb.SheetNames.length === 0) {
     return []
   }

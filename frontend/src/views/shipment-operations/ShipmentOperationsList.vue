@@ -12,9 +12,9 @@
     />
 
     <div class="between-controls">
-      <label class="switch-label">{{ t('wms.shipment.showPrintedOnly', '印刷済みのみ表示') }}
+      <label class="switch-label">{{ t('wms.shipment.showPrinted', '印刷済みも表示') }}
         <label class="o-toggle">
-          <input type="checkbox" v-model="showPrintedOnly">
+          <input type="checkbox" v-model="showPrinted">
           <span class="o-toggle-slider"></span>
         </label>
       </label>
@@ -176,9 +176,9 @@
       </table>
     </div>
 
-    <!-- Pagination -->
+    <!-- ページネーション / 分页 -->
     <div class="o-table-pagination">
-      <span class="o-table-pagination__info">{{ displayRows.length }} {{ t('wms.common.items', '件') }}</span>
+      <span class="o-table-pagination__info">{{ totalRows }} {{ t('wms.common.items', '件') }}</span>
       <div class="o-table-pagination__controls">
         <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;">
           <option :value="10">10</option>
@@ -195,7 +195,7 @@
 
     <!-- Bottom bar -->
     <OrderBottomBar
-      :total-count="displayRows.length"
+      :total-count="totalRows"
       :selected-count="tableSelectedKeys.length"
       :total-label="t('wms.shipment.displayCount', '表示件数')"
     >
@@ -258,7 +258,7 @@ import CustomExportDialog from '@/components/export/CustomExportDialog.vue'
 import FormExportDialog from '@/components/form-export/FormExportDialog.vue'
 import type { Operator } from '@/types/table'
 import { getOrderFieldDefinitions } from '@/types/order'
-import { fetchShipmentOrder, fetchShipmentOrdersPage, updateShipmentOrderStatusBulk } from '@/api/shipmentOrders'
+import { fetchShipmentOrder, fetchShipmentOrdersPage, fetchShipmentOrdersByIds, updateShipmentOrderStatusBulk } from '@/api/shipmentOrders'
 import { fetchCarriers } from '@/api/carrier'
 import type { Carrier } from '@/types/carrier'
 import { fetchProducts } from '@/api/product'
@@ -278,13 +278,15 @@ const rows = ref<OrderRow[]>([])
 const tableSelectedKeys = ref<Array<string | number>>([])
 const isLoadingOrders = ref(false)
 
+// サーバーサイドページネーション用 / 服务端分页用
+const totalRows = ref(0)
 const pageSize = ref(25)
 const currentPage = ref(1)
 const sortBy = ref<string | null>('orderNumber')
 const sortOrder = ref<SortOrder>('asc')
 const isMarkingShipped = ref(false)
 const isUnconfirming = ref(false)
-const showPrintedOnly = ref(true)
+const showPrinted = ref(true)
 
 // Custom export dialog state
 const customExportDialogVisible = ref(false)
@@ -315,23 +317,41 @@ const effectiveSearchPayload = computed(() => {
   q['status.confirm.isConfirmed'] = { operator: 'is', value: true }
   q['status.carrierReceipt.isReceived'] = { operator: 'is', value: true }
   q['status.shipped.isShipped'] = { operator: 'isNot', value: true }
-  if (showPrintedOnly.value) {
-    q['status.printed.isPrinted'] = { operator: 'is', value: true }
+  if (!showPrinted.value) {
+    q['status.printed.isPrinted'] = { operator: 'isNot', value: true }
   }
   return q
 })
 
-const displayRows = computed(() => [...rows.value])
+// サーバーサイドページネーション: rowsは現在ページのデータのみ保持
+// 服务端分页: rows仅保存当前页数据
+const paginatedRows = computed(() => rows.value)
 
-// --- Pagination ---
-const totalPages = computed(() => Math.max(1, Math.ceil(displayRows.value.length / pageSize.value)))
-const paginatedRows = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return displayRows.value.slice(start, start + pageSize.value)
+// --- ページネーション / 分页 ---
+const totalPages = computed(() => Math.max(1, Math.ceil(totalRows.value / pageSize.value)))
+
+// ページ/ページサイズ変更時にサーバーから再取得するかどうかのフラグ
+// 页码/页大小变更时是否从服务器重新获取的标记
+let skipPageWatch = false
+
+// ページサイズ変更時はページ1にリセット（currentPageのwatcherが再取得する）
+// 切换页大小时重置到第1页（currentPage的watcher会触发重新获取）
+watch(pageSize, () => {
+  // ページサイズ変更時はページ1にリセットして再取得
+  // 切换页大小时重置到第1页并重新获取
+  skipPageWatch = true
+  currentPage.value = 1
+  void loadOrders()
 })
 
-watch(pageSize, () => { currentPage.value = 1 })
-watch(displayRows, () => { if (currentPage.value > totalPages.value) currentPage.value = totalPages.value })
+// ページ変更時に再取得 / 切换页码时重新获取
+watch(currentPage, () => {
+  if (skipPageWatch) {
+    skipPageWatch = false
+    return
+  }
+  void loadOrders()
+})
 
 // --- Selection ---
 const isAllCurrentPageSelected = computed(() =>
@@ -418,6 +438,7 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
         toast.showSuccess(message)
       }
       await loadOrders()
+      isUnconfirming.value = false
     } catch (e: any) {
       if (isCarrierDeleteError(e)) {
         isUnconfirming.value = false
@@ -427,9 +448,8 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
         }
         return
       }
-      throw e
-    } finally {
       isUnconfirming.value = false
+      throw e
     }
   } catch (e: any) {
     if (e === 'cancel') return
@@ -438,19 +458,29 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
   }
 }
 
-// --- Export ---
-const handleCustomExportClick = () => {
+// --- エクスポート / 导出 ---
+// サーバーサイドページネーションのため、選択IDでサーバーから取得
+// 由于使用服务端分页，需通过选中的ID从服务器获取数据
+const handleCustomExportClick = async () => {
   if (tableSelectedKeys.value.length === 0) return
-  const keySet = new Set(tableSelectedKeys.value.map((k) => String(k)))
-  selectedOrdersForCustomExport.value = displayRows.value.filter((r: any) => keySet.has(String(r?._id)))
-  customExportDialogVisible.value = true
+  try {
+    const ids = tableSelectedKeys.value.map((k) => String(k))
+    selectedOrdersForCustomExport.value = await fetchShipmentOrdersByIds(ids)
+    customExportDialogVisible.value = true
+  } catch (e: any) {
+    toast.showError(e?.message || t('wms.shipment.fetchOrdersError', '出荷予定の取得に失敗しました'))
+  }
 }
 
-const handleFormExportClick = () => {
+const handleFormExportClick = async () => {
   if (tableSelectedKeys.value.length === 0) return
-  const keySet = new Set(tableSelectedKeys.value.map((k) => String(k)))
-  selectedOrdersForFormExport.value = displayRows.value.filter((r: any) => keySet.has(String(r?._id))) as OrderDocument[]
-  formExportDialogVisible.value = true
+  try {
+    const ids = tableSelectedKeys.value.map((k) => String(k))
+    selectedOrdersForFormExport.value = await fetchShipmentOrdersByIds<OrderDocument>(ids)
+    formExportDialogVisible.value = true
+  } catch (e: any) {
+    toast.showError(e?.message || t('wms.shipment.fetchOrdersError', '出荷予定の取得に失敗しました'))
+  }
 }
 
 // --- Mark Shipped ---
@@ -460,9 +490,11 @@ const handleMarkShipped = async () => {
     return
   }
 
-  const selectedRows = displayRows.value.filter((row: any) => tableSelectedKeys.value.includes(row._id))
+  // 現在ページの行からマッチする行を取得（確認表示用）
+  // 从当前页数据中获取匹配的行（用于确认弹窗显示）
+  const selectedRows = rows.value.filter((row: any) => tableSelectedKeys.value.includes(row._id))
   const orderNumbers = selectedRows.map((row: any) => row.orderNumber || row._id).filter(Boolean).slice(0, 5)
-  const moreText = selectedRows.length > 5 ? `他${selectedRows.length - 5}件` : ''
+  const moreText = tableSelectedKeys.value.length > 5 ? `他${tableSelectedKeys.value.length - 5}件` : ''
 
   if (!confirm(`選択した${tableSelectedKeys.value.length}件の出荷を完了にしますか？\n${orderNumbers.join(', ')}${moreText ? `\n${moreText}` : ''}`)) return
 
@@ -494,6 +526,9 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
   globalSearchText.value = keyword ? String(keyword) : ''
   delete (nextPayload as any).__global
   currentSearchPayload.value = nextPayload
+  // 検索条件変更時はページ1にリセット / 搜索条件变更时重置到第1页
+  skipPageWatch = true
+  currentPage.value = 1
   void loadOrders()
 }
 
@@ -509,6 +544,9 @@ const handleSortClick = (field: string) => {
     sortBy.value = field
     sortOrder.value = 'asc'
   }
+  // ソート変更時はページ1にリセット / 排序变更时重置到第1页
+  skipPageWatch = true
+  currentPage.value = 1
   void loadOrders()
 }
 
@@ -521,6 +559,8 @@ const loadCarriers = async () => {
   }
 }
 
+// サーバーサイドページネーション: 1ページ分のみ取得
+// 服务端分页: 仅获取单页数据
 let loadOrdersVersion = 0
 
 const loadOrders = async () => {
@@ -529,38 +569,30 @@ const loadOrders = async () => {
 
   try {
     const tzOffsetMinutes = new Date().getTimezoneOffset()
-    const limit = 1000
-    const all: OrderRow[] = []
-    let page = 1
-    let total = Infinity
-
     const q = effectiveSearchPayload.value || undefined
     const currentSortBy = sortBy.value
     const currentSortOrder = sortOrder.value
 
-    while (all.length < total) {
-      const res = await fetchShipmentOrdersPage<OrderRow>({
-        page,
-        limit,
-        q,
-        sortBy: currentSortBy,
-        sortOrder: currentSortOrder,
-        tzOffsetMinutes,
-      })
-      if (version !== loadOrdersVersion) return
+    const res = await fetchShipmentOrdersPage<OrderRow>({
+      page: currentPage.value,
+      limit: pageSize.value,
+      q,
+      sortBy: currentSortBy,
+      sortOrder: currentSortOrder,
+      tzOffsetMinutes,
+    })
+    if (version !== loadOrdersVersion) return
 
-      const items = Array.isArray(res?.items) ? res.items : []
-      const resTotal = typeof res?.total === 'number' ? res.total : undefined
-      if (typeof resTotal === 'number') total = resTotal
+    const items = Array.isArray(res?.items) ? res.items : []
+    const resTotal = typeof res?.total === 'number' ? res.total : 0
 
-      if (!items.length) break
-      all.push(...items)
+    rows.value = items
+    totalRows.value = resTotal
 
-      if (items.length < limit) break
-      page += 1
+    // 合計件数変更でページ超過した場合はページ1にリセット / 如果总数变化导致超出页范围则重置到第1页
+    if (currentPage.value > totalPages.value && totalPages.value > 0) {
+      currentPage.value = totalPages.value
     }
-
-    rows.value = all
   } catch (e: any) {
     if (version !== loadOrdersVersion) return
     toast.showError(e?.message || t('wms.shipment.fetchOrdersError', '出荷予定の取得に失敗しました'))
@@ -572,8 +604,13 @@ const loadOrders = async () => {
 }
 
 watch(
-  () => showPrintedOnly.value,
-  () => { void loadOrders() },
+  () => showPrinted.value,
+  () => {
+    // フィルタ変更時はページ1にリセット / 筛选变更时重置到第1页
+    skipPageWatch = true
+    currentPage.value = 1
+    void loadOrders()
+  },
 )
 
 onMounted(async () => {

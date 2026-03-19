@@ -1658,7 +1658,7 @@ export const searchOrders = async (params: SearchOrdersParams): Promise<SearchOr
     ShipmentOrder.find(mongoQuery)
       .select(LIGHT_PROJECTION)
       .sort({ [sortField]: sortOrder })
-      .collation(collation || { locale: 'ja' })
+      .collation(collation as any)
       .skip(skip)
       .limit(limit)
       .lean(),

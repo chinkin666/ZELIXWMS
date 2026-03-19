@@ -9,9 +9,11 @@ import { registerCoreRoutes } from '@/api/routes';
 import { extensionManager } from '@/core/extensions';
 import { errorHandler, notFoundHandler } from '@/api/middleware/errorHandler';
 import { paginationGuard } from '@/api/middleware/paginationGuard';
+import { requestTimer } from '@/api/middleware/requestTimer';
 import { swaggerSpec } from '@/config/swagger';
 import { optionalAuth } from '@/api/middleware/auth';
 import { globalLimiter } from '@/api/middleware/rateLimit';
+import { healthRouter } from '@/api/routes/health';
 
 loadEnv();
 
@@ -48,6 +50,9 @@ export const createApp = () => {
   );
   app.use(morgan('dev'));
 
+  // 请求计时 / リクエストタイマー（レスポンスタイム計測 + 遅延検出）
+  app.use(requestTimer);
+
   // レートリミット / 速率限制
   app.use(globalLimiter);
 
@@ -78,25 +83,8 @@ export const createApp = () => {
   // 插件通过 registerAPI() 注册的路由挂载到 /api/plugins/{name}/*
   app.use('/api/plugins', extensionManager.getPluginManager().getRouter());
 
-  app.get('/health', async (_req, res) => {
-    const mongoose = await import('mongoose');
-    const { queueManager } = await import('@/core/queue');
-
-    const dbOk = mongoose.default.connection.readyState === 1;
-    const redisOk = queueManager.isReady();
-    const allOk = dbOk; // Redis is optional / Redis はオプション
-
-    res.status(allOk ? 200 : 503).json({
-      status: allOk ? 'ok' : 'degraded',
-      timestamp: new Date().toISOString(),
-      services: {
-        database: dbOk ? 'connected' : 'disconnected',
-        redis: redisOk ? 'connected' : 'unavailable',
-        graphql: true,
-        extensions: true,
-      },
-    });
-  });
+  // 健康检查（认证不要） / ヘルスチェック（認証不要）
+  app.use('/health', healthRouter);
 
   // notFoundHandler / errorHandler は server.ts で GraphQL 登録後に追加
   // notFoundHandler / errorHandler は server.ts で GraphQL 登録後に追加
