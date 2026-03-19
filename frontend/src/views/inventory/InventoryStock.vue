@@ -377,9 +377,14 @@ async function executeImport() {
   importing.value = true
   try {
     const result = await bulkAdjustStock(importPreview.value)
-    toast.showSuccess(result.message)
+    // 成功/失敗件数を明示表示 / 明确显示成功/失败件数
+    if (result.failCount === 0) {
+      toast.showSuccess(`${result.successCount}件の調整が完了しました`)
+    } else {
+      toast.showWarning(`成功: ${result.successCount}件 / 失敗: ${result.failCount}件`)
+    }
     if (result.errors.length > 0) {
-      toast.showWarning(`エラー: ${result.errors.slice(0, 3).join('; ')}${result.errors.length > 3 ? '...' : ''}`)
+      toast.showError(`エラー内容: ${result.errors.slice(0, 5).join('; ')}${result.errors.length > 5 ? ` ...他${result.errors.length - 5}件` : ''}`)
     }
     clearImport()
     await loadData()

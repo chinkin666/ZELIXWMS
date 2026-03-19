@@ -107,7 +107,8 @@ import { useElementManagement } from './print-template-editor/useElementManageme
 
 const route = useRoute()
 const router = useRouter()
-const { show: showToast } = useToast()
+const { show: _showToast } = useToast()
+const showToast = (msg: string, type: string) => _showToast(msg, type as 'success' | 'warning' | 'danger' | 'info')
 const { t: $t } = useI18n()
 
 const templateId = String(route.params.id || '')

@@ -292,7 +292,7 @@
 import { computed, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
-import type { TableColumn } from '@/types/table'
+import type { TableColumn, SearchOption } from '@/types/table'
 import { setNestedValue, getNestedValue } from '@/utils/nestedObject'
 import { getCoolTypeOptionsForInvoiceType } from '@/utils/orderValidation'
 import { useEnabledInvoiceTypes } from '@/composables/useEnabledInvoiceTypes'
@@ -470,7 +470,7 @@ const getFilteredOptions = (column: TableColumn) => {
   if (dataKey === 'invoiceType') {
     const carrierId = String(getNestedValue(formData.value, 'carrierId') || '')
     const isSagawa = carrierId === '__builtin_sagawa__' || carrierId.includes('sagawa')
-    if (!isSagawa) return filterEnabledOptions(options)
+    if (!isSagawa) return filterEnabledOptions(options as { value: string; label?: string }[]) as SearchOption[]
   }
   return options
 }

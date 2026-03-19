@@ -33,6 +33,7 @@ export const HOOK_EVENTS = {
   // 入库 / 入庫
   INBOUND_RECEIVED: 'inbound.received',
   INBOUND_PUTAWAY_COMPLETED: 'inbound.putaway.completed',
+  INBOUND_DAMAGE_REPORTED: 'inbound.damage.reported',
 
   // 退货 / 返品
   RETURN_COMPLETED: 'return.completed',

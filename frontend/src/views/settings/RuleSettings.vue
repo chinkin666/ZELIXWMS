@@ -444,11 +444,11 @@ const removeConditionGroup = (gi: number) => {
 }
 
 const addCondition = (gi: number) => {
-  form.value.conditionGroups[gi].conditions.push({ field: '', operator: 'equals', value: '' })
+  form.value.conditionGroups[gi]?.conditions.push({ field: '', operator: 'equals', value: '' })
 }
 
 const removeCondition = (gi: number, ci: number) => {
-  form.value.conditionGroups[gi].conditions.splice(ci, 1)
+  form.value.conditionGroups[gi]?.conditions.splice(ci, 1)
 }
 
 // Action builders

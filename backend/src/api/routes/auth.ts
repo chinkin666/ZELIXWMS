@@ -7,8 +7,12 @@
 import { Router } from 'express'
 import { login, register, me, changePassword } from '@/api/controllers/authController'
 import { requireAuth } from '@/api/middleware/auth'
+import { authLimiter } from '@/api/middleware/rateLimit'
 
 export const authRouter = Router()
+
+// 認証エンドポイントに厳格なレートリミット / 认证端点严格速率限制
+authRouter.use(authLimiter)
 
 /**
  * @swagger

@@ -179,7 +179,7 @@ const emptyForm = () => ({
   address2: '',
   phone: '',
   email: '',
-  plan: 'free' as const,
+  plan: 'free' as 'free' | 'standard' | 'pro' | 'enterprise',
   billingEnabled: false,
   memo: '',
 })

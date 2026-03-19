@@ -300,7 +300,7 @@ async function loadList() {
     const res = await fetchCustomFieldDefinitions(params)
     definitions.value = res.data
   } catch (e) {
-    toast.error((e as Error).message)
+    toast.showError((e as Error).message)
   } finally {
     loading.value = false
   }
@@ -349,15 +349,15 @@ async function handleSave() {
 
     if (isEditing.value) {
       await updateCustomFieldDefinition(editingId.value, data)
-      toast.success('フィールド定義を更新しました')
+      toast.showSuccess('フィールド定義を更新しました')
     } else {
       await createCustomFieldDefinition(data)
-      toast.success('フィールド定義を作成しました')
+      toast.showSuccess('フィールド定義を作成しました')
     }
     dialogOpen.value = false
     await loadList()
   } catch (e) {
-    toast.error((e as Error).message)
+    toast.showError((e as Error).message)
   }
 }
 
@@ -370,11 +370,11 @@ async function handleDelete() {
   if (!deleteTarget.value) return
   try {
     await deleteCustomFieldDefinition(deleteTarget.value._id)
-    toast.success('フィールド定義を削除しました')
+    toast.showSuccess('フィールド定義を削除しました')
     deleteDialogOpen.value = false
     await loadList()
   } catch (e) {
-    toast.error((e as Error).message)
+    toast.showError((e as Error).message)
   }
 }
 

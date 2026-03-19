@@ -576,6 +576,12 @@ export async function bulkAdjustStock(items: BulkAdjustItem[]): Promise<BulkAdju
     throw new ValidationError('調整データが必要です');
   }
 
+  // 一括調整の上限チェック / 批量调整上限检查
+  const MAX_BULK_ADJUST = 500;
+  if (items.length > MAX_BULK_ADJUST) {
+    throw new ValidationError(`一括調整は${MAX_BULK_ADJUST}件以下で実行してください / 批量调整上限${MAX_BULK_ADJUST}条`);
+  }
+
   const { supplier: virtualSupplier, customer: virtualCustomer } = await getVirtualLocations();
 
   let successCount = 0;
@@ -963,7 +969,25 @@ export async function rebuildInventory(fix: boolean = false): Promise<RebuildInv
   }
 
   // 4. fix=true の場合、StockQuant を更新 / fix=true 时更新 StockQuant
+  //    注意: confirmed（引当中）の StockMove から reservedQuantity も再計算する
+  //    注意: 从 confirmed（分配中）的 StockMove 重新计算 reservedQuantity
   if (fix && discrepancies.length > 0) {
+    // confirmed 出庫の引当量を再計算 / 重新计算 confirmed 出库的预留量
+    const confirmedOutbound = await StockMove.aggregate([
+      { $match: { state: 'confirmed', moveType: 'outbound', fromLocationId: { $nin: virtualLocationIds } } },
+      {
+        $group: {
+          _id: { productId: '$productId', locationId: '$fromLocationId', lotId: '$lotId' },
+          totalReserved: { $sum: '$quantity' },
+        },
+      },
+    ]);
+    const reservedMap = new Map<string, number>();
+    for (const row of confirmedOutbound) {
+      const key = makeKey(String(row._id.productId), String(row._id.locationId), row._id.lotId ? String(row._id.lotId) : undefined);
+      reservedMap.set(key, (reservedMap.get(key) || 0) + row.totalReserved);
+    }
+
     for (const disc of discrepancies) {
       const product = products.find((p) => p.sku === disc.productSku);
       const location = locations.find((l) => l.code === disc.locationCode);
@@ -977,8 +1001,12 @@ export async function rebuildInventory(fix: boolean = false): Promise<RebuildInv
         lotId: lot ? lot._id : undefined,
       };
 
-      if (disc.calculatedQty <= 0 && disc.currentQty <= 0) {
-        // 両方0以下なら削除 / 两者都<=0则删除
+      // confirmed から再計算した reservedQuantity / 从 confirmed 重新计算的 reservedQuantity
+      const key = makeKey(String(product._id), String(location._id), lot ? String(lot._id) : undefined);
+      const recalcReserved = reservedMap.get(key) || 0;
+
+      if (disc.calculatedQty <= 0 && disc.currentQty <= 0 && recalcReserved === 0) {
+        // 両方0以下かつ引当なしなら削除 / 两者都<=0且无预留则删除
         await StockQuant.deleteOne(filter);
       } else {
         await StockQuant.findOneAndUpdate(
@@ -986,10 +1014,10 @@ export async function rebuildInventory(fix: boolean = false): Promise<RebuildInv
           {
             $set: {
               quantity: disc.calculatedQty,
+              reservedQuantity: recalcReserved,
               productSku: product.sku,
               lastMovedAt: new Date(),
             },
-            $setOnInsert: { reservedQuantity: 0 },
           },
           { upsert: true },
         );
@@ -1033,8 +1061,8 @@ export interface ReleaseExpiredResult {
  * Finds StockMove records in 'confirmed' state older than timeoutMinutes,
  * cancels them, and releases reservedQuantity in StockQuant.
  *
- * TODO: スケジュールジョブ（WMS Schedule）から定期的に呼び出すこと
- * TODO: 应该从定时任务（WMS Schedule）定期调用此函数
+ * BullMQ 定期ジョブとして登録済み（queueManager 経由で 30 分間隔で実行）
+ * 已通过 BullMQ 注册为定期任务（通过 queueManager 每 30 分钟执行一次）
  */
 export async function releaseExpiredReservations(
   timeoutMinutes: number = 30,

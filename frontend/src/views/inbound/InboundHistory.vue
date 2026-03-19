@@ -184,7 +184,7 @@ const now = new Date()
 const defaultDateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
 const defaultDateTo = now.toISOString().slice(0, 10)
 
-const searchColumns = computed<TableColumn[]>(() => [
+const searchColumns = computed<TableColumn[]>(() => ([
   {
     key: 'completedAt',
     title: t('wms.inbound.completedDate', '完了日'),
@@ -231,7 +231,7 @@ const searchColumns = computed<TableColumn[]>(() => [
     searchable: true,
     searchType: 'string',
   },
-])
+] as TableColumn[]))
 
 const searchInitialValues: Record<string, any> = {
   completedAt__from: defaultDateFrom,

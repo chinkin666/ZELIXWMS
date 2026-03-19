@@ -1,41 +1,43 @@
-import axios from 'axios'
+import { http } from '@/api/http'
 import type { RuleDefinition } from '../types/rule'
-
-const api = axios.create({ baseURL: '/api' })
 
 export const ruleApi = {
   /** ルール一覧取得 */
   getRules(params?: { module?: string; warehouseId?: string; isActive?: boolean }) {
-    return api.get('/rules', { params })
+    const stringParams: Record<string, string> = {}
+    if (params?.module) stringParams.module = params.module
+    if (params?.warehouseId) stringParams.warehouseId = params.warehouseId
+    if (params?.isActive !== undefined) stringParams.isActive = String(params.isActive)
+    return http.get<unknown>('/rules', stringParams)
   },
 
   /** ルール詳細取得 */
   getRule(ruleId: string) {
-    return api.get(`/rules/${ruleId}`)
+    return http.get<unknown>(`/rules/${ruleId}`)
   },
 
   /** ルール作成 */
   createRule(data: Omit<RuleDefinition, '_id' | 'createdAt' | 'updatedAt' | 'executionCount' | 'lastExecutedAt'>) {
-    return api.post('/rules', data)
+    return http.post<unknown>('/rules', data)
   },
 
   /** ルール更新 */
   updateRule(ruleId: string, data: Partial<RuleDefinition>) {
-    return api.put(`/rules/${ruleId}`, data)
+    return http.put<unknown>(`/rules/${ruleId}`, data)
   },
 
   /** ルール削除 */
   deleteRule(ruleId: string) {
-    return api.delete(`/rules/${ruleId}`)
+    return http.delete<unknown>(`/rules/${ruleId}`)
   },
 
   /** ルール有効/無効切替 */
   toggleRule(ruleId: string, isActive: boolean) {
-    return api.patch(`/rules/${ruleId}/toggle`, { isActive })
+    return http.patch<unknown>(`/rules/${ruleId}/toggle`, { isActive })
   },
 
   /** ルールテスト実行（ドライラン） */
   testRule(module: string, context: Record<string, unknown>) {
-    return api.post('/rules/test', { module, context })
+    return http.post<unknown>('/rules/test', { module, context })
   },
 }

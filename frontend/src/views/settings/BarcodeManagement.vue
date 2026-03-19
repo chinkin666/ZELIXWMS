@@ -173,16 +173,16 @@ const searchColumns: TableColumn[] = baseColumns.filter((c) => c.searchable)
 
 const tableColumns: TableColumn[] = [
   {
-    ...baseColumns[0],
+    ...baseColumns[0]!,
     cellRenderer: ({ rowData }: { rowData: Product }) =>
       h('strong', {}, rowData.sku),
   },
   {
-    ...baseColumns[1],
+    ...baseColumns[1]!,
     cellRenderer: ({ rowData }: { rowData: Product }) => rowData.name || '-',
   },
   {
-    ...baseColumns[2],
+    ...baseColumns[2]!,
     cellRenderer: ({ rowData }: { rowData: Product }) => {
       const barcodes = rowData.barcode || []
       if (barcodes.length === 0) {

@@ -146,11 +146,18 @@ export async function reserveStockForOrder(
 
       const reserve = Math.min(available, remaining);
 
-      // StockQuant を引当
-      await StockQuant.updateOne(
-        { _id: quant._id },
+      // StockQuant を原子的に引当（TOCTOU防止）/ 原子性分配（防止竞态条件）
+      const updateResult = await StockQuant.updateOne(
+        {
+          _id: quant._id,
+          $expr: { $lte: [{ $add: ['$reservedQuantity', reserve] }, '$quantity'] },
+        },
         { $inc: { reservedQuantity: reserve } },
       );
+      if (updateResult.modifiedCount === 0) {
+        // 他のリクエストが先に引当した / 其他请求已先分配
+        continue;
+      }
 
       // StockMove を作成 (confirmed = 引当済み、まだ出庫していない)
       const moveNumber = await generateSequenceNumber('MV');
@@ -218,13 +225,15 @@ export async function completeStockForOrder(orderId: string): Promise<{ movedCou
 
   const now = new Date();
 
-  // 一括でStockQuantを更新 / 批量更新StockQuant
+  // 一括でStockQuantを更新（負値ガード付き）/ 批量更新StockQuant（防止负值）
   const quantOps = moves.map(move => ({
     updateOne: {
       filter: {
         productId: move.productId,
         locationId: move.fromLocationId,
         ...(move.lotId ? { lotId: move.lotId } : { lotId: undefined }),
+        quantity: { $gte: move.quantity },
+        reservedQuantity: { $gte: move.quantity },
       },
       update: {
         $inc: { quantity: -move.quantity, reservedQuantity: -move.quantity },

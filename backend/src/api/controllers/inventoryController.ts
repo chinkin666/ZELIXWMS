@@ -412,8 +412,8 @@ export const rebuildInventory = async (req: Request, res: Response): Promise<voi
  * Releases reservations that have been in 'confirmed' state longer than
  * the specified timeout (default: 30 minutes).
  *
- * TODO: スケジュールジョブ（WMS Schedule）から定期的に呼び出すこと
- * TODO: 应该从定时任务（WMS Schedule）定期调用此函数
+ * BullMQ 定期ジョブ（30分間隔）で自動実行済み。このAPIは手動実行用。
+ * 已通过 BullMQ 定期任务（30分钟间隔）自动执行。此 API 为手动执行用。
  */
 export const releaseExpiredReservations = async (req: Request, res: Response): Promise<void> => {
   try {

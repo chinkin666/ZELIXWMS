@@ -79,7 +79,7 @@ export function beepComplete(): void {
       gain.connect(ctx.destination)
 
       osc.type = 'sine'
-      osc.frequency.value = notes[i]
+      osc.frequency.value = notes[i] ?? 0
       gain.gain.value = 0.1
 
       const start = ctx.currentTime + i * 0.12

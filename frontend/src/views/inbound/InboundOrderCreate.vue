@@ -141,6 +141,16 @@
     </div>
 
     <div class="form-actions">
+      <!-- バリデーションヒント / 验证提示 -->
+      <div v-if="!canSubmit && form.lines.length > 0" class="validation-hints">
+        <p v-if="!form.destinationLocationId" class="hint-text">⚠️ {{ t('wms.inbound.selectLocation', '入庫先ロケーションを選択してください') }}</p>
+        <p v-for="(line, i) in form.lines.filter(l => !l.productId)" :key="'v-' + i" class="hint-text">
+          ⚠️ {{ t('wms.inbound.selectProduct', '行{n}: 商品を選択してください').replace('{n}', String(form.lines.indexOf(line) + 1)) }}
+        </p>
+        <p v-for="(line, i) in form.lines.filter(l => l.productId && l.expectedQuantity < 1)" :key="'q-' + i" class="hint-text">
+          ⚠️ {{ t('wms.inbound.quantityRequired', '行{n}: 数量を1以上入力してください').replace('{n}', String(form.lines.indexOf(line) + 1)) }}
+        </p>
+      </div>
       <OButton
         variant="primary"
         :disabled="!canSubmit || isSubmitting"
@@ -418,5 +428,14 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .form-grid { grid-template-columns: 1fr; }
+}
+
+.validation-hints {
+  margin-bottom: 8px;
+}
+.hint-text {
+  color: #e6a23c;
+  font-size: 13px;
+  margin: 2px 0;
 }
 </style>

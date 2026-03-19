@@ -65,6 +65,9 @@ import { kpiRouter } from './kpi';
 import { portalAuthRouter } from './portalAuth';
 import { adminDashboardRouter } from './adminDashboard';
 import { outboundRequestRouter } from './outboundRequests';
+import { notificationRouter } from './notifications';
+import { importRouter } from './import';
+import { peakModeRouter } from './peakMode';
 import { auditLogger } from '@/api/middleware/auditLogger';
 
 export const registerCoreRoutes = (app: Application): void => {
@@ -73,8 +76,15 @@ export const registerCoreRoutes = (app: Application): void => {
   // 操作監査 / 操作审计（全 POST/PUT/DELETE 自動記録）
   api.use(auditLogger);
 
-  // 认证路由（登录・注册等，无需全局认证） / 認証ルート（ログイン・登録等、グローバル認証不要）
+  // ── 認証不要ルート / 无需认证的路由 ──
   api.use('/auth', authRouter);
+  api.use('/portal', portalAuthRouter);
+
+  // ── 認証必須ルート / 需要认证的路由 ──
+  // requireAuth: JWT検証。開発環境ではトークンなしで自動管理者注入。
+  // requireAuth: JWT验证。开发环境下无token时自动注入管理员。
+  const { requireAuth } = require('@/api/middleware/auth');
+  api.use(requireAuth);
 
   api.use('/dashboard', dashboardRouter);
   api.use('/shipment-orders', shipmentOrderRouter);
@@ -113,6 +123,7 @@ export const registerCoreRoutes = (app: Application): void => {
   api.use('/clients', clientRouter);
   api.use('/warehouses', warehouseRouter);
   api.use('/workflows', workflowRouter);
+  api.use('/peak-mode', peakModeRouter);
 
   // 运费率表 / 運賃率表
   api.use('/shipping-rates', shippingRateRouter);
@@ -186,8 +197,11 @@ export const registerCoreRoutes = (app: Application): void => {
   // 荷主ポータル / 货主门户
   api.use('/client-portal', clientPortalRouter);
 
-  // 顧客ポータル認証 + ダッシュボード / 客户门户认证 + 仪表板
-  api.use('/portal', portalAuthRouter);
+  // 通知 / 通知
+  api.use('/notifications', notificationRouter);
+
+  // CSV 一括インポート / CSV 批量导入
+  api.use('/import', importRouter);
 
   app.use('/api', api);
 };

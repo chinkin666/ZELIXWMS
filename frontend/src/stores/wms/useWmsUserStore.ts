@@ -72,6 +72,7 @@ const ROLE_HIERARCHY: Record<UserRole, number> = {
   admin: 3,
   operator: 2,
   viewer: 1,
+  client: 0,
 }
 
 // ─── Storage Keys ────────────────────────────────────────────────────────────

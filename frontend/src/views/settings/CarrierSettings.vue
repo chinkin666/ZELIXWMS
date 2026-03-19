@@ -224,16 +224,16 @@ function getInvoiceTypesForCarrier(carrier: Carrier): ReadonlyArray<{ invoiceTyp
   if (CARRIER_INVOICE_TYPES[code]) return CARRIER_INVOICE_TYPES[code]
   // 部分一致（sagawa_xxx → sagawa）/ 部分一致
   for (const key of Object.keys(CARRIER_INVOICE_TYPES)) {
-    if (code.includes(key)) return CARRIER_INVOICE_TYPES[key]
+    if (code.includes(key)) return CARRIER_INVOICE_TYPES[key]!
   }
   // automationType で判定 / automationType で判定
   if (carrier.automationType) {
-    if (carrier.automationType.includes('yamato')) return CARRIER_INVOICE_TYPES.yamato_b2
-    if (carrier.automationType.includes('sagawa')) return CARRIER_INVOICE_TYPES.sagawa
-    if (carrier.automationType.includes('japanpost')) return CARRIER_INVOICE_TYPES.japanpost
+    if (carrier.automationType.includes('yamato')) return CARRIER_INVOICE_TYPES.yamato_b2!
+    if (carrier.automationType.includes('sagawa')) return CARRIER_INVOICE_TYPES.sagawa!
+    if (carrier.automationType.includes('japanpost')) return CARRIER_INVOICE_TYPES.japanpost!
   }
   // フォールバック: ヤマト（最も利用が多い）/ フォールバック
-  return CARRIER_INVOICE_TYPES.yamato_b2
+  return CARRIER_INVOICE_TYPES.yamato_b2!
 }
 
 type EditableColumn = CarrierColumnConfig & { __key?: string }

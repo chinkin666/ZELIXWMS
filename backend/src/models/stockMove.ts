@@ -127,5 +127,9 @@ stockMoveSchema.index({ scheduledDate: 1, state: 1 });
 stockMoveSchema.index({ referenceId: 1 });
 // 複合インデックス：referenceId×state / 复合索引：referenceId×state
 stockMoveSchema.index({ referenceId: 1, state: 1 });
+// 期限切れ引当解放用: state + createdAt / 过期预留释放用
+stockMoveSchema.index({ state: 1, createdAt: 1 });
+// 出庫確定用: referenceType + referenceId + state + moveType / 出库确认用
+stockMoveSchema.index({ referenceType: 1, referenceId: 1, state: 1, moveType: 1 });
 
 export const StockMove = mongoose.model<IStockMove>('StockMove', stockMoveSchema);

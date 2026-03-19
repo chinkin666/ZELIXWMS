@@ -6,7 +6,8 @@
   "workspaces": [
     "backend",
     "frontend",
-    "mobile"
+    "mobile",
+    "packages/*"
   ],
   "scripts": {
     "postinstall": "npm run bootstrap --workspaces --if-present",

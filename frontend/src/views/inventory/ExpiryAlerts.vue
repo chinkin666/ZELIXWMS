@@ -5,11 +5,11 @@
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:13px;color:#606266;">{{ t('wms.inventory.displayPeriod', '表示期間') }}</span>
           <select v-model="daysAhead" class="o-input" style="width:120px;" @change="loadData">
-            <option :value="7">{{ t('wms.inventory.withinDays', '{n}日以内', { n: '7' }) }}</option>
-            <option :value="14">{{ t('wms.inventory.withinDays', '{n}日以内', { n: '14' }) }}</option>
-            <option :value="30">{{ t('wms.inventory.withinDays', '{n}日以内', { n: '30' }) }}</option>
-            <option :value="60">{{ t('wms.inventory.withinDays', '{n}日以内', { n: '60' }) }}</option>
-            <option :value="90">{{ t('wms.inventory.withinDays', '{n}日以内', { n: '90' }) }}</option>
+            <option :value="7">{{ t('wms.inventory.withinDays', { n: '7' }) }}</option>
+            <option :value="14">{{ t('wms.inventory.withinDays', { n: '14' }) }}</option>
+            <option :value="30">{{ t('wms.inventory.withinDays', { n: '30' }) }}</option>
+            <option :value="60">{{ t('wms.inventory.withinDays', { n: '60' }) }}</option>
+            <option :value="90">{{ t('wms.inventory.withinDays', { n: '90' }) }}</option>
           </select>
         </div>
       </template>

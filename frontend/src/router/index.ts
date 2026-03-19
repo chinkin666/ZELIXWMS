@@ -468,7 +468,20 @@ const router = createRouter({
               component: () => import('@/views/warehouse/SerialNumberTracking.vue'),
               meta: { title: 'シリアル番号管理', requiresAuth: true },
             },
+            {
+              path: 'replenishment',
+              name: 'ReplenishmentDashboard',
+              component: () => import('@/views/warehouse/ReplenishmentDashboard.vue'),
+              meta: { title: '補充管理', requiresAuth: true },
+            },
           ],
+        },
+        // === 通知センター / 通知中心 ===
+        {
+          path: 'notifications',
+          name: 'NotificationCenter',
+          component: () => import('@/views/notifications/NotificationCenter.vue'),
+          meta: { title: '通知センター', requiresAuth: true },
         },
         // === 請求管理 / 請求管理 ===
         {
@@ -754,6 +767,12 @@ const router = createRouter({
               name: 'SystemSettings',
               component: () => import('@/views/settings/SystemSettings.vue'),
               meta: { title: '応用設定', requiresAuth: true },
+            },
+            {
+              path: 'peak-mode',
+              name: 'PeakModeSettings',
+              component: () => import('@/views/settings/PeakModeSettings.vue'),
+              meta: { title: 'ピークモード設定', requiresAuth: true },
             },
           ],
         },

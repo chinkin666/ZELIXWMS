@@ -274,7 +274,7 @@ const handleSubmit = async () => {
   saving.value = true
   try {
     const payload = {
-      chargeType: form.value.chargeType,
+      chargeType: form.value.chargeType || undefined,
       name: form.value.name.trim(),
       clientId: form.value.clientId || undefined,
       unit: form.value.unit,

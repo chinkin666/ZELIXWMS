@@ -232,7 +232,7 @@ async function loadList() {
     const res = await fetchFeatureFlags()
     flags.value = res.data
   } catch (e) {
-    toast.error((e as Error).message)
+    toast.showError((e as Error).message)
   } finally {
     loading.value = false
   }
@@ -262,15 +262,15 @@ async function handleSave() {
   try {
     if (isEditing.value) {
       await updateFeatureFlag(editingId.value, form.value)
-      toast.success('フラグを更新しました')
+      toast.showSuccess('フラグを更新しました')
     } else {
       await createFeatureFlag(form.value)
-      toast.success('フラグを作成しました')
+      toast.showSuccess('フラグを作成しました')
     }
     dialogOpen.value = false
     await loadList()
   } catch (e) {
-    toast.error((e as Error).message)
+    toast.showError((e as Error).message)
   }
 }
 
@@ -278,9 +278,9 @@ async function handleToggle(f: FeatureFlag) {
   try {
     const result = await toggleFeatureFlag(f._id)
     f.defaultEnabled = result.defaultEnabled
-    toast.success(`${f.key} を ${result.defaultEnabled ? 'ON' : 'OFF'} に切り替えました`)
+    toast.showSuccess(`${f.key} を ${result.defaultEnabled ? 'ON' : 'OFF'} に切り替えました`)
   } catch (e) {
-    toast.error((e as Error).message)
+    toast.showError((e as Error).message)
   }
 }
 
@@ -293,11 +293,11 @@ async function handleDelete() {
   if (!deleteTarget.value) return
   try {
     await deleteFeatureFlag(deleteTarget.value._id)
-    toast.success('フラグを削除しました')
+    toast.showSuccess('フラグを削除しました')
     deleteDialogOpen.value = false
     await loadList()
   } catch (e) {
-    toast.error((e as Error).message)
+    toast.showError((e as Error).message)
   }
 }
 

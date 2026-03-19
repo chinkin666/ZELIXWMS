@@ -277,11 +277,28 @@ export const buildMongoQueryFromFilters = (filters: FilterPayload): Record<strin
     };
   };
 
+  // 許可フィールドの白名単（セキュリティ: 任意フィールドへのクエリを防止）
+  // 允许的字段白名单（安全: 防止对任意字段的查询）
+  const allowedFields = new Set([
+    ...dateFields, ...dateOnlyStringFields, ...booleanFields, ...numberFields, ...objectIdFields,
+    '_productsMeta.totalQuantity', '_productsMeta.skuCount', '_productsMeta.totalPrice',
+    '_productsMeta.names', '_productsMeta.skus', '_productsMeta.barcodes',
+    'productName', 'productSku', 'productBarcode', 'handlingTags',
+    'status.confirm.isConfirmed', 'status.shipped.isShipped',
+    // デフォルト文字列フィールド / 默认字符串字段
+    'orderNumber', 'senderName', 'recipient.name', 'recipient.phone', 'recipient.postalCode',
+    'recipient.prefecture', 'recipient.city', 'recipient.address1', 'recipient.address2',
+    'deliveryTimeSlot', 'memo', 'trackingId', 'carrier', 'carrierServiceType',
+    'orderSourceCompanyId', 'coolType', 'honorific', 'warehouseId',
+  ]);
+
   for (const [field, cond] of Object.entries(filters || {})) {
     const op = cond?.operator as Operator;
     const value = (cond as any)?.value;
 
     if (!field || typeof field !== 'string') continue;
+    // 許可されていないフィールドを無視 / 忽略未许可的字段
+    if (!allowedFields.has(field)) continue;
 
     // Empty / any-value operators are type-agnostic.
     if (op === 'isEmpty') {
@@ -1422,7 +1439,7 @@ export const updateOrderStatus = async (
   // 自動チャージ: 出荷確認 / 自动收费: 出货确认 (fire-and-forget)
   if (input.action === 'mark-print-ready') {
     createAutoCharge({
-      tenantId: 'default',
+      tenantId: updated.tenantId || 'default',
       clientId: updated.orderSourceCompanyId,
       chargeType: 'outbound_handling',
       referenceType: 'shipmentOrder',
@@ -1436,7 +1453,7 @@ export const updateOrderStatus = async (
   // 自動チャージ: 検品完了 / 自动收费: 检品完了 (fire-and-forget)
   if (input.action === 'mark-inspected') {
     createAutoCharge({
-      tenantId: 'default',
+      tenantId: updated.tenantId || 'default',
       chargeType: 'inspection',
       referenceType: 'shipmentOrder',
       referenceId: id,

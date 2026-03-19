@@ -23,12 +23,19 @@ import {
   getWebhookLogs,
 } from '@/api/controllers/webhookController';
 import {
+  getQueueStats,
+  cleanQueue,
+} from '@/api/controllers/queueController';
+import {
   listPlugins,
   getPlugin,
   enablePlugin,
   disablePlugin,
   getPluginConfig,
   updatePluginConfig,
+  pluginHealthCheck,
+  pluginsHealthDashboard,
+  getSdkInfo,
 } from '@/api/controllers/pluginController';
 import {
   listScripts,
@@ -90,6 +97,11 @@ extensionRouter.post('/plugins/:name/enable', pluginGuard, enablePlugin);
 extensionRouter.post('/plugins/:name/disable', pluginGuard, disablePlugin);
 extensionRouter.get('/plugins/:name/config', pluginGuard, getPluginConfig);
 extensionRouter.put('/plugins/:name/config', pluginGuard, updatePluginConfig);
+extensionRouter.get('/plugins/:name/health', pluginGuard, pluginHealthCheck);
+
+// 插件健康仪表板 + SDK 信息 / プラグインヘルスダッシュボード + SDK 情報
+extensionRouter.get('/plugins-health', pluginGuard, pluginsHealthDashboard);
+extensionRouter.get('/sdk-info', getSdkInfo);
 
 // 脚本管理 / スクリプト管理（功能开关: extensions.scripts）
 const scriptGuard = requireFeatureFlag('extensions.scripts');
@@ -120,3 +132,7 @@ extensionRouter.delete('/feature-flags/:id', deleteFlag);
 extensionRouter.post('/feature-flags/:id/toggle', toggleFlag);
 extensionRouter.post('/feature-flags/:id/tenant-override', setTenantOverride);
 extensionRouter.delete('/feature-flags/:id/tenant-override/:tenantId', removeTenantOverride);
+
+// 队列监控 / キュー監視
+extensionRouter.get('/queues/stats', getQueueStats);
+extensionRouter.post('/queues/:name/clean', cleanQueue);

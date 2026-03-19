@@ -318,15 +318,15 @@ Week 5-7:   Phase 4 + Phase 5 并行
 
 ## 后续规划（Phase 6+）
 
-| 阶段 | 内容 | 前提 |
-|------|------|------|
-| Phase 6 | Plugin SDK (`@zelix/plugin-sdk`) | Phase 3 稳定 |
-| Phase 7 | 插件市场 (Plugin Marketplace) | Phase 6 完成 |
-| Phase 8 | 更多内置插件（佐川/日本郵便） | Phase 3 完成 |
-| Phase 9 | Redis + BullMQ（队列化 Webhook/脚本） | Phase 2+4 需要扩展时 |
-| Phase 10 | GraphQL API | 当 REST 不够灵活时 |
-| Phase 11 | AI Engine（需求预测/拣货优化） | 业务需求驱动 |
-| Phase 12 | 3D 仓库可视化 | 业务需求驱动 |
+| 阶段 | 内容 | 前提 | 状态 |
+|------|------|------|------|
+| Phase 6 | Plugin SDK (`@zelix/plugin-sdk`) | Phase 3 稳定 | **✅ 完成 (2026-03-16)** |
+| Phase 7 | 插件管理增强 (Health + SDK Info + Detail) | Phase 6 完成 | **✅ 完成 (2026-03-16)** |
+| Phase 8 | 更多内置插件（佐川/日本郵便） | Phase 3 完成 | **✅ 完成 (2026-03-16)** 佐川+日本郵便 SDK 化 |
+| Phase 9 | Redis + BullMQ（队列化 Webhook/脚本/审计） | Phase 2+4 需要扩展时 | **✅ 完成 (2026-03-16)** |
+| Phase 10 | GraphQL API (Apollo v5, 只读 Query) | 当 REST 不够灵活时 | **✅ 完成 (2026-03-16)** |
+| Phase 11 | AI Engine（需求预测/拣货优化） | 业务需求驱动 | 待开发 |
+| Phase 12 | 3D 仓库可视化 | 业务需求驱动 | 待开发 |
 
 ---
 

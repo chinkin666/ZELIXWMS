@@ -5,6 +5,7 @@ import { WorkCharge } from '@/models/workCharge';
 import { Product } from '@/models/product';
 import { Client } from '@/models/client';
 import type { HydratedDocument } from 'mongoose';
+import { logger } from '@/lib/logger';
 
 /**
  * 通過型入庫予約サービス / 通过型入库预定服务
@@ -293,6 +294,6 @@ async function createChargeForOption(
   } catch (err) {
     // 計費失敗は警告のみ、メインフローをブロックしない
     // 计费失败仅警告，不阻塞主流程
-    console.warn(`[PassthroughService] 計費失敗 / 计费失败: ${opt.optionCode}`, err);
+    logger.warn({ optionCode: opt.optionCode, err }, '[PassthroughService] 計費失敗 / 计费失败');
   }
 }

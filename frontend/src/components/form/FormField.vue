@@ -110,7 +110,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
-import type { TableColumn } from '@/types/table'
+import type { TableColumn, SearchOption } from '@/types/table'
 import { getNestedValue } from '@/utils/nestedObject'
 import { useEnabledInvoiceTypes } from '@/composables/useEnabledInvoiceTypes'
 import { getMinDeliveryDate } from '@/utils/yamatoDeliveryDays'
@@ -166,7 +166,7 @@ const filteredOptions = computed(() => {
   const options = col.searchOptions || []
   // ヤマト B2: 無効化された送り状種類をフィルタリング / ヤマト B2: 无效化的送り状種類を过滤
   if (dataKey.value === 'invoiceType' && !isSagawa()) {
-    return filterEnabledOptions(options)
+    return filterEnabledOptions(options as { value: string; label?: string }[]) as SearchOption[]
   }
   return options
 })

@@ -426,7 +426,7 @@ const saveConfig = async () => {
   saving.value = true
   try {
     await saveCarrierAutomationConfig('yamato-b2', {
-      enabled: yamatoB2Form.value.enabled,
+      enabled: yamatoB2Form.value.enabled ?? false,
       yamatoB2: yamatoB2Form.value,
       autoValidation: autoValidationForm.value,
     })

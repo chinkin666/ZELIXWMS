@@ -1,6 +1,56 @@
 <template>
   <div class="plugin-management">
-    <ControlPanel title="プラグイン管理" :show-search="false" />
+    <ControlPanel title="プラグイン管理" :show-search="false">
+      <template #actions>
+        <OButton variant="secondary" size="sm" @click="runHealthCheck" :disabled="healthLoading">
+          {{ healthLoading ? 'チェック中...' : 'ヘルスチェック' }}
+        </OButton>
+        <OButton variant="secondary" size="sm" @click="showSdkInfo = !showSdkInfo">
+          SDK 情報
+        </OButton>
+      </template>
+    </ControlPanel>
+
+    <!-- 健康仪表板 / ヘルスダッシュボード -->
+    <div v-if="healthDashboard" class="health-dashboard">
+      <div class="health-header">
+        <span :class="['health-badge', healthDashboard.overall === 'healthy' ? 'health-badge--ok' : 'health-badge--warn']">
+          {{ healthDashboard.overall === 'healthy' ? '全プラグイン正常' : '一部異常あり' }}
+        </span>
+        <span class="health-time">{{ formatTime(healthDashboard.checkedAt) }}</span>
+      </div>
+      <div class="health-grid">
+        <div
+          v-for="p in healthDashboard.plugins"
+          :key="p.name"
+          :class="['health-card', p.healthy ? 'health-card--ok' : 'health-card--err']"
+        >
+          <div class="health-card__name">{{ p.name }}</div>
+          <div class="health-card__ver">v{{ p.version }}</div>
+          <div class="health-card__status">{{ p.healthy ? '正常' : p.message || 'エラー' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SDK 信息面板 / SDK 情報パネル -->
+    <div v-if="showSdkInfo && sdkInfo" class="sdk-info-panel">
+      <div class="sdk-info-header">
+        <strong>@zelix/plugin-sdk</strong>
+        <span class="sdk-version">v{{ sdkInfo.version }}</span>
+      </div>
+      <div class="sdk-info-section">
+        <div class="sdk-info-label">利用可能なモデル ({{ sdkInfo.availableModels.length }})</div>
+        <div class="sdk-info-tags">
+          <code v-for="m in sdkInfo.availableModels" :key="m" class="event-code">{{ m }}</code>
+        </div>
+      </div>
+      <div class="sdk-info-section">
+        <div class="sdk-info-label">利用可能なイベント ({{ sdkInfo.availableEvents.length }})</div>
+        <div class="sdk-info-tags">
+          <code v-for="e in sdkInfo.availableEvents" :key="e" class="event-code">{{ e }}</code>
+        </div>
+      </div>
+    </div>
 
     <SearchForm
       class="search-section"
@@ -50,6 +100,54 @@
         </div>
       </div>
     </ODialog>
+
+    <!-- 详细信息侧边栏 / 詳細サイドバー -->
+    <ODialog v-model="detailOpen" :title="detailPlugin?.name || ''" size="lg">
+      <div v-if="detailPlugin" class="plugin-detail">
+        <div class="detail-row">
+          <span class="detail-label">バージョン</span>
+          <span>{{ detailPlugin.version }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">作者</span>
+          <span>{{ detailPlugin.author }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">状態</span>
+          <span :class="statusTagClass(detailPlugin.status)">{{ statusLabel(detailPlugin.status) }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">説明</span>
+          <span>{{ detailPlugin.description }}</span>
+        </div>
+        <div class="detail-row" v-if="detailPlugin.installedAt">
+          <span class="detail-label">インストール日</span>
+          <span>{{ formatTime(detailPlugin.installedAt) }}</span>
+        </div>
+        <div class="detail-row" v-if="detailPlugin.enabledAt">
+          <span class="detail-label">有効化日</span>
+          <span>{{ formatTime(detailPlugin.enabledAt) }}</span>
+        </div>
+        <div class="detail-section">
+          <span class="detail-label">Hook イベント</span>
+          <div class="sdk-info-tags">
+            <code v-for="h in detailPlugin.hooks" :key="h" class="event-code">{{ h }}</code>
+          </div>
+        </div>
+        <div class="detail-section" v-if="detailPlugin.permissions?.length">
+          <span class="detail-label">権限</span>
+          <div class="sdk-info-tags">
+            <code v-for="p in detailPlugin.permissions" :key="p" class="event-code">{{ p }}</code>
+          </div>
+        </div>
+        <div class="detail-section" v-if="detailHealth">
+          <span class="detail-label">ヘルスチェック</span>
+          <span :class="detailHealth.healthy ? 'health-ok' : 'health-err'">
+            {{ detailHealth.healthy ? '正常' : detailHealth.message || 'エラー' }}
+          </span>
+        </div>
+      </div>
+    </ODialog>
   </div>
 </template>
 
@@ -69,7 +167,13 @@ import {
   disablePlugin,
   fetchPluginConfig,
   updatePluginConfig,
+  fetchPluginsHealth,
+  fetchPluginHealth,
+  fetchSdkInfo,
   type PluginInfo,
+  type PluginsHealthDashboard,
+  type PluginHealthResult,
+  type SdkInfo,
 } from '@/api/plugin'
 
 const { show: showToast } = useToast()
@@ -81,11 +185,24 @@ const loading = ref(false)
 const toggling = ref<string | null>(null)
 const globalSearchText = ref('')
 
+// 健康检查 / ヘルスチェック
+const healthDashboard = ref<PluginsHealthDashboard | null>(null)
+const healthLoading = ref(false)
+
+// SDK 信息 / SDK 情報
+const showSdkInfo = ref(false)
+const sdkInfo = ref<SdkInfo | null>(null)
+
 // Config dialog
 const configDialogOpen = ref(false)
 const configPluginName = ref('')
 const configSchema = ref<Record<string, { type: string; default?: unknown; description?: string }>>({})
 const configValues = ref<Record<string, any>>({})
+
+// Detail dialog / 詳細ダイアログ
+const detailOpen = ref(false)
+const detailPlugin = ref<PluginInfo | null>(null)
+const detailHealth = ref<PluginHealthResult | null>(null)
 
 // Computed
 const errorPlugins = computed(() => plugins.value.filter((p) => p.status === 'error' && p.errorMessage))
@@ -102,7 +219,6 @@ const baseColumns: TableColumn[] = [
       { label: '有効', value: 'enabled' },
       { label: '無効', value: 'disabled' },
       { label: 'エラー', value: 'error' },
-      { label: '未初期化', value: 'installed' },
     ],
   },
   {
@@ -153,7 +269,10 @@ const tableColumns: TableColumn[] = [
       return {
         ...col,
         cellRenderer: ({ rowData }: { rowData: PluginInfo }) =>
-          h('strong', {}, rowData.name),
+          h('strong', {
+            style: 'cursor: pointer; color: var(--o-primary, #714b67)',
+            onClick: () => openDetail(rowData),
+          }, rowData.name),
       }
     }
     if (col.key === 'version') {
@@ -181,7 +300,7 @@ const tableColumns: TableColumn[] = [
   {
     key: 'actions',
     title: t('wms.common.actions', '操作'),
-    width: 200,
+    width: 220,
     cellRenderer: ({ rowData }: { rowData: PluginInfo }) => {
       const buttons: any[] = []
 
@@ -222,6 +341,14 @@ const tableColumns: TableColumn[] = [
           ),
         )
       }
+
+      buttons.push(
+        h(
+          OButton,
+          { variant: 'secondary', size: 'sm', onClick: () => openDetail(rowData) },
+          () => '詳細',
+        ),
+      )
 
       return h('div', { class: 'action-cell' }, buttons)
     },
@@ -307,13 +434,49 @@ const handleSaveConfig = async () => {
   }
 }
 
+// Health check / ヘルスチェック
+const runHealthCheck = async () => {
+  healthLoading.value = true
+  try {
+    healthDashboard.value = await fetchPluginsHealth()
+  } catch (error: any) {
+    showToast(error?.message || 'ヘルスチェックに失敗しました', 'danger')
+  } finally {
+    healthLoading.value = false
+  }
+}
+
+// Detail dialog / 詳細ダイアログ
+const openDetail = async (p: PluginInfo) => {
+  detailPlugin.value = p
+  detailHealth.value = null
+  detailOpen.value = true
+
+  // 非同期でヘルスチェックを実行 / 异步执行健康检查
+  if (p.status === 'enabled') {
+    try {
+      detailHealth.value = await fetchPluginHealth(p.name)
+    } catch {
+      detailHealth.value = { healthy: false, message: 'ヘルスチェック失敗' }
+    }
+  }
+}
+
+// Load SDK info / SDK 情報を読み込む
+const loadSdkInfo = async () => {
+  try {
+    sdkInfo.value = await fetchSdkInfo()
+  } catch {
+    // サイレント / 静默
+  }
+}
+
 // Helpers
 const statusTagClass = (status: string) => {
   const map: Record<string, string> = {
     enabled: 'o-status-tag o-status-tag--confirmed',
     disabled: 'o-status-tag o-status-tag--cancelled',
     error: 'o-status-tag o-status-tag--cancelled',
-    installed: 'o-status-tag o-status-tag--pending',
   }
   return map[status] || 'o-status-tag'
 }
@@ -323,19 +486,23 @@ const statusLabel = (status: string) => {
     enabled: '有効',
     disabled: '無効',
     error: 'エラー',
-    installed: '未初期化',
   }
   return map[status] || status
 }
 
+const formatTime = (dateStr: string | undefined) => {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleString('ja-JP')
+}
+
 onMounted(() => {
   loadList()
+  loadSdkInfo()
 })
 </script>
 
 <style>
 .o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
-.o-status-tag--pending { background: #fdf6ec; color: #e6a23c; }
 </style>
 
 <style scoped>
@@ -349,6 +516,97 @@ onMounted(() => {
 :deep(.o-control-panel) {
   margin-left: -20px;
   margin-right: -20px;
+}
+
+/* 健康仪表板 / ヘルスダッシュボード */
+.health-dashboard {
+  background: var(--o-gray-50, #fafbfc);
+  border: 1px solid var(--o-gray-200, #e4e7ed);
+  border-radius: 6px;
+  padding: 14px;
+}
+
+.health-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.health-badge {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
+.health-badge--ok { background: #f0f9eb; color: #67c23a; }
+.health-badge--warn { background: #fef0f0; color: #f56c6c; }
+
+.health-time {
+  font-size: 12px;
+  color: var(--o-gray-400, #c0c4cc);
+}
+
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.health-card {
+  padding: 10px 12px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+.health-card--ok { background: #f0f9eb; border-color: #e1f3d8; }
+.health-card--err { background: #fef0f0; border-color: #fde2e2; }
+
+.health-card__name { font-weight: 600; font-size: 13px; }
+.health-card__ver { font-size: 11px; color: var(--o-gray-400, #c0c4cc); }
+.health-card__status { font-size: 12px; margin-top: 4px; }
+
+/* SDK 信息面板 / SDK 情報パネル */
+.sdk-info-panel {
+  background: var(--o-gray-50, #fafbfc);
+  border: 1px solid var(--o-gray-200, #e4e7ed);
+  border-radius: 6px;
+  padding: 14px;
+}
+
+.sdk-info-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.sdk-version {
+  background: var(--o-primary-light, #f3edf2);
+  color: var(--o-primary, #714b67);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sdk-info-section {
+  margin-bottom: 10px;
+}
+
+.sdk-info-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--o-gray-600, #606266);
+  margin-bottom: 6px;
+}
+
+.sdk-info-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .event-code {
@@ -408,4 +666,32 @@ onMounted(() => {
   cursor: pointer;
   font-size: 14px;
 }
+
+/* 详细面板 / 詳細パネル */
+.plugin-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-row {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  align-items: baseline;
+}
+
+.detail-section {
+  margin-top: 4px;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: var(--o-gray-600, #606266);
+  min-width: 120px;
+  font-size: 12px;
+}
+
+.health-ok { color: #67c23a; font-weight: 600; }
+.health-err { color: #f56c6c; font-weight: 600; }
 </style>

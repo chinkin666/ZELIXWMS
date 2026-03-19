@@ -13,7 +13,7 @@
         :key="tab.value"
         class="category-filter-btn"
         :class="{ 'category-filter-btn--active': categoryFilter === tab.value }"
-        @click="onCategoryChange(tab.value)"
+        @click="onCategoryChange(tab.value as MaterialCategory | '')"
       >{{ tab.label }}</button>
     </div>
 

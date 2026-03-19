@@ -119,7 +119,7 @@ const coolTypeWarning = computed(() => {
   if (!hasCoolOrders.value) return null
   if (!selectedInvoiceType.value) return null
   if (coolSupportedInvoiceTypes.has(selectedInvoiceType.value)) return null
-  const option = invoiceTypeOptions.find((o) => o.value === selectedInvoiceType.value)
+  const option = invoiceTypeOptions.value.find((o) => o.value === selectedInvoiceType.value)
   return `選択した送り状種類「${option?.label}」はクール便に対応していません。クール便の出荷指示が含まれているため選択できません。`
 })
 

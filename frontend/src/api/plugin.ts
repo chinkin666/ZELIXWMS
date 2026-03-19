@@ -77,3 +77,48 @@ export async function updatePluginConfig(
   }
   return response.json()
 }
+
+// ─── 健康检查 / ヘルスチェック ───
+
+export interface PluginHealthResult {
+  healthy: boolean
+  message?: string
+}
+
+export interface PluginsHealthDashboard {
+  overall: 'healthy' | 'degraded'
+  plugins: Array<{
+    name: string
+    version: string
+    status: string
+    healthy: boolean
+    message?: string
+  }>
+  checkedAt: string
+}
+
+export async function fetchPluginHealth(name: string): Promise<PluginHealthResult> {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/plugins/${name}/health`)
+  if (!response.ok) throw new Error(`ヘルスチェックに失敗しました: ${response.statusText}`)
+  return response.json()
+}
+
+export async function fetchPluginsHealth(): Promise<PluginsHealthDashboard> {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/plugins-health`)
+  if (!response.ok) throw new Error(`ヘルスダッシュボードの取得に失敗しました: ${response.statusText}`)
+  return response.json()
+}
+
+// ─── SDK 信息 / SDK 情報 ───
+
+export interface SdkInfo {
+  version: string
+  availableModels: string[]
+  availableEvents: string[]
+}
+
+export async function fetchSdkInfo(): Promise<SdkInfo> {
+  const response = await apiFetch(`${API_BASE_URL}/extensions/sdk-info`)
+  if (!response.ok) throw new Error(`SDK情報の取得に失敗しました: ${response.statusText}`)
+  return response.json()
+}

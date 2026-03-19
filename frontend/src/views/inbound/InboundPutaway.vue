@@ -81,7 +81,7 @@
                       </option>
                     </select>
                     <span v-if="suggestions[line.lineNumber]?.reason" class="suggestion-hint">
-                      &#x2728; {{ suggestions[line.lineNumber].reason }}
+                      &#x2728; {{ suggestions[line.lineNumber]?.reason }}
                     </span>
                   </div>
                 </template>

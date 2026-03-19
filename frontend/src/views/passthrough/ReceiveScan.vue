@@ -52,21 +52,31 @@ async function fetchOrder(orderNumber: string) {
   }
 }
 
+// スキャン済み箱番号の重複チェック用 / 已扫描箱号去重检查用
+const scannedBoxNumbers = ref<Set<string>>(new Set())
+
 function handleScan() {
   if (!scanInput.value.trim()) return
   if (!order.value) {
-    // 第一次扫码匹配预定 / 初回スキャンで予約マッチ
+    // 初回スキャンで予約マッチ / 第一次扫码匹配预定
     fetchOrder(scanInput.value.trim())
   } else {
-    // 后续扫码计箱数 / 以降のスキャンで箱数カウント
-    scannedBoxes.value++
-    ElMessage.success(`箱 #${scannedBoxes.value} スキャン完了`)
+    const boxCode = scanInput.value.trim()
+    // 重複チェック / 去重检查
+    if (scannedBoxNumbers.value.has(boxCode)) {
+      ElMessage.warning(`この箱は既にスキャン済みです: ${boxCode}`)
+    } else {
+      scannedBoxNumbers.value.add(boxCode)
+      scannedBoxes.value++
+      ElMessage.success(`箱 #${scannedBoxes.value} スキャン完了: ${boxCode}`)
+    }
   }
   scanInput.value = ''
 }
 
 function updateVariance(idx: number) {
   const d = varianceDetails.value[idx]
+  if (!d) return
   d.variance = d.actualQuantity - d.expectedQuantity
 }
 
@@ -105,6 +115,7 @@ async function submitArrive() {
 function reset() {
   order.value = null
   scannedBoxes.value = 0
+  scannedBoxNumbers.value = new Set()
   varianceDetails.value = []
   scanInput.value = ''
 }
@@ -138,8 +149,8 @@ function reset() {
           </div>
         </template>
         <el-descriptions :column="3" size="small" border>
-          <el-descriptions-item label="预定箱数">{{ order.totalBoxCount || '--' }}</el-descriptions-item>
-          <el-descriptions-item label="已扫箱数">
+          <el-descriptions-item label="予定箱数">{{ order.totalBoxCount || '--' }}</el-descriptions-item>
+          <el-descriptions-item label="スキャン済箱数">
             <span :style="{ color: scannedBoxes !== order.totalBoxCount ? '#e6a23c' : '#67c23a', fontWeight: 'bold' }">
               {{ scannedBoxes }}
             </span>
@@ -150,17 +161,17 @@ function reset() {
 
       <!-- 差异核对 / 差異確認 -->
       <el-card v-if="order.status === 'confirmed'" style="margin-bottom: 16px">
-        <template #header>数量核对（如有差异请修改实收数量）</template>
+        <template #header>数量照合（差異がある場合は実数を修正） / 数量核对（如有差异请修改实收数量）</template>
         <el-table :data="varianceDetails" size="small">
           <el-table-column prop="sku" label="SKU" width="150" />
-          <el-table-column prop="productName" label="商品" />
-          <el-table-column prop="expectedQuantity" label="预定" width="80" />
-          <el-table-column label="实收" width="120">
+          <el-table-column prop="productName" label="商品名" />
+          <el-table-column prop="expectedQuantity" label="予定数" width="80" />
+          <el-table-column label="実数" width="120">
             <template #default="{ row, $index }">
               <el-input-number v-model="row.actualQuantity" :min="0" size="small" @change="updateVariance($index)" />
             </template>
           </el-table-column>
-          <el-table-column label="差异" width="80">
+          <el-table-column label="差異" width="80">
             <template #default="{ row }">
               <span :style="{ color: row.variance !== 0 ? '#f56c6c' : '#67c23a' }">
                 {{ row.variance > 0 ? '+' : '' }}{{ row.variance }}
@@ -170,9 +181,9 @@ function reset() {
         </el-table>
 
         <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px">
-          <el-button @click="reset">重置</el-button>
+          <el-button @click="reset">リセット</el-button>
           <el-button type="primary" :loading="submitting" @click="submitArrive">
-            受付完了 → 暂存区
+            受付完了 → 一時保管エリア
           </el-button>
         </div>
       </el-card>

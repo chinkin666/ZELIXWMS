@@ -701,7 +701,7 @@ const handleOneByOneStart = () => {
   const orderIds = tableSelectedKeys.value.map((k) => String(k))
   localStorage.setItem('oneByOneSelectedOrderIds', JSON.stringify(orderIds))
   localStorage.removeItem('oneByOneProcessedOrderIds')
-  router.push('/shipment-operations/one-by-one/inspection')
+  router.push('/shipment/operations/one-by-one/inspection')
 }
 
 const handleNByOneStart = () => {
@@ -729,7 +729,7 @@ const handleNByOneStart = () => {
   const orderIds = tableSelectedKeys.value.map((k) => String(k))
   localStorage.setItem('nByOneSelectedOrderIds', JSON.stringify(orderIds))
   localStorage.removeItem('nByOneProcessedOrderIds')
-  router.push('/shipment-operations/n-by-one/inspection')
+  router.push('/shipment/operations/n-by-one/inspection')
 }
 
 const openPrintPreview = async () => {

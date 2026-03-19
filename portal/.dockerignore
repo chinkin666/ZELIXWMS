@@ -1,0 +1,15 @@
+node_modules
+dist
+.git
+.gitignore
+.env.development
+.env.local
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+*.log
+Dockerfile
+docker-compose*.yml
+.dockerignore

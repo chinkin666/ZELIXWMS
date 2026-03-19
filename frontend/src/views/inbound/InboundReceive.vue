@@ -83,7 +83,7 @@
             <button
               v-for="m in inspectionModes" :key="m.key"
               class="mode-tab" :class="{ 'mode-tab--active': inspectionMode === m.key }"
-              @click="inspectionMode = m.key"
+              @click="inspectionMode = m.key; scanMessage = ''; scanIsError = false"
             >{{ m.label }}</button>
           </div>
         </div>
@@ -274,6 +274,14 @@ const handleScan = () => {
   )
 
   if (matchLine) {
+    // 超過入庫チェック / 超收检查
+    const remaining = matchLine.expectedQuantity - matchLine.receivedQuantity
+    if (scanQuantity.value > remaining) {
+      beepError()
+      scanMessage.value = `⚠️ 入庫数量(${scanQuantity.value})が残り数量(${remaining})を超えています。確認してください。`
+      scanIsError.value = true
+      return
+    }
     handleReceiveLine(matchLine.lineNumber, scanQuantity.value)
     beepSuccess()
     scanInput.value = ''
@@ -289,6 +297,7 @@ const handleReceiveLine = async (lineNumber: number, qty: number) => {
   if (!order.value || isReceiving.value) return
   isReceiving.value = true
   scanMessage.value = ''
+  scanIsError.value = false
   try {
     const result = await receiveInboundLine(order.value._id, { lineNumber, receiveQuantity: qty })
     scanMessage.value = result.message

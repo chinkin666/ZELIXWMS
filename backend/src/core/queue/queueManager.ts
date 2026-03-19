@@ -31,6 +31,7 @@ export interface WebhookJobData {
   url: string;
   secret: string;
   attempt?: number;
+  [key: string]: unknown;
 }
 
 export interface ScriptJobData {
@@ -38,6 +39,7 @@ export interface ScriptJobData {
   payload: Record<string, unknown>;
   scriptId: string;
   scriptName: string;
+  [key: string]: unknown;
 }
 
 export interface AuditJobData {
@@ -48,6 +50,7 @@ export interface AuditJobData {
   duration: number;
   handlerCount: number;
   error?: string;
+  [key: string]: unknown;
 }
 
 class QueueManager {
@@ -185,6 +188,56 @@ class QueueManager {
    */
   isReady(): boolean {
     return this.initialized;
+  }
+
+  /**
+   * 获取所有队列的状态概览 / すべてのキューのステータス概要を取得
+   */
+  async getStats(): Promise<Array<{
+    name: string;
+    waiting: number;
+    active: number;
+    completed: number;
+    failed: number;
+    delayed: number;
+  }>> {
+    const stats: Array<{
+      name: string;
+      waiting: number;
+      active: number;
+      completed: number;
+      failed: number;
+      delayed: number;
+    }> = [];
+
+    for (const [name, queue] of this.queues) {
+      try {
+        const counts = await queue.getJobCounts('waiting', 'active', 'completed', 'failed', 'delayed');
+        stats.push({
+          name,
+          waiting: counts.waiting ?? 0,
+          active: counts.active ?? 0,
+          completed: counts.completed ?? 0,
+          failed: counts.failed ?? 0,
+          delayed: counts.delayed ?? 0,
+        });
+      } catch {
+        stats.push({ name, waiting: -1, active: -1, completed: -1, failed: -1, delayed: -1 });
+      }
+    }
+    return stats;
+  }
+
+  /**
+   * 清理指定队列的已完成/失败任务 / 指定キューの完了/失敗ジョブをクリーンアップ
+   */
+  async cleanQueue(queueName: QueueName, grace = 60_000): Promise<{ cleaned: number }> {
+    const queue = this.queues.get(queueName);
+    if (!queue) return { cleaned: 0 };
+
+    const completed = await queue.clean(grace, 1000, 'completed');
+    const failed = await queue.clean(grace, 1000, 'failed');
+    return { cleaned: completed.length + failed.length };
   }
 
   /**

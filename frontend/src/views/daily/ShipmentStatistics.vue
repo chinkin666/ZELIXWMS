@@ -154,7 +154,7 @@ const maxInvoiceType = computed(() => stats.value?.invoiceTypes ? Math.max(1, ..
 // ピーク日（最も出荷件数が多い日）/ 峰值日（出荷件数最多的一天）
 const peakDay = computed(() => {
   if (!stats.value || stats.value.daily.length === 0) return null
-  return stats.value.daily.reduce((peak, day) => day.count > peak.count ? day : peak, stats.value.daily[0])
+  return stats.value.daily.reduce((peak, day) => day.count > (peak?.count ?? -1) ? day : peak, stats.value.daily[0]!)
 })
 
 function barHeight(value: number, max: number): string {

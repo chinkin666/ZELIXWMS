@@ -55,6 +55,7 @@ const autoBreadcrumbs = computed<{ label: string; route?: string }[]>(() => {
 
   for (let i = 0; i < matched.length; i++) {
     const record = matched[i]
+    if (!record) continue
     const title = record.meta?.title as string | undefined
     if (!title) continue
 

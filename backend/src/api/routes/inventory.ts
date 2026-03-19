@@ -310,7 +310,7 @@ inventoryRouter.post('/rebuild', rebuildInventory);
  *     description: |
  *       指定分数以上 confirmed のまま放置された引当を自動解放する。
  *       Releases reservations in 'confirmed' state older than timeoutMinutes.
- *       TODO: スケジュールジョブ（WMS Schedule）から定期的に呼び出すこと。
+ *       BullMQ 定期ジョブ（30分間隔）で自動実行済み。手動実行も可能。
  *     parameters:
  *       - in: query
  *         name: timeoutMinutes

@@ -776,11 +776,11 @@ function finishCurrentOrder() {
 
   // 自動次注文移動 / 自动切换到下一个待检订单
   if (autoAdvanceEnabled.value && pendingOrders.value.length > 0) {
-    const nextOrder = pendingOrders.value[0]
+    const nextOrder = pendingOrders.value[0] ?? null
     currentOrder.value = nextOrder
     mode.value = 'product'
     initializeInspectionItems()
-    showToast(t('wms.inspection.autoAdvancedToNext', '次の注文に自動移動しました') + `: ${nextOrder.orderNumber || ''}`, 'info')
+    showToast(t('wms.inspection.autoAdvancedToNext', '次の注文に自動移動しました') + `: ${nextOrder?.orderNumber || ''}`, 'info')
     focusScanInput()
     return
   }
@@ -1212,14 +1212,14 @@ function fkeySkipToNext() {
     const idx = pendingOrders.value.findIndex(o => String(o._id) === currentId)
     if (idx >= 0) {
       const [skipped] = pendingOrders.value.splice(idx, 1)
-      pendingOrders.value.push(skipped)
+      if (skipped) pendingOrders.value.push(skipped)
     }
   }
-  const next = pendingOrders.value[0]
+  const next = pendingOrders.value[0] ?? null
   currentOrder.value = next
   mode.value = 'product'
   initializeInspectionItems()
-  showToast(t('wms.inspection.skippedToNext', 'スキップしました') + `: ${next.orderNumber || ''}`, 'info')
+  showToast(t('wms.inspection.skippedToNext', 'スキップしました') + `: ${next?.orderNumber || ''}`, 'info')
   focusScanInput()
 }
 
@@ -1235,9 +1235,9 @@ async function fkeyManualComplete() {
   if (!ok) return
   // 全商品を検品済みにする / 将所有商品标记为已检品
   for (const item of inspectionItems.value) {
-    item.inspectedQuantity = item.quantity
+    item.inspectedQuantity = item.totalQuantity
   }
-  handleInspectionComplete()
+  checkCompletion()
 }
 
 function fkeyChangeInvoiceType() {

@@ -145,13 +145,13 @@ onMounted(loadBoxes)
     <el-dialog v-model="showAddDialog" title="箱追加 / 添加箱" width="500px">
       <el-form label-width="100px">
         <el-form-item label="SKU">
-          <el-input v-model="addForm.items[0].sku" />
+          <el-input v-model="addForm.items[0]!.sku" />
         </el-form-item>
         <el-form-item label="FNSKU">
-          <el-input v-model="addForm.items[0].fnsku" />
+          <el-input v-model="addForm.items[0]!.fnsku" />
         </el-form-item>
         <el-form-item label="数量">
-          <el-input-number v-model="addForm.items[0].quantity" :min="1" />
+          <el-input-number v-model="addForm.items[0]!.quantity" :min="1" />
         </el-form-item>
         <el-form-item label="重量(kg)">
           <el-input-number v-model="addForm.weight" :min="0" :precision="1" />

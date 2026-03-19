@@ -80,6 +80,25 @@ class HttpClient {
       }
     }
 
+    // 429 = レート制限 → ユーザーフレンドリーなメッセージ
+    // 429 = 速率限制 → 用户友好消息
+    if (response.status === 429) {
+      throw new HttpError(
+        'リクエストが多すぎます。しばらく後に再試行してください。',
+        429,
+        'Too Many Requests',
+      )
+    }
+
+    // 503 = サービス利用不可 / 服务不可用
+    if (response.status === 503) {
+      throw new HttpError(
+        'サーバーが一時的に利用できません。しばらく後に再試行してください。',
+        503,
+        'Service Unavailable',
+      )
+    }
+
     if (response.ok) {
       // 204 No Content など body がないケース
       const text = await response.text()

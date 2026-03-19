@@ -11,6 +11,7 @@ import { errorHandler, notFoundHandler } from '@/api/middleware/errorHandler';
 import { paginationGuard } from '@/api/middleware/paginationGuard';
 import { swaggerSpec } from '@/config/swagger';
 import { optionalAuth } from '@/api/middleware/auth';
+import { globalLimiter } from '@/api/middleware/rateLimit';
 
 loadEnv();
 
@@ -47,6 +48,9 @@ export const createApp = () => {
   );
   app.use(morgan('dev'));
 
+  // レートリミット / 速率限制
+  app.use(globalLimiter);
+
   // 可选认证（全局）：提取 JWT 用户信息但不阻止未认证请求
   // オプション認証（グローバル）：JWT ユーザー情報を抽出するが未認証リクエストは阻止しない
   app.use(optionalAuth);
@@ -74,15 +78,28 @@ export const createApp = () => {
   // 插件通过 registerAPI() 注册的路由挂载到 /api/plugins/{name}/*
   app.use('/api/plugins', extensionManager.getPluginManager().getRouter());
 
-  app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  app.get('/health', async (_req, res) => {
+    const mongoose = await import('mongoose');
+    const { queueManager } = await import('@/core/queue');
+
+    const dbOk = mongoose.default.connection.readyState === 1;
+    const redisOk = queueManager.isReady();
+    const allOk = dbOk; // Redis is optional / Redis はオプション
+
+    res.status(allOk ? 200 : 503).json({
+      status: allOk ? 'ok' : 'degraded',
+      timestamp: new Date().toISOString(),
+      services: {
+        database: dbOk ? 'connected' : 'disconnected',
+        redis: redisOk ? 'connected' : 'unavailable',
+        graphql: true,
+        extensions: true,
+      },
+    });
   });
 
-  // 未匹配路由处理 / 未マッチルートハンドラー
-  app.use(notFoundHandler);
-
-  // 全局错误处理 / グローバルエラーハンドラー
-  app.use(errorHandler);
+  // notFoundHandler / errorHandler は server.ts で GraphQL 登録後に追加
+  // notFoundHandler / errorHandler は server.ts で GraphQL 登録後に追加
 
   return app;
 };

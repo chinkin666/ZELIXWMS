@@ -301,6 +301,153 @@ export class InboundWorkflow {
   }
 
   /**
+   * 部分入荷：指定ラインの一部のみ受け入れ、残りを次回入荷に繰り越す
+   * 部分入库：接收指定行的部分数量，剩余转入下次入库
+   *
+   * 日本の3PL現場では、サプライヤーが複数回に分けて納品することが一般的。
+   * 日本3PL现场，供应商分多次交货很常见。
+   */
+  static async partialReceive(
+    orderId: string,
+    lineNumber: number,
+    receivedQuantity: number,
+    executedBy?: string,
+  ): Promise<IInboundOrder> {
+    try {
+      const order = await InboundOrder.findById(orderId);
+      if (!order) {
+        throw new Error(`入荷指示が見つかりません: ${orderId}`);
+      }
+
+      const line = order.lines.find((l) => l.lineNumber === lineNumber);
+      if (!line) {
+        throw new Error(`ライン番号 ${lineNumber} が見つかりません`);
+      }
+
+      // 部分入荷：既存の受入数に加算 / 部分入库：加到已接收数量
+      const previousReceived = line.receivedQuantity || 0;
+      const totalReceived = previousReceived + receivedQuantity;
+
+      if (totalReceived > line.expectedQuantity) {
+        throw new Error(
+          `受入合計(${totalReceived})が予定数量(${line.expectedQuantity})を超えています / ` +
+          `接收总量(${totalReceived})超过预期数量(${line.expectedQuantity})`,
+        );
+      }
+
+      line.receivedQuantity = totalReceived;
+
+      // 在庫台帳に増分のみ記帳 / 仅记录增量到台帐
+      await InventoryLedger.create({
+        productId: line.productId,
+        productSku: line.productSku,
+        locationId: order.destinationLocationId,
+        lotId: line.lotId,
+        lotNumber: line.lotNumber,
+        type: 'inbound',
+        quantity: receivedQuantity,
+        referenceType: 'inbound-order',
+        referenceId: String(order._id),
+        referenceNumber: order.orderNumber,
+        reason: `部分入荷（${totalReceived}/${line.expectedQuantity}）/ 部分入库`,
+        executedBy,
+        executedAt: new Date(),
+      });
+
+      // 全ライン受入完了チェック
+      const allReceived = order.lines.every(
+        (l) => l.receivedQuantity >= l.expectedQuantity,
+      );
+      if (allReceived) {
+        order.status = 'received';
+        extensionManager.emit(HOOK_EVENTS.INBOUND_RECEIVED, {
+          orderId,
+          orderNumber: order.orderNumber,
+        }).catch(() => {});
+      }
+
+      await order.save();
+      return order;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`部分入荷に失敗しました: ${message}`);
+    }
+  }
+
+  /**
+   * 入荷検品で不良品を報告（損傷・数量不一致）
+   * 入库检品时报告不良品（损坏/数量不一致）
+   *
+   * 日本の3PL倉庫では、入荷時の検品で破損品を発見した場合、
+   * 隔離ゾーンに移動し荷主に連絡するのが一般的。
+   */
+  static async reportDamage(
+    orderId: string,
+    lineNumber: number,
+    damagedQuantity: number,
+    reason: string,
+    executedBy?: string,
+  ): Promise<IInboundOrder> {
+    try {
+      const order = await InboundOrder.findById(orderId);
+      if (!order) {
+        throw new Error(`入荷指示が見つかりません: ${orderId}`);
+      }
+
+      const line = order.lines.find((l) => l.lineNumber === lineNumber);
+      if (!line) {
+        throw new Error(`ライン番号 ${lineNumber} が見つかりません`);
+      }
+
+      if (damagedQuantity > line.expectedQuantity) {
+        throw new Error(
+          `損傷数(${damagedQuantity})が予定数量(${line.expectedQuantity})を超えています`,
+        );
+      }
+
+      // 損傷情報をメモに記録 / 在备注中记录损坏信息
+      const existingMemo = line.memo || '';
+      const damageNote = `[損傷報告 / 损坏报告] ${damagedQuantity}個 - ${reason} (${executedBy || 'system'}, ${new Date().toISOString()})`;
+      line.memo = existingMemo ? `${existingMemo}\n${damageNote}` : damageNote;
+
+      // 在庫台帳に損傷記録 / 在台帐中记录损坏
+      await InventoryLedger.create({
+        productId: line.productId,
+        productSku: line.productSku,
+        locationId: order.destinationLocationId,
+        lotId: line.lotId,
+        lotNumber: line.lotNumber,
+        type: 'adjustment',
+        quantity: -damagedQuantity,
+        referenceType: 'inbound-order',
+        referenceId: String(order._id),
+        referenceNumber: order.orderNumber,
+        reason: `入荷損傷: ${reason} / 入库损坏: ${reason}`,
+        executedBy,
+        executedAt: new Date(),
+      });
+
+      await order.save();
+
+      // 損傷イベント発行（通知サービスやWebhookで活用）
+      // 发出损坏事件（供通知服务和Webhook使用）
+      extensionManager.emit(HOOK_EVENTS.INBOUND_DAMAGE_REPORTED, {
+        orderId: String(order._id),
+        orderNumber: order.orderNumber,
+        lineNumber,
+        productSku: line.productSku,
+        damagedQuantity,
+        reason,
+      }).catch(() => {});
+
+      return order;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`損傷報告に失敗しました: ${message}`);
+    }
+  }
+
+  /**
    * ワークフロー進捗取得：入荷指示と関連タスク、進捗情報を返す
    */
   static async getWorkflowStatus(orderId: string): Promise<WorkflowStatus> {

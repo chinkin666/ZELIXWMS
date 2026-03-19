@@ -613,6 +613,7 @@ const isSagawaCarrier = computed(() => currentCarrierId.value === '__builtin_sag
 
 // ヤマト: invoiceType に基づく表示制御 / ヤマト: invoiceType ベースの表示制御
 const YAMATO_COOL_TYPES = new Set(['0', '2', '5']) // 発払い, コレクト, 着払い
+const COOL_TYPE_INVOICE_TYPES = YAMATO_COOL_TYPES // クール便対応送り状種類 / 冷藏配送支持的送り状種類
 const YAMATO_TIME_SLOTS = new Set(['0', '2', '5', '6', '8', '9'])
 const YAMATO_DELIVERY_DATES = new Set(['0', '1', '2', '4', '5', '6', '8', '9'])
 

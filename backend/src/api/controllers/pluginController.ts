@@ -1,8 +1,8 @@
 /**
  * Plugin 管理 API 控制器 / プラグイン管理 API コントローラ
  *
- * 插件列表 + 启用/禁用 + 配置管理
- * プラグイン一覧 + 有効/無効 + 設定管理
+ * 插件列表 + 启用/禁用 + 配置管理 + 健康检查 + SDK 信息
+ * プラグイン一覧 + 有効/無効 + 設定管理 + ヘルスチェック + SDK 情報
  */
 
 import type { Request, Response } from 'express';
@@ -127,6 +127,54 @@ export async function updatePluginConfig(req: Request, res: Response) {
     const pluginManager = extensionManager.getPluginManager();
     const updated = await pluginManager.updatePluginConfig(req.params.name, tenantId, config);
     res.json({ data: updated });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+}
+
+/**
+ * GET /api/extensions/plugins/:name/health
+ * 单个插件健康检查 / 単一プラグインヘルスチェック
+ */
+export async function pluginHealthCheck(req: Request, res: Response) {
+  try {
+    const pluginManager = extensionManager.getPluginManager();
+    const result = await pluginManager.healthCheck(req.params.name);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+}
+
+/**
+ * GET /api/extensions/plugins-health
+ * 全插件健康检查仪表板 / 全プラグインヘルスチェックダッシュボード
+ */
+export async function pluginsHealthDashboard(_req: Request, res: Response) {
+  try {
+    const pluginManager = extensionManager.getPluginManager();
+    const results = await pluginManager.healthCheckAll();
+    const allHealthy = results.every((r) => r.healthy);
+
+    res.json({
+      overall: allHealthy ? 'healthy' : 'degraded',
+      plugins: results,
+      checkedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+}
+
+/**
+ * GET /api/extensions/sdk-info
+ * SDK 信息（开发者参考）/ SDK 情報（開発者リファレンス）
+ */
+export async function getSdkInfo(_req: Request, res: Response) {
+  try {
+    const pluginManager = extensionManager.getPluginManager();
+    const info = pluginManager.getSdkInfo();
+    res.json(info);
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
   }

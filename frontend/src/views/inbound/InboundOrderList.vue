@@ -678,7 +678,7 @@ const handleSingleFormPrint = async (order: InboundOrder) => {
 
     // テンプレートが1つの場合はそのまま使用、複数の場合は最初のものを使用
     // 1つしかない場合はダイアログ省略 / 只有一个模板时跳过选择
-    const tmpl = allTemplates[0]
+    const tmpl = allTemplates[0]!
     const data = tmpl.targetType === 'inbound-inspection-sheet'
       ? transformToInspectionRows([order])
       : transformToDetailRows([order])

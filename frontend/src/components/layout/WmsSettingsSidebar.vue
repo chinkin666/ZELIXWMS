@@ -20,7 +20,7 @@ const MANAGER_GROUPS = new Set(['出荷設定', 'テンプレート・印刷'])
 const visibleGroups = computed<SubMenuGroup[]>(() => {
   const role = user.value?.role
   if (!role || role === 'admin' || role === 'super_admin') return props.groups
-  if (role === 'manager') return props.groups.filter(g => MANAGER_GROUPS.has(g.groupLabel))
+  if ((role as string) === 'manager') return props.groups.filter(g => MANAGER_GROUPS.has(g.groupLabel))
   return []
 })
 

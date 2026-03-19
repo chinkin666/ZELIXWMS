@@ -37,5 +37,9 @@ export function useToast() {
     show(message, 'warning', duration)
   }
 
-  return { toasts, show, remove, showSuccess, showError, showWarning }
+  function showInfo(message: string, duration = 3000) {
+    show(message, 'info', duration)
+  }
+
+  return { toasts, show, remove, showSuccess, showError, showWarning, showInfo }
 }

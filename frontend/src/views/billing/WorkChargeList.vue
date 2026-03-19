@@ -331,7 +331,7 @@ const handleCreateSubmit = async () => {
   creating.value = true
   try {
     const payload = {
-      chargeType: createForm.value.chargeType,
+      chargeType: createForm.value.chargeType || undefined,
       clientId: createForm.value.clientId || undefined,
       chargeDate: createForm.value.chargeDate,
       referenceType: createForm.value.referenceType || 'manual',

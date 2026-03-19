@@ -14,11 +14,13 @@ import { logger } from '@/lib/logger';
  */
 
 /**
- * 获取租户ID（从请求上下文或默认值）
- * TODO: 从认证中间件获取实际租户ID
+ * 获取租户ID（从请求参数或默认值）/ テナントIDを取得（リクエストパラメータまたはデフォルト値）
+ *
+ * Controller 层通过 req.user?.tenantId 传入，此处提供 fallback。
+ * Controller 層で req.user?.tenantId を渡し、ここでは fallback を提供。
  */
-const getTenantId = (): string => {
-  return 'default-tenant';
+const getTenantId = (tenantId?: string): string => {
+  return tenantId || 'default-tenant';
 };
 
 /**

@@ -1,10 +1,6 @@
 {
   "watch": ["src"],
   "ext": "ts",
-  "exec": "node --expose-gc --max-old-space-size=8192 -r ts-node/register -r tsconfig-paths/register src/server.ts",
-  "ignore": ["src/**/*.spec.ts", "docs", "dist", "tmp"]
+  "exec": "tsx src/server.ts",
+  "ignore": ["src/**/*.spec.ts", "src/**/*.test.ts", "docs", "dist", "tmp"]
 }
-
-
-
-

@@ -5,7 +5,8 @@
  * Phase 2: WebhookDispatcher
  * Phase 3: PluginManager
  * Phase 4: ScriptRunner
- * Phase 5+: CustomFields, FeatureFlags 等を順次追加
+ * Phase 5: CustomFields, FeatureFlags
+ * Phase 9: BullMQ 队列化（Webhook/Script/Audit 走队列，Redis 不可用时降级为 fire-and-forget）
  *
  * 所有 Engine 操作完成后通过此类发射事件。
  * すべての Engine 操作完了後、このクラスを通じてイベントを発行する。
@@ -19,6 +20,8 @@ import { WebhookDispatcher } from './webhookDispatcher';
 import { CustomFieldService } from './customFieldService';
 import { FeatureFlagService } from './featureFlagService';
 import { EventLog } from '@/models/eventLog';
+import { queueManager, QUEUE_NAMES } from '@/core/queue';
+import type { WebhookJobData, ScriptJobData, AuditJobData } from '@/core/queue';
 import type { HookEventName, EmitOptions } from './types';
 
 class ExtensionManager {
@@ -60,10 +63,10 @@ class ExtensionManager {
    * すべてのコア Engine 操作完了後にこのメソッドを呼び出す。
    *
    * 处理流程 / 処理フロー:
-   * 1. HookManager → 执行注册的 Hook 处理函数
-   * 2. (Phase 4) ScriptRunner → 执行匹配的自动化脚本
-   * 3. WebhookDispatcher → 发送匹配的 Webhook（异步）
-   * 4. 记录事件日志
+   * 1. HookManager → 同步执行注册的 Hook 处理函数
+   * 2. ScriptRunner → 队列化执行（Redis 不可用时降级为 fire-and-forget）
+   * 3. WebhookDispatcher → 队列化投递（Redis 不可用时降级为 fire-and-forget）
+   * 4. EventLog → 队列化写入（Redis 不可用时降级为直接写入）
    */
   async emit(
     event: HookEventName,
@@ -72,34 +75,80 @@ class ExtensionManager {
   ): Promise<void> {
     const startTime = Date.now();
     const tenantId = options?.tenantId;
+    const useQueue = queueManager.isReady();
 
     try {
-      // 1. Hook handlers（插件 + 内置处理）
-      // 1. Hook handlers（プラグイン + 組み込み処理）
+      // 1. Hook handlers（插件 + 内置处理）— 始终同步执行
+      // 1. Hook handlers（プラグイン + 組み込み処理）— 常に同期実行
       const handlerCount = await this.hookManager.emit(event, payload, tenantId);
 
-      // 2. ScriptRunner — 执行匹配的自动化脚本（异步，不阻塞）
-      // 2. ScriptRunner — 一致する自動化スクリプトを実行（非同期、ブロックしない）
-      this.scriptRunner.executeForEvent(event, payload).catch((err) => {
-        logger.error({ event, err }, 'Script execution error / スクリプト実行エラー');
-      });
+      // 1.5 通知系统 — 异步分发（不阻塞核心流程）
+      // 1.5 通知システム — 非同期配信（コアフローをブロックしない）
+      import('@/services/notificationService').then(({ sendNotificationsForEvent }) => {
+        sendNotificationsForEvent(event, payload, tenantId).catch((err) => {
+          logger.error({ event, err }, 'Notification dispatch error / 通知配信エラー');
+        });
+      }).catch(() => {});
 
-      // 3. Webhook 投递（异步，不阻塞）/ Webhook 配信（非同期、ブロックしない）
-      this.webhookDispatcher.dispatch(event, payload).catch((err) => {
-        logger.error({ event, err }, 'Webhook dispatch error / Webhook 配信エラー');
-      });
+      // 2. ScriptRunner — 队列化 or fire-and-forget
+      // 2. ScriptRunner — キュー化 or fire-and-forget
+      if (useQueue) {
+        queueManager.addJob<ScriptJobData>(QUEUE_NAMES.SCRIPT, {
+          event,
+          payload,
+          scriptId: '',
+          scriptName: '',
+        }).catch((err) => {
+          logger.error({ event, err }, 'Failed to enqueue script job / スクリプトジョブのキュー追加失敗');
+        });
+      } else {
+        this.scriptRunner.executeForEvent(event, payload).catch((err) => {
+          logger.error({ event, err }, 'Script execution error / スクリプト実行エラー');
+        });
+      }
+
+      // 3. Webhook 投递 — 队列化 or fire-and-forget
+      // 3. Webhook 配信 — キュー化 or fire-and-forget
+      if (useQueue) {
+        queueManager.addJob<WebhookJobData>(QUEUE_NAMES.WEBHOOK, {
+          event,
+          payload,
+          webhookId: '',
+          url: '',
+          secret: '',
+        }).catch((err) => {
+          logger.error({ event, err }, 'Failed to enqueue webhook job / Webhook ジョブのキュー追加失敗');
+        });
+      } else {
+        this.webhookDispatcher.dispatch(event, payload).catch((err) => {
+          logger.error({ event, err }, 'Webhook dispatch error / Webhook 配信エラー');
+        });
+      }
 
       const duration = Date.now() - startTime;
 
-      // 4. 记录事件日志（异步，不阻塞）
-      // 4. イベントログ記録（非同期、ブロックしない）
-      this.logEvent(event, 'engine', payload, duration, tenantId, handlerCount).catch((err) => {
-        logger.error({ err }, 'Failed to write event log / イベントログ書き込み失敗');
-      });
+      // 4. 审计日志 — 队列化 or 直接写入
+      // 4. 監査ログ — キュー化 or 直接書き込み
+      if (useQueue) {
+        queueManager.addJob<AuditJobData>(QUEUE_NAMES.AUDIT, {
+          event,
+          source: 'engine',
+          payload: this.summarizePayload(payload),
+          tenantId,
+          duration,
+          handlerCount,
+        }).catch((err) => {
+          logger.error({ err }, 'Failed to enqueue audit job / 監査ジョブのキュー追加失敗');
+        });
+      } else {
+        this.logEvent(event, 'engine', payload, duration, tenantId, handlerCount).catch((err) => {
+          logger.error({ err }, 'Failed to write event log / イベントログ書き込み失敗');
+        });
+      }
 
       if (handlerCount > 0) {
         logger.debug(
-          { event, handlerCount, duration },
+          { event, handlerCount, duration, queued: useQueue },
           'Event emitted / イベント発行',
         );
       }
@@ -108,9 +157,19 @@ class ExtensionManager {
       const duration = Date.now() - startTime;
       logger.error({ event, err }, 'Extension emit error / 拡張 emit エラー');
 
-      this.logEvent(event, 'engine', payload, duration, tenantId, 0, err as Error).catch(() => {
-        // 日志写入失败时静默处理 / ログ書き込み失敗時はサイレント処理
-      });
+      if (useQueue) {
+        queueManager.addJob<AuditJobData>(QUEUE_NAMES.AUDIT, {
+          event,
+          source: 'engine',
+          payload: this.summarizePayload(payload),
+          tenantId,
+          duration,
+          handlerCount: 0,
+          error: (err as Error).message,
+        }).catch(() => {});
+      } else {
+        this.logEvent(event, 'engine', payload, duration, tenantId, 0, err as Error).catch(() => {});
+      }
     }
   }
 
@@ -157,7 +216,7 @@ class ExtensionManager {
   }
 
   /**
-   * 写入事件日志 / イベントログを書き込む
+   * 写入事件日志（降级直接写入）/ イベントログを書き込む（降級直接書き込み）
    */
   private async logEvent(
     event: string,

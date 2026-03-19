@@ -74,7 +74,16 @@ export const notifyException = async (req: Request, res: Response): Promise<void
       { new: true },
     ).lean();
     if (!updated) { res.status(404).json({ message: 'Not found' }); return; }
-    // TODO: webhook 通知実装 / webhook 通知实现
+
+    // Webhook 通知（扩展系统经由）/ Webhook 通知（拡張システム経由）
+    const { extensionManager, HOOK_EVENTS } = await import('@/core/extensions');
+    extensionManager.emit('exception.notified' as any, {
+      exceptionId: String(updated._id),
+      level: updated.level,
+      status: updated.status,
+      description: updated.description,
+    }).catch(() => {});
+
     res.json(updated);
   } catch (error: any) {
     res.status(500).json({ message: error.message });

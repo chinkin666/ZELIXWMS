@@ -3,9 +3,13 @@
  *
  * 挂载到 /api/plugins/sagawa-express/*
  * /api/plugins/sagawa-express/* にマウント
+ *
+ * 使用 ModelProxy 替代 require 硬编码路径。
+ * require ハードコードパスの代わりに ModelProxy を使用。
  */
 
 import { Router, type Request, type Response } from 'express';
+import type { ModelProxy, PluginLogger } from '@zelix/plugin-sdk';
 import { SAGAWA_INVOICE_TYPES } from './data/invoiceTypes';
 import { generateCsvRows, generateCsvString, type SagawaExportConfig } from './services/sagawaCsvService';
 import { parseSagawaTrackingCsv } from './services/sagawaTrackingService';
@@ -14,20 +18,14 @@ import { parseSagawaTrackingCsv } from './services/sagawaTrackingService';
  * 创建路由 / ルーターを作成
  * @param getConfig 获取插件配置的函数 / プラグイン設定取得関数
  * @param pluginLogger 插件 logger / プラグインロガー
+ * @param models 模型代理 / モデルプロキシ
  */
-export function createRouter(getConfig: (tenantId: string) => Promise<Record<string, any>>, pluginLogger: any) {
+export function createRouter(
+  getConfig: (tenantId: string) => Promise<Record<string, unknown>>,
+  pluginLogger: PluginLogger,
+  models: ModelProxy,
+) {
   const router = Router();
-
-  // 需要延迟加载 ShipmentOrder 模型（避免循环依赖）
-  // ShipmentOrder モデルは遅延ロードが必要（循環依存回避）
-  let ShipmentOrder: any = null;
-  function getShipmentOrderModel() {
-    if (!ShipmentOrder) {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      ShipmentOrder = require('../../../backend/src/models/shipmentOrder').ShipmentOrder;
-    }
-    return ShipmentOrder;
-  }
 
   /**
    * GET /status — 插件状态 / プラグインステータス
@@ -77,13 +75,15 @@ export function createRouter(getConfig: (tenantId: string) => Promise<Record<str
       const tenantId = (req.headers['x-tenant-id'] as string) || 'default';
       const pluginConfig = await getConfig(tenantId);
       const mergedConfig: SagawaExportConfig = {
-        billingCode: reqConfig?.billingCode || pluginConfig.billingCode || '',
-        defaultInvoiceType: reqConfig?.defaultInvoiceType || pluginConfig.defaultInvoiceType || '0',
-        defaultSize: reqConfig?.defaultSize || pluginConfig.defaultSize || '80',
+        billingCode: (reqConfig?.billingCode || pluginConfig.billingCode || '') as string,
+        defaultInvoiceType: (reqConfig?.defaultInvoiceType || pluginConfig.defaultInvoiceType || '0') as string,
+        defaultSize: (reqConfig?.defaultSize || pluginConfig.defaultSize || '80') as string,
       };
 
-      const Model = getShipmentOrderModel();
-      const orders = await Model.find({ _id: { $in: orderIds } }).lean();
+      // 通过 ModelProxy 获取模型（不再使用 require 硬编码路径）
+      // ModelProxy 経由でモデルを取得（require ハードコードパス不要）
+      const ShipmentOrder = models.getModel('ShipmentOrder') as any;
+      const orders = await ShipmentOrder.find({ _id: { $in: orderIds } }).lean();
 
       if (orders.length === 0) {
         res.status(404).json({ error: '注文が見つかりません / 未找到订单' });
@@ -123,11 +123,12 @@ export function createRouter(getConfig: (tenantId: string) => Promise<Record<str
         return;
       }
 
-      const Model = getShipmentOrderModel();
+      // 通过 ModelProxy 获取模型 / ModelProxy 経由でモデルを取得
+      const ShipmentOrder = models.getModel('ShipmentOrder') as any;
       let updated = 0;
 
       for (const [orderNumber, trackingNumber] of trackingMap) {
-        const result = await Model.updateOne(
+        const result = await ShipmentOrder.updateOne(
           { orderNumber },
           {
             $set: {

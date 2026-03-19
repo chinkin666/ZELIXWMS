@@ -5,6 +5,8 @@ import { connectDatabase, checkTransactionSupport } from '@/config/database';
 import { logger } from '@/lib/logger';
 import { extensionManager } from '@/core/extensions';
 import { queueManager, registerWorkers } from '@/core/queue';
+import { initGraphQL } from '@/graphql';
+import { errorHandler, notFoundHandler } from '@/api/middleware/errorHandler';
 
 const env = loadEnv();
 const app = createApp();
@@ -28,6 +30,16 @@ async function startServer() {
       logger.warn({ err }, 'QueueManager initialization skipped / キューマネージャー初期化をスキップ');
     });
     registerWorkers();
+
+    // 初始化 GraphQL（/graphql エンドポイント）
+    await initGraphQL(app).catch((err) => {
+      logger.warn({ err }, 'GraphQL initialization skipped / GraphQL 初期化をスキップ');
+    });
+
+    // GraphQL 登録後に notFoundHandler / errorHandler を追加
+    // GraphQL 登録後に notFoundHandler / errorHandler を追加
+    app.use(notFoundHandler);
+    app.use(errorHandler);
 
     server.listen(env.port, env.host, () => {
       logger.info(`API server listening on http://${env.host}:${env.port}`);

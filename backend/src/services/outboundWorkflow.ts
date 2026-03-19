@@ -419,6 +419,108 @@ export class OutboundWorkflow {
   }
 
   /**
+   * 出荷前の重量チェック / 出货前重量检查
+   *
+   * 日本の宅配業者（ヤマト・佐川）には重量制限がある。
+   * 日本快递公司（大和/佐川）有重量限制。
+   * ヤマト：25kg以内、佐川：30kg以内（通常）
+   *
+   * @returns 超過した出荷指示のリスト / 超重的出货指示列表
+   */
+  static async validateShipmentWeights(
+    waveId: string,
+    maxWeightKg: number = 25,
+  ): Promise<{
+    valid: string[];
+    overweight: Array<{ shipmentId: string; orderNumber: string; totalWeightKg: number }>;
+  }> {
+    const wave = await Wave.findById(waveId).lean<IWave>();
+    if (!wave) {
+      throw new Error(`Wave not found: ${waveId}`);
+    }
+
+    const valid: string[] = [];
+    const overweight: Array<{ shipmentId: string; orderNumber: string; totalWeightKg: number }> = [];
+
+    for (const shipmentId of wave.shipmentIds) {
+      const shipment = await ShipmentOrder.findById(shipmentId).lean<IShipmentOrder>();
+      if (!shipment) continue;
+
+      // 重量計算（商品の weight フィールドから）/ 重量计算（从商品weight字段）
+      let totalWeightKg = 0;
+      for (const product of shipment.products) {
+        const weight = (product as any).weight || 0;
+        totalWeightKg += weight * (product.quantity || 1);
+      }
+
+      if (totalWeightKg > maxWeightKg) {
+        overweight.push({
+          shipmentId: String(shipment._id),
+          orderNumber: shipment.orderNumber,
+          totalWeightKg,
+        });
+      } else {
+        valid.push(String(shipment._id));
+      }
+    }
+
+    return { valid, overweight };
+  }
+
+  /**
+   * 装箱単（パッキングリスト）データ生成 / 装箱单（Packing List）数据生成
+   *
+   * 日本の3PL倉庫では、出荷時にパッキングリストを同梱するのが標準。
+   * 日本3PL仓库出货时，随箱附装箱单是标准做法。
+   */
+  static async generatePackingList(shipmentId: string): Promise<{
+    orderNumber: string;
+    customerName: string;
+    shippingAddress: string;
+    items: Array<{
+      sku: string;
+      productName: string;
+      quantity: number;
+    }>;
+    totalItems: number;
+    totalQuantity: number;
+    generatedAt: Date;
+  }> {
+    const shipment = await ShipmentOrder.findById(shipmentId).lean<IShipmentOrder>();
+    if (!shipment) {
+      throw new Error(`出荷指示が見つかりません: ${shipmentId}`);
+    }
+
+    const items = shipment.products.map((p) => ({
+      sku: p.productSku || p.inputSku || '',
+      productName: p.productName || '',
+      quantity: p.quantity || 0,
+    }));
+
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+
+    // 配送先住所の組み立て / 组装配送地址
+    const addr = (shipment as any).consignee || {};
+    const shippingAddress = [
+      addr.postalCode ? `〒${addr.postalCode}` : '',
+      addr.prefecture || '',
+      addr.city || '',
+      addr.address1 || '',
+      addr.address2 || '',
+    ].filter(Boolean).join(' ');
+
+    return {
+      orderNumber: shipment.orderNumber,
+      customerName: addr.name || (shipment as any).customerName || '',
+      shippingAddress,
+      items,
+      totalItems: items.length,
+      totalQuantity,
+      generatedAt: new Date(),
+    };
+  }
+
+  /**
    * Get wave progress with task completion counts by type.
    */
   static async getWaveProgress(waveId: string): Promise<{

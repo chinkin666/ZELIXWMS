@@ -81,6 +81,9 @@ const DEFAULT_PRINT_PARAMS: Required<TemplatePrintParams> = {
   paper: 'AUTO',
   orientation: 'portrait',
   scale: 'fit',
+  scalePercent: 100,
+  marginLeftMm: 0,
+  marginTopMm: 0,
   margin_mm: 6,
   copies: 1,
 }

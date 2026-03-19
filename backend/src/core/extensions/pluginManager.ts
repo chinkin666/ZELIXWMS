@@ -24,6 +24,64 @@ import { PluginConfig } from '@/models/pluginConfig';
 import type { HookManager } from './hookManager';
 import type { HookEventName, HookHandlerFn, HookHandlerOptions } from './types';
 
+/** @zelix/plugin-sdk バージョン / バージョン */
+const SDK_VERSION = '1.0.0';
+
+/** 模型白名单 — 插件可通过 ModelProxy 访问的模型 / プラグインが ModelProxy 経由でアクセス可能なモデル */
+const ALLOWED_MODELS = [
+  'ShipmentOrder', 'Product', 'Stock', 'InboundOrder', 'ReturnOrder',
+  'Warehouse', 'Location', 'Client', 'SubClient', 'Shop',
+  'Wave', 'WarehouseTask', 'Carrier', 'ServiceRate',
+  'CycleCountPlan', 'AgingAlert', 'InspectionRecord', 'ExceptionReport',
+  'LabelingTask', 'FbaBox', 'OutboundRequest',
+] as const;
+
+/** 模型缓存（延迟加载）/ モデルキャッシュ（遅延ロード） */
+const modelCache: Map<string, unknown> = new Map();
+
+/**
+ * 创建 ModelProxy — 安全的模型访问层 / 安全なモデルアクセスレイヤーを作成
+ *
+ * 插件不再需要 require('../../../backend/src/models/...') 这种脆弱路径。
+ * プラグインは require('../../../backend/src/models/...') のような脆いパスが不要になる。
+ */
+function createModelProxy(): { getModel: (name: string) => unknown; getAvailableModels: () => string[] } {
+  return {
+    getModel(name: string): unknown {
+      if (!ALLOWED_MODELS.includes(name as typeof ALLOWED_MODELS[number])) {
+        throw new Error(
+          `Model "${name}" is not available to plugins. Allowed: ${ALLOWED_MODELS.join(', ')} / ` +
+          `モデル "${name}" はプラグインから利用できません。利用可能: ${ALLOWED_MODELS.join(', ')}`,
+        );
+      }
+
+      const cached = modelCache.get(name);
+      if (cached) return cached;
+
+      try {
+        // 将 PascalCase 转换为 camelCase 文件名 / PascalCase を camelCase ファイル名に変換
+        const fileName = name.charAt(0).toLowerCase() + name.slice(1);
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const mod = require(`@/models/${fileName}`);
+        const model = mod[name] || mod.default;
+        if (!model) {
+          throw new Error(`Model export "${name}" not found in @/models/${fileName}`);
+        }
+        modelCache.set(name, model);
+        return model;
+      } catch (err) {
+        throw new Error(
+          `Failed to load model "${name}": ${(err as Error).message} / ` +
+          `モデル "${name}" のロードに失敗: ${(err as Error).message}`,
+        );
+      }
+    },
+    getAvailableModels(): string[] {
+      return [...ALLOWED_MODELS];
+    },
+  };
+}
+
 // ─── 插件清单 / プラグインマニフェスト ───
 
 export interface PluginManifest {
@@ -68,6 +126,8 @@ export interface PluginDefinition {
   manifest: PluginManifest;
   install: (ctx: PluginContext) => Promise<void>;
   uninstall?: () => Promise<void>;
+  /** 健康检查（SDK v1.0.0+）/ ヘルスチェック（SDK v1.0.0+） */
+  healthCheck?: () => Promise<{ healthy: boolean; message?: string }>;
 }
 
 // ─── 内部插件实例 / 内部プラグインインスタンス ───
@@ -175,8 +235,9 @@ export class PluginManager {
     const pluginModule = require(entryPath);
     const pluginDef: PluginDefinition = pluginModule.default || pluginModule;
 
-    // 5. 创建插件上下文 / プラグインコンテキストを作成
-    const ctx: PluginContext = {
+    // 5. 创建插件上下文（兼容 @zelix/plugin-sdk PluginContext 接口）
+    // プラグインコンテキストを作成（@zelix/plugin-sdk PluginContext インターフェースと互換）
+    const ctx: PluginContext & { models: ReturnType<typeof createModelProxy>; sdkVersion: string } = {
       registerHook: (event, handler, options = {}) => {
         this.hookManager.register(
           event,
@@ -193,6 +254,8 @@ export class PluginManager {
       },
       getConfig: (tenantId) => this.getPluginConfig(manifest.name, tenantId || '_default'),
       logger: logger.child({ plugin: manifest.name }),
+      models: createModelProxy(),
+      sdkVersion: SDK_VERSION,
     };
 
     // 6. 执行安装 / インストール実行
@@ -382,6 +445,59 @@ export class PluginManager {
    */
   async getConfig(name: string, tenantId?: string): Promise<Record<string, unknown>> {
     return this.getPluginConfig(name, tenantId || '_default');
+  }
+
+  /**
+   * 单个插件健康检查 / 単一プラグインヘルスチェック
+   */
+  async healthCheck(name: string): Promise<{ healthy: boolean; message?: string }> {
+    const plugin = this.plugins.get(name);
+    if (!plugin) {
+      return { healthy: false, message: `Plugin ${name} not found / プラグイン ${name} が見つかりません` };
+    }
+    if (plugin.status !== 'enabled') {
+      return { healthy: false, message: `Plugin is ${plugin.status}` };
+    }
+    if (!plugin.definition.healthCheck) {
+      // 没有 healthCheck 方法则默认健康 / healthCheck メソッドがなければデフォルト健康
+      return { healthy: true, message: 'No health check defined' };
+    }
+    try {
+      return await plugin.definition.healthCheck();
+    } catch (err) {
+      return { healthy: false, message: (err as Error).message };
+    }
+  }
+
+  /**
+   * 全插件健康检查 / 全プラグインヘルスチェック
+   */
+  async healthCheckAll(): Promise<Array<{ name: string; version: string; status: string; healthy: boolean; message?: string }>> {
+    const results: Array<{ name: string; version: string; status: string; healthy: boolean; message?: string }> = [];
+    for (const [name, plugin] of this.plugins) {
+      const health = await this.healthCheck(name);
+      results.push({
+        name,
+        version: plugin.manifest.version,
+        status: plugin.status,
+        ...health,
+      });
+    }
+    return results;
+  }
+
+  /**
+   * 获取 SDK 信息 / SDK 情報を取得
+   */
+  getSdkInfo(): { version: string; availableModels: string[]; availableEvents: string[] } {
+    return {
+      version: SDK_VERSION,
+      availableModels: [...ALLOWED_MODELS],
+      availableEvents: Object.values(
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        require('./types').HOOK_EVENTS,
+      ),
+    };
   }
 
   /**
