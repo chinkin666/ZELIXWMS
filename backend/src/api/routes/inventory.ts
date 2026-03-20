@@ -14,6 +14,7 @@ import {
   getLocationUsage,
   rebuildInventory,
   releaseExpiredReservations,
+  getReceiptPaymentLedger,
 } from '@/api/controllers/inventoryController';
 import { requirePermission } from '@/api/middleware/requirePermission';
 
@@ -51,6 +52,44 @@ export const inventoryRouter = Router();
  */
 inventoryRouter.get('/overview', getInventoryOverview);
 inventoryRouter.get('/location-usage', getLocationUsage);
+
+/**
+ * @swagger
+ * /inventory/ledger-summary:
+ *   get:
+ *     tags: [Inventory]
+ *     summary: 受払一覧（在庫受払台帳サマリー） / Receipt/payment ledger summary
+ *     description: |
+ *       指定期間の商品別入出庫・調整・繰越残高を集計して返す。
+ *       Aggregates inbound/outbound/adjustment quantities and opening/closing balances per product for a given date range.
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: 期間開始日 / Period start date (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: 期間終了日 / Period end date (YYYY-MM-DD)
+ *       - in: query
+ *         name: productId
+ *         schema:
+ *           type: string
+ *         description: 商品IDで絞り込み / Filter by product ID
+ *     responses:
+ *       200:
+ *         description: 受払一覧データ / Ledger summary data
+ *       400:
+ *         description: パラメータ不正 / Invalid parameters
+ */
+inventoryRouter.get('/ledger-summary', getReceiptPaymentLedger);
+
 inventoryRouter.get('/stock', listStock);
 
 /**

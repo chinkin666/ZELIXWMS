@@ -13,6 +13,8 @@ import * as inventoryService from '@/services/inventoryService';
 import { AppError } from '@/lib/errors';
 import { getWarehouseFilter } from '@/api/helpers/tenantHelper';
 import { Location } from '@/models/location';
+import { InventoryLedger } from '@/models/inventoryLedger';
+import { Product } from '@/models/product';
 
 /**
  * エラーレスポンスヘルパー / Error response helper
@@ -446,5 +448,167 @@ export const releaseExpiredReservations = async (req: Request, res: Response): P
     });
   } catch (error) {
     handleError(res, error, '期限切れ引当の解放に失敗しました / 过期预留释放失败');
+  }
+};
+
+/**
+ * 受払一覧（在庫受払台帳サマリー） / 收付一览（库存收付台账摘要）
+ *
+ * 指定期間の商品別入出庫・調整・繰越残高を集計して返す。
+ * 按指定期间汇总各商品的入库、出库、调整及期初期末余额。
+ *
+ * クエリパラメータ / 查询参数:
+ *   - startDate (必須 / 必填): 期間開始日 / 期间开始日 (YYYY-MM-DD)
+ *   - endDate   (必須 / 必填): 期間終了日 / 期间结束日 (YYYY-MM-DD)
+ *   - productId (任意 / 可选): 商品IDで絞り込み / 按商品ID筛选
+ */
+export const getReceiptPaymentLedger = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { startDate, endDate, productId } = req.query;
+
+    // バリデーション / 参数校验
+    if (!startDate || !endDate) {
+      res.status(400).json({ message: 'startDate と endDate は必須です / startDate 和 endDate 为必填项' });
+      return;
+    }
+
+    const start = new Date(String(startDate));
+    const end = new Date(String(endDate));
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      res.status(400).json({ message: '日付の形式が不正です（YYYY-MM-DD） / 日期格式无效（YYYY-MM-DD）' });
+      return;
+    }
+
+    // endDate を当日末尾まで含める / endDate 包含到当天结束
+    const endInclusive = new Date(end);
+    endInclusive.setHours(23, 59, 59, 999);
+
+    // 商品IDフィルタ / 商品ID过滤条件
+    const productFilter: Record<string, unknown> = {};
+    if (typeof productId === 'string' && productId.trim()) {
+      productFilter.productId = new mongoose.Types.ObjectId(productId.trim());
+    }
+
+    // 1. 前期繰越（startDate より前の全数量合計） / 期初余额（startDate 之前的所有数量合计）
+    const openingAgg = await InventoryLedger.aggregate([
+      {
+        $match: {
+          ...productFilter,
+          createdAt: { $lt: start },
+        },
+      },
+      {
+        $group: {
+          _id: { productId: '$productId', productSku: '$productSku' },
+          openingBalance: { $sum: '$quantity' },
+        },
+      },
+    ]);
+
+    // 2. 当期の入庫・出庫・調整を集計 / 当期入库、出库、调整汇总
+    const periodAgg = await InventoryLedger.aggregate([
+      {
+        $match: {
+          ...productFilter,
+          createdAt: { $gte: start, $lte: endInclusive },
+        },
+      },
+      {
+        $group: {
+          _id: { productId: '$productId', productSku: '$productSku' },
+          // 入庫数: type='inbound' の数量合計 / 入库数: type='inbound' 的数量合计
+          inboundQty: {
+            $sum: { $cond: [{ $eq: ['$type', 'inbound'] }, '$quantity', 0] },
+          },
+          // 出庫数: type='outbound' の数量の絶対値合計 / 出库数: type='outbound' 的数量绝对值合计
+          outboundQty: {
+            $sum: { $cond: [{ $eq: ['$type', 'outbound'] }, { $abs: '$quantity' }, 0] },
+          },
+          // 調整数: type='adjustment' の数量合計 / 调整数: type='adjustment' 的数量合计
+          adjustmentQty: {
+            $sum: { $cond: [{ $eq: ['$type', 'adjustment'] }, '$quantity', 0] },
+          },
+          // 当期全変動合計（closingBalance 計算用） / 当期全部变动合计（用于计算期末余额）
+          periodTotal: { $sum: '$quantity' },
+        },
+      },
+    ]);
+
+    // 全商品IDを収集 / 收集所有商品ID
+    const productIds = new Set<string>();
+    const openingMap = new Map<string, { productSku: string; openingBalance: number }>();
+    for (const row of openingAgg) {
+      const pid = String(row._id.productId);
+      productIds.add(pid);
+      openingMap.set(pid, {
+        productSku: row._id.productSku,
+        openingBalance: row.openingBalance,
+      });
+    }
+
+    const periodMap = new Map<string, {
+      productSku: string;
+      inboundQty: number;
+      outboundQty: number;
+      adjustmentQty: number;
+      periodTotal: number;
+    }>();
+    for (const row of periodAgg) {
+      const pid = String(row._id.productId);
+      productIds.add(pid);
+      periodMap.set(pid, {
+        productSku: row._id.productSku,
+        inboundQty: row.inboundQty,
+        outboundQty: row.outboundQty,
+        adjustmentQty: row.adjustmentQty,
+        periodTotal: row.periodTotal,
+      });
+    }
+
+    // 商品名を取得 / 获取商品名称
+    const products = await Product.find({
+      _id: { $in: Array.from(productIds).map((id) => new mongoose.Types.ObjectId(id)) },
+    })
+      .select('_id name')
+      .lean();
+    const productNameMap = new Map<string, string>();
+    for (const p of products) {
+      productNameMap.set(String(p._id), p.name);
+    }
+
+    // 結果を組み立て / 组装结果
+    const results = Array.from(productIds).map((pid) => {
+      const opening = openingMap.get(pid);
+      const period = periodMap.get(pid);
+      const openingBalance = opening?.openingBalance ?? 0;
+      const inboundQty = period?.inboundQty ?? 0;
+      const outboundQty = period?.outboundQty ?? 0;
+      const adjustmentQty = period?.adjustmentQty ?? 0;
+      const periodTotal = period?.periodTotal ?? 0;
+
+      return {
+        productId: pid,
+        productSku: period?.productSku ?? opening?.productSku ?? '',
+        productName: productNameMap.get(pid) ?? '',
+        // 前期繰越 / 期初余额
+        openingBalance,
+        // 入庫数 / 入库数
+        inboundQty,
+        // 出庫数 / 出库数
+        outboundQty,
+        // 調整数 / 调整数
+        adjustmentQty,
+        // 当期末残 = 前期繰越 + 当期全変動 / 期末余额 = 期初余额 + 当期全部变动
+        closingBalance: openingBalance + periodTotal,
+      };
+    });
+
+    // SKU 順にソート / 按 SKU 排序
+    results.sort((a, b) => a.productSku.localeCompare(b.productSku));
+
+    res.json(results);
+  } catch (error) {
+    handleError(res, error, '受払一覧の取得に失敗しました / 收付一览获取失败');
   }
 };

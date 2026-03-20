@@ -214,6 +214,12 @@ const router = createRouter({
               component: () => import('@/views/shipment-results/ShipmentResults.vue'),
               meta: { title: '出荷実績', requiresAuth: true },
             },
+            {
+              path: 'delivery',
+              name: 'DeliveryCompletion',
+              component: () => import('@/views/shipment-operations/DeliveryCompletion.vue'),
+              meta: { title: '配完管理', requiresAuth: true },
+            },
           ],
         },
         // === FBA管理 / FBA管理 ===
@@ -374,6 +380,12 @@ const router = createRouter({
               name: 'ExpiryAlerts',
               component: () => import('@/views/inventory/ExpiryAlerts.vue'),
               meta: { title: '賞味期限アラート', requiresAuth: true },
+            },
+            {
+              path: 'low-stock-alerts',
+              name: 'LowStockAlerts',
+              component: () => import('@/views/inventory/LowStockAlerts.vue'),
+              meta: { title: '補充管理（定点割れ）', requiresAuth: true },
             },
             {
               path: 'locations',
