@@ -161,7 +161,6 @@ const tableColumns = computed<TableColumn[]>(() => [
 const handleSearch = async () => {
   isLoading.value = true
   try {
-    const baseUrl = getApiBaseUrl()
     const params = new URLSearchParams()
     if (searchKeyword.value) params.set('q', searchKeyword.value)
     params.set('limit', '200')
