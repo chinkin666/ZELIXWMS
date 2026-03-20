@@ -145,10 +145,23 @@ const formatDateTime = (d: string) => {
   return new Date(d).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
+// --- 倉庫種別（stockType）フィルタ / 仓库类型过滤 ---
+const selectedStockType = ref('')
+
+// 倉庫種別オプション / 仓库类型选项
+const stockTypeOptions = [
+  { label: '良品倉庫', value: '01' },
+  { label: '不良品倉庫', value: '02' },
+  { label: '保留倉庫', value: '03' },
+  { label: '返品倉庫', value: '04' },
+  { label: '廃棄倉庫', value: '05' },
+]
+
 // --- Search columns ---
 const baseSummaryColumns: TableColumn[] = [
   { key: 'productSku', dataKey: 'productSku', title: 'SKU', width: 140, fieldType: 'string', searchable: true, searchType: 'string' },
   { key: 'productName', title: '商品名', width: 200, fieldType: 'string', searchable: true, searchType: 'string' },
+  { key: 'stockType', title: '倉庫種別', width: 140, fieldType: 'string', searchable: true, searchType: 'select', searchOptions: stockTypeOptions },
 ]
 
 const searchColumns: TableColumn[] = baseSummaryColumns.filter((c) => c.searchable)
@@ -253,6 +266,12 @@ const handleSearch = (payload: Record<string, { operator: Operator; value: any }
     delete payload.__global
   } else {
     globalSearchText.value = ''
+  }
+  // 倉庫種別フィルタを抽出 / 提取仓库类型过滤条件
+  if (payload.stockType?.value) {
+    selectedStockType.value = String(payload.stockType.value)
+  } else {
+    selectedStockType.value = ''
   }
   loadData()
 }
@@ -406,11 +425,12 @@ const loadData = async () => {
   isLoading.value = true
   try {
     if (viewMode.value === 'summary') {
-      summaryRows.value = await fetchStockSummary({ search: globalSearchText.value || undefined })
+      summaryRows.value = await fetchStockSummary({ search: globalSearchText.value || undefined, stockType: selectedStockType.value || undefined })
     } else {
       detailRows.value = await fetchStock({
         productSku: globalSearchText.value || undefined,
         showZero: showZero.value,
+        stockType: selectedStockType.value || undefined,
       })
     }
   } catch (e: any) {

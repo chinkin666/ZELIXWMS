@@ -129,6 +129,7 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'ロット管理', to: '/inventory/lots' },
     { label: '賞味期限アラート', to: '/inventory/expiry-alerts' },
     { label: 'ロケーション', to: '/inventory/locations' },
+    { label: '在庫移動', to: '/inventory/transfer' },
     { label: '庫内作業', to: '/warehouse-ops/tasks' },
   ],
   // 出荷管理 ← FBA + RSL / 出荷管理 ← FBA + RSL

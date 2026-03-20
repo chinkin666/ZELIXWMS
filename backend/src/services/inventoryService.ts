@@ -81,6 +81,8 @@ export interface StockListFilters {
 /** 在庫集計フィルタ / Inventory summary filters */
 export interface InventorySummaryFilters {
   search?: string;
+  /** 倉庫種別フィルタで絞り込むロケーションIDリスト / 仓库类型过滤后的库位ID列表 */
+  locationIds?: string[];
 }
 
 /** 入出庫履歴フィルタ / Movement history filters */
@@ -234,6 +236,10 @@ export async function getInventorySummary(filters: InventorySummaryFilters): Pro
   const matchStage: Record<string, unknown> = { quantity: { $gt: 0 } };
   if (filters.search) {
     matchStage.productSku = { $regex: filters.search, $options: 'i' };
+  }
+  // 倉庫種別フィルタ → ロケーションIDで絞り込み / 仓库类型过滤 → 按库位ID筛选
+  if (filters.locationIds && filters.locationIds.length > 0) {
+    matchStage.locationId = { $in: filters.locationIds.map(id => new mongoose.Types.ObjectId(id)) };
   }
 
   return StockQuant.aggregate([

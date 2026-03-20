@@ -9,20 +9,23 @@ export async function fetchStock(params?: {
   productSku?: string
   locationId?: string
   showZero?: boolean
+  stockType?: string
 }): Promise<StockQuant[]> {
   const url = new URL(`${API_BASE_URL}/inventory/stock`)
   if (params?.productId) url.searchParams.append('productId', params.productId)
   if (params?.productSku) url.searchParams.append('productSku', params.productSku)
   if (params?.locationId) url.searchParams.append('locationId', params.locationId)
   if (params?.showZero) url.searchParams.append('showZero', 'true')
+  if (params?.stockType) url.searchParams.append('stockType', params.stockType)
   const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch stock')
   return res.json()
 }
 
-export async function fetchStockSummary(params?: { search?: string }): Promise<StockSummary[]> {
+export async function fetchStockSummary(params?: { search?: string; stockType?: string }): Promise<StockSummary[]> {
   const url = new URL(`${API_BASE_URL}/inventory/stock/summary`)
   if (params?.search) url.searchParams.append('search', params.search)
+  if (params?.stockType) url.searchParams.append('stockType', params.stockType)
   const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch stock summary')
   return res.json()

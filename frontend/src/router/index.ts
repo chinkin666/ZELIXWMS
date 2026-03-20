@@ -382,6 +382,12 @@ const router = createRouter({
               meta: { title: 'ロケーション管理', requiresAuth: true },
             },
             {
+              path: 'transfer',
+              name: 'InventoryTransfer',
+              component: () => import('@/views/inventory/InventoryTransfer.vue'),
+              meta: { title: '在庫移動', requiresAuth: true },
+            },
+            {
               path: 'ledger',
               name: 'InventoryLedgerDashboard',
               component: () => import('@/views/inventory/InventoryLedgerDashboard.vue'),

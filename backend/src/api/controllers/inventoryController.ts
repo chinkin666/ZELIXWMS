@@ -30,13 +30,24 @@ function handleError(res: Response, error: unknown, fallbackMessage: string): vo
 /** 在庫一覧（StockQuant） / List stock */
 export const listStock = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { productId, productSku, locationId, showZero } = req.query;
+    const { productId, productSku, locationId, showZero, stockType } = req.query;
 
     // 倉庫フィルタ → ロケーションIDに変換 / 仓库过滤 → 转换为库位ID
     let locationIds: string[] | undefined;
     const whFilter = getWarehouseFilter(req);
+
+    // stockType フィルタ: 指定された場合、該当 stockType のロケーションに絞り込む
+    // stockType 过滤: 指定时，筛选对应 stockType 的库位
+    const locQuery: Record<string, unknown> = {};
     if (whFilter.length > 0) {
-      const locs = await Location.find({ warehouseId: { $in: whFilter } }).select('_id').lean();
+      locQuery.warehouseId = { $in: whFilter };
+    }
+    if (typeof stockType === 'string' && stockType.trim()) {
+      locQuery.stockType = stockType.trim();
+    }
+
+    if (Object.keys(locQuery).length > 0) {
+      const locs = await Location.find(locQuery).select('_id').lean();
       locationIds = locs.map(l => l._id.toString());
     }
 
@@ -56,9 +67,19 @@ export const listStock = async (req: Request, res: Response): Promise<void> => {
 /** 在庫集計（商品単位） / Inventory summary */
 export const listStockSummary = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { search } = req.query;
+    const { search, stockType } = req.query;
+
+    // stockType フィルタ: 指定された場合、該当 stockType のロケーションに絞り込む
+    // stockType 过滤: 指定时，筛选对应 stockType 的库位
+    let locationIds: string[] | undefined;
+    if (typeof stockType === 'string' && stockType.trim()) {
+      const locs = await Location.find({ stockType: stockType.trim() }).select('_id').lean();
+      locationIds = locs.map(l => l._id.toString());
+    }
+
     const summary = await inventoryService.getInventorySummary({
       search: typeof search === 'string' ? search.trim() : undefined,
+      locationIds,
     });
     res.json(summary);
   } catch (error) {
