@@ -118,7 +118,10 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '入庫指示作成', to: '/inbound/create' },
     { label: 'CSV取込', to: '/inbound/import' },
     { label: '入庫履歴', to: '/inbound/history' },
+    { label: 'サイズ登録', to: '/inbound/sizes' },
+    { label: '入庫請求', to: '/inbound/billing' },
     { label: '通過型受付', to: '/passthrough/receive' },
+    { label: '写真登録', to: '/inbound/photos' },
   ],
   // 在庫管理 ← 倉庫オペレーション / 库存管理 ← 仓库作业
   '/inventory': [
@@ -132,6 +135,8 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'ロケーション', to: '/inventory/locations' },
     { label: '在庫移動', to: '/inventory/transfer' },
     { label: '庫内作業', to: '/warehouse-ops/tasks' },
+    { label: '受払一覧', to: '/inventory/ledger-view' },
+    { label: '補充承認', to: '/inventory/replenishment-approval' },
   ],
   // 出荷管理 ← FBA + RSL / 出荷管理 ← FBA + RSL
   '/shipment': [
@@ -142,13 +147,17 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'N-1検品', to: '/shipment/operations/n-by-one/inspection' },
     { label: '出荷実績', to: '/shipment/results' },
     { label: '配完管理', to: '/shipment/delivery' },
+    { label: '受注訂正', to: '/shipment/correction' },
+    { label: 'ピッキングリスト', to: '/shipment/picking-list' },
     { label: 'FBA', to: '/fba/plans' },
     { label: 'RSL', to: '/rsl/plans' },
+    { label: '伝票管理', to: '/shipment/tracking' },
   ],
   '/returns': [
     { label: 'ダッシュボード', to: '/returns/dashboard' },
     { label: '返品一覧', to: '/returns/list' },
     { label: '返品作成', to: '/returns/create' },
+    { label: '返品請求', to: '/returns/billing' },
   ],
   '/stocktaking': [
     { label: '棚卸一覧', to: '/stocktaking/list' },
@@ -164,6 +173,7 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'ダッシュボード', to: '/billing/dashboard' },
     { label: '月次請求', to: '/billing/monthly' },
     { label: '作業チャージ', to: '/billing/charges' },
+    { label: '保管料', to: '/billing/storage' },
   ],
   '/settings': settingsGroups.flatMap((g) => g.items),
   // 旧メニューの互換ルーティング（子ページから親メニューへのハイライト用）
