@@ -766,7 +766,12 @@ export async function listMovements(
 }
 
 /**
- * 安全在庫割れアラート / Low stock alerts
+ * 安全在庫割れアラート（補充管理・定点割れリスト） / Low stock alerts (replenishment / reorder point alerts)
+ *
+ * 商品ごとの在庫合計が safetyStock を下回るアイテムを返す。
+ * ロケーション別の内訳と補充推奨数も含む。
+ * Returns products where total available stock is below safetyStock,
+ * including per-location breakdown and replenishment suggestion.
  */
 export async function listLowStockAlerts(): Promise<any[]> {
   const products = await Product.find({
@@ -780,6 +785,7 @@ export async function listLowStockAlerts(): Promise<any[]> {
 
   const productIds = products.map((p) => p._id);
 
+  // 商品ごとの在庫集計 / 按商品汇总库存
   const stockSummary = await StockQuant.aggregate([
     { $match: { productId: { $in: productIds } } },
     {
@@ -794,17 +800,73 @@ export async function listLowStockAlerts(): Promise<any[]> {
 
   const stockMap = new Map(stockSummary.map((s) => [String(s._id), s]));
 
+  // ロケーション別内訳取得 / 获取按库位的明细
+  const locationBreakdown = await StockQuant.aggregate([
+    { $match: { productId: { $in: productIds }, quantity: { $gt: 0 } } },
+    {
+      $lookup: {
+        from: 'locations',
+        localField: 'locationId',
+        foreignField: '_id',
+        as: 'location',
+      },
+    },
+    { $unwind: { path: '$location', preserveNullAndEmptyArrays: true } },
+    {
+      $project: {
+        productId: 1,
+        locationCode: { $ifNull: ['$location.code', 'N/A'] },
+        quantity: 1,
+        reservedQuantity: 1,
+        availableQuantity: { $subtract: ['$quantity', '$reservedQuantity'] },
+      },
+    },
+  ]);
+
+  // 商品IDごとのロケーション内訳マップ / 按商品ID的库位明细 Map
+  const locationMap = new Map<string, Array<{ locationCode: string; quantity: number; reservedQuantity: number; availableQuantity: number }>>();
+  for (const row of locationBreakdown) {
+    const pid = String(row.productId);
+    if (!locationMap.has(pid)) {
+      locationMap.set(pid, []);
+    }
+    locationMap.get(pid)!.push({
+      locationCode: row.locationCode,
+      quantity: row.quantity,
+      reservedQuantity: row.reservedQuantity,
+      availableQuantity: row.availableQuantity,
+    });
+  }
+
   return products
     .map((p) => {
       const stock = stockMap.get(String(p._id));
+      const currentStock = stock?.totalQuantity ?? 0;
       const availableQty = stock?.totalAvailable ?? 0;
+      const deficit = p.safetyStock - currentStock;
+      const reorderSuggestion = Math.max(p.safetyStock * 2 - currentStock, 0);
+      // ステータス判定: deficit >= safetyStock の場合 critical、それ以外 warning
+      // 状态判定: deficit >= safetyStock 时为 critical，其他为 warning
+      const status: 'critical' | 'warning' = deficit >= p.safetyStock ? 'critical' : 'warning';
+      const locations = locationMap.get(String(p._id)) || [];
+      // 代表ロケーション（最多在庫） / 代表库位（库存最多）
+      const primaryLocation = locations.length > 0
+        ? locations.reduce((a, b) => (a.quantity >= b.quantity ? a : b)).locationCode
+        : '-';
+
       return {
         productId: p._id,
         productSku: p.sku,
         productName: p.name,
         safetyStock: p.safetyStock,
+        currentStock,
         availableQuantity: availableQty,
         shortage: p.safetyStock - availableQty,
+        deficit,
+        reorderSuggestion,
+        status,
+        locationCode: primaryLocation,
+        locations,
       };
     })
     .filter((a) => a.shortage > 0)

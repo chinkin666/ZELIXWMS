@@ -171,8 +171,19 @@ export interface LowStockAlert {
   productSku: string
   productName: string
   safetyStock: number
+  currentStock: number
   availableQuantity: number
   shortage: number
+  deficit: number
+  reorderSuggestion: number
+  status: 'critical' | 'warning'
+  locationCode: string
+  locations: Array<{
+    locationCode: string
+    quantity: number
+    reservedQuantity: number
+    availableQuantity: number
+  }>
 }
 
 export type LotStatus = 'active' | 'expired' | 'recalled' | 'quarantine'

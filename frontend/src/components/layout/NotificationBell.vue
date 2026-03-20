@@ -43,7 +43,7 @@ async function loadAlerts() {
         type: 'low-stock',
         title: t('wms.notification.lowStock', '低在庫アラート'),
         detail: `${lowStock.length} ${t('wms.notification.skusBelowSafety', 'SKUが安全在庫を下回っています')}`,
-        route: '/inventory/stock',
+        route: '/inventory/low-stock-alerts',
         severity: 'warning',
       })
     }

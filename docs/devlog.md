@@ -3,6 +3,27 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-20] 補充管理（定点割れリスト）追加 / 补充管理（低于安全库存列表）
+
+**变更类型 / 変更種別**: feat
+**影响范围 / 影響範囲**: backend (inventoryService), frontend (LowStockAlerts.vue, router, menuData, NotificationBell, types)
+
+### 内容 / 内容
+
+**バックエンド / 后端:**
+- `inventoryService.listLowStockAlerts()` を拡張：ロケーション別内訳、現在庫数、不足数(deficit)、補充推奨数(reorderSuggestion)、ステータス(critical/warning) を追加
+- 补充推荐数 = max(safetyStock * 2 - currentStock, 0)
+- ステータス判定: deficit >= safetyStock → critical, それ以外 → warning
+
+**フロントエンド / 前端:**
+- `LowStockAlerts.vue` 新規作成：サマリーカード（緊急/警告/合計/補充推奨合計）+ テーブル（SKU, 商品名, 現在庫, 安全在庫, 不足数, ロケーション, ステータス, 補充推奨数）
+- ルーター: `/inventory/low-stock-alerts` 追加
+- メニュー: 在庫管理サブメニューに「補充管理（定点割れ）」追加
+- NotificationBell: 低在庫アラートのリンク先を `/inventory/low-stock-alerts` に変更
+- `LowStockAlert` 型に `currentStock`, `deficit`, `reorderSuggestion`, `status`, `locationCode`, `locations` フィールド追加
+
+---
+
 ## [2026-03-20] セキュリティ修正 + 入庫フロー LOGIFAST 統合 / 安全修复 + 入库流程 LOGIFAST 整合
 
 **变更类型 / 変更種別**: fix + feat
