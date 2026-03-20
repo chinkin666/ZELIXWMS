@@ -410,7 +410,7 @@
         <div class="error-list__items">
           <div v-for="(e, idx) in backendErrorList" :key="`${idx}-${e.clientId}-${e.field}`" class="error-list__item">
             <div class="error-list__item-title">
-              {{ t('wms.shipmentOrder.rowId', '行ID') }}：<strong>{{ e.clientId || '-' }}</strong>
+              {{ t('wms.shipmentOrder.rowId', '行') }}：<strong>{{ e.clientId?.startsWith('temp-') ? `#${idx + 1}` : (e.clientId || '-') }}</strong>
               <span v-if="e.orderNumber">（{{ t('wms.shipmentOrder.shipmentManagementNo', '出荷管理No') }}：{{ e.orderNumber }}）</span>
               <span v-if="e.fieldTitle"> - {{ e.fieldTitle }}</span>
             </div>

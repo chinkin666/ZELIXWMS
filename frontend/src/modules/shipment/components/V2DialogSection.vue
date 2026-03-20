@@ -159,7 +159,9 @@
     <div v-else>
       <p style="margin-bottom: 12px;">エラー件数: <strong>{{ submitErrors.length }}</strong></p>
       <el-table :data="submitErrors" max-height="300" border size="small">
-        <el-table-column prop="clientId" label="行ID" width="160" />
+        <el-table-column label="行" width="80">
+          <template #default="{ row, $index }">{{ row.clientId?.startsWith('temp-') ? `#${$index + 1}` : (row.clientId || '-') }}</template>
+        </el-table-column>
         <el-table-column prop="field" label="フィールド" width="120" />
         <el-table-column prop="message" label="エラー内容" />
       </el-table>
