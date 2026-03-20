@@ -160,6 +160,10 @@ export interface InboundOrder {
   createdBy?: string
   createdAt: string
   updatedAt: string
+  // LOGIFAST新フィールド / LOGIFAST新字段
+  purchaseOrderNumber?: string
+  requestedDate?: string
+  containerType?: string
 }
 
 export interface LowStockAlert {

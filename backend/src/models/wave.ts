@@ -9,6 +9,8 @@ export type WavePriority = 'low' | 'normal' | 'high' | 'urgent';
 /** 波次インターフェース */
 export interface IWave {
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   /** 波次番号 */
   waveNumber: string;
   /** 倉庫ID */
@@ -44,6 +46,8 @@ export interface IWave {
 /** 波次スキーマ */
 const waveSchema = new mongoose.Schema<IWave>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     waveNumber: {
       type: String,
       required: true,

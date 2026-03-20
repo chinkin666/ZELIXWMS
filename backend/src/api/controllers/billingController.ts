@@ -169,9 +169,12 @@ export async function generateMonthlyBilling(req: Request, res: Response) {
 // ---------------------------------------------------------------------------
 export async function listBillingRecords(req: Request, res: Response) {
   try {
-    const { period, clientId, status, tenantId, page = '1', limit = '50' } = req.query;
+    const { period, clientId, status, page = '1', limit = '50' } = req.query;
     const filter: Record<string, unknown> = {};
 
+    // セキュリティ: tenantId はリクエストユーザーから取得（クエリパラメータ禁止）
+    // 安全: tenantId 从认证用户获取（禁止通过查询参数指定）
+    const tenantId = (req as any).user?.tenantId;
     if (tenantId) filter.tenantId = tenantId;
     if (period) filter.period = period;
     if (clientId) filter.clientId = clientId;

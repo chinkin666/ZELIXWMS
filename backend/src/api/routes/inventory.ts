@@ -15,6 +15,7 @@ import {
   rebuildInventory,
   releaseExpiredReservations,
 } from '@/api/controllers/inventoryController';
+import { requirePermission } from '@/api/middleware/requirePermission';
 
 export const inventoryRouter = Router();
 
@@ -116,7 +117,7 @@ inventoryRouter.get('/stock/:productId', getProductStock);
  *       400:
  *         description: Validation error / バリデーションエラー
  */
-inventoryRouter.post('/adjust', adjustStock);
+inventoryRouter.post('/adjust', requirePermission('inventory:adjust'), adjustStock);
 
 /**
  * @swagger
@@ -194,7 +195,7 @@ inventoryRouter.get('/alerts/low-stock', listLowStockAlerts);
  *       200:
  *         description: Stock reserved / 在庫引当成功
  */
-inventoryRouter.post('/reserve-orders', reserveOrdersStock);
+inventoryRouter.post('/reserve-orders', requirePermission('inventory:reserve'), reserveOrdersStock);
 
 /**
  * @swagger
@@ -226,7 +227,7 @@ inventoryRouter.post('/reserve-orders', reserveOrdersStock);
  *       200:
  *         description: Transfer successful / 移動成功
  */
-inventoryRouter.post('/transfer', transferStock);
+inventoryRouter.post('/transfer', requirePermission('inventory:transfer'), transferStock);
 
 /**
  * @swagger
@@ -256,7 +257,7 @@ inventoryRouter.post('/transfer', transferStock);
  *       200:
  *         description: Bulk adjustment successful / 一括調整成功
  */
-inventoryRouter.post('/bulk-adjust', bulkAdjustStock);
+inventoryRouter.post('/bulk-adjust', requirePermission('inventory:adjust'), bulkAdjustStock);
 
 /**
  * @swagger
@@ -275,7 +276,7 @@ inventoryRouter.post('/bulk-adjust', bulkAdjustStock);
  *                 deletedCount:
  *                   type: integer
  */
-inventoryRouter.post('/cleanup-zero', cleanupZeroStock);
+inventoryRouter.post('/cleanup-zero', requirePermission('inventory:admin'), cleanupZeroStock);
 
 /**
  * @swagger
@@ -299,7 +300,7 @@ inventoryRouter.post('/cleanup-zero', cleanupZeroStock);
  *       200:
  *         description: Rebuild result with discrepancies / リビルド結果（差異一覧）
  */
-inventoryRouter.post('/rebuild', rebuildInventory);
+inventoryRouter.post('/rebuild', requirePermission('inventory:admin'), rebuildInventory);
 
 /**
  * @swagger
@@ -322,4 +323,4 @@ inventoryRouter.post('/rebuild', rebuildInventory);
  *       200:
  *         description: Released reservations count / 解放された引当数
  */
-inventoryRouter.post('/release-expired-reservations', releaseExpiredReservations);
+inventoryRouter.post('/release-expired-reservations', requirePermission('inventory:admin'), releaseExpiredReservations);

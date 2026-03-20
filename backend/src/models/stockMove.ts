@@ -6,6 +6,8 @@ export type ReferenceType = 'inbound-order' | 'shipment-order' | 'adjustment' | 
 
 export interface IStockMove {
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   moveNumber: string;
   moveType: MoveType;
   state: MoveState;
@@ -30,6 +32,8 @@ export interface IStockMove {
 
 const stockMoveSchema = new mongoose.Schema<IStockMove>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     moveNumber: {
       type: String,
       required: true,
@@ -131,5 +135,8 @@ stockMoveSchema.index({ referenceId: 1, state: 1 });
 stockMoveSchema.index({ state: 1, createdAt: 1 });
 // 出庫確定用: referenceType + referenceId + state + moveType / 出库确认用
 stockMoveSchema.index({ referenceType: 1, referenceId: 1, state: 1, moveType: 1 });
+
+// テナント別移動履歴検索用複合インデックス / 租户级移动记录查询复合索引
+stockMoveSchema.index({ tenantId: 1, createdAt: -1 });
 
 export const StockMove = mongoose.model<IStockMove>('StockMove', stockMoveSchema);

@@ -284,6 +284,33 @@ const baseColumns = computed<TableColumn[]>(() => [
       rowData.expectedDate ? formatDate(rowData.expectedDate) : '-',
   },
   {
+    key: 'purchaseOrderNumber',
+    dataKey: 'purchaseOrderNumber',
+    title: t('wms.inbound.purchaseOrderNumber', '発注番号'),
+    width: 140,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: InboundOrder }) =>
+      rowData.purchaseOrderNumber || '-',
+  },
+  {
+    key: 'requestedDate',
+    dataKey: 'requestedDate',
+    title: t('wms.inbound.requestedDate', '入庫希望日'),
+    width: 120,
+    fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: InboundOrder }) =>
+      rowData.requestedDate ? new Date(rowData.requestedDate).toLocaleDateString('ja-JP') : '-',
+  },
+  {
+    key: 'containerType',
+    dataKey: 'containerType',
+    title: t('wms.inbound.containerType', 'コンテナ'),
+    width: 120,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: InboundOrder }) =>
+      rowData.containerType || '-',
+  },
+  {
     key: 'createdAt',
     dataKey: 'createdAt',
     title: t('wms.inbound.createdAt', '作成日時'),

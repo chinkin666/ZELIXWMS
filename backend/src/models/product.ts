@@ -97,6 +97,68 @@ export interface IProduct {
   // 楽天RSL関連 / 乐天RSL相关
   rakutenSku?: string;         // 楽天SKU / 乐天SKU
   rslEnabled?: boolean;        // RSL出荷対応商品か / 是否RSL出货对应商品
+  // --- LOGIFAST要件整合 (Phase 13) ---
+  /** 顧客商品コード/ハウスコード / 客户商品编码 */
+  customerProductCode?: string;
+  /** ブランドコード / 品牌编码 */
+  brandCode?: string;
+  /** ブランド名称 / 品牌名称 */
+  brandName?: string;
+  /** サイズ名称 / 尺码名称 */
+  sizeName?: string;
+  /** カラー名称 / 颜色名称 */
+  colorName?: string;
+  /** 単位区分 / 单位类型 (01:ﾋﾟｰｽ/02:ｹｰｽ/03:ﾕﾆｯﾄ/04:ﾎﾞｯｸｽ/05:ﾛｰﾙ) */
+  unitType?: string;
+  /** 外箱サイズ縦(cm) / 外箱尺寸-长 */
+  outerBoxWidth?: number;
+  /** 外箱サイズ横(cm) / 外箱尺寸-宽 */
+  outerBoxDepth?: number;
+  /** 外箱サイズ高(cm) / 外箱尺寸-高 */
+  outerBoxHeight?: number;
+  /** 外箱容積(M3) / 外箱体积 */
+  outerBoxVolume?: number;
+  /** 外箱重量(kg) / 外箱重量 */
+  outerBoxWeight?: number;
+  /** 総重量G/W(kg) / 毛重 */
+  grossWeight?: number;
+  /** 配送サイズコード(SS/60/80/.../260) / 配送尺寸编码 */
+  shippingSizeCode?: string;
+  /** 税区分(01:課税/02:非課税) / 税区分 */
+  taxType?: string;
+  /** 税率(%) / 税率 */
+  taxRate?: number;
+  /** 危険区分(0:一般/1:危険) / 危险品区分 */
+  hazardousType?: string;
+  /** 航空搭載禁止 / 禁止航空运输 */
+  airTransportBan?: boolean;
+  /** バーコード委託区分 / 条码委托贴付 */
+  barcodeCommission?: boolean;
+  /** 予約対象区分 / 是否预约对象 */
+  reservationTarget?: boolean;
+  /**
+   * 販売商品コード（モール別）/ 各平台销售商品编码
+   * key: モール名 (例: 'rakuten','amazon','yahoo','wowma','mercari','temu','shopify','tiktok'...)
+   * value: そのモールでの商品コード
+   */
+  marketplaceCodes?: Record<string, string>;
+  /**
+   * 顧客の顧客の商品コード（卸先別）/ B2B客户的客户商品编码
+   * key: 卸先名 (例: 'joshin','biccamera','yodobashi','nitori'...)
+   * value: その卸先での商品コード
+   */
+  wholesalePartnerCodes?: Record<string, string>;
+  /** 通貨 / 货币 (1:JPY/2:RMB/3:USD) */
+  currency?: string;
+  /** 仕入先名称 / 供货方名称 */
+  supplierName?: string;
+  /** 商品の容積(M3) / 商品体积 */
+  volume?: number;
+  /** 有償無償区分 / 有偿无偿区分 (0:無償/1:有償) */
+  paidType?: string;
+  /** 備考（複数）/ 备注（多条） */
+  remarks?: string[];
+
   /** 自定义字段 / カスタムフィールド */
   customFields?: Record<string, unknown>;
   createdAt: Date;
@@ -308,6 +370,50 @@ const productSchema = new mongoose.Schema<IProduct>(
     rakutenSku: { type: String, trim: true },
     rslEnabled: { type: Boolean, default: false },
 
+    // --- LOGIFAST要件整合 (Phase 13) / LOGIFAST要件統合 ---
+    // 顧客商品コード / 客户商品编码
+    customerProductCode: { type: String, trim: true },
+    // ブランド / 品牌
+    brandCode: { type: String, trim: true },
+    brandName: { type: String, trim: true },
+    // サイズ・カラー / 尺码・颜色
+    sizeName: { type: String, trim: true },
+    colorName: { type: String, trim: true },
+    // 単位区分 / 单位类型
+    unitType: { type: String, enum: ['01', '02', '03', '04', '05'], trim: true },
+    // 外箱サイズ / 外箱尺寸
+    outerBoxWidth: { type: Number, min: 0 },
+    outerBoxDepth: { type: Number, min: 0 },
+    outerBoxHeight: { type: Number, min: 0 },
+    outerBoxVolume: { type: Number, min: 0 },
+    outerBoxWeight: { type: Number, min: 0 },
+    // 総重量G/W / 毛重
+    grossWeight: { type: Number, min: 0 },
+    // 配送サイズ / 配送尺寸
+    shippingSizeCode: { type: String, trim: true },
+    // 税 / 税金
+    taxType: { type: String, enum: ['01', '02'], trim: true },
+    taxRate: { type: Number, min: 0 },
+    // 危険物・航空・バーコード・予約 / 危险品・航空・条码・预约
+    hazardousType: { type: String, enum: ['0', '1'], default: '0' },
+    airTransportBan: { type: Boolean, default: false },
+    barcodeCommission: { type: Boolean, default: false },
+    reservationTarget: { type: Boolean, default: false },
+    // 販売商品コード（モール別 Map）/ 各平台销售商品编码
+    marketplaceCodes: { type: mongoose.Schema.Types.Mixed, default: {} },
+    // 顧客の顧客の商品コード（卸先別 Map）/ B2B卸先商品编码
+    wholesalePartnerCodes: { type: mongoose.Schema.Types.Mixed, default: {} },
+    // 通貨 / 货币
+    currency: { type: String, enum: ['1', '2', '3'], trim: true },
+    // 仕入先名称 / 供货方名称
+    supplierName: { type: String, trim: true },
+    // 商品の容積 / 商品体积
+    volume: { type: Number, min: 0 },
+    // 有償無償区分 / 有偿无偿区分
+    paidType: { type: String, enum: ['0', '1'], default: '0' },
+    // 備考（複数）/ 备注（多条）
+    remarks: { type: [String], default: [] },
+
     // 自定义字段 / カスタムフィールド（Phase 5）
     customFields: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
@@ -324,6 +430,9 @@ productSchema.index({ _allSku: 1 }, { unique: true });
 productSchema.index({ tenantId: 1, clientId: 1 });
 productSchema.index({ tenantId: 1, shopId: 1 });
 productSchema.index({ tenantId: 1, shopId: 1, sku: 1 });
+// LOGIFAST: 顧客商品コード検索用 / 客户商品编码检索
+productSchema.index({ tenantId: 1, customerProductCode: 1 });
+productSchema.index({ tenantId: 1, brandCode: 1 });
 
 // Pre-save hook: auto-compute _allSku from sku + subSkus
 productSchema.pre('save', function () {

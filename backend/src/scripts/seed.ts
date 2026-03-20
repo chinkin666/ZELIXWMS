@@ -11,6 +11,7 @@ import { seedCarriersFromJson } from './seeds/seedCarriers';
 import { seedFormTemplatesFromJson } from './seeds/seedFormTemplates';
 import { seedMappingConfigsFromJson } from './seeds/seedMappingConfigs';
 import { seedPrintTemplatesFromJson } from './seeds/seedPrintTemplates';
+import { seedInboundPrintTemplates } from './seeds/inboundPrintTemplates';
 
 async function main(): Promise<void> {
   try {
@@ -23,6 +24,9 @@ async function main(): Promise<void> {
     await seedMappingConfigsFromJson();
     await seedPrintTemplatesFromJson();
     await seedFormTemplatesFromJson();
+
+    // 入庫帳票テンプレート / 入库单据模板
+    await seedInboundPrintTemplates();
 
     logger.info('Database seed completed successfully');
   } catch (error) {
@@ -41,6 +45,7 @@ if (require.main === module) {
 export {
   seedCarriersFromJson,
   seedFormTemplatesFromJson,
+  seedInboundPrintTemplates,
   seedMappingConfigsFromJson,
   seedPrintTemplatesFromJson,
 };

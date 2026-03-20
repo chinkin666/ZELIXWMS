@@ -99,6 +99,14 @@ export function useProductColumns(options: UseProductColumnsOptions) {
       cellRenderer: ({ rowData }: { rowData: Product }) => formatBarcode(rowData.barcode),
     },
     {
+      key: 'customerProductCode',
+      dataKey: 'customerProductCode',
+      title: t('wms.product.customerProductCode', '顧客商品コード'),
+      width: 160,
+      fieldType: 'string',
+      cellRenderer: ({ rowData }: { rowData: Product }) => rowData.customerProductCode || '-',
+    },
+    {
       key: 'category',
       dataKey: 'category',
       title: t('wms.product.category', 'カテゴリ'),

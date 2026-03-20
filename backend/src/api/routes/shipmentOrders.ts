@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { bulkUpdateOrders, createManualOrdersBulk, deleteOrder, deleteOrdersBulk, getOrder, getOrdersByIds, handleStatus, handleStatusBulk, importCarrierReceiptRows, listOrders, updateOrder } from '@/api/controllers/shipmentOrderController';
+import { requirePermission } from '@/api/middleware/requirePermission';
 
 export const shipmentOrderRouter = Router();
 
@@ -104,7 +105,7 @@ shipmentOrderRouter.post('/status/bulk', handleStatusBulk);
  *       200:
  *         description: Orders deleted / オーダー削除成功
  */
-shipmentOrderRouter.post('/delete/bulk', deleteOrdersBulk);
+shipmentOrderRouter.post('/delete/bulk', requirePermission('order:delete'), deleteOrdersBulk);
 
 /**
  * @swagger
@@ -309,4 +310,4 @@ shipmentOrderRouter.get('/', listOrders);
  */
 shipmentOrderRouter.get('/:id', getOrder);
 shipmentOrderRouter.put('/:id', updateOrder);
-shipmentOrderRouter.delete('/:id', deleteOrder);
+shipmentOrderRouter.delete('/:id', requirePermission('order:delete'), deleteOrder);

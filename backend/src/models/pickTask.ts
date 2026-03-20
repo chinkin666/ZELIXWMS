@@ -7,6 +7,8 @@ export type PickTaskStatus = 'pending' | 'picking' | 'completed' | 'cancelled';
 export interface IPickTask {
   /** タスクID */
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   /** 拣货タスク番号 */
   taskNumber: string;
   /** 波次ID */
@@ -41,6 +43,8 @@ export interface IPickTask {
 
 const pickTaskSchema = new mongoose.Schema<IPickTask>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     taskNumber: {
       type: String,
       unique: true,

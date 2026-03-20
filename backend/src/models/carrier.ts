@@ -48,6 +48,8 @@ export interface ICarrierService {
  */
 export interface ICarrier {
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   /** 快递公司代码（用于系统内部标识） */
   code: string;
   /** 快递公司名称（显示名称） */
@@ -135,6 +137,8 @@ const carrierServiceSchema = new mongoose.Schema<ICarrierService>(
 
 const carrierSchema = new mongoose.Schema<ICarrier>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     code: {
       type: String,
       required: true,

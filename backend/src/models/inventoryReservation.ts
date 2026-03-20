@@ -9,6 +9,8 @@ export type ReservationSource = 'order' | 'shipment' | 'transfer' | 'manual';
 /** 在庫引当インターフェース */
 export interface IInventoryReservation {
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   /** 商品ID */
   productId: mongoose.Types.ObjectId;
   /** 商品SKU */
@@ -50,6 +52,8 @@ export interface IInventoryReservation {
 /** 在庫引当スキーマ */
 const inventoryReservationSchema = new mongoose.Schema<IInventoryReservation>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     productId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Product',

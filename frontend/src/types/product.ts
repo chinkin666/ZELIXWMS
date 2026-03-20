@@ -46,6 +46,8 @@ export interface Product {
   alertDaysBeforeExpiry: number
   defaultLocationId?: string
   safetyStock: number
+  // 顧客商品コード / 客户商品代码
+  customerProductCode?: string
   // FBA設定 / FBA设置
   fbaEnabled?: boolean
   fnsku?: string

@@ -115,6 +115,19 @@ export interface IInboundOrderLine {
   stockCategory: StockCategory;
   orderReferenceNumber?: string;
   memo?: string;
+  // --- LOGIFAST要件整合 (Phase 13) ---
+  /** 入庫予定ケース数 / 预定箱数 */
+  expectedCaseCount?: number;
+  /** 入庫実績ケース数 / 实际箱数 */
+  receivedCaseCount?: number;
+  /** ケース単位(01:ﾋﾟｰｽ/02:ｹｰｽ/03:ﾕﾆｯﾄ/04:ﾎﾞｯｸｽ/05:ﾛｰﾙ) / 箱单位类型 */
+  caseUnitType?: string;
+  /** ケース入数 / 每箱数量 */
+  caseUnitQuantity?: number;
+  /** 顧客商品コード / 客户商品编码 */
+  customerProductCode?: string;
+  /** 検品コード / 检品编码 */
+  inspectionCode?: string;
 }
 
 export interface IInboundOrder {
@@ -128,14 +141,36 @@ export interface IInboundOrder {
     name: string;
     code?: string;
     memo?: string;
+    /** 納品元電話番号 / 供货方电话 */
+    phone?: string;
+    /** 納品元郵便番号 / 供货方邮编 */
+    postalCode?: string;
+    /** 納品元住所 / 供货方地址 */
+    address?: string;
   };
   lines: IInboundOrderLine[];
   expectedDate?: Date;
+  /** 入庫希望日 / 入库希望日 */
+  requestedDate?: Date;
   completedAt?: Date;
   memo?: string;
   createdBy?: string;
   purchaseOrderNumber?: string;
   purchaseOrderDate?: Date;
+
+  // --- LOGIFAST要件整合 (Phase 13) ---
+  /** コンテナタイプ / 集装箱类型 (20ft/40ft/40ftH) */
+  containerType?: string;
+  /** 立方数(M3) / 体积 */
+  cubicMeters?: number;
+  /** パレット数 / 托盘数 */
+  palletCount?: number;
+  /** インナー箱数 / 内箱数 */
+  innerBoxCount?: number;
+  /** 取込管理番号 / 导入批次号 */
+  importBatchNumber?: string;
+  /** 取込管理日 / 导入批次日期 */
+  importBatchDate?: Date;
 
   /** 入庫フロータイプ / 入库流程类型 */
   flowType?: InboundFlowType;
@@ -218,6 +253,13 @@ const inboundOrderLineSchema = new mongoose.Schema<IInboundOrderLine>(
     stockCategory: { type: String, enum: ['new', 'damaged'], default: 'new' },
     orderReferenceNumber: { type: String, trim: true },
     memo: { type: String, trim: true },
+    // LOGIFAST Phase 13: ケース管理 / 箱管理
+    expectedCaseCount: { type: Number, min: 0 },
+    receivedCaseCount: { type: Number, min: 0 },
+    caseUnitType: { type: String, enum: ['01', '02', '03', '04', '05'], trim: true },
+    caseUnitQuantity: { type: Number, min: 1 },
+    customerProductCode: { type: String, trim: true },
+    inspectionCode: { type: String, trim: true },
   },
   { _id: false },
 );
@@ -227,6 +269,9 @@ const supplierSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     code: { type: String, trim: true },
     memo: { type: String, trim: true },
+    phone: { type: String, trim: true },
+    postalCode: { type: String, trim: true },
+    address: { type: String, trim: true },
   },
   { _id: false },
 );
@@ -336,12 +381,21 @@ const inboundOrderSchema = new mongoose.Schema<IInboundOrder>(
     supplier: { type: supplierSchema },
     lines: { type: [inboundOrderLineSchema], default: [] },
     expectedDate: { type: Date },
+    requestedDate: { type: Date },
     completedAt: { type: Date },
     memo: { type: String, trim: true },
     createdBy: { type: String, trim: true },
 
     purchaseOrderNumber: { type: String, trim: true },
     purchaseOrderDate: { type: Date },
+
+    // LOGIFAST Phase 13: 物流情報 / 物流信息
+    containerType: { type: String, enum: ['20ft', '40ft', '40ftH'], trim: true },
+    cubicMeters: { type: Number, min: 0 },
+    palletCount: { type: Number, min: 0 },
+    innerBoxCount: { type: Number, min: 0 },
+    importBatchNumber: { type: String, trim: true },
+    importBatchDate: { type: Date },
 
     // フロータイプ / 流程类型
     flowType: { type: String, enum: ['standard', 'crossdock', 'passthrough'], default: 'standard' },

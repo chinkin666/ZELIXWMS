@@ -9,6 +9,8 @@ export type ReferenceType = 'inbound-order' | 'shipment-order' | 'adjustment' | 
 /** 在庫流水台帳インターフェース */
 export interface IInventoryLedger {
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   /** 3PL顧客ID（将来の3PL対応用） */
   clientId?: mongoose.Types.ObjectId;
   /** 商品ID */
@@ -48,6 +50,8 @@ export interface IInventoryLedger {
 /** 在庫流水台帳スキーマ */
 const inventoryLedgerSchema = new mongoose.Schema<IInventoryLedger>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     clientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Client',
@@ -130,5 +134,8 @@ inventoryLedgerSchema.index({ referenceType: 1, referenceId: 1 });
 inventoryLedgerSchema.index({ type: 1, executedAt: -1 });
 /** 最新の流水検索用 */
 inventoryLedgerSchema.index({ createdAt: -1 });
+
+// テナント別在庫台帳検索用複合インデックス / 租户级库存台账查询复合索引
+inventoryLedgerSchema.index({ tenantId: 1, createdAt: -1 });
 
 export const InventoryLedger = mongoose.model<IInventoryLedger>('InventoryLedger', inventoryLedgerSchema);

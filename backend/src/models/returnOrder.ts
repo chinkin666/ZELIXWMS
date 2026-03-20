@@ -22,6 +22,8 @@ export interface IReturnOrderLine {
 
 export interface IReturnOrder {
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   orderNumber: string;
   status: ReturnOrderStatus;
   shipmentOrderId?: mongoose.Types.ObjectId;
@@ -114,6 +116,8 @@ const returnOrderLineSchema = new mongoose.Schema<IReturnOrderLine>(
 
 const returnOrderSchema = new mongoose.Schema<IReturnOrder>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     orderNumber: {
       type: String,
       required: true,
@@ -187,5 +191,8 @@ returnOrderSchema.index({ status: 1, receivedDate: -1 });
 returnOrderSchema.index({ shipmentOrderId: 1 });
 returnOrderSchema.index({ 'lines.productId': 1 });
 returnOrderSchema.index({ returnReason: 1 });
+
+// テナント別返品注文検索用複合インデックス / 租户级退货单查询复合索引
+returnOrderSchema.index({ tenantId: 1, createdAt: -1 });
 
 export const ReturnOrder = mongoose.model<IReturnOrder>('ReturnOrder', returnOrderSchema);

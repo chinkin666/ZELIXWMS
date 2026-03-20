@@ -4,6 +4,8 @@ export type ApiLogStatus = 'pending' | 'running' | 'success' | 'error' | 'timeou
 
 export interface IApiLog {
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   apiName: string;
   action: string;
   status: ApiLogStatus;
@@ -28,6 +30,8 @@ export interface IApiLog {
 
 const apiLogSchema = new mongoose.Schema<IApiLog>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     apiName: {
       type: String,
       required: true,
@@ -109,5 +113,10 @@ apiLogSchema.index({ createdAt: -1 });
 apiLogSchema.index({ apiName: 1 });
 apiLogSchema.index({ status: 1 });
 apiLogSchema.index({ referenceNumber: 1 });
+
+// テナント別APIログ検索用複合インデックス / 租户级API日志查询复合索引
+apiLogSchema.index({ tenantId: 1, createdAt: -1 });
+// 180日TTL（自動削除） / 180天TTL（自动删除）
+apiLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 180 * 24 * 60 * 60 });
 
 export const ApiLog = mongoose.model<IApiLog>('ApiLog', apiLogSchema);

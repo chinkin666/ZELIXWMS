@@ -22,6 +22,8 @@ export type OperationCategory = 'inbound' | 'outbound' | 'inventory' | 'master' 
 
 export interface IOperationLog {
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   action: OperationAction;
   category: OperationCategory;
   description: string;
@@ -43,6 +45,8 @@ export interface IOperationLog {
 
 const operationLogSchema = new mongoose.Schema<IOperationLog>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     action: {
       type: String,
       required: true,
@@ -135,5 +139,10 @@ operationLogSchema.index({ referenceNumber: 1 });
 operationLogSchema.index({ category: 1 });
 // 複合インデックス：カテゴリ×アクション×日時 / 复合索引：类别×操作×时间
 operationLogSchema.index({ category: 1, action: 1, createdAt: -1 });
+
+// テナント別操作ログ検索用複合インデックス / 租户级操作日志查询复合索引
+operationLogSchema.index({ tenantId: 1, createdAt: -1 });
+// 180日TTL（自動削除） / 180天TTL（自动删除）
+operationLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 180 * 24 * 60 * 60 });
 
 export const OperationLog = mongoose.model<IOperationLog>('OperationLog', operationLogSchema);

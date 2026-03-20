@@ -3,6 +3,140 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-20] セキュリティ修正 + 入庫フロー LOGIFAST 統合 / 安全修复 + 入库流程 LOGIFAST 整合
+
+**变更类型 / 変更種別**: fix + feat
+**影响范围 / 影響範囲**: backend (controllers, routes, middleware, services), frontend (views, api)
+
+### UX改善 + テスト補完 / UX优化 + 测试补全
+
+**入庫一覧テーブルにLOGIFAST 3列追加:**
+- 発注番号（purchaseOrderNumber）
+- 入庫希望日（requestedDate）
+- コンテナ（containerType）
+→ Playwright で実データ（PO-BROWSER-001, 2026/3/24, 40ft）表示確認済み
+
+**商品一覧に顧客商品コード列追加:**
+- customerProductCode カラム追加
+
+**死コード削除:**
+- `frontend/src/composables/useAuth.ts` 削除（0 imports）
+
+**CSV Import テスト 8件追加（1446→1454）:**
+1. 空CSV / 2. 日本語ヘッダー / 3. 入庫予定番号グルーピング / 4. 未知SKU /
+5. 英語ヘッダー / 6. LOGIFASTケース管理フィールド / 7. コンテナ変換 / 8. flowType変換
+
+**Playwright ブラウザ検証（3アプリ）:**
+- frontend (4001): ホーム/入庫/在庫/出荷/商品/返品/請求/設定 — 10画面OK, 31ルート200
+- admin (4003): Platform Dashboard — OK
+- portal (4002): 客户ダッシュボード — OK（メニュー6項目表示）
+
+### マルチテナント隔離（13 Model）/ 多租户隔离（13个Model）
+以下の13モデルに `tenantId` フィールド + インデックスを追加:
+StockQuant, StockMove, Warehouse, Lot, ReturnOrder, Carrier, OperationLog, ApiLog, DailyReport, Wave, PickTask, InventoryReservation, InventoryLedger
+
+- Warehouse: `{ tenantId: 1, code: 1 }` 複合ユニーク追加
+- DailyReport: `{ tenantId: 1, date: 1 }` 複合ユニークに変更
+- ApiLog/OperationLog: TTL 180日インデックス追加（無限増大防止）
+
+### 入庫帳票テンプレート（5種）/ 入库单据模板（5种）
+LOGIFAST 0531版準拠の5種入庫帳票 seed:
+1. 入庫予定一覧表（A4横）
+2. 入庫チェックリスト（A4横）
+3. 入庫差異/破損リスト（A4横）
+4. 入庫実績一覧表（A4横）
+5. 入庫看板（A4縦）
+
+### 入庫フロー E2E 検証 / 入库流程端到端验证
+API全ステップ通過: draft → confirmed → received(800pcs) → putaway(2行) → done
+在庫レコード正常作成: TEST-APPLE-001 = 800pcs @ WH-01-A01
+
+### セキュリティ修正（4件） / 安全修复（4项）
+
+1. **[CRITICAL] Billing 租户穿透修正** — `listBillingRecords` がクエリパラメータで任意tenantIdを受け入れていた → 認証ユーザーのtenantIdを強制使用 (`billingController.ts`)
+2. **[CRITICAL] 前端 localStorage key 不一致修正** — 401時に `wms_auth_token` を削除していたがストアは `wms_token` を使用 → key名統一 (`frontend/api/http.ts`)
+3. **[HIGH] Health check rate limit 修正** — `/health`, `/health/liveness` がrate limitの対象になっていた → skip条件追加 (`rateLimit.ts`)
+4. **[HIGH] RBAC追加** — inventory 7ルート + shipmentOrder 2ルートに `requirePermission` ミドルウェア追加。adjust/transfer/rebuild/cleanup/delete等の危険操作を権限制御 (`inventory.ts`, `shipmentOrders.ts`)
+
+### 入庫フロー LOGIFAST 統合 / 入库流程 LOGIFAST 整合
+
+**Backend — Controller 更新:**
+- `createInboundOrder`: LOGIFAST Phase 13 全フィールド対応（顧客情報、物流情報、ケース管理、検品コード）
+- `updateInboundOrder`: 同上
+- tenantId を認証ユーザーから自動取得
+
+**Backend — CSV Import:**
+- `importInboundOrders()` 関数を csvImportService に追加（LOGIFAST 0531版準拠）
+- 47項目のヘッダーマッピング（日本語+英語対応）
+- 入庫予定番号でのグルーピング（1ファイル複数明細対応）
+- 商品検索: SKU / 顧客商品コード / _allSku 複合検索
+- POST `/api/inbound-orders/import` エンドポイント追加
+
+**Frontend — InboundOrderCreate.vue:**
+- 入庫希望日、発注番号フィールド追加
+- 「物流・納品元詳細」折りたたみセクション追加（納品元電話/郵便番号/住所、コンテナ、立方数、パレット数、インナー箱数）
+- submit payload にLOGIFAST全フィールド含む
+
+**テスト結果: 1446全通過、TypeScript 0エラー（backend + frontend）**
+
+---
+
+## [2026-03-20] Phase 13: LOGIFAST入庫要件整合 P0 — Model拡張 / LOGIFAST入库要件整合 P0 — 模型扩展
+
+**变更类型 / 変更種別**: feat
+**影响范围 / 影響範囲**: backend/src/models/product.ts, inboundOrder.ts, location.ts
+**关联文档 / 関連ドキュメント**: docs/extension/01-requirements.md (Phase 13追加)
+
+### 内容 / 内容
+
+0531版LOGIFAST入庫要件定義修正版.xlsx に基づき、現行ZELIXWMSの3つのコアModelを拡張。
+基于0531版LOGIFAST入库要件定义修正版，扩展了3个核心Model。
+
+**Product（商品マスタ）18フィールド追加:**
+- customerProductCode（顧客商品コード/ハウスコード）— LOGIFAST核心の商品特定キー
+- brandCode/brandName, sizeName, colorName — アパレル・化粧品対応
+- unitType（単位区分 01-05）— ﾋﾟｰｽ/ｹｰｽ/ﾕﾆｯﾄ/ﾎﾞｯｸｽ/ﾛｰﾙ
+- outerBoxWidth/Depth/Height/Volume/Weight — 外箱サイズ5項目
+- grossWeight（G/W総重量）— 既存weight（N/W）と分離
+- shippingSizeCode — 配送サイズ判定結果（SS/60/80/.../260）
+- taxType/taxRate — 税区分・税率
+- hazardousType, airTransportBan, barcodeCommission, reservationTarget
+- インデックス追加: {tenantId, customerProductCode}, {tenantId, brandCode}
+
+**InboundOrder（入庫予定）10フィールド追加:**
+- requestedDate（入庫希望日）— expectedDate（予定日）と区別
+- supplier拡張: phone, postalCode, address
+- containerType/cubicMeters/palletCount/innerBoxCount — 物流情報
+- importBatchNumber/importBatchDate — CSV取込管理
+
+**InboundOrderLine（入庫明細）6フィールド追加:**
+- expectedCaseCount/receivedCaseCount — ケース数管理
+- caseUnitType/caseUnitQuantity — ケース単位・入数
+- customerProductCode/inspectionCode — 顧客商品コード・検品コード
+
+**Location（ロケーション）2フィールド追加 + バグ修正:**
+- stockType（倉庫コード: 01良品/02不良品/03保留/04返品/05廃棄/06その他）
+- temperatureType（倉庫種類: 01常温/02冷蔵/03冷凍/04危険/05その他）
+- **[BUG FIX]** warehouseId の ref を 'Location' → 'Warehouse' に修正
+
+**追加: 0531商品マスタLogifast修正版.xlsx 分析に基づく7フィールド追加:**
+- marketplaceCodes (Map) — 36モール対応（楽天/Amazon/Yahoo/WOWMA/メルカリ/Temu/Shopify/TikTok等）
+- wholesalePartnerCodes (Map) — 30卸先対応（上新電機/ビックカメラ/ヨドバシ等 B2B）
+- currency — 通貨(1:JPY/2:RMB/3:USD)
+- supplierName — 仕入先名称
+- volume — 商品の容積(M3)
+- paidType — 有償無償区分
+- remarks[] — 備考×26（配列化）
+
+**設計判断: モール商品コード36個 + 卸先コード30個 = 66フィールドを個別追加せず、Map（Record<string, string>）で実装。理由：**
+- モール・卸先は今後も増減する（Temu/SHEIN等新興モール）
+- 個別フィールドだと schema 変更のたびに migration が必要
+- Map なら CSV import/export 時にキー名でマッピング可能
+
+**テスト結果: 1446全通過、0失敗、TypeScript 0エラー**
+
+---
+
 ## [2026-03-19] テスト大規模強化 + 日本倉庫ユーザーシナリオ網羅 / 测试大规模增强 + 日本仓库用户场景全覆盖
 
 **变更类型 / 変更種別**: test + quality + security + ux + feat

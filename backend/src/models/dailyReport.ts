@@ -35,6 +35,8 @@ export interface IDailyReportSummary {
 
 export interface IDailyReport {
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   date: string;
   status: DailyReportStatus;
   closedAt?: Date;
@@ -106,6 +108,8 @@ const dailyReportSummarySchema = new mongoose.Schema(
 
 const dailyReportSchema = new mongoose.Schema<IDailyReport>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     date: {
       type: String,
       required: true,
@@ -145,5 +149,8 @@ const dailyReportSchema = new mongoose.Schema<IDailyReport>(
 );
 
 dailyReportSchema.index({ status: 1 });
+
+// テナント別日報一意制約用複合インデックス / 租户级日报唯一约束复合索引
+dailyReportSchema.index({ tenantId: 1, date: 1 }, { unique: true });
 
 export const DailyReport = mongoose.model<IDailyReport>('DailyReport', dailyReportSchema);

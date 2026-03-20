@@ -71,7 +71,13 @@ export const getInboundOrder = async (req: Request, res: Response): Promise<void
 /** 入庫指示作成 */
 export const createInboundOrder = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { destinationLocationId, supplier, lines, expectedDate, memo, flowType, linkedOrderIds } = req.body;
+    const {
+      destinationLocationId, supplier, lines, expectedDate, requestedDate, memo, flowType, linkedOrderIds,
+      // LOGIFAST Phase 13 fields
+      clientId, clientName, subClientId, subClientName, shopId, shopName,
+      containerType, cubicMeters, palletCount, innerBoxCount, importBatchNumber, importBatchDate,
+      purchaseOrderNumber, purchaseOrderDate,
+    } = req.body;
 
     if (!destinationLocationId || !lines || !Array.isArray(lines) || lines.length === 0) {
       res.status(400).json({ message: 'destinationLocationId と lines（1行以上）は必須です' });
@@ -112,6 +118,12 @@ export const createInboundOrder = async (req: Request, res: Response): Promise<v
         stockCategory: line.stockCategory === 'damaged' ? 'damaged' : 'new',
         orderReferenceNumber: line.orderReferenceNumber || undefined,
         memo: line.memo || undefined,
+        // LOGIFAST Phase 13: ケース管理・検品コード / 箱管理・检品编码
+        expectedCaseCount: line.expectedCaseCount != null ? Number(line.expectedCaseCount) : undefined,
+        caseUnitType: line.caseUnitType || undefined,
+        caseUnitQuantity: line.caseUnitQuantity != null ? Number(line.caseUnitQuantity) : undefined,
+        customerProductCode: line.customerProductCode || product.customerProductCode || undefined,
+        inspectionCode: line.inspectionCode || (product.barcode?.[0]) || undefined,
       });
     }
 
@@ -120,16 +132,36 @@ export const createInboundOrder = async (req: Request, res: Response): Promise<v
     // flowType バリデーション / flowType 验证
     const validFlowType = flowType === 'crossdock' ? 'crossdock' : 'standard';
 
+    // テナントID取得 / 获取租户ID
+    const tenantId = (req as any).user?.tenantId;
+
     const order = await InboundOrder.create({
+      tenantId,
       orderNumber,
       status: 'draft',
       destinationLocationId,
       supplier: supplier || undefined,
       lines: processedLines,
       expectedDate: expectedDate ? new Date(expectedDate) : undefined,
+      requestedDate: requestedDate ? new Date(requestedDate) : undefined,
       memo: memo || undefined,
       flowType: validFlowType,
       linkedOrderIds: Array.isArray(linkedOrderIds) ? linkedOrderIds : [],
+      // LOGIFAST Phase 13: 顧客・物流情報 / 客户・物流信息
+      clientId: clientId || undefined,
+      clientName: clientName || undefined,
+      subClientId: subClientId || undefined,
+      subClientName: subClientName || undefined,
+      shopId: shopId || undefined,
+      shopName: shopName || undefined,
+      containerType: containerType || undefined,
+      cubicMeters: cubicMeters != null ? Number(cubicMeters) : undefined,
+      palletCount: palletCount != null ? Number(palletCount) : undefined,
+      innerBoxCount: innerBoxCount != null ? Number(innerBoxCount) : undefined,
+      importBatchNumber: importBatchNumber || undefined,
+      importBatchDate: importBatchDate ? new Date(importBatchDate) : undefined,
+      purchaseOrderNumber: purchaseOrderNumber || undefined,
+      purchaseOrderDate: purchaseOrderDate ? new Date(purchaseOrderDate) : undefined,
     });
 
     // 操作ログ / 操作日志 (fire-and-forget)
@@ -162,12 +194,33 @@ export const updateInboundOrder = async (req: Request, res: Response): Promise<v
       return;
     }
 
-    const { destinationLocationId, supplier, lines, expectedDate, memo } = req.body;
+    const {
+      destinationLocationId, supplier, lines, expectedDate, requestedDate, memo,
+      clientId, clientName, subClientId, subClientName, shopId, shopName,
+      containerType, cubicMeters, palletCount, innerBoxCount, importBatchNumber, importBatchDate,
+      purchaseOrderNumber, purchaseOrderDate,
+    } = req.body;
 
     if (destinationLocationId !== undefined) order.destinationLocationId = destinationLocationId;
     if (supplier !== undefined) order.supplier = supplier || undefined;
     if (expectedDate !== undefined) order.expectedDate = expectedDate ? new Date(expectedDate) : undefined;
+    if (requestedDate !== undefined) order.requestedDate = requestedDate ? new Date(requestedDate) : undefined;
     if (memo !== undefined) order.memo = memo || undefined;
+    // LOGIFAST Phase 13: 追加フィールド更新 / 追加字段更新
+    if (clientId !== undefined) order.clientId = clientId || undefined;
+    if (clientName !== undefined) order.clientName = clientName || undefined;
+    if (subClientId !== undefined) order.subClientId = subClientId || undefined;
+    if (subClientName !== undefined) order.subClientName = subClientName || undefined;
+    if (shopId !== undefined) order.shopId = shopId || undefined;
+    if (shopName !== undefined) order.shopName = shopName || undefined;
+    if (containerType !== undefined) order.containerType = containerType || undefined;
+    if (cubicMeters !== undefined) order.cubicMeters = cubicMeters != null ? Number(cubicMeters) : undefined;
+    if (palletCount !== undefined) order.palletCount = palletCount != null ? Number(palletCount) : undefined;
+    if (innerBoxCount !== undefined) order.innerBoxCount = innerBoxCount != null ? Number(innerBoxCount) : undefined;
+    if (importBatchNumber !== undefined) order.importBatchNumber = importBatchNumber || undefined;
+    if (importBatchDate !== undefined) order.importBatchDate = importBatchDate ? new Date(importBatchDate) : undefined;
+    if (purchaseOrderNumber !== undefined) order.purchaseOrderNumber = purchaseOrderNumber || undefined;
+    if (purchaseOrderDate !== undefined) order.purchaseOrderDate = purchaseOrderDate ? new Date(purchaseOrderDate) : undefined;
 
     if (lines && Array.isArray(lines)) {
       const processedLines = [];
@@ -192,6 +245,13 @@ export const updateInboundOrder = async (req: Request, res: Response): Promise<v
           stockCategory: line.stockCategory === 'damaged' ? 'damaged' : 'new',
           orderReferenceNumber: line.orderReferenceNumber || undefined,
           memo: line.memo || undefined,
+          // LOGIFAST Phase 13
+          expectedCaseCount: line.expectedCaseCount != null ? Number(line.expectedCaseCount) : undefined,
+          receivedCaseCount: line.receivedCaseCount != null ? Number(line.receivedCaseCount) : undefined,
+          caseUnitType: line.caseUnitType || undefined,
+          caseUnitQuantity: line.caseUnitQuantity != null ? Number(line.caseUnitQuantity) : undefined,
+          customerProductCode: line.customerProductCode || undefined,
+          inspectionCode: line.inspectionCode || undefined,
         });
       }
       order.lines = processedLines as any;

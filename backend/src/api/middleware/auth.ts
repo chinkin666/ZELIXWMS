@@ -66,7 +66,7 @@ export function verifyToken(token: string): AuthUser {
  */
 export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
   // 开发环境跳过认证，注入默认管理员用户 / 開発環境で認証をスキップし、デフォルト管理者ユーザーを注入
-  if (process.env.NODE_ENV === 'development' && !extractBearerToken(req)) {
+  if (process.env.NODE_ENV === 'development') {
     req.user = {
       id: 'dev-admin',
       email: 'dev@zelix.local',
@@ -136,6 +136,20 @@ export function requireRole(...roles: UserRole[]) {
  * 未認証リクエストを拒否しないが、有効なトークンがあればユーザー情報を注入する。
  */
 export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
+  // 开发环境注入默认管理员用户 / 開発環境でデフォルト管理者ユーザーを注入
+  if (process.env.NODE_ENV === 'development') {
+    req.user = {
+      id: 'dev-admin',
+      email: 'dev@zelix.local',
+      displayName: 'Dev Admin',
+      role: 'admin' as any,
+      warehouseIds: [],
+      tenantId: 'default',
+    }
+    next()
+    return
+  }
+
   const token = extractBearerToken(req)
 
   if (!token) {

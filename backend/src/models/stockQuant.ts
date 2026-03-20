@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 
 export interface IStockQuant {
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   productId: mongoose.Types.ObjectId;
   productSku: string;
   locationId: mongoose.Types.ObjectId;
@@ -15,6 +17,8 @@ export interface IStockQuant {
 
 const stockQuantSchema = new mongoose.Schema<IStockQuant>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     productId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Product',
@@ -71,5 +75,8 @@ stockQuantSchema.index(
   { productId: 1, quantity: 1, reservedQuantity: 1 },
   { partialFilterExpression: { quantity: { $gt: 0 } } },
 );
+
+// テナント別在庫検索用複合インデックス / 租户级库存查询复合索引
+stockQuantSchema.index({ tenantId: 1, productId: 1, locationId: 1 });
 
 export const StockQuant = mongoose.model<IStockQuant>('StockQuant', stockQuantSchema);

@@ -365,3 +365,106 @@ if (order.products.some(p => p.coolType === '1')) {
 3. **向后兼容** — 扩展系统不破坏现有 API/功能
 4. **渐进式引入** — 可分阶段实施，每阶段独立可用
 5. **脚本沙箱** — 用户脚本禁止访问文件系统/网络/进程
+
+---
+
+## Phase 13: LOGIFAST入庫要件整合 / LOGIFAST入库要件整合
+
+> 基于 0531【入庫編】LOGIFAST要件定義修正版.xlsx 的入库模块要件，整合到现有 ZELIXWMS 架构中。
+> 0531版LOGIFAST入庫要件定義に基づき、既存ZELIXWMS アーキテクチャへ統合する。
+
+### 背景 / 背景
+- LOGIFAST要件定義は2025年5月31日合意版の入庫業務フルスペック
+- 現行ZELIXWMSは入庫基本機能を実装済みだが、以下の業務要件が不足
+- 本Phaseでは段階的にLOGIFAST要件を統合する
+
+### 13.1 商品マスタ拡張 / 商品主数据扩展
+
+**追加フィールド / 新增字段:**
+| フィールド | 型 | 必須 | 説明(JP) | 说明(CN) |
+|---|---|---|---|---|
+| customerProductCode | String | △ | 顧客商品コード/ハウスコード | 客户商品编码/内部管理编码 |
+| brandCode | String | △ | ブランドコード | 品牌编码 |
+| brandName | String | △ | ブランド名称 | 品牌名称 |
+| sizeName | String | △ | サイズ名称 | 尺码名称 |
+| colorName | String | △ | カラー名称 | 颜色名称 |
+| unitType | String enum | △ | 単位区分(01:ﾋﾟｰｽ/02:ｹｰｽ/03:ﾕﾆｯﾄ/04:ﾎﾞｯｸｽ/05:ﾛｰﾙ) | 单位类型 |
+| outerBoxWidth | Number | △ | 外箱サイズ縦(cm) | 外箱尺寸-长 |
+| outerBoxDepth | Number | △ | 外箱サイズ横(cm) | 外箱尺寸-宽 |
+| outerBoxHeight | Number | △ | 外箱サイズ高(cm) | 外箱尺寸-高 |
+| outerBoxVolume | Number | △ | 外箱容積(M3) | 外箱体积 |
+| outerBoxWeight | Number | △ | 外箱重量(kg) | 外箱重量 |
+| grossWeight | Number | △ | 総重量G/W(kg) | 毛重 |
+| shippingSizeCode | String | △ | 配送サイズ(SS/60/80/.../260) | 配送尺寸编码 |
+| taxType | String enum | △ | 税区分(01:課税/02:非課税) | 税区分 |
+| taxRate | Number | △ | 税率(%) | 税率 |
+| hazardousType | String enum | △ | 危険区分(0:一般/1:危険) | 危险品区分 |
+| airTransportBan | Boolean | △ | 航空搭載禁止 | 禁止航空运输 |
+| barcodeCommission | Boolean | △ | バーコード委託区分 | 条码委托贴付 |
+| reservationTarget | Boolean | △ | 予約対象区分 | 是否预约对象 |
+
+### 13.2 入庫予定拡張 / 入库预定扩展
+
+**InboundOrder 追加フィールド:**
+| フィールド | 型 | 必須 | 説明(JP) | 说明(CN) |
+|---|---|---|---|---|
+| requestedDate | Date | △ | 入庫希望日 | 入库希望日 |
+| supplier.phone | String | △ | 納品元電話番号 | 供货方电话 |
+| supplier.postalCode | String | △ | 納品元郵便番号 | 供货方邮编 |
+| supplier.address | String | △ | 納品元住所 | 供货方地址 |
+| containerType | String enum | △ | コンテナ(20ft/40ft/40ftH) | 集装箱类型 |
+| cubicMeters | Number | △ | 立方数(M3) | 体积 |
+| palletCount | Number | △ | パレット数 | 托盘数 |
+| innerBoxCount | Number | △ | インナー箱数 | 内箱数 |
+| importBatchNumber | String | △ | 取込管理番号 | 导入批次号 |
+| importBatchDate | Date | △ | 取込管理日 | 导入批次日期 |
+
+**InboundOrderLine 追加フィールド:**
+| フィールド | 型 | 必須 | 説明(JP) | 说明(CN) |
+|---|---|---|---|---|
+| expectedCaseCount | Number | △ | 入庫予定ケース数 | 预定箱数 |
+| receivedCaseCount | Number | △ | 入庫実績ケース数 | 实际箱数 |
+| caseUnitType | String enum | △ | ケース単位(01-05) | 箱单位类型 |
+| caseUnitQuantity | Number | △ | ケース入数 | 每箱数量 |
+| customerProductCode | String | △ | 顧客商品コード | 客户商品编码 |
+| inspectionCode | String | △ | 検品コード | 检品编码 |
+
+### 13.3 倉庫/ロケーション拡張 / 仓库/库位扩展
+
+**Location 追加フィールド:**
+| フィールド | 型 | 説明(JP) | 说明(CN) |
+|---|---|---|---|
+| stockType | String enum | 倉庫コード(01:良品/02:不良品/03:保留/04:返品/05:廃棄/06:その他/07-:指定品) | 库存类型 |
+| temperatureType | String enum | 倉庫種類(01:常温/02:冷蔵/03:冷凍/04:危険/05:その他) | 温度类型 |
+
+### 13.4 入庫帳票 / 入库单据
+
+printTemplate系统に以下のテンプレートを追加:
+1. **入庫予定一覧表** — 商品コード/商品名/納品元/倉庫種類/入庫予定数/入庫数/未入庫数/付帯作業
+2. **入庫チェックリスト** — 入庫予定数/入庫数/差異/結果判明/コンテナ・パレット・カートン・pcs集計
+3. **入庫差異/破損リスト** — 差異分のみ抽出/良品数/不良品数/結果判明
+4. **入庫実績一覧表** — 全明細の入庫実績
+5. **入庫看板(A4)** — 商品コード/検品コード/商品名/入庫日/棚番号/入庫数/バーコード
+
+### 13.5 納品元/仕入先マスタ / 供货方/采购方主数据
+
+**新規Model: Supplier**
+| フィールド | 型 | 必須 | 説明(JP) | 说明(CN) |
+|---|---|---|---|---|
+| tenantId | String | ○ | テナントID | 租户ID |
+| code | String | ○ | 仕入先コード | 供货方编码 |
+| name | String | ○ | 名称 | 名称 |
+| phone | String | △ | 電話番号 | 电话 |
+| postalCode | String | △ | 郵便番号 | 邮编 |
+| address | String | △ | 住所 | 地址 |
+| clientId | ObjectId | △ | 関連顧客 | 关联客户 |
+| isActive | Boolean | ○ | 有効フラグ | 有效标志 |
+
+### 実装優先度 / 实施优先级
+
+| 優先度 | 内容 | 影響範囲 |
+|---|---|---|
+| P0 | 商品マスタ拡張 + 入庫予定拡張 + Location拡張 | Product, InboundOrder, Location models |
+| P1 | 入庫帳票テンプレート5種 | renderService, printTemplate |
+| P2 | Supplier独立マスタ化 | 新model + routes + controller |
+| P3 | 配送サイズ自動判定ロジック | Product pre-save hook |

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import {
   listInboundOrders,
   getInboundOrder,
@@ -15,8 +15,30 @@ import {
   getInboundVariance,
   suggestPutawayLocations,
 } from '@/api/controllers/inboundOrderController';
+import { importInboundOrders } from '@/services/csvImportService';
 
 export const inboundOrderRouter = Router();
+
+/**
+ * 入庫予定 CSV インポート / 入库预定 CSV 导入
+ * POST /api/inbound-orders/import
+ * Body: raw CSV text in req.body.csv or req.body (Buffer)
+ */
+inboundOrderRouter.post('/import', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const tenantId = (req as any).user?.tenantId;
+    const { csv, defaultLocationId, preview } = req.body;
+    if (!csv) {
+      res.status(400).json({ message: 'csv フィールドは必須です / csv field is required' });
+      return;
+    }
+    const buffer = Buffer.from(csv, 'utf-8');
+    const result = await importInboundOrders(buffer, { tenantId, defaultLocationId, preview });
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ message: 'CSVインポートに失敗しました', error: error.message });
+  }
+});
 
 inboundOrderRouter.get('/', listInboundOrders);
 inboundOrderRouter.get('/history', searchInboundHistory);

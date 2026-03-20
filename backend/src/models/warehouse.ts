@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 /** 倉庫マスタ — 3PL複数倉庫管理用の上位エンティティ */
 export interface IWarehouse {
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   /** 倉庫コード */
   code: string;
   /** 倉庫名 */
@@ -41,6 +43,8 @@ export interface IWarehouse {
 
 const warehouseSchema = new mongoose.Schema<IWarehouse>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     code: {
       type: String,
       required: true,
@@ -113,5 +117,8 @@ const warehouseSchema = new mongoose.Schema<IWarehouse>(
 warehouseSchema.index({ isActive: 1 });
 warehouseSchema.index({ sortOrder: 1 });
 warehouseSchema.index({ name: 'text', code: 'text' });
+
+// テナント別倉庫コード一意制約用複合インデックス / 租户级仓库代码唯一约束复合索引
+warehouseSchema.index({ tenantId: 1, code: 1 }, { unique: true });
 
 export const Warehouse = mongoose.model<IWarehouse>('Warehouse', warehouseSchema);

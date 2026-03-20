@@ -330,6 +330,213 @@ export async function importProducts(
   return result;
 }
 
+// ─── 入庫予定一括インポート / 入库预定批量导入 ───
+
+/**
+ * 入庫予定 CSV ヘッダーマッピング / 入库预定 CSV 标题映射
+ *
+ * LOGIFAST 0531版準拠 / 符合LOGIFAST 0531版要件
+ */
+const INBOUND_HEADER_MAP: Record<string, string> = {
+  // 日本語 / 日语
+  '入庫予定番号': 'externalOrderNumber',
+  '発注番号': 'purchaseOrderNumber',
+  '契約顧客アカウントID': 'clientCode',
+  '顧客商品コード': 'customerProductCode',
+  'ハウスコード': 'customerProductCode',
+  '商品コード': 'sku',
+  '検品コード': 'inspectionCode',
+  '商品名称': 'productName',
+  '入庫予定日': 'expectedDate',
+  '入庫希望日': 'requestedDate',
+  '納品予定日': 'expectedDate',
+  '入庫予定数': 'expectedQuantity',
+  '納品予定数': 'expectedQuantity',
+  '入庫予定数（ケース数）': 'expectedCaseCount',
+  '入庫ケース単位': 'caseUnitType',
+  '入庫ケース単位入数': 'caseUnitQuantity',
+  'ロット番号': 'lotNumber',
+  '有効期限': 'expiryDate',
+  '納品元名称': 'supplierName',
+  '納品元電話番号': 'supplierPhone',
+  '納品元郵便番号': 'supplierPostalCode',
+  '納品元住所': 'supplierAddress',
+  '倉庫コード': 'warehouseCode',
+  '倉庫拠点': 'warehouseSite',
+  '入庫区分': 'flowType',
+  '倉庫種類': 'temperatureType',
+  '入庫コンテナ': 'containerType',
+  '入庫立方数': 'cubicMeters',
+  '入庫パレット数': 'palletCount',
+  '入庫インナー箱数': 'innerBoxCount',
+  '入庫コメント': 'memo',
+  '商品取扱区分': 'handlingType',
+  // 英語 / 英语
+  'Order Number': 'externalOrderNumber',
+  'PO Number': 'purchaseOrderNumber',
+  'SKU': 'sku',
+  'Product Code': 'sku',
+  'Customer Product Code': 'customerProductCode',
+  'Inspection Code': 'inspectionCode',
+  'Product Name': 'productName',
+  'Expected Date': 'expectedDate',
+  'Requested Date': 'requestedDate',
+  'Expected Quantity': 'expectedQuantity',
+  'Lot Number': 'lotNumber',
+  'Expiry Date': 'expiryDate',
+  'Supplier Name': 'supplierName',
+  'Container Type': 'containerType',
+  'Memo': 'memo',
+};
+
+/**
+ * 入庫予定 CSV インポート / 入库预定 CSV 导入
+ *
+ * 1行 = 1明細。同一入庫予定番号の行はグルーピングして1つの入庫予定にまとめる。
+ * 1行 = 1明细。相同入库预定番号的行分组为1个入库预定。
+ */
+export async function importInboundOrders(
+  csvBuffer: Buffer,
+  options: { tenantId?: string; defaultLocationId?: string; preview?: boolean } = {},
+): Promise<ImportResult> {
+  const result: ImportResult = {
+    success: true,
+    totalRows: 0,
+    importedCount: 0,
+    skippedCount: 0,
+    errors: [],
+    importedIds: [],
+  };
+
+  let rows: CsvRow[];
+  try {
+    rows = parse(csvBuffer, { columns: true, skip_empty_lines: true, trim: true, bom: true });
+  } catch (err: any) {
+    return { ...result, success: false, errors: [{ row: 0, message: `CSVパースエラー: ${err.message}` }] };
+  }
+
+  result.totalRows = rows.length;
+  if (rows.length === 0) return result;
+
+  // ヘッダーマッピング / 标题映射
+  const mapped = rows.map((r, i) => {
+    const m = mapHeaders(r, INBOUND_HEADER_MAP);
+    m._rowNum = i + 2;
+    return m;
+  });
+
+  // 入庫予定番号でグルーピング / 按入库预定番号分组
+  const groups = new Map<string, MappedRow[]>();
+  for (const row of mapped) {
+    const key = row.externalOrderNumber || row.purchaseOrderNumber || `__auto_${row._rowNum}`;
+    const group = groups.get(key);
+    if (group) group.push(row);
+    else groups.set(key, [row]);
+  }
+
+  if (options.preview) return result;
+
+  // 商品SKUキャッシュ / 商品SKU缓存
+  const allSkus = [...new Set(mapped.map((r) => r.sku || r.customerProductCode).filter(Boolean))];
+  const products = await Product.find({
+    $or: [
+      { sku: { $in: allSkus } },
+      { customerProductCode: { $in: allSkus } },
+      { _allSku: { $in: allSkus } },
+    ],
+  }).lean();
+  const skuMap = new Map<string, typeof products[0]>();
+  for (const p of products) {
+    skuMap.set(p.sku, p);
+    if (p.customerProductCode) skuMap.set(p.customerProductCode, p);
+    for (const s of p._allSku || []) skuMap.set(s, p);
+  }
+
+  // グループごとに入庫予定作成 / 按分组创建入库预定
+  for (const [groupKey, groupRows] of groups) {
+    const firstRow = groupRows[0];
+    const lines = [];
+
+    for (const row of groupRows) {
+      const code = row.sku || row.customerProductCode;
+      const product = code ? skuMap.get(code) : undefined;
+      if (!product) {
+        result.errors.push({ row: row._rowNum, field: 'sku', message: `商品が見つかりません: ${code}` });
+        result.skippedCount++;
+        continue;
+      }
+      lines.push({
+        lineNumber: lines.length + 1,
+        productId: product._id,
+        productSku: product.sku,
+        productName: product.name,
+        expectedQuantity: Number(row.expectedQuantity) || 1,
+        receivedQuantity: 0,
+        putawayQuantity: 0,
+        stockCategory: 'new' as const,
+        stockMoveIds: [],
+        lotNumber: row.lotNumber || undefined,
+        expiryDate: row.expiryDate ? new Date(row.expiryDate) : undefined,
+        customerProductCode: row.customerProductCode || product.customerProductCode || undefined,
+        inspectionCode: row.inspectionCode || (product.barcode?.[0]) || undefined,
+        expectedCaseCount: row.expectedCaseCount ? Number(row.expectedCaseCount) : undefined,
+        caseUnitType: row.caseUnitType || undefined,
+        caseUnitQuantity: row.caseUnitQuantity ? Number(row.caseUnitQuantity) : undefined,
+        memo: row.memo || undefined,
+      });
+    }
+
+    if (lines.length === 0) continue;
+
+    try {
+      const orderNumber = await generateSequenceNumber('IN');
+      // flowType 解析 / flowType解析
+      let flowType: 'standard' | 'crossdock' | 'passthrough' = 'standard';
+      if (firstRow.flowType === '2' || firstRow.flowType === 'crossdock') flowType = 'crossdock';
+      if (firstRow.flowType === '3' || firstRow.flowType === 'passthrough') flowType = 'passthrough';
+
+      // containerType 解析 / containerType解析
+      let containerType: string | undefined;
+      if (firstRow.containerType === '1') containerType = '20ft';
+      else if (firstRow.containerType === '2') containerType = '40ft';
+      else if (firstRow.containerType === '3') containerType = '40ftH';
+      else containerType = firstRow.containerType || undefined;
+
+      const doc = await InboundOrder.create({
+        tenantId: options.tenantId,
+        orderNumber,
+        status: 'draft',
+        destinationLocationId: options.defaultLocationId || undefined,
+        supplier: firstRow.supplierName ? {
+          name: firstRow.supplierName,
+          phone: firstRow.supplierPhone || undefined,
+          postalCode: firstRow.supplierPostalCode || undefined,
+          address: firstRow.supplierAddress || undefined,
+        } : undefined,
+        lines,
+        expectedDate: firstRow.expectedDate ? new Date(firstRow.expectedDate) : undefined,
+        requestedDate: firstRow.requestedDate ? new Date(firstRow.requestedDate) : undefined,
+        purchaseOrderNumber: firstRow.purchaseOrderNumber || undefined,
+        flowType,
+        containerType,
+        cubicMeters: firstRow.cubicMeters ? Number(firstRow.cubicMeters) : undefined,
+        palletCount: firstRow.palletCount ? Number(firstRow.palletCount) : undefined,
+        innerBoxCount: firstRow.innerBoxCount ? Number(firstRow.innerBoxCount) : undefined,
+        memo: firstRow.memo || undefined,
+      });
+
+      result.importedIds.push(String(doc._id));
+      result.importedCount++;
+    } catch (err: any) {
+      result.errors.push({ row: groupRows[0]._rowNum, message: `作成エラー: ${err.message}` });
+      result.skippedCount++;
+    }
+  }
+
+  result.success = result.errors.length === 0;
+  return result;
+}
+
 // ─── ヘルパー / 辅助函数 ───
 
 type MappedRow = Record<string, any> & { _rowNum: number };

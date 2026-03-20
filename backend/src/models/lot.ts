@@ -4,6 +4,8 @@ export type LotStatus = 'active' | 'expired' | 'recalled' | 'quarantine';
 
 export interface ILot {
   _id: mongoose.Types.ObjectId;
+  // テナントID / 租户ID
+  tenantId?: string;
   lotNumber: string;
   productId: mongoose.Types.ObjectId;
   productSku: string;
@@ -24,6 +26,8 @@ export interface ILot {
 
 const lotSchema = new mongoose.Schema<ILot>(
   {
+    // テナントID / 租户ID
+    tenantId: { type: String, trim: true, index: true },
     lotNumber: {
       type: String,
       required: true,

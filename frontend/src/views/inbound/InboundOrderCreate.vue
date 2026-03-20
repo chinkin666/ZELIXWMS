@@ -57,7 +57,57 @@
             {{ t('wms.inbound.crossdockHint', '通過型: 検品後に棚入れをスキップし、直接出荷ステージングに移動します') }}
           </p>
         </div>
+
+        <div class="form-field">
+          <label class="form-label">{{ t('wms.inbound.requestedDate', '入庫希望日') }}</label>
+          <input v-model="form.requestedDate" type="date" class="o-input" />
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">{{ t('wms.inbound.purchaseOrderNumber', '発注番号') }}</label>
+          <input v-model="form.purchaseOrderNumber" type="text" class="o-input" :placeholder="t('wms.inbound.poPlaceholder', '顧客側管理番号...')" />
+        </div>
       </div>
+
+      <!-- LOGIFAST 詳細情報（折りたたみ）/ 详细信息（折叠） -->
+      <details class="logifast-details">
+        <summary class="details-summary">{{ t('wms.inbound.advancedInfo', '物流・納品元詳細') }}</summary>
+        <div class="form-grid" style="margin-top:8px;">
+          <div class="form-field">
+            <label class="form-label">{{ t('wms.inbound.supplierPhone', '納品元電話番号') }}</label>
+            <input v-model="form.supplierPhone" type="text" class="o-input" placeholder="03-1234-5678" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">{{ t('wms.inbound.supplierPostalCode', '納品元郵便番号') }}</label>
+            <input v-model="form.supplierPostalCode" type="text" class="o-input" placeholder="123-4567" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">{{ t('wms.inbound.supplierAddress', '納品元住所') }}</label>
+            <input v-model="form.supplierAddress" type="text" class="o-input" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">{{ t('wms.inbound.containerType', 'コンテナ') }}</label>
+            <select v-model="form.containerType" class="o-input">
+              <option value="">{{ t('wms.common.none', 'なし') }}</option>
+              <option value="20ft">20ft</option>
+              <option value="40ft">40ft</option>
+              <option value="40ftH">40ft HC</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">{{ t('wms.inbound.cubicMeters', '立方数 (M³)') }}</label>
+            <input v-model.number="form.cubicMeters" type="number" step="0.1" min="0" class="o-input" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">{{ t('wms.inbound.palletCount', 'パレット数') }}</label>
+            <input v-model.number="form.palletCount" type="number" min="0" class="o-input" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">{{ t('wms.inbound.innerBoxCount', 'インナー箱数') }}</label>
+            <input v-model.number="form.innerBoxCount" type="number" min="0" class="o-input" />
+          </div>
+        </div>
+      </details>
     </div>
 
     <!-- 入庫明細 -->
@@ -197,10 +247,19 @@ interface FormLine {
 const form = ref({
   destinationLocationId: '',
   expectedDate: '',
+  requestedDate: '',
   supplierId: '',
   supplierName: '',
+  supplierPhone: '',
+  supplierPostalCode: '',
+  supplierAddress: '',
   memo: '',
   flowType: 'standard' as 'standard' | 'crossdock',
+  purchaseOrderNumber: '',
+  containerType: '',
+  cubicMeters: undefined as number | undefined,
+  palletCount: undefined as number | undefined,
+  innerBoxCount: undefined as number | undefined,
   lines: [] as FormLine[],
 })
 
@@ -276,15 +335,32 @@ const handleSubmit = async () => {
       ? suppliers.value.find(s => s._id === form.value.supplierId)
       : null
     const supplierData = selectedSupplier
-      ? { name: selectedSupplier.name, code: selectedSupplier.supplierCode }
-      : (form.value.supplierName ? { name: form.value.supplierName } : undefined)
+      ? {
+          name: selectedSupplier.name,
+          code: selectedSupplier.supplierCode,
+          phone: form.value.supplierPhone || (selectedSupplier as any).phone || undefined,
+          postalCode: form.value.supplierPostalCode || (selectedSupplier as any).postalCode || undefined,
+          address: form.value.supplierAddress || (selectedSupplier as any).address || undefined,
+        }
+      : (form.value.supplierName ? {
+          name: form.value.supplierName,
+          phone: form.value.supplierPhone || undefined,
+          postalCode: form.value.supplierPostalCode || undefined,
+          address: form.value.supplierAddress || undefined,
+        } : undefined)
 
     const payload = {
       destinationLocationId: form.value.destinationLocationId,
       supplier: supplierData,
       expectedDate: form.value.expectedDate || undefined,
+      requestedDate: form.value.requestedDate || undefined,
       memo: form.value.memo || undefined,
       flowType: form.value.flowType,
+      purchaseOrderNumber: form.value.purchaseOrderNumber || undefined,
+      containerType: form.value.containerType || undefined,
+      cubicMeters: form.value.cubicMeters || undefined,
+      palletCount: form.value.palletCount || undefined,
+      innerBoxCount: form.value.innerBoxCount || undefined,
       lines: form.value.lines.map(l => ({
         productId: l.productId,
         expectedQuantity: l.expectedQuantity,
@@ -437,5 +513,26 @@ onMounted(async () => {
   color: #e6a23c;
   font-size: 13px;
   margin: 2px 0;
+}
+
+.logifast-details {
+  margin-top: 12px;
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: var(--o-border-radius, 4px);
+  padding: 0 12px;
+}
+.logifast-details[open] {
+  padding-bottom: 12px;
+}
+.details-summary {
+  padding: 10px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--o-primary, #017e84);
+  cursor: pointer;
+  user-select: none;
+}
+.details-summary:hover {
+  color: var(--o-primary-dark, #015f63);
 }
 </style>

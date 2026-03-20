@@ -73,8 +73,8 @@ class HttpClient {
     // 401 = トークン期限切れまたは無効 → 自動ログアウト
     // 401 = 令牌过期或无效 → 自动登出
     if (response.status === 401) {
-      localStorage.removeItem('wms_auth_token')
-      localStorage.removeItem('wms_auth_user')
+      localStorage.removeItem('wms_token')
+      localStorage.removeItem('wms_current_user')
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login'
       }
@@ -275,8 +275,8 @@ export async function apiFetch(url: string, init?: RequestInit): Promise<Respons
   // 401 = トークン期限切れまたは無効 → 自動ログアウト
   // 401 = 令牌过期或无效 → 自动登出
   if (response.status === 401) {
-    localStorage.removeItem('wms_auth_token')
-    localStorage.removeItem('wms_auth_user')
+    localStorage.removeItem('wms_token')
+    localStorage.removeItem('wms_current_user')
     // ログインページにいない場合はリダイレクト / 如果不在登录页则重定向
     if (!window.location.pathname.includes('/login')) {
       window.location.href = '/login'
