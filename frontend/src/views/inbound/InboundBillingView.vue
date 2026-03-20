@@ -45,12 +45,10 @@ import { useI18n } from '@/composables/useI18n'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import Table from '@/components/table/Table.vue'
 import { apiFetch } from '@/api/http'
-import { getApiBaseUrl } from '@/api/base'
 import type { TableColumn } from '@/types/table'
 
 const toast = useToast()
 const { t } = useI18n()
-const API_BASE_URL = getApiBaseUrl()
 
 // デフォルトは当月 / 默认当月
 const now = new Date()
@@ -91,7 +89,7 @@ const tableColumns = computed<TableColumn[]>(() => [
 const loadBilling = async () => {
   try {
     const [year, month] = selectedMonth.value.split('-')
-    const res = await apiFetch(`${API_BASE_URL}/billing/work-charges?category=inbound&year=${year}&month=${month}`)
+    const res = await apiFetch(`/api/billing/work-charges?category=inbound&year=${year}&month=${month}`)
     if (!res.ok) throw new Error(res.statusText)
     const data = await res.json()
     billingRows.value = data.items || data || []

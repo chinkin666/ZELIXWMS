@@ -86,7 +86,6 @@ import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { apiFetch } from '@/api/base'
-import { getApiBaseUrl } from '@/api/base'
 
 interface InboundOrder {
   _id: string
@@ -162,8 +161,7 @@ const handleUpload = async () => {
       formData.append('memo', memo.value)
     }
 
-    const baseUrl = getApiBaseUrl()
-    const res = await apiFetch(`${baseUrl}/inbound-orders/${selectedOrderId.value}/photos`, {
+    const res = await apiFetch(`/api/inbound-orders/${selectedOrderId.value}/photos`, {
       method: 'POST',
       body: formData,
     })
@@ -188,8 +186,7 @@ const handleUpload = async () => {
 // 入庫指示一覧を取得 / 获取入库指示列表
 onMounted(async () => {
   try {
-    const baseUrl = getApiBaseUrl()
-    const res = await apiFetch(`${baseUrl}/inbound-orders?limit=100`)
+    const res = await apiFetch(`/api/inbound-orders?limit=100`)
     if (res.ok) {
       const data = await res.json()
       orders.value = data.items || data || []

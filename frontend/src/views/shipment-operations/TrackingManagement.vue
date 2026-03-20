@@ -61,8 +61,7 @@ import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import Table from '@/components/table/Table.vue'
 import type { TableColumn } from '@/types/table'
-import { apiFetch } from '@/api/base'
-import { getApiBaseUrl } from '@/api/base'
+import { apiFetch } from '@/api/http'
 
 interface TrackingRow {
   _id: string
@@ -166,13 +165,23 @@ const handleSearch = async () => {
     const params = new URLSearchParams()
     if (searchKeyword.value) params.set('q', searchKeyword.value)
     params.set('limit', '200')
-    const res = await apiFetch(`${baseUrl}/shipment-orders?${params}`)
+    const res = await apiFetch(`/api/shipment-orders?${params}`)
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }))
       throw new Error(err.message || '取得に失敗しました')
     }
     const data = await res.json()
-    rows.value = data.items || data || []
+    const items = Array.isArray(data) ? data : data.items || data.data || []
+    // APIフィールド→画面フィールドマッピング / API字段→画面字段映射
+    rows.value = items.map((o: any) => ({
+      _id: o._id,
+      shipmentNumber: o.orderNumber || '',
+      customerOrderNumber: o.customerManagementNumber || '',
+      trackingNumber: o.trackingId || '',
+      carrier: o.carrierId === '__builtin_yamato_b2__' ? 'ヤマト運輸' : o.carrierId?.includes('sagawa') ? '佐川急便' : (o.carrierId || ''),
+      shipDate: o.status?.shipped?.shippedAt || o.createdAt || '',
+      deliveryStatus: o.status?.shipped?.isShipped ? (o.status?.delivered?.isDelivered ? 'delivered' : 'shipped') : 'pending',
+    }))
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '出荷データの取得に失敗しました'
     toast.showError(msg)

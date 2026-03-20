@@ -56,7 +56,6 @@ import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import Table from '@/components/table/Table.vue'
 import type { TableColumn } from '@/types/table'
 import { apiFetch } from '@/api/base'
-import { getApiBaseUrl } from '@/api/base'
 
 interface LedgerRow {
   sku: string
@@ -125,9 +124,8 @@ const tableColumns = computed<TableColumn[]>(() => [
 const handleSearch = async () => {
   isLoading.value = true
   try {
-    const baseUrl = getApiBaseUrl()
     const params = new URLSearchParams({ startDate: startDate.value, endDate: endDate.value })
-    const res = await apiFetch(`${baseUrl}/inventory/ledger-summary?${params}`)
+    const res = await apiFetch(`/api/inventory/ledger-summary?${params}`)
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }))
       throw new Error(err.message || '取得に失敗しました')

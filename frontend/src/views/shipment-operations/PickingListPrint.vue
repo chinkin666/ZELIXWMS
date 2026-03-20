@@ -70,12 +70,10 @@ import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import Table from '@/components/table/Table.vue'
 import { apiFetch } from '@/api/http'
-import { getApiBaseUrl } from '@/api/base'
 import type { TableColumn } from '@/types/table'
 
 const toast = useToast()
 const { t } = useI18n()
-const API_BASE_URL = getApiBaseUrl()
 
 const searchQuery = ref('')
 const isLoading = ref(false)
@@ -126,7 +124,7 @@ const loadOrders = async () => {
   pickingItems.value = []
   try {
     const q = searchQuery.value ? `&search=${encodeURIComponent(searchQuery.value)}` : ''
-    const res = await apiFetch(`${API_BASE_URL}/shipment-orders?status=confirmed${q}`)
+    const res = await apiFetch(`/api/shipment-orders?status=confirmed${q}`)
     if (!res.ok) throw new Error(res.statusText)
     const data = await res.json()
     const items = data.items || data || []
@@ -150,7 +148,7 @@ const loadPickingList = async () => {
     return
   }
   try {
-    const res = await apiFetch(`${API_BASE_URL}/shipment-orders/picking-list`, {
+    const res = await apiFetch(`/api/shipment-orders/picking-list`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderIds: selectedIds.value }),
@@ -179,7 +177,7 @@ const handlePrint = () => {
 // PDFダウンロード / PDF下载
 const handleDownloadPdf = async () => {
   try {
-    const res = await apiFetch(`${API_BASE_URL}/shipment-orders/picking-list/pdf`, {
+    const res = await apiFetch(`/api/shipment-orders/picking-list/pdf`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orderIds: selectedIds.value }),
