@@ -1593,8 +1593,18 @@ export const searchOrders = async (params: SearchOrdersParams): Promise<SearchOr
   const mongoQuery = buildMongoQueryFromFilters(params.filters);
 
   // 租户隔离: tenantId がある場合はクエリに追加 / テナント分離
+  // 'default' テナントは未設定データも含む（後方互換）/ 'default'租户也匹配未设置的数据（向后兼容）
   if (params.tenantId) {
-    mongoQuery.tenantId = params.tenantId;
+    if (params.tenantId === 'default') {
+      mongoQuery.$or = [
+        { tenantId: 'default' },
+        { tenantId: { $exists: false } },
+        { tenantId: null },
+        { tenantId: '' },
+      ];
+    } else {
+      mongoQuery.tenantId = params.tenantId;
+    }
   }
 
   const allowedSortFields = new Set([

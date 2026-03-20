@@ -175,7 +175,12 @@ export async function listBillingRecords(req: Request, res: Response) {
     // セキュリティ: tenantId はリクエストユーザーから取得（クエリパラメータ禁止）
     // 安全: tenantId 从认证用户获取（禁止通过查询参数指定）
     const tenantId = (req as any).user?.tenantId;
-    if (tenantId) filter.tenantId = tenantId;
+    // 'default'テナントは未設定データも含む（後方互換）/ 'default'租户兼容未设置数据
+    if (tenantId && tenantId !== 'default') {
+      filter.tenantId = tenantId;
+    } else if (tenantId === 'default') {
+      filter.$or = [{ tenantId: 'default' }, { tenantId: { $exists: false } }, { tenantId: null }, { tenantId: '' }];
+    }
     if (period) filter.period = period;
     if (clientId) filter.clientId = clientId;
     if (status) filter.status = status;
