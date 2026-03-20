@@ -112,8 +112,9 @@ function formatDate(d: string | undefined) {
 async function loadData() {
   try {
     // 出荷済み注文を取得 / 获取已出荷订单
-    const params = new URLSearchParams({ limit: '100' })
+    const params = new URLSearchParams({ limit: '200', sortBy: 'createdAt', sortOrder: 'desc' })
     const res = await apiFetch(`/api/shipment-orders?${params}`)
+    if (!res.ok) { orders.value = []; return }
     const data = await res.json()
     const items = Array.isArray(data) ? data : data.items || data.data || []
 
