@@ -91,6 +91,7 @@ import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { apiFetch } from '@/api/http'
+import { getApiBaseUrl } from '@/api/base'
 
 const toast = useToast()
 const { t } = useI18n()
@@ -126,7 +127,7 @@ const handleSearch = async () => {
   searchDone.value = false
   order.value = null
   try {
-    const res = await apiFetch(`/api/shipment-orders?search=${encodeURIComponent(searchQuery.value)}`)
+    const res = await apiFetch(`${getApiBaseUrl()}/shipment-orders?search=${encodeURIComponent(searchQuery.value)}`)
     if (!res.ok) throw new Error(res.statusText)
     const data = await res.json()
     const items = data.items || data || []
@@ -180,7 +181,7 @@ const handleSave = async () => {
       address: order.value.address,
       items: order.value.items,
     }
-    const res = await apiFetch(`/api/shipment-orders/${order.value._id}`, {
+    const res = await apiFetch(`${getApiBaseUrl()}/shipment-orders/${order.value._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

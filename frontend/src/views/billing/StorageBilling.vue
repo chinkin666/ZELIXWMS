@@ -131,7 +131,7 @@ const tableColumns = computed<TableColumn[]>(() => [
 const handleSearch = async () => {
   isLoading.value = true
   try {
-    const res = await apiFetch(`/api/billing?period=${period.value}`)
+    const res = await apiFetch(`${getApiBaseUrl()}/billing?period=${period.value}`)
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }))
       throw new Error(err.message || '取得に失敗しました')

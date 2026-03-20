@@ -87,6 +87,7 @@ import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import Table from '@/components/table/Table.vue'
 import { apiFetch } from '@/api/http'
+import { getApiBaseUrl } from '@/api/base'
 import { fetchProducts } from '@/api/product'
 import type { Product } from '@/types/product'
 import type { TableColumn } from '@/types/table'
@@ -140,7 +141,7 @@ const handleSubmit = async () => {
       outerHeight: form.value.outerHeight,
       outerWeight: form.value.outerWeight,
     }
-    const res = await apiFetch(`/api/products/${form.value.productId}`, {
+    const res = await apiFetch(`${getApiBaseUrl()}/products/${form.value.productId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

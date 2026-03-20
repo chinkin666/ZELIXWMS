@@ -161,7 +161,7 @@ const handleUpload = async () => {
       formData.append('memo', memo.value)
     }
 
-    const res = await apiFetch(`/api/inbound-orders/${selectedOrderId.value}/photos`, {
+    const res = await apiFetch(`${getApiBaseUrl()}/inbound-orders/${selectedOrderId.value}/photos`, {
       method: 'POST',
       body: formData,
     })
@@ -186,7 +186,7 @@ const handleUpload = async () => {
 // 入庫指示一覧を取得 / 获取入库指示列表
 onMounted(async () => {
   try {
-    const res = await apiFetch(`/api/inbound-orders?limit=100`)
+    const res = await apiFetch(`${getApiBaseUrl()}/inbound-orders?limit=100`)
     if (res.ok) {
       const data = await res.json()
       orders.value = data.items || data || []

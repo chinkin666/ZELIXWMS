@@ -62,6 +62,7 @@ import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import Table from '@/components/table/Table.vue'
 import type { TableColumn } from '@/types/table'
 import { apiFetch } from '@/api/http'
+import { getApiBaseUrl } from '@/api/base'
 
 interface TrackingRow {
   _id: string
@@ -164,7 +165,7 @@ const handleSearch = async () => {
     const params = new URLSearchParams()
     if (searchKeyword.value) params.set('q', searchKeyword.value)
     params.set('limit', '200')
-    const res = await apiFetch(`/api/shipment-orders?${params}`)
+    const res = await apiFetch(`${getApiBaseUrl()}/shipment-orders?${params}`)
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }))
       throw new Error(err.message || '取得に失敗しました')

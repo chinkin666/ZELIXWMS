@@ -125,7 +125,7 @@ const handleSearch = async () => {
   isLoading.value = true
   try {
     const params = new URLSearchParams({ startDate: startDate.value, endDate: endDate.value })
-    const res = await apiFetch(`/api/inventory/ledger-summary?${params}`)
+    const res = await apiFetch(`${getApiBaseUrl()}/inventory/ledger-summary?${params}`)
     if (!res.ok) {
       const err = await res.json().catch(() => ({ message: res.statusText }))
       throw new Error(err.message || '取得に失敗しました')
