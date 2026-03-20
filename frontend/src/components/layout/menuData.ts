@@ -8,22 +8,16 @@ export interface SubMenuGroup {
   readonly items: SubMenuItem[]
 }
 
-// 主菜单: 仓库业务流程顺序 / メインメニュー: 倉庫業務フロー順
+// 主菜单: 整合後10項目 / メインメニュー: 統合後10項目
+// 16→10: 耗材→商品, 通過型→入庫, FBA/RSL→出荷, セット組→商品, 倉庫オペ→在庫, 業績→日次
 export const wmsMenuItems: Array<{ label: string; to: string }> = [
   { label: '商品管理', to: '/products' },
-  { label: '耗材管理', to: '/materials' },
   { label: '入庫管理', to: '/inbound' },
-  { label: '通過型受付', to: '/passthrough' },
   { label: '在庫管理', to: '/inventory' },
   { label: '出荷管理', to: '/shipment' },
-  { label: 'FBA管理', to: '/fba' },
-  { label: 'RSL管理', to: '/rsl' },
   { label: '返品管理', to: '/returns' },
   { label: '棚卸管理', to: '/stocktaking' },
-  { label: 'セット組管理', to: '/set-products' },
-  { label: '倉庫オペレーション', to: '/warehouse-ops' },
   { label: '日次管理', to: '/daily' },
-  { label: '業績レポート', to: '/reports' },
   { label: '請求管理', to: '/billing' },
   { label: '設定', to: '/settings' },
 ]
@@ -107,36 +101,26 @@ export const settingsGroups: SubMenuGroup[] = [
 ]
 
 // 各セクションのサブメニュー / 各模块子菜单
+// 整合: 耗材→商品, 通過型→入庫, FBA/RSL→出荷, セット組→商品, 倉庫オペ→在庫, 業績→日次
 export const subMenuMap: Record<string, SubMenuItem[]> = {
+  // 商品管理 ← 耗材 + セット組 / 商品管理 ← 耗材 + 套装
   '/products': [
     { label: '商品一覧', to: '/products/list' },
     { label: 'バーコード管理', to: '/products/barcodes' },
+    { label: '耗材管理', to: '/materials/list' },
+    { label: 'セット組', to: '/set-products/list' },
     { label: '出荷統計', to: '/products/shipment-stats' },
   ],
-  '/materials': [
-    { label: '耗材一覧', to: '/materials/list' },
-  ],
-  '/set-products': [
-    { label: 'セット組一覧', to: '/set-products/list' },
-    { label: 'セット組制作指示', to: '/set-products/assembly' },
-    { label: '指示履歴', to: '/set-products/history' },
-  ],
-  '/shipment': [
-    { label: '出荷指示作成', to: '/shipment/orders/create' },
-    { label: '出荷作業一覧', to: '/shipment/operations/tasks' },
-    { label: '出荷一覧', to: '/shipment/operations/list' },
-    { label: '1-1検品', to: '/shipment/operations/one-by-one/inspection' },
-    { label: 'N-1検品', to: '/shipment/operations/n-by-one/inspection' },
-    { label: '出荷実績', to: '/shipment/results' },
-  ],
-  '/passthrough': passthroughSubMenu,
+  // 入庫管理 ← 通過型受付 / 入库管理 ← 通过型受付
   '/inbound': [
     { label: 'ダッシュボード', to: '/inbound/dashboard' },
     { label: '入庫指示一覧', to: '/inbound/orders' },
     { label: '入庫指示作成', to: '/inbound/create' },
     { label: 'CSV取込', to: '/inbound/import' },
     { label: '入庫履歴', to: '/inbound/history' },
+    { label: '通過型受付', to: '/passthrough/receive' },
   ],
+  // 在庫管理 ← 倉庫オペレーション / 库存管理 ← 仓库作业
   '/inventory': [
     { label: '在庫ダッシュボード', to: '/inventory/ledger' },
     { label: '在庫一覧', to: '/inventory/stock' },
@@ -145,11 +129,49 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'ロット管理', to: '/inventory/lots' },
     { label: '賞味期限アラート', to: '/inventory/expiry-alerts' },
     { label: 'ロケーション', to: '/inventory/locations' },
+    { label: '庫内作業', to: '/warehouse-ops/tasks' },
+  ],
+  // 出荷管理 ← FBA + RSL / 出荷管理 ← FBA + RSL
+  '/shipment': [
+    { label: '出荷指示作成', to: '/shipment/orders/create' },
+    { label: '出荷作業一覧', to: '/shipment/operations/tasks' },
+    { label: '出荷一覧', to: '/shipment/operations/list' },
+    { label: '1-1検品', to: '/shipment/operations/one-by-one/inspection' },
+    { label: 'N-1検品', to: '/shipment/operations/n-by-one/inspection' },
+    { label: '出荷実績', to: '/shipment/results' },
+    { label: 'FBA', to: '/fba/plans' },
+    { label: 'RSL', to: '/rsl/plans' },
+  ],
+  '/returns': [
+    { label: 'ダッシュボード', to: '/returns/dashboard' },
+    { label: '返品一覧', to: '/returns/list' },
+    { label: '返品作成', to: '/returns/create' },
   ],
   '/stocktaking': [
     { label: '棚卸一覧', to: '/stocktaking/list' },
     { label: '棚卸作成', to: '/stocktaking/create' },
   ],
+  // 日次管理 ← 業績レポート / 日次管理 ← 业绩报表
+  '/daily': [
+    { label: '日次レポート', to: '/daily/list' },
+    { label: '出荷統計', to: '/daily/statistics' },
+    { label: '業績レポート', to: '/reports' },
+  ],
+  '/billing': [
+    { label: 'ダッシュボード', to: '/billing/dashboard' },
+    { label: '月次請求', to: '/billing/monthly' },
+    { label: '作業チャージ', to: '/billing/charges' },
+  ],
+  '/settings': settingsGroups.flatMap((g) => g.items),
+  // 旧メニューの互換ルーティング（子ページから親メニューへのハイライト用）
+  // 旧菜单兼容路由（子页面→父菜单高亮）
+  '/materials': [{ label: '耗材管理', to: '/materials/list' }],
+  '/set-products': [
+    { label: 'セット組一覧', to: '/set-products/list' },
+    { label: 'セット組制作指示', to: '/set-products/assembly' },
+    { label: '指示履歴', to: '/set-products/history' },
+  ],
+  '/passthrough': passthroughSubMenu,
   '/fba': [
     { label: 'FBAプラン一覧', to: '/fba/plans' },
     { label: 'FBAプラン作成', to: '/fba/plans/create' },
@@ -158,24 +180,9 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'RSLプラン一覧', to: '/rsl/plans' },
     { label: 'RSLプラン作成', to: '/rsl/plans/create' },
   ],
-  '/returns': [
-    { label: 'ダッシュボード', to: '/returns/dashboard' },
-    { label: '返品一覧', to: '/returns/list' },
-    { label: '返品作成', to: '/returns/create' },
-  ],
   '/warehouse-ops': [
     { label: 'タスクダッシュボード', to: '/warehouse-ops/tasks' },
     { label: 'ウェーブ管理', to: '/warehouse-ops/waves' },
     { label: 'シリアル番号', to: '/warehouse-ops/serial-numbers' },
   ],
-  '/daily': [
-    { label: '日次レポート', to: '/daily/list' },
-    { label: '出荷統計', to: '/daily/statistics' },
-  ],
-  '/billing': [
-    { label: 'ダッシュボード', to: '/billing/dashboard' },
-    { label: '月次請求', to: '/billing/monthly' },
-    { label: '作業チャージ', to: '/billing/charges' },
-  ],
-  '/settings': settingsGroups.flatMap((g) => g.items),
 }
