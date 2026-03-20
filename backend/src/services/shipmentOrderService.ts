@@ -1577,6 +1577,8 @@ export interface SearchOrdersParams {
   sortOrder?: 'asc' | 'desc';
   /** 是否包含 page 参数（影响返回格式） / pageパラメータの有無（返却フォーマットに影響） */
   paginated: boolean;
+  /** 租户隔离 / テナント分離 */
+  tenantId?: string;
 }
 
 /** 搜索结果 / 検索結果 */
@@ -1589,6 +1591,11 @@ export type SearchOrdersResult =
  */
 export const searchOrders = async (params: SearchOrdersParams): Promise<SearchOrdersResult> => {
   const mongoQuery = buildMongoQueryFromFilters(params.filters);
+
+  // 租户隔离: tenantId がある場合はクエリに追加 / テナント分離
+  if (params.tenantId) {
+    mongoQuery.tenantId = params.tenantId;
+  }
 
   const allowedSortFields = new Set([
     'createdAt',

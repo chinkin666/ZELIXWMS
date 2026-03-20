@@ -56,6 +56,16 @@ const handleError = (res: Response, error: unknown, fallbackMessage: string): vo
  */
 export const createManualOrdersBulk = async (req: Request, res: Response): Promise<void> => {
   try {
+    // 租户隔離: 各注文に tenantId を注入 / テナント分離
+    const tenantId = req.user?.tenantId;
+    if (tenantId && req.body?.items && Array.isArray(req.body.items)) {
+      for (const item of req.body.items) {
+        if (item?.order && !item.order.tenantId) {
+          item.order.tenantId = tenantId;
+        }
+      }
+    }
+
     const result = await createOrdersService(req.body);
 
     // 保持原有的响应格式 / 元のレスポンスフォーマットを維持
@@ -107,6 +117,9 @@ export const listOrders = async (req: Request, res: Response): Promise<void> => 
       }
     }
 
+    // 租户隔离: req.user.tenantId をサービスに渡す / テナント分離
+    const tenantId = req.user?.tenantId;
+
     const result = await searchOrders({
       filters,
       page,
@@ -114,6 +127,7 @@ export const listOrders = async (req: Request, res: Response): Promise<void> => 
       sortBy: typeof sortByRaw === 'string' ? sortByRaw : undefined,
       sortOrder: sortOrderRaw === 'asc' ? 'asc' : sortOrderRaw === 'desc' ? 'desc' : undefined,
       paginated: hasPageParam,
+      tenantId,
     });
 
     if (result.mode === 'list') {
