@@ -215,7 +215,6 @@ const productSchema = new mongoose.Schema<IProduct>(
     sku: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     name: {
@@ -424,7 +423,8 @@ const productSchema = new mongoose.Schema<IProduct>(
 );
 
 // unique index on _allSku: MongoDB multikey unique index ensures no two documents share the same SKU/sub-SKU value
-productSchema.index({ _allSku: 1 }, { unique: true });
+productSchema.index({ tenantId: 1, _allSku: 1 }, { unique: true });
+productSchema.index({ tenantId: 1, sku: 1 }, { unique: true });
 
 // 客户/店铺归属索引 / 顧客・店舗帰属インデックス
 productSchema.index({ tenantId: 1, clientId: 1 });
