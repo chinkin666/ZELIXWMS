@@ -83,7 +83,8 @@
 </template>
 
 <script setup lang="ts">
-import Konva from 'konva'
+// Konva は動的インポートでバンドルサイズ削減 / Konva 动态导入以减少包体积
+import type KonvaType from 'konva'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
@@ -115,9 +116,11 @@ const { t: $t } = useI18n()
 const templateId = String(route.params.id || '')
 
 const canvasPreviewRef = ref<InstanceType<typeof CanvasPreview> | null>(null)
-let stage: Konva.Stage | null = null
-let layer: Konva.Layer | null = null
-let transformer: Konva.Transformer | null = null
+let stage: KonvaType.Stage | null = null
+let layer: KonvaType.Layer | null = null
+let transformer: KonvaType.Transformer | null = null
+// Konva モジュール参照（動的インポート後に設定）/ Konva 模块引用（动态导入后设置）
+let KonvaModule: typeof KonvaType | null = null
 
 const template = ref<PrintTemplate>(createEmptyPrintTemplate({ id: templateId }))
 const saving = ref(false)
@@ -706,9 +709,15 @@ async function barcodeToImage(b: PrintBarcodeElement, value: string): Promise<HT
   })
 }
 
-function ensureStage() {
+async function ensureStage() {
   const stageEl = canvasPreviewRef.value?.stageEl
   if (stage || !stageEl) return
+  // Konva 動的インポート（メインバンドルから分離）/ Konva 动态导入（从主包分离）
+  if (!KonvaModule) {
+    const mod = await import('konva')
+    KonvaModule = mod.default
+  }
+  const Konva = KonvaModule!
   stage = new Konva.Stage({ container: stageEl, width: 10, height: 10 })
   layer = new Konva.Layer()
   stage.add(layer)
@@ -758,8 +767,9 @@ function syncTransformer() {
 }
 
 async function render(seq?: number) {
-  ensureStage()
-  if (!stage || !layer) return
+  await ensureStage()
+  if (!stage || !layer || !KonvaModule) return
+  const Konva = KonvaModule
   const mySeq = seq ?? ++renderSeq
 
   const widthPx = Math.max(1, Math.round(mmToPx(template.value.canvas.widthMm)))

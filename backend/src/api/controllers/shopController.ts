@@ -1,12 +1,13 @@
 import type { Request, Response } from 'express';
 import { Shop } from '@/models/shop';
 import { Client } from '@/models/client';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 // 店舗一覧 / 店铺列表
 export const listShops = async (req: Request, res: Response): Promise<void> => {
   try {
     const { clientId, subClientId, platform, search, isActive, page, limit } = req.query;
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
 
     const filter: Record<string, unknown> = { tenantId };
 
@@ -64,7 +65,7 @@ export const getShop = async (req: Request, res: Response): Promise<void> => {
 // 店舗作成 / 创建店铺
 export const createShop = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const { clientId, subClientId, shopCode, shopName, platform, platformAccountId, platformStoreName, memo } = req.body;
 
     // 必須チェック / 必填校验
@@ -125,7 +126,7 @@ export const createShop = async (req: Request, res: Response): Promise<void> => 
 // 店舗更新 / 更新店铺
 export const updateShop = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const existing = await Shop.findById(req.params.id).lean();
     if (!existing) {
       res.status(404).json({ message: '店舗が見つかりません / 店铺不存在' });

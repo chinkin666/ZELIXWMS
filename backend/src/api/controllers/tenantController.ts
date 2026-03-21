@@ -34,7 +34,7 @@ export const listTenants = async (req: Request, res: Response): Promise<void> =>
 
     res.json({ data, total });
   } catch (error: any) {
-    res.status(500).json({ message: 'テナントの取得に失敗しました', error: error.message });
+    res.status(500).json({ message: 'テナントの取得に失敗しました' });
   }
 };
 
@@ -47,7 +47,7 @@ export const getTenant = async (req: Request, res: Response): Promise<void> => {
     }
     res.json(item);
   } catch (error: any) {
-    res.status(500).json({ message: 'テナントの取得に失敗しました', error: error.message });
+    res.status(500).json({ message: 'テナントの取得に失敗しました' });
   }
 };
 
@@ -113,7 +113,7 @@ export const createTenant = async (req: Request, res: Response): Promise<void> =
       });
       return;
     }
-    res.status(500).json({ message: 'テナントの作成に失敗しました', error: error.message });
+    res.status(500).json({ message: 'テナントの作成に失敗しました' });
   }
 };
 
@@ -187,7 +187,7 @@ export const updateTenant = async (req: Request, res: Response): Promise<void> =
       });
       return;
     }
-    res.status(500).json({ message: 'テナントの更新に失敗しました', error: error.message });
+    res.status(500).json({ message: 'テナントの更新に失敗しました' });
   }
 };
 
@@ -206,7 +206,7 @@ export const deleteTenant = async (req: Request, res: Response): Promise<void> =
 
     res.json({ message: 'Deleted', id: updated._id });
   } catch (error: any) {
-    res.status(500).json({ message: 'テナントの削除に失敗しました', error: error.message });
+    res.status(500).json({ message: 'テナントの削除に失敗しました' });
   }
 };
 
@@ -241,6 +241,6 @@ export const toggleTenantStatus = async (req: Request, res: Response): Promise<v
 
     res.json(updated);
   } catch (error: any) {
-    res.status(500).json({ message: 'テナントステータスの変更に失敗しました', error: error.message });
+    res.status(500).json({ message: 'テナントステータスの変更に失敗しました' });
   }
 };

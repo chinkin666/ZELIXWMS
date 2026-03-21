@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { InspectionRecord } from '@/models/inspectionRecord';
 import { ExceptionReport, SLA_MINUTES } from '@/models/exceptionReport';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 function generateNumber(prefix: string): string {
   const d = new Date();
@@ -11,7 +12,7 @@ function generateNumber(prefix: string): string {
 // 検品記録一覧 / 检品记录列表
 export const listInspections = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const { inboundOrderId, page, limit } = req.query;
     const filter: Record<string, unknown> = { tenantId };
     if (inboundOrderId) filter.inboundOrderId = inboundOrderId;
@@ -32,7 +33,7 @@ export const listInspections = async (req: Request, res: Response): Promise<void
 // 検品記録作成 / 创建检品记录
 export const createInspection = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const record = await InspectionRecord.create({
       ...req.body,
       tenantId,

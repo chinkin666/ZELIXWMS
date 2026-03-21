@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { FbaBox, validateFbaBox } from '@/models/fbaBox';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 function generateBoxNumber(index: number): string {
   return `BOX-${String(index).padStart(4, '0')}`;
@@ -7,7 +8,7 @@ function generateBoxNumber(index: number): string {
 
 export const listBoxes = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const { inboundOrderId } = req.query;
     const filter: Record<string, unknown> = { tenantId };
     if (inboundOrderId) filter.inboundOrderId = inboundOrderId;
@@ -21,7 +22,7 @@ export const listBoxes = async (req: Request, res: Response): Promise<void> => {
 
 export const createBox = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const count = await FbaBox.countDocuments({ tenantId, inboundOrderId: req.body.inboundOrderId });
     const box = await FbaBox.create({
       ...req.body,
@@ -76,7 +77,7 @@ export const sealBox = async (req: Request, res: Response): Promise<void> => {
 export const validateBoxes = async (req: Request, res: Response): Promise<void> => {
   try {
     const { inboundOrderId } = req.params;
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const boxes = await FbaBox.find({ tenantId, inboundOrderId }).lean();
 
     const results = boxes.map((box) => {

@@ -104,6 +104,21 @@ export const getProductStock = async (req: Request, res: Response): Promise<void
 export const adjustStock = async (req: Request, res: Response): Promise<void> => {
   try {
     const { productId, locationId, lotId, adjustQuantity, memo } = req.body;
+
+    // 入力バリデーション / 输入验证
+    if (!productId || typeof productId !== 'string') {
+      res.status(400).json({ message: 'productId は必須です / productId 为必填项' });
+      return;
+    }
+    if (!locationId || typeof locationId !== 'string') {
+      res.status(400).json({ message: 'locationId は必須です / locationId 为必填项' });
+      return;
+    }
+    if (typeof adjustQuantity !== 'number' || !Number.isFinite(adjustQuantity)) {
+      res.status(400).json({ message: 'adjustQuantity は有限な数値である必要があります / adjustQuantity 必须是有限数值' });
+      return;
+    }
+
     const result = await inventoryService.adjustStock({
       productId,
       locationId,
@@ -212,6 +227,29 @@ export const reserveOrdersStock = async (req: Request, res: Response): Promise<v
 export const transferStock = async (req: Request, res: Response): Promise<void> => {
   try {
     const { productId, fromLocationId, toLocationId, quantity, lotId, memo } = req.body;
+
+    // 入力バリデーション / 输入验证
+    if (!productId || typeof productId !== 'string') {
+      res.status(400).json({ message: 'productId は必須です / productId 为必填项' });
+      return;
+    }
+    if (!fromLocationId || typeof fromLocationId !== 'string') {
+      res.status(400).json({ message: 'fromLocationId は必須です / fromLocationId 为必填项' });
+      return;
+    }
+    if (!toLocationId || typeof toLocationId !== 'string') {
+      res.status(400).json({ message: 'toLocationId は必須です / toLocationId 为必填项' });
+      return;
+    }
+    if (fromLocationId === toLocationId) {
+      res.status(400).json({ message: '移動元と移動先は異なる必要があります / 移动源和移动目标必须不同' });
+      return;
+    }
+    if (typeof quantity !== 'number' || !Number.isFinite(quantity) || quantity <= 0) {
+      res.status(400).json({ message: 'quantity は正の有限な数値である必要があります / quantity 必须是正的有限数值' });
+      return;
+    }
+
     const result = await inventoryService.transferStock({
       productId,
       fromLocationId,
@@ -230,6 +268,28 @@ export const transferStock = async (req: Request, res: Response): Promise<void> 
 export const bulkAdjustStock = async (req: Request, res: Response): Promise<void> => {
   try {
     const { adjustments } = req.body;
+
+    // 入力バリデーション / 输入验证
+    if (!Array.isArray(adjustments) || adjustments.length === 0) {
+      res.status(400).json({ message: 'adjustments は空でない配列である必要があります / adjustments 必须是非空数组' });
+      return;
+    }
+    for (let i = 0; i < adjustments.length; i++) {
+      const adj = adjustments[i];
+      if (!adj.productId || typeof adj.productId !== 'string') {
+        res.status(400).json({ message: `adjustments[${i}].productId は必須です / adjustments[${i}].productId 为必填项` });
+        return;
+      }
+      if (!adj.locationId || typeof adj.locationId !== 'string') {
+        res.status(400).json({ message: `adjustments[${i}].locationId は必須です / adjustments[${i}].locationId 为必填项` });
+        return;
+      }
+      if (typeof adj.adjustQuantity !== 'number' || !Number.isFinite(adj.adjustQuantity)) {
+        res.status(400).json({ message: `adjustments[${i}].adjustQuantity は有限な数値である必要があります / adjustments[${i}].adjustQuantity 必须是有限数值` });
+        return;
+      }
+    }
+
     const result = await inventoryService.bulkAdjustStock(adjustments);
     res.json(result);
   } catch (error) {

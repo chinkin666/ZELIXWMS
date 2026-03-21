@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { ExceptionReport, SLA_MINUTES } from '@/models/exceptionReport';
 import type { ExceptionLevel } from '@/models/exceptionReport';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 function generateNumber(): string {
   const d = new Date();
@@ -11,7 +12,7 @@ function generateNumber(): string {
 // 異常報告一覧 / 异常报告列表
 export const listExceptions = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const { status, level, clientId, page, limit } = req.query;
     const filter: Record<string, unknown> = { tenantId };
     if (status) filter.status = status;
@@ -34,7 +35,7 @@ export const listExceptions = async (req: Request, res: Response): Promise<void>
 // 異常報告作成 / 创建异常报告
 export const createException = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const level = (req.body.level || 'A') as ExceptionLevel;
     const now = new Date();
     const slaDeadline = new Date(now.getTime() + SLA_MINUTES[level] * 60 * 1000);
@@ -124,7 +125,7 @@ export const resolveException = async (req: Request, res: Response): Promise<voi
 // SLA 状況 / SLA 状况
 export const slaStatus = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const now = new Date();
 
     // SLA超過のオープン報告を検出 / 检测SLA超时的未处理报告

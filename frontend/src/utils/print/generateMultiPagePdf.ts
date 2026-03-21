@@ -1,4 +1,4 @@
-import { PDFDocument } from 'pdf-lib'
+// pdf-lib は動的インポートでバンドルサイズ削減 / pdf-lib 动态导入以减少包体积
 
 export type GenerateMultiPagePdfOptions = {
   widthMm: number
@@ -13,6 +13,8 @@ export async function generateMultiPagePdf(
   pngBlobs: Blob[],
   options: GenerateMultiPagePdfOptions,
 ): Promise<Blob> {
+  // 動的インポートでメインバンドルから分離 / 动态导入从主包分离
+  const { PDFDocument } = await import('pdf-lib')
   const pdfDoc = await PDFDocument.create()
 
   for (const pngBlob of pngBlobs) {

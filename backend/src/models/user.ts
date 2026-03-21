@@ -43,7 +43,9 @@ export interface IUser {
 }
 
 // パスワードハッシュ定数 / 密码哈希常量
-const PBKDF2_ITERATIONS = 10000;
+// OWASP推奨値: SHA-512で210,000回（2023年ガイドライン準拠）
+// OWASP推荐值: SHA-512使用210,000次迭代（符合2023年指南）
+const PBKDF2_ITERATIONS = 210000;
 const PBKDF2_KEYLEN = 64;
 const PBKDF2_DIGEST = 'sha512';
 const SALT_BYTES = 16;

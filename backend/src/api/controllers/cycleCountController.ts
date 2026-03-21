@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { CycleCountPlan } from '@/models/cycleCountPlan';
 import mongoose from 'mongoose';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 function generateNumber(): string {
   const d = new Date();
@@ -10,7 +11,7 @@ function generateNumber(): string {
 // 一覧 / 列表
 export const listCycleCounts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const { status, period, page, limit } = req.query;
     const filter: Record<string, unknown> = { tenantId };
     if (status) filter.status = status;
@@ -32,7 +33,7 @@ export const listCycleCounts = async (req: Request, res: Response): Promise<void
 // 作成 / 创建
 export const createCycleCount = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const plan = await CycleCountPlan.create({
       ...req.body,
       tenantId,
@@ -60,7 +61,7 @@ export const getCycleCount = async (req: Request, res: Response): Promise<void> 
 // 自動生成（月度20% SKU をランダム選択）/ 自动生成（月度随机选取20% SKU）
 export const generateItems = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const plan = await CycleCountPlan.findById(req.params.id);
     if (!plan) { res.status(404).json({ message: 'Not found' }); return; }
 
@@ -163,7 +164,7 @@ export const completeCycleCount = async (req: Request, res: Response): Promise<v
 // 盘点覆盖率统计 / 棚卸カバー率統計
 export const coverageStats = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const year = req.query.year || new Date().getFullYear();
 
     const plans = await CycleCountPlan.find({

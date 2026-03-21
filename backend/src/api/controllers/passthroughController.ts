@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { InboundOrder } from '@/models/inboundOrder';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 import {
   createPassthroughOrder,
   arriveOrder,
@@ -15,7 +16,7 @@ import { processOrderFbaLabel } from '@/services/fbaLabelService';
  */
 export const listPassthroughOrders = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const { status, clientId, shopId, search, page, limit } = req.query;
 
     const filter: Record<string, unknown> = { tenantId, flowType: 'passthrough' };
@@ -64,7 +65,7 @@ export const getPassthroughOrder = async (req: Request, res: Response): Promise<
  */
 export const createOrder = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const order = await createPassthroughOrder({ ...req.body, tenantId });
     res.status(201).json(order.toObject());
   } catch (error: any) {
@@ -151,7 +152,7 @@ export const ackVariance = async (req: Request, res: Response): Promise<void> =>
  */
 export const stagingDashboard = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const activeStatuses = ['arrived', 'processing', 'awaiting_label', 'ready_to_ship'];
 
     const orders = await InboundOrder.find({

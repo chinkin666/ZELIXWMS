@@ -3,10 +3,11 @@
  */
 import type { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 export async function getAdminDashboard(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const db = mongoose.connection.db!;
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);

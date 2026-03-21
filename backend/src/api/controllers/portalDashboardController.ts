@@ -9,6 +9,7 @@ import { InboundOrder } from '@/models/inboundOrder';
 import { WorkCharge } from '@/models/workCharge';
 import { Client } from '@/models/client';
 import { ExceptionReport } from '@/models/exceptionReport';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 /**
  * GET /api/portal/dashboard
@@ -17,7 +18,7 @@ import { ExceptionReport } from '@/models/exceptionReport';
 export async function getPortalDashboard(req: Request, res: Response): Promise<void> {
   try {
     const user = (req as any).user;
-    const tenantId = user?.tenantId || req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const clientId = user?.clientId || req.query.clientId as string;
 
     if (!clientId) {

@@ -58,7 +58,7 @@ export const listUsers = async (req: Request, res: Response): Promise<void> => {
 
     res.json({ data, total });
   } catch (error: any) {
-    res.status(500).json({ message: 'ユーザー一覧の取得に失敗しました / 获取用户列表失败', error: error.message });
+    res.status(500).json({ message: 'ユーザー一覧の取得に失敗しました / 获取用户列表失败' });
   }
 };
 
@@ -76,7 +76,7 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
     }
     res.json(item);
   } catch (error: any) {
-    res.status(500).json({ message: 'ユーザーの取得に失敗しました / 获取用户失败', error: error.message });
+    res.status(500).json({ message: 'ユーザーの取得に失敗しました / 获取用户失败' });
   }
 };
 
@@ -157,7 +157,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       });
       return;
     }
-    res.status(500).json({ message: 'ユーザーの作成に失敗しました / 创建用户失败', error: error.message });
+    res.status(500).json({ message: 'ユーザーの作成に失敗しました / 创建用户失败' });
   }
 };
 
@@ -247,7 +247,7 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
       });
       return;
     }
-    res.status(500).json({ message: 'ユーザーの更新に失敗しました / 更新用户失败', error: error.message });
+    res.status(500).json({ message: 'ユーザーの更新に失敗しました / 更新用户失败' });
   }
 };
 
@@ -272,7 +272,7 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
 
     res.json({ message: 'Deleted', id: updated._id });
   } catch (error: any) {
-    res.status(500).json({ message: 'ユーザーの削除に失敗しました / 删除用户失败', error: error.message });
+    res.status(500).json({ message: 'ユーザーの削除に失敗しました / 删除用户失败' });
   }
 };
 
@@ -302,7 +302,7 @@ export const listSubUsers = async (req: Request, res: Response): Promise<void> =
 
     res.json({ data: subUsers, total: subUsers.length });
   } catch (error: any) {
-    res.status(500).json({ message: '子ユーザーの取得に失敗しました / 获取子用户失败', error: error.message });
+    res.status(500).json({ message: '子ユーザーの取得に失敗しました / 获取子用户失败' });
   }
 };
 
@@ -344,6 +344,6 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
 
     res.json({ message: 'パスワードを変更しました / 密码已修改' });
   } catch (error: any) {
-    res.status(500).json({ message: 'パスワードの変更に失敗しました / 修改密码失败', error: error.message });
+    res.status(500).json({ message: 'パスワードの変更に失敗しました / 修改密码失败' });
   }
 };

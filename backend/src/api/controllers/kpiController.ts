@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 /**
  * KPI ダッシュボード / KPI 仪表板
@@ -19,7 +20,7 @@ const KPI_TARGETS = {
 
 export const getKpiDashboard = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const period = (req.query.period as string) || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
 
     const InboundOrder = mongoose.connection.collection('inbound_orders');

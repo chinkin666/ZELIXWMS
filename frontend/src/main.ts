@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
+// 全局CSS保留，组件按需自动导入 / グローバルCSS維持、コンポーネントはオンデマンド自動インポート
 import 'element-plus/dist/index.css'
 import './style.css'
 import App from './App.vue'
@@ -12,7 +12,6 @@ const pinia = createPinia()
 const app = createApp(App)
 app.use(pinia)
 app.use(router)
-app.use(ElementPlus)
 
 // ストレージから認証状態を復元 / 从存储恢复认证状态
 const userStore = useWmsUserStore()

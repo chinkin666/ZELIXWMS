@@ -11,6 +11,39 @@ import { Webhook } from '@/models/webhook';
 import { WebhookLog } from '@/models/webhookLog';
 import { extensionManager } from '@/core/extensions';
 import { HOOK_EVENTS } from '@/core/extensions/types';
+import net from 'net';
+
+/**
+ * SSRF防護: 内部・プライベートURLをブロック / SSRF防护: 阻止内部或私有URL
+ * ブロック対象 / 阻止对象: localhost, 127.0.0.1, 0.0.0.0, ::1, 169.254.169.254, 10.x, 172.16-31.x, 192.168.x
+ */
+function isPrivateOrBlockedUrl(urlString: string): boolean {
+  const parsed = new URL(urlString);
+  const hostname = parsed.hostname.toLowerCase();
+
+  // ブロックリスト / 黑名单
+  const blockedHosts = ['localhost', '127.0.0.1', '0.0.0.0', '::1', '169.254.169.254'];
+  if (blockedHosts.includes(hostname)) return true;
+
+  // IPアドレスの場合、プライベートIP範囲をチェック / 如果是IP地址，检查私有IP范围
+  if (net.isIPv4(hostname)) {
+    const parts = hostname.split('.').map(Number);
+    // 10.0.0.0/8
+    if (parts[0] === 10) return true;
+    // 172.16.0.0/12
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+    // 192.168.0.0/16
+    if (parts[0] === 192 && parts[1] === 168) return true;
+    // 127.0.0.0/8
+    if (parts[0] === 127) return true;
+    // 0.0.0.0/8
+    if (parts[0] === 0) return true;
+    // 169.254.0.0/16 (link-local / リンクローカル)
+    if (parts[0] === 169 && parts[1] === 254) return true;
+  }
+
+  return false;
+}
 
 /**
  * GET /api/extensions/webhooks
@@ -31,7 +64,8 @@ export async function listWebhooks(req: Request, res: Response) {
 
     res.json({ data: webhooks, availableEvents });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    // エラー詳細を非公開 / 不泄露错误详情
+    res.status(500).json({ error: 'Internal server error / 内部サーバーエラー / 内部服务器错误' });
   }
 }
 
@@ -48,7 +82,8 @@ export async function getWebhook(req: Request, res: Response) {
     }
     res.json(webhook);
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    // エラー詳細を非公開 / 不泄露错误详情
+    res.status(500).json({ error: 'Internal server error / 内部サーバーエラー / 内部服务器错误' });
   }
 }
 
@@ -83,6 +118,12 @@ export async function createWebhook(req: Request, res: Response) {
       return;
     }
 
+    // SSRF防護: 内部URLをブロック / SSRF防护: 阻止内部URL
+    if (isPrivateOrBlockedUrl(url)) {
+      res.status(400).json({ error: 'Internal/private URLs are not allowed / 内部・プライベートURLは許可されていません / 不允许内部或私有URL' });
+      return;
+    }
+
     const webhook = await Webhook.create({
       event,
       name,
@@ -97,7 +138,8 @@ export async function createWebhook(req: Request, res: Response) {
 
     res.status(201).json(webhook.toObject());
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    // エラー詳細を非公開 / 不泄露错误详情
+    res.status(500).json({ error: 'Internal server error / 内部サーバーエラー / 内部服务器错误' });
   }
 }
 
@@ -126,6 +168,11 @@ export async function updateWebhook(req: Request, res: Response) {
         res.status(400).json({ error: 'Invalid URL format / 無効な URL フォーマットです' });
         return;
       }
+      // SSRF防護: 内部URLをブロック / SSRF防护: 阻止内部URL
+      if (isPrivateOrBlockedUrl(url)) {
+        res.status(400).json({ error: 'Internal/private URLs are not allowed / 内部・プライベートURLは許可されていません / 不允许内部或私有URL' });
+        return;
+      }
       update.url = url;
     }
     if (secret !== undefined) update.secret = secret;
@@ -147,7 +194,8 @@ export async function updateWebhook(req: Request, res: Response) {
 
     res.json(webhook);
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    // エラー詳細を非公開 / 不泄露错误详情
+    res.status(500).json({ error: 'Internal server error / 内部サーバーエラー / 内部服务器错误' });
   }
 }
 
@@ -164,7 +212,8 @@ export async function deleteWebhook(req: Request, res: Response) {
     }
     res.json({ message: 'Webhook deleted / Webhook を削除しました' });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    // エラー詳細を非公開 / 不泄露错误详情
+    res.status(500).json({ error: 'Internal server error / 内部サーバーエラー / 内部服务器错误' });
   }
 }
 
@@ -178,7 +227,8 @@ export async function testWebhook(req: Request, res: Response) {
     const result = await dispatcher.test(req.params.id);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    // エラー詳細を非公開 / 不泄露错误详情
+    res.status(500).json({ error: 'Internal server error / 内部サーバーエラー / 内部服务器错误' });
   }
 }
 
@@ -203,7 +253,8 @@ export async function toggleWebhook(req: Request, res: Response) {
       message: webhook.enabled ? 'Webhook enabled / 有効化' : 'Webhook disabled / 無効化',
     });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    // エラー詳細を非公開 / 不泄露错误详情
+    res.status(500).json({ error: 'Internal server error / 内部サーバーエラー / 内部服务器错误' });
   }
 }
 
@@ -241,6 +292,7 @@ export async function getWebhookLogs(req: Request, res: Response) {
       },
     });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    // エラー詳細を非公開 / 不泄露错误详情
+    res.status(500).json({ error: 'Internal server error / 内部サーバーエラー / 内部服务器错误' });
   }
 }

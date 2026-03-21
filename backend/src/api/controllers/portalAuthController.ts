@@ -9,6 +9,7 @@ import { Client } from '@/models/client';
 import { SubClient } from '@/models/subClient';
 import { generateToken } from '@/api/middleware/auth';
 import { logger } from '@/lib/logger';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 /**
  * POST /api/portal/auth/login
@@ -89,7 +90,7 @@ export async function portalLogin(req: Request, res: Response): Promise<void> {
  */
 export async function invitePortalUser(req: Request, res: Response): Promise<void> {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const { email, displayName, password, clientId, subClientId } = req.body;
 
     if (!email || !password || !clientId) {

@@ -1,12 +1,13 @@
 import type { Request, Response } from 'express';
 import { SubClient } from '@/models/subClient';
 import { Client } from '@/models/client';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 // 子顧客一覧 / 子客户列表
 export const listSubClients = async (req: Request, res: Response): Promise<void> => {
   try {
     const { clientId, search, isActive, page, limit } = req.query;
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
 
     const filter: Record<string, unknown> = { tenantId };
 
@@ -58,7 +59,7 @@ export const getSubClient = async (req: Request, res: Response): Promise<void> =
 // 子顧客作成 / 创建子客户
 export const createSubClient = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const { clientId, subClientCode, name, name2, subClientType, contactPerson, phone, email, portalEnabled, memo } = req.body;
 
     // 必須チェック / 必填校验
@@ -117,7 +118,7 @@ export const createSubClient = async (req: Request, res: Response): Promise<void
 // 子顧客更新 / 更新子客户
 export const updateSubClient = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const existing = await SubClient.findById(req.params.id).lean();
     if (!existing) {
       res.status(404).json({ message: '子顧客が見つかりません / 子客户不存在' });

@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { LabelingTask } from '@/models/labelingTask';
 import { WorkCharge } from '@/models/workCharge';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 function generateNumber(): string {
   const d = new Date();
@@ -10,7 +11,7 @@ function generateNumber(): string {
 
 export const listLabelingTasks = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const { status, inboundOrderId, page, limit } = req.query;
     const filter: Record<string, unknown> = { tenantId };
     if (status) filter.status = status;
@@ -31,7 +32,7 @@ export const listLabelingTasks = async (req: Request, res: Response): Promise<vo
 
 export const createLabelingTask = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const task = await LabelingTask.create({
       ...req.body,
       tenantId,
@@ -105,7 +106,7 @@ export const verifyLabel = async (req: Request, res: Response): Promise<void> =>
 // 入庫予約から一括生成 / 入库预定批量生成
 export const batchCreateFromOrder = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const { inboundOrderId, lines } = req.body;
     if (!lines?.length) { res.status(400).json({ message: 'lines required' }); return; }
 

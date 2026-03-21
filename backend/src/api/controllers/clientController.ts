@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { Client } from '@/models/client';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 export const listClients = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -52,7 +53,7 @@ export const getClient = async (req: Request, res: Response): Promise<void> => {
 
 export const createClient = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const {
       clientCode, name, name2, clientType, contactName,
       postalCode, prefecture, city, address, address2, phone, email,
@@ -124,7 +125,7 @@ export const createClient = async (req: Request, res: Response): Promise<void> =
 
 export const updateClient = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const {
       clientCode, name, name2, clientType, contactName,
       postalCode, prefecture, city, address, address2, phone, email,

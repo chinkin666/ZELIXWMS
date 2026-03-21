@@ -12,9 +12,8 @@ export const getSettings = async (_req: Request, res: Response): Promise<void> =
       const created = await SystemSettings.create({ settingsKey: 'global' });
       res.json(created.toObject());
     }
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ message: 'システム設定の取得に失敗しました', error: message });
+  } catch (_error: unknown) {
+    res.status(500).json({ message: 'システム設定の取得に失敗しました' });
   }
 };
 
@@ -30,9 +29,8 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
     ).lean();
 
     res.json(doc);
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ message: 'システム設定の更新に失敗しました', error: message });
+  } catch (_error: unknown) {
+    res.status(500).json({ message: 'システム設定の更新に失敗しました' });
   }
 };
 
@@ -43,8 +41,7 @@ export const resetSettings = async (_req: Request, res: Response): Promise<void>
     // デフォルト値で再作成
     const created = await SystemSettings.create({ settingsKey: 'global' });
     res.json(created.toObject());
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    res.status(500).json({ message: 'システム設定のリセットに失敗しました', error: message });
+  } catch (_error: unknown) {
+    res.status(500).json({ message: 'システム設定のリセットに失敗しました' });
   }
 };

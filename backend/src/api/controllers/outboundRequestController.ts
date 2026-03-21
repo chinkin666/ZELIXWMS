@@ -6,6 +6,7 @@
  */
 import type { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import { getTenantId } from '@/api/helpers/tenantHelper';
 
 const OutboundRequest = mongoose.connection.collection('outbound_requests');
 
@@ -18,7 +19,7 @@ function generateNumber(): string {
 // 出库申请一覧 / 出库申请列表
 export const listOutboundRequests = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const { clientId, status, page, limit } = req.query;
     const filter: Record<string, unknown> = { tenantId };
     if (clientId) filter.clientId = clientId;
@@ -43,7 +44,7 @@ export const listOutboundRequests = async (req: Request, res: Response): Promise
 // 出库申请作成 / 创建出库申请
 export const createOutboundRequest = async (req: Request, res: Response): Promise<void> => {
   try {
-    const tenantId = req.headers['x-tenant-id'] as string || 'default';
+    const tenantId = getTenantId(req);
     const {
       clientId, clientName, subClientId, shopId,
       recipientName, postalCode, prefecture, city, address1, address2, phone,

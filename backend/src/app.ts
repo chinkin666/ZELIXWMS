@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import path from 'path';
+import { randomUUID } from 'crypto';
 import swaggerUi from 'swagger-ui-express';
 import { loadEnv } from '@/config/env';
 import { registerCoreRoutes } from '@/api/routes';
@@ -48,7 +49,16 @@ export const createApp = () => {
       limit: '10mb',
     }),
   );
-  app.use(morgan('dev'));
+  // リクエストID付与（ログ相関用）/ 请求ID（日志关联用）
+  app.use((req, _res, next) => {
+    const requestId = (req.headers['x-request-id'] as string) || randomUUID();
+    req.headers['x-request-id'] = requestId;
+    _res.setHeader('X-Request-ID', requestId);
+    next();
+  });
+
+  // 本番は combined フォーマット、開発は dev / 生产用 combined 格式，开发用 dev
+  app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
   // 请求计时 / リクエストタイマー（レスポンスタイム計測 + 遅延検出）
   app.use(requestTimer);
@@ -73,11 +83,13 @@ export const createApp = () => {
 
   registerCoreRoutes(app);
 
-  // Swagger UI / API ドキュメント
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    customSiteTitle: 'ZELIX WMS API Docs',
-  }));
-  app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
+  // Swagger UI は本番環境では無効化 / Swagger UI 在生产环境禁用
+  if (process.env.NODE_ENV !== 'production') {
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+      customSiteTitle: 'ZELIX WMS API Docs',
+    }));
+    app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
+  }
 
   // 插件自定义 API 路由 / プラグインカスタム API ルート
   // 插件通过 registerAPI() 注册的路由挂载到 /api/plugins/{name}/*

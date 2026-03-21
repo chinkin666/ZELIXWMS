@@ -1,4 +1,4 @@
-import Konva from 'konva'
+// Konva は動的インポートでバンドルサイズ削減 / Konva 动态导入以减少包体积
 import type { OrderDocument } from '@/types/order'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
 import type { PrintBarcodeElement, PrintImageElement, PrintTemplate, PrintTextElement } from '@/types/printTemplate'
@@ -75,6 +75,8 @@ export async function renderTemplateWithContextToPngBlob(
   document.body.appendChild(container)
 
   try {
+    // Konva 動的インポート（メインバンドルから分離）/ Konva 动态导入（从主包分离）
+    const { default: Konva } = await import('konva')
     const stage = new Konva.Stage({ container, width: widthPx, height: heightPx })
     const layer = new Konva.Layer()
     stage.add(layer)

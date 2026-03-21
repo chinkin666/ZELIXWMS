@@ -11,6 +11,9 @@ import {
   updateInvoiceStatus,
   getBillingDashboard,
 } from '@/api/controllers/billingController';
+// 権限ガード: 書き込みルートに admin/manager ロールを要求
+// 权限守卫: 写入路由要求 admin/manager 角色
+import { requireRole } from '@/api/middleware/auth';
 
 export const billingRouter = Router();
 
@@ -48,7 +51,7 @@ billingRouter.get('/dashboard', getBillingDashboard);
  *       200:
  *         description: 生成成功 / Generated
  */
-billingRouter.post('/generate', generateMonthlyBilling);
+billingRouter.post('/generate', requireRole('admin', 'manager'), generateMonthlyBilling);
 
 /**
  * @swagger
@@ -79,7 +82,7 @@ billingRouter.get('/invoices', listInvoices);
  *       201:
  *         description: 作成成功 / Created
  */
-billingRouter.post('/invoices', createInvoice);
+billingRouter.post('/invoices', requireRole('admin', 'manager'), createInvoice);
 
 /**
  * @swagger
@@ -133,7 +136,7 @@ billingRouter.get('/invoices/:id', getInvoice);
  *       200:
  *         description: 更新成功 / Updated
  */
-billingRouter.put('/invoices/:id/status', updateInvoiceStatus);
+billingRouter.put('/invoices/:id/status', requireRole('admin', 'manager'), updateInvoiceStatus);
 
 /**
  * @swagger
@@ -170,4 +173,4 @@ billingRouter.get('/:id', getBillingRecord);
  *       200:
  *         description: 確定成功 / Confirmed
  */
-billingRouter.post('/:id/confirm', confirmBillingRecord);
+billingRouter.post('/:id/confirm', requireRole('admin', 'manager'), confirmBillingRecord);
