@@ -107,4 +107,131 @@ export class BillingController {
   ) {
     return this.billingService.createWorkCharge(tenantId, dto);
   }
+
+  // 作業チャージID検索 / 按ID查找作业费用
+  @Get('work-charges/:id')
+  findWorkChargeById(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.billingService.findWorkChargeById(tenantId, id);
+  }
+
+  // 作業チャージ更新 / 更新作业费用
+  @Put('work-charges/:id')
+  updateWorkCharge(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Record<string, unknown>,
+  ) {
+    return this.billingService.updateWorkCharge(tenantId, id, dto);
+  }
+
+  // 作業チャージ削除 / 删除作业费用
+  @Delete('work-charges/:id')
+  removeWorkCharge(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.billingService.removeWorkCharge(tenantId, id);
+  }
+
+  // ============================================
+  // 運費率エンドポイント / 运费率端点
+  // ============================================
+
+  // 運費率一覧取得 / 获取运费率列表
+  @Get('shipping-rates')
+  findAllShippingRates(
+    @TenantId() tenantId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('carrierId') carrierId?: string,
+    @Query('isActive') isActive?: string,
+  ) {
+    return this.billingService.findAllShippingRates(tenantId, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      carrierId,
+      isActive: isActive !== undefined ? isActive === 'true' : undefined,
+    });
+  }
+
+  // 運費率ID検索 / 按ID查找运费率
+  @Get('shipping-rates/:id')
+  findShippingRateById(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.billingService.findShippingRateById(tenantId, id);
+  }
+
+  // 運費率作成 / 创建运费率
+  @Post('shipping-rates')
+  createShippingRate(
+    @TenantId() tenantId: string,
+    @Body() dto: Record<string, unknown>,
+  ) {
+    return this.billingService.createShippingRate(tenantId, dto);
+  }
+
+  // 運費率更新 / 更新运费率
+  @Put('shipping-rates/:id')
+  updateShippingRate(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Record<string, unknown>,
+  ) {
+    return this.billingService.updateShippingRate(tenantId, id, dto);
+  }
+
+  // 運費率削除（論理削除: isActive=false）/ 删除运费率（软删除: isActive=false）
+  @Delete('shipping-rates/:id')
+  removeShippingRate(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.billingService.removeShippingRate(tenantId, id);
+  }
+
+  // ============================================
+  // 請求書エンドポイント / 发票端点
+  // ============================================
+
+  // 請求書一覧取得 / 获取发票列表
+  @Get('invoices')
+  findAllInvoices(
+    @TenantId() tenantId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('clientId') clientId?: string,
+    @Query('period') period?: string,
+  ) {
+    return this.billingService.findAllInvoices(tenantId, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      status,
+      clientId,
+      period,
+    });
+  }
+
+  // 請求書ID検索 / 按ID查找发票
+  @Get('invoices/:id')
+  findInvoiceById(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.billingService.findInvoiceById(tenantId, id);
+  }
+
+  // 請求書作成 / 创建发票
+  @Post('invoices')
+  createInvoice(
+    @TenantId() tenantId: string,
+    @Body() dto: Record<string, unknown>,
+  ) {
+    return this.billingService.createInvoice(tenantId, dto);
+  }
 }

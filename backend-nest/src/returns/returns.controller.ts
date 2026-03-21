@@ -68,6 +68,33 @@ export class ReturnsController {
     return this.returnsService.update(tenantId, id, dto);
   }
 
+  // 返品オーダー受領（draft → inspecting）/ 退货订单收货（draft → inspecting）
+  @Post(':id/receive')
+  receive(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.returnsService.receive(tenantId, id);
+  }
+
+  // 返品オーダー完了（inspecting → completed）/ 退货订单完成（inspecting → completed）
+  @Post(':id/complete')
+  complete(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.returnsService.complete(tenantId, id);
+  }
+
+  // 返品オーダーキャンセル（any → cancelled）/ 退货订单取消（any → cancelled）
+  @Post(':id/cancel')
+  cancel(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.returnsService.cancel(tenantId, id);
+  }
+
   // 返品オーダー削除（論理削除）/ 删除退货订单（软删除）
   @Delete(':id')
   remove(

@@ -1,0 +1,83 @@
+// フォームテンプレートサービス / 表单模板服务
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { eq, and, sql } from 'drizzle-orm';
+import { DRIZZLE } from '../database/database.module.js';
+import { formTemplates } from '../database/schema/templates.js';
+
+interface FindAllQuery {
+  page?: number;
+  limit?: number;
+  targetType?: string;
+}
+
+@Injectable()
+export class FormTemplatesService {
+  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+
+  // 一覧取得 / 获取列表
+  async findAll(tenantId: string, query: FindAllQuery) {
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const offset = (page - 1) * limit;
+
+    const conditions = [eq(formTemplates.tenantId, tenantId)];
+    if (query.targetType) {
+      conditions.push(eq(formTemplates.targetType, query.targetType));
+    }
+
+    const where = and(...conditions);
+
+    const [items, countResult] = await Promise.all([
+      this.db.select().from(formTemplates).where(where).limit(limit).offset(offset).orderBy(formTemplates.createdAt),
+      this.db.select({ count: sql<number>`count(*)::int` }).from(formTemplates).where(where),
+    ]);
+
+    return { items, total: countResult[0]?.count ?? 0, page, limit };
+  }
+
+  // ID検索 / 按ID查找
+  async findById(tenantId: string, id: string) {
+    const rows = await this.db
+      .select()
+      .from(formTemplates)
+      .where(and(eq(formTemplates.id, id), eq(formTemplates.tenantId, tenantId)))
+      .limit(1);
+
+    if (rows.length === 0) {
+      throw new NotFoundException(`FormTemplate ${id} not found / フォームテンプレート ${id} が見つかりません / 表单模板 ${id} 未找到`);
+    }
+    return rows[0];
+  }
+
+  // 作成 / 创建
+  async create(tenantId: string, dto: Record<string, unknown>) {
+    const rows = await this.db
+      .insert(formTemplates)
+      .values({ tenantId, ...dto })
+      .returning();
+    return rows[0];
+  }
+
+  // 更新 / 更新
+  async update(tenantId: string, id: string, dto: Record<string, unknown>) {
+    await this.findById(tenantId, id);
+
+    const rows = await this.db
+      .update(formTemplates)
+      .set({ ...dto, updatedAt: new Date() })
+      .where(and(eq(formTemplates.id, id), eq(formTemplates.tenantId, tenantId)))
+      .returning();
+    return rows[0];
+  }
+
+  // 削除 / 删除
+  async remove(tenantId: string, id: string) {
+    await this.findById(tenantId, id);
+
+    const rows = await this.db
+      .delete(formTemplates)
+      .where(and(eq(formTemplates.id, id), eq(formTemplates.tenantId, tenantId)))
+      .returning();
+    return rows[0];
+  }
+}

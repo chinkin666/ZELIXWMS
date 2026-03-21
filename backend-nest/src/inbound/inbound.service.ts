@@ -1,5 +1,5 @@
 // 入庫サービス / 入库服务
-import { Inject, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { eq, and, isNull, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { inboundOrders, inboundOrderLines } from '../database/schema/inbound.js';
@@ -147,6 +147,70 @@ export class InboundService {
       .where(and(eq(inboundOrders.id, id), eq(inboundOrders.tenantId, tenantId)))
       .returning();
 
+    return rows[0];
+  }
+
+  // 入庫オーダー確認（draft → confirmed）/ 入库订单确认（draft → confirmed）
+  async confirm(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+    if (order.status !== 'draft') {
+      throw new BadRequestException(
+        `Cannot confirm order with status "${order.status}". Expected "draft" / ステータス "${order.status}" の注文は確認できません。"draft" が必要です / 状态 "${order.status}" 的订单无法确认，需要 "draft"`,
+      );
+    }
+    const rows = await this.db
+      .update(inboundOrders)
+      .set({ status: 'confirmed', updatedAt: new Date() })
+      .where(and(eq(inboundOrders.id, id), eq(inboundOrders.tenantId, tenantId)))
+      .returning();
+    return rows[0];
+  }
+
+  // 入庫オーダー入荷開始（confirmed → receiving）/ 入库订单开始收货（confirmed → receiving）
+  async receive(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+    if (order.status !== 'confirmed') {
+      throw new BadRequestException(
+        `Cannot receive order with status "${order.status}". Expected "confirmed" / ステータス "${order.status}" の注文は入荷開始できません。"confirmed" が必要です / 状态 "${order.status}" 的订单无法开始收货，需要 "confirmed"`,
+      );
+    }
+    const rows = await this.db
+      .update(inboundOrders)
+      .set({ status: 'receiving', updatedAt: new Date() })
+      .where(and(eq(inboundOrders.id, id), eq(inboundOrders.tenantId, tenantId)))
+      .returning();
+    return rows[0];
+  }
+
+  // 入庫オーダー完了（receiving → done）/ 入库订单完成（receiving → done）
+  async complete(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+    if (order.status !== 'receiving') {
+      throw new BadRequestException(
+        `Cannot complete order with status "${order.status}". Expected "receiving" / ステータス "${order.status}" の注文は完了できません。"receiving" が必要です / 状态 "${order.status}" 的订单无法完成，需要 "receiving"`,
+      );
+    }
+    const rows = await this.db
+      .update(inboundOrders)
+      .set({ status: 'done', updatedAt: new Date() })
+      .where(and(eq(inboundOrders.id, id), eq(inboundOrders.tenantId, tenantId)))
+      .returning();
+    return rows[0];
+  }
+
+  // 入庫オーダーキャンセル（any → cancelled、done/cancelled 除外）/ 入库订单取消（any → cancelled、排除 done/cancelled）
+  async cancel(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+    if (order.status === 'done' || order.status === 'cancelled') {
+      throw new BadRequestException(
+        `Cannot cancel order with status "${order.status}" / ステータス "${order.status}" の注文はキャンセルできません / 状态 "${order.status}" 的订单无法取消`,
+      );
+    }
+    const rows = await this.db
+      .update(inboundOrders)
+      .set({ status: 'cancelled', updatedAt: new Date() })
+      .where(and(eq(inboundOrders.id, id), eq(inboundOrders.tenantId, tenantId)))
+      .returning();
     return rows[0];
   }
 

@@ -32,6 +32,12 @@ import { ClientPortalModule } from './client-portal/client-portal.module.js';
 import { IntegrationsModule } from './integrations/integrations.module.js';
 import { RenderModule } from './render/render.module.js';
 import { PeakModeModule } from './peak-mode/peak-mode.module.js';
+import { EmailTemplatesModule } from './email-templates/email-templates.module.js';
+import { FormTemplatesModule } from './form-templates/form-templates.module.js';
+import { PrintTemplatesModule } from './print-templates/print-templates.module.js';
+import { MappingConfigsModule } from './mapping-configs/mapping-configs.module.js';
+import { LotsModule } from './lots/lots.module.js';
+import { ExceptionsModule } from './exceptions/exceptions.module.js';
 import { ListenersModule } from './common/listeners/listeners.module.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -68,6 +74,12 @@ import envConfig from './config/env.js';
     IntegrationsModule,
     RenderModule,
     PeakModeModule,
+    EmailTemplatesModule,
+    FormTemplatesModule,
+    PrintTemplatesModule,
+    MappingConfigsModule,
+    LotsModule,
+    ExceptionsModule,
     ListenersModule,
   ],
   providers: [

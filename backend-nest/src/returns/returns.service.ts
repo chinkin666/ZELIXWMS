@@ -1,5 +1,5 @@
 // 返品サービス / 退货服务
-import { Inject, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { eq, and, isNull, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { returnOrders, returnOrderLines } from '../database/schema/returns.js';
@@ -160,6 +160,54 @@ export class ReturnsService {
       .where(and(eq(returnOrders.id, id), eq(returnOrders.tenantId, tenantId)))
       .returning();
 
+    return rows[0];
+  }
+
+  // 返品オーダー受領（draft → inspecting）/ 退货订单收货（draft → inspecting）
+  async receive(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+    if (order.status !== 'draft') {
+      throw new BadRequestException(
+        `Cannot receive return order with status "${order.status}". Expected "draft" / ステータス "${order.status}" の返品は受領できません。"draft" が必要です / 状态 "${order.status}" 的退货订单无法收货，需要 "draft"`,
+      );
+    }
+    const rows = await this.db
+      .update(returnOrders)
+      .set({ status: 'inspecting', updatedAt: new Date() })
+      .where(and(eq(returnOrders.id, id), eq(returnOrders.tenantId, tenantId)))
+      .returning();
+    return rows[0];
+  }
+
+  // 返品オーダー完了（inspecting → completed）/ 退货订单完成（inspecting → completed）
+  async complete(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+    if (order.status !== 'inspecting') {
+      throw new BadRequestException(
+        `Cannot complete return order with status "${order.status}". Expected "inspecting" / ステータス "${order.status}" の返品は完了できません。"inspecting" が必要です / 状态 "${order.status}" 的退货订单无法完成，需要 "inspecting"`,
+      );
+    }
+    const rows = await this.db
+      .update(returnOrders)
+      .set({ status: 'completed', updatedAt: new Date() })
+      .where(and(eq(returnOrders.id, id), eq(returnOrders.tenantId, tenantId)))
+      .returning();
+    return rows[0];
+  }
+
+  // 返品オーダーキャンセル（any → cancelled）/ 退货订单取消（any → cancelled）
+  async cancel(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+    if (order.status === 'completed' || order.status === 'cancelled') {
+      throw new BadRequestException(
+        `Cannot cancel return order with status "${order.status}" / ステータス "${order.status}" の返品はキャンセルできません / 状态 "${order.status}" 的退货订单无法取消`,
+      );
+    }
+    const rows = await this.db
+      .update(returnOrders)
+      .set({ status: 'cancelled', updatedAt: new Date() })
+      .where(and(eq(returnOrders.id, id), eq(returnOrders.tenantId, tenantId)))
+      .returning();
     return rows[0];
   }
 

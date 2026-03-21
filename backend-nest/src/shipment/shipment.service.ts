@@ -1,6 +1,6 @@
 // 出荷注文サービス / 出货订单服务
-import { Inject, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { eq, and, ilike, isNull, or, sql, SQL } from 'drizzle-orm';
+import { Inject, Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { eq, and, ilike, isNull, or, sql, SQL, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { shipmentOrders, shipmentOrderProducts } from '../database/schema/shipments.js';
 import type { CreateShipmentOrderDto, UpdateShipmentOrderDto } from './dto/create-shipment-order.dto.js';
@@ -155,6 +155,67 @@ export class ShipmentService {
       .returning();
 
     return rows[0];
+  }
+
+  // 出荷注文確認（statusConfirmed=true）/ 出货订单确认（statusConfirmed=true）
+  async confirm(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+    if (order.statusConfirmed) {
+      throw new BadRequestException(
+        `Order ${id} is already confirmed / 注文 ${id} は既に確認済みです / 订单 ${id} 已确认`,
+      );
+    }
+    const rows = await this.db
+      .update(shipmentOrders)
+      .set({ statusConfirmed: true, updatedAt: new Date() })
+      .where(and(eq(shipmentOrders.id, id), eq(shipmentOrders.tenantId, tenantId)))
+      .returning();
+    return rows[0];
+  }
+
+  // 出荷注文出荷（statusShipped=true）/ 出货订单发货（statusShipped=true）
+  async ship(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+    if (order.statusShipped) {
+      throw new BadRequestException(
+        `Order ${id} is already shipped / 注文 ${id} は既に出荷済みです / 订单 ${id} 已发货`,
+      );
+    }
+    const rows = await this.db
+      .update(shipmentOrders)
+      .set({ statusShipped: true, updatedAt: new Date() })
+      .where(and(eq(shipmentOrders.id, id), eq(shipmentOrders.tenantId, tenantId)))
+      .returning();
+    return rows[0];
+  }
+
+  // 出荷注文一括作成 / 批量创建出货订单
+  async bulkCreate(tenantId: string, orders: CreateShipmentOrderDto[]) {
+    const results = [];
+    for (const dto of orders) {
+      const created = await this.create(tenantId, dto);
+      results.push(created);
+    }
+    return results;
+  }
+
+  // 出荷注文一括削除（論理削除）/ 批量删除出货订单（软删除）
+  async bulkDelete(tenantId: string, ids: string[]) {
+    if (!ids || ids.length === 0) {
+      throw new BadRequestException(
+        'No IDs provided / IDが指定されていません / 未提供ID',
+      );
+    }
+    const rows = await this.db
+      .update(shipmentOrders)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(and(
+        inArray(shipmentOrders.id, ids),
+        eq(shipmentOrders.tenantId, tenantId),
+        isNull(shipmentOrders.deletedAt),
+      ))
+      .returning();
+    return { deleted: rows.length, items: rows };
   }
 
   // 出荷注文論理削除 / 出货订单软删除

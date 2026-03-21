@@ -127,6 +127,55 @@ export const featureFlags = pgTable('feature_flags', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// ===== プラグイン / 插件 =====
+
+export const plugins = pgTable('plugins', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+
+  // 基本情報 / 基本信息
+  name: text('name').notNull(),
+  description: text('description'),
+  version: text('version').notNull().default('1.0.0'),
+  author: text('author'),
+
+  // ステータス / 状态
+  enabled: boolean('enabled').default(false).notNull(),
+  config: jsonb('config').default({}),
+
+  // タイムスタンプ / 时间戳
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('plugins_tenant_idx').on(table.tenantId),
+  index('plugins_tenant_enabled_idx').on(table.tenantId, table.enabled),
+]);
+
+// ===== スクリプト / 脚本 =====
+
+export const scripts = pgTable('scripts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+
+  // 基本情報 / 基本信息
+  name: text('name').notNull(),
+  description: text('description'),
+  language: text('language').notNull().default('javascript'),  // javascript | python
+  code: text('code').notNull().default(''),
+  enabled: boolean('enabled').default(true).notNull(),
+
+  // 実行制御 / 执行控制
+  triggerEvent: text('trigger_event'),   // 実行トリガーイベント / 触发事件
+  lastRunAt: timestamp('last_run_at'),
+  lastRunStatus: text('last_run_status'), // success | error
+
+  // タイムスタンプ / 时间戳
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('scripts_tenant_idx').on(table.tenantId),
+]);
+
 // ===== カスタムフィールド定義 / 自定义字段定义 =====
 
 export const customFieldDefinitions = pgTable('custom_field_definitions', {

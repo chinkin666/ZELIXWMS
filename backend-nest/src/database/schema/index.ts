@@ -14,3 +14,4 @@ export * from './templates';
 export * from './settings';
 export * from './billing';
 export * from './carriers';
+export * from './exceptions';

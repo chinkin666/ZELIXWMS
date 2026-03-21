@@ -35,6 +35,33 @@ export class ShipmentController {
     });
   }
 
+  // 出荷注文作成 / 创建出货订单
+  @Post()
+  create(
+    @TenantId() tenantId: string,
+    @Body(new ZodValidationPipe(createShipmentOrderSchema)) dto: CreateShipmentOrderDto,
+  ) {
+    return this.shipmentService.create(tenantId, dto);
+  }
+
+  // 出荷注文一括作成 / 批量创建出货订单
+  @Post('bulk')
+  bulkCreate(
+    @TenantId() tenantId: string,
+    @Body() body: { orders: CreateShipmentOrderDto[] },
+  ) {
+    return this.shipmentService.bulkCreate(tenantId, body.orders);
+  }
+
+  // 出荷注文一括削除 / 批量删除出货订单
+  @Post('bulk-delete')
+  bulkDelete(
+    @TenantId() tenantId: string,
+    @Body() body: { ids: string[] },
+  ) {
+    return this.shipmentService.bulkDelete(tenantId, body.ids);
+  }
+
   // 出荷注文ID検索 / 按ID查找出货订单
   @Get(':id')
   findOne(
@@ -53,13 +80,22 @@ export class ShipmentController {
     return this.shipmentService.findProducts(tenantId, id);
   }
 
-  // 出荷注文作成 / 创建出货订单
-  @Post()
-  create(
+  // 出荷注文確認（statusConfirmed=true）/ 出货订单确认（statusConfirmed=true）
+  @Post(':id/confirm')
+  confirm(
     @TenantId() tenantId: string,
-    @Body(new ZodValidationPipe(createShipmentOrderSchema)) dto: CreateShipmentOrderDto,
+    @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.shipmentService.create(tenantId, dto);
+    return this.shipmentService.confirm(tenantId, id);
+  }
+
+  // 出荷注文出荷（statusShipped=true）/ 出货订单发货（statusShipped=true）
+  @Post(':id/ship')
+  ship(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.shipmentService.ship(tenantId, id);
   }
 
   // 出荷注文更新 / 更新出货订单

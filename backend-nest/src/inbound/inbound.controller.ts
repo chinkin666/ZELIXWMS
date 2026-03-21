@@ -72,6 +72,42 @@ export class InboundController {
     return this.inboundService.update(tenantId, id, dto);
   }
 
+  // 入庫オーダー確認（draft → confirmed）/ 入库订单确认（draft → confirmed）
+  @Post(':id/confirm')
+  confirm(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.inboundService.confirm(tenantId, id);
+  }
+
+  // 入庫オーダー入荷開始（confirmed → receiving）/ 入库订单开始收货（confirmed → receiving）
+  @Post(':id/receive')
+  receive(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.inboundService.receive(tenantId, id);
+  }
+
+  // 入庫オーダー完了（receiving → done）/ 入库订单完成（receiving → done）
+  @Post(':id/complete')
+  complete(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.inboundService.complete(tenantId, id);
+  }
+
+  // 入庫オーダーキャンセル（any → cancelled）/ 入库订单取消（any → cancelled）
+  @Post(':id/cancel')
+  cancel(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.inboundService.cancel(tenantId, id);
+  }
+
   // 入庫オーダー削除（論理削除）/ 删除入库订单（软删除）
   @Delete(':id')
   remove(
