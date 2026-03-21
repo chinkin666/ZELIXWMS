@@ -3,6 +3,30 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-21] docs 対比第2弾：共通基盤完全整備 + テスト3136件
+
+**変更種別 / 变更类型**: feat + test
+**影響範囲 / 影响范围**: backend-nest/src/common/, backend-nest/src/health/, backend/
+
+### 追加実装 / 追加实现
+- WMS Exception 体系: 27 エラーコード (9 ドメイン)、InsufficientStockException 等
+- Domain Events: 5 event classes + 10 event name constants
+- Health Check 強化: /health (DB ping + memory), /health/liveness, /health/readiness
+- Pagination DTO: Zod schema + PaginatedResult<T> + helper
+- API Key Guard: x-api-key 外部連携認証
+- Request ID Middleware: UUID + X-Request-Id ヘッダー
+- GlobalExceptionFilter 強化: WMS エラーコード、details、path、500 系ログ
+- TransformInterceptor テスト: _id エイリアス検証
+- RolesGuard テスト: ロール検証・拒否
+- main.ts 強化: RequestID middleware、CORS ヘッダー拡張
+
+### 最終統計 / 最终统计
+- Express: **137 suites, 2835 tests**
+- NestJS: **34 suites, 301 tests**
+- **合計: 171 suites, 3136 tests, ALL PASSING**
+
+---
+
 ## [2026-03-21] 文档対比完了：全差分解消 + データ移行ETL
 
 **変更種別 / 变更类型**: test + feat
