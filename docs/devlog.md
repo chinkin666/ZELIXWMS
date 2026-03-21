@@ -3,6 +3,37 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-21] NestJS 全26モジュール完成 + Express テスト全網羅
+
+**変更種別 / 变更类型**: feat + test
+**影響範囲 / 影响范围**: backend-nest/ (26 modules, 100+ files), backend/ (26 new test files)
+**関連ドキュメント / 关联文档**: devlog.md, docs/migration/
+
+### NestJS 移行 Phase 0-4 完了 / NestJS 迁移 Phase 0-4 完成
+
+| カテゴリ / 类别 | モジュール / 模块 |
+|---|---|
+| インフラ / 基础设施 | health, database, auth, admin, queue |
+| コア / 核心 | products, clients, warehouses, inbound, inventory, carriers |
+| ビジネス / 业务 | shipment, billing, returns, notifications, extensions |
+| 倉庫作業 / 仓库作业 | waves, warehouse-tasks, materials, stocktaking |
+| レポート / 报表 | kpi, daily-reports, peak-mode |
+| 拡張 / 扩展 | import, render, integrations, client-portal |
+| **合計 / 总计** | **26 モジュール / 模块** |
+
+### 共通基盤 / 通用基础
+- AuthGuard (Supabase JWT) + TenantGuard + RolesGuard（5ロール）
+- @Public(), @TenantId(), @CurrentUser(), @RequireRole() デコレータ
+- ZodValidationPipe, TransformInterceptor, GlobalExceptionFilter
+- Drizzle ORM + PostgreSQL (16 schema files, 65+ tables)
+
+### テスト / 测试
+- NestJS: 18 suites, 195 tests
+- Express: 127 suites, 2763 tests
+- **合計: 145 suites, 2958 tests, ALL PASSING**
+
+---
+
 ## [2026-03-21] NestJS 全22モジュール + RBAC + Auth 完成
 
 **変更種別 / 变更类型**: feat
