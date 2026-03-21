@@ -26,9 +26,9 @@ export class AuthGuard implements CanActivate {
     // 開発環境: トークンなしでもdev userを注入 / 开发环境: 无token时注入dev用户
     if (!token && this.configService.get('NODE_ENV') === 'development') {
       request.user = {
-        id: 'dev-admin',
+        id: '00000000-0000-0000-0000-000000000099',
         email: 'dev@zelix.local',
-        tenantId: 'default',
+        tenantId: '00000000-0000-0000-0000-000000000001',
         role: 'admin',
       };
       return true;

@@ -41,10 +41,9 @@ export class ProductsController {
 
   // 商品作成 / 创建商品
   @Post()
-  @UsePipes(new ZodValidationPipe(createProductSchema))
   create(
     @TenantId() tenantId: string,
-    @Body() dto: CreateProductDto,
+    @Body(new ZodValidationPipe(createProductSchema)) dto: CreateProductDto,
   ) {
     return this.productsService.create(tenantId, dto);
   }
