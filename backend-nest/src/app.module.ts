@@ -1,17 +1,21 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { DatabaseModule } from './database/database.module';
-import { AuthGuard } from './common/guards/auth.guard';
-import { TenantGuard } from './common/guards/tenant.guard';
-import { TransformInterceptor } from './common/interceptors/transform.interceptor';
-import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
-import envConfig from './config/env';
+import { DatabaseModule } from './database/database.module.js';
+import { HealthModule } from './health/health.module.js';
+import { ProductsModule } from './products/products.module.js';
+import { AuthGuard } from './common/guards/auth.guard.js';
+import { TenantGuard } from './common/guards/tenant.guard.js';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
+import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
+import envConfig from './config/env.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [envConfig] }),
     DatabaseModule,
+    HealthModule,
+    ProductsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
