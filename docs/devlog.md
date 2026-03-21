@@ -3,6 +3,24 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-21] NestJS 全22モジュール + RBAC + Auth 完成
+
+**変更種別 / 变更类型**: feat
+**影響範囲 / 影响范围**: backend-nest/src/ (22 modules, 80+ files)
+**関連ドキュメント / 关联文档**: devlog.md, docs/migration/
+
+### 内容 / 内容
+- RolesGuard + @RequireRole() デコレータ（5ロール対応）
+  RolesGuard + @RequireRole() 装饰器（5角色支持）
+- Auth モジュール: login/register/me/profile
+- Waves, WarehouseTasks, Materials モジュール（warehouse-ops）
+- Admin モジュール: ユーザー管理 + システム設定 + 操作ログ
+- Import モジュール: CSV バリデーション + インポート
+- NestJS テスト: 13 suites, 133 tests all passing
+- NestJS ビルド: 0 errors, 22 モジュール登録済み
+
+---
+
 ## [2026-03-21] NestJS 全14モジュール実装完了（Phase 2-4）
 
 **変更種別 / 变更类型**: feat
