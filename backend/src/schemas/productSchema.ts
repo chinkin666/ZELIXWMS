@@ -46,7 +46,8 @@ const optionalNumberPreprocess = (val: unknown) => {
   return val;
 };
 
-const categoryEnum = z.enum(['0', '1', '2', '3', '4']);
+// カテゴリ: enum制限解除（日本語カテゴリ名も許可）/ 类别: 取消enum限制
+const categoryEnum = z.string().trim();
 const allocationRuleEnum = z.enum(['FIFO', 'FEFO', 'LIFO']);
 
 const booleanPreprocess = (val: unknown) => {

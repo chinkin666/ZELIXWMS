@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 export type CoolType = '0' | '1' | '2';
-export type ProductCategory = '0' | '1' | '2' | '3' | '4';  // 0:商品 1:消耗品 2:作業 3:おまけ 4:部材
+export type ProductCategory = string;  // 自由入力: '0'-'4' or 日本語名（書籍、食品、アパレル等）
 export type AllocationRule = 'FIFO' | 'FEFO' | 'LIFO';  // FIFO:先入先出 FEFO:先期限先出 LIFO:後入先出
 export interface ISubSku {
   subSku: string;        // 子SKU編碼 (必填，全局唯一)
@@ -285,7 +285,8 @@ const productSchema = new mongoose.Schema<IProduct>(
     },
     category: {
       type: String,
-      enum: ['0', '1', '2', '3', '4'],
+      // enum 制限を解除: 日本語カテゴリ名も許可（書籍、食品、アパレル等）
+      // 取消 enum 限制: 允许日语类别名（书籍、食品、服装等）
       default: '0',
     },
     // 原価/仕入単価（コスト計算用）/ 成本价/进货单价（用于成本计算）
