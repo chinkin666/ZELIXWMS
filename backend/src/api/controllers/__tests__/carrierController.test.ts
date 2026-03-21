@@ -1,5 +1,5 @@
 /**
- * carrierController 统合テスト / Carrier Controller Integration Tests
+ * carrierController 統合テスト / Carrier Controller Integration Tests
  *
  * Carrier モデルと内蔵配送業者データを通じた配送業者操作の HTTP フローを検証する。
  * Verifies HTTP flow for carrier operations through Carrier model and built-in carrier data.
@@ -104,12 +104,15 @@ describe('listCarriers', () => {
     // Act
     await listCarriers(req, res)
 
-    // Assert: 内蔵業者 + DB 業者の両方が含まれる / both built-in and DB carriers included
+    // Assert: レスポンスは { items, total, page, limit } 形式 / response is paginated envelope
+    // items に内蔵業者 + DB 業者の両方が含まれる / items contains both built-in and DB carriers
     expect(res.json).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'YAMATO' }),
-        expect.objectContaining({ code: 'SAGAWA' }),
-      ]),
+      expect.objectContaining({
+        items: expect.arrayContaining([
+          expect.objectContaining({ code: 'YAMATO' }),
+          expect.objectContaining({ code: 'SAGAWA' }),
+        ]),
+      }),
     )
   })
 
@@ -125,9 +128,9 @@ describe('listCarriers', () => {
     // Act
     await listCarriers(req, res)
 
-    // Assert: 最初の要素が内蔵業者 / first element is built-in carrier
-    const result = vi.mocked(res.json).mock.calls[0][0] as any[]
-    expect(result[0]).toEqual(expect.objectContaining({ code: 'YAMATO' }))
+    // Assert: items の最初の要素が内蔵業者 / first element of items is built-in carrier
+    const result = vi.mocked(res.json).mock.calls[0][0] as { items: any[] }
+    expect(result.items[0]).toEqual(expect.objectContaining({ code: 'YAMATO' }))
   })
 
   it('name フィルタで内蔵業者もフィルタされる / built-in carriers also filtered by name', async () => {
@@ -144,8 +147,8 @@ describe('listCarriers', () => {
     await listCarriers(req, res)
 
     // Assert: 内蔵業者はフィルタで除外される / built-in carriers excluded by filter
-    const result = vi.mocked(res.json).mock.calls[0][0] as any[]
-    expect(result.every((c) => c.code !== 'YAMATO')).toBe(true)
+    const result = vi.mocked(res.json).mock.calls[0][0] as { items: any[] }
+    expect(result.items.every((c) => c.code !== 'YAMATO')).toBe(true)
   })
 
   it('enabled=true フィルタが適用される / applies enabled=true filter', async () => {
@@ -178,10 +181,12 @@ describe('listCarriers', () => {
     // Act
     await listCarriers(req, res)
 
-    // Assert
+    // Assert: sendError 形式 { success: false, error: { message } } / sendError format
     expect(res.status).toHaveBeenCalledWith(500)
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ message: 'Failed to fetch carriers' }),
+      expect.objectContaining({
+        error: expect.objectContaining({ message: 'Failed to fetch carriers' }),
+      }),
     )
   })
 })
@@ -240,9 +245,13 @@ describe('getCarrier', () => {
     // Act
     await getCarrier(req, res)
 
-    // Assert
+    // Assert: sendError 形式 / sendError format
     expect(res.status).toHaveBeenCalledWith(404)
-    expect(res.json).toHaveBeenCalledWith({ message: 'Carrier not found' })
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ message: 'Carrier not found' }),
+      }),
+    )
   })
 
   it('DB エラー時に 500 を返す / returns 500 on DB error', async () => {
@@ -303,10 +312,12 @@ describe('createCarrier', () => {
     // Act
     await createCarrier(req, res)
 
-    // Assert
+    // Assert: sendError 形式 { success: false, error: { message: 'Validation failed' } }
     expect(res.status).toHaveBeenCalledWith(400)
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ message: 'Validation failed' }),
+      expect.objectContaining({
+        error: expect.objectContaining({ message: 'Validation failed' }),
+      }),
     )
   })
 
@@ -329,10 +340,15 @@ describe('createCarrier', () => {
     // Act
     await createCarrier(req, res)
 
-    // Assert
+    // Assert: 409 + エラーメッセージに 'code' フィールド名が含まれる / error message includes field name 'code'
+    // sendError 形式: { success: false, error: { code: 'DUPLICATE_ERROR', message: '...' } }
+    // コントローラは keyPattern から duplicateField を取得してメッセージに埋め込む
+    // Controller embeds the duplicate field name in the message string
     expect(res.status).toHaveBeenCalledWith(409)
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ duplicateField: 'code' }),
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'DUPLICATE_ERROR' }),
+      }),
     )
   })
 
@@ -371,9 +387,12 @@ describe('updateCarrier', () => {
     await updateCarrier(req, res)
 
     // Assert: 内蔵業者は編集不可 / built-in carrier cannot be edited
+    // sendError 形式: { success: false, error: { message: '内蔵配送業者は編集できません' } }
     expect(res.status).toHaveBeenCalledWith(403)
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ message: '内蔵配送業者は編集できません' }),
+      expect.objectContaining({
+        error: expect.objectContaining({ message: '内蔵配送業者は編集できません' }),
+      }),
     )
   })
 
@@ -390,9 +409,13 @@ describe('updateCarrier', () => {
     // Act
     await updateCarrier(req, res)
 
-    // Assert
+    // Assert: sendError 形式 / sendError format
     expect(res.status).toHaveBeenCalledWith(404)
-    expect(res.json).toHaveBeenCalledWith({ message: 'Carrier not found' })
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ message: 'Carrier not found' }),
+      }),
+    )
   })
 
   it('バリデーション失敗時に 400 を返す / returns 400 when validation fails', async () => {
@@ -458,9 +481,12 @@ describe('deleteCarrier', () => {
     await deleteCarrier(req, res)
 
     // Assert: 内蔵業者は削除不可 / built-in carrier cannot be deleted
+    // sendError 形式: { success: false, error: { message: '内蔵配送業者は削除できません' } }
     expect(res.status).toHaveBeenCalledWith(403)
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ message: '内蔵配送業者は削除できません' }),
+      expect.objectContaining({
+        error: expect.objectContaining({ message: '内蔵配送業者は削除できません' }),
+      }),
     )
   })
 
@@ -497,9 +523,13 @@ describe('deleteCarrier', () => {
     // Act
     await deleteCarrier(req, res)
 
-    // Assert
+    // Assert: sendError 形式 / sendError format
     expect(res.status).toHaveBeenCalledWith(404)
-    expect(res.json).toHaveBeenCalledWith({ message: 'Carrier not found' })
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ message: 'Carrier not found' }),
+      }),
+    )
   })
 
   it('DB エラー時に 500 を返す / returns 500 on DB error', async () => {

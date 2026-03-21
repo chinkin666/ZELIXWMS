@@ -150,11 +150,13 @@ describe('listExceptions', () => {
   })
 
   it('x-tenant-id ヘッダーがない場合 default を使用する / uses default when x-tenant-id header is absent', async () => {
-    // Arrange: x-tenant-id なし / no x-tenant-id header
+    // Arrange: x-tenant-id なし、かつ認証ユーザーなし / no x-tenant-id header, no authenticated user
     vi.mocked(ExceptionReport.find).mockReturnValue(makeListChain([]) as any)
     vi.mocked(ExceptionReport.countDocuments).mockResolvedValue(0 as any)
 
-    const req = mockReq({ headers: {} }) // ヘッダーなし / no headers
+    // user を undefined にして getTenantId が 'default' を返すようにする
+    // Set user to undefined so getTenantId returns 'default'
+    const req = mockReq({ headers: {}, user: undefined })
     const res = mockRes()
 
     // Act
@@ -706,11 +708,12 @@ describe('slaStatus', () => {
   })
 
   it('x-tenant-id ヘッダーがない場合 default を使用する / uses default when x-tenant-id header is absent', async () => {
-    // Arrange
+    // Arrange: user を undefined にして getTenantId が 'default' を返すようにする
+    // Set user to undefined so getTenantId returns 'default'
     vi.mocked(ExceptionReport.find).mockReturnValue(makeLeanChain([]) as any)
     vi.mocked(ExceptionReport.countDocuments).mockResolvedValue(0 as any)
 
-    const req = mockReq({ headers: {} }) // ヘッダーなし / no headers
+    const req = mockReq({ headers: {}, user: undefined })
     const res = mockRes()
 
     // Act

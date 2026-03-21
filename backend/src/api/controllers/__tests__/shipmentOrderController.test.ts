@@ -168,14 +168,14 @@ describe('listOrders', () => {
     expect(shipmentOrderService.searchOrders).not.toHaveBeenCalled()
   })
 
-  it('limit は最大 5000 にクランプされる / clamps limit to max 5000', async () => {
-    // Arrange
+  it('limit は最大 200 にクランプされる / clamps limit to max 200', async () => {
+    // Arrange: コントローラーの上限は 200（メモリ保護） / Controller cap is 200 (memory protection)
     vi.mocked(shipmentOrderService.searchOrders).mockResolvedValue({
       mode: 'paginated',
       items: [],
       total: 0,
       page: 1,
-      limit: 5000,
+      limit: 200,
     } as any)
 
     const req = mockReq({ query: { page: '1', limit: '99999' } })
@@ -184,9 +184,9 @@ describe('listOrders', () => {
     // Act
     await listOrders(req, res)
 
-    // Assert: limit は 5000 以下に制限される / limit capped at 5000
+    // Assert: limit は 200 以下に制限される / limit capped at 200
     expect(shipmentOrderService.searchOrders).toHaveBeenCalledWith(
-      expect.objectContaining({ limit: 5000 }),
+      expect.objectContaining({ limit: 200 }),
     )
   })
 

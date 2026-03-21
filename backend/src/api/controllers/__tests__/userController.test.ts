@@ -208,8 +208,9 @@ describe('getUser', () => {
 
   it('既存ユーザーを取得する / retrieves existing user', async () => {
     // Arrange
+    // getUser は findOne({ _id, tenantId }) を使用 / getUser uses findOne({ _id, tenantId })
     const fakeUser = { _id: 'u1', email: 'user@example.com', displayName: 'テストユーザー' }
-    vi.mocked(User.findById).mockReturnValue({
+    vi.mocked(User.findOne).mockReturnValue({
       select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue(fakeUser) }),
     } as any)
 
@@ -219,14 +220,14 @@ describe('getUser', () => {
     // Act
     await getUser(req, res)
 
-    // Assert: passwordHash が除外されていること確認 / passwordHash excluded
-    expect(User.findById).toHaveBeenCalledWith('u1')
+    // Assert: テナント分離 + passwordHash 除外 / tenant isolation + passwordHash excluded
+    expect(User.findOne).toHaveBeenCalledWith({ _id: 'u1', tenantId: 'T1' })
     expect(res.json).toHaveBeenCalledWith(fakeUser)
   })
 
   it('ユーザーが存在しない場合 404 を返す / returns 404 when user not found', async () => {
     // Arrange
-    vi.mocked(User.findById).mockReturnValue({
+    vi.mocked(User.findOne).mockReturnValue({
       select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue(null) }),
     } as any)
 
@@ -242,7 +243,7 @@ describe('getUser', () => {
 
   it('DB エラー時に 500 を返す / returns 500 on DB error', async () => {
     // Arrange
-    vi.mocked(User.findById).mockReturnValue({
+    vi.mocked(User.findOne).mockReturnValue({
       select: vi.fn().mockReturnValue({ lean: vi.fn().mockRejectedValue(new Error('timeout')) }),
     } as any)
 
@@ -267,22 +268,23 @@ describe('createUser', () => {
     vi.mocked(User.findOne).mockReturnValue({
       lean: vi.fn().mockResolvedValue(null),
     } as any)
+    // パスワードは8文字以上必須 / Password must be 8+ chars
     const fakeCreated = {
       _id: 'u-new',
       email: 'new@example.com',
       displayName: '新ユーザー',
-      passwordHash: 'hashed:pass123',
+      passwordHash: 'hashed:pass1234',
       toObject: () => ({
         _id: 'u-new',
         email: 'new@example.com',
         displayName: '新ユーザー',
-        passwordHash: 'hashed:pass123',
+        passwordHash: 'hashed:pass1234',
       }),
     }
     vi.mocked(User.create).mockResolvedValue(fakeCreated as any)
 
     const req = mockReq({
-      body: { email: 'new@example.com', password: 'pass123', displayName: '新ユーザー' },
+      body: { email: 'new@example.com', password: 'pass1234', displayName: '新ユーザー' },
     })
     const res = mockRes()
 
@@ -339,9 +341,10 @@ describe('createUser', () => {
   })
 
   it('無効なロールが指定された場合 400 を返す / returns 400 for invalid role', async () => {
-    // Arrange
+    // Arrange: パスワードは8文字以上（バリデーション順序: email→password→displayName→role）
+    // Password must be 8+ chars (validation order: email→password→displayName→role)
     const req = mockReq({
-      body: { email: 'a@b.com', password: 'pass123', displayName: '太郎', role: 'superadmin' },
+      body: { email: 'a@b.com', password: 'pass1234', displayName: '太郎', role: 'superadmin' },
     })
     const res = mockRes()
 
@@ -357,12 +360,13 @@ describe('createUser', () => {
 
   it('メールアドレスが重複している場合 409 を返す / returns 409 when email already exists', async () => {
     // Arrange: 既存ユーザーあり / existing user found
+    // パスワードは8文字以上（バリデーションを通過させるため）/ Password must be 8+ chars to pass validation
     vi.mocked(User.findOne).mockReturnValue({
       lean: vi.fn().mockResolvedValue({ _id: 'existing', email: 'dup@example.com' }),
     } as any)
 
     const req = mockReq({
-      body: { email: 'dup@example.com', password: 'pass123', displayName: '太郎' },
+      body: { email: 'dup@example.com', password: 'pass1234', displayName: '太郎' },
     })
     const res = mockRes()
 
@@ -500,7 +504,11 @@ describe('deleteUser', () => {
 
   it('ユーザーをソフトデリート（isActive=false）する / soft-deletes user (sets isActive=false)', async () => {
     // Arrange
+    // deleteUser は findOne({ _id, tenantId }) でテナント確認してから findByIdAndUpdate する
+    // deleteUser checks tenant via findOne({ _id, tenantId }) before findByIdAndUpdate
+    const fakeExisting = { _id: 'u1', email: 'user@example.com' }
     const fakeUpdated = { _id: 'u1', isActive: false, email: 'user@example.com' }
+    vi.mocked(User.findOne).mockResolvedValue(fakeExisting as any)
     vi.mocked(User.findByIdAndUpdate).mockReturnValue({
       select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue(fakeUpdated) }),
     } as any)
@@ -511,7 +519,8 @@ describe('deleteUser', () => {
     // Act
     await deleteUser(req, res)
 
-    // Assert: isActive=false で更新 / updated with isActive=false
+    // Assert: テナント確認 + isActive=false で更新 / tenant check + updated with isActive=false
+    expect(User.findOne).toHaveBeenCalledWith({ _id: 'u1', tenantId: 'T1' })
     expect(User.findByIdAndUpdate).toHaveBeenCalledWith(
       'u1',
       { isActive: false },
@@ -524,9 +533,8 @@ describe('deleteUser', () => {
 
   it('ユーザーが存在しない場合 404 を返す / returns 404 when user not found', async () => {
     // Arrange
-    vi.mocked(User.findByIdAndUpdate).mockReturnValue({
-      select: vi.fn().mockReturnValue({ lean: vi.fn().mockResolvedValue(null) }),
-    } as any)
+    // findOne が null を返す = テナント内に存在しない / findOne returns null = not in tenant
+    vi.mocked(User.findOne).mockResolvedValue(null as any)
 
     const req = mockReq({ params: { id: 'ghost' } })
     const res = mockRes()
@@ -540,9 +548,8 @@ describe('deleteUser', () => {
 
   it('DB エラー時に 500 を返す / returns 500 on DB error', async () => {
     // Arrange
-    vi.mocked(User.findByIdAndUpdate).mockReturnValue({
-      select: vi.fn().mockReturnValue({ lean: vi.fn().mockRejectedValue(new Error('DB error')) }),
-    } as any)
+    // findOne が例外をスロー / findOne throws exception
+    vi.mocked(User.findOne).mockRejectedValue(new Error('DB error') as any)
 
     const req = mockReq({ params: { id: 'u1' } })
     const res = mockRes()
@@ -562,8 +569,9 @@ describe('changePassword', () => {
 
   it('旧パスワードが正しく新パスワードに変更できる / changes password when old password is correct', async () => {
     // Arrange
+    // changePassword は findOne({ _id, tenantId }) を使用 / changePassword uses findOne({ _id, tenantId })
     const fakeUser = { _id: 'u1', passwordHash: 'hashed:oldpass' }
-    vi.mocked(User.findById).mockReturnValue({
+    vi.mocked(User.findOne).mockReturnValue({
       lean: vi.fn().mockResolvedValue(fakeUser),
     } as any)
     vi.mocked(User.verifyPassword).mockReturnValue(true as any)
@@ -586,7 +594,7 @@ describe('changePassword', () => {
 
   it('旧パスワードが間違っている場合 401 を返す / returns 401 when old password is incorrect', async () => {
     // Arrange
-    vi.mocked(User.findById).mockReturnValue({
+    vi.mocked(User.findOne).mockReturnValue({
       lean: vi.fn().mockResolvedValue({ _id: 'u1', passwordHash: 'hashed:correct' }),
     } as any)
     vi.mocked(User.verifyPassword).mockReturnValue(false as any)
@@ -636,7 +644,7 @@ describe('changePassword', () => {
 
   it('ユーザーが存在しない場合 404 を返す / returns 404 when user not found', async () => {
     // Arrange
-    vi.mocked(User.findById).mockReturnValue({
+    vi.mocked(User.findOne).mockReturnValue({
       lean: vi.fn().mockResolvedValue(null),
     } as any)
 

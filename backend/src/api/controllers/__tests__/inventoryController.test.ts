@@ -102,12 +102,15 @@ describe('listStock', () => {
     await listStock(req, res)
 
     // Assert: サービスが正しい引数で呼ばれたか / service called with correct args
+    // コントローラーは常に page と limit を渡す / Controller always passes page and limit
     expect(inventoryService.listStock).toHaveBeenCalledWith({
       productId: undefined,
       productSku: undefined,
       locationId: undefined,
       showZero: false,
       locationIds: undefined,
+      page: 1,
+      limit: 50,
     })
     // Assert: レスポンスにデータが含まれるか / response contains data
     expect(res.json).toHaveBeenCalledWith(fakeQuants)
@@ -132,12 +135,15 @@ describe('listStock', () => {
     await listStock(req, res)
 
     // Assert: 文字列トリムが適用されているか / string trimming applied
+    // コントローラーは page と limit も渡す / Controller also passes page and limit
     expect(inventoryService.listStock).toHaveBeenCalledWith({
       productId: 'prod-123',
       productSku: 'SKU-001',
       locationId: 'loc-abc',
       showZero: true,
       locationIds: undefined,
+      page: 1,
+      limit: 50,
     })
   })
 
@@ -297,10 +303,17 @@ describe('transferStock', () => {
   })
 
   it('サービスエラー時に 500 を返す / returns 500 on service error', async () => {
-    // Arrange
+    // Arrange: バリデーションを通過する有効なボディを渡す / Pass valid body to pass controller validation
     vi.mocked(inventoryService.transferStock).mockRejectedValue(new Error('move failed'))
 
-    const req = mockReq({ body: {} })
+    const req = mockReq({
+      body: {
+        productId: 'p1',
+        fromLocationId: 'loc-from',
+        toLocationId: 'loc-to',
+        quantity: 1,
+      },
+    })
     const res = mockRes()
 
     // Act
@@ -320,10 +333,11 @@ describe('bulkAdjustStock', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('adjustments 配列をサービスに渡す / passes adjustments array to service', async () => {
-    // Arrange
+    // Arrange: コントローラーが検証する productId, locationId, adjustQuantity を使用する
+    // Use productId, locationId, adjustQuantity which the controller validates
     const adjustments = [
-      { productSku: 'SKU-A', locationCode: 'A-01', quantity: 10 },
-      { productSku: 'SKU-B', locationCode: 'B-01', quantity: 5 },
+      { productId: 'prod-A', locationId: 'loc-A01', adjustQuantity: 10 },
+      { productId: 'prod-B', locationId: 'loc-B01', adjustQuantity: 5 },
     ]
     const fakeResult = { message: '一括調整完了', successCount: 2, failCount: 0, errors: [] }
     vi.mocked(inventoryService.bulkAdjustStock).mockResolvedValue(fakeResult as any)
@@ -340,7 +354,7 @@ describe('bulkAdjustStock', () => {
   })
 
   it('一部失敗がある結果もそのまま返す / returns result with partial failures', async () => {
-    // Arrange
+    // Arrange: バリデーションを通過する有効な配列を渡す / Pass valid array to pass controller validation
     const fakeResult = {
       message: '一括調整完了（エラーあり）',
       successCount: 1,
@@ -349,7 +363,7 @@ describe('bulkAdjustStock', () => {
     }
     vi.mocked(inventoryService.bulkAdjustStock).mockResolvedValue(fakeResult as any)
 
-    const req = mockReq({ body: { adjustments: [] } })
+    const req = mockReq({ body: { adjustments: [{ productId: 'prod-X', locationId: 'loc-X', adjustQuantity: 1 }] } })
     const res = mockRes()
 
     // Act

@@ -124,21 +124,26 @@ describe('inventoryService', () => {
   // ─── listStock / 在庫一覧 ─────────────────────────────────────────────────
 
   describe('listStock / 在庫一覧取得', () => {
+    // $facet パイプライン用のデフォルトモックレスポンス
+    // $facet パイプラインのデフォルトモックレスポンス
+    const facetResult = [{ metadata: [], data: [] }];
+
     it('フィルタなしで aggregate を呼ぶこと / calls aggregate without filters', async () => {
       const { StockQuant } = await import('@/models/stockQuant');
-      vi.mocked(StockQuant.aggregate).mockResolvedValue([]);
+      vi.mocked(StockQuant.aggregate).mockResolvedValue(facetResult);
 
       const { listStock } = await import('../inventoryService');
       const result = await listStock({});
 
       expect(StockQuant.aggregate).toHaveBeenCalledOnce();
-      expect(result).toEqual([]);
+      // 戻り値はページネーション付きオブジェクト / 返回值为带分页的对象
+      expect(result).toMatchObject({ items: [], total: 0, page: 1, limit: 50 });
     });
 
     it('productId フィルタで ObjectId を生成すること / builds ObjectId for productId', async () => {
       const { StockQuant } = await import('@/models/stockQuant');
-      const mockData = [{ productId: oid(), quantity: 5 }];
-      vi.mocked(StockQuant.aggregate).mockResolvedValue(mockData);
+      const mockItem = { productId: oid(), quantity: 5 };
+      vi.mocked(StockQuant.aggregate).mockResolvedValue([{ metadata: [{ total: 1 }], data: [mockItem] }]);
 
       const { listStock } = await import('../inventoryService');
       const productId = String(oid());
@@ -149,12 +154,12 @@ describe('inventoryService', () => {
       // aggregate に渡されるパイプラインの最初の $match に productId が含まれること
       const pipeline = vi.mocked(StockQuant.aggregate).mock.calls[0][0] as any[];
       expect(pipeline[0].$match.productId).toBeInstanceOf(mongoose.Types.ObjectId);
-      expect(result).toEqual(mockData);
+      expect(result).toMatchObject({ items: [mockItem], total: 1 });
     });
 
     it('productSku フィルタで正規表現を使うこと / uses regex for productSku', async () => {
       const { StockQuant } = await import('@/models/stockQuant');
-      vi.mocked(StockQuant.aggregate).mockResolvedValue([]);
+      vi.mocked(StockQuant.aggregate).mockResolvedValue(facetResult);
 
       const { listStock } = await import('../inventoryService');
       await listStock({ productSku: 'SKU-' });
@@ -165,7 +170,7 @@ describe('inventoryService', () => {
 
     it('locationId フィルタで ObjectId を生成すること / builds ObjectId for locationId', async () => {
       const { StockQuant } = await import('@/models/stockQuant');
-      vi.mocked(StockQuant.aggregate).mockResolvedValue([]);
+      vi.mocked(StockQuant.aggregate).mockResolvedValue(facetResult);
 
       const { listStock } = await import('../inventoryService');
       const locationId = String(oid());
@@ -177,7 +182,7 @@ describe('inventoryService', () => {
 
     it('locationIds フィルタで $in を使うこと / uses $in for locationIds', async () => {
       const { StockQuant } = await import('@/models/stockQuant');
-      vi.mocked(StockQuant.aggregate).mockResolvedValue([]);
+      vi.mocked(StockQuant.aggregate).mockResolvedValue(facetResult);
 
       const { listStock } = await import('../inventoryService');
       const locationIds = [String(oid()), String(oid())];
@@ -190,7 +195,7 @@ describe('inventoryService', () => {
 
     it('showZero=true のとき数量フィルタを含めないこと / skips quantity filter when showZero=true', async () => {
       const { StockQuant } = await import('@/models/stockQuant');
-      vi.mocked(StockQuant.aggregate).mockResolvedValue([]);
+      vi.mocked(StockQuant.aggregate).mockResolvedValue(facetResult);
 
       const { listStock } = await import('../inventoryService');
       await listStock({ showZero: true });
@@ -201,7 +206,7 @@ describe('inventoryService', () => {
 
     it('showZero=false(デフォルト) のとき $gt:0 フィルタを含むこと / includes $gt:0 filter by default', async () => {
       const { StockQuant } = await import('@/models/stockQuant');
-      vi.mocked(StockQuant.aggregate).mockResolvedValue([]);
+      vi.mocked(StockQuant.aggregate).mockResolvedValue(facetResult);
 
       const { listStock } = await import('../inventoryService');
       await listStock({ showZero: false });
@@ -212,7 +217,7 @@ describe('inventoryService', () => {
 
     it('locationIds が空配列のとき locationId フィルタを設定しないこと / does not set locationId filter for empty locationIds', async () => {
       const { StockQuant } = await import('@/models/stockQuant');
-      vi.mocked(StockQuant.aggregate).mockResolvedValue([]);
+      vi.mocked(StockQuant.aggregate).mockResolvedValue(facetResult);
 
       const { listStock } = await import('../inventoryService');
       await listStock({ locationIds: [] });
@@ -225,20 +230,25 @@ describe('inventoryService', () => {
   // ─── getInventorySummary / 在庫集計 ──────────────────────────────────────
 
   describe('getInventorySummary / 在庫集計', () => {
+    // $facet パイプライン用のデフォルトモックレスポンス
+    // $facet パイプラインのデフォルトモックレスポンス
+    const facetResult = [{ metadata: [], data: [] }];
+
     it('フィルタなしで aggregate を呼ぶこと / calls aggregate without search filter', async () => {
       const { StockQuant } = await import('@/models/stockQuant');
-      vi.mocked(StockQuant.aggregate).mockResolvedValue([]);
+      vi.mocked(StockQuant.aggregate).mockResolvedValue(facetResult);
 
       const { getInventorySummary } = await import('../inventoryService');
       const result = await getInventorySummary({});
 
       expect(StockQuant.aggregate).toHaveBeenCalledOnce();
-      expect(result).toEqual([]);
+      // 戻り値はページネーション付きオブジェクト / 返回值为带分页的对象
+      expect(result).toMatchObject({ items: [], total: 0, page: 1, limit: 50 });
     });
 
     it('search フィルタで productSku 正規表現を使うこと / uses regex for search filter', async () => {
       const { StockQuant } = await import('@/models/stockQuant');
-      vi.mocked(StockQuant.aggregate).mockResolvedValue([]);
+      vi.mocked(StockQuant.aggregate).mockResolvedValue(facetResult);
 
       const { getInventorySummary } = await import('../inventoryService');
       await getInventorySummary({ search: 'ABC' });
@@ -249,23 +259,22 @@ describe('inventoryService', () => {
 
     it('集計結果を返すこと / returns aggregated results', async () => {
       const { StockQuant } = await import('@/models/stockQuant');
-      const mockSummary = [
-        {
-          productId: oid(),
-          productSku: 'SKU-001',
-          totalQuantity: 100,
-          totalReserved: 10,
-          totalAvailable: 90,
-          locationCount: 3,
-          isBelowSafety: false,
-        },
-      ];
-      vi.mocked(StockQuant.aggregate).mockResolvedValue(mockSummary);
+      const mockItem = {
+        productId: oid(),
+        productSku: 'SKU-001',
+        totalQuantity: 100,
+        totalReserved: 10,
+        totalAvailable: 90,
+        locationCount: 3,
+        isBelowSafety: false,
+      };
+      // $facet 形式で返す / Return in $facet format
+      vi.mocked(StockQuant.aggregate).mockResolvedValue([{ metadata: [{ total: 1 }], data: [mockItem] }]);
 
       const { getInventorySummary } = await import('../inventoryService');
       const result = await getInventorySummary({});
 
-      expect(result).toEqual(mockSummary);
+      expect(result).toMatchObject({ items: [mockItem], total: 1 });
     });
   });
 

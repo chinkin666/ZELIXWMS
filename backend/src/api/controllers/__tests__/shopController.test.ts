@@ -49,6 +49,8 @@ const mockReq = (overrides = {}) =>
     params: {},
     body: {},
     headers: { 'x-tenant-id': 'T1' },
+    // getTenantId は req.user.tenantId を使用する / getTenantId uses req.user.tenantId
+    user: { tenantId: 'T1' },
     ...overrides,
   }) as any
 
