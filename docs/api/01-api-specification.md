@@ -462,3 +462,63 @@ X-Request-ID: 7c9e6679-7425-40de-944b-e07fc1f90ae7
   }
 }
 ```
+
+---
+
+## API 権限マトリクス / API 权限矩阵
+
+> 2026-03-21 セキュリティ強化により追加 / 2026-03-21 安全加固后添加
+
+### 認証レベル / 认证级别
+
+| レベル / 级别 | 説明 / 说明 |
+|---|---|
+| **Public** | 認証不要 / 无需认证 (`/health`, `/health/liveness`, `/health/readiness`) |
+| **Auth** | JWT トークン必須 / 需要 JWT 令牌 |
+| **Role: admin** | 管理者のみ / 仅管理员 |
+| **Role: admin,manager** | 管理者 + マネージャー / 管理员 + 经理 |
+
+### 拡張システム / 扩展系统 (`/api/extensions/...`)
+
+| エンドポイント / 端点 | メソッド / 方法 | 権限 / 权限 |
+|---|---|---|
+| `/extensions/hooks` | GET | Auth |
+| `/extensions/logs` | GET | Auth |
+| `/extensions/webhooks` | GET | Auth + Feature Flag |
+| `/extensions/webhooks` | POST/PUT/DELETE | Auth + Feature Flag + **admin/manager** |
+| `/extensions/webhooks/:id/test` | POST | Auth + Feature Flag + **admin/manager** |
+| `/extensions/scripts/*` | ALL | Auth + Feature Flag + **admin** |
+| `/extensions/custom-fields` | GET | Auth |
+| `/extensions/custom-fields` | POST/PUT/DELETE | Auth + **admin/manager** |
+| `/extensions/feature-flags/status` | GET | Auth |
+| `/extensions/feature-flags` | GET/POST/PUT/DELETE | Auth + **admin** |
+| `/extensions/feature-flags/:id/toggle` | POST | Auth + **admin** |
+| `/extensions/feature-flags/:id/tenant-override` | POST/DELETE | Auth + **admin** |
+| `/extensions/queues/*` | ALL | Auth + **admin** |
+| `/extensions/plugins/*` | ALL | Auth + Feature Flag |
+
+### 管理ダッシュボード / 管理仪表板
+
+| エンドポイント / 端点 | メソッド / 方法 | 権限 / 权限 |
+|---|---|---|
+| `/api/admin/dashboard` | GET | Auth + **admin** |
+
+### ユーザー管理 / 用户管理
+
+| エンドポイント / 端点 | メソッド / 方法 | 権限 / 权限 | 備考 / 备注 |
+|---|---|---|---|
+| `/api/users` | GET | Auth + **admin/manager** | テナント分離 / 租户隔离 |
+| `/api/users` | POST | Auth + **admin/manager** | パスワード最小8文字 / 密码最少8字符 |
+| `/api/users/:id` | GET/PUT/DELETE | Auth + **admin/manager** | テナント分離 / 租户隔离 |
+| `/api/users/:id/change-password` | POST | Auth | テナント分離 / 租户隔离、パスワード最小8文字 |
+
+### セキュリティ仕様 / 安全规格
+
+| 項目 / 项目 | 仕様 / 规格 |
+|---|---|
+| JWT アルゴリズム / 算法 | **HS256 固定** (アルゴリズム混乱攻撃防止 / 防止算法混淆攻击) |
+| JWT_SECRET | 本番未設定時は起動拒否 / 生产环境未设置时拒绝启动 |
+| ログイン試行制限 / 登录尝试限制 | 同一アカウント: 15分間で5回まで (429) / 同一账户: 15分钟内最多5次 |
+| IP レート制限 / IP 速率限制 | 認証: 20 req/15min、全体: 1000 req/15min、書込: 200 req/15min |
+| パスワード最小長 / 密码最小长度 | **8 文字 / 8 字符**（全エンドポイント統一 / 全端点统一） |
+| 開発モード / 开发模式 | トークン無し時のみデフォルトユーザー注入 / 仅无 token 时注入默认用户 |

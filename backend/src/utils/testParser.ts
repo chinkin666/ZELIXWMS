@@ -1,10 +1,14 @@
 /**
  * 临时测试脚本：验证解析器是否正确解析格式文件
+ * テスト用スクリプト：パーサーがフォーマットファイルを正しく解析するか検証
+ *
+ * 使い方 / 使用方法: npx ts-node -r tsconfig-paths/register src/utils/testParser.ts
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import { parseFormatFile } from './carrierFormatParser';
+import { logger } from '@/lib/logger';
 
 const projectRoot = path.resolve(process.cwd(), '..');
 const carrierFormatDir = path.join(projectRoot, 'carrier-format');
@@ -14,7 +18,7 @@ const formatFileName = files.find(
 );
 
 if (!formatFileName) {
-  console.error('Format file not found');
+  logger.error('Format file not found / フォーマットファイルが見つかりません');
   process.exit(1);
 }
 
@@ -23,16 +27,18 @@ const formatFileContent = fs.readFileSync(formatFilePath, 'utf-8');
 
 const columns = parseFormatFile(formatFileContent);
 
-console.log(`\n总共解析了 ${columns.length} 个列\n`);
-console.log('前10个列的解析结果：\n');
+logger.info({ total: columns.length }, 'Parsed columns / 解析された列数');
 
 columns.slice(0, 10).forEach((col, index) => {
-  console.log(`${index + 1}. 列名: "${col.name}"`);
-  console.log(`   描述: ${col.description?.substring(0, 100) || '(无)'}...`);
-  console.log(`   类型: ${col.type}`);
-  console.log(`   最大宽度: ${col.maxWidth || '(无限制)'}`);
-  console.log(`   必须: ${col.required}`);
-  console.log(`   用户可上传: ${col.userUploadable}`);
-  console.log('');
+  logger.info(
+    {
+      index: index + 1,
+      name: col.name,
+      type: col.type,
+      maxWidth: col.maxWidth,
+      required: col.required,
+      userUploadable: col.userUploadable,
+    },
+    `Column ${index + 1}: ${col.name}`,
+  );
 });
-

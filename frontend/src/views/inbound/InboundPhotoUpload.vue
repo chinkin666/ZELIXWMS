@@ -85,7 +85,7 @@ import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import { apiFetch } from '@/api/base'
+import { apiFetch, getApiBaseUrl } from '@/api/base'
 
 interface InboundOrder {
   _id: string
@@ -144,7 +144,7 @@ const addFiles = (files: File[]) => {
 // プレビュー削除 / 删除预览
 const removePreview = (idx: number) => {
   const removed = previews.value[idx]
-  URL.revokeObjectURL(removed.url)
+  if (removed) URL.revokeObjectURL(removed.url)
   previews.value = previews.value.filter((_, i) => i !== idx)
 }
 

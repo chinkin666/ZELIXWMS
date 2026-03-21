@@ -55,7 +55,7 @@ import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import Table from '@/components/table/Table.vue'
 import type { TableColumn } from '@/types/table'
-import { apiFetch } from '@/api/base'
+import { apiFetch, getApiBaseUrl } from '@/api/base'
 
 interface LedgerRow {
   sku: string
