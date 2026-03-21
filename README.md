@@ -1,100 +1,92 @@
-# Nexand 出荷管理システム (ZELIXWMS)
+# ZELIX WMS — 日本 3PL 倉庫管理システム
+# ZELIX WMS — 日本 3PL 仓库管理系统
 
-## 環境構築
+> LOGIFAST 109 項目 100% 実装 / 1807 テスト / B2 Cloud 連携済み
 
-### 必要なもの
+## システム概要 / 系统概述
 
-- **Node.js** >= 20.x (`node -v` で確認)
-- **npm** >= 10.x
-- **MongoDB** >= 7.x (Community Edition)
+| アプリ | ポート | 説明 |
+|--------|--------|------|
+| Backend (Express + TS) | 4000 | REST API + GraphQL + BullMQ |
+| Frontend (Vue 3 + Vite) | 4001 | 倉庫オペレーター画面 |
+| Portal (Vue 3) | 4002 | 顧客ポータル |
+| Admin (Vue 3) | 4003 | プラットフォーム管理 |
+| MongoDB | 27017 | メインDB |
+| Redis | 6379 | キャッシュ + ジョブキュー |
 
-### MongoDB インストール
-
-**Windows:**
-1. https://www.mongodb.com/try/download/community からダウンロード
-2. インストーラーで「Complete」を選択
-3. 「Install MongoDB as a Service」のチェックを**外す**（手動起動するため）
-4. `mongod` にパスが通っていることを確認: `mongod --version`
-
-**Mac (Homebrew):**
-```bash
-brew tap mongodb/brew
-brew install mongodb-community
-```
-
-### セットアップ手順
+## クイックスタート / 快速开始
 
 ```bash
-# 1. 依存パッケージをインストール（ルートで実行、backend/frontend両方入る）
+# 1. DB 起動（Docker）
+docker compose up -d mongo redis
+
+# 2. 依存関係インストール
 npm install
 
-# 2. MongoDB を起動（データはプロジェクト内 local-db/mongo/ に保存される）
-npm run db
-
-# 3. 別ターミナルで backend の .env を作成
-cd backend
-cp env.example .env
-cd ..
-
-# 4a. データバックアップがある場合: ダンプから復元
-npm run db:restore
-
-# 4b. 初回（バックアップなし）: シードデータを投入（配送業者マスタ等）
+# 3. 初期データ投入
 npm run seed
 
-# 5. バックエンド起動（別ターミナル）
-npm run dev:backend
-
-# 6. フロントエンド起動（別ターミナル）
-npm run dev:frontend
+# 4. 全サービス起動
+./dev-start.sh
+# または個別:
+npm run dev:backend    # :4000
+npm run dev:frontend   # :4001
 ```
 
-### 起動に必要なターミナル（3つ）
+ブラウザで http://localhost:4001 を開く（dev mode は自動ログイン）
 
-| ターミナル | コマンド | 説明 |
-|-----------|---------|------|
-| 1 | `npm run db` | MongoDB (port 27017) |
-| 2 | `npm run dev:backend` | Backend API (port 4000) |
-| 3 | `npm run dev:frontend` | Frontend dev server (port 5173) |
+## 主要機能 / 主要功能
 
-### データベースについて
+| 区分 | 機能数 | 内容 |
+|------|--------|------|
+| 入庫管理 | 19 | CSV取込/検品/棚入れ/差異管理/帳票/LOGIFAST全フィールド |
+| 出荷管理 | 38 | 個別・一括登録/B2 Cloud/検品/ピッキング/配完管理 |
+| 在庫管理 | 18 | 一覧/調整/移動/補充管理/受払/倉庫種別フィルター |
+| 返品管理 | 6 | 作成/検品/確定/請求 |
+| 棚卸管理 | 棚卸 | 作成/カウント/差異/確定 |
+| 請求管理 | 4 | 月次/日次/保管料/作業チャージ |
+| 日次管理 | 3 | 日報/統計/業績レポート |
+| 設定 | 30+ | マスタ/配送/帳票/拡張/ログ |
 
-- データは `local-db/mongo/` ディレクトリに保存されます（`.gitignore` 対象）
-- `local-db/dump/` にポータブルな BSON バックアップが保存されます（git 管理対象）
-- 別PCでセットアップする場合は `npm run db:restore` で復元できます
-- MongoDB Compass で接続: `mongodb://localhost:27017/nexand-shipment`
+## 技術スタック / 技术栈
 
-### データバックアップ・復元
+**Backend:** Express.js + TypeScript + MongoDB + Mongoose + Zod + BullMQ + Redis
+**Frontend:** Vue 3 + Vite + Pinia + Element Plus
+**連携:** ヤマト B2 Cloud API / 佐川 e飛伝Ⅲ
+**DevOps:** Docker Compose + GitHub Actions CI/CD
+
+## ドキュメント / 文档
+
+| ドキュメント | 説明 |
+|-------------|------|
+| `docs/devlog.md` | 開発記録（時系列） |
+| `docs/migration/` | **NestJS + PostgreSQL 移行設計（6文書）** |
+| `docs/extension/` | 拡張アーキテクチャ（Phase 1-12） |
+| `CLAUDE.md` | AI 開発ルール |
+| `backend/docs/` | API 参考 |
+
+## 移行計画 / 迁移计划
+
+> 現在 Express + MongoDB → **NestJS + PostgreSQL (Supabase)** への移行を計画中
+
+詳細は `docs/migration/` を参照：
+- 01-requirements.md: 要件定義
+- 02-database-design.md: PostgreSQL スキーマ設計
+- 03-backend-architecture.md: NestJS アーキテクチャ
+- 04-api-mapping.md: API マッピング
+- 05-development-guide.md: 開発ガイド
+- 06-migration-plan.md: 3 週間実施計画
+
+## テスト / 测试
 
 ```bash
-# データベースを local-db/dump/ に BSON エクスポート
-npm run db:dump
+# Backend (1454 tests)
+cd backend && npx vitest run
 
-# local-db/dump/ から データベースへ復元
-npm run db:restore
+# Frontend (353 tests)
+cd frontend && npx vitest run
 ```
 
-> **運用フロー**: 作業後に `npm run db:dump` → git commit → 別PCで `npm run db:restore` でデータを持ち運べます。
+## ライセンス / License
 
-### よく使うコマンド
-
-```bash
-npm run db              # MongoDB 起動
-npm run dev:backend     # バックエンド起動
-npm run dev:frontend    # フロントエンド起動
-npm run seed            # シードデータ投入（初回のみ）
-npm run db:dump         # データベースをダンプ（local-db/dump/）
-npm run db:restore      # ダンプからデータベースを復元
-```
-
----
-
-## 開発規範
-
-### 現在のフェーズ
-
-**快速開発フェーズ** - 以下のルールに従ってください：
-
-1. **旧バージョンとの互換性は不要** - 既存のデータ構造やAPIとの後方互換性を維持する必要はありません
-2. **シンプルな実装を優先** - 将来の拡張性よりも、現在の要件を満たすシンプルな実装を選択してください
-3. **レガシーコードの削除OK** - 使用されていない旧構造のコードは積極的に削除してください
+Private — LogiFast Inc.
