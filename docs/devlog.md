@@ -3,6 +3,41 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-21] NestJS API 322 endpoints + 51 modules 完全実装
+
+**変更種別 / 变更类型**: feat
+**影響範囲 / 影响范围**: backend-nest/src/ (51 modules, 226 source files, 322 endpoints)
+
+### docs/migration/04-api-mapping.md 対比実装
+- clients sub-entities: sub-clients, shops, customers, suppliers, order-source-companies
+- workflow endpoints: inbound (confirm/receive/complete/cancel), shipment (confirm/ship/bulk), returns (receive/complete/cancel)
+- billing expansion: shipping-rates, invoices, work-charges full CRUD
+- extensions expansion: plugins, scripts, custom-fields, auto-processing-rules
+- templates: email-templates, form-templates, print-templates, mapping-configs
+- warehouse-ops: lots, inspections, labeling-tasks, cycle-counts, outbound-requests
+- integrations: fba, rsl, sagawa, carrier-automation, passthrough
+- monitoring: api-logs, operation-logs, inventory-ledger, inventory-categories
+- products: search, barcode, bulk-update/delete, import/export
+- inventory: adjust, transfer, bulk-adjust, movements, aging, locations tree
+- auth: portal login/register, logout, refresh-token
+- dashboard: stats, inventory-summary, orders-summary
+- kpi: accuracy-rate, fulfillment-rate, throughput
+- waves/tasks: release, complete, cancel, assign workflow
+
+### 最終統計 / 最终统计
+| 指標 | 数値 |
+|------|------|
+| NestJS modules | **51** |
+| NestJS source files | **226** |
+| NestJS endpoints | **322** |
+| NestJS tests | **35 suites / 308 tests** |
+| NestJS DB tables | **69** |
+| Express tests | **137 suites / 2835 tests** |
+| **テスト合計** | **172 suites / 3143 tests / ALL PASS** |
+| NestJS build | **0 errors** |
+
+---
+
 ## [2026-03-21] 全インフラ完成：Swagger + BullMQ + EventEmitter + Docker + CI
 
 **変更種別 / 变更类型**: feat + ci
