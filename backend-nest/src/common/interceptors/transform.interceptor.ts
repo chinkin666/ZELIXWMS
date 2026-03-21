@@ -13,7 +13,7 @@ export class TransformInterceptor implements NestInterceptor {
         if (Array.isArray(data)) return data.map(this.addIdAlias);
         // items 配列を持つページネーション / 带items数组的分页
         if (data.items && Array.isArray(data.items)) {
-          data.items = data.items.map(this.addIdAlias);
+          return this.addIdAlias({ ...data, items: data.items.map(this.addIdAlias) });
         }
         return this.addIdAlias(data);
       }),
@@ -22,7 +22,7 @@ export class TransformInterceptor implements NestInterceptor {
 
   private addIdAlias(obj: any): any {
     if (obj && typeof obj === 'object' && obj.id && !obj._id) {
-      obj._id = obj.id;
+      return { ...obj, _id: obj.id };
     }
     return obj;
   }

@@ -40,6 +40,123 @@ export const WMS_ERROR_CODES = {
   TENANT_MISMATCH: { code: 'TENANT-001', status: 403, message: 'Tenant mismatch' },
   TENANT_NOT_FOUND: { code: 'TENANT-002', status: 404, message: 'Tenant not found' },
 
+  // FBA Amazon FBA / Amazon FBA
+  FBA_PLAN_NOT_FOUND: { code: 'FBA-001', status: 404, message: 'FBA shipment plan not found' },
+  FBA_BOX_NOT_FOUND: { code: 'FBA-002', status: 404, message: 'FBA box not found' },
+
+  // RSL 楽天RSL / 乐天RSL
+  RSL_PLAN_NOT_FOUND: { code: 'RSL-001', status: 404, message: 'RSL shipment plan not found' },
+  RSL_ITEM_NOT_FOUND: { code: 'RSL-002', status: 404, message: 'RSL item not found' },
+
+  // Passthrough パススルー / 直通
+  PASSTHROUGH_NOT_FOUND: { code: 'PASS-001', status: 404, message: 'Passthrough order not found' },
+  PASSTHROUGH_INVALID_STATUS: { code: 'PASS-002', status: 422, message: 'Invalid passthrough status transition' },
+
+  // Import インポート / 导入
+  IMPORT_FILE_TOO_LARGE: { code: 'IMP-001', status: 413, message: 'Import file exceeds 10MB limit' },
+  IMPORT_INVALID_HEADERS: { code: 'IMP-002', status: 422, message: 'Invalid CSV headers' },
+  IMPORT_VALIDATION_FAILED: { code: 'IMP-003', status: 422, message: 'CSV validation failed' },
+
+  // Photo 写真 / 照片
+  PHOTO_NOT_FOUND: { code: 'PHO-001', status: 404, message: 'Photo not found' },
+  PHOTO_TOO_LARGE: { code: 'PHO-002', status: 413, message: 'Photo exceeds 5MB limit' },
+  PHOTO_INVALID_TYPE: { code: 'PHO-003', status: 422, message: 'Invalid file type — only images allowed' },
+  PHOTO_STORAGE_FULL: { code: 'PHO-004', status: 507, message: 'Storage capacity exceeded' },
+
+  // Workflow ワークフロー / 工作流
+  WORKFLOW_NOT_FOUND: { code: 'WF-001', status: 404, message: 'Workflow not found' },
+  WORKFLOW_DISABLED: { code: 'WF-002', status: 422, message: 'Workflow is disabled' },
+  SLOTTING_RULE_NOT_FOUND: { code: 'WF-003', status: 404, message: 'Slotting rule not found' },
+
+  // Auth 認証追加 / 认证追加
+  AUTH_INVALID_CREDENTIALS: { code: 'AUTH-005', status: 401, message: 'Invalid credentials' },
+  AUTH_DUPLICATE_EMAIL: { code: 'AUTH-006', status: 409, message: 'Email already exists' },
+
+  // User ユーザー / 用户
+  USER_NOT_FOUND: { code: 'USER-001', status: 404, message: 'User not found' },
+
+  // Warehouse 倉庫 / 仓库
+  WAREHOUSE_NOT_FOUND: { code: 'WH-001', status: 404, message: 'Warehouse not found' },
+
+  // Wave ウェーブ / 波次
+  WAVE_NOT_FOUND: { code: 'WAVE-001', status: 404, message: 'Wave not found' },
+  WAVE_INVALID_STATUS: { code: 'WAVE-002', status: 422, message: 'Invalid wave status transition' },
+
+  // Warehouse Task 倉庫タスク / 仓库任务
+  TASK_NOT_FOUND: { code: 'TASK-001', status: 404, message: 'Warehouse task not found' },
+  TASK_INVALID_STATUS: { code: 'TASK-002', status: 422, message: 'Invalid task status transition' },
+
+  // Stocktaking 棚卸 / 盘点
+  STOCKTAKING_NOT_FOUND: { code: 'STK-001', status: 404, message: 'Stocktaking order not found' },
+
+  // Return 返品 / 退货
+  RETURN_NOT_FOUND: { code: 'RET-001', status: 404, message: 'Return order not found' },
+  RETURN_INVALID_STATUS: { code: 'RET-002', status: 422, message: 'Invalid return status transition' },
+
+  // Material 資材 / 物料
+  MATERIAL_NOT_FOUND: { code: 'MAT-001', status: 404, message: 'Material not found' },
+
+  // Client 顧客 / 客户
+  CLIENT_NOT_FOUND: { code: 'CLI-001', status: 404, message: 'Client not found' },
+  CUSTOMER_NOT_FOUND: { code: 'CLI-002', status: 404, message: 'Customer not found' },
+  SUPPLIER_NOT_FOUND: { code: 'CLI-003', status: 404, message: 'Supplier not found' },
+  SUBCLIENT_NOT_FOUND: { code: 'CLI-004', status: 404, message: 'Sub-client not found' },
+  SHOP_NOT_FOUND: { code: 'CLI-005', status: 404, message: 'Shop not found' },
+  ORDER_SOURCE_NOT_FOUND: { code: 'CLI-006', status: 404, message: 'Order source company not found' },
+
+  // Extensions 拡張 / 扩展
+  EXT_WEBHOOK_NOT_FOUND: { code: 'EXT-001', status: 404, message: 'Webhook not found' },
+  EXT_FLAG_NOT_FOUND: { code: 'EXT-002', status: 404, message: 'Feature flag not found' },
+  EXT_PLUGIN_NOT_FOUND: { code: 'EXT-003', status: 404, message: 'Plugin not found' },
+  EXT_SCRIPT_NOT_FOUND: { code: 'EXT-004', status: 404, message: 'Script not found' },
+  EXT_CUSTOM_FIELD_NOT_FOUND: { code: 'EXT-005', status: 404, message: 'Custom field not found' },
+  EXT_AUTO_RULE_NOT_FOUND: { code: 'EXT-006', status: 404, message: 'Auto-processing rule not found' },
+
+  // Template テンプレート / 模板
+  TEMPLATE_NOT_FOUND: { code: 'TMPL-001', status: 404, message: 'Template not found' },
+
+  // Notification 通知 / 通知
+  NOTIFICATION_NOT_FOUND: { code: 'NOTIF-001', status: 404, message: 'Notification not found' },
+
+  // Daily Report 日次レポート / 日报
+  DAILY_REPORT_NOT_FOUND: { code: 'RPT-001', status: 404, message: 'Daily report not found' },
+
+  // Lot ロット / 批次
+  LOT_NOT_FOUND: { code: 'LOT-001', status: 404, message: 'Lot not found' },
+
+  // Inventory Category 在庫区分 / 库存分类
+  INV_CATEGORY_NOT_FOUND: { code: 'INV-005', status: 404, message: 'Inventory category not found' },
+
+  // Labeling Task ラベリングタスク / 贴标任务
+  LABELING_TASK_NOT_FOUND: { code: 'LBL-001', status: 404, message: 'Labeling task not found' },
+
+  // Outbound Request 出庫依頼 / 出库请求
+  OUTBOUND_NOT_FOUND: { code: 'OUT-001', status: 404, message: 'Outbound request not found' },
+
+  // Inspection 検品 / 检验
+  INSPECTION_NOT_FOUND: { code: 'INSP-001', status: 404, message: 'Inspection not found' },
+
+  // Cycle Count 循環棚卸 / 循环盘点
+  CYCLE_COUNT_NOT_FOUND: { code: 'CC-001', status: 404, message: 'Cycle count not found' },
+
+  // Set Product セット商品 / 组合商品
+  SET_PRODUCT_NOT_FOUND: { code: 'SETP-001', status: 404, message: 'Set product not found' },
+
+  // Serial Number シリアル番号 / 序列号
+  SERIAL_NOT_FOUND: { code: 'SER-001', status: 404, message: 'Serial number not found' },
+
+  // Operation Log 操作ログ / 操作日志
+  OPERATION_LOG_NOT_FOUND: { code: 'OPLOG-001', status: 404, message: 'Operation log not found' },
+
+  // API Log APIログ / API日志
+  API_LOG_NOT_FOUND: { code: 'APILOG-001', status: 404, message: 'API log not found' },
+
+  // Exception Report 異常報告 / 异常报告
+  EXCEPTION_REPORT_NOT_FOUND: { code: 'EXCPT-001', status: 404, message: 'Exception report not found' },
+
+  // Carrier Automation 配送業者自動化 / 配送业者自动化
+  CARRIER_AUTO_NOT_FOUND: { code: 'CARR-004', status: 404, message: 'Carrier automation config not found' },
+
   // General 一般 / 通用
   DUPLICATE_RESOURCE: { code: 'GEN-001', status: 409, message: 'Resource already exists' },
   VALIDATION_ERROR: { code: 'GEN-002', status: 422, message: 'Validation failed' },
