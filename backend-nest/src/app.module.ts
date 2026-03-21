@@ -67,6 +67,8 @@ import { TasksModule } from './tasks/tasks.module.js';
 import { StocktakingOrdersModule } from './stocktaking-orders/stocktaking-orders.module.js';
 import { WmsSchedulesModule } from './wms-schedules/wms-schedules.module.js';
 import { NotificationPreferencesModule } from './notification-preferences/notification-preferences.module.js';
+import { PhotosModule } from './photos/photos.module.js';
+import { WorkflowsModule } from './workflows/workflows.module.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
 import envConfig from './config/env.js';
@@ -137,6 +139,8 @@ import envConfig from './config/env.js';
     StocktakingOrdersModule,
     WmsSchedulesModule,
     NotificationPreferencesModule,
+    PhotosModule,
+    WorkflowsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
