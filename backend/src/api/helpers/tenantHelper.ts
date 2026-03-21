@@ -29,6 +29,8 @@ export function getTenantId(req: Request): string {
  * - フロントの倉庫セレクター選択値も考慮
  *   也考虑前端仓库选择器的值
  */
+// TODO: warehouseId がテナントに属しているか検証を追加予定
+// TODO: 计划添加warehouseId是否属于当前租户的验证
 export function getWarehouseFilter(req: Request): string[] {
   const role = req.user?.role
   // admin/manager は全倉庫 / admin/manager 全仓库

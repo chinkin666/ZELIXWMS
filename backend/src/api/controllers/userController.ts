@@ -98,8 +98,9 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
       res.status(400).json({ message: 'メールアドレスは必須です / 邮箱为必填项' });
       return;
     }
-    if (!password || typeof password !== 'string' || password.length < 6) {
-      res.status(400).json({ message: 'パスワードは6文字以上必須です / 密码至少6个字符' });
+    // パスワード最小長を authController と統一 / 密码最小长度与authController统一
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      res.status(400).json({ message: 'パスワードは8文字以上必須です / 密码至少8个字符' });
       return;
     }
     if (!displayName || typeof displayName !== 'string' || !displayName.trim()) {

@@ -52,6 +52,8 @@ function buildUserResponse(user: InstanceType<typeof User>) {
  * @body password - 密码 / パスワード
  * @body tenantId - 租户ID（可选，默认 'default'） / テナントID（省略可、デフォルト 'default'）
  */
+// TODO: アカウント単位のログイン試行制限（Redis カウンター）を追加予定
+// TODO: 计划添加账户级别的登录尝试限制（Redis计数器）
 export async function login(req: Request, res: Response): Promise<void> {
   try {
     const { email, password, tenantId = 'default' } = req.body
