@@ -59,6 +59,7 @@ export async function fetchStocktakingOrder(id: string): Promise<StocktakingOrde
 }
 
 export async function createStocktakingOrder(data: {
+  warehouseId?: string
   type?: string
   targetLocations?: string[]
   targetProducts?: string[]

@@ -18,15 +18,26 @@ const baseUrl = getApiBaseUrl()
 const orders = ref<any[]>([])
 const loading = ref(false)
 
+// 検索 / 搜索
+const searchQuery = ref('')
+
+// ページネーション / 分页
+const page = ref(1)
+const limit = ref(20)
+const total = ref(0)
+
 async function loadOrders() {
   loading.value = true
   try {
+    const qp = new URLSearchParams({ status: 'processing', page: String(page.value), limit: String(limit.value) })
+    if (searchQuery.value.trim()) qp.set('search', searchQuery.value.trim())
     const res = await fetch(
-      `${baseUrl}/passthrough?status=processing&limit=50`,
+      `${baseUrl}/passthrough?${qp}`,
       { headers: { Authorization: `Bearer ${userStore.token}` } },
     )
     const data = await res.json()
     orders.value = data.data || []
+    total.value = data.total ?? data.data?.length ?? 0
   } catch (e) {
     console.error(e)
   } finally {
@@ -83,7 +94,17 @@ onMounted(loadOrders)
   <div>
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
       <h2 style="margin: 0">通過型作業タスク / 通过型作业任务</h2>
-      <el-button @click="loadOrders" :loading="loading">更新</el-button>
+      <div style="display: flex; gap: 8px; align-items: center">
+        <el-input
+          v-model="searchQuery"
+          placeholder="注文番号検索 / 搜索订单号"
+          clearable
+          style="width: 220px"
+          @keyup.enter="() => { page = 1; loadOrders() }"
+          @clear="() => { page = 1; loadOrders() }"
+        />
+        <el-button @click="loadOrders" :loading="loading">更新</el-button>
+      </div>
     </div>
 
     <div v-for="order in orders" :key="order._id" style="margin-bottom: 16px">
@@ -132,6 +153,17 @@ onMounted(loadOrders)
     </div>
 
     <el-empty v-if="!loading && orders.length === 0" description="作業中の予約はありません / 没有作业中的预定" />
+
+    <!-- ページネーション / 分页 -->
+    <div v-if="total > limit" style="display: flex; justify-content: center; margin-top: 16px">
+      <el-pagination
+        v-model:current-page="page"
+        :page-size="limit"
+        :total="total"
+        layout="prev, pager, next"
+        @current-change="loadOrders"
+      />
+    </div>
 
     <!-- 完了ダイアログ / 完成对话框 -->
     <el-dialog v-model="completingOrder" title="作業完了 / 作业完成" width="400px" :close-on-click-modal="false" @close="completingOrder = null">

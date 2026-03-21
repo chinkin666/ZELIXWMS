@@ -8,6 +8,14 @@
 
     <div class="form-card o-card">
       <div class="form-row">
+        <label class="form-label">{{ t('wms.stocktaking.warehouse', '倉庫') }} <span style="color: #f56c6c">*</span></label>
+        <select v-model="form.warehouseId" class="o-input" style="width:200px;">
+          <option value="">{{ t('wms.stocktaking.selectWarehousePlaceholder', '-- 倉庫を選択 / 选择仓库 --') }}</option>
+          <option v-for="wh in warehouses" :key="wh._id" :value="wh._id">{{ wh.code }} - {{ wh.name }}</option>
+        </select>
+      </div>
+
+      <div class="form-row">
         <label class="form-label">{{ t('wms.stocktaking.type', '棚卸タイプ') }}</label>
         <select v-model="form.type" class="o-input" style="width:200px;">
           <option value="full">{{ t('wms.stocktaking.typeFull', '全棚卸') }}</option>
@@ -58,9 +66,12 @@ import { onMounted, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
+import { ElMessage } from 'element-plus'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { createStocktakingOrder } from '@/api/stocktakingOrder'
+import { fetchWarehouses } from '@/api/warehouse'
+import type { Warehouse } from '@/api/warehouse'
 import { http } from '@/api/http'
 
 const { t } = useI18n()
@@ -69,13 +80,23 @@ const toast = useToast()
 const isSubmitting = ref(false)
 
 const form = reactive({
+  warehouseId: '',
   type: 'spot' as 'full' | 'cycle' | 'spot',
   scheduledDate: '',
   targetLocations: [] as string[],
   memo: '',
 })
 
+const warehouses = ref<Warehouse[]>([])
+
 const locations = ref<Array<{ _id: string; code: string; name: string }>>([])
+
+const loadWarehouses = async () => {
+  try {
+    const res = await fetchWarehouses({ isActive: 'true' })
+    warehouses.value = res.data || []
+  } catch { /* ignore */ }
+}
 
 const loadLocations = async () => {
   try {
@@ -100,9 +121,15 @@ const addLocation = (e: Event) => {
 }
 
 const handleCreate = async () => {
+  // バリデーション / 表单验证
+  if (!form.warehouseId) {
+    ElMessage.warning('倉庫を選択してください / 请选择仓库')
+    return
+  }
   isSubmitting.value = true
   try {
     const result = await createStocktakingOrder({
+      warehouseId: form.warehouseId,
       type: form.type,
       targetLocations: form.targetLocations.length > 0 ? form.targetLocations : undefined,
       scheduledDate: form.scheduledDate || undefined,
@@ -117,7 +144,10 @@ const handleCreate = async () => {
   }
 }
 
-onMounted(() => loadLocations())
+onMounted(() => {
+  loadWarehouses()
+  loadLocations()
+})
 </script>
 
 <style scoped>

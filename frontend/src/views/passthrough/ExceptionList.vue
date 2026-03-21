@@ -15,6 +15,11 @@ const loading = ref(false)
 const statusFilter = ref('')
 const slaInfo = ref<any>(null)
 
+// ページネーション / 分页
+const page = ref(1)
+const limit = ref(20)
+const total = ref(0)
+
 // 新規異常ダイアログ / 新建异常对话框
 const showCreateDialog = ref(false)
 const createForm = ref({
@@ -29,13 +34,15 @@ const createForm = ref({
 async function loadData() {
   loading.value = true
   try {
-    const params = statusFilter.value ? `?status=${statusFilter.value}&limit=50` : '?limit=50'
+    const qp = new URLSearchParams({ page: String(page.value), limit: String(limit.value) })
+    if (statusFilter.value) qp.set('status', statusFilter.value)
     const [reportsRes, slaRes] = await Promise.all([
-      fetch(`${baseUrl}/exceptions${params}`, { headers: { Authorization: `Bearer ${userStore.token}` } }),
+      fetch(`${baseUrl}/exceptions?${qp}`, { headers: { Authorization: `Bearer ${userStore.token}` } }),
       fetch(`${baseUrl}/exceptions/sla-status`, { headers: { Authorization: `Bearer ${userStore.token}` } }),
     ])
     const reportsData = await reportsRes.json()
     reports.value = reportsData.data || []
+    total.value = reportsData.total ?? reportsData.data?.length ?? 0
     slaInfo.value = await slaRes.json()
   } catch (e) { console.error(e) }
   finally { loading.value = false }
@@ -94,7 +101,7 @@ onMounted(loadData)
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
       <h2 style="margin: 0">異常報告 / 异常报告</h2>
       <div style="display: flex; gap: 8px">
-        <el-select v-model="statusFilter" style="width: 140px" @change="loadData" clearable placeholder="ステータス">
+        <el-select v-model="statusFilter" style="width: 140px" @change="() => { page = 1; loadData() }" clearable placeholder="ステータス">
           <el-option label="Open" value="open" />
           <el-option label="Notified" value="notified" />
           <el-option label="Acknowledged" value="acknowledged" />
@@ -153,6 +160,17 @@ onMounted(loadData)
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- ページネーション / 分页 -->
+    <div v-if="total > limit" style="display: flex; justify-content: center; margin-top: 16px">
+      <el-pagination
+        v-model:current-page="page"
+        :page-size="limit"
+        :total="total"
+        layout="prev, pager, next"
+        @current-change="loadData"
+      />
+    </div>
 
     <!-- 新規異常ダイアログ / 新建异常对话框 -->
     <el-dialog v-model="showCreateDialog" title="異常報告作成 / 新建异常报告" width="500px">
