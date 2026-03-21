@@ -2,6 +2,7 @@ import { Module, Global } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
+import * as schema from './schema/index.js';
 
 export const DRIZZLE = Symbol('DRIZZLE');
 
@@ -15,7 +16,7 @@ export const DRIZZLE = Symbol('DRIZZLE');
         const connectionString = config.get<string>('DATABASE_URL') ||
           'postgresql://postgres:postgres@localhost:54322/postgres';
         const client = postgres(connectionString);
-        return drizzle(client);
+        return drizzle(client, { schema });
       },
     },
   ],
