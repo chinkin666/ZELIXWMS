@@ -9,6 +9,11 @@ import { WarehousesModule } from './warehouses/warehouses.module.js';
 import { InboundModule } from './inbound/inbound.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
 import { CarriersModule } from './carriers/carriers.module.js';
+import { ShipmentModule } from './shipment/shipment.module.js';
+import { BillingModule } from './billing/billing.module.js';
+import { ReturnsModule } from './returns/returns.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
+import { ExtensionsModule } from './extensions/extensions.module.js';
 import { AuthGuard } from './common/guards/auth.guard.js';
 import { TenantGuard } from './common/guards/tenant.guard.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
@@ -26,6 +31,11 @@ import envConfig from './config/env.js';
     InboundModule,
     InventoryModule,
     CarriersModule,
+    ShipmentModule,
+    BillingModule,
+    ReturnsModule,
+    NotificationsModule,
+    ExtensionsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

@@ -1,0 +1,79 @@
+// 返品コントローラ / 退货控制器
+import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
+import { ReturnsService } from './returns.service.js';
+import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
+import {
+  createReturnOrderSchema,
+  updateReturnOrderSchema,
+  type CreateReturnOrderDto,
+  type UpdateReturnOrderDto,
+} from './dto/create-return-order.dto.js';
+
+@Controller('api/return-orders')
+export class ReturnsController {
+  constructor(private readonly returnsService: ReturnsService) {}
+
+  // 返品オーダー一覧取得 / 获取退货订单列表
+  @Get()
+  findAll(
+    @TenantId() tenantId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('clientId') clientId?: string,
+  ) {
+    return this.returnsService.findAll(tenantId, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      status,
+      clientId,
+    });
+  }
+
+  // 返品オーダーID検索 / 按ID查找退货订单
+  @Get(':id')
+  findOne(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.returnsService.findById(tenantId, id);
+  }
+
+  // 返品オーダー明細行取得 / 获取退货订单明细行
+  @Get(':id/lines')
+  findLines(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.returnsService.findLines(tenantId, id);
+  }
+
+  // 返品オーダー作成 / 创建退货订单
+  @Post()
+  create(
+    @TenantId() tenantId: string,
+    @Body(new ZodValidationPipe(createReturnOrderSchema)) dto: CreateReturnOrderDto,
+  ) {
+    return this.returnsService.create(tenantId, dto);
+  }
+
+  // 返品オーダー更新 / 更新退货订单
+  @Put(':id')
+  update(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(updateReturnOrderSchema)) dto: UpdateReturnOrderDto,
+  ) {
+    return this.returnsService.update(tenantId, id, dto);
+  }
+
+  // 返品オーダー削除（論理削除）/ 删除退货订单（软删除）
+  @Delete(':id')
+  remove(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.returnsService.remove(tenantId, id);
+  }
+}
