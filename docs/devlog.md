@@ -3,6 +3,31 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-21] NestJS 全14モジュール実装完了（Phase 2-4）
+
+**変更種別 / 变更类型**: feat
+**影響範囲 / 影响范围**: backend-nest/src/ (14 new modules, 50+ files)
+**関連ドキュメント / 关联文档**: devlog.md, docs/migration/06-migration-plan.md
+
+### 内容 / 内容
+- NestJS Phase 1 完了: Drizzle スキーマ全16モジュール（65+ テーブル）
+  NestJS Phase 1 完成: Drizzle schema 全16模块（65+表）
+- NestJS Phase 2 完了: コアモジュール 5 件実装
+  NestJS Phase 2 完成: 核心模块 5 个实装
+  - clients, warehouses, inbound, inventory, carriers
+- NestJS Phase 3 完了: ビジネスモジュール 5 件実装
+  NestJS Phase 3 完成: 业务模块 5 个实装
+  - shipment, billing, returns, notifications, extensions
+- NestJS Phase 4 完了: 残りモジュール 4 件実装
+  NestJS Phase 4 完成: 剩余模块 4 个实装
+  - stocktaking, kpi, daily-reports, queue
+- 全モジュール: controller + service + DTO (Zod validation)
+- テナント分離、ページネーション、検索、ソフトデリート対応
+- NestJS ビルド成功（0 errors）
+- app.module.ts に全14モジュール登録済み
+
+---
+
 ## [2026-03-21] コントローラーテスト全網羅（+332 tests, 26 新規テストファイル）
 
 **変更種別 / 变更类型**: test

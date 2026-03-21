@@ -14,6 +14,10 @@ import { BillingModule } from './billing/billing.module.js';
 import { ReturnsModule } from './returns/returns.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { ExtensionsModule } from './extensions/extensions.module.js';
+import { StocktakingModule } from './stocktaking/stocktaking.module.js';
+import { KpiModule } from './kpi/kpi.module.js';
+import { DailyReportsModule } from './daily-reports/daily-reports.module.js';
+import { QueueModule } from './queue/queue.module.js';
 import { AuthGuard } from './common/guards/auth.guard.js';
 import { TenantGuard } from './common/guards/tenant.guard.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
@@ -36,6 +40,10 @@ import envConfig from './config/env.js';
     ReturnsModule,
     NotificationsModule,
     ExtensionsModule,
+    StocktakingModule,
+    KpiModule,
+    DailyReportsModule,
+    QueueModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
