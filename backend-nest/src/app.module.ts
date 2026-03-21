@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
 import { ProductsModule } from './products/products.module.js';
@@ -31,6 +32,7 @@ import { ClientPortalModule } from './client-portal/client-portal.module.js';
 import { IntegrationsModule } from './integrations/integrations.module.js';
 import { RenderModule } from './render/render.module.js';
 import { PeakModeModule } from './peak-mode/peak-mode.module.js';
+import { ListenersModule } from './common/listeners/listeners.module.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
 import envConfig from './config/env.js';
@@ -38,6 +40,7 @@ import envConfig from './config/env.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [envConfig] }),
+    EventEmitterModule.forRoot(),
     DatabaseModule,
     HealthModule,
     ProductsModule,
@@ -65,6 +68,7 @@ import envConfig from './config/env.js';
     IntegrationsModule,
     RenderModule,
     PeakModeModule,
+    ListenersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
