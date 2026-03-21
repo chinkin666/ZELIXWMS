@@ -3,6 +3,29 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-21] 全インフラ完成：Swagger + BullMQ + EventEmitter + Docker + CI
+
+**変更種別 / 变更类型**: feat + ci
+**影響範囲 / 影响范围**: backend-nest/, docker-compose.yml, .github/workflows/ci.yml
+
+### 追加実装 / 追加实现
+- **Swagger/OpenAPI**: /api-docs（開発環境）Bearer + API Key 認証
+- **BullMQ**: 7 queues + 3 processors (webhook/audit/notification)
+- **EventEmitter2**: @nestjs/event-emitter + 3 listeners (audit/webhook/notification)
+- **Dockerfile**: NestJS multi-stage build + non-root + healthcheck
+- **docker-compose**: backend-nest + PostgreSQL サービス追加
+- **Drizzle migration**: 全65テーブル 1097行 SQL 再生成
+- **CI/CD**: NestJS build + test を CI パイプラインに追加
+- **.env.example**: 環境変数テンプレート
+
+### 最終統計 / 最终统计
+- Express: **137 suites, 2835 tests**
+- NestJS: **35 suites, 308 tests**
+- **合計: 172 suites, 3143 tests, ALL PASSING**
+- NestJS: **181 .ts files, 30 modules, 65 DB tables**
+
+---
+
 ## [2026-03-21] docs 対比第2弾：共通基盤完全整備 + テスト3136件
 
 **変更種別 / 变更类型**: feat + test
