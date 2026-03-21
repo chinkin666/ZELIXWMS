@@ -515,8 +515,8 @@ const orderGroups = ref<OrderGroup[]>([])
 const orderGroupSelectorRef = ref<{ reloadCounts: () => Promise<void> } | null>(null)
 // Products
 const products = ref<Product[]>([])
-const showInspected = ref(false)
-const showPrinted = ref(false)
+const showInspected = ref(true)
+const showPrinted = ref(true)
 
 const handleCarrierChange = (carrierId: string) => {
   selectedCarrierId.value = carrierId
