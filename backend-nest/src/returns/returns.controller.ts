@@ -95,6 +95,32 @@ export class ReturnsController {
     return this.returnsService.cancel(tenantId, id);
   }
 
+  // 返品オーダー検品（inspecting状態更新）/ 退货订单检品（inspecting状态更新）
+  @Post(':id/inspect')
+  inspect(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+  }
+
+  // 返品オーダー再入庫（プレースホルダー）/ 退货订单重新入库（占位符）
+  @Post(':id/putback')
+  putback(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+  }
+
+  // 返品インポート（プレースホルダー）/ 退货导入（占位符）
+  @Post('import')
+  importOrders(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
   // 返品オーダー削除（論理削除）/ 删除退货订单（软删除）
   @Delete(':id')
   remove(

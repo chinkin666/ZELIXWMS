@@ -1,5 +1,5 @@
 // 商品コントローラ / 商品控制器
-import { Controller, Get, Post, Put, Delete, Param, Query, Body, UsePipes, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Param, Query, Body, UsePipes, ParseUUIDPipe } from '@nestjs/common';
 import { ProductsService } from './products.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
@@ -125,6 +125,25 @@ export class ProductsController {
     @Body(new ZodValidationPipe(updateProductSchema)) dto: UpdateProductDto,
   ) {
     return this.productsService.update(tenantId, id, dto);
+  }
+
+  // 商品部分更新（PUTのエイリアス）/ 商品部分更新（PUT的别名）
+  @Patch(':id')
+  partialUpdate(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateProductDto,
+  ) {
+    return this.productsService.update(tenantId, id, dto);
+  }
+
+  // 商品変更履歴取得（プレースホルダー）/ 获取商品变更历史（占位符）
+  @Get(':id/history')
+  getHistory(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { items: [], total: 0, productId: id, message: 'Not implemented yet / 未実装 / 尚未实现' };
   }
 
   // 商品削除（論理削除）/ 删除商品（软删除）

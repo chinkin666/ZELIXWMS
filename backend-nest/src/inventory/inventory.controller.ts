@@ -171,4 +171,67 @@ export class InventoryController {
   ) {
     return this.inventoryService.getStockByProduct(tenantId, productId);
   }
+
+  // 在庫概要ダッシュボード（プレースホルダー）/ 库存概要仪表盘（占位符）
+  @Get('overview')
+  getOverview(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // ロケーション使用率（プレースホルダー）/ 库位使用率（占位符）
+  @Get('location-usage')
+  getLocationUsage(@TenantId() tenantId: string) {
+    return { items: [], message: 'Not implemented yet / 未実装 / 尚未实现' };
+  }
+
+  // 在庫サマリー（プレースホルダー）/ 库存汇总（占位符）
+  @Get('stock/summary')
+  getStockSummary(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // 低在庫アラート（プレースホルダー）/ 低库存警报（占位符）
+  @Get('alerts/low-stock')
+  getLowStockAlerts(@TenantId() tenantId: string) {
+    return { items: [], total: 0, message: 'Not implemented yet / 未実装 / 尚未实现' };
+  }
+
+  // 注文引当（プレースホルダー）/ 订单预留（占位符）
+  @Post('reserve-orders')
+  reserveOrders(
+    @TenantId() tenantId: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // ゼロ在庫クリーンアップ（プレースホルダー）/ 零库存清理（占位符）
+  @Post('cleanup-zero')
+  cleanupZero(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // 在庫リビルド（プレースホルダー）/ 库存重建（占位符）
+  @Post('rebuild')
+  rebuild(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // 期限切れ引当解放（プレースホルダー）/ 释放过期预留（占位符）
+  @Post('release-expired-reservations')
+  releaseExpiredReservations(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // 在庫台帳サマリー（プレースホルダー）/ 库存台账汇总（占位符）
+  @Get('ledger-summary')
+  getLedgerSummary(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // 在庫エクスポート（プレースホルダー）/ 库存导出（占位符）
+  @Post('export')
+  exportInventory(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
 }

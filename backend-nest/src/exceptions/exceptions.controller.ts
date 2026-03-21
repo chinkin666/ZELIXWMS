@@ -1,5 +1,5 @@
 // 異常報告コントローラ / 异常报告控制器
-import { Controller, Get, Post, Put, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { ExceptionsService } from './exceptions.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 
@@ -50,5 +50,15 @@ export class ExceptionsController {
     @Body() dto: Record<string, unknown>,
   ) {
     return this.service.update(tenantId, id, dto);
+  }
+
+  // 異常解決 / 解决异常
+  @Patch(':id/resolve')
+  resolve(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', exceptionId: id };
   }
 }

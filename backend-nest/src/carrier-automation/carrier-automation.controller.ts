@@ -53,4 +53,46 @@ export class CarrierAutomationController {
   ) {
     return this.carrierAutomationService.exportYamatoB2(tenantId, dto);
   }
+
+  // ヤマトB2ログイン（プレースホルダー）/ 大和B2登录（占位符）
+  @Post('yamato-b2/login')
+  loginYamatoB2(
+    @TenantId() tenantId: string,
+    @Body() dto: Record<string, any>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // ヤマトB2印刷（プレースホルダー）/ 大和B2打印（占位符）
+  @Post('yamato-b2/print')
+  printYamatoB2(
+    @TenantId() tenantId: string,
+    @Body() dto: Record<string, any>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // ヤマト運賃見積（プレースホルダー）/ 大和运费估算（占位符）
+  @Post('yamato-calc/estimate')
+  estimateYamatoCalc(
+    @TenantId() tenantId: string,
+    @Body() dto: Record<string, any>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // ヤマト運賃率取得（プレースホルダー）/ 获取大和运费率（占位符）
+  @Get('yamato-calc/rates')
+  getYamatoCalcRates(@TenantId() tenantId: string) {
+    return { items: [], message: 'Not implemented yet / 未実装 / 尚未实现' };
+  }
+
+  // ヤマト運賃率更新（プレースホルダー）/ 更新大和运费率（占位符）
+  @Put('yamato-calc/rates')
+  updateYamatoCalcRates(
+    @TenantId() tenantId: string,
+    @Body() dto: Record<string, any>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
 }

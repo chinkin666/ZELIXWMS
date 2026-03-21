@@ -54,6 +54,19 @@ import { InspectionsModule } from './inspections/inspections.module.js';
 import { LabelingTasksModule } from './labeling-tasks/labeling-tasks.module.js';
 import { CycleCountsModule } from './cycle-counts/cycle-counts.module.js';
 import { ListenersModule } from './common/listeners/listeners.module.js';
+import { SetOrdersModule } from './set-orders/set-orders.module.js';
+import { RulesModule } from './rules/rules.module.js';
+import { PackingRulesModule } from './packing-rules/packing-rules.module.js';
+import { OrderGroupsModule } from './order-groups/order-groups.module.js';
+import { PriceCatalogsModule } from './price-catalogs/price-catalogs.module.js';
+import { FbaBoxesModule } from './fba-boxes/fba-boxes.module.js';
+import { FbaShipmentPlansModule } from './fba-shipment-plans/fba-shipment-plans.module.js';
+import { RslShipmentPlansModule } from './rsl-shipment-plans/rsl-shipment-plans.module.js';
+import { LocationsModule } from './locations/locations.module.js';
+import { TasksModule } from './tasks/tasks.module.js';
+import { StocktakingOrdersModule } from './stocktaking-orders/stocktaking-orders.module.js';
+import { WmsSchedulesModule } from './wms-schedules/wms-schedules.module.js';
+import { NotificationPreferencesModule } from './notification-preferences/notification-preferences.module.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
 import envConfig from './config/env.js';
@@ -111,6 +124,19 @@ import envConfig from './config/env.js';
     LabelingTasksModule,
     CycleCountsModule,
     ListenersModule,
+    SetOrdersModule,
+    RulesModule,
+    PackingRulesModule,
+    OrderGroupsModule,
+    PriceCatalogsModule,
+    FbaBoxesModule,
+    FbaShipmentPlansModule,
+    RslShipmentPlansModule,
+    LocationsModule,
+    TasksModule,
+    StocktakingOrdersModule,
+    WmsSchedulesModule,
+    NotificationPreferencesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

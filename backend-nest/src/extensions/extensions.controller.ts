@@ -61,12 +61,57 @@ export class ExtensionsController {
     return this.extensionsService.removeWebhook(tenantId, id);
   }
 
+  // Webhookテスト送信（プレースホルダー）/ 测试发送Webhook（占位符）
+  @Post('webhooks/:id/test')
+  testWebhook(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', webhookId: id };
+  }
+
+  // Webhookログ取得（プレースホルダー）/ 获取Webhook日志（占位符）
+  @Get('webhooks/:id/logs')
+  getWebhookLogs(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { items: [], total: 0, webhookId: id, message: 'Not implemented yet / 未実装 / 尚未实现' };
+  }
+
   // ===== フィーチャーフラグ エンドポイント / 功能开关端点 =====
 
   // フィーチャーフラグ一覧取得 / 获取功能开关列表
   @Get('feature-flags')
   findAllFlags() {
     return this.extensionsService.findAllFlags();
+  }
+
+  // フィーチャーフラグキー検索 / 按key查找功能开关
+  @Get('feature-flags/:key')
+  findFlagByKey(@Param('key') key: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', key };
+  }
+
+  // フィーチャーフラグ作成 / 创建功能开关
+  @Post('feature-flags')
+  createFlag(@Body() dto: Record<string, unknown>) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // フィーチャーフラグ更新 / 更新功能开关
+  @Put('feature-flags/:key')
+  updateFlag(
+    @Param('key') key: string,
+    @Body() dto: Record<string, unknown>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', key };
+  }
+
+  // フィーチャーフラグ削除 / 删除功能开关
+  @Delete('feature-flags/:key')
+  removeFlag(@Param('key') key: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', key };
   }
 
   // フィーチャーフラグ切替 / 切换功能开关
@@ -99,6 +144,34 @@ export class ExtensionsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.extensionsService.findPluginById(tenantId, id);
+  }
+
+  // プラグインインストール / 安装插件
+  @Post('plugins')
+  installPlugin(
+    @TenantId() tenantId: string,
+    @Body() dto: Record<string, unknown>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // プラグイン設定更新 / 更新插件配置
+  @Put('plugins/:id')
+  updatePlugin(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Record<string, unknown>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', pluginId: id };
+  }
+
+  // プラグインアンインストール / 卸载插件
+  @Delete('plugins/:id')
+  uninstallPlugin(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', pluginId: id };
   }
 
   // プラグイン有効化 / 启用插件
@@ -171,6 +244,24 @@ export class ExtensionsController {
     return this.extensionsService.removeScript(tenantId, id);
   }
 
+  // スクリプト実行（プレースホルダー）/ 执行脚本（占位符）
+  @Post('scripts/:id/execute')
+  executeScript(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', scriptId: id };
+  }
+
+  // スクリプトログ取得（プレースホルダー）/ 获取脚本日志（占位符）
+  @Get('scripts/:id/logs')
+  getScriptLogs(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { items: [], total: 0, scriptId: id, message: 'Not implemented yet / 未実装 / 尚未实现' };
+  }
+
   // ===== カスタムフィールド エンドポイント / 自定义字段端点 =====
 
   // カスタムフィールド一覧取得 / 获取自定义字段列表
@@ -186,6 +277,15 @@ export class ExtensionsController {
       limit: limit ? parseInt(limit, 10) : undefined,
       entityType,
     });
+  }
+
+  // カスタムフィールドID検索 / 按ID查找自定义字段
+  @Get('custom-fields/:id')
+  findCustomFieldById(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', fieldId: id };
   }
 
   // カスタムフィールド作成 / 创建自定义字段
@@ -250,6 +350,15 @@ export class ExtensionsController {
     return this.extensionsService.updateAutoProcessingRule(tenantId, id, dto);
   }
 
+  // 自動処理ルールID検索 / 按ID查找自动处理规则
+  @Get('auto-processing-rules/:id')
+  findAutoProcessingRuleById(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', ruleId: id };
+  }
+
   // 自動処理ルール削除 / 删除自动处理规则
   @Delete('auto-processing-rules/:id')
   removeAutoProcessingRule(
@@ -257,5 +366,14 @@ export class ExtensionsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.extensionsService.removeAutoProcessingRule(tenantId, id);
+  }
+
+  // 自動処理ルールログ取得（プレースホルダー）/ 获取自动处理规则日志（占位符）
+  @Get('auto-processing-rules/:id/logs')
+  getAutoProcessingRuleLogs(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { items: [], total: 0, ruleId: id, message: 'Not implemented yet / 未実装 / 尚未实现' };
   }
 }

@@ -1,5 +1,5 @@
 // 在庫台帳コントローラ / 库存台账控制器
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Post, Query } from '@nestjs/common';
 import { InventoryLedgerService } from './inventory-ledger.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 
@@ -37,5 +37,11 @@ export class InventoryLedgerController {
     @Query('endDate') endDate?: string,
   ) {
     return this.inventoryLedgerService.getSummary(tenantId, { productId, startDate, endDate });
+  }
+
+  // 在庫台帳エクスポート（プレースホルダー）/ 库存台账导出（占位符）
+  @Post('export')
+  exportLedger(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
   }
 }

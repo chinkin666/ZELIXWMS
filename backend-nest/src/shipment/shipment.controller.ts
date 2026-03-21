@@ -1,5 +1,5 @@
 // 出荷注文コントローラ / 出货订单控制器
-import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { ShipmentService } from './shipment.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
@@ -106,6 +106,92 @@ export class ShipmentController {
     @Body(new ZodValidationPipe(updateShipmentOrderSchema)) dto: UpdateShipmentOrderDto,
   ) {
     return this.shipmentService.update(tenantId, id, dto);
+  }
+
+  // 手動一括作成（bulkのエイリアス）/ 手动批量创建（bulk的别名）
+  @Post('manual/bulk')
+  manualBulkCreate(
+    @TenantId() tenantId: string,
+    @Body() body: { orders: CreateShipmentOrderDto[] },
+  ) {
+    return this.shipmentService.bulkCreate(tenantId, body.orders);
+  }
+
+  // 出荷注文部分更新 / 出货订单部分更新
+  @Patch(':id')
+  partialUpdate(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateShipmentOrderDto,
+  ) {
+    return this.shipmentService.update(tenantId, id, dto);
+  }
+
+  // 出荷注文一括部分更新（プレースホルダー）/ 出货订单批量部分更新（占位符）
+  @Patch('bulk')
+  bulkPartialUpdate(
+    @TenantId() tenantId: string,
+    @Body() body: { ids: string[]; data: Record<string, unknown> },
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', ids: body.ids };
+  }
+
+  // ID一括取得（プレースホルダー）/ 按ID批量获取（占位符）
+  @Post('by-ids')
+  findByIds(
+    @TenantId() tenantId: string,
+    @Body() body: { ids: string[] },
+  ) {
+    return { items: [], ids: body.ids, message: 'Not implemented yet / 未実装 / 尚未实现' };
+  }
+
+  // 単一ステータス変更 / 单个状态变更
+  @Post(':id/status')
+  changeStatus(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { status: string },
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id, newStatus: body.status };
+  }
+
+  // 一括ステータス変更（プレースホルダー）/ 批量状态变更（占位符）
+  @Post('status/bulk')
+  bulkChangeStatus(
+    @TenantId() tenantId: string,
+    @Body() body: { ids: string[]; status: string },
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', ids: body.ids, newStatus: body.status };
+  }
+
+  // 配送業者受領インポート（プレースホルダー）/ 配送业者回单导入（占位符）
+  @Post('carrier-receipts/import')
+  importCarrierReceipts(
+    @TenantId() tenantId: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // グループ別件数取得（プレースホルダー）/ 获取分组计数（占位符）
+  @Get('group-counts')
+  getGroupCounts(@TenantId() tenantId: string) {
+    return { groups: [], message: 'Not implemented yet / 未実装 / 尚未实现' };
+  }
+
+  // エクスポート（プレースホルダー）/ 导出（占位符）
+  @Post('export')
+  exportOrders(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // 追跡情報取得（プレースホルダー）/ 获取跟踪信息（占位符）
+  @Get(':id/tracking')
+  getTracking(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { events: [], orderId: id, message: 'Not implemented yet / 未実装 / 尚未实现' };
   }
 
   // 出荷注文削除（論理削除）/ 删除出货订单（软删除）

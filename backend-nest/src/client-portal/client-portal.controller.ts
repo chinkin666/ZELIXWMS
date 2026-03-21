@@ -63,4 +63,31 @@ export class ClientPortalController {
       limit: limit ? parseInt(limit, 10) : undefined,
     });
   }
+
+  // クライアントの出荷一覧（ordersのエイリアス）/ 获取客户出货列表（orders的别名）
+  @Get('shipments')
+  getShipments(
+    @TenantId() tenantId: string,
+    @Query('clientId') clientId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.clientPortalService.getOrders(tenantId, clientId, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      status,
+    });
+  }
+
+  // クライアントの在庫一覧 / 获取客户库存列表
+  @Get('inventory')
+  getInventory(
+    @TenantId() tenantId: string,
+    @Query('clientId') clientId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return { items: [], total: 0, page: page ? parseInt(page, 10) : 1, limit: limit ? parseInt(limit, 10) : 20, message: 'Not implemented yet / 未実装 / 尚未实现' };
+  }
 }

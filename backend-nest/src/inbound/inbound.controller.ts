@@ -108,6 +108,57 @@ export class InboundController {
     return this.inboundService.cancel(tenantId, id);
   }
 
+  // 入庫オーダー一括入荷（プレースホルダー）/ 入库订单批量收货（占位符）
+  @Post(':id/bulk-receive')
+  bulkReceive(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+  }
+
+  // 入庫オーダー棚入れ（プレースホルダー）/ 入库订单上架（占位符）
+  @Post(':id/putaway')
+  putaway(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+  }
+
+  // 入庫オーダー差異取得（プレースホルダー）/ 获取入库订单差异（占位符）
+  @Get(':id/variance')
+  getVariance(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { items: [], total: 0, orderId: id, message: 'Not implemented yet / 未実装 / 尚未实现' };
+  }
+
+  // 入庫履歴取得（プレースホルダー）/ 获取入库历史（占位符）
+  @Get('history')
+  getHistory(
+    @TenantId() tenantId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return { items: [], total: 0, page: page ? parseInt(page, 10) : 1, limit: limit ? parseInt(limit, 10) : 20, message: 'Not implemented yet / 未実装 / 尚未实现' };
+  }
+
+  // 入庫インポート（プレースホルダー）/ 入库导入（占位符）
+  @Post('import')
+  importOrders(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // 入庫エクスポート（プレースホルダー）/ 入库导出（占位符）
+  @Post('export')
+  exportOrders(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
   // 入庫オーダー削除（論理削除）/ 删除入库订单（软删除）
   @Delete(':id')
   remove(

@@ -1,5 +1,5 @@
 // パススルーコントローラ / 直通控制器
-import { Controller, Get, Post, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { PassthroughService } from './passthrough.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 
@@ -64,5 +64,66 @@ export class PassthroughController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.passthroughService.ship(tenantId, id);
+  }
+
+  // パススルー注文更新 / 更新直通订单
+  @Put(':id')
+  update(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Record<string, any>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+  }
+
+  // パススルー注文削除 / 删除直通订单
+  @Delete(':id')
+  remove(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+  }
+
+  // パススルー注文確認 / 确认直通订单
+  @Post(':id/confirm')
+  confirm(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+  }
+
+  // パススルー注文受領 / 接收直通订单
+  @Post(':id/receive')
+  receive(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+  }
+
+  // パススルー注文完了 / 完成直通订单
+  @Post(':id/complete')
+  complete(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+  }
+
+  // パススルー注文キャンセル / 取消直通订单
+  @Post(':id/cancel')
+  cancel(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+  }
+
+  // パススルーインポート（プレースホルダー）/ 直通导入（占位符）
+  @Post('import')
+  importOrders(@TenantId() tenantId: string) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
   }
 }

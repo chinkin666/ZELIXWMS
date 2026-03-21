@@ -30,4 +30,22 @@ export class SagawaController {
   getInvoiceTypes() {
     return this.sagawaService.getInvoiceTypes();
   }
+
+  // 佐川バリデーション（プレースホルダー）/ 佐川校验（占位符）
+  @Post('validate')
+  validate(
+    @TenantId() tenantId: string,
+    @Body() dto: Record<string, any>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
+
+  // 佐川印刷（プレースホルダー）/ 佐川打印（占位符）
+  @Post('print')
+  print(
+    @TenantId() tenantId: string,
+    @Body() dto: Record<string, any>,
+  ) {
+    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  }
 }
