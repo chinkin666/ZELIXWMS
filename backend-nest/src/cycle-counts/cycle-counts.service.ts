@@ -1,6 +1,8 @@
 // 循環棚卸サービス / 循环盘点服务
-import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { DRIZZLE } from '../database/database.module.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -24,20 +26,15 @@ export class CycleCountsService {
   // 循環棚卸一覧取得（プレースホルダー）/ 获取循环盘点列表（占位符）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
 
     // プレースホルダー / 占位符
-    return {
-      items: [],
-      total: 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult([], 0, page, limit);
   }
 
   // 循環棚卸ID検索（プレースホルダー）/ 按ID查找循环盘点（占位符）
   async findById(tenantId: string, id: string) {
-    throw new NotFoundException(`Cycle count ${id} not found / 循環棚卸 ${id} が見つかりません / 循环盘点 ${id} 未找到`);
+    throw new WmsException('CYCLE_COUNT_NOT_FOUND', `ID: ${id}`);
   }
 
   // 循環棚卸作成（プレースホルダー）/ 创建循环盘点（占位符）
@@ -52,7 +49,7 @@ export class CycleCountsService {
 
   // 循環棚卸更新（プレースホルダー）/ 更新循环盘点（占位符）
   async update(tenantId: string, id: string, dto: Record<string, unknown>) {
-    throw new NotFoundException(`Cycle count ${id} not found / 循環棚卸 ${id} が見つかりません / 循环盘点 ${id} 未找到`);
+    throw new WmsException('CYCLE_COUNT_NOT_FOUND', `ID: ${id}`);
   }
 
   // 循環棚卸開始（ステータス遷移: planned → in_progress）/ 开始循环盘点（状态转换: planned → in_progress）

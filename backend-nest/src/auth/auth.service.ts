@@ -1,5 +1,6 @@
 // 認証サービス / 认证服务
-import { Inject, Injectable, ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { users } from '../database/schema/users.js';
@@ -20,9 +21,7 @@ export class AuthService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new UnauthorizedException(
-        'Invalid credentials / 認証情報が無効です / 凭证无效',
-      );
+      throw new WmsException('AUTH_INVALID_CREDENTIALS');
     }
 
     const user = rows[0];
@@ -55,9 +54,7 @@ export class AuthService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(
-        `Email "${dto.email}" already exists / メール "${dto.email}" は既に登録済みです / 邮箱 "${dto.email}" 已存在`,
-      );
+      throw new WmsException('AUTH_DUPLICATE_EMAIL', `Email: ${dto.email}`);
     }
 
     const insertData = {
@@ -88,9 +85,7 @@ export class AuthService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(
-        `User not found / ユーザーが見つかりません / 用户未找到`,
-      );
+      throw new WmsException('USER_NOT_FOUND', `ID: ${userId}`);
     }
 
     const user = rows[0];

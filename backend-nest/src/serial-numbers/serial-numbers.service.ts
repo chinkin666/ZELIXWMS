@@ -1,8 +1,10 @@
 // シリアル番号サービス / 序列号服务
 // NOTE: シリアル番号は stockQuants テーブルを利用するプレースホルダー実装
 // 注意: 序列号使用 stockQuants 表的占位符实现
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { DRIZZLE } from '../database/database.module.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -18,21 +20,16 @@ export class SerialNumbersService {
   // シリアル番号一覧取得（プレースホルダー）/ 获取序列号列表（占位符）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
 
     // プレースホルダー: 将来 stockQuants から取得 / 占位符: 将来从 stockQuants 获取
-    return {
-      items: [],
-      total: 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult([], 0, page, limit);
   }
 
   // シリアル番号ID検索（プレースホルダー）/ 按ID查找序列号（占位符）
   async findById(tenantId: string, id: string) {
     // プレースホルダー / 占位符
-    throw new NotFoundException(`Serial number ${id} not found / シリアル番号 ${id} が見つかりません / 序列号 ${id} 未找到`);
+    throw new WmsException('SERIAL_NOT_FOUND', `ID: ${id}`);
   }
 
   // シリアル番号登録（プレースホルダー）/ 创建序列号（占位符）
@@ -48,6 +45,6 @@ export class SerialNumbersService {
   // シリアル番号削除（プレースホルダー）/ 删除序列号（占位符）
   async remove(tenantId: string, id: string) {
     // プレースホルダー / 占位符
-    throw new NotFoundException(`Serial number ${id} not found / シリアル番号 ${id} が見つかりません / 序列号 ${id} 未找到`);
+    throw new WmsException('SERIAL_NOT_FOUND', `ID: ${id}`);
   }
 }

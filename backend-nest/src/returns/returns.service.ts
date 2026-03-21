@@ -1,9 +1,11 @@
 // 返品サービス / 退货服务
-import { Inject, Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, isNull, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { returnOrders, returnOrderLines } from '../database/schema/returns.js';
 import type { CreateReturnOrderDto, UpdateReturnOrderDto } from './dto/create-return-order.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -19,7 +21,7 @@ export class ReturnsService {
   // 返品オーダー一覧取得（テナント分離・ページネーション・フィルタ）/ 获取退货订单列表（租户隔离・分页・过滤）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -52,12 +54,7 @@ export class ReturnsService {
         .where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 返品オーダーID検索（テナント分離・論理削除除外）/ 按ID查找退货订单（租户隔离・排除软删除）
@@ -75,9 +72,7 @@ export class ReturnsService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(
-        `Return order ${id} not found / 返品オーダー ${id} が見つかりません / 退货订单 ${id} 未找到`,
-      );
+      throw new WmsException('RETURN_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -115,9 +110,7 @@ export class ReturnsService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(
-        `Order number "${dto.orderNumber}" already exists / 注文番号 "${dto.orderNumber}" は既に存在します / 订单号 "${dto.orderNumber}" 已存在`,
-      );
+      throw new WmsException('DUPLICATE_RESOURCE', `Order number: ${dto.orderNumber}`);
     }
 
     const rows = await this.db
@@ -148,9 +141,7 @@ export class ReturnsService {
         .limit(1);
 
       if (existing.length > 0 && existing[0].id !== id) {
-        throw new ConflictException(
-          `Order number "${dto.orderNumber}" already exists / 注文番号 "${dto.orderNumber}" は既に存在します / 订单号 "${dto.orderNumber}" 已存在`,
-        );
+        throw new WmsException('DUPLICATE_RESOURCE', `Order number: ${dto.orderNumber}`);
       }
     }
 
@@ -167,9 +158,7 @@ export class ReturnsService {
   async receive(tenantId: string, id: string) {
     const order = await this.findById(tenantId, id);
     if (order.status !== 'draft') {
-      throw new BadRequestException(
-        `Cannot receive return order with status "${order.status}". Expected "draft" / ステータス "${order.status}" の返品は受領できません。"draft" が必要です / 状态 "${order.status}" 的退货订单无法收货，需要 "draft"`,
-      );
+      throw new WmsException('RETURN_INVALID_STATUS', `Cannot receive: current status is ${order.status}`);
     }
     const rows = await this.db
       .update(returnOrders)
@@ -183,9 +172,7 @@ export class ReturnsService {
   async complete(tenantId: string, id: string) {
     const order = await this.findById(tenantId, id);
     if (order.status !== 'inspecting') {
-      throw new BadRequestException(
-        `Cannot complete return order with status "${order.status}". Expected "inspecting" / ステータス "${order.status}" の返品は完了できません。"inspecting" が必要です / 状态 "${order.status}" 的退货订单无法完成，需要 "inspecting"`,
-      );
+      throw new WmsException('RETURN_INVALID_STATUS', `Cannot complete: current status is ${order.status}`);
     }
     const rows = await this.db
       .update(returnOrders)
@@ -199,9 +186,7 @@ export class ReturnsService {
   async cancel(tenantId: string, id: string) {
     const order = await this.findById(tenantId, id);
     if (order.status === 'completed' || order.status === 'cancelled') {
-      throw new BadRequestException(
-        `Cannot cancel return order with status "${order.status}" / ステータス "${order.status}" の返品はキャンセルできません / 状态 "${order.status}" 的退货订单无法取消`,
-      );
+      throw new WmsException('RETURN_INVALID_STATUS', `Cannot cancel: current status is ${order.status}`);
     }
     const rows = await this.db
       .update(returnOrders)

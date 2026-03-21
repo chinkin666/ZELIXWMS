@@ -1,9 +1,11 @@
 // 出荷注文サービス / 出货订单服务
-import { Inject, Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, ilike, isNull, or, sql, SQL, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { shipmentOrders, shipmentOrderProducts } from '../database/schema/shipments.js';
 import type { CreateShipmentOrderDto, UpdateShipmentOrderDto } from './dto/create-shipment-order.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -21,7 +23,7 @@ export class ShipmentService {
   // 出荷注文一覧取得（テナント分離・ページネーション・検索）/ 获取出货订单列表（租户隔离・分页・搜索）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -57,12 +59,7 @@ export class ShipmentService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(shipmentOrders).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 出荷注文ID検索 / 按ID查找出货订单
@@ -78,7 +75,7 @@ export class ShipmentService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`Shipment order ${id} not found / 出荷注文 ${id} が見つかりません / 出货订单 ${id} 未找到`);
+      throw new WmsException('SHIP_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -111,9 +108,7 @@ export class ShipmentService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(
-        `Order number "${dto.orderNumber}" already exists / 注文番号 "${dto.orderNumber}" は既に存在します / 订单编号 "${dto.orderNumber}" 已存在`,
-      );
+      throw new WmsException('DUPLICATE_RESOURCE', `Order number: ${dto.orderNumber}`);
     }
 
     const rows = await this.db
@@ -142,9 +137,7 @@ export class ShipmentService {
         .limit(1);
 
       if (existing.length > 0 && existing[0].id !== id) {
-        throw new ConflictException(
-          `Order number "${dto.orderNumber}" already exists / 注文番号 "${dto.orderNumber}" は既に存在します / 订单编号 "${dto.orderNumber}" 已存在`,
-        );
+        throw new WmsException('DUPLICATE_RESOURCE', `Order number: ${dto.orderNumber}`);
       }
     }
 
@@ -161,9 +154,7 @@ export class ShipmentService {
   async confirm(tenantId: string, id: string) {
     const order = await this.findById(tenantId, id);
     if (order.statusConfirmed) {
-      throw new BadRequestException(
-        `Order ${id} is already confirmed / 注文 ${id} は既に確認済みです / 订单 ${id} 已确认`,
-      );
+      throw new WmsException('SHIP_INVALID_STATUS', `Order ${id} is already confirmed`);
     }
     const rows = await this.db
       .update(shipmentOrders)
@@ -177,9 +168,7 @@ export class ShipmentService {
   async ship(tenantId: string, id: string) {
     const order = await this.findById(tenantId, id);
     if (order.statusShipped) {
-      throw new BadRequestException(
-        `Order ${id} is already shipped / 注文 ${id} は既に出荷済みです / 订单 ${id} 已发货`,
-      );
+      throw new WmsException('SHIP_ALREADY_SHIPPED', `ID: ${id}`);
     }
     const rows = await this.db
       .update(shipmentOrders)
@@ -202,9 +191,7 @@ export class ShipmentService {
   // 出荷注文一括削除（論理削除）/ 批量删除出货订单（软删除）
   async bulkDelete(tenantId: string, ids: string[]) {
     if (!ids || ids.length === 0) {
-      throw new BadRequestException(
-        'No IDs provided / IDが指定されていません / 未提供ID',
-      );
+      throw new WmsException('VALIDATION_ERROR', 'No IDs provided');
     }
     const rows = await this.db
       .update(shipmentOrders)

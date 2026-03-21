@@ -1,9 +1,11 @@
 // 資材サービス / 物料服务
-import { Inject, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, ilike, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { materials } from '../database/schema/warehouse-ops.js';
 import type { CreateMaterialDto, UpdateMaterialDto } from './dto/create-material.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -21,7 +23,7 @@ export class MaterialsService {
   // 資材一覧取得（テナント分離・ページネーション・検索・フィルタ）/ 获取物料列表（租户隔离・分页・搜索・筛选）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -50,12 +52,7 @@ export class MaterialsService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(materials).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 資材ID検索 / 按ID查找物料
@@ -70,7 +67,7 @@ export class MaterialsService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`Material ${id} not found / 資材 ${id} が見つかりません / 物料 ${id} 未找到`);
+      throw new WmsException('MATERIAL_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -88,7 +85,7 @@ export class MaterialsService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(`SKU "${dto.sku}" already exists / SKU "${dto.sku}" は既に存在します / SKU "${dto.sku}" 已存在`);
+      throw new WmsException('PROD_DUPLICATE_SKU', `SKU: ${dto.sku}`);
     }
 
     const rows = await this.db.insert(materials).values({
@@ -116,7 +113,7 @@ export class MaterialsService {
         .limit(1);
 
       if (existing.length > 0 && existing[0].id !== id) {
-        throw new ConflictException(`SKU "${dto.sku}" already exists / SKU "${dto.sku}" は既に存在します / SKU "${dto.sku}" 已存在`);
+        throw new WmsException('PROD_DUPLICATE_SKU', `SKU: ${dto.sku}`);
       }
     }
 

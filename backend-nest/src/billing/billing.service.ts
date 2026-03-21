@@ -1,9 +1,11 @@
 // 請求サービス / 账单服务
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { serviceRates, workCharges, shippingRates, invoices } from '../database/schema/billing.js';
 import type { CreateServiceRateDto, UpdateServiceRateDto } from './dto/create-service-rate.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 // サービス料金検索パラメータ / 服务费率查询参数
 interface FindAllServiceRatesQuery {
@@ -52,7 +54,7 @@ export class BillingService {
   // サービス料金一覧取得（テナント分離・ページネーション・フィルタ）/ 获取服务费率列表（租户隔离・分页・筛选）
   async findAllServiceRates(tenantId: string, query: FindAllServiceRatesQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -78,12 +80,7 @@ export class BillingService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(serviceRates).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // サービス料金ID検索 / 按ID查找服务费率
@@ -98,9 +95,7 @@ export class BillingService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(
-        `Service rate ${id} not found / サービス料金 ${id} が見つかりません / 服务费率 ${id} 未找到`,
-      );
+      throw new WmsException('BILL_NOT_FOUND', `Service rate ID: ${id}`);
     }
     return rows[0];
   }
@@ -167,7 +162,7 @@ export class BillingService {
   // 作業チャージ一覧取得（テナント分離・ページネーション・フィルタ）/ 获取作业费用列表（租户隔离・分页・筛选）
   async findAllWorkCharges(tenantId: string, query: FindAllWorkChargesQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -196,12 +191,7 @@ export class BillingService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(workCharges).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 作業チャージ作成 / 创建作业费用
@@ -227,9 +217,7 @@ export class BillingService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(
-        `Work charge ${id} not found / 作業チャージ ${id} が見つかりません / 作业费用 ${id} 未找到`,
-      );
+      throw new WmsException('BILL_NOT_FOUND', `Work charge ID: ${id}`);
     }
     return rows[0];
   }
@@ -268,7 +256,7 @@ export class BillingService {
   // 運費率一覧取得（テナント分離・ページネーション・フィルタ）/ 获取运费率列表（租户隔离・分页・筛选）
   async findAllShippingRates(tenantId: string, query: FindAllShippingRatesQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -291,12 +279,7 @@ export class BillingService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(shippingRates).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 運費率ID検索 / 按ID查找运费率
@@ -311,9 +294,7 @@ export class BillingService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(
-        `Shipping rate ${id} not found / 運費率 ${id} が見つかりません / 运费率 ${id} 未找到`,
-      );
+      throw new WmsException('BILL_NOT_FOUND', `Shipping rate ID: ${id}`);
     }
     return rows[0];
   }
@@ -363,7 +344,7 @@ export class BillingService {
   // 請求書一覧取得（テナント分離・ページネーション・フィルタ）/ 获取发票列表（租户隔离・分页・筛选）
   async findAllInvoices(tenantId: string, query: FindAllInvoicesQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -389,12 +370,7 @@ export class BillingService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(invoices).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 請求書ID検索 / 按ID查找发票
@@ -409,9 +385,7 @@ export class BillingService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(
-        `Invoice ${id} not found / 請求書 ${id} が見つかりません / 发票 ${id} 未找到`,
-      );
+      throw new WmsException('BILL_NOT_FOUND', `Invoice ID: ${id}`);
     }
     return rows[0];
   }

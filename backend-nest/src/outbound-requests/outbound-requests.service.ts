@@ -1,6 +1,8 @@
 // 出庫依頼サービス / 出库请求服务
-import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { DRIZZLE } from '../database/database.module.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -25,20 +27,15 @@ export class OutboundRequestsService {
   // 出庫依頼一覧取得（プレースホルダー）/ 获取出库请求列表（占位符）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
 
     // プレースホルダー / 占位符
-    return {
-      items: [],
-      total: 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult([], 0, page, limit);
   }
 
   // 出庫依頼ID検索（プレースホルダー）/ 按ID查找出库请求（占位符）
   async findById(tenantId: string, id: string) {
-    throw new NotFoundException(`Outbound request ${id} not found / 出庫依頼 ${id} が見つかりません / 出库请求 ${id} 未找到`);
+    throw new WmsException('OUTBOUND_NOT_FOUND', `ID: ${id}`);
   }
 
   // 出庫依頼作成（プレースホルダー）/ 创建出库请求（占位符）
@@ -53,12 +50,12 @@ export class OutboundRequestsService {
 
   // 出庫依頼更新（プレースホルダー）/ 更新出库请求（占位符）
   async update(tenantId: string, id: string, dto: Record<string, unknown>) {
-    throw new NotFoundException(`Outbound request ${id} not found / 出庫依頼 ${id} が見つかりません / 出库请求 ${id} 未找到`);
+    throw new WmsException('OUTBOUND_NOT_FOUND', `ID: ${id}`);
   }
 
   // 出庫依頼削除（プレースホルダー）/ 删除出库请求（占位符）
   async remove(tenantId: string, id: string) {
-    throw new NotFoundException(`Outbound request ${id} not found / 出庫依頼 ${id} が見つかりません / 出库请求 ${id} 未找到`);
+    throw new WmsException('OUTBOUND_NOT_FOUND', `ID: ${id}`);
   }
 
   // 出庫依頼承認（ステータス遷移: pending → approved）/ 审批出库请求（状态转换: pending → approved）

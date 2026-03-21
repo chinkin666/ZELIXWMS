@@ -1,9 +1,11 @@
 // 顧客サービス / 客户服务
-import { Inject, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, ilike, isNull, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { clients } from '../database/schema/clients.js';
 import type { CreateClientDto, UpdateClientDto } from './dto/create-client.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -20,7 +22,7 @@ export class ClientsService {
   // 顧客一覧取得（テナント分離・ページネーション・検索）/ 获取客户列表（租户隔离・分页・搜索）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -47,12 +49,7 @@ export class ClientsService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(clients).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 顧客ID検索 / 按ID查找客户
@@ -68,7 +65,7 @@ export class ClientsService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`Client ${id} not found / 顧客 ${id} が見つかりません / 客户 ${id} 未找到`);
+      throw new WmsException('CLIENT_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -87,7 +84,7 @@ export class ClientsService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(`Code "${dto.code}" already exists / コード "${dto.code}" は既に存在します / 编码 "${dto.code}" 已存在`);
+      throw new WmsException('DUPLICATE_RESOURCE', `Code: ${dto.code}`);
     }
 
     const rows = await this.db.insert(clients).values({ tenantId, ...dto }).returning();
@@ -112,7 +109,7 @@ export class ClientsService {
         .limit(1);
 
       if (existing.length > 0 && existing[0].id !== id) {
-        throw new ConflictException(`Code "${dto.code}" already exists / コード "${dto.code}" は既に存在します / 编码 "${dto.code}" 已存在`);
+        throw new WmsException('DUPLICATE_RESOURCE', `Code: ${dto.code}`);
       }
     }
 

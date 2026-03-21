@@ -1,5 +1,6 @@
 // 配送業者サービス / 配送业者服务
-import { Inject, Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, or, ilike, isNull, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { carriers } from '../database/schema/carriers.js';
@@ -85,9 +86,7 @@ export class CarriersService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(
-        `Carrier ${id} not found / 配送業者 ${id} が見つかりません / 配送业者 ${id} 未找到`,
-      );
+      throw new WmsException('CARRIER_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -108,9 +107,7 @@ export class CarriersService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(
-        `Carrier code "${dto.code}" already exists / 配送業者コード "${dto.code}" は既に存在します / 配送业者代码 "${dto.code}" 已存在`,
-      );
+      throw new WmsException('DUPLICATE_RESOURCE', `Carrier code: ${dto.code}`);
     }
 
     const rows = await this.db
@@ -128,9 +125,7 @@ export class CarriersService {
 
     // 内置チェック / 内置检查
     if (carrier.isBuiltIn) {
-      throw new ForbiddenException(
-        `Built-in carrier cannot be updated / 内置配送業者は更新できません / 内置配送业者不可更新`,
-      );
+      throw new WmsException('CARRIER_BUILT_IN', `ID: ${id}`);
     }
 
     // コード変更時の重複チェック / 代码变更时的重复检查
@@ -148,9 +143,7 @@ export class CarriersService {
         .limit(1);
 
       if (existing.length > 0 && existing[0].id !== id) {
-        throw new ConflictException(
-          `Carrier code "${dto.code}" already exists / 配送業者コード "${dto.code}" は既に存在します / 配送业者代码 "${dto.code}" 已存在`,
-        );
+        throw new WmsException('DUPLICATE_RESOURCE', `Carrier code: ${dto.code}`);
       }
     }
 
@@ -176,9 +169,7 @@ export class CarriersService {
 
     // 内置チェック / 内置检查
     if (carrier.isBuiltIn) {
-      throw new ForbiddenException(
-        `Built-in carrier cannot be deleted / 内置配送業者は削除できません / 内置配送业者不可删除`,
-      );
+      throw new WmsException('CARRIER_BUILT_IN', `ID: ${id}`);
     }
 
     const rows = await this.db

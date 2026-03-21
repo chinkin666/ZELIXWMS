@@ -1,9 +1,11 @@
 // ウェーブサービス / 波次服务
-import { Inject, Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { waves } from '../database/schema/warehouse-ops.js';
 import type { CreateWaveDto, UpdateWaveDto } from './dto/create-wave.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -19,7 +21,7 @@ export class WavesService {
   // ウェーブ一覧取得（テナント分離・ページネーション・フィルタ）/ 获取波次列表（租户隔离・分页・筛选）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -42,12 +44,7 @@ export class WavesService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(waves).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // ウェーブID検索 / 按ID查找波次
@@ -62,7 +59,7 @@ export class WavesService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`Wave ${id} not found / ウェーブ ${id} が見つかりません / 波次 ${id} 未找到`);
+      throw new WmsException('WAVE_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -80,7 +77,7 @@ export class WavesService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(`Wave number "${dto.waveNumber}" already exists / ウェーブ番号 "${dto.waveNumber}" は既に存在します / 波次编号 "${dto.waveNumber}" 已存在`);
+      throw new WmsException('DUPLICATE_RESOURCE', `Wave number: ${dto.waveNumber}`);
     }
 
     const rows = await this.db.insert(waves).values({
@@ -108,7 +105,7 @@ export class WavesService {
         .limit(1);
 
       if (existing.length > 0 && existing[0].id !== id) {
-        throw new ConflictException(`Wave number "${dto.waveNumber}" already exists / ウェーブ番号 "${dto.waveNumber}" は既に存在します / 波次编号 "${dto.waveNumber}" 已存在`);
+        throw new WmsException('DUPLICATE_RESOURCE', `Wave number: ${dto.waveNumber}`);
       }
     }
 
@@ -141,9 +138,7 @@ export class WavesService {
     const wave = await this.findById(tenantId, id);
 
     if (wave.status !== 'pending') {
-      throw new BadRequestException(
-        `Wave status must be "pending" to release, current: "${wave.status}" / リリースするにはステータスが "pending" である必要があります。現在: "${wave.status}" / 释放需要状态为 "pending"，当前: "${wave.status}"`,
-      );
+      throw new WmsException('WAVE_INVALID_STATUS', `Cannot release: current status is ${wave.status}`);
     }
 
     const rows = await this.db
@@ -160,9 +155,7 @@ export class WavesService {
     const wave = await this.findById(tenantId, id);
 
     if (wave.status !== 'in_progress') {
-      throw new BadRequestException(
-        `Wave status must be "in_progress" to complete, current: "${wave.status}" / 完了するにはステータスが "in_progress" である必要があります。現在: "${wave.status}" / 完成需要状态为 "in_progress"，当前: "${wave.status}"`,
-      );
+      throw new WmsException('WAVE_INVALID_STATUS', `Cannot complete: current status is ${wave.status}`);
     }
 
     const rows = await this.db
@@ -179,9 +172,7 @@ export class WavesService {
     const wave = await this.findById(tenantId, id);
 
     if (wave.status === 'completed' || wave.status === 'cancelled') {
-      throw new BadRequestException(
-        `Cannot cancel wave with status "${wave.status}" / ステータス "${wave.status}" のウェーブはキャンセルできません / 无法取消状态为 "${wave.status}" 的波次`,
-      );
+      throw new WmsException('WAVE_INVALID_STATUS', `Cannot cancel: current status is ${wave.status}`);
     }
 
     const rows = await this.db

@@ -1,9 +1,11 @@
 // 倉庫タスクサービス / 仓库任务服务
-import { Inject, Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { warehouseTasks } from '../database/schema/warehouse-ops.js';
 import type { CreateWarehouseTaskDto, UpdateWarehouseTaskDto } from './dto/create-warehouse-task.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -21,7 +23,7 @@ export class WarehouseTasksService {
   // タスク一覧取得（テナント分離・ページネーション・フィルタ）/ 获取任务列表（租户隔离・分页・筛选）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -50,12 +52,7 @@ export class WarehouseTasksService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(warehouseTasks).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // タスクID検索 / 按ID查找任务
@@ -70,7 +67,7 @@ export class WarehouseTasksService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`Warehouse task ${id} not found / タスク ${id} が見つかりません / 任务 ${id} 未找到`);
+      throw new WmsException('TASK_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -88,7 +85,7 @@ export class WarehouseTasksService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(`Task number "${dto.taskNumber}" already exists / タスク番号 "${dto.taskNumber}" は既に存在します / 任务编号 "${dto.taskNumber}" 已存在`);
+      throw new WmsException('DUPLICATE_RESOURCE', `Task number: ${dto.taskNumber}`);
     }
 
     const rows = await this.db.insert(warehouseTasks).values({
@@ -116,7 +113,7 @@ export class WarehouseTasksService {
         .limit(1);
 
       if (existing.length > 0 && existing[0].id !== id) {
-        throw new ConflictException(`Task number "${dto.taskNumber}" already exists / タスク番号 "${dto.taskNumber}" は既に存在します / 任务编号 "${dto.taskNumber}" 已存在`);
+        throw new WmsException('DUPLICATE_RESOURCE', `Task number: ${dto.taskNumber}`);
       }
     }
 
@@ -163,9 +160,7 @@ export class WarehouseTasksService {
     const task = await this.findById(tenantId, id);
 
     if (task.status === 'completed' || task.status === 'cancelled') {
-      throw new BadRequestException(
-        `Cannot complete task with status "${task.status}" / ステータス "${task.status}" のタスクは完了できません / 无法完成状态为 "${task.status}" 的任务`,
-      );
+      throw new WmsException('TASK_INVALID_STATUS', `Cannot complete: current status is ${task.status}`);
     }
 
     const rows = await this.db
@@ -182,9 +177,7 @@ export class WarehouseTasksService {
     const task = await this.findById(tenantId, id);
 
     if (task.status === 'completed' || task.status === 'cancelled') {
-      throw new BadRequestException(
-        `Cannot cancel task with status "${task.status}" / ステータス "${task.status}" のタスクはキャンセルできません / 无法取消状态为 "${task.status}" 的任务`,
-      );
+      throw new WmsException('TASK_INVALID_STATUS', `Cannot cancel: current status is ${task.status}`);
     }
 
     const rows = await this.db

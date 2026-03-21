@@ -1,8 +1,10 @@
 // 異常報告サービス / 异常报告服务
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { exceptionReports } from '../database/schema/exceptions.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -18,7 +20,7 @@ export class ExceptionsService {
   // 一覧取得 / 获取列表
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     const conditions = [eq(exceptionReports.tenantId, tenantId)];
@@ -36,7 +38,7 @@ export class ExceptionsService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(exceptionReports).where(where),
     ]);
 
-    return { items, total: countResult[0]?.count ?? 0, page, limit };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // ID検索 / 按ID查找
@@ -48,7 +50,7 @@ export class ExceptionsService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`ExceptionReport ${id} not found / 異常報告 ${id} が見つかりません / 异常报告 ${id} 未找到`);
+      throw new WmsException('EXCEPTION_REPORT_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }

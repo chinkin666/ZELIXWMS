@@ -1,6 +1,8 @@
 // ラベリングタスクサービス / 贴标任务服务
-import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { DRIZZLE } from '../database/database.module.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -23,20 +25,15 @@ export class LabelingTasksService {
   // ラベリングタスク一覧取得（プレースホルダー）/ 获取贴标任务列表（占位符）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
 
     // プレースホルダー / 占位符
-    return {
-      items: [],
-      total: 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult([], 0, page, limit);
   }
 
   // ラベリングタスクID検索（プレースホルダー）/ 按ID查找贴标任务（占位符）
   async findById(tenantId: string, id: string) {
-    throw new NotFoundException(`Labeling task ${id} not found / ラベリングタスク ${id} が見つかりません / 贴标任务 ${id} 未找到`);
+    throw new WmsException('LABELING_TASK_NOT_FOUND', `ID: ${id}`);
   }
 
   // ラベリングタスク作成（プレースホルダー）/ 创建贴标任务（占位符）
@@ -51,7 +48,7 @@ export class LabelingTasksService {
 
   // ラベリングタスク更新（プレースホルダー）/ 更新贴标任务（占位符）
   async update(tenantId: string, id: string, dto: Record<string, unknown>) {
-    throw new NotFoundException(`Labeling task ${id} not found / ラベリングタスク ${id} が見つかりません / 贴标任务 ${id} 未找到`);
+    throw new WmsException('LABELING_TASK_NOT_FOUND', `ID: ${id}`);
   }
 
   // ラベリングタスク開始（ステータス遷移: pending → in_progress）/ 开始贴标任务（状态转换: pending → in_progress）

@@ -1,9 +1,11 @@
 // 日次レポートサービス / 日报服务
-import { Inject, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, sql, gte, lte, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { dailyReports } from '../database/schema/settings.js';
 import type { CreateDailyReportDto, UpdateDailyReportDto } from './dto/create-daily-report.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -19,7 +21,7 @@ export class DailyReportsService {
   // 日次レポート一覧取得（テナント分離・ページネーション・日付範囲フィルタ）/ 获取日报列表（租户隔离・分页・日期范围筛选）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -42,12 +44,7 @@ export class DailyReportsService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(dailyReports).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 日次レポートID検索 / 按ID查找日报
@@ -62,7 +59,7 @@ export class DailyReportsService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`DailyReport ${id} not found / 日次レポート ${id} が見つかりません / 日报 ${id} 未找到`);
+      throw new WmsException('DAILY_REPORT_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -82,7 +79,7 @@ export class DailyReportsService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(`DailyReport for date "${dto.date}" already exists / 日付 "${dto.date}" のレポートは既に存在します / 日期 "${dto.date}" 的日报已存在`);
+      throw new WmsException('DUPLICATE_RESOURCE', `Daily report date: ${dto.date}`);
     }
 
     const rows = await this.db

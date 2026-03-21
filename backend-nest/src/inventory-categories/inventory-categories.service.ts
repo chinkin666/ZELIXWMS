@@ -1,8 +1,10 @@
 // 在庫区分サービス / 库存分类服务
 // NOTE: Express の InventoryCategory モデル（code/name/description/isDefault/isActive/sortOrder/colorLabel）に対応
 // 注意: 对应 Express 的 InventoryCategory 模型（code/name/description/isDefault/isActive/sortOrder/colorLabel）
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { DRIZZLE } from '../database/database.module.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -24,20 +26,15 @@ export class InventoryCategoriesService {
   // 在庫区分一覧取得（プレースホルダー）/ 获取库存分类列表（占位符）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
 
     // プレースホルダー: 将来テーブル作成後に実装 / 占位符: 将来创建表后实现
-    return {
-      items: [],
-      total: 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult([], 0, page, limit);
   }
 
   // 在庫区分ID検索（プレースホルダー）/ 按ID查找库存分类（占位符）
   async findById(tenantId: string, id: string) {
-    throw new NotFoundException(`Inventory category ${id} not found / 在庫区分 ${id} が見つかりません / 库存分类 ${id} 未找到`);
+    throw new WmsException('INV_CATEGORY_NOT_FOUND', `ID: ${id}`);
   }
 
   // 在庫区分作成（プレースホルダー）/ 创建库存分类（占位符）
@@ -51,12 +48,12 @@ export class InventoryCategoriesService {
 
   // 在庫区分更新（プレースホルダー）/ 更新库存分类（占位符）
   async update(tenantId: string, id: string, dto: Record<string, unknown>) {
-    throw new NotFoundException(`Inventory category ${id} not found / 在庫区分 ${id} が見つかりません / 库存分类 ${id} 未找到`);
+    throw new WmsException('INV_CATEGORY_NOT_FOUND', `ID: ${id}`);
   }
 
   // 在庫区分削除（プレースホルダー）/ 删除库存分类（占位符）
   async remove(tenantId: string, id: string) {
-    throw new NotFoundException(`Inventory category ${id} not found / 在庫区分 ${id} が見つかりません / 库存分类 ${id} 未找到`);
+    throw new WmsException('INV_CATEGORY_NOT_FOUND', `ID: ${id}`);
   }
 
   // デフォルトカテゴリ初期化（プレースホルダー）/ 初始化默认分类（占位符）

@@ -1,9 +1,11 @@
 // 棚卸サービス / 盘点服务
-import { Inject, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, isNull, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { stocktakingOrders } from '../database/schema/warehouse-ops.js';
 import type { CreateStocktakingDto, UpdateStocktakingDto } from './dto/create-stocktaking.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -20,7 +22,7 @@ export class StocktakingService {
   // 棚卸一覧取得（テナント分離・ページネーション・フィルタ）/ 获取盘点列表（租户隔离・分页・筛选）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -47,12 +49,7 @@ export class StocktakingService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(stocktakingOrders).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 棚卸ID検索 / 按ID查找盘点单
@@ -68,7 +65,7 @@ export class StocktakingService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`Stocktaking order ${id} not found / 棚卸指示 ${id} が見つかりません / 盘点单 ${id} 未找到`);
+      throw new WmsException('STOCKTAKING_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -87,7 +84,7 @@ export class StocktakingService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(`Order number "${dto.orderNumber}" already exists / 棚卸番号 "${dto.orderNumber}" は既に存在します / 盘点单号 "${dto.orderNumber}" 已存在`);
+      throw new WmsException('DUPLICATE_RESOURCE', `Order number: ${dto.orderNumber}`);
     }
 
     const rows = await this.db.insert(stocktakingOrders).values({
@@ -122,7 +119,7 @@ export class StocktakingService {
         .limit(1);
 
       if (existing.length > 0 && existing[0].id !== id) {
-        throw new ConflictException(`Order number "${dto.orderNumber}" already exists / 棚卸番号 "${dto.orderNumber}" は既に存在します / 盘点单号 "${dto.orderNumber}" 已存在`);
+        throw new WmsException('DUPLICATE_RESOURCE', `Order number: ${dto.orderNumber}`);
       }
     }
 

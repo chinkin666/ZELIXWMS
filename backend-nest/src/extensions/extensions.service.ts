@@ -1,9 +1,11 @@
 // 拡張機能サービス（Webhook・フィーチャーフラグ）/ 扩展功能服务（Webhook・功能开关）
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { webhooks, featureFlags, plugins, scripts, customFieldDefinitions, autoProcessingRules } from '../database/schema/extensions.js';
 import type { CreateWebhookDto, UpdateWebhookDto } from './dto/create-webhook.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllWebhooksQuery {
   page?: number;
@@ -30,7 +32,7 @@ export class ExtensionsService {
   // Webhook一覧取得（テナント分離・ページネーション）/ 获取Webhook列表（租户隔离・分页）
   async findAllWebhooks(tenantId: string, query: FindAllWebhooksQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     const where = eq(webhooks.tenantId, tenantId);
@@ -41,12 +43,7 @@ export class ExtensionsService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(webhooks).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // WebhookID検索 / 按ID查找Webhook
@@ -61,7 +58,7 @@ export class ExtensionsService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`Webhook ${id} not found / Webhook ${id} が見つかりません / Webhook ${id} 未找到`);
+      throw new WmsException('EXT_WEBHOOK_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -124,7 +121,7 @@ export class ExtensionsService {
       .limit(1);
 
     if (existing.length === 0) {
-      throw new NotFoundException(`Feature flag ${id} not found / フィーチャーフラグ ${id} が見つかりません / 功能开关 ${id} 未找到`);
+      throw new WmsException('EXT_FLAG_NOT_FOUND', `ID: ${id}`);
     }
 
     const rows = await this.db
@@ -144,7 +141,7 @@ export class ExtensionsService {
   // プラグイン一覧取得（テナント分離・ページネーション）/ 获取插件列表（租户隔离・分页）
   async findAllPlugins(tenantId: string, query: PaginationQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     const where = eq(plugins.tenantId, tenantId);
@@ -154,12 +151,7 @@ export class ExtensionsService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(plugins).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // プラグインID検索 / 按ID查找插件
@@ -171,7 +163,7 @@ export class ExtensionsService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`Plugin ${id} not found / プラグイン ${id} が見つかりません / 插件 ${id} 未找到`);
+      throw new WmsException('EXT_PLUGIN_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -195,7 +187,7 @@ export class ExtensionsService {
   // スクリプト一覧取得（テナント分離・ページネーション）/ 获取脚本列表（租户隔离・分页）
   async findAllScripts(tenantId: string, query: PaginationQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     const where = eq(scripts.tenantId, tenantId);
@@ -205,12 +197,7 @@ export class ExtensionsService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(scripts).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // スクリプトID検索 / 按ID查找脚本
@@ -222,7 +209,7 @@ export class ExtensionsService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`Script ${id} not found / スクリプト ${id} が見つかりません / 脚本 ${id} 未找到`);
+      throw new WmsException('EXT_SCRIPT_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -269,7 +256,7 @@ export class ExtensionsService {
   // カスタムフィールド一覧取得（テナント分離・ページネーション）/ 获取自定义字段列表（租户隔离・分页）
   async findAllCustomFields(tenantId: string, query: FindAllCustomFieldsQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     const conditions: SQL[] = [eq(customFieldDefinitions.tenantId, tenantId)];
@@ -285,12 +272,7 @@ export class ExtensionsService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(customFieldDefinitions).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // カスタムフィールド作成 / 创建自定义字段
@@ -313,7 +295,7 @@ export class ExtensionsService {
       .limit(1);
 
     if (existing.length === 0) {
-      throw new NotFoundException(`Custom field ${id} not found / カスタムフィールド ${id} が見つかりません / 自定义字段 ${id} 未找到`);
+      throw new WmsException('EXT_CUSTOM_FIELD_NOT_FOUND', `ID: ${id}`);
     }
 
     const rows = await this.db
@@ -334,7 +316,7 @@ export class ExtensionsService {
       .limit(1);
 
     if (existing.length === 0) {
-      throw new NotFoundException(`Custom field ${id} not found / カスタムフィールド ${id} が見つかりません / 自定义字段 ${id} 未找到`);
+      throw new WmsException('EXT_CUSTOM_FIELD_NOT_FOUND', `ID: ${id}`);
     }
 
     const rows = await this.db
@@ -350,7 +332,7 @@ export class ExtensionsService {
   // 自動処理ルール一覧取得（テナント分離・ページネーション）/ 获取自动处理规则列表（租户隔离・分页）
   async findAllAutoProcessingRules(tenantId: string, query: PaginationQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     const where = eq(autoProcessingRules.tenantId, tenantId);
@@ -360,12 +342,7 @@ export class ExtensionsService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(autoProcessingRules).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 自動処理ルール作成 / 创建自动处理规则
@@ -388,7 +365,7 @@ export class ExtensionsService {
       .limit(1);
 
     if (existing.length === 0) {
-      throw new NotFoundException(`Auto-processing rule ${id} not found / 自動処理ルール ${id} が見つかりません / 自动处理规则 ${id} 未找到`);
+      throw new WmsException('EXT_AUTO_RULE_NOT_FOUND', `ID: ${id}`);
     }
 
     const rows = await this.db
@@ -409,7 +386,7 @@ export class ExtensionsService {
       .limit(1);
 
     if (existing.length === 0) {
-      throw new NotFoundException(`Auto-processing rule ${id} not found / 自動処理ルール ${id} が見つかりません / 自动处理规则 ${id} 未找到`);
+      throw new WmsException('EXT_AUTO_RULE_NOT_FOUND', `ID: ${id}`);
     }
 
     const rows = await this.db

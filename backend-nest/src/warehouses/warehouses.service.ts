@@ -1,9 +1,11 @@
 // 倉庫サービス / 仓库服务
-import { Inject, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, ilike, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { warehouses } from '../database/schema/warehouses.js';
 import type { CreateWarehouseDto, UpdateWarehouseDto } from './dto/create-warehouse.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -20,7 +22,7 @@ export class WarehousesService {
   // 倉庫一覧取得（テナント分離・ページネーション・検索）/ 获取仓库列表（租户隔离・分页・搜索）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -46,12 +48,7 @@ export class WarehousesService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(warehouses).where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 倉庫ID検索 / 按ID查找仓库
@@ -66,7 +63,7 @@ export class WarehousesService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`Warehouse ${id} not found / 倉庫 ${id} が見つかりません / 仓库 ${id} 未找到`);
+      throw new WmsException('WAREHOUSE_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -84,7 +81,7 @@ export class WarehousesService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(`Warehouse code "${dto.code}" already exists / 倉庫コード "${dto.code}" は既に存在します / 仓库编码 "${dto.code}" 已存在`);
+      throw new WmsException('DUPLICATE_RESOURCE', `Warehouse code: ${dto.code}`);
     }
 
     const rows = await this.db.insert(warehouses).values({
@@ -112,7 +109,7 @@ export class WarehousesService {
         .limit(1);
 
       if (existing.length > 0 && existing[0].id !== id) {
-        throw new ConflictException(`Warehouse code "${dto.code}" already exists / 倉庫コード "${dto.code}" は既に存在します / 仓库编码 "${dto.code}" 已存在`);
+        throw new WmsException('DUPLICATE_RESOURCE', `Warehouse code: ${dto.code}`);
       }
     }
 

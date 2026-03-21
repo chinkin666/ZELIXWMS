@@ -1,9 +1,11 @@
 // 依頼元会社サービス / 委托方公司服务
-import { Inject, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, ilike, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { orderSourceCompanies } from '../database/schema/shipments.js';
 import type { CreateOrderSourceCompanyDto, UpdateOrderSourceCompanyDto } from './dto/create-order-source-company.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -19,7 +21,7 @@ export class OrderSourceCompaniesService {
   // 依頼元会社一覧取得 / 获取委托方公司列表
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     const conditions: SQL[] = [eq(orderSourceCompanies.tenantId, tenantId)];
@@ -38,7 +40,7 @@ export class OrderSourceCompaniesService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(orderSourceCompanies).where(where),
     ]);
 
-    return { items, total: countResult[0]?.count ?? 0, page, limit };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 依頼元会社ID検索 / 按ID查找委托方公司
@@ -50,7 +52,7 @@ export class OrderSourceCompaniesService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`OrderSourceCompany ${id} not found / 依頼元会社 ${id} が見つかりません / 委托方公司 ${id} 未找到`);
+      throw new WmsException('ORDER_SOURCE_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -65,7 +67,7 @@ export class OrderSourceCompaniesService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(`Sender name "${dto.senderName}" already exists / 送り主名 "${dto.senderName}" は既に存在します / 发件人名称 "${dto.senderName}" 已存在`);
+      throw new WmsException('DUPLICATE_RESOURCE', `Sender name: ${dto.senderName}`);
     }
 
     const rows = await this.db.insert(orderSourceCompanies).values({ tenantId, ...dto }).returning();
@@ -84,7 +86,7 @@ export class OrderSourceCompaniesService {
         .limit(1);
 
       if (existing.length > 0 && existing[0].id !== id) {
-        throw new ConflictException(`Sender name "${dto.senderName}" already exists / 送り主名 "${dto.senderName}" は既に存在します / 发件人名称 "${dto.senderName}" 已存在`);
+        throw new WmsException('DUPLICATE_RESOURCE', `Sender name: ${dto.senderName}`);
       }
     }
 

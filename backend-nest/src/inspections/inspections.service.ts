@@ -1,6 +1,8 @@
 // 検品サービス / 检验服务
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { DRIZZLE } from '../database/database.module.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 interface FindAllQuery {
   page?: number;
@@ -16,20 +18,15 @@ export class InspectionsService {
   // 検品一覧取得（プレースホルダー）/ 获取检验列表（占位符）
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
 
     // プレースホルダー / 占位符
-    return {
-      items: [],
-      total: 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult([], 0, page, limit);
   }
 
   // 検品ID検索（プレースホルダー）/ 按ID查找检验（占位符）
   async findById(tenantId: string, id: string) {
-    throw new NotFoundException(`Inspection ${id} not found / 検品 ${id} が見つかりません / 检验 ${id} 未找到`);
+    throw new WmsException('INSPECTION_NOT_FOUND', `ID: ${id}`);
   }
 
   // 検品作成（プレースホルダー）/ 创建检验（占位符）
@@ -43,6 +40,6 @@ export class InspectionsService {
 
   // 検品更新（プレースホルダー）/ 更新检验（占位符）
   async update(tenantId: string, id: string, dto: Record<string, unknown>) {
-    throw new NotFoundException(`Inspection ${id} not found / 検品 ${id} が見つかりません / 检验 ${id} 未找到`);
+    throw new WmsException('INSPECTION_NOT_FOUND', `ID: ${id}`);
   }
 }

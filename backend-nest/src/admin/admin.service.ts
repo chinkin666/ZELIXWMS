@@ -1,5 +1,6 @@
 // 管理サービス / 管理服务
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, ilike, sql, SQL, desc } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { users } from '../database/schema/users.js';
@@ -7,6 +8,7 @@ import { tenants } from '../database/schema/tenants.js';
 import { systemSettings } from '../database/schema/settings.js';
 import { operationLogs } from '../database/schema/settings.js';
 import type { CreateUserDto, UpdateUserDto } from './dto/create-user.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 // ===== ユーザー検索クエリ / 用户查询参数 =====
 interface FindAllUsersQuery {
@@ -34,7 +36,7 @@ export class AdminService {
   // ユーザー一覧取得（テナント分離・ページネーション・検索）/ 获取用户列表（租户隔离・分页・搜索）
   async findAllUsers(tenantId: string, query: FindAllUsersQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -67,12 +69,7 @@ export class AdminService {
         .where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // ユーザーID検索 / 按ID查找用户
@@ -84,9 +81,7 @@ export class AdminService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(
-        `User ${id} not found / ユーザー ${id} が見つかりません / 用户 ${id} 未找到`,
-      );
+      throw new WmsException('USER_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -156,7 +151,7 @@ export class AdminService {
   // テナント一覧取得 / 获取租户列表
   async findAllTenants(query: { page?: number; limit?: number }) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     const [items, countResult] = await Promise.all([
@@ -164,12 +159,7 @@ export class AdminService {
       this.db.select({ count: sql<number>`count(*)::int` }).from(tenants),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // テナントID検索 / 按ID查找租户
@@ -181,9 +171,7 @@ export class AdminService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(
-        `Tenant ${id} not found / テナント ${id} が見つかりません / 租户 ${id} 未找到`,
-      );
+      throw new WmsException('TENANT_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -218,14 +206,9 @@ export class AdminService {
   // TODO: 実テーブルから取得 / 从实际表中获取
   async findApiLogs(tenantId: string, query: { page?: number; limit?: number }) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
 
-    return {
-      items: [],
-      total: 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult([], 0, page, limit);
   }
 
   // ========== システム設定 / 系统设置 ==========
@@ -273,7 +256,7 @@ export class AdminService {
   // 操作ログ取得（ページネーション・フィルタ）/ 获取操作日志（分页・筛选）
   async findOperationLogs(tenantId: string, query: FindOperationLogsQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -303,11 +286,6 @@ export class AdminService {
         .where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 }
