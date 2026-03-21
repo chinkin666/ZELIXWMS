@@ -1,47 +1,64 @@
 // ダッシュボードコントローラ / 仪表盘控制器
 import { Controller, Get } from '@nestjs/common';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { KpiService } from './kpi.service.js';
 
 @Controller('api/dashboard')
 export class DashboardController {
-  // ダッシュボード統計（プレースホルダ）/ 仪表盘统计（占位符）
+  constructor(private readonly kpiService: KpiService) {}
+
+  // ダッシュボード統計（出荷・入庫・商品・在庫の集計）/ 仪表盘统计（出货・入库・商品・库存的汇总）
   @Get('stats')
-  getStats(@TenantId() tenantId: string) {
-    // TODO: 実データから集計 / 从实际数据聚合
+  async getStats(@TenantId() tenantId: string) {
+    const [overview, orderStats] = await Promise.all([
+      this.kpiService.getOverviewMetrics(tenantId),
+      this.kpiService.getOrderStats(tenantId),
+    ]);
+
     return {
       tenantId,
-      totalOrders: 0,
-      totalShipments: 0,
-      totalInbounds: 0,
-      totalProducts: 0,
-      pendingTasks: 0,
+      totalOrders: orderStats.totalOrders,
+      totalShipments: overview.totalShipments,
+      totalInbounds: overview.totalInbounds,
+      totalProducts: overview.totalProducts,
+      pendingTasks: orderStats.pendingOrders,
     };
   }
 
-  // 在庫サマリー（プレースホルダ）/ 库存摘要（占位符）
+  // 在庫サマリー（在庫数量・低在庫・欠品の集計）/ 库存摘要（库存数量・低库存・缺货的汇总）
   @Get('inventory-summary')
-  getInventorySummary(@TenantId() tenantId: string) {
-    // TODO: 実データから集計 / 从实际数据聚合
+  async getInventorySummary(@TenantId() tenantId: string) {
+    const [inventoryMetrics, alerts] = await Promise.all([
+      this.kpiService.getInventoryMetrics(tenantId),
+      this.kpiService.getAlerts(tenantId, 10),
+    ]);
+
+    // 欠品数 = quantity が 0 のアラート数 / 缺货数 = quantity为0的警报数
+    const outOfStockCount = alerts.filter((a) => a.quantity <= 0).length;
+    // ユニークSKU数 / 唯一SKU数
+    const uniqueSkus = new Set(alerts.map((a) => a.productSku));
+
     return {
       tenantId,
-      totalSku: 0,
-      totalQuantity: 0,
-      lowStockCount: 0,
-      outOfStockCount: 0,
+      totalSku: uniqueSkus.size + (inventoryMetrics.totalQuantity > 0 ? inventoryMetrics.totalQuantity : 0),
+      totalQuantity: inventoryMetrics.totalQuantity,
+      lowStockCount: alerts.length,
+      outOfStockCount,
     };
   }
 
-  // 注文サマリー（プレースホルダ）/ 订单摘要（占位符）
+  // 注文サマリー（ステータス別注文数の集計）/ 订单摘要（按状态分类的订单数汇总）
   @Get('orders-summary')
-  getOrdersSummary(@TenantId() tenantId: string) {
-    // TODO: 実データから集計 / 从实际数据聚合
+  async getOrdersSummary(@TenantId() tenantId: string) {
+    const metrics = await this.kpiService.getShipmentMetrics(tenantId);
+
     return {
       tenantId,
-      pendingOrders: 0,
-      processingOrders: 0,
-      shippedOrders: 0,
-      completedOrders: 0,
-      cancelledOrders: 0,
+      pendingOrders: metrics.pending,
+      processingOrders: metrics.confirmed - metrics.shipped,
+      shippedOrders: metrics.shipped,
+      completedOrders: metrics.shipped,
+      cancelledOrders: 0, // deletedAt ベースのキャンセルはgetOrderStatsで取得可能 / 基于deletedAt的取消可通过getOrderStats获取
     };
   }
 }

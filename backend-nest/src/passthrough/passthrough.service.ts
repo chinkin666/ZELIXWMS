@@ -1,8 +1,11 @@
 // パススルーサービス / 直通服务
-// プレースホルダー実装 — パススルーテーブル確定後に本実装へ移行
-// 占位符实现 — 直通表确定后迁移到正式实装
-import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { eq, and, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
+import type { DrizzleDB } from '../database/database.types.js';
+import { passthroughOrders } from '../database/schema/passthrough.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 
 interface FindAllQuery {
   page?: number;
@@ -11,74 +14,181 @@ interface FindAllQuery {
 }
 
 // パススルーのステータス遷移定義 / 直通状态迁移定义
-const STATUS_TRANSITIONS: Record<string, string[]> = {
-  pending: ['arrived'],
-  arrived: ['shipped'],
-  shipped: [],
+// draft → confirmed → receiving → completed
+// draft → cancelled
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  draft: ['confirmed', 'cancelled'],
+  confirmed: ['receiving', 'cancelled'],
+  receiving: ['completed'],
+  completed: [],
+  cancelled: [],
 };
 
 @Injectable()
 export class PassthroughService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
-
-  // パススルー注文一覧取得 / 获取直通订单列表
-  async findAll(tenantId: string, query: FindAllQuery) {
-    // TODO: パススルーテーブル実装後に本実装 / 直通表实装后正式实现
-    return { items: [], total: 0, page: query.page ?? 1, limit: query.limit ?? 20 };
-  }
-
-  // パススルー注文詳細取得 / 获取直通订单详情
-  async findById(tenantId: string, id: string) {
-    // TODO: パススルーテーブル実装後に本実装 / 直通表实装后正式实现
-    throw new NotFoundException(
-      `Passthrough order ${id} not found / パススルー注文 ${id} が見つかりません / 直通订单 ${id} 未找到`,
-    );
-  }
-
-  // パススルー注文作成 / 创建直通订单
-  async create(tenantId: string, dto: Record<string, any>) {
-    // TODO: パススルーテーブル実装後に本実装 / 直通表实装后正式实现
-    return { id: 'placeholder', tenantId, ...dto, status: 'pending', createdAt: new Date() };
-  }
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // ステータス遷移バリデーション / 状态迁移校验
   private validateStatusTransition(currentStatus: string, targetStatus: string): void {
-    const allowed = STATUS_TRANSITIONS[currentStatus];
+    const allowed = VALID_TRANSITIONS[currentStatus];
     if (!allowed || !allowed.includes(targetStatus)) {
-      throw new BadRequestException(
-        `Cannot transition from "${currentStatus}" to "${targetStatus}" / ` +
+      throw new WmsException(
+        'PASSTHROUGH_INVALID_STATUS',
+        `Cannot transition from '${currentStatus}' to '${targetStatus}' / ` +
         `「${currentStatus}」から「${targetStatus}」への遷移は不可 / ` +
         `不能从「${currentStatus}」迁移到「${targetStatus}」`,
       );
     }
   }
 
-  // パススルー注文到着処理 / 直通订单到货处理
+  // パススルー注文一覧取得（テナント分離・ページネーション・ステータスフィルタ）
+  // 获取直通订单列表（租户隔离・分页・状态过滤）
+  async findAll(tenantId: string, query: FindAllQuery) {
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
+    const offset = (page - 1) * limit;
+
+    // 検索条件構築 / 构建查询条件
+    const conditions: SQL[] = [eq(passthroughOrders.tenantId, tenantId)];
+
+    if (query.status) {
+      conditions.push(eq(passthroughOrders.status, query.status));
+    }
+
+    const where = and(...conditions);
+
+    // 並列でデータ取得とカウント実行 / 并行执行数据获取和计数
+    const [items, countResult] = await Promise.all([
+      this.db
+        .select()
+        .from(passthroughOrders)
+        .where(where)
+        .limit(limit)
+        .offset(offset)
+        .orderBy(passthroughOrders.createdAt),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(passthroughOrders)
+        .where(where),
+    ]);
+
+    const total = countResult[0]?.count ?? 0;
+    return createPaginatedResult(items, total, page, limit);
+  }
+
+  // パススルー注文詳細取得 / 获取直通订单详情
+  async findById(tenantId: string, id: string) {
+    const rows = await this.db
+      .select()
+      .from(passthroughOrders)
+      .where(and(eq(passthroughOrders.id, id), eq(passthroughOrders.tenantId, tenantId)))
+      .limit(1);
+
+    if (rows.length === 0) {
+      throw new WmsException('PASSTHROUGH_NOT_FOUND', `id=${id}`);
+    }
+    return rows[0];
+  }
+
+  // パススルー注文作成（ステータスは draft で初期化）/ 创建直通订单（状态初始化为 draft）
+  async create(tenantId: string, dto: Record<string, any>) {
+    const rows = await this.db
+      .insert(passthroughOrders)
+      .values({
+        tenantId,
+        ...dto,
+        status: 'draft',
+      })
+      .returning();
+
+    return rows[0];
+  }
+
+  // パススルー注文ステータス更新（遷移バリデーション付き）
+  // 更新直通订单状态（带迁移校验）
+  async update(tenantId: string, id: string, dto: Record<string, any>) {
+    // 現在のレコード取得 / 获取当前记录
+    const current = await this.findById(tenantId, id);
+
+    // ステータス変更がある場合はバリデーション / 如果有状态变更则进行校验
+    if (dto.status && dto.status !== current.status) {
+      this.validateStatusTransition(current.status, dto.status);
+
+      // ステータスに応じたタイムスタンプ設定 / 根据状态设置时间戳
+      const now = new Date();
+      const statusTimestamps: Record<string, Record<string, Date>> = {
+        confirmed: { confirmedAt: now },
+        receiving: { receivedAt: now },
+        completed: { completedAt: now },
+        cancelled: { cancelledAt: now },
+      };
+
+      const timestamps = statusTimestamps[dto.status] ?? {};
+      const rows = await this.db
+        .update(passthroughOrders)
+        .set({ ...dto, ...timestamps, updatedAt: now })
+        .where(and(eq(passthroughOrders.id, id), eq(passthroughOrders.tenantId, tenantId)))
+        .returning();
+
+      return rows[0];
+    }
+
+    // ステータス変更なしの通常更新 / 无状态变更的普通更新
+    const rows = await this.db
+      .update(passthroughOrders)
+      .set({ ...dto, updatedAt: new Date() })
+      .where(and(eq(passthroughOrders.id, id), eq(passthroughOrders.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // パススルー注文到着処理（draft→confirmed 遷移のショートカット）
+  // 直通订单到货处理（draft→confirmed 迁移的快捷方式）
   async arrive(tenantId: string, id: string) {
-    // TODO: パススルーテーブル実装後に本実装 / 直通表实装后正式实现
-    this.validateStatusTransition('pending', 'arrived');
-    return { id, tenantId, status: 'arrived', arrivedAt: new Date() };
+    return this.update(tenantId, id, { status: 'confirmed' });
   }
 
-  // パススルー注文出荷処理 / 直通订单发货处理
+  // パススルー注文出荷処理（confirmed→receiving 遷移のショートカット）
+  // 直通订单发货处理（confirmed→receiving 迁移的快捷方式）
   async ship(tenantId: string, id: string) {
-    // TODO: パススルーテーブル実装後に本実装 / 直通表实装后正式实现
-    this.validateStatusTransition('arrived', 'shipped');
-    return { id, tenantId, status: 'shipped', shippedAt: new Date() };
+    return this.update(tenantId, id, { status: 'receiving' });
   }
 
-  // ステージングダッシュボード / 暂存仪表板
+  // ステージングダッシュボード（ステータス別集計）/ 暂存仪表板（按状态汇总）
   async getDashboard(tenantId: string) {
-    // TODO: パススルーテーブル実装後に本実装 / 直通表实装后正式实现
-    return {
-      tenantId,
-      summary: {
-        pending: 0,
-        arrived: 0,
-        shipped: 0,
-        total: 0,
-      },
-      recentOrders: [],
+    // ステータス別カウント取得 / 获取各状态计数
+    const counts = await this.db
+      .select({
+        status: passthroughOrders.status,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(passthroughOrders)
+      .where(eq(passthroughOrders.tenantId, tenantId))
+      .groupBy(passthroughOrders.status);
+
+    const summary: Record<string, number> = {
+      draft: 0,
+      confirmed: 0,
+      receiving: 0,
+      completed: 0,
+      cancelled: 0,
+      total: 0,
     };
+
+    for (const row of counts) {
+      summary[row.status] = row.count;
+      summary.total += row.count;
+    }
+
+    // 最近の注文取得 / 获取最近的订单
+    const recentOrders = await this.db
+      .select()
+      .from(passthroughOrders)
+      .where(eq(passthroughOrders.tenantId, tenantId))
+      .orderBy(passthroughOrders.createdAt)
+      .limit(10);
+
+    return { tenantId, summary, recentOrders };
   }
 }

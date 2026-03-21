@@ -1,9 +1,11 @@
 // 在庫サービス / 库存服务
-import { Inject, Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { locations, stockQuants, stockMoves } from '../database/schema/inventory.js';
 import type { CreateLocationDto, UpdateLocationDto } from './dto/create-location.dto.js';
+import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
 // ロケーション検索クエリ / 库位查询参数
 interface FindLocationsQuery {
@@ -32,7 +34,7 @@ export class InventoryService {
   // ロケーション一覧取得（テナント分離・ページネーション・フィルタ）/ 获取库位列表（租户隔离・分页・筛选）
   async findAllLocations(tenantId: string, query: FindLocationsQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -64,12 +66,7 @@ export class InventoryService {
         .where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // ロケーションID検索 / 按ID查找库位
@@ -84,9 +81,7 @@ export class InventoryService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(
-        `Location ${id} not found / ロケーション ${id} が見つかりません / 库位 ${id} 未找到`,
-      );
+      throw new WmsException('INV_LOCATION_NOT_FOUND', `ID: ${id}`);
     }
     return rows[0];
   }
@@ -104,9 +99,7 @@ export class InventoryService {
       .limit(1);
 
     if (existing.length > 0) {
-      throw new ConflictException(
-        `Location code "${dto.code}" already exists / ロケーションコード "${dto.code}" は既に存在します / 库位编码 "${dto.code}" 已存在`,
-      );
+      throw new WmsException('DUPLICATE_RESOURCE', `Location code: ${dto.code}`);
     }
 
     const rows = await this.db
@@ -134,9 +127,7 @@ export class InventoryService {
         .limit(1);
 
       if (existing.length > 0 && existing[0].id !== id) {
-        throw new ConflictException(
-          `Location code "${dto.code}" already exists / ロケーションコード "${dto.code}" は既に存在します / 库位编码 "${dto.code}" 已存在`,
-        );
+        throw new WmsException('DUPLICATE_RESOURCE', `Location code: ${dto.code}`);
       }
     }
 
@@ -169,7 +160,7 @@ export class InventoryService {
   // 在庫レベル取得（商品別集計: 合計/予約/利用可能）/ 获取库存水平（按商品汇总: 总量/预约/可用）
   async getStockLevels(tenantId: string, query: StockLevelsQuery) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     // 検索条件構築 / 构建查询条件
@@ -213,12 +204,7 @@ export class InventoryService {
         .where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
   // 商品別在庫詳細（ロケーション別）/ 按商品查看库存详情（按库位）
@@ -258,9 +244,7 @@ export class InventoryService {
     const { productId, locationId, quantity, reason } = body;
 
     if (!productId || !locationId || quantity === undefined) {
-      throw new BadRequestException(
-        'productId, locationId, quantity are required / productId, locationId, quantity は必須です / productId, locationId, quantity 为必填',
-      );
+      throw new WmsException('VALIDATION_ERROR', 'productId, locationId, quantity are required');
     }
 
     const now = new Date();
@@ -299,9 +283,7 @@ export class InventoryService {
     const { productId, fromLocationId, toLocationId, quantity } = body;
 
     if (!productId || !fromLocationId || !toLocationId || !quantity || quantity <= 0) {
-      throw new BadRequestException(
-        'productId, fromLocationId, toLocationId, quantity (> 0) are required / 必須項目が不足しています / 必填项缺失',
-      );
+      throw new WmsException('VALIDATION_ERROR', 'productId, fromLocationId, toLocationId, quantity (> 0) are required');
     }
 
     const now = new Date();
@@ -360,7 +342,7 @@ export class InventoryService {
   // 在庫移動履歴取得（ページネーション付き）/ 获取库存移动历史（带分页）
   async getMovements(tenantId: string, query: { page?: number; limit?: number; productId?: string; moveType?: string }) {
     const page = Math.max(1, query.page || 1);
-    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
     const conditions: SQL[] = [eq(stockMoves.tenantId, tenantId)];
@@ -388,27 +370,84 @@ export class InventoryService {
         .where(where),
     ]);
 
-    return {
-      items,
-      total: countResult[0]?.count ?? 0,
-      page,
-      limit,
-    };
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
-  // 在庫エイジング分析（プレースホルダー）/ 库存老化分析（占位符）
+  // 在庫エイジング分析（lastMovedAtベース）/ 库存老化分析（基于lastMovedAt）
   async getAgingAnalysis(tenantId: string, warehouseId?: string) {
-    // TODO: 実装予定 - stockQuantsのlastMovedAtをベースに分析 / 待实现 - 基于stockQuants的lastMovedAt分析
+    // 検索条件構築 / 构建查询条件
+    const conditions: SQL[] = [
+      eq(stockQuants.tenantId, tenantId),
+      sql`${stockQuants.quantity} > 0`,
+    ];
+
+    // 倉庫IDフィルタ（ロケーション経由）/ 仓库ID筛选（通过库位）
+    if (warehouseId) {
+      conditions.push(
+        sql`${stockQuants.locationId} IN (
+          SELECT ${locations.id} FROM ${locations}
+          WHERE ${locations.warehouseId} = ${warehouseId}
+        )`,
+      );
+    }
+
+    const where = and(...conditions);
+
+    // 商品別に最新移動日と数量を集計 / 按商品汇总最新移动日和数量
+    const rows = await this.db
+      .select({
+        productId: stockQuants.productId,
+        totalQuantity: sql<number>`sum(${stockQuants.quantity})::int`,
+        lastMovedAt: sql<string>`max(${stockQuants.lastMovedAt})`,
+      })
+      .from(stockQuants)
+      .where(where)
+      .groupBy(stockQuants.productId);
+
+    // エイジングバケット定義 / 老化分桶定义
+    const buckets = [
+      { range: '0-30 days / 0-30日', minDays: 0, maxDays: 30, count: 0, totalQuantity: 0 },
+      { range: '31-60 days / 31-60日', minDays: 31, maxDays: 60, count: 0, totalQuantity: 0 },
+      { range: '61-90 days / 61-90日', minDays: 61, maxDays: 90, count: 0, totalQuantity: 0 },
+      { range: '91-180 days / 91-180日', minDays: 91, maxDays: 180, count: 0, totalQuantity: 0 },
+      { range: '180+ days / 180日以上', minDays: 181, maxDays: Infinity, count: 0, totalQuantity: 0 },
+    ];
+
+    const now = Date.now();
+    let totalAgeDays = 0;
+
+    for (const row of rows) {
+      // lastMovedAtがnullの場合はcreatedAtを代用（最大エイジング扱い）
+      // lastMovedAt为null时使用createdAt代替（视为最大老化）
+      const movedAt = row.lastMovedAt ? new Date(row.lastMovedAt).getTime() : 0;
+      const ageDays = movedAt > 0
+        ? Math.floor((now - movedAt) / (1000 * 60 * 60 * 24))
+        : 365; // lastMovedAt不明の場合は365日扱い / 未知时视为365天
+
+      totalAgeDays += ageDays;
+      const quantity = row.totalQuantity ?? 0;
+
+      // 適切なバケットに分類 / 分类到对应的桶
+      for (const bucket of buckets) {
+        if (ageDays >= bucket.minDays && ageDays <= bucket.maxDays) {
+          bucket.count++;
+          bucket.totalQuantity += quantity;
+          break;
+        }
+      }
+    }
+
+    const totalProducts = rows.length;
+    const averageAge = totalProducts > 0 ? Math.round(totalAgeDays / totalProducts) : 0;
+
     return {
-      tenantId,
-      warehouseId: warehouseId ?? null,
-      message: 'Aging analysis placeholder / エイジング分析プレースホルダー / 老化分析占位符',
-      brackets: [
-        { label: '0-30 days / 0-30日', count: 0 },
-        { label: '31-60 days / 31-60日', count: 0 },
-        { label: '61-90 days / 61-90日', count: 0 },
-        { label: '90+ days / 90日以上', count: 0 },
-      ],
+      buckets: buckets.map(({ range, count, totalQuantity }) => ({
+        range,
+        count,
+        totalQuantity,
+      })),
+      totalProducts,
+      averageAge,
     };
   }
 

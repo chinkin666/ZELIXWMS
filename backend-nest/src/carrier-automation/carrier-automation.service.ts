@@ -1,5 +1,6 @@
 // 配送業者自動化サービス / 配送业者自动化服务
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { carrierAutomationConfigs } from '../database/schema/carriers.js';
@@ -30,11 +31,7 @@ export class CarrierAutomationService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(
-        `Carrier automation config for "${type}" not found / ` +
-        `配送業者自動化設定「${type}」が見つかりません / ` +
-        `配送业者自动化配置「${type}」未找到`,
-      );
+      throw new WmsException('CARRIER_AUTO_NOT_FOUND', `Type: ${type}`);
     }
     return rows[0];
   }
