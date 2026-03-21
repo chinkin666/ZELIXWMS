@@ -24,12 +24,17 @@ type ImportRowError = {
 async function validateSkuUniqueness(
   codes: string[],
   excludeProductId?: mongoose.Types.ObjectId | string,
+  tenantId?: string,
 ): Promise<string[]> {
   if (!codes || codes.length === 0) return [];
 
   const query: any = { _allSku: { $in: codes } };
   if (excludeProductId) {
     query._id = { $ne: excludeProductId };
+  }
+  // テナント隔離: 同一テナント内でのみ重複チェック / 租户隔离: 仅在同一租户内检查重复
+  if (tenantId) {
+    query.tenantId = tenantId;
   }
 
   const existingProducts = await Product.find(query, { sku: 1, _allSku: 1 }).lean();
@@ -174,9 +179,10 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Validate all SKU codes (main + sub) are globally unique
+    // Validate all SKU codes (main + sub) are unique within tenant
+    const tenantId = (req as any).user?.tenantId || 'default';
     const allCodes = computeAllSku(parsed.data.sku, parsed.data.subSkus);
-    const conflicts = await validateSkuUniqueness(allCodes);
+    const conflicts = await validateSkuUniqueness(allCodes, undefined, tenantId);
     if (conflicts.length > 0) {
       res.status(409).json({
         message: conflicts.join('; '),
@@ -611,7 +617,8 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
     const newSku = parsed.data.sku || existingProduct.sku;
     const newSubSkus = parsed.data.subSkus ?? existingProduct.subSkus;
     const allCodes = computeAllSku(newSku, newSubSkus as { subSku: string }[]);
-    const conflicts = await validateSkuUniqueness(allCodes, req.params.id);
+    const updateTenantId = (req as any).user?.tenantId || existingProduct.tenantId || 'default';
+    const conflicts = await validateSkuUniqueness(allCodes, req.params.id, updateTenantId);
     if (conflicts.length > 0) {
       res.status(409).json({
         message: conflicts.join('; '),
