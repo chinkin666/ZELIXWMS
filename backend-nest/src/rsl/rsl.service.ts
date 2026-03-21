@@ -72,9 +72,12 @@ export class RslService {
       .insert(rslShipmentPlans)
       .values({
         tenantId,
-        ...dto,
+        planName: dto.planName ?? `RSL-${Date.now()}`,
+        rslOrderId: dto.rslOrderId ?? null,
+        items: dto.items ?? null,
+        notes: dto.notes ?? null,
         status: 'draft',
-      })
+      } satisfies typeof rslShipmentPlans.$inferInsert)
       .returning();
 
     return rows[0];

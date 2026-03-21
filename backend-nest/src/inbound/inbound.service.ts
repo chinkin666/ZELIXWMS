@@ -1,7 +1,7 @@
 // 入庫サービス / 入库服务
 import { Inject, Injectable } from '@nestjs/common';
 import { WmsException } from '../common/exceptions/wms.exception.js';
-import { eq, and, isNull, sql, SQL } from 'drizzle-orm';
+import { eq, and, isNull, sql, SQL, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { inboundOrders, inboundOrderLines } from '../database/schema/inbound.js';
 import type { CreateInboundOrderDto, UpdateInboundOrderDto } from './dto/create-inbound-order.dto.js';
@@ -218,5 +218,206 @@ export class InboundService {
       .orderBy(inboundOrderLines.createdAt);
 
     return rows;
+  }
+
+  // 入庫オーダー一括入荷（明細行のreceivedQuantityを一括更新）
+  // 入库订单批量收货（批量更新明细行的receivedQuantity）
+  async bulkReceive(tenantId: string, id: string, body: Record<string, unknown>) {
+    const order = await this.findById(tenantId, id);
+    if (order.status !== 'confirmed' && order.status !== 'receiving') {
+      throw new WmsException('INBOUND_INVALID_STATUS', `Cannot bulk receive: current status is ${order.status}`);
+    }
+
+    const lines = body.lines as Array<{ lineId: string; receivedQuantity: number; damagedQuantity?: number }> | undefined;
+    if (!lines || !Array.isArray(lines) || lines.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'lines array is required / lines配列は必須 / lines数组必填');
+    }
+
+    const now = new Date();
+    const results = [];
+
+    for (const line of lines) {
+      if (!line.lineId || line.receivedQuantity === undefined) {
+        continue;
+      }
+
+      const updateData: Record<string, unknown> = {
+        receivedQuantity: line.receivedQuantity,
+        updatedAt: now,
+      };
+      if (line.damagedQuantity !== undefined) {
+        updateData.damagedQuantity = line.damagedQuantity;
+      }
+
+      const [updated] = await this.db
+        .update(inboundOrderLines)
+        .set(updateData)
+        .where(and(
+          eq(inboundOrderLines.id, line.lineId),
+          eq(inboundOrderLines.inboundOrderId, id),
+          eq(inboundOrderLines.tenantId, tenantId),
+        ))
+        .returning();
+
+      if (updated) {
+        results.push(updated);
+      }
+    }
+
+    // ステータスをreceivingに更新（まだでなければ）/ 将状态更新为receiving（如果还不是）
+    if (order.status === 'confirmed') {
+      await this.db.update(inboundOrders)
+        .set({ status: 'receiving', updatedAt: now })
+        .where(and(eq(inboundOrders.id, id), eq(inboundOrders.tenantId, tenantId)));
+    }
+
+    return { updated: results.length, lines: results };
+  }
+
+  // 入庫オーダー棚入れ（明細行のputawayLocationIdとputawayQuantityを更新）
+  // 入库订单上架（更新明细行的putawayLocationId和putawayQuantity）
+  async putaway(tenantId: string, id: string, body: Record<string, unknown>) {
+    await this.findById(tenantId, id);
+
+    const lines = body.lines as Array<{ lineId: string; putawayLocationId: string; putawayQuantity: number }> | undefined;
+    if (!lines || !Array.isArray(lines) || lines.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'lines array is required / lines配列は必須 / lines数组必填');
+    }
+
+    const now = new Date();
+    const results = [];
+
+    for (const line of lines) {
+      if (!line.lineId || !line.putawayLocationId || !line.putawayQuantity) {
+        continue;
+      }
+
+      const [updated] = await this.db
+        .update(inboundOrderLines)
+        .set({
+          putawayLocationId: line.putawayLocationId,
+          putawayQuantity: line.putawayQuantity,
+          updatedAt: now,
+        })
+        .where(and(
+          eq(inboundOrderLines.id, line.lineId),
+          eq(inboundOrderLines.inboundOrderId, id),
+          eq(inboundOrderLines.tenantId, tenantId),
+        ))
+        .returning();
+
+      if (updated) {
+        results.push(updated);
+      }
+    }
+
+    return { updated: results.length, lines: results };
+  }
+
+  // 入庫オーダー差異取得（expectedQuantity vs receivedQuantityの差異）
+  // 获取入库订单差异（expectedQuantity vs receivedQuantity的差异）
+  async getVariance(tenantId: string, id: string) {
+    await this.findById(tenantId, id);
+
+    const lines = await this.db
+      .select({
+        lineId: inboundOrderLines.id,
+        productSku: inboundOrderLines.productSku,
+        expectedQuantity: inboundOrderLines.expectedQuantity,
+        receivedQuantity: inboundOrderLines.receivedQuantity,
+        damagedQuantity: inboundOrderLines.damagedQuantity,
+        variance: sql<number>`(${inboundOrderLines.receivedQuantity} - ${inboundOrderLines.expectedQuantity})::int`,
+      })
+      .from(inboundOrderLines)
+      .where(and(
+        eq(inboundOrderLines.inboundOrderId, id),
+        eq(inboundOrderLines.tenantId, tenantId),
+      ))
+      .orderBy(inboundOrderLines.createdAt);
+
+    const totalExpected = lines.reduce((s: number, l: any) => s + (l.expectedQuantity ?? 0), 0);
+    const totalReceived = lines.reduce((s: number, l: any) => s + (l.receivedQuantity ?? 0), 0);
+    const totalDamaged = lines.reduce((s: number, l: any) => s + (l.damagedQuantity ?? 0), 0);
+
+    return {
+      orderId: id,
+      items: lines,
+      total: lines.length,
+      totalExpected,
+      totalReceived,
+      totalDamaged,
+      totalVariance: totalReceived - totalExpected,
+    };
+  }
+
+  // 入庫履歴取得（完了/キャンセル済みオーダーのページネーション）
+  // 获取入库历史（已完成/取消的订单分页）
+  async getHistory(tenantId: string, query: { page?: number; limit?: number }) {
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
+    const offset = (page - 1) * limit;
+
+    const conditions: SQL[] = [
+      eq(inboundOrders.tenantId, tenantId),
+      isNull(inboundOrders.deletedAt),
+      sql`${inboundOrders.status} IN ('done', 'cancelled')`,
+    ];
+
+    const where = and(...conditions);
+
+    const [items, countResult] = await Promise.all([
+      this.db.select().from(inboundOrders).where(where).limit(limit).offset(offset).orderBy(sql`${inboundOrders.updatedAt} DESC`),
+      this.db.select({ count: sql<number>`count(*)::int` }).from(inboundOrders).where(where),
+    ]);
+
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
+  }
+
+  // 入庫インポート（CSV/JSONボディをパースして一括挿入）
+  // 入库导入（解析CSV/JSON body后批量插入）
+  async importOrders(tenantId: string, body: { orders: Record<string, any>[] }) {
+    const { orders } = body;
+    if (!orders || !Array.isArray(orders) || orders.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'orders array is required / orders配列は必須 / orders数组必填');
+    }
+
+    const results = [];
+    for (const dto of orders) {
+      const created = await this.create(tenantId, dto as CreateInboundOrderDto);
+      results.push(created);
+    }
+
+    return { imported: results.length, items: results };
+  }
+
+  // 入庫エクスポート（CSV形式のバッファを返す）/ 入库导出（返回CSV格式buffer）
+  async exportOrders(tenantId: string) {
+    const items = await this.db
+      .select()
+      .from(inboundOrders)
+      .where(and(
+        eq(inboundOrders.tenantId, tenantId),
+        isNull(inboundOrders.deletedAt),
+      ))
+      .orderBy(inboundOrders.createdAt);
+
+    const headers = ['orderNumber', 'status', 'flowType', 'clientId', 'warehouseId', 'expectedDate', 'notes', 'createdAt'];
+    const csvLines = [headers.join(',')];
+
+    for (const item of items) {
+      const row = headers.map((h) => {
+        const val = (item as Record<string, unknown>)[h];
+        const str = val === null || val === undefined ? '' : String(val);
+        return str.includes(',') || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str;
+      });
+      csvLines.push(row.join(','));
+    }
+
+    return {
+      filename: `inbound-orders-${new Date().toISOString().slice(0, 10)}.csv`,
+      contentType: 'text/csv',
+      data: csvLines.join('\n'),
+      totalRows: items.length,
+    };
   }
 }

@@ -4,6 +4,7 @@ import { eq, and, inArray, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import type { DrizzleDB } from '../database/database.types.js';
 import { shipmentOrders } from '../database/schema/shipments.js';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 
 // 佐川急便の送り状種類（静的参照データ） / 佐川急便送状类型（静态参考数据）
 const INVOICE_TYPES = [
@@ -49,7 +50,7 @@ export class SagawaService {
     const shipmentIds: string[] = dto.shipmentIds ?? [];
 
     // 出荷注文データ取得 / 获取出货订单数据
-    const orders = await (this.db as any)
+    const orders = await this.db
       .select()
       .from(shipmentOrders)
       .where(
@@ -145,7 +146,7 @@ export class SagawaService {
 
       try {
         // 出荷注文を追跡番号で更新 / 用追踪号更新出货订单
-        const updated = await (this.db as any)
+        const updated = await this.db
           .update(shipmentOrders)
           .set({
             trackingId: trackingNumber,
@@ -186,6 +187,106 @@ export class SagawaService {
   // 送り状種類取得（静的参照データ） / 获取送状类型（静态参考数据）
   getInvoiceTypes() {
     return { items: INVOICE_TYPES };
+  }
+
+  // 佐川バリデーション（出荷注文の必須フィールド検証）/ 佐川校验（出货订单必填字段验证）
+  async validateShipments(tenantId: string, dto: Record<string, any>) {
+    const shipmentIds: string[] = dto.shipmentIds ?? [];
+
+    if (shipmentIds.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'shipmentIds is required / shipmentIdsは必須です / shipmentIds为必填项');
+    }
+
+    // 出荷注文データ取得 / 获取出货订单数据
+    const orders = await this.db
+      .select()
+      .from(shipmentOrders)
+      .where(
+        and(
+          eq(shipmentOrders.tenantId, tenantId),
+          inArray(shipmentOrders.id, shipmentIds),
+        ),
+      );
+
+    if (orders.length === 0) {
+      throw new WmsException('SHIP_NOT_FOUND', 'No shipment orders found / 出荷注文が見つかりません / 未找到出货订单');
+    }
+
+    // 必須フィールド定義 / 必填字段定义
+    const requiredFields = [
+      { key: 'recipientPhone', label: 'お届け先電話番号 / 收件人电话' },
+      { key: 'recipientPostalCode', label: 'お届け先郵便番号 / 收件人邮编' },
+      { key: 'recipientPrefecture', label: 'お届け先住所1 / 收件人地址1' },
+      { key: 'recipientName', label: 'お届け先名称 / 收件人名称' },
+      { key: 'senderPhone', label: 'ご依頼主電話番号 / 发件人电话' },
+      { key: 'senderPostalCode', label: 'ご依頼主郵便番号 / 发件人邮编' },
+      { key: 'senderPrefecture', label: 'ご依頼主住所1 / 发件人地址1' },
+      { key: 'senderName', label: 'ご依頼主名称 / 发件人名称' },
+    ] as const;
+
+    // 各注文のバリデーション実行 / 对每个订单执行验证
+    const validationResults = orders.map((order: any) => {
+      const missingFields = requiredFields
+        .filter((field) => !order[field.key] || String(order[field.key]).trim() === '')
+        .map((field) => ({ field: field.key, label: field.label }));
+
+      return {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        valid: missingFields.length === 0,
+        missingFields,
+      };
+    });
+
+    const validCount = validationResults.filter((r) => r.valid).length;
+    const invalidCount = validationResults.filter((r) => !r.valid).length;
+
+    return {
+      totalChecked: validationResults.length,
+      validCount,
+      invalidCount,
+      results: validationResults,
+      message: `Validated ${validationResults.length} orders: ${validCount} valid, ${invalidCount} invalid / ${validationResults.length}件検証: ${validCount}件OK, ${invalidCount}件NG / 已验证${validationResults.length}条: ${validCount}条通过, ${invalidCount}条不通过`,
+    };
+  }
+
+  // 佐川印刷ステータス更新（送り状印刷済みマーク）/ 佐川打印状态更新（标记送状已打印）
+  async markAsPrinted(tenantId: string, dto: Record<string, any>) {
+    const shipmentIds: string[] = dto.shipmentIds ?? [];
+
+    if (shipmentIds.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'shipmentIds is required / shipmentIdsは必須です / shipmentIds为必填项');
+    }
+
+    // 印刷済みステータス更新 / 更新已打印状态
+    const updated = await this.db
+      .update(shipmentOrders)
+      .set({
+        statusPrinted: true,
+        statusPrintedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(shipmentOrders.tenantId, tenantId),
+          inArray(shipmentOrders.id, shipmentIds),
+        ),
+      )
+      .returning({ id: shipmentOrders.id, orderNumber: shipmentOrders.orderNumber });
+
+    if (updated.length === 0) {
+      throw new WmsException('SHIP_NOT_FOUND', 'No shipment orders found to update / 更新対象の出荷注文が見つかりません / 未找到要更新的出货订单');
+    }
+
+    return {
+      printedCount: updated.length,
+      printedIds: updated.map((row: { id: string; orderNumber: string }) => ({
+        id: row.id,
+        orderNumber: row.orderNumber,
+      })),
+      printedAt: new Date(),
+      message: `Marked ${updated.length} orders as printed / ${updated.length}件を印刷済みにしました / 已标记${updated.length}条为已打印`,
+    };
   }
 
   // CSVフィールドエスケープ / CSV字段转义

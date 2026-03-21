@@ -167,9 +167,9 @@ export class AdminController {
     });
   }
 
-  // テナント統計ダッシュボード（プレースホルダー）/ 租户统计仪表盘（占位符）
+  // テナント統計ダッシュボード / 租户统计仪表盘
   @Get('dashboard/tenant-stats')
   getTenantStats(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.adminService.getTenantStats(tenantId);
   }
 }

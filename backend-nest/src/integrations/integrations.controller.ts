@@ -37,57 +37,57 @@ export class IntegrationsController {
     return this.integrationsService.getErpStatus(tenantId);
   }
 
-  // OMS同期（プレースホルダー）/ OMS同步（占位符）
+  // OMS同期 / OMS同步
   @Post('oms/sync')
   syncOms(
     @TenantId() tenantId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.integrationsService.syncOms(tenantId, body);
   }
 
-  // OMS設定更新（プレースホルダー）/ 更新OMS配置（占位符）
+  // OMS設定更新 / 更新OMS配置
   @Put('oms/config')
   updateOmsConfig(
     @TenantId() tenantId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.integrationsService.updateOmsConfig(tenantId, body);
   }
 
-  // マーケットプレイス同期（プレースホルダー）/ 市场平台同步（占位符）
+  // マーケットプレイス同期 / 市场平台同步
   @Post('marketplace/sync')
   syncMarketplace(
     @TenantId() tenantId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.integrationsService.syncMarketplace(tenantId, body);
   }
 
-  // マーケットプレイス設定更新（プレースホルダー）/ 更新市场平台配置（占位符）
+  // マーケットプレイス設定更新 / 更新市场平台配置
   @Put('marketplace/config')
   updateMarketplaceConfig(
     @TenantId() tenantId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.integrationsService.updateMarketplaceConfig(tenantId, body);
   }
 
-  // ERP同期（プレースホルダー）/ ERP同步（占位符）
+  // ERP同期 / ERP同步
   @Post('erp/sync')
   syncErp(
     @TenantId() tenantId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.integrationsService.syncErp(tenantId, body);
   }
 
-  // ERP設定更新（プレースホルダー）/ 更新ERP配置（占位符）
+  // ERP設定更新 / 更新ERP配置
   @Put('erp/config')
   updateErpConfig(
     @TenantId() tenantId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.integrationsService.updateErpConfig(tenantId, body);
   }
 }

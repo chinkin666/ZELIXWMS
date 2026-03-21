@@ -75,4 +75,27 @@ export class ExceptionsService {
       .returning();
     return rows[0];
   }
+
+  // 異常解決（ステータスをresolvedに更新、resolvedAtを設定）/ 解决异常（更新状态为resolved，设置resolvedAt）
+  async resolve(tenantId: string, id: string, body: Record<string, unknown>) {
+    const report = await this.findById(tenantId, id);
+    if (report.status === 'resolved' || report.status === 'closed') {
+      throw new WmsException('EXCEPTION_INVALID_STATUS', `Cannot resolve: current status is ${report.status} / 解決不可: ステータスは${report.status} / 无法解决: 状态为${report.status}`);
+    }
+
+    const now = new Date();
+    const rows = await this.db
+      .update(exceptionReports)
+      .set({
+        status: 'resolved',
+        resolvedAt: now,
+        resolvedBy: (body.resolvedBy as string) ?? null,
+        resolution: (body.resolution as string) ?? null,
+        updatedAt: now,
+      })
+      .where(and(eq(exceptionReports.id, id), eq(exceptionReports.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
 }

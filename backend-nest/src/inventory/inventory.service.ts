@@ -1,9 +1,9 @@
 // 在庫サービス / 库存服务
 import { Inject, Injectable } from '@nestjs/common';
 import { WmsException } from '../common/exceptions/wms.exception.js';
-import { eq, and, sql, SQL } from 'drizzle-orm';
+import { eq, and, sql, SQL, gt, lte } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
-import { locations, stockQuants, stockMoves } from '../database/schema/inventory.js';
+import { locations, stockQuants, stockMoves, inventoryLedger } from '../database/schema/inventory.js';
 import type { CreateLocationDto, UpdateLocationDto } from './dto/create-location.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
@@ -497,5 +497,294 @@ export class InventoryService {
     }
 
     return roots;
+  }
+
+  // ========================================
+  // 在庫ダッシュボード・分析 / 库存仪表盘・分析
+  // ========================================
+
+  // 在庫概要ダッシュボード / 库存概要仪表盘
+  async getOverview(tenantId: string) {
+    // 並列で各集計クエリを実行 / 并行执行各汇总查询
+    const [
+      totalProductsResult,
+      totalQuantityResult,
+      totalLocationsResult,
+      activeLocationsResult,
+      recentMovesResult,
+    ] = await Promise.all([
+      this.db.select({ count: sql<number>`count(DISTINCT ${stockQuants.productId})::int` })
+        .from(stockQuants).where(eq(stockQuants.tenantId, tenantId)),
+      this.db.select({
+        totalQuantity: sql<number>`coalesce(sum(${stockQuants.quantity}), 0)::int`,
+        totalReserved: sql<number>`coalesce(sum(${stockQuants.reservedQuantity}), 0)::int`,
+      }).from(stockQuants).where(eq(stockQuants.tenantId, tenantId)),
+      this.db.select({ count: sql<number>`count(*)::int` })
+        .from(locations).where(eq(locations.tenantId, tenantId)),
+      this.db.select({ count: sql<number>`count(*)::int` })
+        .from(locations).where(and(eq(locations.tenantId, tenantId), eq(locations.isActive, true))),
+      this.db.select({ count: sql<number>`count(*)::int` })
+        .from(stockMoves).where(and(
+          eq(stockMoves.tenantId, tenantId),
+          sql`${stockMoves.createdAt} > now() - interval '24 hours'`,
+        )),
+    ]);
+
+    const totalQty = totalQuantityResult[0];
+    return {
+      totalProducts: totalProductsResult[0]?.count ?? 0,
+      totalQuantity: totalQty?.totalQuantity ?? 0,
+      totalReserved: totalQty?.totalReserved ?? 0,
+      totalAvailable: (totalQty?.totalQuantity ?? 0) - (totalQty?.totalReserved ?? 0),
+      totalLocations: totalLocationsResult[0]?.count ?? 0,
+      activeLocations: activeLocationsResult[0]?.count ?? 0,
+      recentMoves24h: recentMovesResult[0]?.count ?? 0,
+    };
+  }
+
+  // ロケーション使用率（在庫がある/ないロケーション集計）/ 库位使用率（有/无库存的库位汇总）
+  async getLocationUsage(tenantId: string) {
+    // アクティブなロケーション全数 / 活跃库位总数
+    const [totalResult] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(locations)
+      .where(and(eq(locations.tenantId, tenantId), eq(locations.isActive, true)));
+
+    // 在庫があるロケーション数 / 有库存的库位数
+    const [usedResult] = await this.db
+      .select({ count: sql<number>`count(DISTINCT ${stockQuants.locationId})::int` })
+      .from(stockQuants)
+      .where(and(eq(stockQuants.tenantId, tenantId), gt(stockQuants.quantity, 0)));
+
+    const total = totalResult?.count ?? 0;
+    const used = usedResult?.count ?? 0;
+    const usageRate = total > 0 ? Math.round((used / total) * 10000) / 100 : 0;
+
+    return {
+      totalLocations: total,
+      usedLocations: used,
+      emptyLocations: total - used,
+      usageRate,
+    };
+  }
+
+  // 在庫サマリー（商品数・総数量・予約数・利用可能数）/ 库存汇总（商品数・总数量・预约数・可用数）
+  async getStockSummary(tenantId: string) {
+    const [result] = await this.db
+      .select({
+        totalProducts: sql<number>`count(DISTINCT ${stockQuants.productId})::int`,
+        totalQuantity: sql<number>`coalesce(sum(${stockQuants.quantity}), 0)::int`,
+        totalReserved: sql<number>`coalesce(sum(${stockQuants.reservedQuantity}), 0)::int`,
+        totalAvailable: sql<number>`coalesce(sum(${stockQuants.quantity}) - sum(${stockQuants.reservedQuantity}), 0)::int`,
+        totalRecords: sql<number>`count(*)::int`,
+      })
+      .from(stockQuants)
+      .where(eq(stockQuants.tenantId, tenantId));
+
+    return result ?? { totalProducts: 0, totalQuantity: 0, totalReserved: 0, totalAvailable: 0, totalRecords: 0 };
+  }
+
+  // 低在庫アラート（reservedQuantity >= quantity の商品を検出）/ 低库存警报（检出reservedQuantity >= quantity的商品）
+  async getLowStockAlerts(tenantId: string) {
+    // 可用数がゼロ以下の商品を検出 / 检出可用数为零或以下的商品
+    const items = await this.db
+      .select({
+        productId: stockQuants.productId,
+        locationId: stockQuants.locationId,
+        quantity: stockQuants.quantity,
+        reservedQuantity: stockQuants.reservedQuantity,
+        available: sql<number>`(${stockQuants.quantity} - ${stockQuants.reservedQuantity})::int`,
+      })
+      .from(stockQuants)
+      .where(and(
+        eq(stockQuants.tenantId, tenantId),
+        sql`${stockQuants.quantity} - ${stockQuants.reservedQuantity} <= 0`,
+        gt(stockQuants.quantity, 0),
+      ))
+      .orderBy(sql`${stockQuants.quantity} - ${stockQuants.reservedQuantity}`);
+
+    return { items, total: items.length };
+  }
+
+  // 注文引当（商品IDリストに対してreservedQuantityを増加）/ 订单预留（对商品ID列表增加reservedQuantity）
+  async reserveOrders(tenantId: string, body: Record<string, unknown>) {
+    const reservations = body.reservations as Array<{ productId: string; locationId: string; quantity: number }> | undefined;
+    if (!reservations || !Array.isArray(reservations) || reservations.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'reservations array is required / reservations配列は必須 / reservations数组必填');
+    }
+
+    const now = new Date();
+    const results = [];
+
+    for (const res of reservations) {
+      if (!res.productId || !res.locationId || !res.quantity || res.quantity <= 0) {
+        results.push({ ...res, status: 'invalid' });
+        continue;
+      }
+
+      // 在庫確認 / 确认库存
+      const [quant] = await this.db
+        .select()
+        .from(stockQuants)
+        .where(and(
+          eq(stockQuants.tenantId, tenantId),
+          eq(stockQuants.productId, res.productId),
+          eq(stockQuants.locationId, res.locationId),
+        ))
+        .limit(1);
+
+      if (!quant) {
+        results.push({ ...res, status: 'not_found' });
+        continue;
+      }
+
+      const available = quant.quantity - quant.reservedQuantity;
+      if (available < res.quantity) {
+        results.push({ ...res, status: 'insufficient', available });
+        continue;
+      }
+
+      // reservedQuantityを増加 / 增加reservedQuantity
+      await this.db.execute(sql`
+        UPDATE stock_quants
+        SET reserved_quantity = reserved_quantity + ${res.quantity}, updated_at = ${now}
+        WHERE tenant_id = ${tenantId} AND product_id = ${res.productId} AND location_id = ${res.locationId}
+      `);
+
+      results.push({ ...res, status: 'reserved' });
+    }
+
+    return { processed: results.length, results };
+  }
+
+  // ゼロ在庫クリーンアップ（quantity=0 のstockQuantsレコードを削除）/ 零库存清理（删除quantity=0的stockQuants记录）
+  async cleanupZero(tenantId: string) {
+    const rows = await this.db
+      .delete(stockQuants)
+      .where(and(
+        eq(stockQuants.tenantId, tenantId),
+        lte(stockQuants.quantity, 0),
+        lte(stockQuants.reservedQuantity, 0),
+      ))
+      .returning();
+
+    return { deleted: rows.length, message: `Cleaned up ${rows.length} zero-quantity records / ${rows.length}件のゼロ在庫レコードを削除 / 删除了${rows.length}条零库存记录` };
+  }
+
+  // 在庫リビルド（stockMovesからstockQuantsを再計算）/ 库存重建（从stockMoves重新计算stockQuants）
+  async rebuild(tenantId: string) {
+    // 1. 既存のstockQuantsを全削除 / 删除所有现有stockQuants
+    await this.db.delete(stockQuants).where(eq(stockQuants.tenantId, tenantId));
+
+    // 2. stockMovesから再集計 / 从stockMoves重新汇总
+    const now = new Date();
+    await this.db.execute(sql`
+      INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, reserved_quantity, updated_at, last_moved_at)
+      SELECT
+        ${tenantId},
+        product_id,
+        coalesce(to_location_id, from_location_id),
+        sum(CASE
+          WHEN to_location_id IS NOT NULL THEN quantity
+          WHEN from_location_id IS NOT NULL THEN -quantity
+          ELSE 0
+        END)::int,
+        0,
+        ${now},
+        max(executed_at)
+      FROM stock_moves
+      WHERE tenant_id = ${tenantId} AND status = 'done'
+      GROUP BY product_id, coalesce(to_location_id, from_location_id)
+      HAVING sum(CASE
+        WHEN to_location_id IS NOT NULL THEN quantity
+        WHEN from_location_id IS NOT NULL THEN -quantity
+        ELSE 0
+      END) > 0
+    `);
+
+    // リビルド後のカウント / 重建后的计数
+    const [countResult] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(stockQuants)
+      .where(eq(stockQuants.tenantId, tenantId));
+
+    return {
+      rebuilt: true,
+      quantRecords: countResult?.count ?? 0,
+      message: 'Stock quants rebuilt from moves / 在庫数量をmovesから再構築完了 / 库存数量已从moves重建完成',
+    };
+  }
+
+  // 期限切れ引当解放（最終更新から一定期間経過したreservedQuantityを解放）
+  // 释放过期预留（释放自最后更新以来经过一定时间的reservedQuantity）
+  async releaseExpiredReservations(tenantId: string) {
+    // 24時間以上前に予約されたものを解放 / 释放24小时前的预约
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const rows = await this.db
+      .update(stockQuants)
+      .set({ reservedQuantity: 0, updatedAt: new Date() })
+      .where(and(
+        eq(stockQuants.tenantId, tenantId),
+        gt(stockQuants.reservedQuantity, 0),
+        lte(stockQuants.updatedAt, cutoff),
+      ))
+      .returning();
+
+    return {
+      released: rows.length,
+      message: `Released ${rows.length} expired reservations / ${rows.length}件の期限切れ引当を解放 / 释放了${rows.length}条过期预留`,
+    };
+  }
+
+  // 在庫台帳サマリー（タイプ別集計）/ 库存台账汇总（按类型汇总）
+  async getLedgerSummary(tenantId: string) {
+    const summary = await this.db
+      .select({
+        type: inventoryLedger.type,
+        totalQuantity: sql<number>`coalesce(sum(${inventoryLedger.quantity}), 0)::int`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(inventoryLedger)
+      .where(eq(inventoryLedger.tenantId, tenantId))
+      .groupBy(inventoryLedger.type);
+
+    return { summary };
+  }
+
+  // 在庫エクスポート（CSV形式のバッファを返す）/ 库存导出（返回CSV格式buffer）
+  async exportInventory(tenantId: string) {
+    const items = await this.db
+      .select({
+        productId: stockQuants.productId,
+        locationId: stockQuants.locationId,
+        lotId: stockQuants.lotId,
+        quantity: stockQuants.quantity,
+        reservedQuantity: stockQuants.reservedQuantity,
+        lastMovedAt: stockQuants.lastMovedAt,
+      })
+      .from(stockQuants)
+      .where(eq(stockQuants.tenantId, tenantId))
+      .orderBy(stockQuants.productId, stockQuants.locationId);
+
+    const headers = ['productId', 'locationId', 'lotId', 'quantity', 'reservedQuantity', 'available', 'lastMovedAt'];
+    const csvLines = [headers.join(',')];
+
+    for (const item of items) {
+      const available = (item.quantity ?? 0) - (item.reservedQuantity ?? 0);
+      const row = [
+        item.productId, item.locationId, item.lotId ?? '',
+        String(item.quantity), String(item.reservedQuantity), String(available),
+        item.lastMovedAt ? String(item.lastMovedAt) : '',
+      ];
+      csvLines.push(row.join(','));
+    }
+
+    return {
+      filename: `inventory-${new Date().toISOString().slice(0, 10)}.csv`,
+      contentType: 'text/csv',
+      data: csvLines.join('\n'),
+      totalRows: items.length,
+    };
   }
 }

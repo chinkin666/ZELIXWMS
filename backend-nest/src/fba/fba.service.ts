@@ -75,9 +75,14 @@ export class FbaService {
       .insert(fbaShipmentPlans)
       .values({
         tenantId,
-        ...dto,
+        planName: dto.planName ?? `FBA-${Date.now()}`,
+        amazonShipmentId: dto.amazonShipmentId ?? null,
+        destinationFulfillmentCenter: dto.destinationFulfillmentCenter ?? null,
+        shipToAddress: dto.shipToAddress ?? null,
+        items: dto.items ?? null,
+        notes: dto.notes ?? null,
         status: 'draft',
-      })
+      } satisfies typeof fbaShipmentPlans.$inferInsert)
       .returning();
 
     return rows[0];
@@ -156,8 +161,14 @@ export class FbaService {
       .insert(fbaBoxes)
       .values({
         tenantId,
-        ...dto,
-      })
+        shipmentPlanId: dto.shipmentPlanId,
+        boxNumber: dto.boxNumber ?? `BOX-${Date.now()}`,
+        weight: dto.weight ?? null,
+        dimensions: dto.dimensions ?? null,
+        items: dto.items ?? null,
+        trackingNumber: dto.trackingNumber ?? null,
+        status: dto.status ?? 'packing',
+      } satisfies typeof fbaBoxes.$inferInsert)
       .returning();
 
     return rows[0];

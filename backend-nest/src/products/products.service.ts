@@ -266,4 +266,72 @@ export class ProductsService {
 
     return { deleted: rows.length, items: rows };
   }
+
+  // 商品CSVインポート（ボディの配列をパースして一括作成）/ 商品CSV导入（解析body数组后批量创建）
+  async importCsv(tenantId: string, body: { products: Record<string, any>[] }) {
+    const { products: productList } = body;
+    if (!productList || !Array.isArray(productList) || productList.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'products array is required / products配列は必須 / products数组必填');
+    }
+
+    const results = [];
+    for (const dto of productList) {
+      const created = await this.create(tenantId, dto as CreateProductDto);
+      results.push(created);
+    }
+
+    return { imported: results.length, items: results };
+  }
+
+  // 商品CSVエクスポート（CSV形式のバッファを返す）/ 商品CSV导出（返回CSV格式buffer）
+  async exportCsv(tenantId: string) {
+    const items = await this.db
+      .select()
+      .from(products)
+      .where(and(
+        eq(products.tenantId, tenantId),
+        isNull(products.deletedAt),
+      ))
+      .orderBy(products.sku);
+
+    const headers = ['sku', 'name', 'category', 'brandCode', 'createdAt'];
+    const csvLines = [headers.join(',')];
+
+    for (const item of items) {
+      const row = headers.map((h) => {
+        const val = (item as Record<string, unknown>)[h];
+        const str = val === null || val === undefined ? '' : String(val);
+        return str.includes(',') || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str;
+      });
+      csvLines.push(row.join(','));
+    }
+
+    return {
+      filename: `products-${new Date().toISOString().slice(0, 10)}.csv`,
+      contentType: 'text/csv',
+      data: csvLines.join('\n'),
+      totalRows: items.length,
+    };
+  }
+
+  // 商品変更履歴取得（updatedAtベースの簡易履歴）/ 获取商品变更历史（基于updatedAt的简易历史）
+  async getHistory(tenantId: string, productId: string) {
+    // 商品存在確認 / 确认商品存在
+    const product = await this.findById(tenantId, productId);
+
+    // 専用の履歴テーブルがないため、商品の現在情報を返す
+    // 由于没有专用的历史表，返回商品的当前信息
+    return {
+      productId,
+      sku: product.sku,
+      name: product.name,
+      items: [{
+        action: 'current_state',
+        timestamp: product.updatedAt,
+        data: product,
+      }],
+      total: 1,
+      message: 'Full audit trail requires dedicated history table / 完全な監査証跡には専用履歴テーブルが必要 / 完整审计日志需要专用历史表',
+    };
+  }
 }

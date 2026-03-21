@@ -42,18 +42,19 @@ describe('RenderService', () => {
       expect(result.fileName).toContain('invoice');
     });
 
-    it('should include provided data in the HTML template', async () => {
+    // PDFKitで実際のPDFを生成するため、バイナリPDFヘッダーを検証
+    // 使用PDFKit生成真正的PDF，验证二进制PDF头
+    it('should generate a real PDF (starts with %PDF header)', async () => {
       const result = await service.renderPdf(tenantId, 'report', {
         title: 'Monthly Report',
         content: 'Some body content',
       });
 
-      const html = result.buffer.toString('utf-8');
-      expect(html).toContain('Monthly Report');
-      expect(html).toContain('Some body content');
+      const pdfHeader = result.buffer.subarray(0, 5).toString('ascii');
+      expect(pdfHeader).toBe('%PDF-');
     });
 
-    it('should render items table when items are provided', async () => {
+    it('should generate a valid PDF buffer for items', async () => {
       const result = await service.renderPdf(tenantId, 'packing', {
         title: 'Packing List',
         items: [
@@ -62,26 +63,29 @@ describe('RenderService', () => {
         ],
       });
 
-      const html = result.buffer.toString('utf-8');
-      expect(html).toContain('Widget A');
-      expect(html).toContain('Widget B');
-      expect(html).toContain('<table');
+      // 実際のPDFバイナリであることを確認 / 确认是真正的PDF二进制
+      const pdfHeader = result.buffer.subarray(0, 5).toString('ascii');
+      expect(pdfHeader).toBe('%PDF-');
+      expect(result.buffer.length).toBeGreaterThan(100);
     });
 
-    it('should generate valid HTML structure', async () => {
+    it('should generate a valid PDF structure', async () => {
       const result = await service.renderPdf(tenantId, 'test', { title: 'Test' });
 
-      const html = result.buffer.toString('utf-8');
-      expect(html).toContain('<!DOCTYPE html>');
-      expect(html).toContain('<html>');
-      expect(html).toContain('</html>');
+      // PDFファイルは%PDF-で始まり%%EOFで終わる / PDF文件以%PDF-开头，以%%EOF结尾
+      const pdfHeader = result.buffer.subarray(0, 5).toString('ascii');
+      expect(pdfHeader).toBe('%PDF-');
+      const pdfString = result.buffer.toString('ascii');
+      expect(pdfString).toContain('%%EOF');
     });
 
-    it('should include generation timestamp in footer', async () => {
+    it('should include creation date in PDF metadata', async () => {
       const result = await service.renderPdf(tenantId);
 
-      const html = result.buffer.toString('utf-8');
-      expect(html).toContain('Generated at');
+      // PDFメタデータにCreationDateが含まれることを確認
+      // 确认PDF元数据中包含CreationDate
+      const pdfString = result.buffer.toString('latin1');
+      expect(pdfString).toContain('/CreationDate');
     });
 
     it('should handle empty data object', async () => {
@@ -89,6 +93,16 @@ describe('RenderService', () => {
 
       expect(result.success).toBe(true);
       expect(result.buffer.length).toBeGreaterThan(0);
+    });
+
+    // キャッシュヒットテスト / 缓存命中测试
+    it('should return cached PDF on second call with same params', async () => {
+      const result1 = await service.renderPdf(tenantId, 'cache-test', { title: 'Cache' });
+      const result2 = await service.renderPdf(tenantId, 'cache-test', { title: 'Cache' });
+
+      expect(result2.success).toBe(true);
+      // 同じバッファが返されること / 返回相同的缓冲区
+      expect(result2.buffer).toEqual(result1.buffer);
     });
   });
 
@@ -119,7 +133,7 @@ describe('RenderService', () => {
     it('should return base64 encoded data', async () => {
       const result = await service.renderBarcode(tenantId, 'TEST');
 
-      // base64 should be decodable
+      // base64デコード可能であること / 可以base64解码
       const buffer = Buffer.from(result.data, 'base64');
       expect(buffer.length).toBeGreaterThan(0);
     });
@@ -144,7 +158,8 @@ describe('RenderService', () => {
       const result2 = await service.renderBarcode(tenantId, 'CACHED-TEST');
 
       expect(result2.success).toBe(true);
-      expect(result2.contentType).toBe('image/png'); // cached returns image/png
+      // キャッシュヒット時もSVGコンテンツタイプを返す / 缓存命中时也返回SVG内容类型
+      expect(result2.contentType).toBe('image/svg+xml');
       expect(result2.data).toBe(result1.data);
     });
   });
@@ -175,9 +190,9 @@ describe('RenderService', () => {
     });
 
     it('should track cache hits and misses after barcode render', async () => {
-      // First render = miss + cache store
+      // 初回レンダー = ミス + キャッシュ保存 / 第一次渲染 = 未命中 + 缓存保存
       await service.renderBarcode(tenantId, 'STATS-TEST');
-      // Second render = hit
+      // 2回目レンダー = ヒット / 第二次渲染 = 命中
       await service.renderBarcode(tenantId, 'STATS-TEST');
 
       const result = await service.getCacheStats(tenantId);
@@ -188,7 +203,8 @@ describe('RenderService', () => {
     });
 
     it('should calculate hit rate correctly', async () => {
-      // 2 misses (different values), 2 hits (same values again)
+      // 2ミス（異なる値）、2ヒット（同じ値の再アクセス）
+      // 2次未命中（不同值），2次命中（相同值的再次访问）
       await service.renderBarcode(tenantId, 'A');
       await service.renderBarcode(tenantId, 'B');
       await service.renderBarcode(tenantId, 'A'); // hit
@@ -208,12 +224,13 @@ describe('RenderService', () => {
 
       const result = await service.getCacheStats(tenantId);
 
-      // 3 barcode entries + possible pdf entries (none in this case)
+      // 3つのバーコードエントリ / 3个条形码条目
       expect(result.size).toBe(3);
     });
 
     it('should evict oldest entry when cache exceeds max size', async () => {
-      // The max cache size is 100. We render 101 different barcodes.
+      // 最大キャッシュサイズは100。101個のバーコードをレンダー
+      // 最大缓存大小为100。渲染101个条形码
       for (let i = 0; i < 101; i++) {
         await service.renderBarcode(tenantId, `EVICT-${i}`);
       }

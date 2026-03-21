@@ -54,18 +54,18 @@ export class DailyReportsController {
     return this.dailyReportsService.update(tenantId, id, dto);
   }
 
-  // 日次レポート生成（プレースホルダー）/ 生成日报（占位符）
+  // 日次レポート生成 / 生成日报
   @Post('generate')
   generate(
     @TenantId() tenantId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.dailyReportsService.generate(tenantId, body);
   }
 
-  // 日次レポートエクスポート（プレースホルダー）/ 导出日报（占位符）
+  // 日次レポートエクスポート / 导出日报
   @Post('export')
   exportReports(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.dailyReportsService.exportReports(tenantId);
   }
 }

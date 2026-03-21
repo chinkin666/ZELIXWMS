@@ -14,7 +14,10 @@ export class SetOrdersController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return { items: [], total: 0, page: page ? parseInt(page, 10) : 1, limit: limit ? parseInt(limit, 10) : 20, message: 'Not implemented yet / 未実装 / 尚未实现' };
+    return this.setOrdersService.findAll(tenantId, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
   // ID検索 / 按ID查找
@@ -23,7 +26,7 @@ export class SetOrdersController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.setOrdersService.findById(tenantId, id);
   }
 
   // 作成 / 创建
@@ -32,7 +35,7 @@ export class SetOrdersController {
     @TenantId() tenantId: string,
     @Body() dto: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.setOrdersService.create(tenantId, dto);
   }
 
   // 更新 / 更新
@@ -42,7 +45,7 @@ export class SetOrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: Record<string, unknown>,
   ) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.setOrdersService.update(tenantId, id, dto);
   }
 
   // 削除 / 删除
@@ -51,7 +54,7 @@ export class SetOrdersController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.setOrdersService.remove(tenantId, id);
   }
 
   // 完了 / 完成
@@ -60,7 +63,7 @@ export class SetOrdersController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.setOrdersService.complete(tenantId, id);
   }
 
   // キャンセル / 取消
@@ -69,6 +72,6 @@ export class SetOrdersController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.setOrdersService.cancel(tenantId, id);
   }
 }

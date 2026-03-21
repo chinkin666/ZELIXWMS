@@ -1,8 +1,8 @@
 // 拡張機能サービスのテスト / 扩展功能服务测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { ExtensionsService } from './extensions.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -75,12 +75,10 @@ describe('ExtensionsService', () => {
 
       const result = await service.findAllWebhooks(tenantId, { page: 1, limit: 10 });
 
-      expect(result).toEqual({
-        items: mockItems,
-        total: 1,
-        page: 1,
-        limit: 10,
-      });
+      expect(result.items).toEqual(mockItems);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
     });
   });
 
@@ -95,12 +93,12 @@ describe('ExtensionsService', () => {
       expect(result).toEqual(mockWebhook);
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when webhook not found', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when webhook not found', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.findWebhookById(tenantId, 'nonexistent')).rejects.toThrow(
-        NotFoundException,
+        WmsException,
       );
     });
   });
@@ -132,13 +130,13 @@ describe('ExtensionsService', () => {
       expect(result.url).toBe('https://example.com/updated');
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when updating nonexistent webhook', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when updating nonexistent webhook', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
       await expect(
         service.updateWebhook(tenantId, 'nonexistent', {} as any),
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(WmsException);
     });
   });
 
@@ -155,12 +153,12 @@ describe('ExtensionsService', () => {
       expect(mockDb.delete).toHaveBeenCalled();
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when removing nonexistent webhook', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when removing nonexistent webhook', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.removeWebhook(tenantId, 'nonexistent')).rejects.toThrow(
-        NotFoundException,
+        WmsException,
       );
     });
   });
@@ -191,11 +189,11 @@ describe('ExtensionsService', () => {
       expect(result.enabled).toBe(true);
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when flag not found', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when flag not found', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.toggleFlag('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.toggleFlag('nonexistent')).rejects.toThrow(WmsException);
     });
   });
 });

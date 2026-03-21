@@ -39,9 +39,9 @@ export class InventoryLedgerController {
     return this.inventoryLedgerService.getSummary(tenantId, { productId, startDate, endDate });
   }
 
-  // 在庫台帳エクスポート（プレースホルダー）/ 库存台账导出（占位符）
+  // 在庫台帳エクスポート / 库存台账导出
   @Post('export')
   exportLedger(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.inventoryLedgerService.exportLedger(tenantId);
   }
 }

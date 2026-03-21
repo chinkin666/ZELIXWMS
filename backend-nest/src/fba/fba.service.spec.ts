@@ -180,20 +180,20 @@ describe('FbaService', () => {
   // ===== updatePlan =====
   describe('updatePlan', () => {
     it('should update a plan', async () => {
-      const updated = { ...mockPlan, name: 'Updated Plan' };
+      const updated = { ...mockPlan, planName: 'Updated Plan' };
       mockDb.select.mockReturnValueOnce(createChain([mockPlan]));
       mockDb.returning.mockResolvedValueOnce([updated]);
 
-      const result = await service.updatePlan(tenantId, planId, { name: 'Updated Plan' });
+      const result = await service.updatePlan(tenantId, planId, { planName: 'Updated Plan' });
 
-      expect(result.name).toBe('Updated Plan');
+      expect(result.planName).toBe('Updated Plan');
     });
 
     it('should throw WmsException when plan does not exist', async () => {
       mockDb.select.mockReturnValueOnce(createChain([]));
 
       await expect(
-        service.updatePlan(tenantId, 'nonexistent', { name: 'test' }),
+        service.updatePlan(tenantId, 'nonexistent', { planName: 'test' }),
       ).rejects.toThrow(WmsException);
     });
   });

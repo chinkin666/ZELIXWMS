@@ -108,55 +108,61 @@ export class InboundController {
     return this.inboundService.cancel(tenantId, id);
   }
 
-  // 入庫オーダー一括入荷（プレースホルダー）/ 入库订单批量收货（占位符）
+  // 入庫オーダー一括入荷 / 入库订单批量收货
   @Post(':id/bulk-receive')
   bulkReceive(
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+    return this.inboundService.bulkReceive(tenantId, id, body);
   }
 
-  // 入庫オーダー棚入れ（プレースホルダー）/ 入库订单上架（占位符）
+  // 入庫オーダー棚入れ / 入库订单上架
   @Post(':id/putaway')
   putaway(
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+    return this.inboundService.putaway(tenantId, id, body);
   }
 
-  // 入庫オーダー差異取得（プレースホルダー）/ 获取入库订单差异（占位符）
+  // 入庫オーダー差異取得 / 获取入库订单差异
   @Get(':id/variance')
   getVariance(
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { items: [], total: 0, orderId: id, message: 'Not implemented yet / 未実装 / 尚未实现' };
+    return this.inboundService.getVariance(tenantId, id);
   }
 
-  // 入庫履歴取得（プレースホルダー）/ 获取入库历史（占位符）
+  // 入庫履歴取得 / 获取入库历史
   @Get('history')
   getHistory(
     @TenantId() tenantId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    return { items: [], total: 0, page: page ? parseInt(page, 10) : 1, limit: limit ? parseInt(limit, 10) : 20, message: 'Not implemented yet / 未実装 / 尚未实现' };
+    return this.inboundService.getHistory(tenantId, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
-  // 入庫インポート（プレースホルダー）/ 入库导入（占位符）
+  // 入庫インポート / 入库导入
   @Post('import')
-  importOrders(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  importOrders(
+    @TenantId() tenantId: string,
+    @Body() body: { orders: Record<string, any>[] },
+  ) {
+    return this.inboundService.importOrders(tenantId, body);
   }
 
-  // 入庫エクスポート（プレースホルダー）/ 入库导出（占位符）
+  // 入庫エクスポート / 入库导出
   @Post('export')
   exportOrders(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.inboundService.exportOrders(tenantId);
   }
 
   // 入庫オーダー削除（論理削除）/ 删除入库订单（软删除）

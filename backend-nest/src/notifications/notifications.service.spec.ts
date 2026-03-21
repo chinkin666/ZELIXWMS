@@ -1,8 +1,8 @@
 // 通知サービスのテスト / 通知服务测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { NotificationsService } from './notifications.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -72,12 +72,10 @@ describe('NotificationsService', () => {
 
       const result = await service.findAll(tenantId, { page: 1, limit: 10 });
 
-      expect(result).toEqual({
-        items: mockItems,
-        total: 1,
-        page: 1,
-        limit: 10,
-      });
+      expect(result.items).toEqual(mockItems);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
     });
 
     // フィルタ付き検索（未読のみ）/ 带筛选搜索（仅未读）
@@ -119,7 +117,7 @@ describe('NotificationsService', () => {
     it('should throw NotFoundException when notification not found', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 
@@ -154,7 +152,7 @@ describe('NotificationsService', () => {
     it('should throw NotFoundException when marking nonexistent notification', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.markAsRead(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.markAsRead(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 

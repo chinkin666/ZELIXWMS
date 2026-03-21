@@ -9,44 +9,47 @@ export class StocktakingOrdersController {
 
   @Get()
   findAll(@TenantId() tenantId: string, @Query('page') page?: string, @Query('limit') limit?: string) {
-    return { items: [], total: 0, page: page ? parseInt(page, 10) : 1, limit: limit ? parseInt(limit, 10) : 20, message: 'Not implemented yet / 未実装 / 尚未实现' };
+    return this.stocktakingOrdersService.findAll(tenantId, {
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+    });
   }
 
   @Get(':id')
   findOne(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.stocktakingOrdersService.findOne(tenantId, id);
   }
 
   @Post()
   create(@TenantId() tenantId: string, @Body() dto: Record<string, unknown>) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.stocktakingOrdersService.create(tenantId, dto);
   }
 
   @Put(':id')
   update(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string, @Body() dto: Record<string, unknown>) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.stocktakingOrdersService.update(tenantId, id, dto);
   }
 
   @Delete(':id')
   remove(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.stocktakingOrdersService.remove(tenantId, id);
   }
 
   // カウント登録 / 登记计数
   @Post(':id/count')
   registerCount(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string, @Body() body: Record<string, unknown>) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.stocktakingOrdersService.registerCount(tenantId, id, body);
   }
 
   // 完了 / 完成
   @Post(':id/complete')
   complete(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.stocktakingOrdersService.complete(tenantId, id);
   }
 
   // キャンセル / 取消
   @Post(':id/cancel')
   cancel(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.stocktakingOrdersService.cancel(tenantId, id);
   }
 }

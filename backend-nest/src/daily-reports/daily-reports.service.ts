@@ -1,9 +1,12 @@
 // 日次レポートサービス / 日报服务
 import { Inject, Injectable } from '@nestjs/common';
 import { WmsException } from '../common/exceptions/wms.exception.js';
-import { eq, and, sql, gte, lte, SQL } from 'drizzle-orm';
+import { eq, and, sql, gte, lte, SQL, isNull } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { dailyReports } from '../database/schema/settings.js';
+import { shipmentOrders } from '../database/schema/shipments.js';
+import { inboundOrders } from '../database/schema/inbound.js';
+import { stockMoves } from '../database/schema/inventory.js';
 import type { CreateDailyReportDto, UpdateDailyReportDto } from './dto/create-daily-report.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
@@ -115,5 +118,96 @@ export class DailyReportsService {
       .returning();
 
     return rows[0];
+  }
+
+  // 日次レポート生成（対象日の出荷・入庫・在庫移動を集計してレポート作成）
+  // 生成日报（汇总目标日的出货・入库・库存移动后创建报告）
+  async generate(tenantId: string, body: Record<string, unknown>) {
+    const dateStr = (body.date as string) ?? new Date().toISOString().slice(0, 10);
+    const reportDate = new Date(dateStr);
+    const nextDate = new Date(reportDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+
+    // 並列で各集計クエリを実行 / 并行执行各汇总查询
+    const [shipmentCount, inboundCount, moveCount] = await Promise.all([
+      this.db.select({ count: sql<number>`count(*)::int` })
+        .from(shipmentOrders)
+        .where(and(
+          eq(shipmentOrders.tenantId, tenantId),
+          gte(shipmentOrders.createdAt, reportDate),
+          lte(shipmentOrders.createdAt, nextDate),
+          isNull(shipmentOrders.deletedAt),
+        )),
+      this.db.select({ count: sql<number>`count(*)::int` })
+        .from(inboundOrders)
+        .where(and(
+          eq(inboundOrders.tenantId, tenantId),
+          gte(inboundOrders.createdAt, reportDate),
+          lte(inboundOrders.createdAt, nextDate),
+          isNull(inboundOrders.deletedAt),
+        )),
+      this.db.select({ count: sql<number>`count(*)::int` })
+        .from(stockMoves)
+        .where(and(
+          eq(stockMoves.tenantId, tenantId),
+          gte(stockMoves.createdAt, reportDate),
+          lte(stockMoves.createdAt, nextDate),
+        )),
+    ]);
+
+    const summary = {
+      date: dateStr,
+      shipmentOrders: shipmentCount[0]?.count ?? 0,
+      inboundOrders: inboundCount[0]?.count ?? 0,
+      stockMoves: moveCount[0]?.count ?? 0,
+      generatedAt: new Date().toISOString(),
+    };
+
+    // レポートを作成（重複チェック込み）/ 创建报告（含重复检查）
+    try {
+      return await this.create(tenantId, { date: dateStr, summary } as any);
+    } catch (e: any) {
+      // 重複の場合は既存レポートを更新 / 重复时更新现有报告
+      if (e.code === 'DUPLICATE_RESOURCE') {
+        const existing = await this.db
+          .select()
+          .from(dailyReports)
+          .where(and(eq(dailyReports.tenantId, tenantId), eq(dailyReports.date, reportDate)))
+          .limit(1);
+
+        if (existing.length > 0) {
+          return this.update(tenantId, existing[0].id, { summary } as any);
+        }
+      }
+      throw e;
+    }
+  }
+
+  // 日次レポートエクスポート（CSV形式のバッファを返す）/ 导出日报（返回CSV格式buffer）
+  async exportReports(tenantId: string) {
+    const items = await this.db
+      .select()
+      .from(dailyReports)
+      .where(eq(dailyReports.tenantId, tenantId))
+      .orderBy(dailyReports.date);
+
+    const headers = ['date', 'summary', 'createdAt'];
+    const csvLines = [headers.join(',')];
+
+    for (const item of items) {
+      const summaryStr = JSON.stringify(item.summary ?? {}).replace(/"/g, '""');
+      csvLines.push([
+        item.date ? new Date(item.date as any).toISOString().slice(0, 10) : '',
+        `"${summaryStr}"`,
+        item.createdAt ? new Date(item.createdAt).toISOString() : '',
+      ].join(','));
+    }
+
+    return {
+      filename: `daily-reports-${new Date().toISOString().slice(0, 10)}.csv`,
+      contentType: 'text/csv',
+      data: csvLines.join('\n'),
+      totalRows: items.length,
+    };
   }
 }

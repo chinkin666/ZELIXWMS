@@ -1,8 +1,8 @@
 // 請求サービスのテスト / 账单服务测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { BillingService } from './billing.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -69,12 +69,10 @@ describe('BillingService', () => {
 
       const result = await service.findAllServiceRates(tenantId, { page: 1, limit: 10 });
 
-      expect(result).toEqual({
-        items: mockItems,
-        total: 1,
-        page: 1,
-        limit: 10,
-      });
+      expect(result.items).toEqual(mockItems);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
     });
 
     // フィルタ付き検索 / 带筛选条件搜索
@@ -104,12 +102,12 @@ describe('BillingService', () => {
       expect(result).toEqual(mockRate);
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when rate not found', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when rate not found', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.findServiceRateById(tenantId, 'nonexistent')).rejects.toThrow(
-        NotFoundException,
+        WmsException,
       );
     });
   });
@@ -170,12 +168,12 @@ describe('BillingService', () => {
       expect(mockDb.set).toHaveBeenCalled();
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when rate not found', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when rate not found', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.removeServiceRate(tenantId, 'nonexistent')).rejects.toThrow(
-        NotFoundException,
+        WmsException,
       );
     });
   });

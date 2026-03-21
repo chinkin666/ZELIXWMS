@@ -1,5 +1,5 @@
 // 認証コントローラ / 认证控制器
-import { Controller, Get, Post, Put, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Headers } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
 import { Public } from '../common/decorators/public.decorator.js';
 import { CurrentUser, type AuthUser } from '../common/decorators/current-user.decorator.js';
@@ -26,16 +26,21 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
-  // ログアウト（セッションクリアプレースホルダー）/ 登出（清除会话占位符）
+  // ログアウト（セッション無効化）/ 登出（会话失效）
   @Post('logout')
-  logout(@CurrentUser() user: AuthUser) {
-    return this.authService.logout(user.id);
+  logout(
+    @CurrentUser() user: AuthUser,
+    @Headers('authorization') authorization: string,
+  ) {
+    const token = authorization?.replace('Bearer ', '') ?? '';
+    return this.authService.logout(user.id, token);
   }
 
-  // トークンリフレッシュ（プレースホルダー）/ 刷新令牌（占位符）
+  // トークンリフレッシュ / 刷新令牌
+  @Public()
   @Post('refresh-token')
-  refreshToken(@CurrentUser() user: AuthUser) {
-    return this.authService.refreshToken(user.id);
+  refreshToken(@Body() body: { refresh_token: string }) {
+    return this.authService.refreshToken(body.refresh_token);
   }
 
   // 現在のユーザープロフィール取得 / 获取当前用户资料
@@ -59,14 +64,14 @@ export class AuthController {
 export class PortalAuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // ポータルログイン（プレースホルダー）/ 门户登录（占位符）
+  // ポータルログイン / 门户登录
   @Public()
   @Post('login')
   portalLogin(@Body() body: { email: string; password: string }) {
     return this.authService.portalLogin(body.email, body.password);
   }
 
-  // ポータル登録（プレースホルダー）/ 门户注册（占位符）
+  // ポータル登録 / 门户注册
   @Public()
   @Post('register')
   portalRegister(@Body() body: { email: string; password: string; companyName?: string }) {

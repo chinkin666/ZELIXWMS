@@ -73,7 +73,7 @@ export class PassthroughController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: Record<string, any>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+    return this.passthroughService.update(tenantId, id, dto);
   }
 
   // パススルー注文削除 / 删除直通订单
@@ -82,7 +82,7 @@ export class PassthroughController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+    return this.passthroughService.remove(tenantId, id);
   }
 
   // パススルー注文確認 / 确认直通订单
@@ -91,7 +91,7 @@ export class PassthroughController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+    return this.passthroughService.confirm(tenantId, id);
   }
 
   // パススルー注文受領 / 接收直通订单
@@ -100,7 +100,7 @@ export class PassthroughController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+    return this.passthroughService.receive(tenantId, id);
   }
 
   // パススルー注文完了 / 完成直通订单
@@ -109,7 +109,7 @@ export class PassthroughController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+    return this.passthroughService.complete(tenantId, id);
   }
 
   // パススルー注文キャンセル / 取消直通订单
@@ -118,12 +118,15 @@ export class PassthroughController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id };
+    return this.passthroughService.cancel(tenantId, id);
   }
 
-  // パススルーインポート（プレースホルダー）/ 直通导入（占位符）
+  // パススルーインポート / 直通导入
   @Post('import')
-  importOrders(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+  importOrders(
+    @TenantId() tenantId: string,
+    @Body() body: { orders: Record<string, any>[] },
+  ) {
+    return this.passthroughService.importOrders(tenantId, body);
   }
 }

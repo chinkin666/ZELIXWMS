@@ -214,9 +214,9 @@ describe('IntegrationsService', () => {
       const amazon = result.providers.find((p: any) => p.id === 'amazon');
       const rakuten = result.providers.find((p: any) => p.id === 'rakuten');
 
-      expect(shopify.configured).toBe(true);
-      expect(amazon.configured).toBe(true);
-      expect(rakuten.configured).toBe(false);
+      expect(shopify!.configured).toBe(true);
+      expect(amazon!.configured).toBe(true);
+      expect(rakuten!.configured).toBe(false);
     });
 
     it('should use custom name from DB settings when available', async () => {
@@ -233,7 +233,7 @@ describe('IntegrationsService', () => {
       const result = await service.getMarketplaceProviders(tenantId);
 
       const shopify = result.providers.find((p: any) => p.id === 'shopify');
-      expect(shopify.name).toBe('My Shopify Store');
+      expect(shopify!.name).toBe('My Shopify Store');
     });
 
     it('should handle null settings', async () => {

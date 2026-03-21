@@ -17,6 +17,7 @@
 
 import { MongoClient, Db } from 'mongodb';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
+// @ts-expect-error pg 未安装为 devDep，运行时需单独安装 / pg未安装为devDep，运行时需单独安装
 import { Pool } from 'pg';
 
 // 移行関数のインポート / 导入迁移函数

@@ -196,6 +196,126 @@ export class ReturnsService {
     return rows[0];
   }
 
+  // 返品オーダー検品（inspecting状態で明細行のinspectedQuantityとdispositionを更新）
+  // 退货订单检品（在inspecting状态下更新明细行的inspectedQuantity和disposition）
+  async inspect(tenantId: string, id: string, body: Record<string, unknown>) {
+    const order = await this.findById(tenantId, id);
+    if (order.status !== 'inspecting') {
+      throw new WmsException('RETURN_INVALID_STATUS', `Cannot inspect: current status is ${order.status}`);
+    }
+
+    const lines = body.lines as Array<{
+      lineId: string;
+      inspectedQuantity: number;
+      disposition: string;
+      inspectionNotes?: string;
+    }> | undefined;
+
+    if (!lines || !Array.isArray(lines) || lines.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'lines array is required / lines配列は必須 / lines数组必填');
+    }
+
+    const now = new Date();
+    const results = [];
+
+    for (const line of lines) {
+      if (!line.lineId || line.inspectedQuantity === undefined) {
+        continue;
+      }
+
+      const updateData: Record<string, unknown> = {
+        inspectedQuantity: line.inspectedQuantity,
+        disposition: line.disposition ?? 'pending',
+        updatedAt: now,
+      };
+      if (line.inspectionNotes !== undefined) {
+        updateData.inspectionNotes = line.inspectionNotes;
+      }
+
+      const [updated] = await this.db
+        .update(returnOrderLines)
+        .set(updateData)
+        .where(and(
+          eq(returnOrderLines.id, line.lineId),
+          eq(returnOrderLines.returnOrderId, id),
+          eq(returnOrderLines.tenantId, tenantId),
+        ))
+        .returning();
+
+      if (updated) {
+        results.push(updated);
+      }
+    }
+
+    return { updated: results.length, lines: results };
+  }
+
+  // 返品オーダー再入庫（明細行のrestockedQuantityを更新）
+  // 退货订单重新入库（更新明细行的restockedQuantity）
+  async putback(tenantId: string, id: string, body: Record<string, unknown>) {
+    await this.findById(tenantId, id);
+
+    const lines = body.lines as Array<{
+      lineId: string;
+      restockedQuantity: number;
+      locationId?: string;
+    }> | undefined;
+
+    if (!lines || !Array.isArray(lines) || lines.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'lines array is required / lines配列は必須 / lines数组必填');
+    }
+
+    const now = new Date();
+    const results = [];
+
+    for (const line of lines) {
+      if (!line.lineId || !line.restockedQuantity) {
+        continue;
+      }
+
+      const updateData: Record<string, unknown> = {
+        restockedQuantity: line.restockedQuantity,
+        updatedAt: now,
+      };
+      if (line.locationId) {
+        updateData.locationId = line.locationId;
+      }
+
+      const [updated] = await this.db
+        .update(returnOrderLines)
+        .set(updateData)
+        .where(and(
+          eq(returnOrderLines.id, line.lineId),
+          eq(returnOrderLines.returnOrderId, id),
+          eq(returnOrderLines.tenantId, tenantId),
+        ))
+        .returning();
+
+      if (updated) {
+        results.push(updated);
+      }
+    }
+
+    return { updated: results.length, lines: results };
+  }
+
+  // 返品インポート（CSV/JSONボディをパースして一括挿入）
+  // 退货导入（解析CSV/JSON body后批量插入）
+  async importOrders(tenantId: string, body: { orders: Record<string, any>[] }) {
+    const { orders } = body;
+    if (!orders || !Array.isArray(orders) || orders.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'orders array is required / orders配列は必須 / orders数组必填');
+    }
+
+    const results = [];
+    for (const dto of orders) {
+      const created = await this.create(tenantId, dto as CreateReturnOrderDto);
+      results.push(created);
+    }
+
+    return { imported: results.length, items: results };
+  }
+
   // 返品オーダー論理削除 / 退货订单软删除
   async remove(tenantId: string, id: string) {
     // 存在確認 / 确认存在

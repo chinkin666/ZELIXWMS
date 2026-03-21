@@ -127,22 +127,22 @@ export class ShipmentController {
     return this.shipmentService.update(tenantId, id, dto);
   }
 
-  // 出荷注文一括部分更新（プレースホルダー）/ 出货订单批量部分更新（占位符）
+  // 出荷注文一括部分更新 / 出货订单批量部分更新
   @Patch('bulk')
   bulkPartialUpdate(
     @TenantId() tenantId: string,
     @Body() body: { ids: string[]; data: Record<string, unknown> },
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', ids: body.ids };
+    return this.shipmentService.bulkPartialUpdate(tenantId, body.ids, body.data);
   }
 
-  // ID一括取得（プレースホルダー）/ 按ID批量获取（占位符）
+  // ID一括取得 / 按ID批量获取
   @Post('by-ids')
   findByIds(
     @TenantId() tenantId: string,
     @Body() body: { ids: string[] },
   ) {
-    return { items: [], ids: body.ids, message: 'Not implemented yet / 未実装 / 尚未实现' };
+    return this.shipmentService.findByIds(tenantId, body.ids);
   }
 
   // 単一ステータス変更 / 单个状态变更
@@ -152,46 +152,46 @@ export class ShipmentController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: { status: string },
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', orderId: id, newStatus: body.status };
+    return this.shipmentService.changeStatus(tenantId, id, body.status);
   }
 
-  // 一括ステータス変更（プレースホルダー）/ 批量状态变更（占位符）
+  // 一括ステータス変更 / 批量状态变更
   @Post('status/bulk')
   bulkChangeStatus(
     @TenantId() tenantId: string,
     @Body() body: { ids: string[]; status: string },
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', ids: body.ids, newStatus: body.status };
+    return this.shipmentService.bulkChangeStatus(tenantId, body.ids, body.status);
   }
 
-  // 配送業者受領インポート（プレースホルダー）/ 配送业者回单导入（占位符）
+  // 配送業者受領インポート / 配送业者回单导入
   @Post('carrier-receipts/import')
   importCarrierReceipts(
     @TenantId() tenantId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.shipmentService.importCarrierReceipts(tenantId, body);
   }
 
-  // グループ別件数取得（プレースホルダー）/ 获取分组计数（占位符）
+  // グループ別件数取得 / 获取分组计数
   @Get('group-counts')
   getGroupCounts(@TenantId() tenantId: string) {
-    return { groups: [], message: 'Not implemented yet / 未実装 / 尚未实现' };
+    return this.shipmentService.getGroupCounts(tenantId);
   }
 
-  // エクスポート（プレースホルダー）/ 导出（占位符）
+  // エクスポート / 导出
   @Post('export')
   exportOrders(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.shipmentService.exportOrders(tenantId);
   }
 
-  // 追跡情報取得（プレースホルダー）/ 获取跟踪信息（占位符）
+  // 追跡情報取得 / 获取跟踪信息
   @Get(':id/tracking')
   getTracking(
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { events: [], orderId: id, message: 'Not implemented yet / 未実装 / 尚未实现' };
+    return this.shipmentService.getTracking(tenantId, id);
   }
 
   // 出荷注文削除（論理削除）/ 删除出货订单（软删除）

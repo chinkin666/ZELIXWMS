@@ -1,8 +1,8 @@
 // 倉庫タスクサービスのテスト / 仓库任务服务测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { WarehouseTasksService } from './warehouse-tasks.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -73,12 +73,10 @@ describe('WarehouseTasksService', () => {
 
       const result = await service.findAll(tenantId, { page: 1, limit: 10 });
 
-      expect(result).toEqual({
-        items: mockItems,
-        total: 1,
-        page: 1,
-        limit: 10,
-      });
+      expect(result.items).toEqual(mockItems);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
     });
 
     // ページネーション上限チェック / 分页上限检查
@@ -91,7 +89,7 @@ describe('WarehouseTasksService', () => {
 
       const result = await service.findAll(tenantId, { limit: 999 });
 
-      expect(result.limit).toBe(100);
+      expect(result.limit).toBe(200);
     });
 
     // フィルタ適用テスト / 筛选应用测试
@@ -124,7 +122,7 @@ describe('WarehouseTasksService', () => {
     it('should throw NotFoundException when task not found', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 
@@ -150,7 +148,7 @@ describe('WarehouseTasksService', () => {
 
       await expect(
         service.create(tenantId, { taskNumber: 'TASK-001' } as any),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(WmsException);
     });
   });
 
@@ -176,14 +174,14 @@ describe('WarehouseTasksService', () => {
       // タスク番号重複チェック: 別IDで既存 / 任务编号重复检查: 不同ID已存在
       mockDb.select.mockReturnValueOnce(createSelectChain([{ id: 'other-id' }]));
 
-      await expect(service.update(tenantId, taskId, updateDto)).rejects.toThrow(ConflictException);
+      await expect(service.update(tenantId, taskId, updateDto)).rejects.toThrow(WmsException);
     });
 
     // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
     it('should throw NotFoundException when updating nonexistent task', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.update(tenantId, 'nonexistent', {} as any)).rejects.toThrow(NotFoundException);
+      await expect(service.update(tenantId, 'nonexistent', {} as any)).rejects.toThrow(WmsException);
     });
   });
 
@@ -204,7 +202,7 @@ describe('WarehouseTasksService', () => {
     it('should throw NotFoundException when removing nonexistent task', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.remove(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.remove(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 });

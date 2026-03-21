@@ -7,7 +7,7 @@ import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 export class SagawaController {
   constructor(private readonly sagawaService: SagawaService) {}
 
-  // CSV エクスポート（プレースホルダー） / CSV导出（占位符）
+  // CSV エクスポート（佐川フォーマット） / CSV导出（佐川格式）
   @Post('export')
   exportCsv(
     @TenantId() tenantId: string,
@@ -16,7 +16,7 @@ export class SagawaController {
     return this.sagawaService.exportCsv(tenantId, dto);
   }
 
-  // 追跡番号インポート（プレースホルダー） / 追踪号导入（占位符）
+  // 追跡番号インポート（佐川CSVパース） / 追踪号导入（佐川CSV解析）
   @Post('import-tracking')
   importTracking(
     @TenantId() tenantId: string,
@@ -31,21 +31,21 @@ export class SagawaController {
     return this.sagawaService.getInvoiceTypes();
   }
 
-  // 佐川バリデーション（プレースホルダー）/ 佐川校验（占位符）
+  // 佐川バリデーション（出荷注文の必須フィールド検証）/ 佐川校验（出货订单必填字段验证）
   @Post('validate')
   validate(
     @TenantId() tenantId: string,
     @Body() dto: Record<string, any>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.sagawaService.validateShipments(tenantId, dto);
   }
 
-  // 佐川印刷（プレースホルダー）/ 佐川打印（占位符）
+  // 佐川印刷ステータス更新（送り状印刷済みマーク）/ 佐川打印状态更新（标记送状已打印）
   @Post('print')
   print(
     @TenantId() tenantId: string,
     @Body() dto: Record<string, any>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.sagawaService.markAsPrinted(tenantId, dto);
   }
 }

@@ -242,7 +242,7 @@ export class BillingController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', invoiceId: id };
+    return this.billingService.updateInvoice(tenantId, id, dto);
   }
 
   // 請求書削除 / 删除发票
@@ -251,49 +251,49 @@ export class BillingController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', invoiceId: id };
+    return this.billingService.removeInvoice(tenantId, id);
   }
 
-  // 請求書送信（プレースホルダー）/ 发送发票（占位符）
+  // 請求書送信 / 发送发票
   @Post('invoices/:id/send')
   sendInvoice(
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', invoiceId: id };
+    return this.billingService.sendInvoice(tenantId, id);
   }
 
-  // 請求書PDF取得（プレースホルダー）/ 获取发票PDF（占位符）
+  // 請求書PDF取得 / 获取发票PDF
   @Get('invoices/:id/pdf')
   getInvoicePdf(
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', invoiceId: id };
+    return this.billingService.getInvoicePdf(tenantId, id);
   }
 
   // ============================================
   // 請求全般エンドポイント / 账单通用端点
   // ============================================
 
-  // 請求ダッシュボード（プレースホルダー）/ 账单仪表盘（占位符）
+  // 請求ダッシュボード / 账单仪表盘
   @Get('dashboard')
   getDashboard(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.billingService.getDashboard(tenantId);
   }
 
-  // 月次請求生成（プレースホルダー）/ 生成月度账单（占位符）
+  // 月次請求生成 / 生成月度账单
   @Post('generate-monthly')
   generateMonthly(
     @TenantId() tenantId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.billingService.generateMonthly(tenantId, body);
   }
 
-  // 請求エクスポート（プレースホルダー）/ 账单导出（占位符）
+  // 請求エクスポート / 账单导出
   @Post('export')
   exportBilling(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.billingService.exportBilling(tenantId);
   }
 }

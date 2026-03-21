@@ -1,12 +1,15 @@
 // 管理サービス / 管理服务
 import { Inject, Injectable } from '@nestjs/common';
 import { WmsException } from '../common/exceptions/wms.exception.js';
-import { eq, and, ilike, sql, SQL, desc } from 'drizzle-orm';
+import { eq, and, ilike, sql, SQL, desc, isNull } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { users } from '../database/schema/users.js';
 import { tenants } from '../database/schema/tenants.js';
 import { systemSettings } from '../database/schema/settings.js';
 import { operationLogs } from '../database/schema/settings.js';
+import { shipmentOrders } from '../database/schema/shipments.js';
+import { inboundOrders } from '../database/schema/inbound.js';
+import { stockQuants } from '../database/schema/inventory.js';
 import type { CreateUserDto, UpdateUserDto } from './dto/create-user.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
@@ -287,5 +290,31 @@ export class AdminService {
     ]);
 
     return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
+  }
+
+  // テナント統計ダッシュボード（テナント内の各種カウント集計）
+  // 租户统计仪表盘（汇总租户内的各种计数）
+  async getTenantStats(tenantId: string) {
+    const [userResult, shipmentResult, inboundResult, stockResult] = await Promise.all([
+      this.db.select({ count: sql<number>`count(*)::int` })
+        .from(users).where(eq(users.tenantId, tenantId)),
+      this.db.select({ count: sql<number>`count(*)::int` })
+        .from(shipmentOrders).where(and(eq(shipmentOrders.tenantId, tenantId), isNull(shipmentOrders.deletedAt))),
+      this.db.select({ count: sql<number>`count(*)::int` })
+        .from(inboundOrders).where(and(eq(inboundOrders.tenantId, tenantId), isNull(inboundOrders.deletedAt))),
+      this.db.select({
+        totalProducts: sql<number>`count(DISTINCT ${stockQuants.productId})::int`,
+        totalQuantity: sql<number>`coalesce(sum(${stockQuants.quantity}), 0)::int`,
+      }).from(stockQuants).where(eq(stockQuants.tenantId, tenantId)),
+    ]);
+
+    return {
+      tenantId,
+      users: userResult[0]?.count ?? 0,
+      shipmentOrders: shipmentResult[0]?.count ?? 0,
+      inboundOrders: inboundResult[0]?.count ?? 0,
+      totalProducts: stockResult[0]?.totalProducts ?? 0,
+      totalStockQuantity: stockResult[0]?.totalQuantity ?? 0,
+    };
   }
 }

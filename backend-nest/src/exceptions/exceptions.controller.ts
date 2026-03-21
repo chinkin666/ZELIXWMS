@@ -59,6 +59,6 @@ export class ExceptionsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', exceptionId: id };
+    return this.service.resolve(tenantId, id, body);
   }
 }

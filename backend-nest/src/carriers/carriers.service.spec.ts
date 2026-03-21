@@ -1,8 +1,8 @@
 // 配送業者サービス単体テスト / 配送业者服务单元测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { CarriersService } from './carriers.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -113,7 +113,7 @@ describe('CarriersService / 配送業者サービス / 配送业者服务', () =
     mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
     await expect(service.findById(tenantId, 'nonexistent'))
-      .rejects.toThrow(NotFoundException);
+      .rejects.toThrow(WmsException);
   });
 
   // ========================================
@@ -134,7 +134,7 @@ describe('CarriersService / 配送業者サービス / 配送业者服务', () =
     mockDb.select.mockReturnValueOnce(createSelectChain([{ id: 'existing-id' }]));
 
     await expect(service.create(tenantId, { code: 'YAMATO', name: 'Dup' } as any))
-      .rejects.toThrow(ConflictException);
+      .rejects.toThrow(WmsException);
   });
 
   // ========================================
@@ -155,7 +155,7 @@ describe('CarriersService / 配送業者サービス / 配送业者服务', () =
     mockDb.select.mockReturnValueOnce(createSelectChain([mockBuiltInCarrier]));
 
     await expect(service.update(tenantId, 'carrier-builtin', { name: 'X' } as any))
-      .rejects.toThrow(ForbiddenException);
+      .rejects.toThrow(WmsException);
   });
 
   // ========================================
@@ -176,6 +176,6 @@ describe('CarriersService / 配送業者サービス / 配送业者服务', () =
     mockDb.select.mockReturnValueOnce(createSelectChain([mockBuiltInCarrier]));
 
     await expect(service.remove(tenantId, 'carrier-builtin'))
-      .rejects.toThrow(ForbiddenException);
+      .rejects.toThrow(WmsException);
   });
 });

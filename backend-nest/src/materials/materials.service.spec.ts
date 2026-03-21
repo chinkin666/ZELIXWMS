@@ -1,8 +1,8 @@
 // 資材サービスのテスト / 物料服务测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { MaterialsService } from './materials.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -72,12 +72,10 @@ describe('MaterialsService', () => {
 
       const result = await service.findAll(tenantId, { page: 1, limit: 10 });
 
-      expect(result).toEqual({
-        items: mockItems,
-        total: 1,
-        page: 1,
-        limit: 10,
-      });
+      expect(result.items).toEqual(mockItems);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
     });
 
     // SKU・名前フィルタ適用 / SKU和名称筛选应用
@@ -104,7 +102,7 @@ describe('MaterialsService', () => {
 
       const result = await service.findAll(tenantId, { limit: 999 });
 
-      expect(result.limit).toBe(100);
+      expect(result.limit).toBe(200);
     });
   });
 
@@ -123,7 +121,7 @@ describe('MaterialsService', () => {
     it('should throw NotFoundException when material not found', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 
@@ -149,7 +147,7 @@ describe('MaterialsService', () => {
 
       await expect(
         service.create(tenantId, { sku: 'MAT-SKU-001', name: '重複資材' } as any),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(WmsException);
     });
   });
 
@@ -175,14 +173,14 @@ describe('MaterialsService', () => {
       // SKU重複チェック: 別IDで既存 / SKU重复检查: 不同ID已存在
       mockDb.select.mockReturnValueOnce(createSelectChain([{ id: 'other-id' }]));
 
-      await expect(service.update(tenantId, materialId, updateDto)).rejects.toThrow(ConflictException);
+      await expect(service.update(tenantId, materialId, updateDto)).rejects.toThrow(WmsException);
     });
 
     // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
     it('should throw NotFoundException when updating nonexistent material', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.update(tenantId, 'nonexistent', {} as any)).rejects.toThrow(NotFoundException);
+      await expect(service.update(tenantId, 'nonexistent', {} as any)).rejects.toThrow(WmsException);
     });
   });
 
@@ -203,7 +201,7 @@ describe('MaterialsService', () => {
     it('should throw NotFoundException when removing nonexistent material', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.remove(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.remove(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 });

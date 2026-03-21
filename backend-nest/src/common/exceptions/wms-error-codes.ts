@@ -30,6 +30,7 @@ export const WMS_ERROR_CODES = {
   // Billing 請求 / 请求
   BILL_NOT_FOUND: { code: 'BILL-001', status: 404, message: 'Billing record not found' },
   BILL_ALREADY_INVOICED: { code: 'BILL-002', status: 409, message: 'Already invoiced' },
+  BILL_INVALID_STATUS: { code: 'BILL-003', status: 422, message: 'Invalid billing status transition' },
 
   // Carrier 配送 / 配送
   CARRIER_NOT_FOUND: { code: 'CARR-001', status: 404, message: 'Carrier not found' },
@@ -88,6 +89,7 @@ export const WMS_ERROR_CODES = {
 
   // Stocktaking 棚卸 / 盘点
   STOCKTAKING_NOT_FOUND: { code: 'STK-001', status: 404, message: 'Stocktaking order not found' },
+  STOCKTAKING_INVALID_STATUS: { code: 'STK-002', status: 422, message: 'Invalid stocktaking status transition' },
 
   // Return 返品 / 退货
   RETURN_NOT_FOUND: { code: 'RET-001', status: 404, message: 'Return order not found' },
@@ -111,6 +113,7 @@ export const WMS_ERROR_CODES = {
   EXT_SCRIPT_NOT_FOUND: { code: 'EXT-004', status: 404, message: 'Script not found' },
   EXT_CUSTOM_FIELD_NOT_FOUND: { code: 'EXT-005', status: 404, message: 'Custom field not found' },
   EXT_AUTO_RULE_NOT_FOUND: { code: 'EXT-006', status: 404, message: 'Auto-processing rule not found' },
+  EXT_SCRIPT_DISABLED: { code: 'EXT-007', status: 422, message: 'Script is disabled' },
 
   // Template テンプレート / 模板
   TEMPLATE_NOT_FOUND: { code: 'TMPL-001', status: 404, message: 'Template not found' },
@@ -153,9 +156,36 @@ export const WMS_ERROR_CODES = {
 
   // Exception Report 異常報告 / 异常报告
   EXCEPTION_REPORT_NOT_FOUND: { code: 'EXCPT-001', status: 404, message: 'Exception report not found' },
+  EXCEPTION_INVALID_STATUS: { code: 'EXCPT-002', status: 422, message: 'Invalid exception report status' },
 
   // Carrier Automation 配送業者自動化 / 配送业者自动化
   CARRIER_AUTO_NOT_FOUND: { code: 'CARR-004', status: 404, message: 'Carrier automation config not found' },
+  CARRIER_PROXY_ERROR: { code: 'CARR-005', status: 502, message: 'Express proxy request failed' },
+
+  // Set Order セットオーダー / 套装订单
+  SET_ORDER_NOT_FOUND: { code: 'SETO-001', status: 404, message: 'Set order not found' },
+  SET_ORDER_INVALID_STATUS: { code: 'SETO-002', status: 422, message: 'Invalid set order status transition' },
+
+  // Order Group オーダーグループ / 订单分组
+  ORDER_GROUP_NOT_FOUND: { code: 'OG-001', status: 404, message: 'Order group not found' },
+
+  // Rule ルール / 规则
+  RULE_NOT_FOUND: { code: 'RULE-001', status: 404, message: 'Rule definition not found' },
+
+  // Packing Rule 梱包ルール / 包装规则
+  PACKING_RULE_NOT_FOUND: { code: 'PKRL-001', status: 404, message: 'Packing rule not found' },
+
+  // WMS Schedule WMSスケジュール / WMS排程
+  WMS_SCHEDULE_NOT_FOUND: { code: 'SCHED-001', status: 404, message: 'WMS schedule not found' },
+
+  // Notification Preference 通知設定 / 通知偏好
+  NOTIF_PREF_NOT_FOUND: { code: 'NOTIF-002', status: 404, message: 'Notification preferences not found' },
+
+  // Price Catalog 価格カタログ / 价格目录
+  PRICE_CATALOG_NOT_FOUND: { code: 'PCAT-001', status: 404, message: 'Price catalog entry not found' },
+
+  // Integration 連携 / 集成
+  INTEGRATION_NOT_CONFIGURED: { code: 'INTG-001', status: 422, message: 'Integration not configured or disabled' },
 
   // General 一般 / 通用
   DUPLICATE_RESOURCE: { code: 'GEN-001', status: 409, message: 'Resource already exists' },

@@ -1,8 +1,8 @@
 // 顧客サービス単体テスト / 客户服务单元测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { ClientsService } from './clients.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -112,7 +112,7 @@ describe('ClientsService / 顧客サービス / 客户服务', () => {
     mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
     await expect(service.findById(tenantId, 'nonexistent'))
-      .rejects.toThrow(NotFoundException);
+      .rejects.toThrow(WmsException);
   });
 
   // ========================================
@@ -138,7 +138,7 @@ describe('ClientsService / 顧客サービス / 客户服务', () => {
     mockDb.select.mockReturnValueOnce(createSelectChain([{ id: 'existing-id' }]));
 
     await expect(service.create(tenantId, { code: 'CLI-001', name: 'Dup' } as any))
-      .rejects.toThrow(ConflictException);
+      .rejects.toThrow(WmsException);
   });
 
   // ========================================
@@ -163,7 +163,7 @@ describe('ClientsService / 顧客サービス / 客户服务', () => {
     mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
     await expect(service.update(tenantId, 'nonexistent', { name: 'X' } as any))
-      .rejects.toThrow(NotFoundException);
+      .rejects.toThrow(WmsException);
   });
 
   // ========================================

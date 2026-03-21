@@ -10,12 +10,12 @@ export class NotificationPreferencesController {
   // 通知設定取得 / 获取通知偏好
   @Get()
   findAll(@TenantId() tenantId: string) {
-    return { preferences: {}, message: 'Not implemented yet / 未実装 / 尚未实现' };
+    return this.notificationPreferencesService.findAll(tenantId);
   }
 
   // 通知設定更新 / 更新通知偏好
   @Put()
   update(@TenantId() tenantId: string, @Body() dto: Record<string, unknown>) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.notificationPreferencesService.update(tenantId, dto);
   }
 }

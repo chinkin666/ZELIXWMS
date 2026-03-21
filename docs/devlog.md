@@ -3,6 +3,29 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-22] CRITICAL 4 项修复 + 全 placeholder 消除 + 测试全绿
+
+**変更種別 / 变更类型**: feat
+**影響範囲 / 影响范围**: backend-nest/src/ (29+ modules, 60+ files)
+**関連ドキュメント / 关联文档**: TODOS.md
+
+### 内容 / 内容
+
+#### CRITICAL 修复（4 项）
+1. **YamatoB2 NestJS Wrapper** — 通过 HTTP 代理到 Express 后端（port 4000），实现 validate/export/login/print/pdf-batch/import/history/unconfirm 8 个方法。遵守 CLAUDE.md 不修改 yamatoB2Service.ts 的约束。
+2. **Auth Service Supabase Auth 集成** — login/register/refreshToken/portalLogin/portalRegister 全部接入真实 Supabase Auth，返回 JWT session token。
+3. **PDF 真实生成** — 用 PDFKit 替换 HTML Buffer，支持标题/正文/表格渲染。Code128B 条码从 20 个字符扩展到完整 107 个编码模式（ISO 15417）。
+4. **Sagawa Controller 接线** — controller 的 validate/print endpoint 接入已有 service 的真实 DB 查询。
+
+#### 全 placeholder 消除
+- **Group B（空 service 全新实现）**: stocktaking-orders(8), tasks(7), locations(7), fba-shipment-plans(7), fba-boxes(5), rsl-shipment-plans(5), set-orders(7), order-groups(5), rules(5), packing-rules(5), wms-schedules(5), notification-preferences(2), price-catalogs(5) — 共 13 个 module、73 个方法
+- **Group A（已有 service 补充方法）**: passthrough(7), shipment(8), inventory(10), billing(7), inbound(6), stocktaking(3), returns(3), extensions(14), exceptions(1), daily-reports(2), client-portal(1), admin(1), products(3), inventory-ledger(1), integrations(6), carrier-automation(3) — 共 16 个 module、76 个方法
+
+#### 代码质量
+- TypeScript: 0 errors
+- Tests: 43 suites, 558 tests all passing（从 308 增长到 558）
+- 修复了所有预存的 spec 错误（WmsException 替换 NestJS 内置异常、分页 totalPages 字段、limit cap 200）
+
 ## [2026-03-21] NestJS API 322 endpoints + 51 modules 完全実装
 
 **変更種別 / 变更类型**: feat

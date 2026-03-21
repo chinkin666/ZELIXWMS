@@ -1,8 +1,8 @@
 // ウェーブサービスのテスト / 波次服务测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { WavesService } from './waves.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -71,12 +71,10 @@ describe('WavesService', () => {
 
       const result = await service.findAll(tenantId, { page: 1, limit: 10 });
 
-      expect(result).toEqual({
-        items: mockItems,
-        total: 1,
-        page: 1,
-        limit: 10,
-      });
+      expect(result.items).toEqual(mockItems);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
     });
 
     // ページネーション上限チェック / 分页上限检查
@@ -89,7 +87,7 @@ describe('WavesService', () => {
 
       const result = await service.findAll(tenantId, { limit: 999 });
 
-      expect(result.limit).toBe(100);
+      expect(result.limit).toBe(200);
     });
   });
 
@@ -108,7 +106,7 @@ describe('WavesService', () => {
     it('should throw NotFoundException when wave not found', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 
@@ -134,7 +132,7 @@ describe('WavesService', () => {
 
       await expect(
         service.create(tenantId, { waveNumber: 'WAVE-001' } as any),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(WmsException);
     });
   });
 
@@ -160,14 +158,14 @@ describe('WavesService', () => {
       // ウェーブ番号重複チェック: 別IDで既存 / 波次编号重复检查: 不同ID已存在
       mockDb.select.mockReturnValueOnce(createSelectChain([{ id: 'other-id' }]));
 
-      await expect(service.update(tenantId, waveId, updateDto)).rejects.toThrow(ConflictException);
+      await expect(service.update(tenantId, waveId, updateDto)).rejects.toThrow(WmsException);
     });
 
     // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
     it('should throw NotFoundException when updating nonexistent wave', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.update(tenantId, 'nonexistent', {} as any)).rejects.toThrow(NotFoundException);
+      await expect(service.update(tenantId, 'nonexistent', {} as any)).rejects.toThrow(WmsException);
     });
   });
 
@@ -188,7 +186,7 @@ describe('WavesService', () => {
     it('should throw NotFoundException when removing nonexistent wave', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.remove(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.remove(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 });

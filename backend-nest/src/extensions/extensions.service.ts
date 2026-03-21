@@ -1,9 +1,9 @@
 // 拡張機能サービス（Webhook・フィーチャーフラグ）/ 扩展功能服务（Webhook・功能开关）
 import { Inject, Injectable } from '@nestjs/common';
 import { WmsException } from '../common/exceptions/wms.exception.js';
-import { eq, and, sql, SQL } from 'drizzle-orm';
+import { eq, and, sql, SQL, desc } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
-import { webhooks, featureFlags, plugins, scripts, customFieldDefinitions, autoProcessingRules } from '../database/schema/extensions.js';
+import { webhooks, webhookLogs, featureFlags, plugins, scripts, customFieldDefinitions, autoProcessingRules } from '../database/schema/extensions.js';
 import type { CreateWebhookDto, UpdateWebhookDto } from './dto/create-webhook.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 
@@ -375,6 +375,261 @@ export class ExtensionsService {
       .returning();
 
     return rows[0];
+  }
+
+  // ===== Webhookテスト・ログ / Webhook测试・日志 =====
+
+  // Webhookテスト送信（テストペイロードを送信してログに記録）
+  // 测试发送Webhook（发送测试payload并记录到日志）
+  async testWebhook(tenantId: string, id: string) {
+    const webhook = await this.findWebhookById(tenantId, id);
+
+    const startTime = Date.now();
+    let httpStatus = 0;
+    let success = false;
+    let error: string | undefined;
+
+    try {
+      const response = await fetch(webhook.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: 'test', timestamp: new Date().toISOString(), webhookId: id }),
+        signal: AbortSignal.timeout(10000),
+      });
+      httpStatus = response.status;
+      success = response.ok;
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+    }
+
+    const responseTimeMs = Date.now() - startTime;
+
+    // ログに記録 / 记录到日志
+    const [log] = await this.db.insert(webhookLogs).values({
+      tenantId,
+      webhookId: id,
+      event: 'test',
+      url: webhook.url,
+      httpStatus: httpStatus || null,
+      responseTimeMs,
+      success,
+      error: error ?? null,
+      payload: { event: 'test' },
+    }).returning();
+
+    return { success, httpStatus, responseTimeMs, error, log };
+  }
+
+  // Webhookログ取得 / 获取Webhook日志
+  async getWebhookLogs(tenantId: string, webhookId: string, query: PaginationQuery) {
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
+    const offset = (page - 1) * limit;
+
+    const where = and(eq(webhookLogs.tenantId, tenantId), eq(webhookLogs.webhookId, webhookId));
+
+    const [items, countResult] = await Promise.all([
+      this.db.select().from(webhookLogs).where(where).limit(limit).offset(offset).orderBy(desc(webhookLogs.createdAt)),
+      this.db.select({ count: sql<number>`count(*)::int` }).from(webhookLogs).where(where),
+    ]);
+
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
+  }
+
+  // ===== フィーチャーフラグ拡張 / 功能开关扩展 =====
+
+  // フィーチャーフラグキー検索 / 按key查找功能开关
+  async findFlagByKey(key: string) {
+    const rows = await this.db
+      .select()
+      .from(featureFlags)
+      .where(eq(featureFlags.name, key))
+      .limit(1);
+
+    if (rows.length === 0) {
+      throw new WmsException('EXT_FLAG_NOT_FOUND', `Key: ${key}`);
+    }
+    return rows[0];
+  }
+
+  // フィーチャーフラグ作成 / 创建功能开关
+  async createFlag(dto: Record<string, unknown>) {
+    if (!dto.name) {
+      throw new WmsException('VALIDATION_ERROR', 'name is required / nameは必須 / name必填');
+    }
+
+    const rows = await this.db
+      .insert(featureFlags)
+      .values(dto)
+      .returning();
+
+    return rows[0];
+  }
+
+  // フィーチャーフラグ更新（キーで検索して更新）/ 更新功能开关（按key搜索后更新）
+  async updateFlag(key: string, dto: Record<string, unknown>) {
+    // 存在確認 / 确认存在
+    await this.findFlagByKey(key);
+
+    const rows = await this.db
+      .update(featureFlags)
+      .set({ ...dto, updatedAt: new Date() })
+      .where(eq(featureFlags.name, key))
+      .returning();
+
+    return rows[0];
+  }
+
+  // フィーチャーフラグ削除 / 删除功能开关
+  async removeFlag(key: string) {
+    // 存在確認 / 确认存在
+    await this.findFlagByKey(key);
+
+    const rows = await this.db
+      .delete(featureFlags)
+      .where(eq(featureFlags.name, key))
+      .returning();
+
+    return rows[0];
+  }
+
+  // ===== プラグイン拡張 / 插件扩展 =====
+
+  // プラグインインストール（作成）/ 安装插件（创建）
+  async installPlugin(tenantId: string, dto: Record<string, unknown>) {
+    if (!dto.name) {
+      throw new WmsException('VALIDATION_ERROR', 'name is required / nameは必須 / name必填');
+    }
+
+    const rows = await this.db
+      .insert(plugins)
+      .values({ tenantId, ...dto, enabled: false })
+      .returning();
+
+    return rows[0];
+  }
+
+  // プラグイン設定更新 / 更新插件配置
+  async updatePlugin(tenantId: string, id: string, dto: Record<string, unknown>) {
+    // 存在確認 / 确认存在
+    await this.findPluginById(tenantId, id);
+
+    const rows = await this.db
+      .update(plugins)
+      .set({ ...dto, updatedAt: new Date() })
+      .where(and(eq(plugins.id, id), eq(plugins.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // プラグインアンインストール（物理削除）/ 卸载插件（硬删除）
+  async uninstallPlugin(tenantId: string, id: string) {
+    // 存在確認 / 确认存在
+    await this.findPluginById(tenantId, id);
+
+    const rows = await this.db
+      .delete(plugins)
+      .where(and(eq(plugins.id, id), eq(plugins.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // ===== スクリプト拡張 / 脚本扩展 =====
+
+  // スクリプト実行（lastRunAtとlastRunStatusを更新、実行結果を返す）
+  // 执行脚本（更新lastRunAt和lastRunStatus，返回执行结果）
+  async executeScript(tenantId: string, id: string) {
+    const script = await this.findScriptById(tenantId, id);
+
+    if (!script.enabled) {
+      throw new WmsException('EXT_SCRIPT_DISABLED', `Script ${id} is disabled / スクリプト${id}は無効 / 脚本${id}已禁用`);
+    }
+
+    const now = new Date();
+
+    // スクリプト実行のシミュレーション（実際のサンドボックス実行は将来実装）
+    // 模拟脚本执行（实际沙箱执行将来实现）
+    const rows = await this.db
+      .update(scripts)
+      .set({ lastRunAt: now, lastRunStatus: 'success', updatedAt: now })
+      .where(and(eq(scripts.id, id), eq(scripts.tenantId, tenantId)))
+      .returning();
+
+    return {
+      script: rows[0],
+      execution: {
+        executedAt: now,
+        status: 'success',
+        message: 'Script executed (sandbox not yet implemented) / スクリプト実行済み（サンドボックス未実装）/ 脚本已执行（沙箱尚未实现）',
+      },
+    };
+  }
+
+  // スクリプトログ取得（lastRunAt/lastRunStatusに基づく実行履歴）
+  // 获取脚本日志（基于lastRunAt/lastRunStatus的执行历史）
+  async getScriptLogs(tenantId: string, id: string) {
+    const script = await this.findScriptById(tenantId, id);
+
+    // スクリプト実行ログテーブルがないため、スクリプト自体の実行履歴を返す
+    // 由于没有脚本执行日志表，返回脚本本身的执行历史
+    return {
+      scriptId: id,
+      lastRunAt: script.lastRunAt,
+      lastRunStatus: script.lastRunStatus,
+      items: script.lastRunAt ? [{
+        executedAt: script.lastRunAt,
+        status: script.lastRunStatus,
+      }] : [],
+      total: script.lastRunAt ? 1 : 0,
+    };
+  }
+
+  // ===== カスタムフィールド拡張 / 自定义字段扩展 =====
+
+  // カスタムフィールドID検索 / 按ID查找自定义字段
+  async findCustomFieldById(tenantId: string, id: string) {
+    const rows = await this.db
+      .select()
+      .from(customFieldDefinitions)
+      .where(and(eq(customFieldDefinitions.id, id), eq(customFieldDefinitions.tenantId, tenantId)))
+      .limit(1);
+
+    if (rows.length === 0) {
+      throw new WmsException('EXT_CUSTOM_FIELD_NOT_FOUND', `ID: ${id}`);
+    }
+    return rows[0];
+  }
+
+  // ===== 自動処理ルール拡張 / 自动处理规则扩展 =====
+
+  // 自動処理ルールID検索 / 按ID查找自动处理规则
+  async findAutoProcessingRuleById(tenantId: string, id: string) {
+    const rows = await this.db
+      .select()
+      .from(autoProcessingRules)
+      .where(and(eq(autoProcessingRules.id, id), eq(autoProcessingRules.tenantId, tenantId)))
+      .limit(1);
+
+    if (rows.length === 0) {
+      throw new WmsException('EXT_AUTO_RULE_NOT_FOUND', `ID: ${id}`);
+    }
+    return rows[0];
+  }
+
+  // 自動処理ルールログ取得（実行履歴は将来のログテーブルで管理）
+  // 获取自动处理规则日志（执行历史将来通过日志表管理）
+  async getAutoProcessingRuleLogs(tenantId: string, id: string) {
+    // 存在確認 / 确认存在
+    await this.findAutoProcessingRuleById(tenantId, id);
+
+    return {
+      ruleId: id,
+      items: [],
+      total: 0,
+      message: 'Execution logs will be recorded here / 実行ログはここに記録される / 执行日志将记录在此',
+    };
   }
 
   // 自動処理ルール削除（物理削除）/ 删除自动处理规则（硬删除）

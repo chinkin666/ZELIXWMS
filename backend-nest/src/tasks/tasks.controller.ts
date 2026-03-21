@@ -9,38 +9,41 @@ export class TasksController {
 
   @Get()
   findAll(@TenantId() tenantId: string, @Query('page') page?: string, @Query('limit') limit?: string) {
-    return { items: [], total: 0, page: page ? parseInt(page, 10) : 1, limit: limit ? parseInt(limit, 10) : 20, message: 'Not implemented yet / 未実装 / 尚未实现' };
+    return this.tasksService.findAll(tenantId, {
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+    });
   }
 
   @Get(':id')
   findOne(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.tasksService.findOne(tenantId, id);
   }
 
   @Post()
   create(@TenantId() tenantId: string, @Body() dto: Record<string, unknown>) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.tasksService.create(tenantId, dto);
   }
 
   @Put(':id')
   update(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string, @Body() dto: Record<string, unknown>) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.tasksService.update(tenantId, id, dto);
   }
 
   @Delete(':id')
   remove(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.tasksService.remove(tenantId, id);
   }
 
   // タスク完了 / 完成任务
   @Patch(':id/complete')
   complete(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.tasksService.complete(tenantId, id);
   }
 
   // タスク割り当て / 分配任务
   @Patch(':id/assign')
   assign(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string, @Body() body: Record<string, unknown>) {
-    return { id, message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.tasksService.assign(tenantId, id, body);
   }
 }

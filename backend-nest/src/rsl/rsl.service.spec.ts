@@ -167,13 +167,13 @@ describe('RslService', () => {
   // ===== updatePlan =====
   describe('updatePlan', () => {
     it('should update a plan', async () => {
-      const updated = { ...mockPlan, name: 'Updated' };
+      const updated = { ...mockPlan, planName: 'Updated' };
       mockDb.select.mockReturnValueOnce(createChain([mockPlan]));
       mockDb.returning.mockResolvedValueOnce([updated]);
 
-      const result = await service.updatePlan(tenantId, planId, { name: 'Updated' });
+      const result = await service.updatePlan(tenantId, planId, { planName: 'Updated' });
 
-      expect(result.name).toBe('Updated');
+      expect(result.planName).toBe('Updated');
     });
 
     it('should throw WmsException when plan does not exist', async () => {

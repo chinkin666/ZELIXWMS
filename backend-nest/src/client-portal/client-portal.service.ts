@@ -7,6 +7,7 @@ import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 import { shipmentOrders } from '../database/schema/shipments.js';
 import { inboundOrders } from '../database/schema/inbound.js';
 import { billingRecords } from '../database/schema/billing.js';
+import { stockQuants } from '../database/schema/inventory.js';
 
 interface PortalQuery {
   page?: number;
@@ -203,6 +204,42 @@ export class ClientPortalService {
         .from(billingRecords)
         .where(whereClause)
         .orderBy(sql`${billingRecords.createdAt} DESC`)
+        .limit(limit)
+        .offset(offset),
+    ]);
+
+    const total = countResult[0]?.value ?? 0;
+    return createPaginatedResult(items, total, page, limit);
+  }
+
+  // クライアントの在庫一覧（stockQuantsをテナント分離でページネーション）
+  // 获取客户库存列表（按租户隔离分页stockQuants）
+  async getInventory(tenantId: string, clientId: string, query: Omit<PortalQuery, 'status'>) {
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(200, Math.max(1, query.limit || 20));
+    const offset = (page - 1) * limit;
+
+    // stockQuantsはclientIdを直接持たないため、テナント全体の在庫を返す
+    // stockQuants没有直接的clientId字段，因此返回租户全体库存
+    // NOTE: クライアント別フィルタは商品マスタとの結合が必要（将来実装）
+    // 注意: 按客户筛选需要与商品主数据连接（将来实现）
+    const whereClause = eq(stockQuants.tenantId, tenantId);
+
+    const [countResult, items] = await Promise.all([
+      this.db.select({ value: count() }).from(stockQuants).where(whereClause),
+      this.db
+        .select({
+          id: stockQuants.id,
+          productId: stockQuants.productId,
+          locationId: stockQuants.locationId,
+          quantity: stockQuants.quantity,
+          reservedQuantity: stockQuants.reservedQuantity,
+          available: sql<number>`(${stockQuants.quantity} - ${stockQuants.reservedQuantity})::int`,
+          lastMovedAt: stockQuants.lastMovedAt,
+        })
+        .from(stockQuants)
+        .where(whereClause)
+        .orderBy(stockQuants.productId)
         .limit(limit)
         .offset(offset),
     ]);

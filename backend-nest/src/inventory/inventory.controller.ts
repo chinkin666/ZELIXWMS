@@ -172,66 +172,66 @@ export class InventoryController {
     return this.inventoryService.getStockByProduct(tenantId, productId);
   }
 
-  // 在庫概要ダッシュボード（プレースホルダー）/ 库存概要仪表盘（占位符）
+  // 在庫概要ダッシュボード / 库存概要仪表盘
   @Get('overview')
   getOverview(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.inventoryService.getOverview(tenantId);
   }
 
-  // ロケーション使用率（プレースホルダー）/ 库位使用率（占位符）
+  // ロケーション使用率 / 库位使用率
   @Get('location-usage')
   getLocationUsage(@TenantId() tenantId: string) {
-    return { items: [], message: 'Not implemented yet / 未実装 / 尚未实现' };
+    return this.inventoryService.getLocationUsage(tenantId);
   }
 
-  // 在庫サマリー（プレースホルダー）/ 库存汇总（占位符）
+  // 在庫サマリー / 库存汇总
   @Get('stock/summary')
   getStockSummary(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.inventoryService.getStockSummary(tenantId);
   }
 
-  // 低在庫アラート（プレースホルダー）/ 低库存警报（占位符）
+  // 低在庫アラート / 低库存警报
   @Get('alerts/low-stock')
   getLowStockAlerts(@TenantId() tenantId: string) {
-    return { items: [], total: 0, message: 'Not implemented yet / 未実装 / 尚未实现' };
+    return this.inventoryService.getLowStockAlerts(tenantId);
   }
 
-  // 注文引当（プレースホルダー）/ 订单预留（占位符）
+  // 注文引当 / 订单预留
   @Post('reserve-orders')
   reserveOrders(
     @TenantId() tenantId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.inventoryService.reserveOrders(tenantId, body);
   }
 
-  // ゼロ在庫クリーンアップ（プレースホルダー）/ 零库存清理（占位符）
+  // ゼロ在庫クリーンアップ / 零库存清理
   @Post('cleanup-zero')
   cleanupZero(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.inventoryService.cleanupZero(tenantId);
   }
 
-  // 在庫リビルド（プレースホルダー）/ 库存重建（占位符）
+  // 在庫リビルド / 库存重建
   @Post('rebuild')
   rebuild(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.inventoryService.rebuild(tenantId);
   }
 
-  // 期限切れ引当解放（プレースホルダー）/ 释放过期预留（占位符）
+  // 期限切れ引当解放 / 释放过期预留
   @Post('release-expired-reservations')
   releaseExpiredReservations(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.inventoryService.releaseExpiredReservations(tenantId);
   }
 
-  // 在庫台帳サマリー（プレースホルダー）/ 库存台账汇总（占位符）
+  // 在庫台帳サマリー / 库存台账汇总
   @Get('ledger-summary')
   getLedgerSummary(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.inventoryService.getLedgerSummary(tenantId);
   }
 
-  // 在庫エクスポート（プレースホルダー）/ 库存导出（占位符）
+  // 在庫エクスポート / 库存导出
   @Post('export')
   exportInventory(@TenantId() tenantId: string) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder' };
+    return this.inventoryService.exportInventory(tenantId);
   }
 }

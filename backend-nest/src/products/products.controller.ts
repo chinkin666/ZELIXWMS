@@ -78,16 +78,19 @@ export class ProductsController {
     }));
   }
 
-  // 商品CSVインポート（プレースホルダー）/ 商品CSV导入（占位符）
+  // 商品CSVインポート / 商品CSV导入
   @Post('import')
-  importCsv(@TenantId() tenantId: string) {
-    return { message: 'CSV import placeholder / CSVインポートプレースホルダー / CSV导入占位符', tenantId };
+  importCsv(
+    @TenantId() tenantId: string,
+    @Body() body: { products: Record<string, any>[] },
+  ) {
+    return this.productsService.importCsv(tenantId, body);
   }
 
-  // 商品CSVエクスポート（プレースホルダー）/ 商品CSV导出（占位符）
+  // 商品CSVエクスポート / 商品CSV导出
   @Post('export')
   exportCsv(@TenantId() tenantId: string) {
-    return { message: 'CSV export placeholder / CSVエクスポートプレースホルダー / CSV导出占位符', tenantId };
+    return this.productsService.exportCsv(tenantId);
   }
 
   // 商品一括更新 / 商品批量更新
@@ -137,13 +140,13 @@ export class ProductsController {
     return this.productsService.update(tenantId, id, dto);
   }
 
-  // 商品変更履歴取得（プレースホルダー）/ 获取商品变更历史（占位符）
+  // 商品変更履歴取得 / 获取商品变更历史
   @Get(':id/history')
   getHistory(
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { items: [], total: 0, productId: id, message: 'Not implemented yet / 未実装 / 尚未实现' };
+    return this.productsService.getHistory(tenantId, id);
   }
 
   // 商品削除（論理削除）/ 删除商品（软删除）

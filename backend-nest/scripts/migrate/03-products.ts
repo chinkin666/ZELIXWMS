@@ -154,7 +154,7 @@ export async function migrateProducts(
   // ステップ1: products テーブルを移行 / 步骤1: 迁移 products 表
   const result = await processBatch(mongoProducts, DEFAULT_BATCH_SIZE, async (batch) => {
     const values = batch.map(mapProduct);
-    await pgDb.insert(products).values(values).onConflictDoNothing();
+    await pgDb.insert(products).values(values as any).onConflictDoNothing();
   });
 
   logComplete('Products (main)', result);

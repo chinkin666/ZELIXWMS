@@ -63,7 +63,7 @@ export class StocktakingController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', stocktakingId: id };
+    return this.stocktakingService.registerCount(tenantId, id, body);
   }
 
   // 棚卸完了 / 完成盘点
@@ -72,7 +72,7 @@ export class StocktakingController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', stocktakingId: id };
+    return this.stocktakingService.complete(tenantId, id);
   }
 
   // 棚卸キャンセル / 取消盘点
@@ -81,7 +81,7 @@ export class StocktakingController {
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return { message: 'Not implemented yet / 未実装 / 尚未实现', status: 'placeholder', stocktakingId: id };
+    return this.stocktakingService.cancel(tenantId, id);
   }
 
   // 棚卸削除（論理削除）/ 删除盘点单（软删除）

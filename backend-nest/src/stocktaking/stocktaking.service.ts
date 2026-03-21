@@ -139,6 +139,71 @@ export class StocktakingService {
     return rows[0];
   }
 
+  // 棚卸カウント登録（itemsフィールドにカウント結果を追記）/ 登记盘点计数（将计数结果追加到items字段）
+  async registerCount(tenantId: string, id: string, body: Record<string, unknown>) {
+    const order = await this.findById(tenantId, id);
+    if (order.status !== 'draft' && order.status !== 'in_progress') {
+      throw new WmsException('STOCKTAKING_INVALID_STATUS', `Cannot register count: current status is ${order.status} / カウント登録不可: ステータスは${order.status} / 无法登记计数: 状态为${order.status}`);
+    }
+
+    const countItems = body.items as Array<{ productId: string; locationId: string; countedQuantity: number }> | undefined;
+    if (!countItems || !Array.isArray(countItems) || countItems.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'items array is required / items配列は必須 / items数组必填');
+    }
+
+    // 既存のitemsにマージ / 合并到现有items
+    const existingItems = Array.isArray(order.items) ? order.items : [];
+    const mergedItems = [...existingItems, ...countItems.map((item) => ({
+      ...item,
+      countedAt: new Date().toISOString(),
+    }))];
+
+    const rows = await this.db
+      .update(stocktakingOrders)
+      .set({
+        items: mergedItems,
+        status: 'in_progress',
+        updatedAt: new Date(),
+      })
+      .where(and(eq(stocktakingOrders.id, id), eq(stocktakingOrders.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // 棚卸完了（in_progress → completed）/ 完成盘点（in_progress → completed）
+  async complete(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+    if (order.status !== 'in_progress') {
+      throw new WmsException('STOCKTAKING_INVALID_STATUS', `Cannot complete: current status is ${order.status}`);
+    }
+
+    const now = new Date();
+    const rows = await this.db
+      .update(stocktakingOrders)
+      .set({ status: 'completed', completedAt: now, updatedAt: now })
+      .where(and(eq(stocktakingOrders.id, id), eq(stocktakingOrders.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // 棚卸キャンセル（draft/in_progress → cancelled）/ 取消盘点（draft/in_progress → cancelled）
+  async cancel(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+    if (order.status === 'completed' || order.status === 'cancelled') {
+      throw new WmsException('STOCKTAKING_INVALID_STATUS', `Cannot cancel: current status is ${order.status}`);
+    }
+
+    const rows = await this.db
+      .update(stocktakingOrders)
+      .set({ status: 'cancelled', updatedAt: new Date() })
+      .where(and(eq(stocktakingOrders.id, id), eq(stocktakingOrders.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
   // 棚卸論理削除 / 盘点单软删除
   async remove(tenantId: string, id: string) {
     // 存在確認 / 确认存在

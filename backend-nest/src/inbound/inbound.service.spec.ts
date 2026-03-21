@@ -1,8 +1,8 @@
 // 入庫サービス単体テスト / 入库服务单元测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { InboundService } from './inbound.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -114,11 +114,11 @@ describe('InboundService / 入庫サービス / 入库服务', () => {
     expect(result).toEqual(mockOrder);
   });
 
-  it('findById: 見つからない場合NotFoundException / 未找到时抛出 NotFoundException', async () => {
+  it('findById: 見つからない場合WmsException / 未找到时抛出 WmsException', async () => {
     mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
     await expect(service.findById(tenantId, 'nonexistent'))
-      .rejects.toThrow(NotFoundException);
+      .rejects.toThrow(WmsException);
   });
 
   // ========================================
@@ -138,11 +138,11 @@ describe('InboundService / 入庫サービス / 入库服务', () => {
     expect(result).toEqual(mockOrder);
   });
 
-  it('create: 注文番号重複でConflictException / 订单号重复时抛出 ConflictException', async () => {
+  it('create: 注文番号重複でWmsException / 订单号重复时抛出 WmsException', async () => {
     mockDb.select.mockReturnValueOnce(createSelectChain([{ id: 'existing-id' }]));
 
     await expect(service.create(tenantId, { orderNumber: 'INB-2026-0001' } as any))
-      .rejects.toThrow(ConflictException);
+      .rejects.toThrow(WmsException);
   });
 
   // ========================================

@@ -1,8 +1,8 @@
 // 管理サービスのテスト / 管理服务测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { AdminService } from './admin.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -90,12 +90,10 @@ describe('AdminService', () => {
 
       const result = await service.findAllUsers(tenantId, { page: 1, limit: 10 });
 
-      expect(result).toEqual({
-        items: mockItems,
-        total: 1,
-        page: 1,
-        limit: 10,
-      });
+      expect(result.items).toEqual(mockItems);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
     });
 
     // ページネーション上限チェック / 分页上限检查
@@ -108,7 +106,7 @@ describe('AdminService', () => {
 
       const result = await service.findAllUsers(tenantId, { limit: 999 });
 
-      expect(result.limit).toBe(100);
+      expect(result.limit).toBe(200);
     });
   });
 
@@ -123,11 +121,11 @@ describe('AdminService', () => {
       expect(result).toEqual(mockUser);
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when user not found', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when user not found', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.findUserById(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findUserById(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 
@@ -160,11 +158,11 @@ describe('AdminService', () => {
       expect(result.displayName).toBe('更新名前');
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when updating nonexistent user', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when updating nonexistent user', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.updateUser(tenantId, 'nonexistent', {} as any)).rejects.toThrow(NotFoundException);
+      await expect(service.updateUser(tenantId, 'nonexistent', {} as any)).rejects.toThrow(WmsException);
     });
   });
 
@@ -181,11 +179,11 @@ describe('AdminService', () => {
       expect(mockDb.update).toHaveBeenCalled();
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when removing nonexistent user', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when removing nonexistent user', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.removeUser(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.removeUser(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 
@@ -238,12 +236,10 @@ describe('AdminService', () => {
 
       const result = await service.findOperationLogs(tenantId, { page: 1, limit: 10 });
 
-      expect(result).toEqual({
-        items: mockItems,
-        total: 1,
-        page: 1,
-        limit: 10,
-      });
+      expect(result.items).toEqual(mockItems);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
     });
 
     // フィルタ適用テスト / 筛选应用测试

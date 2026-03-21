@@ -96,9 +96,12 @@ export class PassthroughService {
       .insert(passthroughOrders)
       .values({
         tenantId,
-        ...dto,
+        orderNumber: dto.orderNumber ?? `PT-${Date.now()}`,
+        clientId: dto.clientId ?? null,
+        items: dto.items ?? null,
+        notes: dto.notes ?? null,
         status: 'draft',
-      })
+      } satisfies typeof passthroughOrders.$inferInsert)
       .returning();
 
     return rows[0];
@@ -153,6 +156,63 @@ export class PassthroughService {
   // 直通订单发货处理（confirmed→receiving 迁移的快捷方式）
   async ship(tenantId: string, id: string) {
     return this.update(tenantId, id, { status: 'receiving' });
+  }
+
+  // パススルー注文削除（draftのみ削除可能）/ 删除直通订单（仅draft可删除）
+  async remove(tenantId: string, id: string) {
+    const current = await this.findById(tenantId, id);
+    if (current.status !== 'draft') {
+      throw new WmsException(
+        'PASSTHROUGH_INVALID_STATUS',
+        `Cannot delete: status is '${current.status}', only 'draft' can be deleted / ` +
+        `ステータス「${current.status}」は削除不可。draftのみ削除可能 / ` +
+        `状态「${current.status}」不可删除，仅draft可删除`,
+      );
+    }
+
+    const rows = await this.db
+      .delete(passthroughOrders)
+      .where(and(eq(passthroughOrders.id, id), eq(passthroughOrders.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // パススルー注文確認（draft → confirmed ショートカット）/ 确认直通订单（draft → confirmed 快捷方式）
+  async confirm(tenantId: string, id: string) {
+    return this.update(tenantId, id, { status: 'confirmed' });
+  }
+
+  // パススルー注文受領（confirmed → receiving ショートカット）/ 接收直通订单（confirmed → receiving 快捷方式）
+  async receive(tenantId: string, id: string) {
+    return this.update(tenantId, id, { status: 'receiving' });
+  }
+
+  // パススルー注文完了（receiving → completed ショートカット）/ 完成直通订单（receiving → completed 快捷方式）
+  async complete(tenantId: string, id: string) {
+    return this.update(tenantId, id, { status: 'completed' });
+  }
+
+  // パススルー注文キャンセル（draft/confirmed → cancelled ショートカット）/ 取消直通订单
+  async cancel(tenantId: string, id: string) {
+    return this.update(tenantId, id, { status: 'cancelled' });
+  }
+
+  // パススルー注文一括インポート（CSV/JSONボディをパースして一括挿入）
+  // 直通订单批量导入（解析CSV/JSON body后批量插入）
+  async importOrders(tenantId: string, body: { orders: Record<string, any>[] }) {
+    const { orders } = body;
+    if (!orders || !Array.isArray(orders) || orders.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'orders array is required and must not be empty / orders配列は必須 / orders数组必填且不能为空');
+    }
+
+    const results = [];
+    for (const dto of orders) {
+      const created = await this.create(tenantId, dto);
+      results.push(created);
+    }
+
+    return { imported: results.length, items: results };
   }
 
   // ステージングダッシュボード（ステータス別集計）/ 暂存仪表板（按状态汇总）

@@ -1,8 +1,8 @@
 // 在庫サービス単体テスト / 库存服务单元测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { InventoryService } from './inventory.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -87,11 +87,11 @@ describe('InventoryService / 在庫サービス / 库存服务', () => {
     expect(result).toEqual(mockLocation);
   });
 
-  it('findLocationById: 見つからない場合NotFoundException / 未找到时抛出 NotFoundException', async () => {
+  it('findLocationById: 見つからない場合WmsException / 未找到时抛出 WmsException', async () => {
     mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
     await expect(service.findLocationById(tenantId, 'nonexistent'))
-      .rejects.toThrow(NotFoundException);
+      .rejects.toThrow(WmsException);
   });
 
   // ========================================
@@ -108,11 +108,11 @@ describe('InventoryService / 在庫サービス / 库存服务', () => {
     expect(mockDb.insert).toHaveBeenCalled();
   });
 
-  it('createLocation: コード重複でConflictException / 编码重复时抛出 ConflictException', async () => {
+  it('createLocation: コード重複でWmsException / 编码重复时抛出 WmsException', async () => {
     mockDb.select.mockReturnValueOnce(createSelectChain([{ id: 'existing-id' }]));
 
     await expect(service.createLocation(tenantId, { code: 'A-01-01' } as any))
-      .rejects.toThrow(ConflictException);
+      .rejects.toThrow(WmsException);
   });
 
   // ========================================
@@ -129,11 +129,11 @@ describe('InventoryService / 在庫サービス / 库存服务', () => {
     expect(result.type).toBe('floor');
   });
 
-  it('updateLocation: 存在しないIDでNotFoundException / 不存在的ID抛出 NotFoundException', async () => {
+  it('updateLocation: 存在しないIDでWmsException / 不存在的ID抛出 WmsException', async () => {
     mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
     await expect(service.updateLocation(tenantId, 'nonexistent', { type: 'x' } as any))
-      .rejects.toThrow(NotFoundException);
+      .rejects.toThrow(WmsException);
   });
 
   // ========================================

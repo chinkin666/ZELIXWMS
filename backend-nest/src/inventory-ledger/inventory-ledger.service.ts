@@ -90,4 +90,32 @@ export class InventoryLedgerService {
 
     return { summary };
   }
+
+  // 在庫台帳エクスポート（CSV形式のバッファを返す）/ 库存台账导出（返回CSV格式buffer）
+  async exportLedger(tenantId: string) {
+    const items = await this.db
+      .select()
+      .from(inventoryLedger)
+      .where(eq(inventoryLedger.tenantId, tenantId))
+      .orderBy(inventoryLedger.createdAt);
+
+    const headers = ['productId', 'productSku', 'type', 'quantity', 'referenceType', 'referenceNumber', 'reason', 'executedAt', 'createdAt'];
+    const csvLines = [headers.join(',')];
+
+    for (const item of items) {
+      const row = headers.map((h) => {
+        const val = (item as Record<string, unknown>)[h];
+        const str = val === null || val === undefined ? '' : String(val);
+        return str.includes(',') || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str;
+      });
+      csvLines.push(row.join(','));
+    }
+
+    return {
+      filename: `inventory-ledger-${new Date().toISOString().slice(0, 10)}.csv`,
+      contentType: 'text/csv',
+      data: csvLines.join('\n'),
+      totalRows: items.length,
+    };
+  }
 }

@@ -1,5 +1,6 @@
 // 外部連携サービス / 外部集成服务
 import { Inject, Injectable } from '@nestjs/common';
+import { WmsException } from '../common/exceptions/wms.exception.js';
 import { DRIZZLE } from '../database/database.module.js';
 import type { DrizzleDB } from '../database/database.types.js';
 import { and, eq } from 'drizzle-orm';
@@ -132,5 +133,91 @@ export class IntegrationsService {
   async getErpStatus(tenantId: string): Promise<IntegrationStatus> {
     const settings = await this.getSettingsByKey(tenantId, SETTINGS_KEYS.ERP);
     return this.buildStatus(settings, 'erp', 'ERP');
+  }
+
+  // ===== 同期・設定更新メソッド / 同步・配置更新方法 =====
+
+  // 設定をDBにupsertするヘルパー / 将设置upsert到DB的辅助方法
+  private async upsertSettings(tenantId: string, key: string, settings: Record<string, unknown>) {
+    await this.db
+      .insert(systemSettings)
+      .values({ tenantId, settingsKey: key, settings })
+      .onConflictDoUpdate({
+        target: [systemSettings.tenantId, systemSettings.settingsKey],
+        set: { settings, updatedAt: new Date() },
+      });
+  }
+
+  // OMS同期（同期リクエストを記録してステータスを返す）/ OMS同步（记录同步请求并返回状态）
+  async syncOms(tenantId: string, body: Record<string, unknown>) {
+    const settings = await this.getSettingsByKey(tenantId, SETTINGS_KEYS.OMS);
+    if (!settings || !settings.enabled) {
+      throw new WmsException('INTEGRATION_NOT_CONFIGURED', 'OMS integration is not enabled / OMS連携未有効 / OMS集成未启用');
+    }
+
+    const syncRecord = {
+      requestedAt: new Date().toISOString(),
+      syncType: body.syncType ?? 'full',
+      status: 'requested',
+    };
+
+    // 最終同期記録を設定に保存 / 保存最后一次同步记录到设置
+    await this.upsertSettings(tenantId, SETTINGS_KEYS.OMS, { ...settings, lastSync: syncRecord });
+
+    return { ...syncRecord, message: 'OMS sync requested / OMS同期リクエスト受付 / OMS同步请求已受理' };
+  }
+
+  // OMS設定更新 / 更新OMS配置
+  async updateOmsConfig(tenantId: string, body: Record<string, unknown>) {
+    await this.upsertSettings(tenantId, SETTINGS_KEYS.OMS, body);
+    return this.getOmsStatus(tenantId);
+  }
+
+  // マーケットプレイス同期 / 市场平台同步
+  async syncMarketplace(tenantId: string, body: Record<string, unknown>) {
+    const settings = await this.getSettingsByKey(tenantId, SETTINGS_KEYS.MARKETPLACE);
+
+    const syncRecord = {
+      requestedAt: new Date().toISOString(),
+      provider: body.provider ?? 'all',
+      syncType: body.syncType ?? 'orders',
+      status: 'requested',
+    };
+
+    const updatedSettings = { ...(settings ?? {}), lastSync: syncRecord };
+    await this.upsertSettings(tenantId, SETTINGS_KEYS.MARKETPLACE, updatedSettings);
+
+    return { ...syncRecord, message: 'Marketplace sync requested / マーケットプレイス同期リクエスト受付 / 市场平台同步请求已受理' };
+  }
+
+  // マーケットプレイス設定更新 / 更新市场平台配置
+  async updateMarketplaceConfig(tenantId: string, body: Record<string, unknown>) {
+    await this.upsertSettings(tenantId, SETTINGS_KEYS.MARKETPLACE, body);
+    return this.getMarketplaceProviders(tenantId);
+  }
+
+  // ERP同期 / ERP同步
+  async syncErp(tenantId: string, body: Record<string, unknown>) {
+    const settings = await this.getSettingsByKey(tenantId, SETTINGS_KEYS.ERP);
+    if (!settings || !settings.enabled) {
+      throw new WmsException('INTEGRATION_NOT_CONFIGURED', 'ERP integration is not enabled / ERP連携未有効 / ERP集成未启用');
+    }
+
+    const syncRecord = {
+      requestedAt: new Date().toISOString(),
+      syncType: body.syncType ?? 'full',
+      entities: body.entities ?? ['products', 'orders'],
+      status: 'requested',
+    };
+
+    await this.upsertSettings(tenantId, SETTINGS_KEYS.ERP, { ...settings, lastSync: syncRecord });
+
+    return { ...syncRecord, message: 'ERP sync requested / ERP同期リクエスト受付 / ERP同步请求已受理' };
+  }
+
+  // ERP設定更新 / 更新ERP配置
+  async updateErpConfig(tenantId: string, body: Record<string, unknown>) {
+    await this.upsertSettings(tenantId, SETTINGS_KEYS.ERP, body);
+    return this.getErpStatus(tenantId);
   }
 }

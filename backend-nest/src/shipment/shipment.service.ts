@@ -205,6 +205,226 @@ export class ShipmentService {
     return { deleted: rows.length, items: rows };
   }
 
+  // 出荷注文一括部分更新（指定IDリストに共通データを適用）/ 出货订单批量部分更新（对指定ID列表应用通用数据）
+  async bulkPartialUpdate(tenantId: string, ids: string[], data: Record<string, unknown>) {
+    if (!ids || ids.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'No IDs provided / IDが未指定 / 未提供ID');
+    }
+
+    const rows = await this.db
+      .update(shipmentOrders)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(
+        inArray(shipmentOrders.id, ids),
+        eq(shipmentOrders.tenantId, tenantId),
+        isNull(shipmentOrders.deletedAt),
+      ))
+      .returning();
+
+    return { updated: rows.length, items: rows };
+  }
+
+  // 出荷注文ID一括取得 / 按ID批量获取出货订单
+  async findByIds(tenantId: string, ids: string[]) {
+    if (!ids || ids.length === 0) {
+      return { items: [] };
+    }
+
+    const rows = await this.db
+      .select()
+      .from(shipmentOrders)
+      .where(and(
+        inArray(shipmentOrders.id, ids),
+        eq(shipmentOrders.tenantId, tenantId),
+        isNull(shipmentOrders.deletedAt),
+      ));
+
+    return { items: rows };
+  }
+
+  // 出荷注文ステータス変更（単一）/ 出货订单状态变更（单个）
+  async changeStatus(tenantId: string, id: string, status: string) {
+    // 存在確認 / 确认存在
+    await this.findById(tenantId, id);
+
+    // ステータスフラグマッピング / 状态标志映射
+    const statusMap: Record<string, Record<string, unknown>> = {
+      confirmed: { statusConfirmed: true, statusConfirmedAt: new Date() },
+      shipped: { statusShipped: true, statusShippedAt: new Date() },
+      held: { statusHeld: true, statusHeldAt: new Date() },
+      printed: { statusPrinted: true, statusPrintedAt: new Date() },
+      inspected: { statusInspected: true, statusInspectedAt: new Date() },
+      carrier_received: { statusCarrierReceived: true, statusCarrierReceivedAt: new Date() },
+      ec_exported: { statusEcExported: true, statusEcExportedAt: new Date() },
+    };
+
+    const fields = statusMap[status];
+    if (!fields) {
+      throw new WmsException('SHIP_INVALID_STATUS', `Unknown status: ${status} / 不明なステータス / 未知状态`);
+    }
+
+    const rows = await this.db
+      .update(shipmentOrders)
+      .set({ ...fields, updatedAt: new Date() })
+      .where(and(eq(shipmentOrders.id, id), eq(shipmentOrders.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // 出荷注文一括ステータス変更 / 出货订单批量状态变更
+  async bulkChangeStatus(tenantId: string, ids: string[], status: string) {
+    if (!ids || ids.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'No IDs provided / IDが未指定 / 未提供ID');
+    }
+
+    const results = [];
+    for (const id of ids) {
+      const result = await this.changeStatus(tenantId, id, status);
+      results.push(result);
+    }
+
+    return { updated: results.length, items: results };
+  }
+
+  // 配送業者受領インポート（受領データをパースしてtrackingId等を更新）
+  // 配送业者回单导入（解析回单数据后更新trackingId等）
+  async importCarrierReceipts(tenantId: string, body: Record<string, unknown>) {
+    const receipts = body.receipts as Array<{ orderNumber: string; trackingId: string; [key: string]: unknown }> | undefined;
+    if (!receipts || !Array.isArray(receipts) || receipts.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'receipts array is required / receipts配列は必須 / receipts数组必填');
+    }
+
+    const results = [];
+    for (const receipt of receipts) {
+      if (!receipt.orderNumber || !receipt.trackingId) {
+        continue;
+      }
+
+      // 注文番号で検索 / 按订单号搜索
+      const [order] = await this.db
+        .select({ id: shipmentOrders.id })
+        .from(shipmentOrders)
+        .where(and(
+          eq(shipmentOrders.tenantId, tenantId),
+          eq(shipmentOrders.orderNumber, receipt.orderNumber),
+          isNull(shipmentOrders.deletedAt),
+        ))
+        .limit(1);
+
+      if (!order) {
+        results.push({ orderNumber: receipt.orderNumber, status: 'not_found' });
+        continue;
+      }
+
+      // trackingId更新 + statusCarrierReceived / 更新trackingId + statusCarrierReceived
+      const now = new Date();
+      await this.db
+        .update(shipmentOrders)
+        .set({
+          trackingId: receipt.trackingId,
+          statusCarrierReceived: true,
+          statusCarrierReceivedAt: now,
+          updatedAt: now,
+        })
+        .where(and(eq(shipmentOrders.id, order.id), eq(shipmentOrders.tenantId, tenantId)));
+
+      results.push({ orderNumber: receipt.orderNumber, status: 'updated', trackingId: receipt.trackingId });
+    }
+
+    return { processed: results.length, results };
+  }
+
+  // グループ別件数取得（ステータス別集計）/ 获取分组计数（按状态汇总）
+  async getGroupCounts(tenantId: string) {
+    const rows = await this.db
+      .select({
+        statusConfirmed: shipmentOrders.statusConfirmed,
+        statusShipped: shipmentOrders.statusShipped,
+        statusHeld: shipmentOrders.statusHeld,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(shipmentOrders)
+      .where(and(
+        eq(shipmentOrders.tenantId, tenantId),
+        isNull(shipmentOrders.deletedAt),
+      ))
+      .groupBy(shipmentOrders.statusConfirmed, shipmentOrders.statusShipped, shipmentOrders.statusHeld);
+
+    // 集計をわかりやすい形に変換 / 将汇总转换为易懂的形式
+    let total = 0;
+    let confirmed = 0;
+    let shipped = 0;
+    let held = 0;
+    let pending = 0;
+
+    for (const row of rows) {
+      total += row.count;
+      if (row.statusShipped) shipped += row.count;
+      if (row.statusConfirmed && !row.statusShipped) confirmed += row.count;
+      if (row.statusHeld) held += row.count;
+      if (!row.statusConfirmed && !row.statusShipped) pending += row.count;
+    }
+
+    return { groups: { total, pending, confirmed, shipped, held } };
+  }
+
+  // 出荷注文エクスポート（CSV形式のバッファを返す）/ 出货订单导出（返回CSV格式buffer）
+  async exportOrders(tenantId: string) {
+    const items = await this.db
+      .select()
+      .from(shipmentOrders)
+      .where(and(
+        eq(shipmentOrders.tenantId, tenantId),
+        isNull(shipmentOrders.deletedAt),
+      ))
+      .orderBy(shipmentOrders.createdAt);
+
+    // CSVヘッダー / CSV头部
+    const headers = [
+      'orderNumber', 'recipientName', 'recipientPostalCode', 'recipientPrefecture',
+      'recipientCity', 'recipientStreet', 'recipientPhone', 'trackingId',
+      'carrierId', 'statusConfirmed', 'statusShipped', 'createdAt',
+    ];
+
+    const csvLines = [headers.join(',')];
+    for (const item of items) {
+      const row = headers.map((h) => {
+        const val = (item as Record<string, unknown>)[h];
+        const str = val === null || val === undefined ? '' : String(val);
+        // カンマやクォートを含む場合はエスケープ / 包含逗号或引号时转义
+        return str.includes(',') || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str;
+      });
+      csvLines.push(row.join(','));
+    }
+
+    return {
+      filename: `shipment-orders-${new Date().toISOString().slice(0, 10)}.csv`,
+      contentType: 'text/csv',
+      data: csvLines.join('\n'),
+      totalRows: items.length,
+    };
+  }
+
+  // 追跡情報取得（trackingId + キャリアデータを返す）/ 获取跟踪信息（返回trackingId + 配送商数据）
+  async getTracking(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+
+    return {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      trackingId: order.trackingId,
+      carrierId: order.carrierId,
+      statusShipped: order.statusShipped,
+      statusShippedAt: order.statusShippedAt,
+      statusCarrierReceived: order.statusCarrierReceived,
+      statusCarrierReceivedAt: order.statusCarrierReceivedAt,
+      carrierData: order.carrierData,
+      // 追跡イベントは配送業者APIから取得（将来実装）/ 追踪事件从配送商API获取（将来实现）
+      events: [],
+    };
+  }
+
   // 出荷注文論理削除 / 出货订单软删除
   async remove(tenantId: string, id: string) {
     // 存在確認 / 确认存在

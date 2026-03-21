@@ -1,8 +1,8 @@
 // 棚卸サービスのテスト / 盘点服务测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { StocktakingService } from './stocktaking.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -70,12 +70,10 @@ describe('StocktakingService', () => {
 
       const result = await service.findAll(tenantId, { page: 1, limit: 10 });
 
-      expect(result).toEqual({
-        items: mockItems,
-        total: 1,
-        page: 1,
-        limit: 10,
-      });
+      expect(result.items).toEqual(mockItems);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
     });
 
     // フィルタ付き検索 / 带筛选搜索
@@ -109,7 +107,7 @@ describe('StocktakingService', () => {
     it('should throw NotFoundException when order not found', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 
@@ -138,7 +136,7 @@ describe('StocktakingService', () => {
 
       await expect(
         service.create(tenantId, { orderNumber: 'STK-0001' } as any),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(WmsException);
     });
   });
 
@@ -160,7 +158,7 @@ describe('StocktakingService', () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.update(tenantId, 'nonexistent', {} as any)).rejects.toThrow(
-        NotFoundException,
+        WmsException,
       );
     });
 
@@ -173,7 +171,7 @@ describe('StocktakingService', () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([{ id: 'other-id' }]));
 
       await expect(service.update(tenantId, orderId, updateDto)).rejects.toThrow(
-        ConflictException,
+        WmsException,
       );
     });
   });
@@ -195,7 +193,7 @@ describe('StocktakingService', () => {
     it('should throw NotFoundException when removing nonexistent order', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.remove(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.remove(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 });

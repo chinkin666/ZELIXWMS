@@ -1,8 +1,8 @@
 // 出荷注文サービスのテスト / 出货订单服务测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { ShipmentService } from './shipment.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -69,12 +69,10 @@ describe('ShipmentService', () => {
 
       const result = await service.findAll(tenantId, { page: 1, limit: 10 });
 
-      expect(result).toEqual({
-        items: mockItems,
-        total: 1,
-        page: 1,
-        limit: 10,
-      });
+      expect(result.items).toEqual(mockItems);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
     });
 
     // デフォルトページネーション / 默认分页参数
@@ -101,12 +99,12 @@ describe('ShipmentService', () => {
       expect(result).toEqual(mockOrder);
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when order not found', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when order not found', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(
-        NotFoundException,
+        WmsException,
       );
     });
   });
@@ -144,12 +142,12 @@ describe('ShipmentService', () => {
       expect(mockDb.insert).toHaveBeenCalled();
     });
 
-    // 注文番号重複時 ConflictException / 订单编号重复时抛出 ConflictException
-    it('should throw ConflictException for duplicate order number', async () => {
+    // 注文番号重複時 WmsException / 订单编号重复时抛出 WmsException
+    it('should throw WmsException for duplicate order number', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([{ id: 'existing-id' }]));
 
       await expect(service.create(tenantId, { orderNumber: 'SHP-0001' } as any)).rejects.toThrow(
-        ConflictException,
+        WmsException,
       );
     });
   });
@@ -170,12 +168,12 @@ describe('ShipmentService', () => {
       expect(result.recipientName).toBe('佐藤一郎');
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when updating nonexistent order', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when updating nonexistent order', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.update(tenantId, 'nonexistent', updateDto)).rejects.toThrow(
-        NotFoundException,
+        WmsException,
       );
     });
   });
@@ -193,11 +191,11 @@ describe('ShipmentService', () => {
       expect(mockDb.update).toHaveBeenCalled();
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when removing nonexistent order', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when removing nonexistent order', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.remove(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.remove(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 });

@@ -1,8 +1,8 @@
 // 商品サービスのテスト / 商品服务测试
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module';
 import { ProductsService } from './products.service';
+import { WmsException } from '../common/exceptions/wms.exception';
 
 // ヘルパー: チェーン可能なクエリモック生成 / 辅助: 生成可链式调用的查询mock
 function createSelectChain(resolveValue: any = []) {
@@ -71,12 +71,10 @@ describe('ProductsService', () => {
 
       const result = await service.findAll(tenantId, { page: 1, limit: 10 });
 
-      expect(result).toEqual({
-        items: mockItems,
-        total: 1,
-        page: 1,
-        limit: 10,
-      });
+      expect(result.items).toEqual(mockItems);
+      expect(result.total).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
     });
 
     // SKU検索フィルタ / SKU搜索筛选
@@ -103,7 +101,7 @@ describe('ProductsService', () => {
 
       const result = await service.findAll(tenantId, { limit: 999 });
 
-      expect(result.limit).toBe(100);
+      expect(result.limit).toBe(200);
     });
   });
 
@@ -118,11 +116,11 @@ describe('ProductsService', () => {
       expect(result).toEqual(mockProduct);
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when product not found', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when product not found', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findById(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 
@@ -142,13 +140,13 @@ describe('ProductsService', () => {
       expect(mockDb.insert).toHaveBeenCalled();
     });
 
-    // SKU重複時 ConflictException / SKU重复时抛出 ConflictException
-    it('should throw ConflictException for duplicate SKU', async () => {
+    // SKU重複時 WmsException / SKU重复时抛出 WmsException
+    it('should throw WmsException for duplicate SKU', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([{ id: 'existing-id' }]));
 
       await expect(
         service.create(tenantId, { sku: 'SKU-001', name: '重複商品' } as any),
-      ).rejects.toThrow(ConflictException);
+      ).rejects.toThrow(WmsException);
     });
   });
 
@@ -167,7 +165,7 @@ describe('ProductsService', () => {
     });
 
     // SKU変更時の重複チェック / SKU变更时的重复检查
-    it('should throw ConflictException when changing to duplicate SKU', async () => {
+    it('should throw WmsException when changing to duplicate SKU', async () => {
       const updateDto = { sku: 'SKU-EXISTING' } as any;
       // findById 成功 / findById 成功
       mockDb.select.mockReturnValueOnce(createSelectChain([mockProduct]));
@@ -175,16 +173,16 @@ describe('ProductsService', () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([{ id: 'other-id' }]));
 
       await expect(service.update(tenantId, productId, updateDto)).rejects.toThrow(
-        ConflictException,
+        WmsException,
       );
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when updating nonexistent product', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when updating nonexistent product', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
       await expect(service.update(tenantId, 'nonexistent', {} as any)).rejects.toThrow(
-        NotFoundException,
+        WmsException,
       );
     });
   });
@@ -202,11 +200,11 @@ describe('ProductsService', () => {
       expect(mockDb.update).toHaveBeenCalled();
     });
 
-    // 存在しない場合 NotFoundException / 不存在时抛出 NotFoundException
-    it('should throw NotFoundException when removing nonexistent product', async () => {
+    // 存在しない場合 WmsException / 不存在时抛出 WmsException
+    it('should throw WmsException when removing nonexistent product', async () => {
       mockDb.select.mockReturnValueOnce(createSelectChain([]));
 
-      await expect(service.remove(tenantId, 'nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.remove(tenantId, 'nonexistent')).rejects.toThrow(WmsException);
     });
   });
 });
