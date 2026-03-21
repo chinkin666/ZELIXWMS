@@ -1,230 +1,75 @@
 # テスト戦略ガイド / 测试策略指南
 
-> ZELIXWMS のテスト構成・実行方法・カバレッジ目標・CI 統合。
-> ZELIXWMS 的测试配置、执行方式、覆盖率目标、CI 集成。
+> ZELIXWMS のテストピラミッド、各テストレベルの設計方針、カバレッジ目標、CI 統合、パフォーマンス・セキュリティテスト（NestJS + PostgreSQL + Supabase 新アーキテクチャ）。
+> ZELIXWMS 的测试金字塔、各测试层级设计方针、覆盖率目标、CI 集成、性能和安全测试（NestJS + PostgreSQL + Supabase 新架构）。
 
 ---
 
-## 1. テスト構成 / 测试配置
+## 1. テストピラミッド / 测试金字塔
 
-### 概要 / 概览
-
-| 領域 / 领域 | フレームワーク | テスト数 | 環境 |
-|---|---|---|---|
-| **Backend** | Vitest 4.x | ~1454 テスト | Node.js (`environment: 'node'`) |
-| **Frontend** | Vitest 4.x | ~353 テスト | jsdom (`environment: 'jsdom'`) |
-| **合計 / 总计** | | **~1807 テスト** | |
-
-### Backend テスト設定 / 后端测试配置
-
-**ファイル**: `backend/vitest.config.ts`
-
-```typescript
-export default defineConfig({
-  plugins: [tsconfigPaths()],
-  test: {
-    globals: true,
-    environment: 'node',
-    include: ['src/**/*.test.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'lcov'],
-      include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts'],
-    },
-  },
-});
+```
+        ┌─────────┐
+        │  E2E    │  10% — Playwright（クリティカルフロー / 关键流程）
+        │ (少数)  │
+       ┌┴─────────┴┐
+       │ Integration│  20% — Testcontainers + Supertest
+       │  (中程度)  │       （実 DB・API テスト / 真实 DB 和 API 测试）
+      ┌┴────────────┴┐
+      │    Unit      │  70% — Vitest + vi.mock
+      │   (大量)     │       （ビジネスロジック / 业务逻辑）
+      └──────────────┘
 ```
 
-### Frontend テスト設定 / 前端测试配置
-
-**ファイル**: `frontend/vitest.config.ts`
-
-```typescript
-export default defineConfig({
-  plugins: [vue()],
-  resolve: {
-    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    include: ['src/**/*.test.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'lcov'],
-      include: ['src/**/*.ts', 'src/**/*.vue'],
-      exclude: ['src/**/*.test.ts'],
-    },
-  },
-});
-```
+| レベル / 层级 | 割合 / 比例 | フレームワーク | 速度 / 速度 | 信頼性 / 可靠性 |
+|---|---|---|---|---|
+| Unit | 70% | Vitest + vi.mock | 高速 / 快 | モックに依存 / 依赖 Mock |
+| Integration | 20% | Testcontainers + Supertest | 中速 / 中 | 実環境に近い / 接近真实环境 |
+| E2E | 10% | Playwright | 低速 / 慢 | 最も信頼性が高い / 最高可靠性 |
 
 ---
 
-## 2. テストカテゴリ / 测试类别
+## 2. ユニットテスト / 单元测试
 
-### ユニットテスト / 单元测试
+### フレームワーク / 框架
 
-個別の関数・サービス・ユーティリティを単体でテスト。
-对单个函数、服务、工具进行独立测试。
+**Vitest** + **vi.mock** で全外部依存をモック。
+使用 Vitest + vi.mock 模拟所有外部依赖。
 
-| 層 / 层 | テストファイル例 | テスト対象 / 测试目标 |
+### 設計方針 / 设计方针
+
+- すべての外部依存（DB、Redis、外部 API）をモック / Mock 所有外部依赖
+- ビジネスロジックを単体でテスト / 独立测试业务逻辑
+- 各テストは独立して実行可能 / 每个测试可独立执行
+- `beforeEach` / `afterEach` で状態をリセット / 在每次测试前后重置状态
+
+### テスト対象 / 测试目标
+
+| 層 / 层 | テスト対象 / 测试目标 | 例 / 示例 |
 |---|---|---|
-| Service | `services/__tests__/inventoryService.test.ts` | ビジネスロジック / 业务逻辑 |
-| Utility | `utils/__tests__/naturalSort.test.ts` | ユーティリティ関数 / 工具函数 |
-| Middleware | `middleware/__tests__/auth.test.ts` | 認証・認可 / 认证授权 |
-| Model | `lib/errors.test.ts` | エラーハンドリング / 错误处理 |
+| Service | ビジネスロジック / 业务逻辑 | `inventoryService.test.ts` |
+| Utility | ユーティリティ関数 / 工具函数 | `naturalSort.test.ts` |
+| Guard | 認証・認可ガード / 认证授权守卫 | `authGuard.test.ts` |
+| Pipe | バリデーションパイプ / 验证管道 | `validationPipe.test.ts` |
+| DTO | データ変換 / 数据转换 | `createProductDto.test.ts` |
 
-### インテグレーションテスト / 集成测试
-
-コントローラーからサービスまでのフローをテスト。
-测试从控制器到服务的完整流程。
-
-| テストファイル例 | テスト対象 |
-|---|---|
-| `controllers/__tests__/shipmentOrderController.test.ts` | 出荷指示 API |
-| `controllers/__tests__/inventoryController.test.ts` | 在庫管理 API |
-| `controllers/__tests__/inboundController.test.ts` | 入庫 API |
-| `controllers/__tests__/billingController.test.ts` | 課金 API |
-| `graphql/__tests__/resolvers.test.ts` | GraphQL リゾルバー |
-| `graphql/__tests__/mutations.test.ts` | GraphQL ミューテーション |
-
-### E2E テスト / 端到端测试
-
-業務フロー全体をシミュレーション。
-模拟完整业务流程。
-
-| テストファイル | 内容 / 内容 |
-|---|---|
-| `services/__tests__/e2e-warehouse-flow.test.ts` | 倉庫業務フロー全体（16 ステップ）/ 完整仓库业务流程 |
-
-### フロントエンドテスト / 前端测试
-
-Vue コンポーネントとユーティリティのテスト。
-Vue 组件和工具函数的测试。
-
-| テストファイル例 | テスト対象 |
-|---|---|
-| `components/__tests__/ErrorBoundary.test.ts` | エラーバウンダリコンポーネント |
-| `components/__tests__/Table.test.ts` | テーブルコンポーネント |
-| `views/shipment-orders/__tests__/ShipmentOrderCreate.test.ts` | 出荷指示作成画面 |
-| `composables/__tests__/useToast.test.ts` | Toast 通知 composable |
-| `utils/__tests__/orderValidation.test.ts` | 注文バリデーション |
-
----
-
-## 3. テスト実行方法 / 测试执行方式
-
-### バックエンド / 后端
-
-```bash
-# 全テスト実行 / 执行所有测试
-cd backend && npx vitest run
-
-# ウォッチモード（ファイル変更で自動実行）/ 监听模式（文件变更自动执行）
-cd backend && npx vitest
-
-# カバレッジ付き / 含覆盖率
-cd backend && npx vitest run --coverage
-
-# 特定ファイルのみ / 仅执行特定文件
-cd backend && npx vitest run src/services/__tests__/inventoryService.test.ts
-
-# パターンでフィルタ / 按模式筛选
-cd backend && npx vitest run --grep "outbound"
-```
-
-### フロントエンド / 前端
-
-```bash
-# 全テスト実行
-cd frontend && npx vitest run
-
-# ウォッチモード
-cd frontend && npx vitest
-
-# カバレッジ付き
-cd frontend && npx vitest run --coverage
-```
-
-### npm スクリプト経由 / 通过 npm 脚本
-
-```bash
-# バックエンド（package.json に定義済み）
-cd backend
-npm test             # vitest run
-npm run test:watch   # vitest（ウォッチモード）
-npm run test:coverage # vitest run --coverage
-```
-
-### 型チェック / 类型检查
-
-```bash
-# バックエンド
-cd backend && npx tsc --noEmit
-
-# フロントエンド
-cd frontend && npx vue-tsc --build
-
-# Admin
-cd admin && npx vue-tsc --build
-
-# Portal
-cd portal && npx vue-tsc --build
-```
-
----
-
-## 4. カバレッジ目標 / 覆盖率目标
-
-### 全体目標 / 整体目标
-
-| 領域 | 最低カバレッジ / 最低覆盖率 | 備考 / 备注 |
-|---|---|---|
-| 全体 / 全体 | **80%** | 必達目標 / 必须达成 |
-| クリティカルパス | **100%** | 入出庫・在庫管理・課金 |
-
-### クリティカルパスの定義 / 关键路径定义
-
-以下のモジュールは 100% カバレッジを目指す。
-以下模块目标 100% 覆盖率。
-
-| モジュール | 理由 / 理由 |
-|---|---|
-| `inventoryService` | 在庫の正確性が業務の根幹 / 库存准确性是业务根本 |
-| `outboundWorkflow` | 出荷ミスは直接的な損害 / 发货错误直接造成损失 |
-| `inboundWorkflow` | 入庫ミスは在庫差異に直結 / 入库错误直接导致库存差异 |
-| `chargeService` | 課金の正確性 / 计费准确性 |
-| `auth middleware` | 認証・認可の安全性 / 认证授权安全性 |
-
-### カバレッジレポーター / 覆盖率报告
-
-| レポーター | 用途 / 用途 |
-|---|---|
-| `text` | コンソール出力（CI + ローカル）/ 控制台输出 |
-| `lcov` | HTML レポート + CI 統合 / HTML 报告 + CI 集成 |
-
----
-
-## 5. モック戦略 / Mock 策略
-
-### vi.mock によるモジュールモック / 使用 vi.mock 进行模块 Mock
+### モック戦略 / Mock 策略
 
 ```typescript
-// MongoDB モデルのモック例 / MongoDB 模型 Mock 示例
-vi.mock('@/models/product', () => ({
-  Product: {
-    find: vi.fn(),
-    findById: vi.fn(),
-    create: vi.fn(),
-    updateOne: vi.fn(),
+// Drizzle DB のモック例 / Drizzle DB Mock 示例
+vi.mock('@/db/drizzle', () => ({
+  db: {
+    select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
 // サービスのモック例 / 服务 Mock 示例
 vi.mock('@/services/notificationService', () => ({
-  sendNotification: vi.fn(),
+  NotificationService: vi.fn().mockImplementation(() => ({
+    send: vi.fn(),
+  })),
 }));
 ```
 
@@ -232,128 +77,218 @@ vi.mock('@/services/notificationService', () => ({
 
 | モックする / 需要 Mock | モックしない / 不需要 Mock | 理由 / 理由 |
 |---|---|---|
-| MongoDB モデル | ビジネスロジック | DB 依存を排除 / 排除数据库依赖 |
-| 外部 API（B2 Cloud 等）| バリデーション関数 | 外部依存を排除 / 排除外部依赖 |
+| Drizzle DB クエリ | ビジネスロジック | DB 依存を排除 / 排除数据库依赖 |
+| 外部 API（B2 Cloud 等） | バリデーション関数 | 外部依存を排除 / 排除外部依赖 |
 | Redis / BullMQ | ユーティリティ関数 | インフラ依存を排除 / 排除基础设施依赖 |
-| nodemailer | 純粋関数 | I/O を排除 / 排除 I/O |
-
-### Vitest グローバル設定 / Vitest 全局设置
-
-`vitest.config.ts` で `globals: true` 設定済みのため、`describe`, `it`, `expect`, `vi` はインポート不要。
-已在 `vitest.config.ts` 中设置 `globals: true`，无需导入 `describe`, `it`, `expect`, `vi`。
+| nodemailer | 純粋関数 / 纯函数 | I/O を排除 / 排除 I/O |
 
 ---
 
-## 6. E2E テスト / 端到端测试
+## 3. インテグレーションテスト / 集成测试
 
-### バックエンド E2E / 后端 E2E
+### フレームワーク / 框架
 
-`e2e-warehouse-flow.test.ts` で 16 ステップの完全な倉庫業務フローをテスト。
-在 `e2e-warehouse-flow.test.ts` 中测试 16 步完整仓库业务流程。
+**Testcontainers** で実際の PostgreSQL コンテナを起動してテスト。
+使用 Testcontainers 启动真实的 PostgreSQL 容器进行测试。
 
-テストフロー / 测试流程:
-1. 商品登録 / 商品注册
-2. 入庫予定作成 / 创建入库预定
-3. 入庫受取 / 入库接收
-4. 棚入れ / 上架
-5. 在庫確認 / 库存确认
-6. 出荷指示作成 / 创建出库指示
-7. ピッキング / 拣货
-8. 検品 / 验货
-9. 出荷確定 / 出库确认
-10. ... 返品・在庫調整等 / 退货、库存调整等
+### 設計方針 / 设计方针
 
-### ブラウザ E2E（Playwright）/ 浏览器 E2E
+- 実際の PostgreSQL に対してクエリを実行 / 对真实 PostgreSQL 执行查询
+- API エンドポイントを Supertest でテスト / 使用 Supertest 测试 API 端点
+- テストごとにトランザクションでロールバック / 每次测试通过事务回滚
+- マイグレーション + シードデータを自動適用 / 自动应用迁移和种子数据
 
-Playwright の設定ファイルが存在。ブラウザベースの E2E テスト用。
-Playwright 配置文件已存在，用于浏览器端的端到端测试。
+### Testcontainers 設定例 / Testcontainers 配置示例
 
-```bash
-# Playwright テスト実行（設定があれば）
-npx playwright test
+```typescript
+import { PostgreSqlContainer } from '@testcontainers/postgresql';
+
+let container: StartedPostgreSqlContainer;
+
+beforeAll(async () => {
+  container = await new PostgreSqlContainer('postgres:15-alpine')
+    .withDatabase('zelixwms_test')
+    .start();
+
+  process.env.DATABASE_URL = container.getConnectionUri();
+  // マイグレーション実行 / 执行迁移
+  await runMigrations();
+}, 60000);
+
+afterAll(async () => {
+  await container.stop();
+});
+```
+
+### テスト対象 / 测试目标
+
+| テスト対象 / 测试目标 | 内容 / 内容 |
+|---|---|
+| API エンドポイント | リクエスト → レスポンスの検証 / 请求 → 响应验证 |
+| DB クエリ | Drizzle ORM クエリの正確性 / 查询准确性 |
+| トランザクション | ロールバック・コミットの動作 / 回滚和提交行为 |
+| マイグレーション | スキーマ変更の正確性 / Schema 变更准确性 |
+| 認証フロー | JWT 発行 → 検証の一連の流れ / JWT 签发 → 验证全流程 |
+
+---
+
+## 4. E2E テスト / 端到端测试
+
+### フレームワーク / 框架
+
+**Playwright** でクリティカルなユーザーフローをブラウザテスト。
+使用 Playwright 对关键用户流程进行浏览器测试。
+
+### テスト対象フロー / 测试目标流程
+
+| フロー / 流程 | ステップ数 / 步骤数 | 優先度 / 优先级 |
+|---|---|---|
+| ログイン → ダッシュボード / 登录 → 仪表盘 | 3 | Critical |
+| 入庫フロー（予定作成 → 受取 → 棚入れ）/ 入库流程 | 8 | Critical |
+| 出庫フロー（指示作成 → ピッキング → 出荷）/ 出库流程 | 10 | Critical |
+| 在庫調整 / 库存调整 | 5 | High |
+| 商品マスタ CRUD / 商品主数据 CRUD | 6 | High |
+| ユーザー管理 / 用户管理 | 5 | Medium |
+
+### Playwright 設定 / Playwright 配置
+
+```typescript
+// playwright.config.ts
+export default defineConfig({
+  testDir: './e2e',
+  fullyParallel: true,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  use: {
+    baseURL: 'http://localhost:4001',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+  },
+  webServer: {
+    command: 'npm run dev',
+    port: 4001,
+    reuseExistingServer: !process.env.CI,
+  },
+});
 ```
 
 ---
 
-## 7. テストデータ / 测试数据
+## 5. カバレッジ目標 / 覆盖率目标
 
-### シードスクリプト / 种子脚本
+### レイヤー別目標 / 各层目标
 
-| スクリプト | 内容 / 内容 |
+| レイヤー / 层 | 最低カバレッジ / 最低覆盖率 | 備考 / 备注 |
+|---|---|---|
+| **Service 層** | **80%+** | ビジネスロジックの核心 / 业务逻辑核心 |
+| **Controller 層** | **60%+** | ルーティング・バリデーション / 路由和验证 |
+| **Utility** | **90%+** | 純粋関数、テストしやすい / 纯函数，易于测试 |
+| **Guard / Pipe** | **80%+** | セキュリティクリティカル / 安全关键 |
+| **全体 / 整体** | **80%+** | CI でブロッキングチェック / CI 中阻断检查 |
+
+### クリティカルパス（100% 目標）/ 关键路径（目标 100%）
+
+以下のモジュールは可能な限り 100% カバレッジを目指す。
+以下模块尽可能目标 100% 覆盖率。
+
+| モジュール / 模块 | 理由 / 理由 |
 |---|---|
-| `npm run seed` | 配送業者・マッピング・帳票テンプレート / 运输商、映射、单据模板 |
-| `npm run seed:b2-mapping` | B2 Cloud マッピング設定 / B2 Cloud 映射配置 |
+| `inventoryService` | 在庫の正確性が業務の根幹 / 库存准确性是业务根本 |
+| `outboundWorkflow` | 出荷ミスは直接的な損害 / 发货错误直接造成损失 |
+| `inboundWorkflow` | 入庫ミスは在庫差異に直結 / 入库错误直接导致库存差异 |
+| `chargeService` | 課金の正確性 / 计费准确性 |
+| `authGuard` | 認証・認可の安全性 / 认证授权安全性 |
 
-**ファイル一覧 / 文件列表** (`backend/src/scripts/seeds/`):
-- `seedCarriers.ts` - 配送業者 / 运输商
-- `seedMappingConfigs.ts` - マッピング設定 / 映射配置
-- `seedPrintTemplates.ts` - 帳票テンプレート / 单据模板
-- `seedFormTemplates.ts` - フォームテンプレート / 表单模板
-- `inboundPrintTemplates.ts` - 入庫帳票テンプレート / 入库单据模板
-- `seedProducts.ts` - 商品マスタ / 商品主数据
-- `utils.ts` - シード共通ユーティリティ / 种子通用工具
+---
 
-### テスト内のデータ生成パターン / 测试中的数据生成模式
+## 6. テストデータ / 测试数据
+
+### ファクトリ関数（推奨）/ 工厂函数（推荐）
+
+フィクスチャファイルではなく、ファクトリ関数でテストデータを生成。
+使用工厂函数生成测试数据，而非 Fixture 文件。
 
 ```typescript
-// ファクトリパターン例 / 工厂模式示例
-function createMockProduct(overrides = {}) {
+// factories/product.factory.ts
+export function createProduct(overrides: Partial<Product> = {}): Product {
   return {
-    _id: new mongoose.Types.ObjectId(),
-    sku: 'TEST-SKU-001',
-    name: 'テスト商品',
+    id: crypto.randomUUID(),
+    sku: `TEST-${Date.now()}`,
+    name: 'テスト商品 / 测试商品',
     minStockLevel: 10,
+    createdAt: new Date(),
+    updatedAt: new Date(),
     ...overrides,
   };
 }
 
 // テスト内での使用 / 在测试中使用
-it('should detect low stock', () => {
-  const product = createMockProduct({ minStockLevel: 5 });
+it('should detect low stock / 应该检测到低库存', () => {
+  const product = createProduct({ minStockLevel: 5 });
   // ...
 });
 ```
 
-### テストの独立性 / 测试独立性
+### ファクトリ関数の原則 / 工厂函数原则
 
-- 各テストは独立して実行可能 / 每个测试可独立执行
-- `beforeEach` / `afterEach` で状態をリセット / 在每次测试前后重置状态
-- モックは各テストで明示的にセットアップ / 每个测试明确设置 Mock
+- デフォルト値は常に有効なデータ / 默认值始终为有效数据
+- `overrides` パラメータで個別のフィールドを上書き可能 / 可通过 overrides 覆盖单个字段
 - テスト間でデータを共有しない / 测试之间不共享数据
+- ID はランダム生成して衝突を回避 / 随机生成 ID 避免冲突
 
 ---
 
-## 8. CI でのテスト / CI 中的测试
+## 7. CI 統合 / CI 集成
 
-### GitHub Actions 統合 / GitHub Actions 集成
+### GitHub Actions テスト実行 / GitHub Actions 测试执行
 
-**ファイル**: `.github/workflows/ci.yml`
+```yaml
+# .github/workflows/ci.yml
+test:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+    - run: npm ci
 
-### 実行タイミング / 执行时机
+    # 型チェック / 类型检查
+    - run: cd backend && npx tsc --noEmit
+    - run: cd frontend && npx vue-tsc --build
 
-| イベント | ブランチ | 実行内容 |
-|---|---|---|
-| `push` | `main`, `develop` | 型チェック + ユニットテスト |
-| `pull_request` | `main` | 型チェック + ユニットテスト |
+    # ユニットテスト / 单元测试
+    - run: cd backend && npx vitest run --coverage
+    - run: cd frontend && npx vitest run --coverage
 
-### CI テスト実行フロー / CI 测试执行流程
-
+    # カバレッジしきい値チェック / 覆盖率阈值检查
+    - name: Check coverage threshold
+      run: |
+        cd backend
+        npx vitest run --coverage --coverage.thresholds.statements=80
 ```
-1. actions/checkout@v4
-2. actions/setup-node@v4 (Node 20, npm cache)
-3. npm ci (ルートワークスペース)
-4. Backend: tsc --noEmit (型チェック / 类型检查)
-5. Backend: vitest run (ユニットテスト / 单元测试)
-6. Frontend: vitest run (ユニットテスト)
-7. Frontend: vue-tsc --build (型チェック)
-8. Admin: vue-tsc --build (型チェック)
-9. Portal: vue-tsc --build (型チェック)
-```
 
-### 並行実行の最適化 / 并行执行优化
+### PR ブロッキングルール / PR 阻断规则
 
-同一ブランチの重複実行はキャンセルされる（`concurrency` 設定）。
-同一分支的重复执行会被取消（`concurrency` 设置）。
+以下のいずれかが失敗した場合、PR マージをブロック。
+以下任一失败时，阻止 PR 合并。
+
+- [ ] 型チェック（tsc / vue-tsc）/ 类型检查
+- [ ] ユニットテスト / 单元测试
+- [ ] カバレッジ 80% 未満 / 覆盖率低于 80%
+- [ ] ESLint エラー
+
+### テスト実行タイミング / 测试执行时机
+
+| イベント / 事件 | ユニット / 单元 | インテグレーション / 集成 | E2E |
+|---|---|---|---|
+| `push` (develop) | YES | YES | NO |
+| `pull_request` (main) | YES | YES | YES |
+| `push` (main) | YES | YES | YES |
+| 手動トリガー / 手动触发 | YES | YES | YES |
+
+### 同一ブランチの重複実行はキャンセル / 同一分支重复执行自动取消
 
 ```yaml
 concurrency:
@@ -361,28 +296,141 @@ concurrency:
   cancel-in-progress: true
 ```
 
-### テスト失敗時の対応 / 测试失败时的处理
+---
 
-1. CI のログで失敗したテストを確認 / 查看 CI 日志中失败的测试
-2. ローカルで再現 / 在本地复现:
-   ```bash
-   cd backend && npx vitest run --reporter verbose
-   ```
-3. 失敗テストを個別に実行 / 单独执行失败的测试:
-   ```bash
-   npx vitest run src/services/__tests__/failingTest.test.ts
-   ```
-4. テスト自体が正しいか確認（実装バグか、テストバグか）
-   确认测试本身是否正确（是实现 bug 还是测试 bug）
+## 8. パフォーマンステスト / 性能测试
+
+### ツール / 工具
+
+**k6** で負荷テストを実施。
+使用 k6 进行负载测试。
+
+### テスト対象エンドポイント / 测试目标端点
+
+| エンドポイント / 端点 | 目標 RPS | 目標 p95 | シナリオ / 场景 |
+|---|---|---|---|
+| `POST /api/auth/login` | 100 | < 200ms | ログイン負荷 / 登录负载 |
+| `GET /api/orders` | 200 | < 300ms | 出荷指示一覧 / 出库指示列表 |
+| `POST /api/inventory/adjust` | 50 | < 500ms | 在庫調整 / 库存调整 |
+| `GET /api/products` | 200 | < 200ms | 商品一覧 / 商品列表 |
+
+### k6 スクリプト例 / k6 脚本示例
+
+```javascript
+// k6/load-test.js
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+
+export const options = {
+  stages: [
+    { duration: '1m', target: 50 },   // ランプアップ / 升压
+    { duration: '3m', target: 50 },   // 定常負荷 / 稳定负载
+    { duration: '1m', target: 0 },    // ランプダウン / 降压
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<500'],  // p95 < 500ms
+    http_req_failed: ['rate<0.01'],    // エラー率 < 1% / 错误率 < 1%
+  },
+};
+
+export default function () {
+  const res = http.get('http://localhost:4000/api/products');
+  check(res, {
+    'status is 200': (r) => r.status === 200,
+    'response time < 500ms': (r) => r.timings.duration < 500,
+  });
+  sleep(1);
+}
+```
+
+### 実行方法 / 执行方式
+
+```bash
+# 負荷テスト実行 / 执行负载测试
+k6 run k6/load-test.js
+
+# HTML レポート出力 / 输出 HTML 报告
+k6 run --out json=results.json k6/load-test.js
+```
+
+---
+
+## 9. セキュリティテスト / 安全测试
+
+### 依存パッケージ監査 / 依赖包审计
+
+```bash
+# npm audit（毎 PR で自動実行）/ 每个 PR 自动执行
+npm audit
+
+# 高重要度のみ / 仅高严重度
+npm audit --audit-level=high
+
+# 自動修正 / 自动修复
+npm audit fix
+```
+
+### OWASP ZAP スキャン / OWASP ZAP 扫描
+
+```bash
+# Docker で ZAP ベースラインスキャン / 使用 Docker 进行 ZAP 基线扫描
+docker run -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+  -t http://host.docker.internal:4000 \
+  -r zap-report.html
+```
+
+### セキュリティテストチェックリスト / 安全测试检查清单
+
+| 項目 / 项目 | ツール / 工具 | 頻度 / 频率 |
+|---|---|---|
+| 依存パッケージ脆弱性 / 依赖包漏洞 | `npm audit` | 毎 PR / 每个 PR |
+| SQL インジェクション / SQL 注入 | OWASP ZAP | 月次 / 每月 |
+| XSS | OWASP ZAP | 月次 |
+| 認証・認可テスト / 认证授权测试 | ユニットテスト + 手動 | 毎 PR + 月次 |
+| シークレット漏洩 / 密钥泄露 | git-secrets / gitleaks | 毎コミット / 每次提交 |
+| CSRF 保護 / CSRF 防护 | 手動テスト / 手动测试 | 月次 |
+| レートリミット / 速率限制 | k6 + 手動 | 月次 |
+
+---
+
+## テスト実行コマンド一覧 / 测试执行命令列表
+
+```bash
+# === ユニットテスト / 单元测试 ===
+cd backend && npx vitest run                    # バックエンド全テスト / 后端全部测试
+cd backend && npx vitest run --coverage         # カバレッジ付き / 含覆盖率
+cd frontend && npx vitest run                   # フロントエンド全テスト / 前端全部测试
+
+# === 型チェック / 类型检查 ===
+cd backend && npx tsc --noEmit
+cd frontend && npx vue-tsc --build
+cd admin && npx vue-tsc --build
+cd portal && npx vue-tsc --build
+
+# === インテグレーションテスト / 集成测试 ===
+cd backend && npx vitest run --config vitest.integration.config.ts
+
+# === E2E テスト / 端到端测试 ===
+npx playwright test
+npx playwright test --ui                        # UI モード / UI 模式
+
+# === パフォーマンステスト / 性能测试 ===
+k6 run k6/load-test.js
+
+# === セキュリティテスト / 安全测试 ===
+npm audit
+```
 
 ---
 
 ## 参考ファイル / 参考文件
 
-| ファイル | 説明 |
+| ファイル / 文件 | 説明 / 说明 |
 |---|---|
-| `backend/vitest.config.ts` | バックエンドテスト設定 / 后端测试配置 |
+| `backend/vitest.config.ts` | バックエンドユニットテスト設定 / 后端单元测试配置 |
+| `backend/vitest.integration.config.ts` | インテグレーションテスト設定 / 集成测试配置 |
 | `frontend/vitest.config.ts` | フロントエンドテスト設定 / 前端测试配置 |
+| `playwright.config.ts` | Playwright E2E テスト設定 / E2E 测试配置 |
 | `.github/workflows/ci.yml` | CI パイプライン / CI 流水线 |
-| `backend/src/scripts/seed.ts` | シードデータスクリプト / 种子数据脚本 |
-| `backend/src/services/__tests__/e2e-warehouse-flow.test.ts` | E2E 業務フローテスト |
+| `k6/` | パフォーマンステストスクリプト / 性能测试脚本 |
+| `backend/src/test/factories/` | テストデータファクトリ / 测试数据工厂 |

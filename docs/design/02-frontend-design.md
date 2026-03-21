@@ -23,8 +23,10 @@
 
 ## 1. フロントエンド構成 / 前端架构
 
-ZELIXWMS は **3 つの独立した Vue アプリケーション** で構成される。
-ZELIXWMS 由 **3 个独立的 Vue 应用** 构成。
+ZELIXWMS は **3 つの独立した Vue 3 アプリケーション** で構成される。
+バックエンドは NestJS + PostgreSQL (Supabase) に移行済み。フロントエンドの変更は最小限（API URL のみ変更）。
+ZELIXWMS 由 **3 个独立的 Vue 3 应用** 构成。
+后端已迁移到 NestJS + PostgreSQL (Supabase)。前端变更最小化（仅修改 API URL）。
 
 | アプリ / 应用 | ディレクトリ / 目录 | 対象ユーザー / 目标用户 | 用途 / 用途 |
 |---|---|---|---|
@@ -45,8 +47,8 @@ ZELIXWMS 由 **3 个独立的 Vue 应用** 构成。
 
 ### アプリ間の共通点 / 应用间的共同点
 
-- 同一バックエンド API (`/api`) を共有する / 共享同一后端 API
-- JWT ベースの認証フロー / 基于 JWT 的认证流程
+- 同一 NestJS バックエンド API (`/api`) を共有する / 共享同一 NestJS 后端 API
+- Supabase Auth JWT ベースの認証フロー / 基于 Supabase Auth JWT 的认证流程
 - `getApiBaseUrl()` による API エンドポイント解決 / 通过 `getApiBaseUrl()` 解析 API 端点
 - 多言語対応（JA/EN/CN）/ 多语言支持
 
@@ -123,7 +125,7 @@ frontend/src/
 
 ## 4. ルーティング設計 / 路由设计
 
-### メインメニュー構成 (9 項目) / 主菜单结构 (9 项)
+### メインメニュー構成 (9 項目、118 遅延ロードルート) / 主菜单结构 (9 项, 118 个懒加载路由)
 
 | # | メニュー / 菜单 | パス / 路径 | サブタブ数 / 子标签数 |
 |---|---|---|---|
@@ -463,6 +465,29 @@ useUnsavedChanges(isDirty)
 
 - 印刷専用ページは WmsLayout 外に配置 / 打印专用页面在布局外
 - `useAutoPrint` composable で自動印刷をサポート / 通过 composable 支持自动打印
+
+---
+
+## 11. 移行対応（API 互換性）/ 迁移兼容性
+
+### ObjectId → UUID 変換 / ObjectId → UUID 转换
+
+NestJS + PostgreSQL 移行に伴い、ID 形式が変更される。
+伴随 NestJS + PostgreSQL 迁移，ID 格式发生变化。
+
+| 項目 / 项目 | 移行前 / 迁移前 | 移行後 / 迁移后 |
+|---|---|---|
+| ID 形式 | MongoDB ObjectId (`507f1f77bcf86cd799439011`) | UUID v4 (`550e8400-e29b-41d4-a716-446655440000`) |
+| ID フィールド名 | `_id` | `id` |
+| レスポンス形式 | そのまま / 原样 | `{ success, data, error }` エンベロープ / 响应封套 |
+
+### フロントエンドの対応 / 前端适配
+
+- `_id` → `id` のフィールド名変更に対応 / 适配字段名从 `_id` 到 `id`
+- Element Plus tree-shaking: `unplugin-vue-components` + `unplugin-auto-import` で自動インポート最適化
+  Element Plus 摇树优化：通过 unplugin 自动导入优化
+- 重量コンポーネント（Konva, pdf-lib）は動的インポート / 重型组件使用动态导入
+  Heavy components (Konva, pdf-lib) use dynamic import
 
 ---
 

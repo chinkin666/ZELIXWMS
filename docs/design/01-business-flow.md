@@ -64,14 +64,14 @@ flowchart TD
 
 ### 関連サービス / 相关服务
 
-| フロー / 流程 | メインサービス / 主要服务 | モデル / 模型 |
+| フロー / 流程 | NestJS サービス / 服务 | DB テーブル / 数据库表 |
 |---|---|---|
-| 入庫 / 入库 | `inboundWorkflow.ts` | `InboundOrder`, `WarehouseTask`, `InventoryLedger` |
-| 出荷 / 出货 | `outboundWorkflow.ts`, `shipmentOrderService.ts` | `ShipmentOrder`, `Wave`, `PickTask` |
-| 在庫 / 库存 | `stockService.ts` | `StockQuant`, `StockMove` |
-| 返品 / 退货 | API routes | `ReturnOrder` |
-| 棚卸 / 盘点 | `cycleCountService.ts` | `CycleCountPlan`, `StocktakingOrder` |
-| 請求 / 计费 | `chargeService.ts` | `WorkCharge`, `BillingRecord`, `ServiceRate` |
+| 入庫 / 入库 | `InboundWorkflowService` | `inbound_orders`, `warehouse_tasks`, `inventory_ledger` |
+| 出荷 / 出货 | `ShipmentService`, `WaveService` | `shipment_orders`, `waves`, `pick_tasks` |
+| 在庫 / 库存 | `StockService` | `stock_quants`, `stock_moves` |
+| 返品 / 退货 | `ReturnsService` | `return_orders` |
+| 棚卸 / 盘点 | `CycleCountService`, `StocktakingService` | `cycle_count_plans`, `stocktaking_orders` |
+| 請求 / 计费 | `BillingService`, `WorkChargeService` | `work_charges`, `billing_records`, `service_rates` |
 
 ---
 
@@ -97,12 +97,12 @@ stateDiagram-v2
 sequenceDiagram
     participant OP as オペレーター<br>操作员
     participant FE as Frontend
-    participant API as Backend API
-    participant WF as InboundWorkflow
-    participant TE as TaskEngine
-    participant RE as RuleEngine
-    participant DB as MongoDB
-    participant EXT as ExtensionManager
+    participant API as NestJS API
+    participant WF as InboundWorkflowService
+    participant TE as TaskService
+    participant RE as RuleEngineService
+    participant DB as PostgreSQL
+    participant EXT as EventEmitter2
 
     Note over OP,EXT: === Phase 1: 入庫予定作成 / 创建入库预定 ===
 
@@ -164,8 +164,8 @@ sequenceDiagram
 
 ### 検品の 6 次元チェック / 检品的 6 维度检查
 
-`inspectionService.ts` で管理される 6 次元チェック:
-由 `inspectionService.ts` 管理的 6 维度检查：
+`InspectionService` で管理される 6 次元チェック:
+由 `InspectionService` 管理的 6 维度检查：
 
 | # | チェック項目 / 检查项 | フィールド | 説明 / 说明 |
 |---|---|---|---|
@@ -187,7 +187,7 @@ flowchart LR
     A[CSV インポート<br>CSV 导入] --> D[shipmentOrderService<br>createBulk]
     B[手動入力<br>手动输入] --> D
     C[顧客ポータル<br>客户门户] --> D
-    D --> E[ShipmentOrder<br>MongoDB 保存]
+    D --> E[ShipmentOrder<br>PostgreSQL 保存]
     E --> F[autoProcessingEngine<br>自動処理エンジン]
 ```
 
@@ -197,13 +197,13 @@ flowchart LR
 sequenceDiagram
     participant CL as 荷主 / 货主
     participant FE as Frontend / Portal
-    participant API as Backend API
-    participant SVC as ShipmentOrderService
+    participant API as NestJS API
+    participant SVC as ShipmentService
     participant STK as StockService
-    participant OW as OutboundWorkflow
-    participant B2 as YamatoB2Service
-    participant AUTO as AutoProcessingEngine
-    participant DB as MongoDB
+    participant OW as WaveService
+    participant B2 as B2CloudService
+    participant AUTO as AutoProcessingService
+    participant DB as PostgreSQL
 
     Note over CL,DB: === Phase 1: 出荷指示登録 / 出货指示登记 ===
 
@@ -318,22 +318,22 @@ flowchart TD
     SQ --> IL[InventoryLedger 記帳<br>库存台账记账]
 ```
 
-### 引当の流れ（`stockService.ts`）/ 预留流程
+### 引当の流れ（`StockService`）/ 预留流程
 
-`reserveStockForOrder()` の処理:
-`reserveStockForOrder()` 的处理逻辑：
+`reserveStockForOrder()` の処理（PostgreSQL トランザクション内で実行）:
+`reserveStockForOrder()` 的处理逻辑（在 PostgreSQL 事务中执行）：
 
 1. **VIRTUAL/CUSTOMER ロケーション確認** — 仮想出庫先ロケーションの存在チェック
    确认 VIRTUAL/CUSTOMER 虚拟出库目的地库位存在
-2. **商品マスタ一括取得** — N+1 問題を回避するためバッチ取得
-   批量获取商品主数据，避免 N+1 问题
-3. **inventoryEnabled チェック** — `inventoryEnabled=true` の商品のみ引当対象
-   仅对 `inventoryEnabled=true` 的商品执行预留
-4. **StockQuant 検索** — 該当ロケーションから利用可能在庫を検索
-   从目标库位搜索可用库存
-5. **原子的更新** — `reservedQuantity += quantity` を原子的に実行
-   原子性执行 `reservedQuantity += quantity`
-6. **StockMove 作成** — 移動記録を作成（監査証跡）
+2. **商品マスタ一括取得** — N+1 問題を回避するため JOIN / バッチ取得
+   批量获取商品主数据，通过 JOIN 避免 N+1 问题
+3. **inventoryEnabled チェック** — `inventory_enabled=true` の商品のみ引当対象
+   仅对 `inventory_enabled=true` 的商品执行预留
+4. **stock_quants 検索** — 該当ロケーションから利用可能在庫を検索（`SELECT ... FOR UPDATE`）
+   从目标库位搜索可用库存（行锁定）
+5. **原子的更新** — `reserved_quantity += quantity` をトランザクション内で実行
+   在事务中执行 `reserved_quantity += quantity`
+6. **stock_moves 作成** — 移動記録を作成（監査証跡）
    创建移动记录（审计跟踪）
 
 ---
@@ -356,8 +356,8 @@ stateDiagram-v2
 ```mermaid
 sequenceDiagram
     participant OP as オペレーター
-    participant API as Backend
-    participant DB as MongoDB
+    participant API as NestJS API
+    participant DB as PostgreSQL
 
     Note over OP,DB: === 返品作成 / 创建退货 ===
 
@@ -405,8 +405,8 @@ sequenceDiagram
 
 ### 循環棚卸（月次自動生成）/ 循环盘点（月度自动生成）
 
-`cycleCountService.ts` が月次で自動生成:
-`cycleCountService.ts` 每月自动生成：
+`CycleCountService` が月次で自動生成（BullMQ スケジュールジョブ）:
+`CycleCountService` 每月自动生成（BullMQ 定时任务）：
 
 - **毎月 20% の SKU** をランダム抽選 → 5 ヶ月で 100% カバー
   每月随机抽选 20% 的 SKU → 5 个月覆盖 100%
@@ -421,8 +421,8 @@ sequenceDiagram
 sequenceDiagram
     participant SYS as システム / 系统
     participant OP as オペレーター
-    participant API as Backend
-    participant DB as MongoDB
+    participant API as NestJS API
+    participant DB as PostgreSQL
 
     Note over SYS,DB: === 計画生成 / 计划生成 ===
 
@@ -464,8 +464,8 @@ sequenceDiagram
 
 ### 料金体系 / 费率体系
 
-`chargeService.ts` による自動チャージ生成:
-通过 `chargeService.ts` 自动生成费用：
+`WorkChargeService` による自動チャージ生成（ドメインイベント経由）:
+通过 `WorkChargeService` 自动生成费用（经由领域事件）：
 
 ```mermaid
 flowchart TD
@@ -504,9 +504,9 @@ flowchart TD
 `findRate()` は 2 段階フォールバック:
 `findRate()` 采用 2 级回退：
 
-1. **顧客専用料金** — `ServiceRate.findOne({ clientId, chargeType })` で検索
-   客户专属费率 — 按客户 + 费用类型查找
-2. **デフォルト料金** — `ServiceRate.findOne({ clientId: null, chargeType })` にフォールバック
+1. **顧客専用料金** — `service_rates` テーブルから `client_id + charge_type` で検索
+   客户专属费率 — 从 service_rates 表按客户 + 费用类型查找
+2. **デフォルト料金** — `client_id IS NULL` のレコードにフォールバック
    默认费率 — 回退到无客户指定的通用费率
 
 ---
@@ -521,7 +521,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     participant FE as Frontend
-    participant API as Backend
+    participant API as NestJS API
     participant B2S as YamatoB2Service
     participant CACHE as キャッシュ層<br>缓存层
     participant B2 as B2 Cloud API
@@ -534,14 +534,14 @@ sequenceDiagram
     alt キャッシュヒット / 缓存命中
         B2S-->>API: session_token
     else メモリミス / 内存未命中
-        B2S->>CACHE: ② MongoDB CarrierSessionCache 確認<br>② 检查 MongoDB 会话缓存
-        alt MongoDB ヒット / MongoDB 命中
+        B2S->>CACHE: ② DB CarrierSessionCache 確認<br>② 检查 DB 会话缓存
+        alt DB ヒット / DB 命中
             CACHE-->>B2S: session_token
             B2S->>B2S: インメモリに保存 / 存入内存
-        else MongoDB ミス / MongoDB 未命中
+        else DB ミス / DB 未命中
             B2S->>B2: ③ B2 Cloud Login API 呼び出し<br>③ 调用 B2 Cloud Login API
             B2-->>B2S: session_token + expires_at
-            B2S->>CACHE: MongoDB に保存 / 存入 MongoDB
+            B2S->>CACHE: DB に保存 / 存入 DB
             B2S->>B2S: インメモリに保存 / 存入内存
         end
     end
@@ -587,7 +587,7 @@ sequenceDiagram
 
 | ポイント / 要点 | 詳細 / 详情 |
 |---|---|
-| **3 層キャッシュ** | インメモリ → MongoDB(`CarrierSessionCache`) → B2 Cloud API |
+| **3 層キャッシュ** | インメモリ → DB(`carrier_session_caches` テーブル) → B2 Cloud API |
 | **セッション切れリトライ** | `authenticatedFetch()` が HTTP 500 + レスポンスに 'entry' を検出したら自動リトライ |
 | **validate vs validate-full** | `validate`（ShipmentInput, 日本語キー）を使用。`validate-full` は幅チェッカーにバグがあるため使用禁止 |
 | **validate = 日本語キー** | `validateShipments()` は日本語キーマッピングで送信 |
@@ -608,38 +608,40 @@ sequenceDiagram
 
 ## 補足: イベント駆動アーキテクチャ / 补充：事件驱动架构
 
-ZELIX WMS は `extensionManager`（Plugin/Hook システム）を通じたイベント駆動処理を採用しています。
-ZELIX WMS 采用通过 `extensionManager`（插件/钩子系统）的事件驱动处理。
+ZELIX WMS は **EventEmitter2** (`@nestjs/event-emitter`) を通じたドメインイベント駆動処理を採用しています。
+イベントは BullMQ キューを経由して非同期処理されます。
+ZELIX WMS 采用 **EventEmitter2** 的领域事件驱动处理。事件通过 BullMQ 队列异步处理。
 
 ### 主要イベント / 主要事件
 
-| イベント | トリガー | 処理例 / 处理示例 |
+| イベント | トリガー / 触发器 | 処理例 / 处理示例 |
 |---|---|---|
 | `INBOUND_RECEIVED` | 入庫検品完了 | 通知送信・チャージ生成 |
 | `ORDER_CREATED` | 出荷指示作成 | B2 自動送信・Webhook |
 | `ORDER_SHIPPED` | 出荷完了 | 通知・請求 |
-| `STOCK_ADJUSTED` | 在庫調整 | ログ記録 |
+| `STOCK_ADJUSTED` | 在庫調整 | 監査ログ記録（BullMQ → `operation_logs`） |
 
 ### 自動処理エンジン / 自动处理引擎
 
-`autoProcessingEngine.ts` は `autoProcessingRule` モデルに基づいて、
-イベント発生時に定義されたアクションを自動実行します。
+`AutoProcessingService` は `auto_processing_rules` テーブルに基づいて、
+ドメインイベント発生時に定義されたアクションを自動実行します。
 
-`autoProcessingEngine.ts` 基于 `autoProcessingRule` 模型，
-在事件发生时自动执行已定义的动作。
+`AutoProcessingService` 基于 `auto_processing_rules` 表，
+在领域事件发生时自动执行已定义的动作。
 
 ```
-イベント発生 → autoProcessingEngine.processOrderEvent()
-    → ルール検索（tenantId + eventType）
-    → 条件マッチ → アクション実行
+ドメインイベント発生 → EventEmitter2
+    → AutoProcessingService.handleEvent()
+    → ルール検索（tenant_id + event_type）
+    → 条件マッチ → BullMQ キューにジョブ投入
         - B2 Cloud 自動送信
-        - Webhook 送信
-        - 通知送信
+        - Webhook 送信（webhook キュー）
+        - 通知送信（notification キュー）
         - ステータス自動遷移
 ```
 
 ---
 
 > **最終更新 / 最后更新**: 2026-03-21
-> **対象コード / 对象代码**: `backend/src/services/` 配下の各サービスファイル
-> **関連ドキュメント / 相关文档**: `docs/design/00-system-overview.md`
+> **対象コード / 对象代码**: `backend-nest/src/modules/` 配下の各 NestJS サービス
+> **関連ドキュメント / 相关文档**: `docs/design/00-system-overview.md`, `docs/migration/03-backend-architecture.md`

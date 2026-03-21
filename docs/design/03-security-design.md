@@ -2,370 +2,327 @@
 
 > 対象読者: 新規開発者 / 目标读者: 新加入的开发者
 >
-> 最終更新: 2026-03-21
+> 最終更新 / 最后更新: 2026-03-21
+>
+> アーキテクチャ: NestJS 11 + PostgreSQL 16 (Supabase) + Drizzle ORM
 
 ---
 
 ## 目次 / 目录
 
-1. [認証方式](#1-認証方式--认证方式)
-2. [認可 / RBAC](#2-認可--rbac--授权--rbac)
+1. [認証方式（Supabase Auth）](#1-認証方式supabase-auth--认证方式)
+2. [認可（3 層ガード）](#2-認可3-層ガード--授权3-层守卫)
 3. [マルチテナント分離](#3-マルチテナント分離--多租户隔离)
-4. [API セキュリティ](#4-api-セキュリティ--api-安全)
-5. [データ保護](#5-データ保護--数据保护)
-6. [OWASP Top 10 対策](#6-owasp-top-10-対策--owasp-top-10-防护)
-7. [ログ・監査](#7-ログ監査--日志审计)
-8. [今後の改善計画](#8-今後の改善計画--未来改进计划)
+4. [パスワードセキュリティ](#4-パスワードセキュリティ--密码安全)
+5. [レートリミット](#5-レートリミット--速率限制)
+6. [SSRF 防御](#6-ssrf-防御--ssrf-防护)
+7. [セキュリティヘッダー](#7-セキュリティヘッダー--安全头)
+8. [入力バリデーション](#8-入力バリデーション--输入验证)
+9. [監査ログ](#9-監査ログ--审计日志)
+10. [シークレット管理](#10-シークレット管理--密钥管理)
+11. [CORS](#11-cors)
+12. [OWASP Top 10 対策](#12-owasp-top-10-対策--owasp-top-10-防护)
 
 ---
 
-## 1. 認証方式 / 认证方式
+## 1. 認証方式（Supabase Auth）/ 认证方式
 
-### 現在の実装: JWT ベース認証 / 当前实现: 基于 JWT 的认证
+### JWT ベース認証 / 基于 JWT 的认证
 
 ```
 [クライアント] → POST /api/auth/login { email, password }
-               ← { token: "eyJhbG...", user: { id, email, role, ... } }
+               → Supabase Auth で認証 / 通过 Supabase Auth 认证
+               ← { access_token, refresh_token, user }
 
-[後続リクエスト] → Authorization: Bearer <token>
-                → auth.ts ミドルウェアで検証 / 中间件验证
+[後続リクエスト] → Authorization: Bearer <access_token>
+                → AuthGuard で Supabase JWT を検証 / AuthGuard 验证 Supabase JWT
                 ← req.user に注入 / 注入到 req.user
 ```
 
-#### JWT 設定 / JWT 配置
+### Supabase Auth の機能 / Supabase Auth 功能
 
-| 項目 / 项目 | 値 / 值 | 備考 / 备注 |
-|---|---|---|
-| アルゴリズム | HS256 (jsonwebtoken デフォルト) | 対称鍵方式 / 对称密钥 |
-| 有効期間 | `JWT_EXPIRES_IN` (デフォルト: 24h) | 環境変数で設定可 / 可通过环境变量配置 |
-| シークレット | `JWT_SECRET` 環境変数 | **本番では必ず設定** / 生产环境必须设置 |
-| ペイロード | `{ id, email, displayName, role, warehouseIds, tenantId }` | `AuthUser` 型 |
-
-#### 認証ミドルウェア / 认证中间件
-
-`backend/src/api/middleware/auth.ts` に 4 つの認証関数を提供:
-提供 4 个认证函数：
-
-| 関数 / 函数 | 用途 / 用途 |
+| 機能 / 功能 | 説明 / 说明 |
 |---|---|
-| `requireAuth` | **必須認証**: トークン未提供/無効時は 401 を返す。本番環境の全 API で使用 |
-| `optionalAuth` | **任意認証**: トークンがあれば検証して `req.user` に注入、なくてもリクエストを通す |
-| `requireRole(...roles)` | **ロール制限**: `requireAuth` の後に使用。指定ロール以外は 403 |
-| `generateToken(payload)` | **トークン生成**: ログイン成功時に JWT を発行 |
+| **JWT 発行・検証** | Supabase が JWT を発行、NestJS AuthGuard が検証 / Supabase 发行 JWT，AuthGuard 验证 |
+| **app_metadata** | `tenant_id` と `role` を JWT の `app_metadata` に格納 / 在 app_metadata 中存储 tenant_id 和 role |
+| **リフレッシュトークン** | 自動トークンリフレッシュ / 自动令牌刷新 |
+| **メール認証** | サインアップ時のメール確認 / 注册时的邮件验证 |
+| **MFA** | TOTP ベースの多要素認証 / 基于 TOTP 的多因素认证 |
 
-#### 開発環境の特例 / 开发环境特殊处理
+### JWT ペイロード / JWT 载荷
 
-```typescript
-// NODE_ENV === 'development' の場合、認証をスキップしデフォルト管理者を注入
-// 开发环境跳过认证，注入默认管理员
-if (process.env.NODE_ENV === 'development') {
-  req.user = {
-    id: 'dev-admin',
-    email: 'dev@zelix.local',
-    role: 'admin',
-    tenantId: 'default',
-  }
+```json
+{
+  "sub": "uuid-of-user",
+  "email": "user@example.com",
+  "app_metadata": {
+    "tenant_id": "uuid-of-tenant",
+    "role": "admin",
+    "warehouse_ids": ["uuid-1", "uuid-2"]
+  },
+  "exp": 1234567890
 }
 ```
 
-> **注意**: この挙動は `NODE_ENV=development` でのみ有効。本番では絶対に発生しない。
-> 此行为仅在 `NODE_ENV=development` 时生效，生产环境不会触发。
+### ポータル認証 / 门户认证
 
-### 計画中: Supabase Auth 移行 / 计划中: 迁移到 Supabase Auth
+荷主（client ロール）向けの `PortalAuthController` を提供。
+为货主（client 角色）提供独立的 `PortalAuthController`。
 
-将来的に自前 JWT 認証から **Supabase Auth** に移行予定。
-计划从自建 JWT 认证迁移到 **Supabase Auth**。
-
-| 現在 / 当前 | 移行後 / 迁移后 |
-|---|---|
-| 自前 JWT 発行/検証 | Supabase Auth JWT |
-| パスワードを MongoDB に保存 | Supabase Auth が管理 |
-| セッション管理なし | Supabase リフレッシュトークン |
-| メール認証なし | Supabase メール認証/MFA |
-
-移行の影響範囲: `auth.ts` ミドルウェア + フロントエンド `useAuth` composable + ログイン画面。
-迁移影响范围：auth.ts 中间件 + 前端 useAuth 组合式 + 登录页面。
+- 専用ログインエンドポイント / 专用登录端点
+- client ロール限定のアクセス / 仅限 client 角色访问
+- テナント内の自社データのみ閲覧可能 / 仅可查看本租户自社数据
 
 ---
 
-## 2. 認可 / RBAC / 授权 / RBAC
+## 2. 認可（3 層ガード）/ 授权（3 层守卫）
+
+### ガードパイプライン / 守卫管道
+
+```
+リクエスト → AuthGuard → TenantGuard → RoleGuard → Controller
+请求       → 认证守卫   → 租户守卫     → 角色守卫   → 控制器
+```
+
+### AuthGuard（認証ガード / 认证守卫）
+
+```typescript
+// Supabase JWT を検証し、req.user にユーザー情報を注入
+// 验证 Supabase JWT，将用户信息注入 req.user
+@UseGuards(AuthGuard)
+```
+
+- Supabase JWT の署名・有効期限を検証 / 验证 Supabase JWT 签名和有效期
+- 無効・期限切れトークンは **401 Unauthorized** / 无效或过期令牌返回 401
+- `@CurrentUser()` デコレータでユーザー情報取得 / 通过装饰器获取用户信息
+
+### TenantGuard（テナントガード / 租户守卫）
+
+```typescript
+// JWT の app_metadata.tenant_id を req に注入し、
+// 以降のクエリで自動的にテナントフィルタを適用
+// 从 JWT 的 app_metadata 中提取 tenant_id 注入请求
+@UseGuards(TenantGuard)
+```
+
+- `app_metadata.tenant_id` を抽出 / 提取 tenant_id
+- テナント ID なしのリクエストは **403 Forbidden** / 无 tenant_id 返回 403
+- `@TenantId()` デコレータで取得可能 / 通过装饰器获取
+
+### RoleGuard（ロールガード / 角色守卫）
+
+```typescript
+// 指定ロール以上のアクセスのみ許可
+// 仅允许指定角色以上的访问
+@Roles('admin', 'manager')
+@UseGuards(RoleGuard)
+```
 
 ### ロール階層 / 角色层级
 
 ```
-super_admin          全テナント・全機能 / 全租户全功能
-  └── admin          テナント内全権限 / 租户内全权限
-       ├── operator  倉庫オペレーション / 仓库操作
-       ├── viewer    閲覧のみ / 仅查看
-       └── client    荷主ポータル / 货主门户
-```
-
-### requirePermission ミドルウェア / 权限校验中间件
-
-`backend/src/api/middleware/requirePermission.ts`
-
-#### 使用方法 / 使用方法
-
-```typescript
-// 単一権限チェック / 单一权限校验
-router.post('/receive', requirePermission('inbound:receive'), controller.receive)
-router.get('/list', requirePermission('inbound:view'), controller.list)
-
-// 複数権限チェック（いずれか1つでOK）/ 多权限校验（有其一即可）
-router.put('/update', requireAnyPermission('shipment:edit', 'shipment:admin'), controller.update)
-```
-
-#### 内部動作 / 内部逻辑
-
-1. `req.user` が存在しなければ **401**
-   如果 `req.user` 不存在则返回 401
-2. `user.role === 'admin'` なら全権限をバイパス（**admin は全権限**）
-   admin 角色绕过所有权限检查
-3. `user.roleIds` から DB (`Role` モデル) の権限リストを取得
-   从数据库 Role 模型获取权限列表
-4. 要求された権限が含まれていなければ **403**
-   如果不包含所需权限则返回 403
-
-#### 権限キャッシュ / 权限缓存
-
-```typescript
-// プロセスメモリキャッシュ、TTL 5 分 / 进程内存缓存，TTL 5分钟
-const permissionCache: Map<string, { permissions: string[]; expiry: number }> = new Map()
-const CACHE_TTL = 5 * 60 * 1000
-```
-
-- ロール ID リストをキーに、権限配列をキャッシュ / 以角色 ID 列表为键缓存权限数组
-- 5 分間有効。ロール変更時は最大 5 分の遅延が発生 / 5 分钟有效，角色变更最多有 5 分钟延迟
-
-### 権限命名規則 / 权限命名规则
-
-```
-<モジュール>:<操作>
-<module>:<action>
-
-例 / 示例:
-  inbound:view, inbound:receive, inbound:create
-  shipment:view, shipment:edit, shipment:admin
-  inventory:view, inventory:adjust, inventory:transfer
-  settings:view, settings:edit
+admin            テナント内全権限 / 租户内全权限
+  ├── manager    承認・レポート / 审批・报表
+  ├── operator   倉庫オペレーション / 仓库操作
+  ├── viewer     閲覧のみ / 仅查看
+  └── client     荷主ポータル / 货主门户
 ```
 
 ---
 
 ## 3. マルチテナント分離 / 多租户隔离
 
-### 現在の実装 / 当前实现
+### 2 層分離戦略 / 双层隔离策略
 
-- 全データモデルに `tenantId` フィールドを保持 / 所有数据模型都有 tenantId 字段
-- `req.user.tenantId` を使ってクエリ条件にテナント ID を付与 / 通过 req.user.tenantId 过滤查询
-- アプリケーション層でのフィルタリング（DB レベルの強制ではない）
-  在应用层进行过滤（非数据库层面强制）
+| 層 / 层 | 方式 / 方式 | 説明 / 说明 |
+|---|---|---|
+| **アプリケーション層** | WHERE `tenant_id = ?` | Repository 基底クラスが全クエリに自動付与 / Base Repository 自动附加 |
+| **データベース層** | PostgreSQL RLS | セーフティネットとして RLS ポリシーを設定 / 作为安全网设置 RLS 策略 |
+
+### アプリケーション層（主要な分離手段）/ 应用层（主要隔离手段）
 
 ```typescript
-// 典型的なテナントフィルタリング / 典型的租户过滤
-const orders = await InboundOrder.find({
-  tenantId: req.user.tenantId,
-  ...otherFilters,
-})
+// BaseRepository が全クエリに tenant_id を自動付与
+// BaseRepository 自动在所有查询中附加 tenant_id
+export abstract class BaseRepository<T> {
+  async findAll(tenantId: string, filters?: Partial<T>): Promise<T[]> {
+    return this.db
+      .select()
+      .from(this.table)
+      .where(and(eq(this.table.tenantId, tenantId), ...filterConditions));
+  }
+}
 ```
 
-### 計画中: Supabase RLS / 计划中: Supabase RLS
-
-Supabase 移行後は **Row Level Security (RLS)** でデータベースレベルの分離を実現予定。
-迁移到 Supabase 后计划通过 **RLS** 实现数据库级别的隔离。
+### RLS（セーフティネット）/ RLS（安全网）
 
 ```sql
--- 計画中の RLS ポリシー例 / 计划中的 RLS 策略示例
+-- 全テーブルに適用する RLS ポリシー / 应用于所有表的 RLS 策略
+ALTER TABLE inbound_orders ENABLE ROW LEVEL SECURITY;
+
 CREATE POLICY tenant_isolation ON inbound_orders
-  USING (tenant_id = auth.jwt()->>'tenantId');
+  USING (tenant_id = (current_setting('app.tenant_id'))::uuid);
+
+-- NestJS から Drizzle 経由で設定 / 通过 NestJS + Drizzle 设置
+-- SET LOCAL app.tenant_id = 'uuid-of-tenant';
 ```
+
+> **設計判断 / 设计决策**: アプリケーション層の WHERE フィルタが主要な分離手段。
+> RLS はアプリケーションバグに対するセーフティネットとして機能する。
+> 应用层 WHERE 过滤是主要隔离手段。RLS 作为应用层 bug 的安全网。
 
 ---
 
-## 4. API セキュリティ / API 安全
+## 4. パスワードセキュリティ / 密码安全
 
-### レートリミット / 速率限制
+| 項目 / 项目 | 値 / 值 |
+|---|---|
+| **アルゴリズム** | PBKDF2 SHA-512 |
+| **イテレーション回数** | 210,000 回 |
+| **ソルト** | ランダム生成、ユーザーごとに一意 / 随机生成，每用户唯一 |
+| **保存先** | Supabase Auth（Supabase が管理）/ Supabase Auth 管理 |
 
-`backend/src/api/middleware/rateLimit.ts`
+> Supabase Auth がパスワードハッシュを管理するため、アプリケーションコードで
+> 直接パスワードを保存・検証することはない。
+> Supabase Auth 管理密码哈希，应用代码不直接存储或验证密码。
+
+---
+
+## 5. レートリミット / 速率限制
+
+NestJS の `@nestjs/throttler` で実装。
+通过 `@nestjs/throttler` 实现。
 
 | プリセット / 预设 | 対象 / 目标 | 制限 / 限制 | ウィンドウ / 时间窗口 |
 |---|---|---|---|
-| `globalLimiter` | 全 API | 1000 req | 15 分 |
-| `authLimiter` | 認証エンドポイント (`/auth/*`) | 20 req | 15 分 |
-| `writeLimiter` | 書き込み操作 (POST/PUT/DELETE) | 200 req | 15 分 |
+| **global** | 全 API エンドポイント | 1000 req | 15 分 |
+| **auth** | 認証エンドポイント (`/auth/*`) | 20 req | 15 分 |
+| **write** | 書き込み操作 (POST/PUT/DELETE) | 200 req | 15 分 |
 
-#### 特記事項 / 注意事项
+### 特記事項 / 注意事项
 
-- **開発環境ではスキップ**: `NODE_ENV === 'development'` の場合、全リミッターが無効。
-  开发环境跳过：`NODE_ENV === 'development'` 时所有限制器均禁用。
-- **ヘルスチェック除外**: `/health`, `/health/liveness` はグローバルリミットから除外。
-  健康检查排除：从全局限制中排除。
-- **標準ヘッダー**: `draft-7` 準拠のレスポンスヘッダー (`RateLimit-*`) を返す。
-  返回 draft-7 标准的响应头。
-
-### 入力バリデーション / 输入验证
-
-- **Zod** によるスキーマベースバリデーション / 基于 Zod 的 schema 验证
-- リクエストボディ、クエリパラメータ、パスパラメータを検証 / 验证请求体、查询参数、路径参数
-- バリデーションエラーは 400 + 詳細メッセージを返す / 验证错误返回 400 + 详细信息
-
-### CORS
-
-- 本番環境では許可オリジンを明示的に指定 / 生产环境明确指定允许的源
-- `credentials: true` でクッキー送信を許可 / 允许发送 cookie
-
-### Helmet
-
-- Express Helmet ミドルウェアで HTTP セキュリティヘッダーを設定
-  通过 Helmet 中间件设置 HTTP 安全头
-- `X-Frame-Options`, `X-Content-Type-Options`, `Strict-Transport-Security` 等
-  包括 X-Frame-Options, X-Content-Type-Options, HSTS 等
+- **ヘルスチェック除外**: `/health`, `/health/liveness` はレートリミットから除外
+  健康检查排除在速率限制外
+- **標準ヘッダー**: `RateLimit-*` レスポンスヘッダーを返す
+  返回 RateLimit-* 响应头
+- **開発環境**: `NODE_ENV === 'development'` 時はスキップ可能（設定依存）
+  开发环境可跳过（取决于配置）
 
 ---
 
-## 5. データ保護 / 数据保护
+## 6. SSRF 防御 / SSRF 防护
 
-### パスワードハッシュ / 密码哈希
+Webhook URL に対する SSRF 防御を実装。
+对 Webhook URL 实施 SSRF 防护。
 
-- **PBKDF2** (または bcrypt) でパスワードをハッシュ化 / 使用 PBKDF2 (或 bcrypt) 哈希密码
-- ソルト付きハッシュを MongoDB に保存 / 加盐后存储到 MongoDB
-- 平文パスワードは一切保存しない / 绝不存储明文密码
+| 対策 / 措施 | 説明 / 说明 |
+|---|---|
+| **URL ホワイトリスト** | 許可されたドメイン/IP のみ接続 / 仅允许连接白名单域名/IP |
+| **プライベート IP 拒否** | `10.x`, `172.16.x`, `192.168.x`, `127.0.0.1` 等を拒否 / 拒绝内网 IP |
+| **リダイレクト制限** | HTTP リダイレクトの追跡を制限 / 限制 HTTP 重定向跟踪 |
+| **タイムアウト** | 外部リクエストにタイムアウトを設定 / 设置外部请求超时 |
 
-### JWT シークレット管理 / JWT 密钥管理
+---
 
-```bash
-# 環境変数で設定 / 通过环境变量配置
-JWT_SECRET=<strong-random-string>
-JWT_EXPIRES_IN=24h
-```
+## 7. セキュリティヘッダー / 安全头
 
-- **開発環境**: ハードコードされたフォールバック値あり (`zelix-wms-dev-secret-change-in-production`)
-  开发环境有硬编码的回退值
-- **本番環境**: `JWT_SECRET` 未設定時はアプリケーションの起動を推奨的にブロックすべき
-  生产环境未设置时应阻止应用启动
-
-### 環境変数一覧 (セキュリティ関連) / 安全相关环境变量
-
-| 変数 / 变量 | 用途 / 用途 | 必須 / 必须 |
-|---|---|---|
-| `JWT_SECRET` | JWT 署名鍵 / JWT 签名密钥 | 本番: 必須 / 生产必须 |
-| `JWT_EXPIRES_IN` | JWT 有効期間 / JWT 有效期 | 任意 (デフォルト: 24h) |
-| `MONGODB_URI` | データベース接続文字列 / 数据库连接串 | 必須 |
-| `NODE_ENV` | 実行環境 / 运行环境 | 必須 (production/development) |
-| `CORS_ORIGIN` | 許可オリジン / 允许的源 | 本番: 推奨 |
-
-### フロントエンドのトークン管理 / 前端令牌管理
+### Helmet（NestJS Fastify 互換）/ Helmet (Fastify 兼容)
 
 ```typescript
-// localStorage に保存 / 存储到 localStorage
-localStorage.setItem('wms_token', token)
-localStorage.setItem('wms_current_user', JSON.stringify(user))
+// main.ts
+import helmet from '@fastify/helmet';
+app.register(helmet, {
+  contentSecurityPolicy: false, // Vue SPA のため無効化 / 因 Vue SPA 禁用
+});
+```
 
-// 401 時に自動クリア + リダイレクト / 401 时自动清除并跳转
-if (response.status === 401) {
-  localStorage.removeItem('wms_token')
-  localStorage.removeItem('wms_current_user')
-  window.location.href = '/login'
+### Nginx 追加ヘッダー / Nginx 附加头
+
+| ヘッダー / 头 | 値 / 值 | 説明 / 说明 |
+|---|---|---|
+| `X-Frame-Options` | `DENY` | クリックジャッキング防止 / 防止点击劫持 |
+| `X-Content-Type-Options` | `nosniff` | MIME スニッフィング防止 / 防止 MIME 嗅探 |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` | HSTS 強制 / 强制 HSTS |
+| `X-XSS-Protection` | `1; mode=block` | XSS フィルタ有効化 / 启用 XSS 过滤 |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | リファラーポリシー / 引用策略 |
+
+---
+
+## 8. 入力バリデーション / 输入验证
+
+### 2 層バリデーション / 双层验证
+
+| 層 / 层 | 技術 / 技术 | 説明 / 说明 |
+|---|---|---|
+| **NestJS ValidationPipe** | class-validator + class-transformer | DTO レベルの自動バリデーション / DTO 级自动验证 |
+| **Zod スキーマ** | Zod 3.x | 複雑なビジネスルールのバリデーション / 复杂业务规则验证 |
+
+### 実装パターン / 实现模式
+
+```typescript
+// DTO バリデーション（NestJS 標準）/ DTO 验证（NestJS 标准）
+@Post()
+async create(@Body() dto: CreateInboundOrderDto) {
+  // ValidationPipe が自動的にバリデーション
+  // ValidationPipe 自动验证
+}
+
+// Zod バリデーション（複雑なビジネスルール）/ Zod 验证（复杂业务规则）
+const result = shipmentSchema.safeParse(data);
+if (!result.success) throw new BadRequestException(result.error);
+```
+
+### バリデーションエラー応答 / 验证错误响应
+
+```json
+{
+  "success": false,
+  "error": "Validation failed",
+  "details": [
+    { "field": "quantity", "message": "数量は正の整数である必要があります / 数量必须是正整数" }
+  ]
 }
 ```
 
 ---
 
-## 6. OWASP Top 10 対策 / OWASP Top 10 防护
+## 9. 監査ログ / 审计日志
 
-### A01: アクセス制御の不備 / 失效的访问控制
+### ドメインイベント → BullMQ → operation_logs / 领域事件 → BullMQ → operation_logs
 
-- `requireAuth` + `requireRole` + `requirePermission` の 3 層チェック
-  三层校验：认证 + 角色 + 权限
-- テナント ID によるデータ分離 / 通过 tenantId 隔离数据
-- admin ロールのバイパスは意図的設計（全権限所持）/ admin 角色的绕过是有意设计
+全ミューテーション（作成・更新・削除）をドメインイベント経由で非同期ログ記録。
+所有变更操作（创建、更新、删除）通过领域事件异步记录日志。
 
-### A02: 暗号化の失敗 / 加密失败
+```
+Service でミューテーション実行
+  → EventEmitter2.emit('audit.created', payload)
+  → BullMQ audit キューにジョブ投入
+  → AuditProcessor が operation_logs テーブルに INSERT
+```
 
-- パスワードは PBKDF2/bcrypt でハッシュ / 密码使用 PBKDF2/bcrypt 哈希
-- JWT シークレットは環境変数で管理 / JWT 密钥通过环境变量管理
-- HTTPS は本番デプロイで Nginx/Cloudflare 等のリバースプロキシで終端
-  HTTPS 在生产环境通过反向代理终端
+### operation_logs テーブル / 表结构
 
-### A03: インジェクション / 注入
-
-- **MongoDB**: Mongoose ORM 経由でクエリ。直接文字列連結なし。
-  通过 Mongoose ORM 查询，无直接字符串拼接。
-- **入力バリデーション**: Zod スキーマで全入力を検証。
-  通过 Zod schema 验证所有输入。
-- **XSS**: Vue のテンプレートはデフォルトで HTML エスケープ。`v-html` は極力使用しない。
-  Vue 模板默认 HTML 转义，尽量不使用 v-html。
-
-### A04: 安全でない設計 / 不安全的设计
-
-- ロールベースアクセス制御 (RBAC) で権限を体系的に管理
-  通过 RBAC 系统性管理权限
-- 最小権限の原則: operator/viewer は必要最小限の操作のみ許可
-  最小权限原则：operator/viewer 仅允许最少必要操作
-
-### A05: セキュリティの設定ミス / 安全配置错误
-
-- Helmet で HTTP ヘッダーを自動設定 / 通过 Helmet 自动设置 HTTP 头
-- 開発環境の認証スキップは `NODE_ENV` で厳格に制御
-  开发环境的认证跳过通过 NODE_ENV 严格控制
-- エラーメッセージは本番では詳細を隠蔽 / 生产环境隐藏错误详情
-
-### A06: 脆弱で古いコンポーネント / 易受攻击和过时的组件
-
-- `npm audit` で定期的に脆弱性チェック / 定期通过 npm audit 检查漏洞
-- CI/CD パイプラインで自動チェック / 在 CI/CD 流水线中自动检查
-
-### A07: 認証の失敗 / 身份验证失败
-
-- `authLimiter` (20 req/15min) でブルートフォース攻撃を防止
-  通过 authLimiter 防止暴力破解
-- JWT 有効期間の制限 (24h) / JWT 有效期限制
-- トークン期限切れ時の明確なエラーメッセージ / 令牌过期时的明确错误信息
-
-### A08: ソフトウェアとデータの整合性の失敗 / 软件和数据完整性失败
-
-- JWT 署名検証で改ざんを検知 / 通过 JWT 签名验证检测篡改
-- `jwt.verify()` で期限切れ・無効トークンを明確に区別
-  通过 jwt.verify() 明确区分过期和无效令牌
-
-### A09: セキュリティログとモニタリングの失敗 / 安全日志和监控失败
-
-- 認証失敗をログに記録 (`logger.warn`) / 记录认证失败日志
-- 操作ログ・API ログで全変更を追跡（後述）/ 通过操作日志和 API 日志追踪所有变更
-
-### A10: SSRF (サーバーサイドリクエストフォージェリ) / 服务器端请求伪造
-
-- 外部 API 呼び出し (Yamato B2 Cloud 等) はサーバーサイドで実行
-  外部 API 调用在服务器端执行
-- URL のホワイトリスト制御で不正な送信先を防止
-  通过 URL 白名单控制防止非法目标
-
----
-
-## 7. ログ・監査 / 日志・审计
+```sql
+CREATE TABLE operation_logs (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id   UUID NOT NULL,
+  user_id     UUID NOT NULL,
+  action      VARCHAR(50) NOT NULL,  -- create, update, delete
+  resource    VARCHAR(100) NOT NULL, -- inbound_orders, shipment_orders, ...
+  resource_id UUID,
+  details     JSONB,                 -- { before: {...}, after: {...} }
+  ip_address  INET,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+) PARTITION BY RANGE (created_at);  -- 月次パーティション / 月度分区
+```
 
 ### ログ種別 / 日志类型
 
 | ログ / 日志 | 保存先 / 存储 | 内容 / 内容 | TTL |
 |---|---|---|---|
-| `operationLog` | MongoDB | ユーザー操作 (CRUD) の記録 / 用户操作记录 | 180 日 |
-| `apiLog` | MongoDB | 外部 API 呼び出しの記録 (B2 Cloud 等) / 外部 API 调用记录 | 180 日 |
-| アプリケーションログ | stdout (pino) | サーバー実行ログ / 服务器运行日志 | インフラ依存 |
-
-### 操作ログの記録内容 / 操作日志记录内容
-
-```typescript
-{
-  userId: string       // 操作者 / 操作人
-  tenantId: string     // テナント / 租户
-  action: string       // 操作種別 (create, update, delete) / 操作类型
-  resource: string     // 対象リソース (inboundOrder, shipmentOrder, ...) / 目标资源
-  resourceId: string   // 対象 ID / 目标 ID
-  details: object      // 変更内容 (before/after) / 变更详情
-  timestamp: Date      // 実行日時 / 执行时间
-  ipAddress: string    // クライアント IP / 客户端 IP
-}
-```
+| `operation_logs` | PostgreSQL (パーティション) | ユーザー操作 (CRUD) / 用户操作 | 180 日 |
+| `api_logs` | PostgreSQL (パーティション) | 外部 API 呼び出し (B2 Cloud 等) / 外部 API 调用 | 180 日 |
+| アプリケーションログ / 应用日志 | stdout (Pino) | サーバー実行ログ / 服务器运行日志 | インフラ依存 |
 
 ### 閲覧方法 / 查看方式
 
@@ -376,61 +333,145 @@ if (response.status === 401) {
 
 ---
 
-## 8. 今後の改善計画 / 未来改进计划
+## 10. シークレット管理 / 密钥管理
 
-### Phase 1: Supabase Auth 移行 / 迁移到 Supabase Auth
+### 環境変数（ハードコードデフォルト値なし）/ 环境变量（无硬编码默认值）
 
-| 項目 / 项目 | 説明 / 描述 |
-|---|---|
-| **認証基盤** | 自前 JWT → Supabase Auth に移行 / 自建 JWT 迁移到 Supabase Auth |
-| **MFA** | Supabase の TOTP/SMS MFA を有効化 / 启用 Supabase 的 MFA |
-| **ソーシャルログイン** | 必要に応じて Google/Microsoft SSO を追加 / 按需添加 SSO |
-| **リフレッシュトークン** | 自動トークンリフレッシュ / 自动令牌刷新 |
-| **メール認証** | サインアップ時のメール確認 / 注册时的邮件验证 |
+| 変数 / 变量 | 用途 / 用途 | 必須 / 必须 |
+|---|---|---|
+| `SUPABASE_URL` | Supabase プロジェクト URL | 必須 |
+| `SUPABASE_ANON_KEY` | Supabase 匿名キー / 匿名密钥 | 必須 |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service_role キー / 服务角色密钥 | 必須 |
+| `DATABASE_URL` | PostgreSQL 接続文字列 / 连接串 | 必須 |
+| `REDIS_URL` | Redis 接続文字列 / 连接串 | 必須 |
+| `NODE_ENV` | 実行環境 / 运行环境 | 必須 (production/development) |
+| `CORS_ORIGIN` | 許可オリジン / 允许的源 | 本番推奨 / 生产推荐 |
 
-### Phase 2: RLS (Row Level Security) / 行级安全
+### セキュリティ原則 / 安全原则
 
-| 項目 / 项目 | 説明 / 描述 |
-|---|---|
-| **テナント分離** | アプリ層フィルタ → DB 層 RLS / 应用层过滤 → 数据库层 RLS |
-| **倉庫分離** | `warehouseIds` による行レベル制御 / 基于 warehouseIds 的行级控制 |
-| **荷主分離** | `clientId` による行レベル制御 / 基于 clientId 的行级控制 |
-
-### Phase 3: セキュリティ強化 / 安全强化
-
-| 項目 / 项目 | 説明 / 描述 |
-|---|---|
-| **service_role キー管理** | Supabase service_role キーをシークレットマネージャーで管理 / 通过密钥管理器管理 |
-| **監査ログの外部送信** | SIEM 連携 (CloudWatch / Datadog 等) / SIEM 集成 |
-| **脆弱性スキャン自動化** | CI/CD に Snyk/Dependabot を統合 / 在 CI/CD 中集成漏洞扫描 |
-| **ペネトレーションテスト** | 本番デプロイ前に実施 / 生产部署前执行 |
-| **API キー認証** | 外部連携向け API キー方式の追加 / 为外部集成添加 API Key 认证 |
-| **IP ホワイトリスト** | 管理画面へのアクセス制限 / 限制管理界面的访问 |
+- **ハードコード禁止**: シークレットをソースコードに含めない / 禁止在源码中包含密钥
+- **デフォルト値なし**: 本番環境でフォールバック値を使用しない / 生产环境不使用回退值
+- **起動時検証**: Zod スキーマで全環境変数を起動時に検証（`config/env.schema.ts`）
+  启动时通过 Zod schema 验证所有环境变量
+- **service_role キー**: サーバーサイドのみで使用、フロントエンドに露出しない
+  仅在服务端使用，不暴露给前端
 
 ---
 
-## クイックリファレンス: セキュリティミドルウェアの適用順序
-## 快速参考: 安全中间件的应用顺序
+## 11. CORS
+
+### 設定可能な許可オリジン / 可配置的允许源
 
 ```typescript
-// 典型的なルート定義 / 典型的路由定义
-app.use(helmet())                           // 1. HTTP ヘッダー保護 / HTTP 头保护
-app.use(cors(corsOptions))                  // 2. CORS 設定
-app.use(globalLimiter)                      // 3. グローバルレートリミット / 全局速率限制
+// config/cors.ts
+{
+  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:4001'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Warehouse-Id'],
+}
+```
 
-// 認証ルート / 认证路由
-app.use('/api/auth', authLimiter, authRouter)
+- 本番環境では許可オリジンを明示的に指定 / 生产环境明确指定允许的源
+- `credentials: true` で認証ヘッダー送信を許可 / 允许发送认证头
+- `X-Warehouse-Id` カスタムヘッダーを許可 / 允许自定义仓库选择头
 
-// 保護ルート / 受保护路由
-app.use('/api/inbound', requireAuth, writeLimiter, inboundRouter)
-//                       ↑ 認証      ↑ 書込制限     ↑ ルーター
+---
 
-// ルート内での権限チェック / 路由内的权限校验
-router.post('/receive',
-  requirePermission('inbound:receive'),     // 4. 権限チェック / 权限校验
-  controller.receive
-)
+## 12. OWASP Top 10 対策 / OWASP Top 10 防护
+
+### A01: アクセス制御の不備 / 失效的访问控制
+
+- [x] 3 層ガード: AuthGuard → TenantGuard → RoleGuard
+- [x] テナント ID によるデータ分離（アプリ層 + RLS）/ 通过 tenant_id 隔离数据
+- [x] Repository 基底クラスで tenant_id 自動付与 / Base Repository 自动附加 tenant_id
+
+### A02: 暗号化の失敗 / 加密失败
+
+- [x] パスワードは Supabase Auth (PBKDF2 SHA-512 210K iterations) でハッシュ
+- [x] JWT は Supabase の秘密鍵で署名 / JWT 由 Supabase 密钥签名
+- [x] HTTPS は Nginx/Cloudflare で終端 / HTTPS 通过反向代理终端
+
+### A03: インジェクション / 注入
+
+- [x] Drizzle ORM: パラメータ化クエリのみ。直接 SQL 文字列連結なし
+  Drizzle ORM：仅参数化查询，无直接 SQL 拼接
+- [x] NestJS ValidationPipe + Zod で全入力を検証 / 验证所有输入
+- [x] Vue テンプレートはデフォルトで HTML エスケープ。`v-html` は極力不使用
+  Vue 模板默认 HTML 转义
+
+### A04: 安全でない設計 / 不安全的设计
+
+- [x] RBAC（ロールベースアクセス制御）で権限を体系的に管理
+- [x] 最小権限の原則: operator/viewer は必要最小限の操作のみ / 最小权限原则
+
+### A05: セキュリティの設定ミス / 安全配置错误
+
+- [x] Helmet で HTTP ヘッダーを自動設定 / 通过 Helmet 自动设置
+- [x] 環境変数の起動時検証（Zod スキーマ）/ 启动时验证环境变量
+- [x] エラーメッセージは本番では詳細を隠蔽 / 生产环境隐藏错误详情
+
+### A06: 脆弱で古いコンポーネント / 易受攻击和过时的组件
+
+- [x] `npm audit` で定期的に脆弱性チェック / 定期检查漏洞
+- [x] CI/CD パイプラインで自動チェック（GitHub Actions）/ CI/CD 自动检查
+- [x] Dependabot / Snyk による自動 PR / 自动漏洞修复 PR
+
+### A07: 認証の失敗 / 身份验证失败
+
+- [x] `authLimiter` (20 req/15min) でブルートフォース攻撃を防止 / 防止暴力破解
+- [x] Supabase Auth のリフレッシュトークンで安全なセッション管理 / 安全会话管理
+- [x] MFA (TOTP) サポート / 多因素认证支持
+
+### A08: ソフトウェアとデータの整合性の失敗 / 软件和数据完整性失败
+
+- [x] Supabase JWT 署名検証で改ざんを検知 / 通过 JWT 签名检测篡改
+- [x] PostgreSQL トランザクションでデータ整合性を保証 / 通过事务保证数据完整性
+
+### A09: セキュリティログとモニタリングの失敗 / 安全日志和监控失败
+
+- [x] 全ミューテーションを `operation_logs` に記録 / 记录所有变更到 operation_logs
+- [x] 外部 API 呼び出しを `api_logs` に記録 / 记录外部 API 调用到 api_logs
+- [x] Pino 構造化ログで異常検知 / 通过 Pino 结构化日志检测异常
+
+### A10: SSRF (サーバーサイドリクエストフォージェリ) / 服务器端请求伪造
+
+- [x] Webhook URL のホワイトリスト制御 / Webhook URL 白名单控制
+- [x] プライベート IP アドレスへのリクエスト拒否 / 拒绝向内网 IP 发送请求
+- [x] 外部 API 呼び出し (B2 Cloud 等) はサーバーサイドで実行 / 外部 API 调用在服务端执行
+
+---
+
+## クイックリファレンス: NestJS セキュリティパイプライン
+## 快速参考: NestJS 安全管道
+
+```typescript
+// main.ts — グローバル設定 / 全局设置
+app.register(helmet);                              // 1. HTTP ヘッダー保護
+app.enableCors(corsOptions);                       // 2. CORS 設定
+app.useGlobalPipes(new ValidationPipe());          // 3. グローバルバリデーション
+app.useGlobalFilters(new AllExceptionsFilter());   // 4. 例外フィルタ
+app.useGlobalInterceptors(new TransformInterceptor()); // 5. レスポンス整形
+
+// コントローラー — エンドポイント保護 / 控制器 — 端点保护
+@Controller('inbound-orders')
+@UseGuards(AuthGuard, TenantGuard)                 // 6. 認証 + テナント
+export class InboundController {
+
+  @Post('receive')
+  @Roles('admin', 'manager', 'operator')           // 7. ロール制限
+  @UseGuards(RoleGuard)
+  @Throttle({ default: { limit: 200, ttl: 900 } }) // 8. レートリミット
+  async receive(@Body() dto: ReceiveDto, @TenantId() tenantId: string) {
+    return this.inboundService.receive(tenantId, dto);
+  }
+}
 ```
 
 この順序により、未認証リクエストは早期に拒否され、不要な処理コストを回避できる。
 通过此顺序，未认证请求会被提前拒绝，避免不必要的处理开销。
+
+---
+
+> **最終更新 / 最后更新**: 2026-03-21
+> **関連ドキュメント / 相关文档**: `docs/migration/03-backend-architecture.md`, `docs/design/00-system-overview.md`
