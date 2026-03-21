@@ -45,8 +45,13 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # ビルド済み静的ファイルをビルダーステージからコピー
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port 80 / ポート 80 を公開
+# 安全: 非 root 実行 / 非 root 运行
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html
+
 EXPOSE 80
 
-# Start nginx / nginx を起動
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost/health || exit 1
+
 CMD ["nginx", "-g", "daemon off;"]

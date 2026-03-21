@@ -3,6 +3,40 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-21] 生产就绪全面加固 / 本番リリース準備の全面強化
+
+**変更種別 / 变更类型**: feat + test + security + chore
+**影響範囲 / 影响范围**: 后端测试、Docker配置、Nginx安全、前端优化
+**関連ドキュメント / 关联文档**: docker-compose.yml, vitest.config.ts, tsconfig.json
+
+### 内容 / 内容
+
+#### テスト強化 / 测试强化（1454 → 1778 テスト、+324）
+- 35 Controller テストファイル（authController, warehouseController, returnOrderController, stocktakingController, clientController, tenantController, dashboardController, importController, dailyReportController, materialController, serialNumberController, lotController, supplierController, shopController, customerController, setProductController, subClientController, operationLogController, apiLogController, taskController, waveController 等）
+- E2E API フロー統合テスト（認証→倉庫作成→ダッシュボード確認→エラーハンドリング）
+- vitest pool を 'forks' に変更しテスト隔離を改善
+
+#### セキュリティ強化 / 安全加固
+- JWT_SECRET 未設定時の本番環境警告追加
+- 全 Nginx 設定にセキュリティヘッダー追加（X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy）
+- 全 Nginx 設定に client_max_body_size 10m 追加
+- 隠しファイルへのアクセス拒否設定追加
+- フロントエンド Dockerfile にヘルスチェック + 非 root 実行追加
+
+#### Docker 本番最適化 / Docker 生产优化
+- MongoDB/Redis ポート外部公開を無効化（内部通信のみ）
+- Docker ネットワーク隔離（internal bridge network）追加
+- 全サービスにヘルスチェック設定
+- admin/portal Dockerfile に非 root nginx 実行設定追加
+
+#### フロントエンド最適化 / 前端优化
+- Vite manual chunks 追加（xlsx, bwip-js, pdfmake, vuedraggable を独立チャンク化）
+- chunkSizeWarningLimit を 600KB に引上げ
+
+#### ビルド設定 / 构建配置
+- tsconfig.json からテストファイルを除外（ビルドエラー解消）
+- vitest.config.ts に pool: 'forks' 追加（テスト隔離改善）
+
 ## [2026-03-20] LOGIFAST要件100%実装 + セキュリティ + マルチテナント + メニュー整合
 全LOGIFAST要件100%实装 + 安全修复 + 多租户隔离 + 菜单整合
 

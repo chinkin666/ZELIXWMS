@@ -33,6 +33,12 @@ tmp/
 *.md
 docs/
 
+# Tests / テストファイル
+src/**/__tests__
+src/**/*.test.ts
+vitest.config.ts
+coverage/
+
 # Docker
 Dockerfile
 docker-compose*.yml

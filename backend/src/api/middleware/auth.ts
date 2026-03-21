@@ -15,7 +15,14 @@ import { logger } from '@/lib/logger'
  * JWT 密钥（从环境变量读取） / JWT シークレット（環境変数から取得）
  * 生产环境必须设置 JWT_SECRET / 本番環境では JWT_SECRET の設定が必須
  */
+// 本番環境では JWT_SECRET 必須、未設定ならプロセス起動時に警告
+// 生产环境必须设置 JWT_SECRET，未设置时启动警告
 const JWT_SECRET = process.env.JWT_SECRET || 'zelix-wms-dev-secret-change-in-production'
+
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  logger.error('CRITICAL: JWT_SECRET is not set in production! Using insecure default. Set JWT_SECRET environment variable immediately.')
+  // 本番で起動は許可するが、ログで強く警告する / 生产允许启动但强烈警告
+}
 
 /**
  * JWT 有效期 / JWT 有効期間

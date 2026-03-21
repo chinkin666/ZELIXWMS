@@ -38,7 +38,7 @@ jobs:
 
       # ─── 后端テスト / バックエンドテスト ───
       - name: Backend - TypeCheck
-        run: npx tsc --noEmit
+        run: npx tsc --project tsconfig.json --noEmit
         working-directory: backend
 
       - name: Backend - Unit Tests

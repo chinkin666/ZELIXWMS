@@ -10,9 +10,6 @@ import mongoose from 'mongoose';
 import { queueManager } from '@/core/queue';
 import { logger } from '@/lib/logger';
 
-// 服务器启动时间 / サーバー起動時刻
-const startTime = Date.now();
-
 // package.json のバージョンをキャッシュ / package.json 版本缓存
 let cachedVersion: string | null = null;
 function getVersion(): string {
@@ -54,8 +51,13 @@ healthRouter.get('/', async (_req: Request, res: Response) => {
     const dbConnected = dbState === 1;
     const mongoLatency = dbConnected ? await measureMongoLatency() : null;
 
-    // Redis 状态 / Redis ステータス
+    // Redis 状态判定 / Redis ステータス判定
+    // REDIS_URL 未设置时视为未配置 / REDIS_URL 未設定の場合は未構成とみなす
+    const redisConfigured = !!process.env.REDIS_URL;
     const redisReady = queueManager.isReady();
+    const redisStatus: 'connected' | 'disconnected' | 'not_configured' =
+      !redisConfigured ? 'not_configured' :
+      redisReady ? 'connected' : 'disconnected';
 
     // 内存使用 / メモリ使用量
     const mem = process.memoryUsage();
@@ -66,8 +68,8 @@ healthRouter.get('/', async (_req: Request, res: Response) => {
       external: Math.round(mem.external / 1024 / 1024),   // MB
     };
 
-    // 运行时间 / アップタイム
-    const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);
+    // 运行时间（秒） / アップタイム（秒）
+    const uptimeSeconds = Math.floor(process.uptime());
 
     // 队列状态摘要 / キューステータス概要
     let queueStats: Awaited<ReturnType<typeof queueManager.getStats>> | null = null;
@@ -79,24 +81,33 @@ healthRouter.get('/', async (_req: Request, res: Response) => {
       }
     }
 
-    // 总体判定 / 総合判定：MongoDB 必须连接 / MongoDB は必須
-    const allOk = dbConnected;
+    // 总体状态判定 / 総合ステータス判定
+    // error: MongoDB 断开 / MongoDB 切断
+    // degraded: MongoDB 连接但 Redis 断开 / MongoDB 接続中だが Redis 切断
+    // ok: 全部正常 / すべて正常
+    const status: 'ok' | 'degraded' | 'error' =
+      !dbConnected ? 'error' :
+      (redisConfigured && !redisReady) ? 'degraded' : 'ok';
 
-    res.status(allOk ? 200 : 503).json({
-      status: allOk ? 'ok' : 'degraded',
+    res.status(status === 'error' ? 503 : 200).json({
+      status,
       version: getVersion(),
       timestamp: new Date().toISOString(),
       uptime: uptimeSeconds,
+      // 扁平字段，便于监控系统解析 / フラットフィールド、監視システム解析用
+      mongodb: dbConnected ? 'connected' : 'disconnected',
+      redis: redisStatus,
+      memory,
+      // 详细服务信息 / 詳細サービス情報
       services: {
         database: {
           status: dbConnected ? 'connected' : 'disconnected',
           latencyMs: mongoLatency,
         },
         redis: {
-          status: redisReady ? 'connected' : 'unavailable',
+          status: redisStatus,
         },
       },
-      memory,
       queues: queueStats,
     });
   } catch (err) {
@@ -104,6 +115,10 @@ healthRouter.get('/', async (_req: Request, res: Response) => {
     res.status(503).json({
       status: 'error',
       timestamp: new Date().toISOString(),
+      uptime: Math.floor(process.uptime()),
+      mongodb: 'disconnected',
+      redis: 'disconnected',
+      memory: null,
       error: 'Health check failed / ヘルスチェック失敗',
     });
   }
@@ -115,4 +130,18 @@ healthRouter.get('/', async (_req: Request, res: Response) => {
  */
 healthRouter.get('/liveness', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'alive' });
+});
+
+/**
+ * GET /health/readiness
+ * 就绪探针：仅当数据库已连接时返回 200（Kubernetes 用）
+ * 準備完了プローブ：データベース接続済みの場合のみ 200 を返す（Kubernetes 用）
+ */
+healthRouter.get('/readiness', (_req: Request, res: Response) => {
+  const dbConnected = mongoose.connection.readyState === 1;
+  if (dbConnected) {
+    res.status(200).json({ status: 'ready' });
+  } else {
+    res.status(503).json({ status: 'not_ready', reason: 'Database not connected / データベース未接続' });
+  }
 });

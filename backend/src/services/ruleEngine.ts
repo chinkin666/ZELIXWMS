@@ -7,7 +7,7 @@ import {
   RuleModule,
   ConditionOperator,
   LogicOperator,
-} from '../models/ruleDefinition';
+} from '@/models/ruleDefinition';
 
 /** Context passed to rule evaluation — a flat or nested object with business data */
 export type RuleContext = Record<string, any>;

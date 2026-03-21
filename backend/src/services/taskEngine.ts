@@ -4,8 +4,8 @@ import {
   WarehouseTaskType,
   WarehouseTaskStatus,
   WarehouseTaskPriority,
-} from '../models/warehouseTask';
-import { InventoryLedger, LedgerType } from '../models/inventoryLedger';
+} from '@/models/warehouseTask';
+import { InventoryLedger, LedgerType } from '@/models/inventoryLedger';
 import { extensionManager } from '@/core/extensions';
 import { HOOK_EVENTS } from '@/core/extensions/types';
 import { logger } from '@/lib/logger';

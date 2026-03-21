@@ -6,7 +6,14 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    pool: 'forks',
+    fileParallelism: false,
     include: ['src/**/*.test.ts'],
+    // テスト環境変数 / 测试环境变量
+    env: {
+      MONGODB_URI: 'mongodb://127.0.0.1:27017/test-zelix',
+      NODE_ENV: 'test',
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

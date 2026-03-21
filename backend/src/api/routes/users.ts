@@ -8,15 +8,20 @@ import {
   listSubUsers,
   changePassword,
 } from '@/api/controllers/userController';
+// CRIT-03: ロールチェック追加 / 添加角色检查
+import { requireRole } from '@/api/middleware/auth';
 
 export const userRouter = Router();
 
+// 読み取り（認証済みユーザー）/ 读取（已认证用户）
 userRouter.get('/', listUsers);
-userRouter.post('/', createUser);
 userRouter.get('/:id', getUser);
-userRouter.put('/:id', updateUser);
-userRouter.delete('/:id', deleteUser);
 // 子ユーザー一覧 / 子用户列表
 userRouter.get('/:id/sub-users', listSubUsers);
-// パスワード変更 / 修改密码
-userRouter.post('/:id/change-password', changePassword);
+
+// 書き込み（admin・manager のみ）/ 写入（仅 admin・manager）
+userRouter.post('/', requireRole('admin', 'manager'), createUser);
+userRouter.put('/:id', requireRole('admin', 'manager'), updateUser);
+userRouter.delete('/:id', requireRole('admin', 'manager'), deleteUser);
+// パスワード変更（admin・manager のみ）/ 修改密码（仅 admin・manager）
+userRouter.post('/:id/change-password', requireRole('admin', 'manager'), changePassword);

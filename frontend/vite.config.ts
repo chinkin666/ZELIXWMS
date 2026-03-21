@@ -18,6 +18,7 @@ export default defineConfig({
     },
   },
   build: {
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -25,6 +26,10 @@ export default defineConfig({
           'vendor-element-plus': ['element-plus'],
           'vendor-charts': ['chart.js'],
           'vendor-pdf': ['pdf-lib'],
+          'vendor-xlsx': ['xlsx'],
+          'vendor-barcode': ['bwip-js'],
+          'vendor-pdfmake': ['pdfmake'],
+          'vendor-draggable': ['vuedraggable'],
         },
       },
     },
