@@ -38,6 +38,21 @@ import { PrintTemplatesModule } from './print-templates/print-templates.module.j
 import { MappingConfigsModule } from './mapping-configs/mapping-configs.module.js';
 import { LotsModule } from './lots/lots.module.js';
 import { ExceptionsModule } from './exceptions/exceptions.module.js';
+import { FbaModule } from './fba/fba.module.js';
+import { RslModule } from './rsl/rsl.module.js';
+import { SagawaModule } from './sagawa/sagawa.module.js';
+import { CarrierAutomationModule } from './carrier-automation/carrier-automation.module.js';
+import { ApiLogsModule } from './api-logs/api-logs.module.js';
+import { OperationLogsModule } from './operation-logs/operation-logs.module.js';
+import { PassthroughModule } from './passthrough/passthrough.module.js';
+import { SerialNumbersModule } from './serial-numbers/serial-numbers.module.js';
+import { InventoryCategoriesModule } from './inventory-categories/inventory-categories.module.js';
+import { InventoryLedgerModule } from './inventory-ledger/inventory-ledger.module.js';
+import { SetProductsModule } from './set-products/set-products.module.js';
+import { OutboundRequestsModule } from './outbound-requests/outbound-requests.module.js';
+import { InspectionsModule } from './inspections/inspections.module.js';
+import { LabelingTasksModule } from './labeling-tasks/labeling-tasks.module.js';
+import { CycleCountsModule } from './cycle-counts/cycle-counts.module.js';
 import { ListenersModule } from './common/listeners/listeners.module.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -80,6 +95,21 @@ import envConfig from './config/env.js';
     MappingConfigsModule,
     LotsModule,
     ExceptionsModule,
+    FbaModule,
+    RslModule,
+    SagawaModule,
+    CarrierAutomationModule,
+    ApiLogsModule,
+    OperationLogsModule,
+    PassthroughModule,
+    SerialNumbersModule,
+    InventoryCategoriesModule,
+    InventoryLedgerModule,
+    SetProductsModule,
+    OutboundRequestsModule,
+    InspectionsModule,
+    LabelingTasksModule,
+    CycleCountsModule,
     ListenersModule,
   ],
   providers: [

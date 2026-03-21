@@ -1,0 +1,54 @@
+// セット商品サービス / 组合商品服务
+// NOTE: products テーブルの isSetProduct フラグで管理するプレースホルダー実装
+// 注意: 通过 products 表的 isSetProduct 标志管理的占位符实现
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { DRIZZLE } from '../database/database.module.js';
+
+interface FindAllQuery {
+  page?: number;
+  limit?: number;
+}
+
+@Injectable()
+export class SetProductsService {
+  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+
+  // セット商品一覧取得（プレースホルダー）/ 获取组合商品列表（占位符）
+  async findAll(tenantId: string, query: FindAllQuery) {
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(100, Math.max(1, query.limit || 20));
+
+    // プレースホルダー: 将来 products テーブルから isSetProduct=true を取得
+    // 占位符: 将来从 products 表获取 isSetProduct=true
+    return {
+      items: [],
+      total: 0,
+      page,
+      limit,
+    };
+  }
+
+  // セット商品ID検索（プレースホルダー）/ 按ID查找组合商品（占位符）
+  async findById(tenantId: string, id: string) {
+    throw new NotFoundException(`Set product ${id} not found / セット商品 ${id} が見つかりません / 组合商品 ${id} 未找到`);
+  }
+
+  // セット商品作成（プレースホルダー）/ 创建组合商品（占位符）
+  async create(tenantId: string, dto: Record<string, unknown>) {
+    return {
+      message: 'Set product creation placeholder / セット商品作成プレースホルダー / 组合商品创建占位符',
+      tenantId,
+      ...dto,
+    };
+  }
+
+  // セット商品更新（プレースホルダー）/ 更新组合商品（占位符）
+  async update(tenantId: string, id: string, dto: Record<string, unknown>) {
+    throw new NotFoundException(`Set product ${id} not found / セット商品 ${id} が見つかりません / 组合商品 ${id} 未找到`);
+  }
+
+  // セット商品削除（プレースホルダー）/ 删除组合商品（占位符）
+  async remove(tenantId: string, id: string) {
+    throw new NotFoundException(`Set product ${id} not found / セット商品 ${id} が見つかりません / 组合商品 ${id} 未找到`);
+  }
+}
