@@ -1,12 +1,20 @@
 import { defineConfig } from 'vitest/config'
 import tsconfigPaths from 'vite-tsconfig-paths'
+import path from 'path'
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
+  resolve: {
+    // @/* → src/* の解決 / Resolve @/* to src/*
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
   test: {
     globals: true,
     environment: 'node',
     pool: 'forks',
+    // テストファイル間のモック干渉を防ぐため順次実行 / Run sequentially to prevent mock interference between test files
     fileParallelism: false,
     include: ['src/**/*.test.ts'],
     // テスト環境変数 / 测试环境变量
