@@ -45,6 +45,15 @@ jobs:
         run: npx vitest run
         working-directory: backend
 
+      # ─── NestJS バックエンドテスト / NestJS后端测试 ───
+      - name: NestJS Backend - Build
+        run: npx nest build
+        working-directory: backend-nest
+
+      - name: NestJS Backend - Unit Tests
+        run: npx jest --passWithNoTests
+        working-directory: backend-nest
+
       # ─── 仓库端テスト / 倉庫フロントエンドテスト ───
       - name: Frontend - Unit Tests
         run: npx vitest run
@@ -90,6 +99,11 @@ jobs:
       - name: Backend - Build
         run: npm run build
         working-directory: backend
+
+      # ─── NestJS 构建 / NestJS ビルド ───
+      - name: NestJS Backend - Build
+        run: npx nest build
+        working-directory: backend-nest
 
       # ─── 仓库端构建 / 倉庫フロントエンドビルド ───
       - name: Frontend - Build
