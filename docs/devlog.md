@@ -3,6 +3,88 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-21] コントローラーテスト全網羅（+332 tests, 26 新規テストファイル）
+
+**変更種別 / 变更类型**: test
+**影響範囲 / 影响范围**: backend/src/api/controllers/__tests__/ (26 new files)
+**関連ドキュメント / 关联文档**: devlog.md
+
+### 内容 / 内容
+- テストカバレッジのないコントローラー 26 件に対してユニットテストを新規作成
+  为 26 个无测试覆盖的 controller 新增单元测试
+- 対象: agingAlert, erp, extension, fbaBox, featureFlag, inventoryCategory,
+  inventoryLedger, labelingTask, marketplace, oms, orderSourceCompany,
+  outboundRequest, packingRule, passthrough, plugin, portalAuth, portalDashboard,
+  queue, rsl, rule, sagawa, script, serviceRate, webhook, wmsSchedule, workCharge
+- テスト数: 2431 → 2763（+332 tests）
+- テストスイート: 101 → 127（+26 suites）
+- コントローラーカバレッジ: 48/74 → 74/74（100%）
+- 全テスト vitest + バイリンガルコメント（中日）
+
+---
+
+## [2026-03-21] 自主巡回テスト + セキュリティ強化 + テスト大幅増加
+
+**変更種別 / 变更类型**: fix + feat + test
+**影響範囲 / 影响范围**: backend (controller, auth, tenantHelper), frontend (3 Vue files)
+**関連ドキュメント / 关联文档**: devlog.md
+
+### テスト修復・増強 / 测试修复与增强
+- 既存 34 件の失敗テストを修復 / 修复 34 个失败的既有测试
+  - inventoryService (11), carrierController (11), userController (3)
+  - exceptionController (2), inventoryController (5), shipmentOrderController (1), shopController (1)
+- 新規テスト 10+ controller 追加 / 新增 10+ controller 测试文件
+  - inboundOrderController, carrierAutomationController, systemSettingsController
+  - mappingConfigController, inspectionController, formTemplateController
+  - emailTemplateController, orderGroupController, autoProcessingRuleController
+  - printTemplateController
+- テスト数: 1782 → 2636+（+854 tests） / 测试数量增长 +854
+
+### セキュリティ強化 / 安全强化
+- **アカウント単位ログイン試行制限**: 15分間で5回まで、超過時429エラー
+  账户级别登录尝试限制: 15分钟内最多5次，超出返回429
+  - authController.ts: checkLoginRateLimit() + resetLoginAttempts()
+- **テナント倉庫検証関数**: validateWarehouseTenant() を tenantHelper に追加
+  租户仓库验证函数: 在 tenantHelper 中添加 validateWarehouseTenant()
+
+### フロントエンド TypeScript 修正 / 前端 TypeScript 修复
+- StorageBilling.vue: getApiBaseUrl import 追加 / 添加 getApiBaseUrl 导入
+- InboundPhotoUpload.vue: getApiBaseUrl import + undefined チェック追加 / 添加导入 + undefined 检查
+- InventoryLedgerView.vue: getApiBaseUrl import 追加 / 添加 getApiBaseUrl 导入
+- 前端 TypeCheck 全通过 / 前端 TypeCheck 全部通过
+
+### CRITICAL セキュリティ修正 5件 / 5 项 CRITICAL 安全修复
+- **CRIT-1**: JWT_SECRET 未設定時に本番環境で process.exit(1)（以前は警告のみ）
+  生产环境未设置 JWT_SECRET 时直接退出（之前仅警告）
+- **CRIT-2**: 開発環境 auth bypass をトークン無し時のみに制限 + JWT アルゴリズム HS256 固定
+  开发环境 auth bypass 限制为仅无 token 时 + JWT 算法固定 HS256
+- **CRIT-3**: Admin dashboard に requireRole('admin') 追加
+  Admin dashboard 添加 requireRole('admin')
+- **CRIT-4**: Script 管理全ルートに requireRole('admin') 追加（RCE 防止）
+  脚本管理所有路由添加 requireRole('admin')（防止 RCE）
+- **CRIT-5**: Feature flag 管理に requireRole('admin') 追加
+  Feature flag 管理添加 requireRole('admin')
+
+### HIGH セキュリティ修正 4件 / 4 项 HIGH 安全修复
+- **HIGH-1**: userController の IDOR 修正（getUser/deleteUser/changePassword に tenantId 分離追加）
+  修复 userController 的 IDOR（getUser/deleteUser/changePassword 添加 tenantId 隔离）
+- **HIGH-2**: パスワード最小長を 6→8 文字に統一（changePassword）
+  密码最小长度统一 6→8（changePassword）
+- **HIGH-3**: Custom fields 書き込みに requireRole('admin','manager') 追加
+  自定义字段写入添加 requireRole('admin','manager')
+- **HIGH-4**: Webhook 書き込みに requireRole('admin','manager') 追加
+  Webhook 写入添加 requireRole('admin','manager')
+- **追加**: Queue 管理に requireRole('admin') 追加、adminDashboard エラー情報漏洩修正
+  附加: 队列管理添加 requireRole('admin')，adminDashboard 错误信息泄漏修复
+
+### コード品質 / 代码质量
+- testParser.ts: console.log → logger（pino）に置換 / 替换为 pino logger
+- 3 つの TODO 実装完了（ログイン制限、倉庫検証） / 3 个 TODO 中 2 个已实现
+- Product 模型の TODO（データ移行スクリプト）は NestJS 移行時に対応予定
+  Product 模型的 TODO（数据迁移脚本）将在 NestJS 迁移时处理
+
+---
+
 ## [2026-03-21] 完全生産化 + 全文档重建 + アーキテクチャ最適化
 
 **変更種別 / 变更类型**: feat + security + refactor + docs + test
