@@ -153,6 +153,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -393,7 +394,13 @@ const handleEnable = async (p: PluginInfo) => {
 }
 
 const handleDisable = async (p: PluginInfo) => {
-  if (!confirm(`「${p.name}」を無効化しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `「${p.name}」を無効化してもよろしいですか？ / 确定要禁用「${p.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '無効化 / 禁用', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   toggling.value = p.name
   try {
     await disablePlugin(p.name)

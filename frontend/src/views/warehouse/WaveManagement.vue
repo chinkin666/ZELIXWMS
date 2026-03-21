@@ -143,6 +143,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -324,12 +325,18 @@ const handleSave = async () => {
   }
 }
 
-const confirmDelete = (w: Wave) => {
+const confirmDelete = async (w: Wave) => {
   if (w.status !== 'draft') {
     showToast(t('wms.warehouse.deleteDraftOnly', '下書きステータスのウェーブのみ削除できます'), 'danger')
     return
   }
-  if (!confirm(t('wms.warehouse.deleteConfirm', `「${w.waveNumber}」を削除しますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.warehouse.deleteConfirm', `「${w.waveNumber}」を削除しますか？ / 确定要删除「${w.waveNumber}」吗？`),
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   deleteWave(w._id)
     .then(async () => {
       showToast(t('wms.warehouse.deleted', '削除しました'), 'success')

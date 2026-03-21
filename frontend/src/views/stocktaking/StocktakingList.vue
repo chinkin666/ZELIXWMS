@@ -36,6 +36,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
@@ -256,7 +257,13 @@ const loadData = async () => {
 }
 
 const handleStart = async (row: StocktakingOrder) => {
-  if (!confirm(`棚卸 ${row.orderNumber} を開始しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `棚卸 ${row.orderNumber} を開始しますか？ / 确定要开始盘点 ${row.orderNumber} 吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '開始 / 开始', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await startStocktakingOrder(row._id)
     toast.showSuccess('棚卸を開始しました')
@@ -273,7 +280,13 @@ const handleComplete = async (row: StocktakingOrder) => {
 }
 
 const handleAdjust = async (row: StocktakingOrder) => {
-  if (!confirm(`棚卸 ${row.orderNumber} の差異を在庫に反映しますか？この操作は取り消せません。`)) return
+  try {
+    await ElMessageBox.confirm(
+      `棚卸 ${row.orderNumber} の差異を在庫に反映しますか？この操作は取り消せません。 / 确定要将盘点 ${row.orderNumber} 的差异反映到库存吗？此操作不可撤销。`,
+      '確認 / 确认',
+      { confirmButtonText: '実行 / 执行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     const res = await adjustStocktakingOrder(row._id)
     toast.showSuccess(`${res.adjustedCount}件の差異を調整しました`)
@@ -285,7 +298,13 @@ const handleAdjust = async (row: StocktakingOrder) => {
 }
 
 const handleCancel = async (row: StocktakingOrder) => {
-  if (!confirm(`棚卸 ${row.orderNumber} をキャンセルしますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `棚卸 ${row.orderNumber} をキャンセルしますか？ / 确定要取消盘点 ${row.orderNumber} 吗？`,
+      '確認 / 确认',
+      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await cancelStocktakingOrder(row._id)
     toast.showSuccess('棚卸をキャンセルしました')
@@ -294,7 +313,13 @@ const handleCancel = async (row: StocktakingOrder) => {
 }
 
 const handleDelete = async (row: StocktakingOrder) => {
-  if (!confirm(`棚卸 ${row.orderNumber} を削除しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `棚卸 ${row.orderNumber} を削除しますか？ / 确定要删除盘点 ${row.orderNumber} 吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await deleteStocktakingOrder(row._id)
     toast.showSuccess('棚卸を削除しました')

@@ -268,6 +268,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -459,7 +460,13 @@ const goToReservationsPage = (page: number) => {
 }
 
 const handleReleaseReservation = async (r: Reservation) => {
-  if (!confirm(`引当（${r.productSku} x ${r.quantity}）を解放しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `引当（${r.productSku} x ${r.quantity}）を解放しますか？ / 确定要释放预留（${r.productSku} x ${r.quantity}）吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '解放 / 释放', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await releaseReservation(r._id)
     showToast('引当を解放しました', 'success')

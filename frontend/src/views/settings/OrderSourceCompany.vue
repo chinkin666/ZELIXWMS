@@ -112,6 +112,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -408,8 +409,14 @@ async function duplicateRow(row: OrderSourceCompany) {
   }
 }
 
-function confirmDelete(row: OrderSourceCompany) {
-  if (!confirm(`「${row.senderName}」を削除しますか？`)) return
+async function confirmDelete(row: OrderSourceCompany) {
+  try {
+    await ElMessageBox.confirm(
+      `「${row.senderName}」を削除してもよろしいですか？ / 确定要删除「${row.senderName}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   deleteOrderSourceCompany(row._id)
     .then(async () => {
       showToast('削除しました', 'success')

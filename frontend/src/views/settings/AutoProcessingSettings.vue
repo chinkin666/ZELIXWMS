@@ -109,6 +109,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -186,7 +187,13 @@ const handleEnableChange = async (rule: AutoProcessingRule, enabled: boolean) =>
 }
 
 const confirmDelete = async (rule: AutoProcessingRule) => {
-  if (!confirm(t('wms.settings.confirmDeleteRule', `ルール「${rule.name}」を削除しますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      `ルール「${rule.name}」を削除してもよろしいですか？ / 确定要删除规则「${rule.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await deleteAutoProcessingRule(rule._id)
     showToast(t('wms.settings.ruleDeleted', 'ルールを削除しました'), 'success')
@@ -197,7 +204,13 @@ const confirmDelete = async (rule: AutoProcessingRule) => {
 }
 
 const handleManualRun = async (rule: AutoProcessingRule) => {
-  if (!confirm(t('wms.settings.confirmManualRun', `ルール「${rule.name}」を手動で実行しますか？条件に合致するすべての注文に対して動作が実行されます。`))) return
+  try {
+    await ElMessageBox.confirm(
+      `ルール「${rule.name}」を手動で実行しますか？条件に合致するすべての注文に対して動作が実行されます。 / 确定要手动执行规则「${rule.name}」吗？将对所有符合条件的订单执行操作。`,
+      '確認 / 确认',
+      { confirmButtonText: '実行 / 执行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     runningRuleId.value = rule._id
     const result = await runAutoProcessingRule(rule._id)

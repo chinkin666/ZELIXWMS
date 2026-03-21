@@ -125,6 +125,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
@@ -399,7 +400,13 @@ const handleSubmit = async () => {
 // 削除 / 删除
 // ---------------------------------------------------------------------------
 const confirmDelete = async (item: Material) => {
-  if (!confirm(`「${item.name}」を削除しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `「${item.name}」を削除しますか？ / 确定要删除「${item.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await deleteMaterial(item._id)
     showToast('削除しました', 'success')

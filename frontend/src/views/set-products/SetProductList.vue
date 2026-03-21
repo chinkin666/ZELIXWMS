@@ -99,6 +99,7 @@
 
 <script setup lang="ts">
 import { ref, computed, h, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
@@ -304,7 +305,13 @@ async function handleSave() {
 }
 
 async function handleDelete(item: SetProduct) {
-  if (!confirm(t('wms.setProduct.deleteConfirm', `セット組「${item.sku}」を削除しますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.setProduct.deleteConfirm', `セット組「${item.sku}」を削除しますか？ / 确定要删除套装「${item.sku}」吗？`),
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await deleteSetProduct(item._id)
     toast.showSuccess(t('wms.setProduct.deleted', '削除しました'))

@@ -104,6 +104,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -394,8 +395,14 @@ const handleSave = async () => {
   }
 }
 
-const confirmDelete = (w: Warehouse) => {
-  if (!confirm(`「${w.name}」(${w.code}) を削除しますか？`)) return
+const confirmDelete = async (w: Warehouse) => {
+  try {
+    await ElMessageBox.confirm(
+      `「${w.name}」(${w.code}) を削除してもよろしいですか？ / 确定要删除「${w.name}」(${w.code}) 吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   deleteWarehouse(w._id)
     .then(async () => {
       showToast('削除しました', 'success')

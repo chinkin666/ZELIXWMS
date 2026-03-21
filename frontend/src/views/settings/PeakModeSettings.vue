@@ -138,6 +138,7 @@
  * 控制峰值模式开关、入库冻结、查看仓库容量
  */
 import { ref, computed, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -253,7 +254,13 @@ const cancelEnable = () => {
 
 // 無効化 / 禁用
 const disablePeakMode = async () => {
-  if (!confirm(t('wms.peakMode.confirmDisable', 'ピークモードを無効にしますか？'))) {
+  try {
+    await ElMessageBox.confirm(
+      'ピークモードを無効にしてもよろしいですか？ / 确定要禁用高峰模式吗？',
+      '確認 / 确认',
+      { confirmButtonText: '無効化 / 禁用', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch {
     await loadStatus() // チェックボックスをリセット / 重置复选框
     return
   }

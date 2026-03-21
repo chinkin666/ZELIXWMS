@@ -32,6 +32,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
@@ -255,8 +256,14 @@ const duplicateMappingConfig = async (row: MappingConfig) => {
 }
 
 // 削除確認
-const confirmDelete = (row: MappingConfig) => {
-  if (!confirm(t('wms.settings.mapping.deleteConfirm', `「${row.name}」を削除しますか？`))) return
+const confirmDelete = async (row: MappingConfig) => {
+  try {
+    await ElMessageBox.confirm(
+      `「${row.name}」を削除してもよろしいですか？ / 确定要删除「${row.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   deleteMappingConfig(row._id)
     .then(async () => {
       showToast(t('wms.settings.mapping.deleteSuccess', '削除しました'), 'success')

@@ -93,6 +93,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRoute } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
@@ -128,12 +129,24 @@ const handleRefresh = async () => {
   catch (e: any) { toast.showError(e?.message) }
 }
 const handleClose = async () => {
-  if (!confirm(t('wms.daily.closeConfirm', `${date.value} の日次を締めますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.daily.closeConfirm', `${date.value} の日次を締めますか？ / 确定要结算 ${date.value} 的日报吗？`),
+      '確認 / 确认',
+      { confirmButtonText: '締め / 结算', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try { report.value = await closeDailyReport(date.value); toast.showSuccess(t('wms.daily.dayClosed', '日次を締めました')) }
   catch (e: any) { toast.showError(e?.message) }
 }
 const handleLock = async () => {
-  if (!confirm(t('wms.daily.lockConfirm', 'ロックすると更新できなくなります。'))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.daily.lockConfirm', 'ロックすると更新できなくなります。 / 锁定后将无法更新。'),
+      '確認 / 确认',
+      { confirmButtonText: 'ロック / 锁定', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try { report.value = await lockDailyReport(date.value); toast.showSuccess(t('wms.daily.locked', 'ロックしました')) }
   catch (e: any) { toast.showError(e?.message) }
 }

@@ -168,6 +168,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
@@ -294,7 +295,13 @@ async function handleComplete() {
 }
 
 async function handleCancel(order: SetOrder) {
-  if (!confirm(t('wms.setProduct.cancelConfirm', `指示「${order.orderNumber}」をキャンセルしますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.setProduct.cancelConfirm', `指示「${order.orderNumber}」をキャンセルしますか？ / 确定要取消指示「${order.orderNumber}」吗？`),
+      '確認 / 确认',
+      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await cancelSetOrder(order._id)
     toast.showSuccess(t('wms.setProduct.orderCancelled', '指示をキャンセルしました'))

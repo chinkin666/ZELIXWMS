@@ -96,6 +96,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -360,7 +361,13 @@ const handleSaveDialog = async () => {
 }
 
 const handleDelete = async (loc: Location) => {
-  if (!confirm(t('wms.inventory.confirmDeleteLocation', `ロケーション "${loc.code}" を削除しますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inventory.confirmDeleteLocation', `ロケーション "${loc.code}" を削除しますか？ / 确定要删除库位 "${loc.code}" 吗？`),
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await apiDeleteLocation(loc._id)
     toast.showSuccess(t('wms.inventory.locationDeleted', 'ロケーションを削除しました'))

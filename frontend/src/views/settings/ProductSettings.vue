@@ -144,6 +144,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useToast } from '@/composables/useToast'
@@ -248,9 +249,15 @@ const saveExportPreset = () => {
   selectedExportPreset.value = name
   toast.showSuccess(t('wms.product.presetSaved', `プリセット「${name}」を保存しました`))
 }
-const deleteExportPreset = () => {
+const deleteExportPreset = async () => {
   if (!selectedExportPreset.value) return
-  if (!confirm(t('wms.product.confirmDeletePreset', `プリセット「${selectedExportPreset.value}」を削除しますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      `プリセット「${selectedExportPreset.value}」を削除してもよろしいですか？ / 确定要删除预设「${selectedExportPreset.value}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   exportPresets.value = exportPresets.value.filter(p => p.name !== selectedExportPreset.value)
   persistExportPresets()
   selectedExportPreset.value = ''
@@ -279,7 +286,13 @@ const exportCsv = () => {
 const isBulkDeleting = ref(false)
 const handleBulkDelete = async () => {
   if (selectedKeys.value.length === 0) return
-  if (!confirm(t('wms.product.confirmBulkDelete', `${selectedKeys.value.length}件の商品を削除しますか？この操作は取り消せません。`))) return
+  try {
+    await ElMessageBox.confirm(
+      `${selectedKeys.value.length}件の商品を削除してもよろしいですか？この操作は取り消せません。 / 确定要删除${selectedKeys.value.length}件商品吗？此操作不可撤销。`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   isBulkDeleting.value = true
   let successCount = 0
   let failCount = 0
@@ -319,7 +332,13 @@ const handleBulkBarcodeGenerate = async () => {
     toast.showError(t('wms.product.noBarcodeTargets', '選択された商品にバーコード未設定の商品がありません'))
     return
   }
-  if (!confirm(t('wms.product.confirmBulkBarcode', `${targets.length}件の商品にバーコードを自動生成しますか？\n（SKUコードをバーコードとして設定します）`))) return
+  try {
+    await ElMessageBox.confirm(
+      `${targets.length}件の商品にバーコードを自動生成しますか？（SKUコードをバーコードとして設定します） / 确定要为${targets.length}件商品自动生成条码吗？（将SKU代码设为条码）`,
+      '確認 / 确认',
+      { confirmButtonText: '生成 / 生成', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   isBulkBarcode.value = true
   let successCount = 0
   let failCount = 0
@@ -1017,15 +1036,20 @@ const handleImportProducts = async (rows: any[], strategy: ImportStrategy = 'err
   }
 }
 
-const confirmDelete = (row: Product) => {
-  if (confirm(t('wms.product.confirmDelete', `「${row.name}」を削除しますか？`))) {
-    deleteProduct(row._id)
-      .then(async () => {
-        toast.showSuccess(t('wms.product.deleted', '削除しました'))
-        await loadList()
-      })
-      .catch(() => {})
-  }
+const confirmDelete = async (row: Product) => {
+  try {
+    await ElMessageBox.confirm(
+      `「${row.name}」を削除してもよろしいですか？ / 确定要删除「${row.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
+  deleteProduct(row._id)
+    .then(async () => {
+      toast.showSuccess(t('wms.product.deleted', '削除しました'))
+      await loadList()
+    })
+    .catch(() => {})
 }
 
 const formatDate = (iso: string) => {

@@ -63,6 +63,7 @@
 
 <script setup lang="ts">
 import { ref, computed, h, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import SearchForm from '@/components/search/SearchForm.vue'
@@ -294,7 +295,13 @@ async function loadData() {
 }
 
 async function handleUpdateExpired() {
-  if (!confirm(t('wms.inventory.confirmBatchUpdate', '期限切れのロットステータスを一括更新しますか？'))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inventory.confirmBatchUpdate', '期限切れのロットステータスを一括更新しますか？ / 确定要批量更新过期批次状态吗？'),
+      '確認 / 确认',
+      { confirmButtonText: '更新 / 更新', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   isUpdating.value = true
   try {
     const res = await updateExpiredLots()

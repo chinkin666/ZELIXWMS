@@ -65,6 +65,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
@@ -178,7 +179,13 @@ async function duplicateFormTemplate(row: FormTemplate) {
 }
 
 async function handleDelete(row: FormTemplate) {
-  if (!confirm(t('wms.settings.confirmDelete', `「${row.name}」を削除しますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      `「${row.name}」を削除してもよろしいですか？ / 确定要删除「${row.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
 
   try {
     await deleteFormTemplate(row._id)

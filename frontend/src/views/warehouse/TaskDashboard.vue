@@ -208,6 +208,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -441,7 +442,13 @@ const handleHold = async (task: WarehouseTask) => {
 
 // Cancel
 const handleCancel = async (task: WarehouseTask) => {
-  if (!confirm(t('wms.warehouse.cancelTaskConfirm', 'タスクをキャンセルしますか？') + `（${task.taskNumber}）`)) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.warehouse.cancelTaskConfirm', 'タスクをキャンセルしますか？ / 确定要取消任务吗？') + `（${task.taskNumber}）`,
+      '確認 / 确认',
+      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await cancelTask(task._id, {})
     showToast(t('wms.warehouse.taskCancelled', 'タスクをキャンセルしました'), 'success')

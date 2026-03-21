@@ -69,6 +69,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, onUnmounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
@@ -407,7 +408,13 @@ const loadData = async () => {
 }
 
 const handleConfirm = async (row: InboundOrder) => {
-  if (!confirm(t('wms.inbound.confirmOrder', `入庫指示 ${row.orderNumber} を確定しますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inbound.confirmOrder', `入庫指示 ${row.orderNumber} を確定しますか？ / 确定要确认入库指示 ${row.orderNumber} 吗？`),
+      '確認 / 确认',
+      { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   isConfirming.value = true
   try {
     await confirmInboundOrder(row._id)
@@ -424,7 +431,13 @@ const handleComplete = async (row: InboundOrder) => {
   const received = totalReceived(row)
   const expected = totalExpected(row)
   if (received < expected) {
-    if (!confirm(t('wms.inbound.confirmForceComplete', `まだ未入庫の行があります（${received}/${expected}）。強制完了しますか？`))) return
+    try {
+      await ElMessageBox.confirm(
+        t('wms.inbound.confirmForceComplete', `まだ未入庫の行があります（${received}/${expected}）。強制完了しますか？ / 还有未入库的行（${received}/${expected}），确定要强制完成吗？`),
+        '確認 / 确认',
+        { confirmButtonText: '強制完了 / 强制完成', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+      )
+    } catch { return }
   }
   try {
     await completeInboundOrder(row._id)
@@ -436,7 +449,13 @@ const handleComplete = async (row: InboundOrder) => {
 }
 
 const handleCancel = async (row: InboundOrder) => {
-  if (!confirm(t('wms.inbound.confirmCancelOrder', `入庫指示 ${row.orderNumber} をキャンセルしますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inbound.confirmCancelOrder', `入庫指示 ${row.orderNumber} をキャンセルしますか？ / 确定要取消入库指示 ${row.orderNumber} 吗？`),
+      '確認 / 确认',
+      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await cancelInboundOrder(row._id)
     toast.showSuccess(t('wms.inbound.orderCancelled', '入庫指示をキャンセルしました'))
@@ -447,7 +466,13 @@ const handleCancel = async (row: InboundOrder) => {
 }
 
 const handleDelete = async (row: InboundOrder) => {
-  if (!confirm(t('wms.inbound.confirmDeleteOrder', `入庫指示 ${row.orderNumber} を削除しますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inbound.confirmDeleteOrder', `入庫指示 ${row.orderNumber} を削除しますか？ / 确定要删除入库指示 ${row.orderNumber} 吗？`),
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await deleteInboundOrder(row._id)
     toast.showSuccess(t('wms.inbound.orderDeleted', '入庫指示を削除しました'))
@@ -463,7 +488,13 @@ const handleBulkDelete = async () => {
     toast.showError(t('wms.inbound.noDeletableOrders', '削除可能な入庫指示（下書き状態）がありません'))
     return
   }
-  if (!confirm(t('wms.inbound.confirmBulkDelete', `${targets.length}件の入庫指示を削除しますか？（下書き状態のみ）`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inbound.confirmBulkDelete', `${targets.length}件の入庫指示を削除しますか？（下書き状態のみ） / 确定要删除 ${targets.length} 条入库指示吗？（仅草稿状态）`),
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
 
   isBulkDeleting.value = true
   let successCount = 0
@@ -491,7 +522,13 @@ const handleBulkCancel = async () => {
     toast.showError(t('wms.inbound.noCancellableOrders', 'キャンセル可能な入庫指示がありません'))
     return
   }
-  if (!confirm(t('wms.inbound.confirmBulkCancel', `${targets.length}件の入庫指示をキャンセルしますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inbound.confirmBulkCancel', `${targets.length}件の入庫指示をキャンセルしますか？ / 确定要取消 ${targets.length} 条入库指示吗？`),
+      '確認 / 确认',
+      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
 
   isBulkProcessing.value = true
   let successCount = 0

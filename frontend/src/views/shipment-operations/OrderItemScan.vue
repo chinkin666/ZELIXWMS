@@ -121,6 +121,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -234,12 +235,14 @@ const handleUnconfirmConfirm = async (reason: string, skipCarrierDelete = false)
   } catch (e: any) {
     if (isCarrierDeleteError(e)) {
       isUnconfirming.value = false
-      const confirmed = confirm(
-        t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteManual', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）')}`
-      )
-      if (confirmed) {
+      try {
+        await ElMessageBox.confirm(
+          t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteManual', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください） / 跳过B2 Cloud删除，仅更新本地吗？\n（请手动删除B2 Cloud端）')}`,
+          '確認 / 确认',
+          { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+        )
         await handleUnconfirmConfirm(reason, true)
-      }
+      } catch { /* cancelled */ }
       return
     }
     toast.error(e?.message || t('wms.inspection.unconfirmFailed', '確認取消に失敗しました'))
@@ -324,12 +327,14 @@ const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrie
   } catch (e: any) {
     if (isCarrierDeleteError(e)) {
       isChangingInvoiceType.value = false
-      const confirmed = confirm(
-        t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteManual', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください）')}`
-      )
-      if (confirmed) {
+      try {
+        await ElMessageBox.confirm(
+          t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteManual', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください） / 跳过B2 Cloud删除，仅更新本地吗？\n（请手动删除B2 Cloud端）')}`,
+          '確認 / 确认',
+          { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+        )
         await handleChangeInvoiceTypeConfirm(newInvoiceType, true)
-      }
+      } catch { /* cancelled */ }
       return
     }
     toast.error(e?.message || t('wms.inspection.invoiceTypeChangeFailed', '送り状種類変更に失敗しました'))

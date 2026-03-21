@@ -33,6 +33,7 @@
 
 <script setup lang="ts">
 import { h, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -188,7 +189,13 @@ const handleGenerate = async () => {
 
 // ── 確定 / 確定 ──
 const handleConfirm = async (record: BillingRecord) => {
-  if (!confirm(`「${record.clientName} - ${record.period}」を確定しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `「${record.clientName} - ${record.period}」を確定しますか？ / 确定要确认「${record.clientName} - ${record.period}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await confirmBillingRecord(record._id)
     showToast('確定しました', 'success')
@@ -200,7 +207,13 @@ const handleConfirm = async (record: BillingRecord) => {
 
 // ── 請求書発行 / 生成发票 ──
 const handleCreateInvoice = async (record: BillingRecord) => {
-  if (!confirm(`「${record.clientName} - ${record.period}」の請求書を発行しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `「${record.clientName} - ${record.period}」の請求書を発行しますか？ / 确定要发行「${record.clientName} - ${record.period}」的发票吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '発行 / 发行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     const now = new Date()
     const issueDate = now.toISOString().slice(0, 10)
@@ -224,7 +237,13 @@ const handleCreateInvoice = async (record: BillingRecord) => {
 
 // ── 入金確認 / 确认入金 ──
 const handleMarkPaid = async (record: BillingRecord) => {
-  if (!confirm(`「${record.clientName} - ${record.period}」の入金を確認しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `「${record.clientName} - ${record.period}」の入金を確認しますか？ / 确定要确认「${record.clientName} - ${record.period}」的入金吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '確認 / 确认', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     const invoice = await findInvoiceByBillingRecord(record._id)
     if (invoice) {

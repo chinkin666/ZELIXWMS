@@ -168,6 +168,7 @@ if (order.coolType === 'frozen') {
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -278,8 +279,14 @@ const handleSave = async () => {
   }
 }
 
-const confirmDelete = (s: AutomationScript) => {
-  if (!confirm(t('wms.settings.confirmDeleteScript', `「${s.name}」を削除しますか？`))) return
+const confirmDelete = async (s: AutomationScript) => {
+  try {
+    await ElMessageBox.confirm(
+      `「${s.name}」を削除してもよろしいですか？ / 确定要删除「${s.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   deleteScriptApi(s._id)
     .then(async () => {
       showToast(t('wms.settings.deleted', '削除しました'), 'success')

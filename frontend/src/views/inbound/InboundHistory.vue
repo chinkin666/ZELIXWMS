@@ -126,6 +126,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -277,8 +278,12 @@ const loadExportPreset = () => {
   }
 }
 
-const saveExportPreset = () => {
-  const name = prompt(t('wms.inbound.presetNamePrompt', 'プリセット名を入力してください:'))
+const saveExportPreset = async () => {
+  const { value: name } = await ElMessageBox.prompt(
+    t('wms.inbound.presetNamePrompt', 'プリセット名を入力してください / 请输入预设名称:'),
+    '入力 / 输入',
+    { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消' },
+  ).catch(() => ({ value: null }))
   if (!name) return
   const existing = exportPresets.value.findIndex(p => p.name === name)
   const preset: ExportPreset = { name, columns: [...exportColumns.value] }
@@ -292,9 +297,15 @@ const saveExportPreset = () => {
   toast.showSuccess(t('wms.inbound.presetSaved', 'プリセットを保存しました'))
 }
 
-const deleteExportPreset = () => {
+const deleteExportPreset = async () => {
   if (!selectedExportPreset.value) return
-  if (!confirm(t('wms.inbound.presetDeleteConfirm', 'このプリセットを削除しますか？'))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inbound.presetDeleteConfirm', 'このプリセットを削除しますか？ / 确定要删除此预设吗？'),
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   exportPresets.value = exportPresets.value.filter(p => p.name !== selectedExportPreset.value)
   persistExportPresets()
   selectedExportPreset.value = ''

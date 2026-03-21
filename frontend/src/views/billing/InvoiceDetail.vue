@@ -117,6 +117,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
@@ -173,7 +174,13 @@ const loadInvoice = async () => {
 // ── 入金確認 / 确认入金 ──
 const handleMarkPaid = async () => {
   if (!invoice.value) return
-  if (!confirm('入金を確認しますか？')) return
+  try {
+    await ElMessageBox.confirm(
+      '入金を確認しますか？ / 确定要确认入金吗？',
+      '確認 / 确认',
+      { confirmButtonText: '確認 / 确认', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     const updated = await updateInvoiceStatus(invoice.value._id, 'paid')
     invoice.value = { ...invoice.value, ...updated }

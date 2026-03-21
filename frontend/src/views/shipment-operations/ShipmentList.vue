@@ -361,6 +361,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useRouter } from 'vue-router'
@@ -414,7 +415,13 @@ const isReserving = ref(false)
 
 const handleReserveStock = async () => {
   if (tableSelectedKeys.value.length === 0) return
-  if (!confirm(`${tableSelectedKeys.value.length}件の出荷指示に対して在庫引当を実行しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `${tableSelectedKeys.value.length}件の出荷指示に対して在庫引当を実行しますか？ / 确定要对 ${tableSelectedKeys.value.length} 条出货指示执行库存预留吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '実行 / 执行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
 
   isReserving.value = true
   try {

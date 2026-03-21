@@ -109,6 +109,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, h, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -365,7 +366,13 @@ const handleSubmit = async () => {
 
 const confirmDelete = async (cat: InventoryCategory) => {
   if (cat.isDefault) return
-  if (!confirm(`在庫区分「${cat.name}」を削除しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `在庫区分「${cat.name}」を削除してもよろしいですか？ / 确定要删除库存区分「${cat.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await deleteInventoryCategory(cat._id)
     showToast('在庫区分を削除しました', 'success')

@@ -122,6 +122,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
@@ -249,8 +250,14 @@ const handleSave = async () => {
   }
 }
 
-const confirmDelete = (wf: Workflow) => {
-  if (!confirm(`「${wf.name}」を削除しますか？/ 确定要删除「${wf.name}」吗？`)) return
+const confirmDelete = async (wf: Workflow) => {
+  try {
+    await ElMessageBox.confirm(
+      `「${wf.name}」を削除してもよろしいですか？ / 确定要删除「${wf.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   deleteWorkflow(wf._id)
     .then(async () => {
       showToast('ワークフローを削除しました / 工作流已删除', 'success')

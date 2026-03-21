@@ -133,6 +133,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { useToast } from '@/composables/useToast'
@@ -213,7 +214,13 @@ function handleMethodChange(method: string) {
 }
 
 async function handleReset() {
-  if (!confirm(t('wms.settings.confirmResetPrinter', 'すべてのプリンター設定をリセットしますか？テンプレートごとの設定もすべて削除されます。'))) return
+  try {
+    await ElMessageBox.confirm(
+      'すべてのプリンター設定をリセットしますか？テンプレートごとの設定もすべて削除されます。 / 确定要重置所有打印机设置吗？每个模板的设置也将全部删除。',
+      '確認 / 确认',
+      { confirmButtonText: 'リセット / 重置', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   resetPrintConfig()
   const fresh = getPrintConfig()
   Object.assign(config, fresh)

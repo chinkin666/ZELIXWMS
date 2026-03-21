@@ -187,6 +187,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, reactive, ref, watch } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -374,7 +375,13 @@ const handleRun = async (s: WmsSchedule) => {
 }
 
 const handleDelete = async (s: WmsSchedule) => {
-  if (!confirm(t('wms.schedule.deleteConfirm', `スケジュール「${s.name}」を削除しますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      `スケジュール「${s.name}」を削除してもよろしいですか？ / 确定要删除计划「${s.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await deleteWmsSchedule(s._id)
     toast.showSuccess(t('wms.schedule.deleteSuccess', 'スケジュールを削除しました'))

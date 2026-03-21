@@ -130,6 +130,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
@@ -234,7 +235,13 @@ const handleBulkPutaway = async () => {
 
 const handleComplete = async () => {
   if (!order.value) return
-  if (!confirm(t('wms.inbound.confirmComplete', '入庫を完了にしますか？'))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inbound.confirmComplete', '入庫を完了にしますか？ / 确定要完成入库吗？'),
+      '確認 / 确认',
+      { confirmButtonText: '完了 / 完成', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await completeInboundOrder(order.value._id)
     toast.showSuccess(t('wms.inbound.orderCompleted', '入庫指示を完了にしました'))

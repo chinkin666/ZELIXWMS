@@ -255,6 +255,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import OButton from '@/components/odoo/OButton.vue'
 import { useRouter, useRoute } from 'vue-router'
 import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vue'
@@ -691,13 +692,18 @@ function checkCompletion() {
   const alreadyPrinted = !!(currentOrder.value as any)?.status?.printed?.isPrinted
 
   if (alreadyPrinted) {
-    if (confirm(t('wms.inspection.alreadyPrintedConfirm', 'この注文は既に印刷済みです。もう一度印刷しますか？'))) {
+    try {
+      await ElMessageBox.confirm(
+        t('wms.inspection.alreadyPrintedConfirm', 'この注文は既に印刷済みです。もう一度印刷しますか？ / 此订单已打印，确定要再次打印吗？'),
+        '確認 / 确认',
+        { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+      )
       if (autoPrintEnabled.value) {
         triggerAutoPrint()
       } else {
         completionDialogVisible.value = true
       }
-    } else {
+    } catch {
       inspPrint.markOrderInspectedOnly(currentOrder.value!).then(() => {
         finishCurrentOrder()
       })
@@ -916,11 +922,15 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
   } catch (e: any) {
     if (builtIn && isCarrierDeleteError(e)) {
       isUnconfirming.value = false
-      if (confirm(t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDelete', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？')}`)) {
+      try {
+        await ElMessageBox.confirm(
+          t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDelete', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？ / 跳过B2 Cloud删除，仅更新本地吗？')}`,
+          '確認 / 确认',
+          { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+        )
         await handleUnconfirmConfirm(reason, true)
         return
-      }
-      return
+      } catch { return }
     }
     showToast(e?.message || t('wms.inspection.unconfirmFailed', '確認取消に失敗しました'), 'danger')
     unconfirmDialogVisible.value = false
@@ -970,11 +980,15 @@ async function handleChangeInvoiceTypeConfirm(newInvoiceType: string, skipCarrie
   } catch (e: any) {
     if (builtIn && isCarrierDeleteError(e)) {
       isChangingInvoiceType.value = false
-      if (confirm(t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDelete', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？')}`)) {
+      try {
+        await ElMessageBox.confirm(
+          t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDelete', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？ / 跳过B2 Cloud删除，仅更新本地吗？')}`,
+          '確認 / 确认',
+          { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+        )
         await handleChangeInvoiceTypeConfirm(newInvoiceType, true)
         return
-      }
-      return
+      } catch { return }
     }
     showToast(e?.message || t('wms.inspection.invoiceTypeChangeFailed', '送り状種類変更に失敗しました'), 'danger')
     changeInvoiceTypeDialogVisible.value = false
@@ -1044,11 +1058,15 @@ async function handleSplitOrderConfirm(request: SplitOrderRequest, skipCarrierDe
   } catch (e: any) {
     if (builtIn && isCarrierDeleteError(e)) {
       isSplittingOrder.value = false
-      if (confirm(t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteContinue', 'B2 Cloud削除をスキップして続行しますか？')}`)) {
+      try {
+        await ElMessageBox.confirm(
+          t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteContinue', 'B2 Cloud削除をスキップして続行しますか？ / 跳过B2 Cloud删除继续吗？')}`,
+          '確認 / 确认',
+          { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+        )
         await handleSplitOrderConfirm(request, true)
         return
-      }
-      return
+      } catch { return }
     }
     showToast(e?.message || t('wms.inspection.orderSplitFailed', '注文分割に失敗しました'), 'danger')
     splitOrderDialogVisible.value = false
@@ -1229,10 +1247,13 @@ function fkeySkipToNext() {
  */
 async function fkeyManualComplete() {
   if (!currentOrder.value) return
-  const ok = await (window.confirm(
-    t('wms.inspection.confirmManualComplete', `${currentOrder.value.orderNumber} を手動で検品完了にしますか？\n（バーコードが読めない場合等にご使用ください）`)
-  ) as unknown as Promise<boolean>)
-  if (!ok) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inspection.confirmManualComplete', `${currentOrder.value.orderNumber} を手動で検品完了にしますか？\n（バーコードが読めない場合等にご使用ください） / 确定要手动将 ${currentOrder.value.orderNumber} 标记为检品完成吗？\n（请在条码无法读取时使用）`),
+      '確認 / 确认',
+      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   // 全商品を検品済みにする / 将所有商品标记为已检品
   for (const item of inspectionItems.value) {
     item.inspectedQuantity = item.totalQuantity

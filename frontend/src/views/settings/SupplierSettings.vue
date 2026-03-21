@@ -137,6 +137,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -420,7 +421,13 @@ const handleSubmit = async () => {
 // Delete
 // ---------------------------------------------------------------------------
 const confirmDelete = async (item: SupplierData) => {
-  if (!confirm(`「${item.name}」を無効にしますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `「${item.name}」を無効にしてもよろしいですか？ / 确定要禁用「${item.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '無効化 / 禁用', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await deleteSupplier(item._id)
     showToast('無効にしました', 'success')

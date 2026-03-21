@@ -160,6 +160,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
@@ -290,8 +291,12 @@ const loadPreset = () => {
   }
 }
 
-const savePreset = () => {
-  const name = prompt(t('wms.inbound.enterPresetName', 'プリセット名を入力してください:'))
+const savePreset = async () => {
+  const { value: name } = await ElMessageBox.prompt(
+    t('wms.inbound.enterPresetName', 'プリセット名を入力してください / 请输入预设名称:'),
+    '入力 / 输入',
+    { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消' },
+  ).catch(() => ({ value: null }))
   if (!name) return
   const existing = savedPresets.value.findIndex(p => p.name === name)
   const preset: ColumnPreset = { name, mapping: { ...columnMapping } }
@@ -305,9 +310,15 @@ const savePreset = () => {
   toast.showSuccess(t('wms.inbound.presetSaved', `プリセット「${name}」を保存しました`))
 }
 
-const deletePreset = () => {
+const deletePreset = async () => {
   if (!selectedPreset.value) return
-  if (!confirm(t('wms.inbound.confirmDeletePreset', `プリセット「${selectedPreset.value}」を削除しますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inbound.confirmDeletePreset', `プリセット「${selectedPreset.value}」を削除しますか？ / 确定要删除预设「${selectedPreset.value}」吗？`),
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   savedPresets.value = savedPresets.value.filter(p => p.name !== selectedPreset.value)
   persistPresets()
   selectedPreset.value = ''
@@ -466,7 +477,13 @@ const validateProducts = async () => {
 
 const handleCreate = async () => {
   if (validRows.value.length === 0 || !selectedLocationId.value) return
-  if (!confirm(t('wms.inbound.confirmCreateOrders', `${groupCount.value}件の入庫指示を作成しますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inbound.confirmCreateOrders', `${groupCount.value}件の入庫指示を作成しますか？ / 确定要创建 ${groupCount.value} 条入库指示吗？`),
+      '確認 / 确认',
+      { confirmButtonText: '作成 / 创建', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
 
   isCreating.value = true
   createResult.value = ''

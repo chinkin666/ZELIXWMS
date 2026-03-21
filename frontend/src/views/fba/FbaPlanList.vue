@@ -37,6 +37,7 @@
 
 <script setup lang="ts">
 import { h, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
@@ -216,7 +217,13 @@ async function loadData() {
 }
 
 async function handleConfirm(row: FbaShipmentPlan) {
-  if (!confirm(`プラン ${row.planNumber} を確定しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `プラン ${row.planNumber} を確定しますか？ / 确定要确认计划 ${row.planNumber} 吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await confirmFbaPlan(row._id)
     toast.showSuccess('プランを確定しました')
@@ -228,14 +235,30 @@ async function handleConfirm(row: FbaShipmentPlan) {
 }
 
 async function handleShip(row: FbaShipmentPlan) {
-  const trackingNumber = prompt('追跡番号を入力してください（任意）:')
-  const boxCountStr = prompt('箱数を入力してください（任意）:')
-  const boxCount = boxCountStr ? Number(boxCountStr) : undefined
+  let trackingNumber: string | undefined
+  let boxCount: number | undefined
+  try {
+    const { value: tn } = await ElMessageBox.prompt(
+      '追跡番号を入力してください（任意） / 请输入追踪号（可选）:',
+      '入力 / 输入',
+      { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消' },
+    ).catch(() => ({ value: null }))
+    trackingNumber = tn || undefined
+  } catch { /* cancelled */ }
+  try {
+    const { value: bcStr } = await ElMessageBox.prompt(
+      '箱数を入力してください（任意） / 请输入箱数（可选）:',
+      '入力 / 输入',
+      { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消' },
+    ).catch(() => ({ value: null }))
+    const bc = bcStr ? Number(bcStr) : undefined
+    boxCount = (bc && !isNaN(bc)) ? bc : undefined
+  } catch { /* cancelled */ }
 
   try {
     await shipFbaPlan(row._id, {
-      trackingNumber: trackingNumber || undefined,
-      boxCount: (boxCount && !isNaN(boxCount)) ? boxCount : undefined,
+      trackingNumber,
+      boxCount,
     })
     toast.showSuccess('出荷しました')
     await loadData()
@@ -246,7 +269,13 @@ async function handleShip(row: FbaShipmentPlan) {
 }
 
 async function handleDelete(row: FbaShipmentPlan) {
-  if (!confirm(`プラン ${row.planNumber} を削除しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `プラン ${row.planNumber} を削除しますか？ / 确定要删除计划 ${row.planNumber} 吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await deleteFbaPlan(row._id)
     toast.showSuccess('削除しました')

@@ -3,7 +3,7 @@
  * 異常報告一覧 / 异常报告列表
  */
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getApiBaseUrl } from '@/api/base'
 import { useWmsUserStore } from '@/stores/wms/useWmsUserStore'
 
@@ -62,7 +62,11 @@ async function createReport() {
 }
 
 async function resolveReport(id: string) {
-  const resolution = prompt('処理結果を入力 / 输入处理结果:')
+  const { value: resolution } = await ElMessageBox.prompt(
+    '処理結果を入力 / 输入处理结果:',
+    '入力 / 输入',
+    { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消' },
+  ).catch(() => ({ value: null }))
   if (!resolution) return
   try {
     await fetch(`${baseUrl}/exceptions/${id}/resolve`, {

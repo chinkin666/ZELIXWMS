@@ -153,6 +153,7 @@
 
 <script setup lang="ts">
 import { h, ref, computed, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -539,8 +540,14 @@ const handleSave = async () => {
   }
 }
 
-const confirmDelete = (r: RuleDefinition) => {
-  if (!confirm(`「${r.name}」を削除しますか？`)) return
+const confirmDelete = async (r: RuleDefinition) => {
+  try {
+    await ElMessageBox.confirm(
+      `「${r.name}」を削除してもよろしいですか？ / 确定要删除「${r.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   deleteRule(r._id)
     .then(async () => {
       showToast('削除しました', 'success')

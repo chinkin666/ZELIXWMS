@@ -249,6 +249,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
@@ -408,9 +409,11 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
     if (skipCarrierDelete && row._unconfirmReason) {
       reason = row._unconfirmReason
     } else {
-      const inputReason = prompt(
-        `注文番号: ${row.orderNumber || id}\n確認を取り消し、未確認状態に戻します。\nB2 Cloud連携を使用している場合、B2 Cloudからも削除されます。\n\n取消理由を入力してください（内部データとして記録されます）`
-      )
+      const { value: inputReason } = await ElMessageBox.prompt(
+        `注文番号: ${row.orderNumber || id}\n確認を取り消し、未確認状態に戻します。\nB2 Cloud連携を使用している場合、B2 Cloudからも削除されます。\n\n取消理由を入力してください（内部データとして記録されます） / 订单号: ${row.orderNumber || id}\n将取消确认，恢复为未确认状态。\n如使用B2 Cloud联动，也将从B2 Cloud中删除。\n\n请输入取消原因（作为内部数据记录）`,
+        '入力 / 输入',
+        { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消' },
+      ).catch(() => ({ value: null }))
 
       if (inputReason === null) return
       if (!inputReason.trim()) {
@@ -442,10 +445,15 @@ const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
     } catch (e: any) {
       if (isCarrierDeleteError(e)) {
         isUnconfirming.value = false
-        if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？`)) {
+        try {
+          await ElMessageBox.confirm(
+            `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？ / B2 Cloud历史删除失败。\n\n错误: ${e.error}\n\n跳过B2 Cloud删除，仅更新本地吗？`,
+            '確認 / 确认',
+            { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+          )
           await handleUnconfirm(row, true)
           return
-        }
+        } catch { /* cancelled */ }
         return
       }
       isUnconfirming.value = false
@@ -496,7 +504,13 @@ const handleMarkShipped = async () => {
   const orderNumbers = selectedRows.map((row: any) => row.orderNumber || row._id).filter(Boolean).slice(0, 5)
   const moreText = tableSelectedKeys.value.length > 5 ? `他${tableSelectedKeys.value.length - 5}件` : ''
 
-  if (!confirm(`選択した${tableSelectedKeys.value.length}件の出荷を完了にしますか？\n${orderNumbers.join(', ')}${moreText ? `\n${moreText}` : ''}`)) return
+  try {
+    await ElMessageBox.confirm(
+      `選択した${tableSelectedKeys.value.length}件の出荷を完了にしますか？ / 确定要将选中的 ${tableSelectedKeys.value.length} 件出货标记为完成吗？\n${orderNumbers.join(', ')}${moreText ? `\n${moreText}` : ''}`,
+      '確認 / 确认',
+      { confirmButtonText: '完了 / 完成', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
 
   isMarkingShipped.value = true
   const ids = tableSelectedKeys.value.map((key) => String(key)).filter(Boolean)

@@ -151,6 +151,7 @@
  * 显示补货任务列表、触发补货、完成任务
  */
 import { ref, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -236,7 +237,13 @@ const handleSkuSearch = () => {
 
 // 補充トリガー / 触发补货
 const triggerReplenishment = async () => {
-  if (!confirm(t('wms.warehouse.confirmTrigger', '補充トリガーを実行しますか？在庫不足の商品に対して補充タスクが作成されます。'))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.warehouse.confirmTrigger', '補充トリガーを実行しますか？在庫不足の商品に対して補充タスクが作成されます。 / 确定要执行补货触发吗？将为库存不足的商品创建补货任务。'),
+      '確認 / 确认',
+      { confirmButtonText: '実行 / 执行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   triggering.value = true
   try {
     const res = await apiFetch(`${API_BASE_URL}/workflows/replenishment/trigger`, {

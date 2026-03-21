@@ -90,6 +90,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
@@ -193,7 +194,13 @@ const submitConnect = async () => {
 }
 
 const handleDisconnect = async (provider: MarketplaceProvider) => {
-  if (!confirm(`「${provider.name}」の接続を切断しますか？/ 确定要断开「${provider.name}」吗？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `「${provider.name}」の接続を切断しますか？ / 确定要断开「${provider.name}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '切断 / 断开', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await disconnectMarketplace(provider.id)
     showToast(`${provider.name} を切断しました / 已断开 ${provider.name}`, 'success')

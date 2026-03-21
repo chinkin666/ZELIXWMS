@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import { useToast } from '@/composables/useToast'
@@ -76,8 +77,13 @@ async function handleSave(): Promise<void> {
 }
 
 async function handleReset(): Promise<void> {
-  const confirmed = window.confirm(t('wms.settings.confirmResetAll', 'すべての設定をデフォルト値にリセットしますか？'))
-  if (!confirmed) return
+  try {
+    await ElMessageBox.confirm(
+      'すべての設定をデフォルト値にリセットしてもよろしいですか？ / 确定要将所有设置重置为默认值吗？',
+      '確認 / 确认',
+      { confirmButtonText: 'リセット / 重置', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
 
   saving.value = true
   try {

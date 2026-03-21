@@ -192,6 +192,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
@@ -329,7 +330,13 @@ const handleReceiveLine = async (lineNumber: number, qty: number) => {
 
 const handleBulkReceive = async () => {
   if (!order.value || isReceiving.value) return
-  if (!confirm(t('wms.inbound.confirmBulkReceive', '全行を予定数量で一括入庫します。よろしいですか？'))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inbound.confirmBulkReceive', '全行を予定数量で一括入庫します。よろしいですか？ / 将按预定数量批量入库所有行，确定吗？'),
+      '確認 / 确认',
+      { confirmButtonText: '実行 / 执行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   isReceiving.value = true
   scanMessage.value = ''
   try {

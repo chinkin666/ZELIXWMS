@@ -80,6 +80,7 @@
 
 <script setup lang="ts">
 import { ref, computed, h, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
@@ -389,7 +390,13 @@ async function handleSave() {
 }
 
 async function handleDelete(lot: Lot) {
-  if (!confirm(t('wms.inventory.confirmDeleteLot', `ロット「${lot.lotNumber}」を削除しますか？`))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.inventory.confirmDeleteLot', `ロット「${lot.lotNumber}」を削除しますか？ / 确定要删除批次「${lot.lotNumber}」吗？`),
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await deleteLot(lot._id)
     await loadData()

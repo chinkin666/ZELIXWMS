@@ -103,6 +103,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRoute } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
@@ -237,7 +238,13 @@ const handleSaveInspection = async () => {
 }
 
 const handleComplete = async () => {
-  if (!confirm(t('wms.returns.confirmComplete', '返品を完了し在庫に反映しますか？'))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.returns.confirmComplete', '返品を完了し在庫に反映しますか？ / 确定要完成退货并反映到库存吗？'),
+      '確認 / 确认',
+      { confirmButtonText: '完了 / 完成', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     const res = await completeReturnOrder(route.params.id as string)
     toast.showSuccess(t('wms.returns.completeSuccess', `完了: 再入庫${res.restockedTotal}点 / 廃棄${res.disposedTotal}点`))

@@ -82,6 +82,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -173,7 +174,13 @@ const handleEnableChange = async (group: OrderGroup, enabled: boolean) => {
 }
 
 const confirmDelete = async (group: OrderGroup) => {
-  if (!confirm(t('wms.settings.confirmDeleteGroup', `出荷グループ「${group.name}」を削除しますか？このグループに属する注文のグループ設定もクリアされます。`))) return
+  try {
+    await ElMessageBox.confirm(
+      `出荷グループ「${group.name}」を削除してもよろしいですか？このグループに属する注文のグループ設定もクリアされます。 / 确定要删除出货组「${group.name}」吗？该组的订单组设置也将被清除。`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await deleteOrderGroup(group._id)
     showToast(t('wms.settings.groupDeleted', '出荷グループを削除しました'), 'success')

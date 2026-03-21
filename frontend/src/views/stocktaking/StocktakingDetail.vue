@@ -75,6 +75,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
@@ -170,7 +171,13 @@ const handleComplete = async () => {
 }
 
 const handleAdjust = async () => {
-  if (!confirm(t('wms.stocktaking.adjustConfirm', '差異を在庫に反映しますか？この操作は取り消せません。'))) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.stocktaking.adjustConfirm', '差異を在庫に反映しますか？この操作は取り消せません。 / 确定要将差异反映到库存吗？此操作不可撤销。'),
+      '確認 / 确认',
+      { confirmButtonText: '実行 / 执行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     const res = await adjustStocktakingOrder(route.params.id as string)
     toast.showSuccess(t('wms.stocktaking.adjusted', `${res.adjustedCount}件の差異を調整しました`))

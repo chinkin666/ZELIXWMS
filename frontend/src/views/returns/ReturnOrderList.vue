@@ -92,6 +92,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
@@ -334,7 +335,13 @@ async function bulkStartInspection() {
 async function bulkCancel() {
   const targets = rows.value.filter(r => selectedIds.value.has(r._id) && r.status !== 'completed' && r.status !== 'cancelled')
   if (targets.length === 0) { toast.showWarning(t('wms.returns.noCancellableSelected', 'キャンセル可能な返品が選択されていません')); return }
-  if (!confirm(`${targets.length}${t('wms.returns.confirmBulkCancel', '件の返品をキャンセルしますか？')}`)) return
+  try {
+    await ElMessageBox.confirm(
+      `${targets.length}${t('wms.returns.confirmBulkCancel', '件の返品をキャンセルしますか？ / 件退货要取消吗？')}`,
+      '確認 / 确认',
+      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   bulkProcessing.value = true
   let ok = 0; let fail = 0
   for (const r of targets) {
@@ -482,12 +489,24 @@ const handleComplete = async (row: ReturnOrder) => {
   } catch (e: any) { toast.showError(e?.message) }
 }
 const handleCancel = async (row: ReturnOrder) => {
-  if (!confirm(t('wms.returns.confirmCancel', '返品をキャンセルしますか？') + ` (${row.orderNumber})`)) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.returns.confirmCancel', '返品をキャンセルしますか？ / 确定要取消退货吗？') + ` (${row.orderNumber})`,
+      '確認 / 确认',
+      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try { await cancelReturnOrder(row._id); toast.showSuccess(t('wms.returns.cancelled', 'キャンセルしました')); await loadData() }
   catch (e: any) { toast.showError(e?.message) }
 }
 const handleDelete = async (row: ReturnOrder) => {
-  if (!confirm(t('wms.returns.confirmDelete', '返品を削除しますか？') + ` (${row.orderNumber})`)) return
+  try {
+    await ElMessageBox.confirm(
+      t('wms.returns.confirmDelete', '返品を削除しますか？ / 确定要删除退货吗？') + ` (${row.orderNumber})`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try { await deleteReturnOrder(row._id); toast.showSuccess(t('wms.returns.deleted', '削除しました')); await loadData() }
   catch (e: any) { toast.showError(e?.message) }
 }

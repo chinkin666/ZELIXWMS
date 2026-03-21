@@ -138,6 +138,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import OButton from '@/components/odoo/OButton.vue'
 import { useRouter, useRoute } from 'vue-router'
 import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vue'
@@ -397,7 +398,16 @@ async function handleOrderCompletion(order: OrderDocument) {
   const alreadyPrinted = !!(order as any)?.status?.printed?.isPrinted
 
   if (alreadyPrinted) {
-    if (confirm('この注文は既に印刷済みです。もう一度印刷しますか？')) {
+    let reprintConfirmed = false
+    try {
+      await ElMessageBox.confirm(
+        'この注文は既に印刷済みです。もう一度印刷しますか？ / 此订单已打印，确定要再次打印吗？',
+        '確認 / 确认',
+        { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+      )
+      reprintConfirmed = true
+    } catch { /* cancelled */ }
+    if (reprintConfirmed) {
       if (autoPrintEnabled.value) {
         await triggerAutoPrint(order)
       } else {
@@ -543,11 +553,15 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
   } catch (e: any) {
     if (builtIn && isCarrierDeleteError(e)) {
       isUnconfirming.value = false
-      if (confirm(`B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？`)) {
+      try {
+        await ElMessageBox.confirm(
+          `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？ / B2 Cloud历史删除失败。\n\n错误: ${e.error}\n\n跳过B2 Cloud删除，仅更新本地吗？`,
+          '確認 / 确认',
+          { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+        )
         await handleUnconfirmConfirm(reason, true)
         return
-      }
-      return
+      } catch { return }
     }
     showToast(e?.message || '確認取消に失敗しました', 'danger')
     unconfirmDialogVisible.value = false

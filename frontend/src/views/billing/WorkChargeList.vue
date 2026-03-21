@@ -110,6 +110,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -354,7 +355,13 @@ const handleCreateSubmit = async () => {
 
 // ── 削除 / 删除 ──
 const confirmDelete = async (item: WorkCharge) => {
-  if (!confirm(`この作業チャージを削除しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      'この作業チャージを削除しますか？ / 确定要删除此作业费用吗？',
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     await deleteWorkCharge(item._id)
     showToast('削除しました', 'success')

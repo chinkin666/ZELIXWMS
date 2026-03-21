@@ -118,6 +118,7 @@
 
 <script setup lang="ts">
 import { ref, computed, h, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
@@ -285,7 +286,13 @@ async function saveAddedBarcodes() {
 
 async function removeBarcode(product: Product, index: number) {
   const bc = (product.barcode || [])[index]
-  if (!confirm(`バーコード「${bc}」を削除しますか？`)) return
+  try {
+    await ElMessageBox.confirm(
+      `バーコード「${bc}」を削除してもよろしいですか？ / 确定要删除条码「${bc}」吗？`,
+      '確認 / 确认',
+      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
+    )
+  } catch { return }
   try {
     const updated = [...(product.barcode || [])]
     updated.splice(index, 1)
