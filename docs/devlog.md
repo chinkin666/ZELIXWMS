@@ -3,6 +3,38 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-21] 文档対比完了：全差分解消 + データ移行ETL
+
+**変更種別 / 变更类型**: test + feat
+**影響範囲 / 影响范围**: backend/, backend-nest/
+
+### 追加作業 / 追加工作
+- Express middleware テスト: auditLogger, featureFlagGuard, paginationGuard, requestTimer
+  Express 中间件测试: 审计日志、功能开关、分页守卫、请求计时
+- Express extension テスト: extensionManager, pluginManager, webhookDispatcher
+  Express 扩展测试: 扩展管理器、插件管理器、Webhook分发器
+- Express utils テスト: carrierFormatParser, carrierMappings, sequenceGenerator
+  Express 工具测试: 载具格式解析、载具映射、序列号生成
+- NestJS 残り7モジュールのテスト追加
+  NestJS 剩余7模块测试追加
+- データ移行 ETL スクリプト（11 files）: MongoDB → PostgreSQL
+  数据迁移 ETL 脚本（11文件）: MongoDB → PostgreSQL
+
+### 最終統計 / 最终统计
+- Express: **137 suites, 2835 tests**
+- NestJS: **25 suites, 236 tests**
+- **合計: 162 suites, 3071 tests, ALL PASSING**
+- NestJS モジュール: **26 modules** (30 directories including common/config/database/health)
+- NestJS ビルド: 0 errors
+
+### 文档残差分（運用フェーズ）/ 文档剩余差距（运维阶段）
+- Phase 5: データ移行実行（ETL スクリプト完成、実行待ち）
+- Phase 5: E2E テスト + フロントエンド API URL 切替
+- Phase 6: パフォーマンステスト + セキュリティ監査 + 本番デプロイ
+- これらは PostgreSQL/Supabase 環境とフロントエンド切替が前提
+
+---
+
 ## [2026-03-21] NestJS 全26モジュール完成 + Express テスト全網羅
 
 **変更種別 / 变更类型**: feat + test
