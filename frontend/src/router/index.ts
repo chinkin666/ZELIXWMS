@@ -852,6 +852,31 @@ const router = createRouter({
               component: () => import('@/views/settings/PeakModeSettings.vue'),
               meta: { title: 'ピークモード設定', requiresAuth: true },
             },
+            // === 外部連携 / 外部集成 ===
+            {
+              path: 'marketplace',
+              name: 'MarketplaceSettings',
+              component: () => import('@/views/settings/MarketplaceSettings.vue'),
+              meta: { title: 'マーケットプレイス連携', requiresAuth: true },
+            },
+            {
+              path: 'oms',
+              name: 'OmsSettings',
+              component: () => import('@/views/settings/OmsSettings.vue'),
+              meta: { title: 'OMS 連携', requiresAuth: true },
+            },
+            {
+              path: 'erp',
+              name: 'ErpSettings',
+              component: () => import('@/views/settings/ErpSettings.vue'),
+              meta: { title: 'ERP 連携', requiresAuth: true },
+            },
+            {
+              path: 'workflows',
+              name: 'WorkflowSettings',
+              component: () => import('@/views/settings/WorkflowSettings.vue'),
+              meta: { title: 'ワークフロー管理', requiresAuth: true },
+            },
           ],
         },
       ],
