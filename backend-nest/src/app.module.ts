@@ -20,6 +20,13 @@ import { DailyReportsModule } from './daily-reports/daily-reports.module.js';
 import { QueueModule } from './queue/queue.module.js';
 import { AuthGuard } from './common/guards/auth.guard.js';
 import { TenantGuard } from './common/guards/tenant.guard.js';
+import { RolesGuard } from './common/guards/roles.guard.js';
+import { AuthModule } from './auth/auth.module.js';
+import { WavesModule } from './waves/waves.module.js';
+import { WarehouseTasksModule } from './warehouse-tasks/warehouse-tasks.module.js';
+import { MaterialsModule } from './materials/materials.module.js';
+import { AdminModule } from './admin/admin.module.js';
+import { ImportModule } from './import/import.module.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
 import envConfig from './config/env.js';
@@ -44,10 +51,17 @@ import envConfig from './config/env.js';
     KpiModule,
     DailyReportsModule,
     QueueModule,
+    AuthModule,
+    WavesModule,
+    WarehouseTasksModule,
+    MaterialsModule,
+    AdminModule,
+    ImportModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: TenantGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
     { provide: APP_FILTER, useClass: GlobalExceptionFilter },
   ],
