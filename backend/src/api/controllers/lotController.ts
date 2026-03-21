@@ -39,8 +39,10 @@ export const listLots = async (req: Request, res: Response): Promise<void> => {
     ]);
 
     res.json({ items, total, page, limit });
-  } catch (error: any) {
-    res.status(500).json({ message: 'ロット一覧の取得に失敗しました', error: error.message });
+  } catch (error: unknown) {
+    // エラーメッセージ抽出 / 提取错误消息
+    const errMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ message: 'ロット一覧の取得に失敗しました', error: errMessage });
   }
 };
 
@@ -68,8 +70,10 @@ export const getLot = async (req: Request, res: Response): Promise<void> => {
       totalReserved,
       totalAvailable: totalQuantity - totalReserved,
     });
-  } catch (error: any) {
-    res.status(500).json({ message: 'ロットの取得に失敗しました', error: error.message });
+  } catch (error: unknown) {
+    // エラーメッセージ抽出 / 提取错误消息
+    const errMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ message: 'ロットの取得に失敗しました', error: errMessage });
   }
 };
 
@@ -110,8 +114,10 @@ export const createLot = async (req: Request, res: Response): Promise<void> => {
     });
 
     res.status(201).json(lot);
-  } catch (error: any) {
-    res.status(500).json({ message: 'ロットの作成に失敗しました', error: error.message });
+  } catch (error: unknown) {
+    // エラーメッセージ抽出 / 提取错误消息
+    const errMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ message: 'ロットの作成に失敗しました', error: errMessage });
   }
 };
 
@@ -133,8 +139,10 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
 
     await lot.save();
     res.json(lot);
-  } catch (error: any) {
-    res.status(500).json({ message: 'ロットの更新に失敗しました', error: error.message });
+  } catch (error: unknown) {
+    // エラーメッセージ抽出 / 提取错误消息
+    const errMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ message: 'ロットの更新に失敗しました', error: errMessage });
   }
 };
 
@@ -158,8 +166,10 @@ export const deleteLot = async (req: Request, res: Response): Promise<void> => {
 
     await Lot.findByIdAndDelete(req.params.id);
     res.json({ message: 'ロットを削除しました' });
-  } catch (error: any) {
-    res.status(500).json({ message: 'ロットの削除に失敗しました', error: error.message });
+  } catch (error: unknown) {
+    // エラーメッセージ抽出 / 提取错误消息
+    const errMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ message: 'ロットの削除に失敗しました', error: errMessage });
   }
 };
 
@@ -217,8 +227,10 @@ export const listExpiryAlerts = async (req: Request, res: Response): Promise<voi
     }
 
     res.json({ alerts, daysAhead });
-  } catch (error: any) {
-    res.status(500).json({ message: '賞味期限アラートの取得に失敗しました', error: error.message });
+  } catch (error: unknown) {
+    // エラーメッセージ抽出 / 提取错误消息
+    const errMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ message: '賞味期限アラートの取得に失敗しました', error: errMessage });
   }
 };
 
@@ -241,8 +253,10 @@ export const updateExpiredLots = async (req: Request, res: Response): Promise<vo
       message: `${result.modifiedCount}件のロットを期限切れに更新しました`,
       modifiedCount: result.modifiedCount,
     });
-  } catch (error: any) {
-    res.status(500).json({ message: '期限切れ更新に失敗しました', error: error.message });
+  } catch (error: unknown) {
+    // エラーメッセージ抽出 / 提取错误消息
+    const errMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ message: '期限切れ更新に失敗しました', error: errMessage });
   }
 };
 

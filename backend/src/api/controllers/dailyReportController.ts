@@ -6,6 +6,7 @@ import { ReturnOrder } from '@/models/returnOrder';
 import { StockQuant } from '@/models/stockQuant';
 import { StockMove } from '@/models/stockMove';
 import { StocktakingOrder } from '@/models/stocktakingOrder';
+import { sendError } from '@/api/helpers/responseHelper';
 
 // ---------------------------------------------------------------------------
 // 日付範囲ヘルパー
@@ -25,9 +26,11 @@ export async function listDailyReports(req: Request, res: Response) {
     const filter: Record<string, unknown> = {};
     if (status) filter.status = status;
     if (from || to) {
-      filter.date = {};
-      if (from) (filter.date as any).$gte = from;
-      if (to) (filter.date as any).$lte = to;
+      // 日付範囲フィルタ構築 / 构建日期范围过滤器
+      const dateFilter: Record<string, unknown> = {};
+      if (from) dateFilter.$gte = from;
+      if (to) dateFilter.$lte = to;
+      filter.date = dateFilter;
     }
 
     const skip = (Number(page) - 1) * Number(limit);
@@ -41,8 +44,8 @@ export async function listDailyReports(req: Request, res: Response) {
     ]);
 
     res.json({ data: docs, total, page: Number(page), limit: Number(limit) });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -53,10 +56,10 @@ export async function getDailyReport(req: Request, res: Response) {
   try {
     const { date } = req.params;
     const doc = await DailyReport.findOne({ date }).lean();
-    if (!doc) return res.status(404).json({ error: `${date}の日次レポートが見つかりません` });
+    if (!doc) return sendError(res, `${date}の日次レポートが見つかりません`, 404, 'NOT_FOUND');
     res.json(doc);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -67,13 +70,13 @@ export async function generateDailyReport(req: Request, res: Response) {
   try {
     const { date } = req.body;
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return res.status(400).json({ error: '日付(YYYY-MM-DD)が必要です' });
+      return sendError(res, '日付(YYYY-MM-DD)が必要です', 400, 'VALIDATION_ERROR');
     }
 
     // 既存チェック（locked は上書き不可）
     const existing = await DailyReport.findOne({ date });
     if (existing?.status === 'locked') {
-      return res.status(400).json({ error: 'ロック済みのレポートは更新できません' });
+      return sendError(res, 'ロック済みのレポートは更新できません', 400, 'VALIDATION_ERROR');
     }
 
     const { start, end } = dayRange(date);
@@ -81,13 +84,14 @@ export async function generateDailyReport(req: Request, res: Response) {
 
     // 出荷集計
     const shipmentOrders = await ShipmentOrder.find(dateFilter).lean();
-    const shippedOrders = shipmentOrders.filter((o: any) => o.status?.shipped?.isShipped);
+    // 出荷済み注文フィルタ / 过滤已出货订单
+    const shippedOrders = shipmentOrders.filter((o) => o.status?.shipped?.isShipped);
     const totalShipmentItems = shipmentOrders.reduce(
-      (sum, o: any) => sum + (o._productsMeta?.totalQuantity || 0),
+      (sum, o) => sum + (o._productsMeta?.totalQuantity || 0),
       0,
     );
     const shippedItems = shippedOrders.reduce(
-      (sum, o: any) => sum + (o._productsMeta?.totalQuantity || 0),
+      (sum, o) => sum + (o._productsMeta?.totalQuantity || 0),
       0,
     );
 
@@ -174,7 +178,7 @@ export async function generateDailyReport(req: Request, res: Response) {
     };
 
     if (existing) {
-      existing.summary = summary as any;
+      existing.summary = summary;
       existing.status = existing.status === 'closed' ? 'closed' : 'open';
       await existing.save();
       return res.json(existing.toObject());
@@ -187,8 +191,8 @@ export async function generateDailyReport(req: Request, res: Response) {
     });
 
     res.status(201).json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -199,9 +203,9 @@ export async function closeDailyReport(req: Request, res: Response) {
   try {
     const { date } = req.params;
     const doc = await DailyReport.findOne({ date });
-    if (!doc) return res.status(404).json({ error: `${date}の日次レポートが見つかりません` });
+    if (!doc) return sendError(res, `${date}の日次レポートが見つかりません`, 404, 'NOT_FOUND');
     if (doc.status === 'locked') {
-      return res.status(400).json({ error: 'ロック済みのレポートです' });
+      return sendError(res, 'ロック済みのレポートです', 400, 'VALIDATION_ERROR');
     }
 
     doc.status = 'closed';
@@ -209,8 +213,8 @@ export async function closeDailyReport(req: Request, res: Response) {
     doc.closedBy = req.body.closedBy || 'system';
     await doc.save();
     res.json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -221,15 +225,15 @@ export async function lockDailyReport(req: Request, res: Response) {
   try {
     const { date } = req.params;
     const doc = await DailyReport.findOne({ date });
-    if (!doc) return res.status(404).json({ error: `${date}の日次レポートが見つかりません` });
+    if (!doc) return sendError(res, `${date}の日次レポートが見つかりません`, 404, 'NOT_FOUND');
     if (doc.status !== 'closed') {
-      return res.status(400).json({ error: '締め済みのレポートのみロックできます' });
+      return sendError(res, '締め済みのレポートのみロックできます', 400, 'VALIDATION_ERROR');
     }
 
     doc.status = 'locked';
     await doc.save();
     res.json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }

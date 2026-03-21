@@ -71,5 +71,8 @@ nul
 *.csv
 /backend/tmp
 
+# Uploads (runtime generated) / アップロードファイル（実行時生成）
+backend/uploads/
+
 # Local database
 local-db/mongo/

@@ -56,13 +56,12 @@ export interface CreateOrdersBulkResult {
 }
 
 /** 更新订单输入 / 注文更新入力 */
-export interface UpdateOrderInput {
-  [key: string]: any;
-}
+export type UpdateOrderInput = Record<string, unknown>;
 
 /** 更新订单结果 / 注文更新結果 */
 export interface UpdateOrderResult {
-  order: any;
+  // lean()結果のため完全型推論が困難 / lean()结果难以完全推断类型
+  order: Record<string, unknown>;
 }
 
 /** 删除订单结果 / 注文削除結果 */
@@ -178,20 +177,20 @@ type Operator =
   | 'next7Days'
   | 'next30Days';
 
-type FilterPayload = Record<string, { operator: Operator; value: any }>;
+type FilterPayload = Record<string, { operator: Operator; value: unknown }>;
 
 export const filterPayloadSchema: z.ZodType<FilterPayload> = z.record(
   z.object({
     operator: z.string(),
     value: z.any().optional(),
   }),
-) as any;
+) as z.ZodType<FilterPayload>;
 
 const escapeRegex = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const isBlank = (v: any): boolean => v === null || v === undefined || (typeof v === 'string' && v.trim() === '');
+const isBlank = (v: unknown): boolean => v === null || v === undefined || (typeof v === 'string' && v.trim() === '');
 
-const parseYmd = (raw: any): { y: number; m: number; d: number } | null => {
+const parseYmd = (raw: unknown): { y: number; m: number; d: number } | null => {
   if (typeof raw !== 'string') return null;
   const s = raw.trim();
   const m = /^(\d{4})[-/](\d{2})[-/](\d{2})$/.exec(s);
@@ -1063,7 +1062,7 @@ export const createOrders = async (
  */
 export const updateOrder = async (
   id: string,
-  body: Record<string, any>,
+  body: Record<string, unknown>,
 ): Promise<UpdateOrderResult> => {
   if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
     throw new ValidationError('Invalid id');
@@ -1076,7 +1075,7 @@ export const updateOrder = async (
   }
 
   // 获取要更新的字段（排除系统字段） / 更新フィールドの取得（システムフィールドを除外）
-  const fieldsToValidate: Record<string, any> = {};
+  const fieldsToValidate: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(body)) {
     if (PROTECTED_FIELDS_UPDATE.includes(key)) continue;
     if (value === undefined || value === null) continue;
@@ -1097,7 +1096,7 @@ export const updateOrder = async (
 
   // 如果没有要更新的字段 / 更新フィールドがない場合
   if (Object.keys(fieldsToValidate).length === 0) {
-    return { order: existing };
+    return { order: existing as unknown as Record<string, unknown> };
   }
 
   // 使用 orderDocumentSchema.partial() 验证 / orderDocumentSchema.partial() でバリデーション
@@ -1113,7 +1112,7 @@ export const updateOrder = async (
   const validatedData = parseResult.data;
 
   const now = new Date().toISOString();
-  const fieldsToUpdate: Record<string, any> = {
+  const fieldsToUpdate: Record<string, unknown> = {
     ...validatedData,
     updatedAt: now,
   };
@@ -1137,7 +1136,7 @@ export const updateOrder = async (
     referenceId: id,
   }).catch(() => {});
 
-  return { order: updated };
+  return { order: updated as unknown as Record<string, unknown> };
 };
 
 /**
@@ -1151,7 +1150,7 @@ export const deleteOrders = async (ids: string[]): Promise<DeleteOrdersBulkResul
   }
 
   const validIds = ids.filter(
-    (id: any) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id)
+    (id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id)
   );
 
   if (validIds.length === 0) {
@@ -1340,7 +1339,7 @@ const emitStatusSideEffects = (action: string, statusType: string | undefined, o
 export const updateOrderStatus = async (
   id: string,
   input: StatusActionInput,
-): Promise<any> => {
+): Promise<Record<string, unknown>> => {
   if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
     throw new ValidationError('Invalid id');
   }
@@ -1463,7 +1462,7 @@ export const updateOrderStatus = async (
     }).catch(() => {});
   }
 
-  return updated;
+  return updated as unknown as Record<string, unknown>;
 };
 
 /**
@@ -1483,7 +1482,7 @@ export const updateOrderStatusBulk = async (
     throw new ValidationError('Invalid request: action is required');
   }
 
-  const validIds = ids.filter((id: any) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id));
+  const validIds = ids.filter((id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id));
 
   if (validIds.length === 0) {
     throw new ValidationError('No valid ids provided');
@@ -1535,7 +1534,7 @@ export const bulkUpdateOrders = async (
     throw new ValidationError('Invalid request: updates object is required');
   }
 
-  const validIds = ids.filter((id: any) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id));
+  const validIds = ids.filter((id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id));
 
   if (validIds.length === 0) {
     throw new ValidationError('No valid ids provided');
@@ -1691,7 +1690,7 @@ export const searchOrders = async (params: SearchOrdersParams): Promise<SearchOr
  * @throws ValidationError - 无效ID / 無効なID
  * @throws NotFoundError - 订单不存在 / 注文が存在しない
  */
-export const getOrderById = async (id: string): Promise<any> => {
+export const getOrderById = async (id: string): Promise<Record<string, unknown>> => {
   if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
     throw new ValidationError('Invalid id');
   }
@@ -1700,7 +1699,7 @@ export const getOrderById = async (id: string): Promise<any> => {
   if (!item) {
     throw new NotFoundError('Order not found');
   }
-  return item;
+  return item as unknown as Record<string, unknown>;
 };
 
 /**
@@ -1711,13 +1710,13 @@ export const getOrderById = async (id: string): Promise<any> => {
 export const getOrdersByIds = async (
   ids: string[],
   includeRawData?: boolean,
-): Promise<{ items: any[]; total: number }> => {
+): Promise<{ items: Record<string, unknown>[]; total: number }> => {
   if (!Array.isArray(ids) || ids.length === 0) {
     throw new ValidationError('Invalid request: ids array is required');
   }
 
   const validIds = ids.filter(
-    (id: any) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id)
+    (id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id)
   );
 
   if (validIds.length === 0) {
@@ -1733,5 +1732,5 @@ export const getOrdersByIds = async (
   }
 
   const orders = await query.lean();
-  return { items: orders, total: orders.length };
+  return { items: orders as unknown as Record<string, unknown>[], total: orders.length };
 };

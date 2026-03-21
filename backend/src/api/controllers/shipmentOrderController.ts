@@ -94,10 +94,11 @@ export const listOrders = async (req: Request, res: Response): Promise<void> => 
 
     const hasPageParam = pageRaw !== undefined && pageRaw !== null && pageRaw !== '';
     const page = hasPageParam ? (typeof pageRaw === 'string' ? Math.max(Number(pageRaw) || 1, 1) : 1) : 1;
+    // limit 上限を200に制限（メモリ保護） / 限制 limit 上限为200（内存保护）
     const parsedLimit = typeof limitRaw === 'string'
-      ? Math.min(Math.max(Number(limitRaw) || 10, 1), 5000)
+      ? Math.min(Math.max(Number(limitRaw) || 10, 1), 200)
       : typeof limitRaw === 'number'
-        ? Math.min(Math.max(limitRaw || 10, 1), 5000)
+        ? Math.min(Math.max(limitRaw || 10, 1), 200)
         : undefined;
     const limit = hasPageParam ? (parsedLimit ?? 10) : parsedLimit;
 

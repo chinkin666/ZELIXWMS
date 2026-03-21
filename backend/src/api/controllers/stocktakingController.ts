@@ -10,6 +10,7 @@ import { extensionManager } from '@/core/extensions';
 import { HOOK_EVENTS } from '@/core/extensions/types';
 import { logger } from '@/lib/logger';
 import mongoose from 'mongoose';
+import { sendError } from '@/api/helpers/responseHelper';
 
 // ---------------------------------------------------------------------------
 // 番号生成
@@ -42,8 +43,8 @@ export async function listStocktakingOrders(req: Request, res: Response) {
     ]);
 
     res.json({ data: docs, total, page: Number(page), limit: Number(limit) });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -53,10 +54,10 @@ export async function listStocktakingOrders(req: Request, res: Response) {
 export async function getStocktakingOrder(req: Request, res: Response) {
   try {
     const doc = await StocktakingOrder.findById(req.params.id).lean();
-    if (!doc) return res.status(404).json({ error: '棚卸指示が見つかりません' });
+    if (!doc) return sendError(res, '棚卸指示が見つかりません', 404, 'NOT_FOUND');
     res.json(doc);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -135,8 +136,8 @@ export async function createStocktakingOrder(req: Request, res: Response) {
     }).catch(() => {});
 
     res.status(201).json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -146,9 +147,9 @@ export async function createStocktakingOrder(req: Request, res: Response) {
 export async function updateStocktakingOrder(req: Request, res: Response) {
   try {
     const doc = await StocktakingOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '棚卸指示が見つかりません' });
+    if (!doc) return sendError(res, '棚卸指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status !== 'draft' && doc.status !== 'in_progress') {
-      return res.status(400).json({ error: 'この状態では編集できません' });
+      return sendError(res, 'この状態では編集できません', 400, 'VALIDATION_ERROR');
     }
 
     const { type, scheduledDate, memo, lines } = req.body;
@@ -159,8 +160,8 @@ export async function updateStocktakingOrder(req: Request, res: Response) {
 
     await doc.save();
     res.json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -170,17 +171,17 @@ export async function updateStocktakingOrder(req: Request, res: Response) {
 export async function startStocktakingOrder(req: Request, res: Response) {
   try {
     const doc = await StocktakingOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '棚卸指示が見つかりません' });
+    if (!doc) return sendError(res, '棚卸指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status !== 'draft') {
-      return res.status(400).json({ error: 'ドラフト状態のみ開始できます' });
+      return sendError(res, 'ドラフト状態のみ開始できます', 400, 'VALIDATION_ERROR');
     }
 
     doc.status = 'in_progress';
     doc.startedAt = new Date();
     await doc.save();
     res.json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -190,15 +191,15 @@ export async function startStocktakingOrder(req: Request, res: Response) {
 export async function recordCount(req: Request, res: Response) {
   try {
     const doc = await StocktakingOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '棚卸指示が見つかりません' });
+    if (!doc) return sendError(res, '棚卸指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status !== 'in_progress') {
-      return res.status(400).json({ error: '進行中の棚卸のみカウント可能です' });
+      return sendError(res, '進行中の棚卸のみカウント可能です', 400, 'VALIDATION_ERROR');
     }
 
     const { counts } = req.body;
     // counts: Array<{ lineIndex: number, countedQuantity: number }>
     if (!Array.isArray(counts)) {
-      return res.status(400).json({ error: 'counts配列が必要です' });
+      return sendError(res, 'counts配列が必要です', 400, 'VALIDATION_ERROR');
     }
 
     for (const c of counts) {
@@ -211,8 +212,8 @@ export async function recordCount(req: Request, res: Response) {
 
     await doc.save();
     res.json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -222,24 +223,22 @@ export async function recordCount(req: Request, res: Response) {
 export async function completeStocktakingOrder(req: Request, res: Response) {
   try {
     const doc = await StocktakingOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '棚卸指示が見つかりません' });
+    if (!doc) return sendError(res, '棚卸指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status !== 'in_progress') {
-      return res.status(400).json({ error: '進行中の棚卸のみ完了できます' });
+      return sendError(res, '進行中の棚卸のみ完了できます', 400, 'VALIDATION_ERROR');
     }
 
     const uncounted = doc.lines.filter((l) => l.status === 'pending');
     if (uncounted.length > 0) {
-      return res.status(400).json({
-        error: `未カウントの明細が${uncounted.length}件あります`,
-      });
+      return sendError(res, `未カウントの明細が${uncounted.length}件あります`, 400, 'VALIDATION_ERROR');
     }
 
     doc.status = 'completed';
     doc.completedAt = new Date();
     await doc.save();
     res.json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -249,15 +248,15 @@ export async function completeStocktakingOrder(req: Request, res: Response) {
 export async function adjustStocktakingOrder(req: Request, res: Response) {
   try {
     const doc = await StocktakingOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '棚卸指示が見つかりません' });
+    if (!doc) return sendError(res, '棚卸指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status !== 'completed') {
-      return res.status(400).json({ error: '完了済みの棚卸のみ調整できます' });
+      return sendError(res, '完了済みの棚卸のみ調整できます', 400, 'VALIDATION_ERROR');
     }
 
     // VIRTUAL/SUPPLIER ロケーション取得（在庫調整用）
     const virtualLoc = await Location.findOne({ type: 'virtual/supplier' }).lean();
     if (!virtualLoc) {
-      return res.status(400).json({ error: '仮想ロケーション(VIRTUAL/SUPPLIER)が見つかりません' });
+      return sendError(res, '仮想ロケーション(VIRTUAL/SUPPLIER)が見つかりません', 400, 'VALIDATION_ERROR');
     }
 
     const varianceLines = doc.lines.filter((l) => l.variance && l.variance !== 0);
@@ -312,8 +311,10 @@ export async function adjustStocktakingOrder(req: Request, res: Response) {
 
         line.status = 'verified';
         adjustedCount++;
-      } catch (e: any) {
-        errors.push(`${line.productSku}@${line.locationName}: ${e.message}`);
+      } catch (e: unknown) {
+        // エラーメッセージ抽出 / 提取错误消息
+        const msg = e instanceof Error ? e.message : String(e);
+        errors.push(`${line.productSku}@${line.locationName}: ${msg}`);
       }
     }
 
@@ -350,8 +351,8 @@ export async function adjustStocktakingOrder(req: Request, res: Response) {
       adjustedCount,
       errors,
     });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -361,16 +362,16 @@ export async function adjustStocktakingOrder(req: Request, res: Response) {
 export async function cancelStocktakingOrder(req: Request, res: Response) {
   try {
     const doc = await StocktakingOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '棚卸指示が見つかりません' });
+    if (!doc) return sendError(res, '棚卸指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status === 'adjusted') {
-      return res.status(400).json({ error: '調整済みの棚卸はキャンセルできません' });
+      return sendError(res, '調整済みの棚卸はキャンセルできません', 400, 'VALIDATION_ERROR');
     }
 
     doc.status = 'cancelled';
     await doc.save();
     res.json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -380,14 +381,14 @@ export async function cancelStocktakingOrder(req: Request, res: Response) {
 export async function deleteStocktakingOrder(req: Request, res: Response) {
   try {
     const doc = await StocktakingOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '棚卸指示が見つかりません' });
+    if (!doc) return sendError(res, '棚卸指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status !== 'draft' && doc.status !== 'cancelled') {
-      return res.status(400).json({ error: 'ドラフトまたはキャンセル済みのみ削除できます' });
+      return sendError(res, 'ドラフトまたはキャンセル済みのみ削除できます', 400, 'VALIDATION_ERROR');
     }
 
     await doc.deleteOne();
     res.json({ success: true });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }

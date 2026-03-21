@@ -29,10 +29,14 @@ function handleError(res: Response, error: unknown, fallbackMessage: string): vo
   res.status(500).json({ message: fallbackMessage, error: message });
 }
 
-/** 在庫一覧（StockQuant） / List stock */
+/** 在庫一覧（StockQuant）ページネーション付き / List stock with pagination / 带分页的库存列表 */
 export const listStock = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { productId, productSku, locationId, showZero, stockType } = req.query;
+    const { productId, productSku, locationId, showZero, stockType, page, limit } = req.query;
+
+    // ページネーション（上限200） / 分页参数（上限200）
+    const pageNum = Math.max(Number(page) || 1, 1);
+    const limitNum = Math.min(Math.max(Number(limit) || 50, 1), 200);
 
     // 倉庫フィルタ → ロケーションIDに変換 / 仓库过滤 → 转换为库位ID
     let locationIds: string[] | undefined;
@@ -53,23 +57,29 @@ export const listStock = async (req: Request, res: Response): Promise<void> => {
       locationIds = locs.map(l => l._id.toString());
     }
 
-    const quants = await inventoryService.listStock({
+    const result = await inventoryService.listStock({
       productId: typeof productId === 'string' ? productId.trim() : undefined,
       productSku: typeof productSku === 'string' ? productSku.trim() : undefined,
       locationId: typeof locationId === 'string' ? locationId.trim() : undefined,
       showZero: showZero === 'true',
       locationIds,
+      page: pageNum,
+      limit: limitNum,
     });
-    res.json(quants);
+    res.json(result);
   } catch (error) {
     handleError(res, error, '在庫一覧の取得に失敗しました');
   }
 };
 
-/** 在庫集計（商品単位） / Inventory summary */
+/** 在庫集計（商品単位）ページネーション付き / Inventory summary with pagination / 带分页的库存汇总 */
 export const listStockSummary = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { search, stockType } = req.query;
+    const { search, stockType, page, limit } = req.query;
+
+    // ページネーション（上限200） / 分页参数（上限200）
+    const pageNum = Math.max(Number(page) || 1, 1);
+    const limitNum = Math.min(Math.max(Number(limit) || 50, 1), 200);
 
     // stockType フィルタ: 指定された場合、該当 stockType のロケーションに絞り込む
     // stockType 过滤: 指定时，筛选对应 stockType 的库位
@@ -79,11 +89,13 @@ export const listStockSummary = async (req: Request, res: Response): Promise<voi
       locationIds = locs.map(l => l._id.toString());
     }
 
-    const summary = await inventoryService.getInventorySummary({
+    const result = await inventoryService.getInventorySummary({
       search: typeof search === 'string' ? search.trim() : undefined,
       locationIds,
+      page: pageNum,
+      limit: limitNum,
     });
-    res.json(summary);
+    res.json(result);
   } catch (error) {
     handleError(res, error, '在庫集計の取得に失敗しました');
   }

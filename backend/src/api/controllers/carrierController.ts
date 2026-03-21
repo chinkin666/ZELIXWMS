@@ -2,10 +2,15 @@ import type { Request, Response } from 'express';
 import { Carrier } from '@/models/carrier';
 import { createCarrierSchema, updateCarrierSchema } from '@/schemas/carrierSchema';
 import { BUILT_IN_CARRIERS, isBuiltInCarrierId, getBuiltInCarrier } from '@/data/builtInCarriers';
+import { sendError } from '@/api/helpers/responseHelper';
 
 export const listCarriers = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { code, name, enabled } = req.query;
+    const { code, name, enabled, page, limit } = req.query;
+
+    // ページネーション（上限200） / 分页参数（上限200）
+    const pageNum = Math.max(Number(page) || 1, 1);
+    const limitNum = Math.min(Math.max(Number(limit) || 50, 1), 200);
 
     const filter: Record<string, unknown> = {};
     if (typeof code === 'string' && code.trim()) {
@@ -23,6 +28,7 @@ export const listCarriers = async (req: Request, res: Response): Promise<void> =
     const dbCarriers = await Carrier.find(filter).sort({ createdAt: -1 }).lean();
 
     // Filter built-in carriers based on query params
+    // 内蔵キャリアをクエリパラメータでフィルタ / 根据查询参数过滤内置承运商
     let filteredBuiltIn = [...BUILT_IN_CARRIERS];
     if (typeof code === 'string' && code.trim()) {
       const codePattern = code.trim().toLowerCase();
@@ -37,11 +43,15 @@ export const listCarriers = async (req: Request, res: Response): Promise<void> =
       if (enabled === 'false') filteredBuiltIn = filteredBuiltIn.filter((c) => c.enabled === false);
     }
 
-    // Built-in carriers first, then DB carriers
-    const items = [...filteredBuiltIn, ...dbCarriers];
-    res.json(items);
-  } catch (error: any) {
-    res.status(500).json({ message: 'Failed to fetch carriers', error: error.message });
+    // 全件結合後にページネーションで切り出し / 合并后通过分页截取
+    const allItems = [...filteredBuiltIn, ...dbCarriers];
+    const total = allItems.length;
+    const skip = (pageNum - 1) * limitNum;
+    const items = allItems.slice(skip, skip + limitNum);
+
+    res.json({ items, total, page: pageNum, limit: limitNum });
+  } catch (error: unknown) {
+    sendError(res, 'Failed to fetch carriers', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -56,19 +66,19 @@ export const getCarrier = async (req: Request, res: Response): Promise<void> => 
         res.json(builtInCarrier);
         return;
       }
-      res.status(404).json({ message: 'Carrier not found' });
+      sendError(res, 'Carrier not found', 404, 'NOT_FOUND');
       return;
     }
 
     // Otherwise, fetch from database
     const item = await Carrier.findById(carrierId).lean();
     if (!item) {
-      res.status(404).json({ message: 'Carrier not found' });
+      sendError(res, 'Carrier not found', 404, 'NOT_FOUND');
       return;
     }
     res.json(item);
-  } catch (error: any) {
-    res.status(500).json({ message: 'Failed to fetch carrier', error: error.message });
+  } catch (error: unknown) {
+    sendError(res, 'Failed to fetch carrier', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -76,27 +86,26 @@ export const createCarrier = async (req: Request, res: Response): Promise<void> 
   try {
     const parsed = createCarrierSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({
-        message: 'Validation failed',
-        errors: parsed.error.flatten(),
-      });
+      sendError(res, 'Validation failed', 400, 'VALIDATION_ERROR');
       return;
     }
 
     const created = await Carrier.create(parsed.data);
     res.status(201).json(created.toObject());
-  } catch (error: any) {
-    if (error.code === 11000) {
-      const duplicateKey = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'unknown';
-      const duplicateValue = error.keyValue ? error.keyValue[duplicateKey] : 'unknown';
-      res.status(409).json({
-        message: `重複エラー: ${duplicateKey} フィールドの値「${duplicateValue}」が既に存在します`,
-        duplicateField: duplicateKey,
-        duplicateValue,
-      });
+  } catch (error: unknown) {
+    // MongoDB重複キーエラー判定 / MongoDB重复键错误判定
+    if (
+      error instanceof Error &&
+      'code' in error &&
+      (error as { code: unknown }).code === 11000
+    ) {
+      const mongoErr = error as { keyPattern?: Record<string, unknown>; keyValue?: Record<string, unknown> };
+      const duplicateKey = mongoErr.keyPattern ? Object.keys(mongoErr.keyPattern)[0] : 'unknown';
+      const duplicateValue = mongoErr.keyValue ? mongoErr.keyValue[duplicateKey] : 'unknown';
+      sendError(res, `重複エラー: ${duplicateKey} フィールドの値「${duplicateValue}」が既に存在します`, 409, 'DUPLICATE_ERROR');
       return;
     }
-    res.status(500).json({ message: 'Failed to create carrier', error: error.message });
+    sendError(res, 'Failed to create carrier', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -106,22 +115,19 @@ export const updateCarrier = async (req: Request, res: Response): Promise<void> 
 
     // Prevent updating built-in carriers
     if (isBuiltInCarrierId(carrierId)) {
-      res.status(403).json({ message: '内蔵配送業者は編集できません' });
+      sendError(res, '内蔵配送業者は編集できません', 403, 'FORBIDDEN');
       return;
     }
 
     const existing = await Carrier.findById(carrierId).lean();
     if (!existing) {
-      res.status(404).json({ message: 'Carrier not found' });
+      sendError(res, 'Carrier not found', 404, 'NOT_FOUND');
       return;
     }
 
     const parsed = updateCarrierSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({
-        message: 'Validation failed',
-        errors: parsed.error.flatten(),
-      });
+      sendError(res, 'Validation failed', 400, 'VALIDATION_ERROR');
       return;
     }
 
@@ -131,13 +137,13 @@ export const updateCarrier = async (req: Request, res: Response): Promise<void> 
     }).lean();
 
     if (!updated) {
-      res.status(404).json({ message: 'Carrier not found' });
+      sendError(res, 'Carrier not found', 404, 'NOT_FOUND');
       return;
     }
 
     res.json(updated);
-  } catch (error: any) {
-    res.status(500).json({ message: 'Failed to update carrier', error: error.message });
+  } catch (error: unknown) {
+    sendError(res, 'Failed to update carrier', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -147,18 +153,18 @@ export const deleteCarrier = async (req: Request, res: Response): Promise<void> 
 
     // Prevent deleting built-in carriers
     if (isBuiltInCarrierId(carrierId)) {
-      res.status(403).json({ message: '内蔵配送業者は削除できません' });
+      sendError(res, '内蔵配送業者は削除できません', 403, 'FORBIDDEN');
       return;
     }
 
     const deleted = await Carrier.findByIdAndDelete(carrierId).lean();
     if (!deleted) {
-      res.status(404).json({ message: 'Carrier not found' });
+      sendError(res, 'Carrier not found', 404, 'NOT_FOUND');
       return;
     }
     res.json({ message: 'Deleted', id: deleted._id });
-  } catch (error: any) {
-    res.status(500).json({ message: 'Failed to delete carrier', error: error.message });
+  } catch (error: unknown) {
+    sendError(res, 'Failed to delete carrier', 500, 'INTERNAL_ERROR');
   }
 };
 

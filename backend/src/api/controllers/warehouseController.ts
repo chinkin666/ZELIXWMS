@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { Warehouse } from '@/models/warehouse';
+import { sendError } from '@/api/helpers/responseHelper';
 
 export const listWarehouses = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -32,7 +33,7 @@ export const listWarehouses = async (req: Request, res: Response): Promise<void>
 
     res.json({ data, total });
   } catch (error: any) {
-    res.status(500).json({ message: '倉庫の取得に失敗しました', error: error.message });
+    sendError(res, '倉庫の取得に失敗しました', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -40,12 +41,12 @@ export const getWarehouse = async (req: Request, res: Response): Promise<void> =
   try {
     const item = await Warehouse.findById(req.params.id).lean();
     if (!item) {
-      res.status(404).json({ message: '倉庫が見つかりません' });
+      sendError(res, '倉庫が見つかりません', 404, 'NOT_FOUND');
       return;
     }
     res.json(item);
   } catch (error: any) {
-    res.status(500).json({ message: '倉庫の取得に失敗しました', error: error.message });
+    sendError(res, '倉庫の取得に失敗しました', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -54,21 +55,17 @@ export const createWarehouse = async (req: Request, res: Response): Promise<void
     const { code, name, name2, postalCode, prefecture, city, address, address2, phone, coolTypes, capacity, operatingHours, memo, isActive, sortOrder } = req.body;
 
     if (!code || typeof code !== 'string' || !code.trim()) {
-      res.status(400).json({ message: '倉庫コードは必須です' });
+      sendError(res, '倉庫コードは必須です', 400, 'VALIDATION_ERROR');
       return;
     }
     if (!name || typeof name !== 'string' || !name.trim()) {
-      res.status(400).json({ message: '倉庫名は必須です' });
+      sendError(res, '倉庫名は必須です', 400, 'VALIDATION_ERROR');
       return;
     }
 
     const existing = await Warehouse.findOne({ code: code.trim() }).lean();
     if (existing) {
-      res.status(409).json({
-        message: `倉庫コード「${code.trim()}」は既に存在します`,
-        duplicateField: 'code',
-        duplicateValue: code.trim(),
-      });
+      sendError(res, `倉庫コード「${code.trim()}」は既に存在します`, 409, 'DUPLICATE_ERROR');
       return;
     }
 
@@ -95,14 +92,10 @@ export const createWarehouse = async (req: Request, res: Response): Promise<void
     if (error.code === 11000) {
       const duplicateKey = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'unknown';
       const duplicateValue = error.keyValue ? error.keyValue[duplicateKey] : 'unknown';
-      res.status(409).json({
-        message: `重複エラー: ${duplicateKey} フィールドの値「${duplicateValue}」が既に存在します`,
-        duplicateField: duplicateKey,
-        duplicateValue,
-      });
+      sendError(res, `重複エラー: ${duplicateKey} フィールドの値「${duplicateValue}」が既に存在します`, 409, 'DUPLICATE_ERROR');
       return;
     }
-    res.status(500).json({ message: '倉庫の作成に失敗しました', error: error.message });
+    sendError(res, '倉庫の作成に失敗しました', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -112,7 +105,7 @@ export const updateWarehouse = async (req: Request, res: Response): Promise<void
 
     const existing = await Warehouse.findById(req.params.id).lean();
     if (!existing) {
-      res.status(404).json({ message: '倉庫が見つかりません' });
+      sendError(res, '倉庫が見つかりません', 404, 'NOT_FOUND');
       return;
     }
 
@@ -152,7 +145,7 @@ export const updateWarehouse = async (req: Request, res: Response): Promise<void
     }).lean();
 
     if (!updated) {
-      res.status(404).json({ message: '倉庫が見つかりません' });
+      sendError(res, '倉庫が見つかりません', 404, 'NOT_FOUND');
       return;
     }
 
@@ -161,14 +154,10 @@ export const updateWarehouse = async (req: Request, res: Response): Promise<void
     if (error.code === 11000) {
       const duplicateKey = error.keyPattern ? Object.keys(error.keyPattern)[0] : 'unknown';
       const duplicateValue = error.keyValue ? error.keyValue[duplicateKey] : 'unknown';
-      res.status(409).json({
-        message: `重複エラー: ${duplicateKey} フィールドの値「${duplicateValue}」が既に存在します`,
-        duplicateField: duplicateKey,
-        duplicateValue,
-      });
+      sendError(res, `重複エラー: ${duplicateKey} フィールドの値「${duplicateValue}」が既に存在します`, 409, 'DUPLICATE_ERROR');
       return;
     }
-    res.status(500).json({ message: '倉庫の更新に失敗しました', error: error.message });
+    sendError(res, '倉庫の更新に失敗しました', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -181,13 +170,13 @@ export const deleteWarehouse = async (req: Request, res: Response): Promise<void
     ).lean();
 
     if (!updated) {
-      res.status(404).json({ message: '倉庫が見つかりません' });
+      sendError(res, '倉庫が見つかりません', 404, 'NOT_FOUND');
       return;
     }
 
     res.json({ message: 'Deleted', id: updated._id });
   } catch (error: any) {
-    res.status(500).json({ message: '倉庫の削除に失敗しました', error: error.message });
+    sendError(res, '倉庫の削除に失敗しました', 500, 'INTERNAL_ERROR');
   }
 };
 
@@ -196,6 +185,6 @@ export const exportWarehouses = async (_req: Request, res: Response): Promise<vo
     const warehouses = await Warehouse.find({ isActive: true }).sort({ code: 1 }).lean();
     res.json(warehouses);
   } catch (error: any) {
-    res.status(500).json({ message: '倉庫のエクスポートに失敗しました', error: error.message });
+    sendError(res, '倉庫のエクスポートに失敗しました', 500, 'INTERNAL_ERROR');
   }
 };

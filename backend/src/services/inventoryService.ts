@@ -76,6 +76,10 @@ export interface StockListFilters {
   showZero?: boolean;
   /** 倉庫フィルタで絞り込むロケーションIDリスト / 仓库过滤后的库位ID列表 */
   locationIds?: string[];
+  /** ページ番号（1始まり） / 页码（从1开始） */
+  page?: number;
+  /** 1ページあたりの件数（最大200） / 每页条数（最大200） */
+  limit?: number;
 }
 
 /** 在庫集計フィルタ / Inventory summary filters */
@@ -83,6 +87,66 @@ export interface InventorySummaryFilters {
   search?: string;
   /** 倉庫種別フィルタで絞り込むロケーションIDリスト / 仓库类型过滤后的库位ID列表 */
   locationIds?: string[];
+  /** ページ番号（1始まり） / 页码（从1开始） */
+  page?: number;
+  /** 1ページあたりの件数（最大200） / 每页条数（最大200） */
+  limit?: number;
+}
+
+/** 在庫一覧アイテム（aggregation結果） / Stock list item (aggregation result) */
+export interface StockListItem {
+  productId: mongoose.Types.ObjectId;
+  productSku: string;
+  product?: { name?: string; nameFull?: string; imageUrl?: string; coolType?: string; safetyStock?: number };
+  locationId: mongoose.Types.ObjectId;
+  location?: { code?: string; name?: string; fullPath?: string; type?: string };
+  lotId?: mongoose.Types.ObjectId;
+  lot?: { lotNumber?: string; expiryDate?: Date; status?: string };
+  quantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  lastMovedAt?: Date;
+  updatedAt?: Date;
+}
+
+/** 在庫集計アイテム（aggregation結果） / Inventory summary item (aggregation result) */
+export interface InventorySummaryItem {
+  _id: mongoose.Types.ObjectId;
+  productSku: string;
+  totalQuantity: number;
+  totalReserved: number;
+  totalAvailable: number;
+  locationCount: number;
+  product?: { name?: string; nameFull?: string; imageUrl?: string; coolType?: string; safetyStock?: number };
+  isBelowSafetyStock?: boolean;
+}
+
+/** 商品別在庫詳細アイテム / Product stock detail item */
+export interface ProductStockItem {
+  locationId: mongoose.Types.ObjectId;
+  location?: { code?: string; name?: string; fullPath?: string };
+  lotId?: mongoose.Types.ObjectId;
+  lot?: { lotNumber?: string; expiryDate?: Date; status?: string };
+  quantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  lastMovedAt?: Date;
+}
+
+/** 在庫不足アラートアイテム / Low stock alert item */
+export interface LowStockAlertItem {
+  productId: mongoose.Types.ObjectId;
+  productSku: string;
+  productName: string;
+  safetyStock: number;
+  currentStock: number;
+  availableQuantity: number;
+  shortage: number;
+  deficit: number;
+  reorderSuggestion: number;
+  status: 'critical' | 'warning';
+  locationCode: string;
+  locations: Array<{ locationCode: string; quantity: number; reservedQuantity: number; availableQuantity: number }>;
 }
 
 /** 入出庫履歴フィルタ / Movement history filters */
@@ -117,7 +181,10 @@ async function getVirtualLocations(): Promise<VirtualLocations> {
       'VIRTUAL_LOCATION_MISSING',
     );
   }
-  return { supplier: virtualSupplier as any, customer: virtualCustomer as any };
+  return {
+    supplier: virtualSupplier as unknown as VirtualLocations['supplier'],
+    customer: virtualCustomer as unknown as VirtualLocations['customer'],
+  };
 }
 
 // ─── Helper: トランザクション対応実行 / Execute with optional transaction ─
@@ -152,8 +219,14 @@ async function withOptionalTransaction<T>(
 
 /**
  * 在庫一覧取得（StockQuant） / List stock (product × location × lot)
+ * ページネーション付き / 带分页功能
  */
-export async function listStock(filters: StockListFilters): Promise<any[]> {
+export async function listStock(filters: StockListFilters): Promise<{ items: StockListItem[]; total: number; page: number; limit: number }> {
+  // ページネーションパラメータ（上限200） / 分页参数（上限200）
+  const page = Math.max(filters.page ?? 1, 1);
+  const limit = Math.min(Math.max(filters.limit ?? 50, 1), 200);
+  const skip = (page - 1) * limit;
+
   const match: Record<string, unknown> = {};
 
   if (filters.productId) {
@@ -171,68 +244,92 @@ export async function listStock(filters: StockListFilters): Promise<any[]> {
     match.quantity = { $gt: 0 };
   }
 
-  return StockQuant.aggregate([
+  // 合計件数を取得（$facet で1回のクエリで実行） / 获取总数（通过 $facet 单次查询）
+  const pipeline: any[] = [
     { $match: match },
     {
-      $lookup: {
-        from: 'products',
-        localField: 'productId',
-        foreignField: '_id',
-        as: 'product',
+      $facet: {
+        // 合計件数 / 总数
+        metadata: [{ $count: 'total' }],
+        // ページネーション付きデータ / 带分页的数据
+        data: [
+          { $sort: { productSku: 1, 'location.code': 1 } as any },
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $lookup: {
+              from: 'products',
+              localField: 'productId',
+              foreignField: '_id',
+              as: 'product',
+            },
+          },
+          { $unwind: { path: '$product', preserveNullAndEmptyArrays: true } },
+          {
+            $lookup: {
+              from: 'locations',
+              localField: 'locationId',
+              foreignField: '_id',
+              as: 'location',
+            },
+          },
+          { $unwind: { path: '$location', preserveNullAndEmptyArrays: true } },
+          {
+            $lookup: {
+              from: 'lots',
+              localField: 'lotId',
+              foreignField: '_id',
+              as: 'lot',
+            },
+          },
+          { $unwind: { path: '$lot', preserveNullAndEmptyArrays: true } },
+          {
+            $project: {
+              productId: 1,
+              productSku: 1,
+              'product.name': 1,
+              'product.nameFull': 1,
+              'product.imageUrl': 1,
+              'product.coolType': 1,
+              'product.safetyStock': 1,
+              locationId: 1,
+              'location.code': 1,
+              'location.name': 1,
+              'location.fullPath': 1,
+              'location.type': 1,
+              lotId: 1,
+              'lot.lotNumber': 1,
+              'lot.expiryDate': 1,
+              'lot.status': 1,
+              quantity: 1,
+              reservedQuantity: 1,
+              availableQuantity: { $subtract: ['$quantity', '$reservedQuantity'] },
+              lastMovedAt: 1,
+              updatedAt: 1,
+            },
+          },
+        ],
       },
     },
-    { $unwind: { path: '$product', preserveNullAndEmptyArrays: true } },
-    {
-      $lookup: {
-        from: 'locations',
-        localField: 'locationId',
-        foreignField: '_id',
-        as: 'location',
-      },
-    },
-    { $unwind: { path: '$location', preserveNullAndEmptyArrays: true } },
-    {
-      $lookup: {
-        from: 'lots',
-        localField: 'lotId',
-        foreignField: '_id',
-        as: 'lot',
-      },
-    },
-    { $unwind: { path: '$lot', preserveNullAndEmptyArrays: true } },
-    {
-      $project: {
-        productId: 1,
-        productSku: 1,
-        'product.name': 1,
-        'product.nameFull': 1,
-        'product.imageUrl': 1,
-        'product.coolType': 1,
-        'product.safetyStock': 1,
-        locationId: 1,
-        'location.code': 1,
-        'location.name': 1,
-        'location.fullPath': 1,
-        'location.type': 1,
-        lotId: 1,
-        'lot.lotNumber': 1,
-        'lot.expiryDate': 1,
-        'lot.status': 1,
-        quantity: 1,
-        reservedQuantity: 1,
-        availableQuantity: { $subtract: ['$quantity', '$reservedQuantity'] },
-        lastMovedAt: 1,
-        updatedAt: 1,
-      },
-    },
-    { $sort: { productSku: 1, 'location.code': 1 } },
-  ]);
+  ];
+
+  const [result] = await StockQuant.aggregate(pipeline);
+  const total = result.metadata[0]?.total ?? 0;
+  const items = result.data;
+
+  return { items, total, page, limit };
 }
 
 /**
  * 在庫集計（商品単位） / Inventory summary grouped by product
+ * ページネーション付き / 带分页功能
  */
-export async function getInventorySummary(filters: InventorySummaryFilters): Promise<any[]> {
+export async function getInventorySummary(filters: InventorySummaryFilters): Promise<{ items: InventorySummaryItem[]; total: number; page: number; limit: number }> {
+  // ページネーションパラメータ（上限200） / 分页参数（上限200）
+  const page = Math.max(filters.page ?? 1, 1);
+  const limit = Math.min(Math.max(filters.limit ?? 50, 1), 200);
+  const skip = (page - 1) * limit;
+
   const matchStage: Record<string, unknown> = { quantity: { $gt: 0 } };
   if (filters.search) {
     matchStage.productSku = { $regex: filters.search, $options: 'i' };
@@ -242,7 +339,7 @@ export async function getInventorySummary(filters: InventorySummaryFilters): Pro
     matchStage.locationId = { $in: filters.locationIds.map(id => new mongoose.Types.ObjectId(id)) };
   }
 
-  return StockQuant.aggregate([
+  const [result] = await StockQuant.aggregate([
     { $match: matchStage },
     {
       $group: {
@@ -259,50 +356,66 @@ export async function getInventorySummary(filters: InventorySummaryFilters): Pro
         locationCount: { $size: '$locationCount' },
       },
     },
-    {
-      $lookup: {
-        from: 'products',
-        localField: '_id',
-        foreignField: '_id',
-        as: 'product',
-      },
-    },
-    { $unwind: { path: '$product', preserveNullAndEmptyArrays: true } },
-    {
-      $project: {
-        productId: '$_id',
-        productSku: 1,
-        'product.name': 1,
-        'product.nameFull': 1,
-        'product.imageUrl': 1,
-        'product.coolType': 1,
-        'product.safetyStock': 1,
-        totalQuantity: 1,
-        totalReserved: 1,
-        totalAvailable: 1,
-        locationCount: 1,
-        isBelowSafety: {
-          $cond: {
-            if: {
-              $and: [
-                { $gt: ['$product.safetyStock', 0] },
-                { $lt: ['$totalAvailable', '$product.safetyStock'] },
-              ],
-            },
-            then: true,
-            else: false,
-          },
-        },
-      },
-    },
     { $sort: { productSku: 1 } },
+    {
+      $facet: {
+        // 合計件数 / 总数
+        metadata: [{ $count: 'total' }],
+        // ページネーション付きデータ / 带分页的数据
+        data: [
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $lookup: {
+              from: 'products',
+              localField: '_id',
+              foreignField: '_id',
+              as: 'product',
+            },
+          },
+          { $unwind: { path: '$product', preserveNullAndEmptyArrays: true } },
+          {
+            $project: {
+              productId: '$_id',
+              productSku: 1,
+              'product.name': 1,
+              'product.nameFull': 1,
+              'product.imageUrl': 1,
+              'product.coolType': 1,
+              'product.safetyStock': 1,
+              totalQuantity: 1,
+              totalReserved: 1,
+              totalAvailable: 1,
+              locationCount: 1,
+              isBelowSafety: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $gt: ['$product.safetyStock', 0] },
+                      { $lt: ['$totalAvailable', '$product.safetyStock'] },
+                    ],
+                  },
+                  then: true,
+                  else: false,
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
   ]);
+
+  const total = result.metadata[0]?.total ?? 0;
+  const items = result.data;
+
+  return { items, total, page, limit };
 }
 
 /**
  * 商品別在庫詳細 / Product stock detail by location
  */
-export async function getProductStock(productId: string): Promise<any[]> {
+export async function getProductStock(productId: string): Promise<ProductStockItem[]> {
   const filter = {
     productId: new mongoose.Types.ObjectId(productId),
     quantity: { $gt: 0 },
@@ -773,7 +886,7 @@ export async function listMovements(
  * Returns products where total available stock is below safetyStock,
  * including per-location breakdown and replenishment suggestion.
  */
-export async function listLowStockAlerts(): Promise<any[]> {
+export async function listLowStockAlerts(): Promise<LowStockAlertItem[]> {
   const products = await Product.find({
     inventoryEnabled: true,
     safetyStock: { $gt: 0 },

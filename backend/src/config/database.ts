@@ -16,9 +16,17 @@ export const connectDatabase = async (): Promise<void> => {
   const env = loadEnv();
 
   try {
-    await mongoose.connect(env.mongoUri);
+    // 接続オプション: プール、タイムアウト、リトライ / 连接选项: 连接池、超时、重试
+    await mongoose.connect(env.mongoUri, {
+      maxPoolSize: Number(process.env.MONGODB_POOL_SIZE) || 10,
+      minPoolSize: 2,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 10000,
+      retryWrites: true,
+    });
     isConnected = true;
-    logger.info(`MongoDB connected: ${env.mongoUri}`);
+    logger.info(`MongoDB connected: ${env.mongoUri} (pool: ${Number(process.env.MONGODB_POOL_SIZE) || 10})`);
 
     mongoose.connection.on('error', (err) => {
       logger.error(err, 'MongoDB connection error');
@@ -67,6 +75,16 @@ export const isDatabaseConnected = (): boolean => {
 };
 
 /**
+ * 接続プール統計を取得 / 获取连接池统计
+ */
+export const getPoolStats = (): { readyState: number; host: string } => {
+  return {
+    readyState: mongoose.connection.readyState,
+    host: mongoose.connection.host || 'unknown',
+  };
+};
+
+/**
  * Check if MongoDB supports transactions (requires replica set)
  */
 let transactionsSupported: boolean | null = null;
@@ -102,10 +120,6 @@ export const checkTransactionSupport = async (): Promise<boolean> => {
 export const isTransactionSupported = (): boolean => {
   return transactionsSupported === true;
 };
-
-
-
-
 
 
 

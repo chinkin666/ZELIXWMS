@@ -13,6 +13,7 @@ import { createAutoCharge } from '@/services/chargeService';
 import { createReturnOrderSchema, inspectLinesSchema } from '@/schemas/returnOrderSchema';
 import { checkTransactionSupport } from '@/config/database';
 import { logger } from '@/lib/logger';
+import { sendError } from '@/api/helpers/responseHelper';
 
 // ---------------------------------------------------------------------------
 // 番号生成
@@ -44,8 +45,8 @@ export async function listReturnOrders(req: Request, res: Response) {
     ]);
 
     res.json({ data: docs, total, page: Number(page), limit: Number(limit) });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -55,10 +56,10 @@ export async function listReturnOrders(req: Request, res: Response) {
 export async function getReturnOrder(req: Request, res: Response) {
   try {
     const doc = await ReturnOrder.findById(req.params.id).lean();
-    if (!doc) return res.status(404).json({ error: '返品指示が見つかりません' });
+    if (!doc) return sendError(res, '返品指示が見つかりません', 404, 'NOT_FOUND');
     res.json(doc);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -70,7 +71,7 @@ export async function createReturnOrder(req: Request, res: Response) {
     // Zodバリデーション / Zod验证
     const parsed = createReturnOrderSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ') });
+      return sendError(res, parsed.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; '), 400, 'VALIDATION_ERROR');
     }
 
     const {
@@ -149,8 +150,8 @@ export async function createReturnOrder(req: Request, res: Response) {
     }).catch(() => {});
 
     res.status(201).json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -160,22 +161,23 @@ export async function createReturnOrder(req: Request, res: Response) {
 export async function updateReturnOrder(req: Request, res: Response) {
   try {
     const doc = await ReturnOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '返品指示が見つかりません' });
+    if (!doc) return sendError(res, '返品指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status === 'completed' || doc.status === 'cancelled') {
-      return res.status(400).json({ error: 'この状態では編集できません' });
+      return sendError(res, 'この状態では編集できません', 400, 'VALIDATION_ERROR');
     }
 
     const allowedFields = ['returnReason', 'reasonDetail', 'customerName', 'receivedDate', 'lines', 'memo'] as const;
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
-        (doc as any)[field] = req.body[field];
+        // Mongoose doc.set() で型安全にフィールド更新 / 使用 Mongoose doc.set() 安全更新字段
+        doc.set(field, req.body[field]);
       }
     }
 
     await doc.save();
     res.json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -185,9 +187,9 @@ export async function updateReturnOrder(req: Request, res: Response) {
 export async function startInspection(req: Request, res: Response) {
   try {
     const doc = await ReturnOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '返品指示が見つかりません' });
+    if (!doc) return sendError(res, '返品指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status !== 'draft') {
-      return res.status(400).json({ error: 'ドラフト状態のみ検品開始できます' });
+      return sendError(res, 'ドラフト状態のみ検品開始できます', 400, 'VALIDATION_ERROR');
     }
 
     doc.status = 'inspecting';
@@ -204,8 +206,8 @@ export async function startInspection(req: Request, res: Response) {
     }).catch(() => {});
 
     res.json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -215,15 +217,15 @@ export async function startInspection(req: Request, res: Response) {
 export async function inspectLines(req: Request, res: Response) {
   try {
     const doc = await ReturnOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '返品指示が見つかりません' });
+    if (!doc) return sendError(res, '返品指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status !== 'inspecting') {
-      return res.status(400).json({ error: '検品中の返品のみ検品可能です' });
+      return sendError(res, '検品中の返品のみ検品可能です', 400, 'VALIDATION_ERROR');
     }
 
     // Zodバリデーション / Zod验证
     const parsed = inspectLinesSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; ') });
+      return sendError(res, parsed.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join('; '), 400, 'VALIDATION_ERROR');
     }
 
     const { lines: inspections } = parsed.data;
@@ -233,23 +235,19 @@ export async function inspectLines(req: Request, res: Response) {
     for (const insp of inspections) {
       const line = doc.lines[insp.lineIndex];
       if (!line) {
-        return res.status(400).json({ error: `lineIndex ${insp.lineIndex}: 該当する明細が存在しません` });
+        return sendError(res, `lineIndex ${insp.lineIndex}: 該当する明細が存在しません`, 400, 'VALIDATION_ERROR');
       }
 
       // inspectedQuantityは0以上かつ元数量以下 / inspectedQuantity必须>=0且<=原始数量
       if (insp.inspectedQuantity > line.quantity) {
-        return res.status(400).json({
-          error: `lineIndex ${insp.lineIndex}: 検品数量(${insp.inspectedQuantity})が元数量(${line.quantity})を超えています`,
-        });
+        return sendError(res, `lineIndex ${insp.lineIndex}: 検品数量(${insp.inspectedQuantity})が元数量(${line.quantity})を超えています`, 400, 'VALIDATION_ERROR');
       }
 
       // restockedQuantity + disposedQuantity <= inspectedQuantity
       const restocked = insp.restockedQuantity ?? 0;
       const disposed = insp.disposedQuantity ?? 0;
       if (restocked + disposed > insp.inspectedQuantity) {
-        return res.status(400).json({
-          error: `lineIndex ${insp.lineIndex}: 再入庫数(${restocked})+廃棄数(${disposed})が検品数量(${insp.inspectedQuantity})を超えています`,
-        });
+        return sendError(res, `lineIndex ${insp.lineIndex}: 再入庫数(${restocked})+廃棄数(${disposed})が検品数量(${insp.inspectedQuantity})を超えています`, 400, 'VALIDATION_ERROR');
       }
 
       // restockの場合、locationIdが設定されていることを推奨 / restock时建议设置locationId
@@ -264,7 +262,7 @@ export async function inspectLines(req: Request, res: Response) {
       line.disposition = insp.disposition;
       line.restockedQuantity = insp.restockedQuantity ?? 0;
       line.disposedQuantity = insp.disposedQuantity ?? 0;
-      if (insp.locationId !== undefined) line.locationId = insp.locationId as any;
+      if (insp.locationId !== undefined) line.locationId = insp.locationId as unknown as typeof line.locationId;
     }
 
     await doc.save();
@@ -284,8 +282,8 @@ export async function inspectLines(req: Request, res: Response) {
       result.warnings = warnings;
     }
     res.json(result);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -295,23 +293,21 @@ export async function inspectLines(req: Request, res: Response) {
 export async function completeReturnOrder(req: Request, res: Response) {
   try {
     const doc = await ReturnOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '返品指示が見つかりません' });
+    if (!doc) return sendError(res, '返品指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status !== 'inspecting') {
-      return res.status(400).json({ error: '検品中の返品のみ完了できます' });
+      return sendError(res, '検品中の返品のみ完了できます', 400, 'VALIDATION_ERROR');
     }
 
     // 全行が検品済みか確認 / 检查所有行是否已检品
     const pendingLines = doc.lines.filter((l) => l.disposition === 'pending');
     if (pendingLines.length > 0) {
-      return res.status(400).json({
-        error: `未判定の明細が${pendingLines.length}件あります`,
-      });
+      return sendError(res, `未判定の明細が${pendingLines.length}件あります`, 400, 'VALIDATION_ERROR');
     }
 
     // 仮想ロケーション取得 / 获取虚拟位置
     const virtualCustomer = await Location.findOne({ type: 'virtual/customer' }).lean();
     if (!virtualCustomer) {
-      return res.status(400).json({ error: '仮想ロケーション(VIRTUAL/CUSTOMER)が見つかりません' });
+      return sendError(res, '仮想ロケーション(VIRTUAL/CUSTOMER)が見つかりません', 400, 'VALIDATION_ERROR');
     }
 
     // トランザクション対応で在庫更新を実行 / 使用事务保护执行库存更新
@@ -472,8 +468,8 @@ export async function completeReturnOrder(req: Request, res: Response) {
       restockedTotal,
       disposedTotal,
     }).catch((err: unknown) => logger.error(err));
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -483,9 +479,9 @@ export async function completeReturnOrder(req: Request, res: Response) {
 export async function cancelReturnOrder(req: Request, res: Response) {
   try {
     const doc = await ReturnOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '返品指示が見つかりません' });
+    if (!doc) return sendError(res, '返品指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status === 'completed') {
-      return res.status(400).json({ error: '完了済みの返品はキャンセルできません' });
+      return sendError(res, '完了済みの返品はキャンセルできません', 400, 'VALIDATION_ERROR');
     }
 
     doc.status = 'cancelled';
@@ -502,8 +498,8 @@ export async function cancelReturnOrder(req: Request, res: Response) {
     }).catch(() => {});
 
     res.json(doc.toObject());
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -514,7 +510,7 @@ export async function bulkCreateReturns(req: Request, res: Response) {
   try {
     const { returns } = req.body;
     if (!Array.isArray(returns) || returns.length === 0) {
-      return res.status(400).json({ error: 'returns配列が必要です' });
+      return sendError(res, 'returns配列が必要です', 400, 'VALIDATION_ERROR');
     }
 
     let successCount = 0;
@@ -565,9 +561,11 @@ export async function bulkCreateReturns(req: Request, res: Response) {
         });
 
         successCount++;
-      } catch (e: any) {
+      } catch (e: unknown) {
         failCount++;
-        errors.push(`行${i + 1}: ${e.message}`);
+        // エラーメッセージ抽出 / 提取错误消息
+        const msg = e instanceof Error ? e.message : String(e);
+        errors.push(`行${i + 1}: ${msg}`);
       }
     }
 
@@ -577,8 +575,8 @@ export async function bulkCreateReturns(req: Request, res: Response) {
       failCount,
       errors,
     });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -643,8 +641,8 @@ export async function getDashboardStats(_req: Request, res: Response) {
       totalDisposed,
       recentReturns,
     });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
 
@@ -654,14 +652,14 @@ export async function getDashboardStats(_req: Request, res: Response) {
 export async function deleteReturnOrder(req: Request, res: Response) {
   try {
     const doc = await ReturnOrder.findById(req.params.id);
-    if (!doc) return res.status(404).json({ error: '返品指示が見つかりません' });
+    if (!doc) return sendError(res, '返品指示が見つかりません', 404, 'NOT_FOUND');
     if (doc.status !== 'draft' && doc.status !== 'cancelled') {
-      return res.status(400).json({ error: 'ドラフトまたはキャンセル済みのみ削除できます' });
+      return sendError(res, 'ドラフトまたはキャンセル済みのみ削除できます', 400, 'VALIDATION_ERROR');
     }
 
     await doc.deleteOne();
     res.json({ success: true });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (err: unknown) {
+    sendError(res, 'Operation failed', 500, 'INTERNAL_ERROR');
   }
 }
