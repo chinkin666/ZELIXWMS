@@ -163,8 +163,14 @@ export const getProduct = async (req: Request, res: Response): Promise<void> => 
       return;
     }
     res.json(item);
-  } catch (error: any) {
-    res.status(500).json({ message: 'Failed to fetch product', error: error.message });
+  } catch (error: unknown) {
+    // 無効な ObjectId の場合 400 を返す / 无效 ObjectId 返回 400
+    if (error instanceof Error && error.name === 'CastError') {
+      res.status(400).json({ message: 'Invalid product ID format / 無効な商品IDです' });
+      return;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ message: 'Failed to fetch product', ...(process.env.NODE_ENV !== 'production' && { error: message }) });
   }
 };
 
