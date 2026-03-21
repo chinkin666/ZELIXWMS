@@ -27,6 +27,10 @@ import { WarehouseTasksModule } from './warehouse-tasks/warehouse-tasks.module.j
 import { MaterialsModule } from './materials/materials.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { ImportModule } from './import/import.module.js';
+import { ClientPortalModule } from './client-portal/client-portal.module.js';
+import { IntegrationsModule } from './integrations/integrations.module.js';
+import { RenderModule } from './render/render.module.js';
+import { PeakModeModule } from './peak-mode/peak-mode.module.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
 import envConfig from './config/env.js';
@@ -57,6 +61,10 @@ import envConfig from './config/env.js';
     MaterialsModule,
     AdminModule,
     ImportModule,
+    ClientPortalModule,
+    IntegrationsModule,
+    RenderModule,
+    PeakModeModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

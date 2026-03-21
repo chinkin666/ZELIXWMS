@@ -1,0 +1,11 @@
+// 外部連携モジュール / 外部集成模块
+import { Module } from '@nestjs/common';
+import { IntegrationsController } from './integrations.controller.js';
+import { IntegrationsService } from './integrations.service.js';
+
+@Module({
+  controllers: [IntegrationsController],
+  providers: [IntegrationsService],
+  exports: [IntegrationsService],
+})
+export class IntegrationsModule {}
