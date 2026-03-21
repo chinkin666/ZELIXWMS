@@ -8,6 +8,7 @@
  * 未認証時は 'default' にフォールバック（段階的移行用）。
  */
 import type { Request } from 'express'
+import { Warehouse } from '@/models/warehouse'
 
 /**
  * 获取请求的租户 ID / リクエストのテナント ID を取得
@@ -29,8 +30,22 @@ export function getTenantId(req: Request): string {
  * - フロントの倉庫セレクター選択値も考慮
  *   也考虑前端仓库选择器的值
  */
-// TODO: warehouseId がテナントに属しているか検証を追加予定
-// TODO: 计划添加warehouseId是否属于当前租户的验证
+/**
+ * 仓库がテナントに属しているか検証 / 验证仓库是否属于当前租户
+ *
+ * @returns true: 属している / 属于  false: 属していない / 不属于
+ */
+export async function validateWarehouseTenant(
+  warehouseId: string,
+  tenantId: string,
+): Promise<boolean> {
+  const wh = await Warehouse.findById(warehouseId).select('tenantId').lean()
+  if (!wh) return false
+  // テナント未設定の場合は許可（下位互換） / 租户未设置时允许（向下兼容）
+  if (!wh.tenantId) return true
+  return wh.tenantId === tenantId
+}
+
 export function getWarehouseFilter(req: Request): string[] {
   const role = req.user?.role
   // admin/manager は全倉庫 / admin/manager 全仓库

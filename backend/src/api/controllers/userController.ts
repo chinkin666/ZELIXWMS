@@ -68,14 +68,15 @@ export const listUsers = async (req: Request, res: Response): Promise<void> => {
  */
 export const getUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    // passwordHash を除外 / 排除 passwordHash
-    const item = await User.findById(req.params.id).select('-passwordHash').lean();
+    const tenantId = getTenantId(req);
+    // passwordHash を除外 + テナント分離 / 排除 passwordHash + 租户隔离
+    const item = await User.findOne({ _id: req.params.id, tenantId }).select('-passwordHash').lean();
     if (!item) {
       res.status(404).json({ message: 'ユーザーが見つかりません / 用户未找到' });
       return;
     }
     res.json(item);
-  } catch (error: any) {
+  } catch (error: unknown) {
     res.status(500).json({ message: 'ユーザーの取得に失敗しました / 获取用户失败' });
   }
 };
@@ -258,6 +259,14 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
  */
 export const deleteUser = async (req: Request, res: Response): Promise<void> => {
   try {
+    const tenantId = getTenantId(req);
+    // テナント分離: 他テナントのユーザーを削除できない / 租户隔离: 不能删除其他租户的用户
+    const existing = await User.findOne({ _id: req.params.id, tenantId });
+    if (!existing) {
+      res.status(404).json({ message: 'ユーザーが見つかりません / 用户未找到' });
+      return;
+    }
+
     const updated = await User.findByIdAndUpdate(
       req.params.id,
       { isActive: false },
@@ -266,13 +275,8 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
       .select('-passwordHash')
       .lean();
 
-    if (!updated) {
-      res.status(404).json({ message: 'ユーザーが見つかりません / 用户未找到' });
-      return;
-    }
-
-    res.json({ message: 'Deleted', id: updated._id });
-  } catch (error: any) {
+    res.json({ message: 'Deleted', id: updated!._id });
+  } catch (error: unknown) {
     res.status(500).json({ message: 'ユーザーの削除に失敗しました / 删除用户失败' });
   }
 };
@@ -320,13 +324,14 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
       res.status(400).json({ message: '現在のパスワードは必須です / 当前密码为必填项' });
       return;
     }
-    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
-      res.status(400).json({ message: '新しいパスワードは6文字以上必須です / 新密码至少6个字符' });
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+      res.status(400).json({ message: 'パスワードは8文字以上必須です / 密码至少8个字符' });
       return;
     }
 
-    // ユーザー取得（passwordHash含む） / 获取用户（含passwordHash）
-    const user = await User.findById(req.params.id).lean();
+    // テナント分離 + ユーザー取得（passwordHash含む） / 租户隔离 + 获取用户（含passwordHash）
+    const tenantId = getTenantId(req);
+    const user = await User.findOne({ _id: req.params.id, tenantId }).lean();
     if (!user) {
       res.status(404).json({ message: 'ユーザーが見つかりません / 用户未找到' });
       return;

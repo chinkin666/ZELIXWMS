@@ -4,6 +4,7 @@
 import type { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { getTenantId } from '@/api/helpers/tenantHelper';
+import { logger } from '@/lib/logger';
 
 export async function getAdminDashboard(req: Request, res: Response): Promise<void> {
   try {
@@ -86,7 +87,9 @@ export async function getAdminDashboard(req: Request, res: Response): Promise<vo
         count: r.count,
       })),
     });
-  } catch (error: any) {
-    res.status(500).json({ message: error.message });
+  } catch (error: unknown) {
+    // 内部エラー詳細をクライアントに漏らさない / 不向客户端泄漏内部错误详情
+    logger.error({ err: error }, 'Admin dashboard error / 管理画面エラー');
+    res.status(500).json({ message: 'Internal server error / サーバー内部エラー' });
   }
 }

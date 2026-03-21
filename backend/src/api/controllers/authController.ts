@@ -10,6 +10,36 @@ import { Tenant } from '@/models/tenant'
 import { generateToken } from '@/api/middleware/auth'
 import { logger } from '@/lib/logger'
 
+// ─── アカウント単位ログイン試行制限 / 账户级别登录尝试限制 ────────────
+// インメモリ Map で管理。Redis 接続不要で軽量。
+// 使用内存 Map 管理。不需要 Redis 连接，轻量级。
+const LOGIN_MAX_ATTEMPTS = 5
+const LOGIN_WINDOW_MS = 15 * 60 * 1000 // 15 分 / 15 分钟
+const loginAttempts = new Map<string, { count: number; firstAttempt: number }>()
+
+function checkLoginRateLimit(email: string): { blocked: boolean; remaining: number } {
+  const key = email.toLowerCase().trim()
+  const now = Date.now()
+  const entry = loginAttempts.get(key)
+
+  if (!entry || now - entry.firstAttempt > LOGIN_WINDOW_MS) {
+    // ウィンドウ期限切れ or 初回 / 窗口过期或首次
+    loginAttempts.set(key, { count: 1, firstAttempt: now })
+    return { blocked: false, remaining: LOGIN_MAX_ATTEMPTS - 1 }
+  }
+
+  if (entry.count >= LOGIN_MAX_ATTEMPTS) {
+    return { blocked: true, remaining: 0 }
+  }
+
+  entry.count++
+  return { blocked: false, remaining: LOGIN_MAX_ATTEMPTS - entry.count }
+}
+
+function resetLoginAttempts(email: string): void {
+  loginAttempts.delete(email.toLowerCase().trim())
+}
+
 /**
  * 从用户文档构建 JWT 载荷 / ユーザードキュメントから JWT ペイロードを構築
  */
@@ -52,8 +82,6 @@ function buildUserResponse(user: InstanceType<typeof User>) {
  * @body password - 密码 / パスワード
  * @body tenantId - 租户ID（可选，默认 'default'） / テナントID（省略可、デフォルト 'default'）
  */
-// TODO: アカウント単位のログイン試行制限（Redis カウンター）を追加予定
-// TODO: 计划添加账户级别的登录尝试限制（Redis计数器）
 export async function login(req: Request, res: Response): Promise<void> {
   try {
     const { email, password, tenantId = 'default' } = req.body
@@ -61,6 +89,16 @@ export async function login(req: Request, res: Response): Promise<void> {
     if (!email || !password) {
       res.status(400).json({
         message: 'メールアドレスとパスワードは必須です / Email and password are required',
+      })
+      return
+    }
+
+    // アカウント単位のレート制限チェック / 账户级别速率限制检查
+    const rateCheck = checkLoginRateLimit(email)
+    if (rateCheck.blocked) {
+      logger.warn({ email }, 'Login rate limited / ログイン試行制限に到達')
+      res.status(429).json({
+        message: 'ログイン試行回数が上限を超えました。15分後に再試行してください / Too many login attempts. Please try again in 15 minutes',
       })
       return
     }
@@ -91,6 +129,9 @@ export async function login(req: Request, res: Response): Promise<void> {
       })
       return
     }
+
+    // ログイン成功時にカウンターをリセット / 登录成功时重置计数器
+    resetLoginAttempts(email)
 
     // 更新登录信息 / ログイン情報を更新
     await User.updateOne(

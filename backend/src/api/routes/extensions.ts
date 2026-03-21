@@ -57,6 +57,7 @@ import {
   validateValues,
 } from '@/api/controllers/customFieldController';
 import { requireFeatureFlag } from '@/api/middleware/featureFlagGuard';
+import { requireRole } from '@/api/middleware/auth';
 import {
   listFlags,
   getFlagStatus,
@@ -78,15 +79,16 @@ extensionRouter.get('/hooks/summary', hooksSummary);
 extensionRouter.get('/logs', listEventLogs);
 extensionRouter.get('/logs/stats', eventLogStats);
 
-// Webhook 管理 / Webhook 管理（功能开关: extensions.webhooks）
+// Webhook 管理 / Webhook 管理（功能开关 + 角色守卫: admin/manager）
 const webhookGuard = requireFeatureFlag('extensions.webhooks');
+const adminManagerRole = requireRole('admin', 'manager');
 extensionRouter.get('/webhooks', webhookGuard, listWebhooks);
-extensionRouter.post('/webhooks', webhookGuard, createWebhook);
+extensionRouter.post('/webhooks', webhookGuard, adminManagerRole, createWebhook);
 extensionRouter.get('/webhooks/:id', webhookGuard, getWebhook);
-extensionRouter.put('/webhooks/:id', webhookGuard, updateWebhook);
-extensionRouter.delete('/webhooks/:id', webhookGuard, deleteWebhook);
-extensionRouter.post('/webhooks/:id/test', webhookGuard, testWebhook);
-extensionRouter.post('/webhooks/:id/toggle', webhookGuard, toggleWebhook);
+extensionRouter.put('/webhooks/:id', webhookGuard, adminManagerRole, updateWebhook);
+extensionRouter.delete('/webhooks/:id', webhookGuard, adminManagerRole, deleteWebhook);
+extensionRouter.post('/webhooks/:id/test', webhookGuard, adminManagerRole, testWebhook);
+extensionRouter.post('/webhooks/:id/toggle', webhookGuard, adminManagerRole, toggleWebhook);
 extensionRouter.get('/webhooks/:id/logs', webhookGuard, getWebhookLogs);
 
 // 插件管理 / プラグイン管理（功能开关: extensions.plugins）
@@ -103,36 +105,37 @@ extensionRouter.get('/plugins/:name/health', pluginGuard, pluginHealthCheck);
 extensionRouter.get('/plugins-health', pluginGuard, pluginsHealthDashboard);
 extensionRouter.get('/sdk-info', getSdkInfo);
 
-// 脚本管理 / スクリプト管理（功能开关: extensions.scripts）
+// 脚本管理 / スクリプト管理（功能开关 + 管理者専用: RCE 防止）
 const scriptGuard = requireFeatureFlag('extensions.scripts');
-extensionRouter.get('/scripts', scriptGuard, listScripts);
-extensionRouter.post('/scripts', scriptGuard, createScript);
-extensionRouter.get('/scripts/:id', scriptGuard, getScript);
-extensionRouter.put('/scripts/:id', scriptGuard, updateScript);
-extensionRouter.delete('/scripts/:id', scriptGuard, deleteScript);
-extensionRouter.post('/scripts/:id/toggle', scriptGuard, toggleScript);
-extensionRouter.post('/scripts/:id/validate', scriptGuard, validateScript);
-extensionRouter.post('/scripts/:id/test', scriptGuard, testScript);
-extensionRouter.get('/scripts/:id/logs', scriptGuard, getScriptLogs);
+const adminOnly = requireRole('admin');
+extensionRouter.get('/scripts', scriptGuard, adminOnly, listScripts);
+extensionRouter.post('/scripts', scriptGuard, adminOnly, createScript);
+extensionRouter.get('/scripts/:id', scriptGuard, adminOnly, getScript);
+extensionRouter.put('/scripts/:id', scriptGuard, adminOnly, updateScript);
+extensionRouter.delete('/scripts/:id', scriptGuard, adminOnly, deleteScript);
+extensionRouter.post('/scripts/:id/toggle', scriptGuard, adminOnly, toggleScript);
+extensionRouter.post('/scripts/:id/validate', scriptGuard, adminOnly, validateScript);
+extensionRouter.post('/scripts/:id/test', scriptGuard, adminOnly, testScript);
+extensionRouter.get('/scripts/:id/logs', scriptGuard, adminOnly, getScriptLogs);
 
-// 自定义字段管理 / カスタムフィールド管理
+// 自定义字段管理 / カスタムフィールド管理（読み取り: 全員、書き込み: admin/manager）
 extensionRouter.get('/custom-fields', listDefinitions);
-extensionRouter.post('/custom-fields', createDefinition);
+extensionRouter.post('/custom-fields', adminManagerRole, createDefinition);
 extensionRouter.get('/custom-fields/:entityType/active', getActiveDefinitions);
 extensionRouter.post('/custom-fields/:entityType/validate', validateValues);
-extensionRouter.put('/custom-fields/:id', updateDefinition);
-extensionRouter.delete('/custom-fields/:id', deleteDefinition);
+extensionRouter.put('/custom-fields/:id', adminManagerRole, updateDefinition);
+extensionRouter.delete('/custom-fields/:id', adminManagerRole, deleteDefinition);
 
-// 功能开关管理 / フィーチャーフラグ管理
-extensionRouter.get('/feature-flags', listFlags);
+// 功能开关管理 / フィーチャーフラグ管理（管理者専用 / 仅管理员）
+extensionRouter.get('/feature-flags', adminOnly, listFlags);
 extensionRouter.get('/feature-flags/status', getFlagStatus);
-extensionRouter.post('/feature-flags', createFlag);
-extensionRouter.put('/feature-flags/:id', updateFlag);
-extensionRouter.delete('/feature-flags/:id', deleteFlag);
-extensionRouter.post('/feature-flags/:id/toggle', toggleFlag);
-extensionRouter.post('/feature-flags/:id/tenant-override', setTenantOverride);
-extensionRouter.delete('/feature-flags/:id/tenant-override/:tenantId', removeTenantOverride);
+extensionRouter.post('/feature-flags', adminOnly, createFlag);
+extensionRouter.put('/feature-flags/:id', adminOnly, updateFlag);
+extensionRouter.delete('/feature-flags/:id', adminOnly, deleteFlag);
+extensionRouter.post('/feature-flags/:id/toggle', adminOnly, toggleFlag);
+extensionRouter.post('/feature-flags/:id/tenant-override', adminOnly, setTenantOverride);
+extensionRouter.delete('/feature-flags/:id/tenant-override/:tenantId', adminOnly, removeTenantOverride);
 
-// 队列监控 / キュー監視
-extensionRouter.get('/queues/stats', getQueueStats);
-extensionRouter.post('/queues/:name/clean', cleanQueue);
+// 队列监控 / キュー監視（管理者専用 / 仅管理员）
+extensionRouter.get('/queues/stats', adminOnly, getQueueStats);
+extensionRouter.post('/queues/:name/clean', adminOnly, cleanQueue);

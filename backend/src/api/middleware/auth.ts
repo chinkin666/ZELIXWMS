@@ -20,8 +20,10 @@ import { logger } from '@/lib/logger'
 const JWT_SECRET = process.env.JWT_SECRET || 'zelix-wms-dev-secret-change-in-production'
 
 if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
-  logger.error('CRITICAL: JWT_SECRET is not set in production! Using insecure default. Set JWT_SECRET environment variable immediately.')
-  // 本番で起動は許可するが、ログで強く警告する / 生产允许启动但强烈警告
+  // 本番環境で JWT_SECRET 未設定は致命的 — 即座に終了
+  // 生产环境未设置 JWT_SECRET 是致命错误 — 立即退出
+  logger.fatal('FATAL: JWT_SECRET is not set in production! Refusing to start with insecure default.')
+  process.exit(1)
 }
 
 /**
@@ -52,7 +54,8 @@ export function generateToken(payload: Omit<AuthUser, 'iat' | 'exp'>): string {
  */
 export function verifyToken(token: string): AuthUser {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthUser
+    // アルゴリズム固定でアルゴリズム混乱攻撃を防止 / 固定算法防止算法混淆攻击
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as AuthUser
     return decoded
   } catch (err) {
     if (err instanceof jwt.TokenExpiredError) {
@@ -72,8 +75,10 @@ export function verifyToken(token: string): AuthUser {
  * Authorization: Bearer <token> ヘッダーを検証し、ユーザー情報を req.user に注入する。
  */
 export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
-  // 开发环境跳过认证，注入默认管理员用户 / 開発環境で認証をスキップし、デフォルト管理者ユーザーを注入
-  if (process.env.NODE_ENV === 'development') {
+  // 開発環境：トークンが無い場合のみデフォルト管理者を注入
+  // 开发环境：仅在没有 token 时注入默认管理员
+  // NODE_ENV が明示的に 'development' の場合のみ適用
+  if (process.env.NODE_ENV === 'development' && !extractBearerToken(req)) {
     req.user = {
       id: 'dev-admin',
       email: 'dev@zelix.local',
