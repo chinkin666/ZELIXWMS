@@ -22,4 +22,22 @@ export class KpiController {
   ) {
     return this.kpiService.getOrderStats(tenantId, dateFrom, dateTo);
   }
+
+  // 精度率取得（プレースホルダ）/ 获取精度率（占位符）
+  @Get('accuracy-rate')
+  getAccuracyRate(@TenantId() tenantId: string) {
+    return this.kpiService.getAccuracyRate(tenantId);
+  }
+
+  // フルフィルメント率取得（プレースホルダ）/ 获取履行率（占位符）
+  @Get('fulfillment-rate')
+  getFulfillmentRate(@TenantId() tenantId: string) {
+    return this.kpiService.getFulfillmentRate(tenantId);
+  }
+
+  // スループット取得（プレースホルダ）/ 获取吞吐量（占位符）
+  @Get('throughput')
+  getThroughput(@TenantId() tenantId: string) {
+    return this.kpiService.getThroughput(tenantId);
+  }
 }

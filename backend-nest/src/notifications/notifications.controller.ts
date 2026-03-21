@@ -28,6 +28,15 @@ export class NotificationsController {
     });
   }
 
+  // 未読通知数取得 / 获取未读通知数
+  @Get('unread-count')
+  getUnreadCount(
+    @TenantId() tenantId: string,
+    @Query('userId', ParseUUIDPipe) userId: string,
+  ) {
+    return this.notificationsService.countUnread(tenantId, userId);
+  }
+
   // 通知ID検索 / 按ID查找通知
   @Get(':id')
   findOne(
@@ -63,4 +72,5 @@ export class NotificationsController {
   ) {
     return this.notificationsService.markAllRead(tenantId, userId);
   }
+
 }

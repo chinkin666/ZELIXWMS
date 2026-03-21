@@ -1,5 +1,5 @@
 // 倉庫タスクサービス / 仓库任务服务
-import { Inject, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { eq, and, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { warehouseTasks } from '../database/schema/warehouse-ops.js';
@@ -136,6 +136,60 @@ export class WarehouseTasksService {
 
     const rows = await this.db
       .delete(warehouseTasks)
+      .where(and(eq(warehouseTasks.id, id), eq(warehouseTasks.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // ========== ワークフロー / 工作流 ==========
+
+  // タスクアサイン（担当者設定）/ 任务分配（设置负责人）
+  async assign(tenantId: string, id: string, assigneeId: string, assigneeName: string) {
+    // 存在確認 / 确认存在
+    await this.findById(tenantId, id);
+
+    const rows = await this.db
+      .update(warehouseTasks)
+      .set({ assigneeId, assigneeName, updatedAt: new Date() })
+      .where(and(eq(warehouseTasks.id, id), eq(warehouseTasks.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // タスク完了（status → completed, completedAt設定）/ 任务完成（status → completed, 设置completedAt）
+  async complete(tenantId: string, id: string) {
+    const task = await this.findById(tenantId, id);
+
+    if (task.status === 'completed' || task.status === 'cancelled') {
+      throw new BadRequestException(
+        `Cannot complete task with status "${task.status}" / ステータス "${task.status}" のタスクは完了できません / 无法完成状态为 "${task.status}" 的任务`,
+      );
+    }
+
+    const rows = await this.db
+      .update(warehouseTasks)
+      .set({ status: 'completed', completedAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(warehouseTasks.id, id), eq(warehouseTasks.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // タスクキャンセル（status → cancelled）/ 任务取消（status → cancelled）
+  async cancel(tenantId: string, id: string) {
+    const task = await this.findById(tenantId, id);
+
+    if (task.status === 'completed' || task.status === 'cancelled') {
+      throw new BadRequestException(
+        `Cannot cancel task with status "${task.status}" / ステータス "${task.status}" のタスクはキャンセルできません / 无法取消状态为 "${task.status}" 的任务`,
+      );
+    }
+
+    const rows = await this.db
+      .update(warehouseTasks)
+      .set({ status: 'cancelled', updatedAt: new Date() })
       .where(and(eq(warehouseTasks.id, id), eq(warehouseTasks.tenantId, tenantId)))
       .returning();
 

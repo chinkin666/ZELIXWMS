@@ -67,9 +67,84 @@ export class InventoryController {
     return this.inventoryService.removeLocation(tenantId, id);
   }
 
+  // ロケーション一括作成 / 批量创建库位
+  @Post('locations/bulk')
+  bulkCreateLocations(
+    @TenantId() tenantId: string,
+    @Body() body: { locations: CreateLocationDto[] },
+  ) {
+    return this.inventoryService.bulkCreateLocations(tenantId, body.locations);
+  }
+
+  // ロケーションツリー取得 / 获取库位树
+  @Get('locations/tree')
+  getLocationTree(
+    @TenantId() tenantId: string,
+    @Query('warehouseId') warehouseId?: string,
+  ) {
+    return this.inventoryService.getLocationTree(tenantId, warehouseId);
+  }
+
+  // ========================================
+  // 在庫操作 / 库存操作
+  // ========================================
+
+  // 在庫調整 / 库存调整
+  @Post('adjust')
+  adjustStock(
+    @TenantId() tenantId: string,
+    @Body() body: { productId: string; locationId: string; quantity: number; reason?: string },
+  ) {
+    return this.inventoryService.adjustStock(tenantId, body);
+  }
+
+  // 在庫移動 / 库存转移
+  @Post('transfer')
+  transferStock(
+    @TenantId() tenantId: string,
+    @Body() body: { productId: string; fromLocationId: string; toLocationId: string; quantity: number },
+  ) {
+    return this.inventoryService.transferStock(tenantId, body);
+  }
+
+  // 在庫一括調整 / 库存批量调整
+  @Post('bulk-adjust')
+  bulkAdjustStock(
+    @TenantId() tenantId: string,
+    @Body() body: { adjustments: { productId: string; locationId: string; quantity: number; reason?: string }[] },
+  ) {
+    return this.inventoryService.bulkAdjustStock(tenantId, body.adjustments);
+  }
+
   // ========================================
   // 在庫クエリ / 库存查询
   // ========================================
+
+  // 在庫移動履歴取得 / 获取库存移动历史
+  @Get('movements')
+  getMovements(
+    @TenantId() tenantId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('productId') productId?: string,
+    @Query('moveType') moveType?: string,
+  ) {
+    return this.inventoryService.getMovements(tenantId, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      productId,
+      moveType,
+    });
+  }
+
+  // 在庫エイジング分析（プレースホルダー）/ 库存老化分析（占位符）
+  @Get('aging')
+  getAgingAnalysis(
+    @TenantId() tenantId: string,
+    @Query('warehouseId') warehouseId?: string,
+  ) {
+    return this.inventoryService.getAgingAnalysis(tenantId, warehouseId);
+  }
 
   // 在庫レベル取得（商品別集計）/ 获取库存水平（按商品汇总）
   @Get('stock')

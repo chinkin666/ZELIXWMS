@@ -90,6 +90,64 @@ export class AdminController {
     return this.adminService.upsertSettings(tenantId, key, settings);
   }
 
+  // ========== ダッシュボード / 仪表盘 ==========
+
+  // 管理ダッシュボード（プレースホルダ）/ 管理仪表盘（占位符）
+  @Get('dashboard')
+  getDashboard(@TenantId() tenantId: string) {
+    return this.adminService.getDashboard(tenantId);
+  }
+
+  // ========== テナント管理 / 租户管理 ==========
+
+  // テナント一覧取得 / 获取租户列表
+  @Get('tenants')
+  findAllTenants(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.adminService.findAllTenants({
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
+  }
+
+  // テナントID検索 / 按ID查找租户
+  @Get('tenants/:id')
+  findTenantById(@Param('id', ParseUUIDPipe) id: string) {
+    return this.adminService.findTenantById(id);
+  }
+
+  // テナント作成 / 创建租户
+  @Post('tenants')
+  createTenant(@Body() dto: Record<string, unknown>) {
+    return this.adminService.createTenant(dto);
+  }
+
+  // テナント更新 / 更新租户
+  @Put('tenants/:id')
+  updateTenant(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: Record<string, unknown>,
+  ) {
+    return this.adminService.updateTenant(id, dto);
+  }
+
+  // ========== APIログ / API日志 ==========
+
+  // APIログ取得（プレースホルダ）/ 获取API日志（占位符）
+  @Get('api-logs')
+  findApiLogs(
+    @TenantId() tenantId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.adminService.findApiLogs(tenantId, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
+  }
+
   // ========== 操作ログ / 操作日志 ==========
 
   // 操作ログ取得 / 获取操作日志

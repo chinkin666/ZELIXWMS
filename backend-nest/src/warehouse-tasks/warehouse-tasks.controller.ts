@@ -66,4 +66,34 @@ export class WarehouseTasksController {
   ) {
     return this.warehouseTasksService.remove(tenantId, id);
   }
+
+  // ========== ワークフロー / 工作流 ==========
+
+  // タスクアサイン（担当者設定）/ 任务分配（设置负责人）
+  @Post(':id/assign')
+  assign(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: { assigneeId: string; assigneeName: string },
+  ) {
+    return this.warehouseTasksService.assign(tenantId, id, dto.assigneeId, dto.assigneeName);
+  }
+
+  // タスク完了（status → completed）/ 任务完成（status → completed）
+  @Post(':id/complete')
+  complete(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.warehouseTasksService.complete(tenantId, id);
+  }
+
+  // タスクキャンセル（status → cancelled）/ 任务取消（status → cancelled）
+  @Post(':id/cancel')
+  cancel(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.warehouseTasksService.cancel(tenantId, id);
+  }
 }

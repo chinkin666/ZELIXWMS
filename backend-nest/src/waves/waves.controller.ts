@@ -62,4 +62,33 @@ export class WavesController {
   ) {
     return this.wavesService.remove(tenantId, id);
   }
+
+  // ========== ワークフロー / 工作流 ==========
+
+  // ウェーブリリース（pending → in_progress）/ 波次释放（pending → in_progress）
+  @Post(':id/release')
+  release(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.wavesService.release(tenantId, id);
+  }
+
+  // ウェーブ完了（in_progress → completed）/ 波次完成（in_progress → completed）
+  @Post(':id/complete')
+  complete(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.wavesService.complete(tenantId, id);
+  }
+
+  // ウェーブキャンセル（→ cancelled）/ 波次取消（→ cancelled）
+  @Post(':id/cancel')
+  cancel(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.wavesService.cancel(tenantId, id);
+  }
 }

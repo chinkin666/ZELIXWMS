@@ -3,6 +3,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { eq, and, ilike, sql, SQL, desc } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { users } from '../database/schema/users.js';
+import { tenants } from '../database/schema/tenants.js';
 import { systemSettings } from '../database/schema/settings.js';
 import { operationLogs } from '../database/schema/settings.js';
 import type { CreateUserDto, UpdateUserDto } from './dto/create-user.dto.js';
@@ -130,6 +131,101 @@ export class AdminService {
       .returning();
 
     return rows[0];
+  }
+
+  // ========== ダッシュボード / 仪表盘 ==========
+
+  // 管理ダッシュボード（プレースホルダ）/ 管理仪表盘（占位符）
+  // TODO: 実データから集計 / 从实际数据聚合
+  async getDashboard(tenantId: string) {
+    const [userCount, tenantCount] = await Promise.all([
+      this.db.select({ count: sql<number>`count(*)::int` }).from(users).where(eq(users.tenantId, tenantId)),
+      this.db.select({ count: sql<number>`count(*)::int` }).from(tenants),
+    ]);
+
+    return {
+      totalUsers: userCount[0]?.count ?? 0,
+      totalTenants: tenantCount[0]?.count ?? 0,
+      activeUsers: 0,
+      storageUsed: 0,
+    };
+  }
+
+  // ========== テナント管理 / 租户管理 ==========
+
+  // テナント一覧取得 / 获取租户列表
+  async findAllTenants(query: { page?: number; limit?: number }) {
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const offset = (page - 1) * limit;
+
+    const [items, countResult] = await Promise.all([
+      this.db.select().from(tenants).limit(limit).offset(offset).orderBy(tenants.createdAt),
+      this.db.select({ count: sql<number>`count(*)::int` }).from(tenants),
+    ]);
+
+    return {
+      items,
+      total: countResult[0]?.count ?? 0,
+      page,
+      limit,
+    };
+  }
+
+  // テナントID検索 / 按ID查找租户
+  async findTenantById(id: string) {
+    const rows = await this.db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.id, id))
+      .limit(1);
+
+    if (rows.length === 0) {
+      throw new NotFoundException(
+        `Tenant ${id} not found / テナント ${id} が見つかりません / 租户 ${id} 未找到`,
+      );
+    }
+    return rows[0];
+  }
+
+  // テナント作成 / 创建租户
+  async createTenant(dto: Record<string, unknown>) {
+    const rows = await this.db
+      .insert(tenants)
+      .values(dto)
+      .returning();
+
+    return rows[0];
+  }
+
+  // テナント更新 / 更新租户
+  async updateTenant(id: string, dto: Record<string, unknown>) {
+    // 存在確認 / 确认存在
+    await this.findTenantById(id);
+
+    const rows = await this.db
+      .update(tenants)
+      .set({ ...dto, updatedAt: new Date() })
+      .where(eq(tenants.id, id))
+      .returning();
+
+    return rows[0];
+  }
+
+  // ========== APIログ / API日志 ==========
+
+  // APIログ取得（プレースホルダ）/ 获取API日志（占位符）
+  // TODO: 実テーブルから取得 / 从实际表中获取
+  async findApiLogs(tenantId: string, query: { page?: number; limit?: number }) {
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(100, Math.max(1, query.limit || 20));
+
+    return {
+      items: [],
+      total: 0,
+      page,
+      limit,
+    };
   }
 
   // ========== システム設定 / 系统设置 ==========

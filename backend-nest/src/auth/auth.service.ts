@@ -141,4 +141,40 @@ export class AuthService {
       updatedAt: user.updatedAt,
     };
   }
+
+  // ログアウト（セッションクリアプレースホルダー）/ 登出（清除会话占位符）
+  async logout(userId: string) {
+    // NOTE: 実際のセッション無効化はSupabase Auth側で行う / 实际会话失效由Supabase Auth处理
+    return { message: 'Logged out successfully / ログアウトしました / 已登出', userId };
+  }
+
+  // トークンリフレッシュ（プレースホルダー）/ 刷新令牌（占位符）
+  async refreshToken(userId: string) {
+    // NOTE: 実際のトークンリフレッシュはSupabase Auth側で行う / 实际令牌刷新由Supabase Auth处理
+    return {
+      token: `mock-refreshed-token-${userId}-${Date.now()}`,
+      expiresIn: 3600,
+      message: 'Token refreshed (placeholder) / トークンリフレッシュ（プレースホルダー）/ 令牌已刷新（占位符）',
+    };
+  }
+
+  // ポータルログイン（プレースホルダー）/ 门户登录（占位符）
+  async portalLogin(email: string, _password: string) {
+    // NOTE: ポータル認証の実装は後日 / 门户认证实现待定
+    return {
+      message: 'Portal login placeholder / ポータルログインプレースホルダー / 门户登录占位符',
+      email,
+      token: `mock-portal-token-${Date.now()}`,
+    };
+  }
+
+  // ポータル登録（プレースホルダー）/ 门户注册（占位符）
+  async portalRegister(email: string, _password: string, companyName?: string) {
+    // NOTE: ポータル登録の実装は後日 / 门户注册实现待定
+    return {
+      message: 'Portal registration placeholder / ポータル登録プレースホルダー / 门户注册占位符',
+      email,
+      companyName: companyName ?? null,
+    };
+  }
 }

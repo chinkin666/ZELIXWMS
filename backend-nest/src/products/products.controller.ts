@@ -30,6 +30,29 @@ export class ProductsController {
     });
   }
 
+  // 商品全文検索（SKU/名前/バーコード）/ 商品全文搜索（SKU/名称/条码）
+  @Get('search')
+  search(
+    @TenantId() tenantId: string,
+    @Query('q') q: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.productsService.search(tenantId, q ?? '', {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
+  }
+
+  // バーコード検索 / 按条码查找商品
+  @Get('barcode/:code')
+  findByBarcode(
+    @TenantId() tenantId: string,
+    @Param('code') code: string,
+  ) {
+    return this.productsService.findByBarcode(tenantId, code);
+  }
+
   // 商品ID検索 / 按ID查找商品
   @Get(':id')
   findOne(
@@ -37,6 +60,52 @@ export class ProductsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.productsService.findById(tenantId, id);
+  }
+
+  // 商品別在庫取得（在庫サービスへ委譲）/ 获取商品库存（委托给库存服务）
+  @Get(':id/stock')
+  getProductStock(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    // NOTE: 在庫サービスへのプロキシ。将来的にInventoryServiceを注入する。
+    // 注意: 代理到库存服务。将来注入InventoryService。
+    return this.productsService.findById(tenantId, id).then((product) => ({
+      productId: product.id,
+      sku: product.sku,
+      name: product.name,
+      stock: { message: 'Delegate to inventory service / 在庫サービスに委譲 / 委托给库存服务' },
+    }));
+  }
+
+  // 商品CSVインポート（プレースホルダー）/ 商品CSV导入（占位符）
+  @Post('import')
+  importCsv(@TenantId() tenantId: string) {
+    return { message: 'CSV import placeholder / CSVインポートプレースホルダー / CSV导入占位符', tenantId };
+  }
+
+  // 商品CSVエクスポート（プレースホルダー）/ 商品CSV导出（占位符）
+  @Post('export')
+  exportCsv(@TenantId() tenantId: string) {
+    return { message: 'CSV export placeholder / CSVエクスポートプレースホルダー / CSV导出占位符', tenantId };
+  }
+
+  // 商品一括更新 / 商品批量更新
+  @Post('bulk-update')
+  bulkUpdate(
+    @TenantId() tenantId: string,
+    @Body() body: { ids: string[]; data: UpdateProductDto },
+  ) {
+    return this.productsService.bulkUpdate(tenantId, body.ids, body.data);
+  }
+
+  // 商品一括削除（論理削除）/ 商品批量删除（软删除）
+  @Post('bulk-delete')
+  bulkDelete(
+    @TenantId() tenantId: string,
+    @Body() body: { ids: string[] },
+  ) {
+    return this.productsService.bulkDelete(tenantId, body.ids);
   }
 
   // 商品作成 / 创建商品

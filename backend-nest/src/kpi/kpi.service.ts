@@ -47,4 +47,22 @@ export class KpiService {
       dateTo: dateTo ?? null,
     };
   }
+
+  // 精度率（プレースホルダ）/ 精度率（占位符）
+  // TODO: 実データから計算 / 从实际数据计算
+  async getAccuracyRate(_tenantId: string): Promise<{ rate: number }> {
+    return { rate: 0 };
+  }
+
+  // フルフィルメント率（プレースホルダ）/ 履行率（占位符）
+  // TODO: 実データから計算 / 从实际数据计算
+  async getFulfillmentRate(_tenantId: string): Promise<{ rate: number }> {
+    return { rate: 0 };
+  }
+
+  // スループット（プレースホルダ）/ 吞吐量（占位符）
+  // TODO: 実データから計算 / 从实际数据计算
+  async getThroughput(_tenantId: string): Promise<{ rate: number }> {
+    return { rate: 0 };
+  }
 }

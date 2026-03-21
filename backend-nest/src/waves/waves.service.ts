@@ -1,5 +1,5 @@
 // ウェーブサービス / 波次服务
-import { Inject, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { eq, and, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { waves } from '../database/schema/warehouse-ops.js';
@@ -128,6 +128,65 @@ export class WavesService {
 
     const rows = await this.db
       .delete(waves)
+      .where(and(eq(waves.id, id), eq(waves.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // ========== ワークフロー / 工作流 ==========
+
+  // ウェーブリリース（pending → in_progress）/ 波次释放（pending → in_progress）
+  async release(tenantId: string, id: string) {
+    const wave = await this.findById(tenantId, id);
+
+    if (wave.status !== 'pending') {
+      throw new BadRequestException(
+        `Wave status must be "pending" to release, current: "${wave.status}" / リリースするにはステータスが "pending" である必要があります。現在: "${wave.status}" / 释放需要状态为 "pending"，当前: "${wave.status}"`,
+      );
+    }
+
+    const rows = await this.db
+      .update(waves)
+      .set({ status: 'in_progress', updatedAt: new Date() })
+      .where(and(eq(waves.id, id), eq(waves.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // ウェーブ完了（in_progress → completed）/ 波次完成（in_progress → completed）
+  async complete(tenantId: string, id: string) {
+    const wave = await this.findById(tenantId, id);
+
+    if (wave.status !== 'in_progress') {
+      throw new BadRequestException(
+        `Wave status must be "in_progress" to complete, current: "${wave.status}" / 完了するにはステータスが "in_progress" である必要があります。現在: "${wave.status}" / 完成需要状态为 "in_progress"，当前: "${wave.status}"`,
+      );
+    }
+
+    const rows = await this.db
+      .update(waves)
+      .set({ status: 'completed', updatedAt: new Date() })
+      .where(and(eq(waves.id, id), eq(waves.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // ウェーブキャンセル（→ cancelled）/ 波次取消（→ cancelled）
+  async cancel(tenantId: string, id: string) {
+    const wave = await this.findById(tenantId, id);
+
+    if (wave.status === 'completed' || wave.status === 'cancelled') {
+      throw new BadRequestException(
+        `Cannot cancel wave with status "${wave.status}" / ステータス "${wave.status}" のウェーブはキャンセルできません / 无法取消状态为 "${wave.status}" 的波次`,
+      );
+    }
+
+    const rows = await this.db
+      .update(waves)
+      .set({ status: 'cancelled', updatedAt: new Date() })
       .where(and(eq(waves.id, id), eq(waves.tenantId, tenantId)))
       .returning();
 

@@ -109,4 +109,18 @@ export class NotificationsService {
 
     return { updated: rows.length };
   }
+
+  // 未読通知数取得 / 获取未读通知数
+  async countUnread(tenantId: string, userId: string): Promise<{ count: number }> {
+    const result = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(notifications)
+      .where(and(
+        eq(notifications.tenantId, tenantId),
+        eq(notifications.userId, userId),
+        eq(notifications.isRead, false),
+      ));
+
+    return { count: result[0]?.count ?? 0 };
+  }
 }

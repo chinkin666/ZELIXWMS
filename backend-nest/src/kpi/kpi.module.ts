@@ -2,9 +2,10 @@
 import { Module } from '@nestjs/common';
 import { KpiController } from './kpi.controller.js';
 import { KpiService } from './kpi.service.js';
+import { DashboardController } from './dashboard.controller.js';
 
 @Module({
-  controllers: [KpiController],
+  controllers: [KpiController, DashboardController],
   providers: [KpiService],
   exports: [KpiService],
 })

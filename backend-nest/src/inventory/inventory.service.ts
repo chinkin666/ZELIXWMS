@@ -1,8 +1,8 @@
 // 在庫サービス / 库存服务
-import { Inject, Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { eq, and, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
-import { locations, stockQuants } from '../database/schema/inventory.js';
+import { locations, stockQuants, stockMoves } from '../database/schema/inventory.js';
 import type { CreateLocationDto, UpdateLocationDto } from './dto/create-location.dto.js';
 
 // ロケーション検索クエリ / 库位查询参数
@@ -247,5 +247,216 @@ export class InventoryService {
       totalReserved: rows.reduce((sum: number, r: any) => sum + (r.reservedQuantity ?? 0), 0),
       totalAvailable: rows.reduce((sum: number, r: any) => sum + (r.availableQuantity ?? 0), 0),
     };
+  }
+
+  // ========================================
+  // 在庫操作 / 库存操作
+  // ========================================
+
+  // 在庫調整（stockMoves挿入 + stockQuants更新）/ 库存调整（插入stockMoves + 更新stockQuants）
+  async adjustStock(tenantId: string, body: { productId: string; locationId: string; quantity: number; reason?: string }) {
+    const { productId, locationId, quantity, reason } = body;
+
+    if (!productId || !locationId || quantity === undefined) {
+      throw new BadRequestException(
+        'productId, locationId, quantity are required / productId, locationId, quantity は必須です / productId, locationId, quantity 为必填',
+      );
+    }
+
+    const now = new Date();
+    const moveNumber = `ADJ-${Date.now()}`;
+
+    // stockMoves に調整レコード挿入 / 在stockMoves中插入调整记录
+    const [move] = await this.db.insert(stockMoves).values({
+      tenantId,
+      moveNumber,
+      moveType: 'adjustment',
+      status: 'done',
+      productId,
+      toLocationId: locationId,
+      quantity,
+      referenceType: 'adjustment',
+      reason: reason ?? '',
+      executedAt: now,
+    }).returning();
+
+    // stockQuants を upsert / upsert stockQuants
+    await this.db.execute(sql`
+      INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
+      VALUES (${tenantId}, ${productId}, ${locationId}, ${quantity}, ${now}, ${now})
+      ON CONFLICT (tenant_id, product_id, location_id, lot_id)
+      DO UPDATE SET
+        quantity = stock_quants.quantity + ${quantity},
+        updated_at = ${now},
+        last_moved_at = ${now}
+    `);
+
+    return { move, message: 'Stock adjusted / 在庫調整完了 / 库存调整完成' };
+  }
+
+  // 在庫移動（ロケーション間転送）/ 库存转移（库位间转移）
+  async transferStock(tenantId: string, body: { productId: string; fromLocationId: string; toLocationId: string; quantity: number }) {
+    const { productId, fromLocationId, toLocationId, quantity } = body;
+
+    if (!productId || !fromLocationId || !toLocationId || !quantity || quantity <= 0) {
+      throw new BadRequestException(
+        'productId, fromLocationId, toLocationId, quantity (> 0) are required / 必須項目が不足しています / 必填项缺失',
+      );
+    }
+
+    const now = new Date();
+    const moveNumber = `TRF-${Date.now()}`;
+
+    // stockMoves に移動レコード挿入 / 在stockMoves中插入转移记录
+    const [move] = await this.db.insert(stockMoves).values({
+      tenantId,
+      moveNumber,
+      moveType: 'transfer',
+      status: 'done',
+      productId,
+      fromLocationId,
+      toLocationId,
+      quantity,
+      referenceType: 'adjustment',
+      executedAt: now,
+    }).returning();
+
+    // 移動元の在庫を減らす / 减少来源库位库存
+    await this.db.execute(sql`
+      UPDATE stock_quants
+      SET quantity = quantity - ${quantity}, updated_at = ${now}, last_moved_at = ${now}
+      WHERE tenant_id = ${tenantId} AND product_id = ${productId} AND location_id = ${fromLocationId}
+    `);
+
+    // 移動先の在庫を増やす（upsert）/ 增加目标库位库存（upsert）
+    await this.db.execute(sql`
+      INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
+      VALUES (${tenantId}, ${productId}, ${toLocationId}, ${quantity}, ${now}, ${now})
+      ON CONFLICT (tenant_id, product_id, location_id, lot_id)
+      DO UPDATE SET
+        quantity = stock_quants.quantity + ${quantity},
+        updated_at = ${now},
+        last_moved_at = ${now}
+    `);
+
+    return { move, message: 'Stock transferred / 在庫移動完了 / 库存转移完成' };
+  }
+
+  // 在庫一括調整 / 库存批量调整
+  async bulkAdjustStock(tenantId: string, adjustments: { productId: string; locationId: string; quantity: number; reason?: string }[]) {
+    if (!adjustments || adjustments.length === 0) {
+      return { adjusted: 0, results: [] };
+    }
+
+    const results = [];
+    for (const adj of adjustments) {
+      const result = await this.adjustStock(tenantId, adj);
+      results.push(result);
+    }
+
+    return { adjusted: results.length, results };
+  }
+
+  // 在庫移動履歴取得（ページネーション付き）/ 获取库存移动历史（带分页）
+  async getMovements(tenantId: string, query: { page?: number; limit?: number; productId?: string; moveType?: string }) {
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(100, Math.max(1, query.limit || 20));
+    const offset = (page - 1) * limit;
+
+    const conditions: SQL[] = [eq(stockMoves.tenantId, tenantId)];
+
+    if (query.productId) {
+      conditions.push(eq(stockMoves.productId, query.productId));
+    }
+    if (query.moveType) {
+      conditions.push(eq(stockMoves.moveType, query.moveType));
+    }
+
+    const where = and(...conditions);
+
+    const [items, countResult] = await Promise.all([
+      this.db
+        .select()
+        .from(stockMoves)
+        .where(where)
+        .limit(limit)
+        .offset(offset)
+        .orderBy(sql`${stockMoves.createdAt} DESC`),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(stockMoves)
+        .where(where),
+    ]);
+
+    return {
+      items,
+      total: countResult[0]?.count ?? 0,
+      page,
+      limit,
+    };
+  }
+
+  // 在庫エイジング分析（プレースホルダー）/ 库存老化分析（占位符）
+  async getAgingAnalysis(tenantId: string, warehouseId?: string) {
+    // TODO: 実装予定 - stockQuantsのlastMovedAtをベースに分析 / 待实现 - 基于stockQuants的lastMovedAt分析
+    return {
+      tenantId,
+      warehouseId: warehouseId ?? null,
+      message: 'Aging analysis placeholder / エイジング分析プレースホルダー / 老化分析占位符',
+      brackets: [
+        { label: '0-30 days / 0-30日', count: 0 },
+        { label: '31-60 days / 31-60日', count: 0 },
+        { label: '61-90 days / 61-90日', count: 0 },
+        { label: '90+ days / 90日以上', count: 0 },
+      ],
+    };
+  }
+
+  // ロケーション一括作成 / 批量创建库位
+  async bulkCreateLocations(tenantId: string, locationDtos: CreateLocationDto[]) {
+    if (!locationDtos || locationDtos.length === 0) {
+      return { created: 0, items: [] };
+    }
+
+    const values = locationDtos.map((dto) => ({ tenantId, ...dto }));
+    const rows = await this.db.insert(locations).values(values).returning();
+
+    return { created: rows.length, items: rows };
+  }
+
+  // ロケーションツリー取得（parentId による階層構造）/ 获取库位树（基于parentId的层级结构）
+  async getLocationTree(tenantId: string, warehouseId?: string) {
+    const conditions: SQL[] = [eq(locations.tenantId, tenantId)];
+
+    if (warehouseId) {
+      conditions.push(eq(locations.warehouseId, warehouseId));
+    }
+
+    const where = and(...conditions);
+
+    const allLocations = await this.db
+      .select()
+      .from(locations)
+      .where(where)
+      .orderBy(locations.sortOrder, locations.code);
+
+    // ツリー構築 / 构建树
+    const map = new Map<string, any>();
+    const roots: any[] = [];
+
+    for (const loc of allLocations) {
+      map.set(loc.id, { ...loc, children: [] });
+    }
+
+    for (const loc of allLocations) {
+      const node = map.get(loc.id);
+      if (loc.parentId && map.has(loc.parentId)) {
+        map.get(loc.parentId).children.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+
+    return roots;
   }
 }
