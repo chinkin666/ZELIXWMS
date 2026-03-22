@@ -51,10 +51,13 @@ services:
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
       - JWT_SECRET=${JWT_SECRET:-replace-me-in-production}
+      - B2_API_URL=http://b2-proxy:8000
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      b2-proxy:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4100/health"]
@@ -124,6 +127,28 @@ services:
       resources:
         limits:
           memory: 128M
+    networks:
+      - internal
+
+  # Yamato B2 Cloud API プロキシ（Python FastAPI）/ 大和B2 Cloud API代理
+  # プラグインアーキテクチャ: 配送業者ごとに独立サービス / 插件架构: 每个配送公司独立服务
+  b2-proxy:
+    build: ../nexand-yamato-b2-webapi
+    environment:
+      - B2_API_KEY=${B2_API_KEY:-}
+      - B2_JWT_SECRET=${B2_JWT_SECRET:-replace-me}
+      - B2_FERNET_KEY=${B2_FERNET_KEY:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     networks:
       - internal
 
