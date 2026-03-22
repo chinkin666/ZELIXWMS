@@ -53,6 +53,12 @@ export class ProductsController {
     return this.productsService.findByBarcode(tenantId, code);
   }
 
+  // 商品出荷統計（:idルートより前に配置）/ 商品出货统计（放在:id路由之前）
+  @Get('shipment-stats')
+  getShipmentStats(@TenantId() tenantId: string) {
+    return this.productsService.getShipmentStats(tenantId);
+  }
+
   // 商品ID検索 / 按ID查找商品
   @Get(':id')
   findOne(
@@ -103,12 +109,6 @@ export class ProductsController {
     @Body() body: { sku: string },
   ) {
     return this.productsService.checkSkuAvailability(tenantId, body.sku);
-  }
-
-  // 商品出荷統計 / 商品出货统计
-  @Get('shipment-stats')
-  getShipmentStats(@TenantId() tenantId: string) {
-    return this.productsService.getShipmentStats(tenantId);
   }
 
   // 商品CSVインポート / 商品CSV导入

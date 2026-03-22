@@ -1014,7 +1014,7 @@ export class ShipmentService {
         eq(shipmentOrders.statusHeld, true),
         eq(shipmentOrders.statusShipped, false),
         isNull(shipmentOrders.deletedAt),
-        sql`${shipmentOrders.statusHeldAt} < ${sevenDaysAgo}`,
+        sql`${shipmentOrders.statusHeldAt} < ${sevenDaysAgo.toISOString()}::timestamp`,
       ))
       .returning();
 
@@ -1036,8 +1036,8 @@ export class ShipmentService {
         eq(shipmentOrders.statusHeld, true),
         eq(shipmentOrders.statusShipped, false),
         isNull(shipmentOrders.deletedAt),
-        sql`${shipmentOrders.statusHeldAt} <= ${sixDaysAgo}`,
-        sql`${shipmentOrders.statusHeldAt} > ${sevenDaysAgo}`,
+        sql`${shipmentOrders.statusHeldAt} <= ${sixDaysAgo.toISOString()}::timestamp`,
+        sql`${shipmentOrders.statusHeldAt} > ${sevenDaysAgo.toISOString()}::timestamp`,
       ));
 
     return { count: nearExpiry.length, items: nearExpiry };
