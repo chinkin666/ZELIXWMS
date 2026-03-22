@@ -193,7 +193,11 @@ export class PrintTemplatesService {
   async create(tenantId: string, dto: Record<string, unknown>) {
     const rows = await this.db
       .insert(printTemplates)
-      .values({ tenantId, ...dto } as any)
+      .values({
+        tenantId,
+        type: 'label',
+        ...dto,
+      } as any)
       .returning();
     return rows[0];
   }
