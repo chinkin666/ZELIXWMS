@@ -205,15 +205,34 @@ export class ShipmentService {
     return { deleted: rows.length, items: rows };
   }
 
-  // 出荷注文一括部分更新（指定IDリストに共通データを適用）/ 出货订单批量部分更新（对指定ID列表应用通用数据）
+  // 出荷注文一括部分更新（指定IDリストに共通データを適用、フィールドホワイトリスト制限）
+  // 出货订单批量部分更新（对指定ID列表应用通用数据，字段白名单限制）
   async bulkPartialUpdate(tenantId: string, ids: string[], data: Record<string, unknown>) {
     if (!ids || ids.length === 0) {
       throw new WmsException('VALIDATION_ERROR', 'No IDs provided / IDが未指定 / 未提供ID');
     }
 
+    // 更新可能フィールドのホワイトリスト / 可更新字段白名单
+    const ALLOWED_FIELDS = new Set([
+      'notes', 'priority', 'assignedTo', 'shippingMethod',
+      'carrierCode', 'trackingNumber', 'labelUrl',
+      'scheduledDate', 'tags', 'metadata',
+    ]);
+
+    const safeData: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (ALLOWED_FIELDS.has(key)) {
+        safeData[key] = value;
+      }
+    }
+
+    if (Object.keys(safeData).length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'No valid fields to update / 更新可能なフィールドがありません / 没有可更新的字段');
+    }
+
     const rows = await this.db
       .update(shipmentOrders)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...safeData, updatedAt: new Date() })
       .where(and(
         inArray(shipmentOrders.id, ids),
         eq(shipmentOrders.tenantId, tenantId),

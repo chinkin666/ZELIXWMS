@@ -241,12 +241,12 @@ export class PassthroughService {
       summary.total += row.count;
     }
 
-    // 最近の注文取得 / 获取最近的订单
+    // 最近の注文取得（降順で最新10件）/ 获取最近的订单（降序取最新10条）
     const recentOrders = await this.db
       .select()
       .from(passthroughOrders)
       .where(eq(passthroughOrders.tenantId, tenantId))
-      .orderBy(passthroughOrders.createdAt)
+      .orderBy(sql`${passthroughOrders.createdAt} DESC`)
       .limit(10);
 
     return { tenantId, summary, recentOrders };

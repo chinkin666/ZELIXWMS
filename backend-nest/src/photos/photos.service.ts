@@ -86,8 +86,11 @@ export class PhotosService {
       throw new WmsException('PHOTO_INVALID_TYPE', `MIME type: ${dto.mimeType}`);
     }
 
+    // ファイル名サニタイズ（パストラバーサル防止）/ 文件名消毒（防止路径遍历）
+    const safeFilename = (dto.filename || 'unnamed').replace(/[\/\\\.\.]+/g, '_').replace(/^_+|_+$/g, '');
+
     // URLプレースホルダー生成 / 生成URL占位符
-    const url = dto.url || `/storage/${tenantId}/photos/${Date.now()}-${dto.filename || 'unnamed'}`;
+    const url = dto.url || `/storage/${tenantId}/photos/${Date.now()}-${safeFilename}`;
 
     const [created] = await this.db
       .insert(photos)
@@ -151,7 +154,7 @@ export class PhotosService {
       originalFilename: dto.originalFilename,
       mimeType: dto.mimeType,
       size: dto.size,
-      url: dto.url || `/storage/${tenantId}/photos/${Date.now()}-${dto.filename || 'unnamed'}`,
+      url: dto.url || `/storage/${tenantId}/photos/${Date.now()}-${(dto.filename || 'unnamed').replace(/[\/\\\.\.]+/g, '_').replace(/^_+|_+$/g, '')}`,
       thumbnailUrl: dto.thumbnailUrl,
       uploadedBy: dto.uploadedBy,
     }));

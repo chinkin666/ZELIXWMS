@@ -44,6 +44,7 @@ export const WMS_ERROR_CODES = {
   // FBA Amazon FBA / Amazon FBA
   FBA_PLAN_NOT_FOUND: { code: 'FBA-001', status: 404, message: 'FBA shipment plan not found' },
   FBA_BOX_NOT_FOUND: { code: 'FBA-002', status: 404, message: 'FBA box not found' },
+  FBA_INVALID_STATUS: { code: 'FBA-003', status: 422, message: 'Invalid FBA plan status transition' },
 
   // RSL 楽天RSL / 乐天RSL
   RSL_PLAN_NOT_FOUND: { code: 'RSL-001', status: 404, message: 'RSL shipment plan not found' },

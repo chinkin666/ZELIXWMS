@@ -239,7 +239,7 @@ export class InventoryService {
   // 在庫操作 / 库存操作
   // ========================================
 
-  // 在庫調整（stockMoves挿入 + stockQuants更新）/ 库存调整（插入stockMoves + 更新stockQuants）
+  // 在庫調整（stockMoves挿入 + stockQuants更新、トランザクション内）/ 库存调整（插入stockMoves + 更新stockQuants，在事务内）
   async adjustStock(tenantId: string, body: { productId: string; locationId: string; quantity: number; reason?: string }) {
     const { productId, locationId, quantity, reason } = body;
 
@@ -248,37 +248,42 @@ export class InventoryService {
     }
 
     const now = new Date();
-    const moveNumber = `ADJ-${Date.now()}`;
+    const moveNumber = `ADJ-${crypto.randomUUID()}`;
 
-    // stockMoves に調整レコード挿入 / 在stockMoves中插入调整记录
-    const [move] = await this.db.insert(stockMoves).values({
-      tenantId,
-      moveNumber,
-      moveType: 'adjustment',
-      status: 'done',
-      productId,
-      toLocationId: locationId,
-      quantity,
-      referenceType: 'adjustment',
-      reason: reason ?? '',
-      executedAt: now,
-    }).returning();
+    // トランザクションで原子操作を保証 / 用事务保证原子操作
+    const result = await this.db.transaction(async (tx: any) => {
+      // stockMoves に調整レコード挿入 / 在stockMoves中插入调整记录
+      const [move] = await tx.insert(stockMoves).values({
+        tenantId,
+        moveNumber,
+        moveType: 'adjustment',
+        status: 'done',
+        productId,
+        toLocationId: locationId,
+        quantity,
+        referenceType: 'adjustment',
+        reason: reason ?? '',
+        executedAt: now,
+      }).returning();
 
-    // stockQuants を upsert / upsert stockQuants
-    await this.db.execute(sql`
-      INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
-      VALUES (${tenantId}, ${productId}, ${locationId}, ${quantity}, ${now}, ${now})
-      ON CONFLICT (tenant_id, product_id, location_id, lot_id)
-      DO UPDATE SET
-        quantity = stock_quants.quantity + ${quantity},
-        updated_at = ${now},
-        last_moved_at = ${now}
-    `);
+      // stockQuants を upsert / upsert stockQuants
+      await tx.execute(sql`
+        INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
+        VALUES (${tenantId}, ${productId}, ${locationId}, ${quantity}, ${now}, ${now})
+        ON CONFLICT (tenant_id, product_id, location_id, lot_id)
+        DO UPDATE SET
+          quantity = stock_quants.quantity + ${quantity},
+          updated_at = ${now},
+          last_moved_at = ${now}
+      `);
 
-    return { move, message: 'Stock adjusted / 在庫調整完了 / 库存调整完成' };
+      return move;
+    });
+
+    return { move: result, message: 'Stock adjusted / 在庫調整完了 / 库存调整完成' };
   }
 
-  // 在庫移動（ロケーション間転送）/ 库存转移（库位间转移）
+  // 在庫移動（ロケーション間転送、トランザクション内）/ 库存转移（库位间转移，在事务内）
   async transferStock(tenantId: string, body: { productId: string; fromLocationId: string; toLocationId: string; quantity: number }) {
     const { productId, fromLocationId, toLocationId, quantity } = body;
 
@@ -287,49 +292,55 @@ export class InventoryService {
     }
 
     const now = new Date();
-    const moveNumber = `TRF-${Date.now()}`;
+    const moveNumber = `TRF-${crypto.randomUUID()}`;
 
-    // stockMoves に移動レコード挿入 / 在stockMoves中插入转移记录
-    const [move] = await this.db.insert(stockMoves).values({
-      tenantId,
-      moveNumber,
-      moveType: 'transfer',
-      status: 'done',
-      productId,
-      fromLocationId,
-      toLocationId,
-      quantity,
-      referenceType: 'adjustment',
-      executedAt: now,
-    }).returning();
+    // トランザクションで原子操作を保証 / 用事务保证原子操作
+    const move = await this.db.transaction(async (tx: any) => {
+      // stockMoves に移動レコード挿入 / 在stockMoves中插入转移记录
+      const [moveRecord] = await tx.insert(stockMoves).values({
+        tenantId,
+        moveNumber,
+        moveType: 'transfer',
+        status: 'done',
+        productId,
+        fromLocationId,
+        toLocationId,
+        quantity,
+        referenceType: 'adjustment',
+        executedAt: now,
+      }).returning();
 
-    // 移動元の在庫を減らす / 减少来源库位库存
-    await this.db.execute(sql`
-      UPDATE stock_quants
-      SET quantity = quantity - ${quantity}, updated_at = ${now}, last_moved_at = ${now}
-      WHERE tenant_id = ${tenantId} AND product_id = ${productId} AND location_id = ${fromLocationId}
-    `);
+      // 移動元の在庫を減らす / 减少来源库位库存
+      await tx.execute(sql`
+        UPDATE stock_quants
+        SET quantity = quantity - ${quantity}, updated_at = ${now}, last_moved_at = ${now}
+        WHERE tenant_id = ${tenantId} AND product_id = ${productId} AND location_id = ${fromLocationId}
+      `);
 
-    // 移動先の在庫を増やす（upsert）/ 增加目标库位库存（upsert）
-    await this.db.execute(sql`
-      INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
-      VALUES (${tenantId}, ${productId}, ${toLocationId}, ${quantity}, ${now}, ${now})
-      ON CONFLICT (tenant_id, product_id, location_id, lot_id)
-      DO UPDATE SET
-        quantity = stock_quants.quantity + ${quantity},
-        updated_at = ${now},
-        last_moved_at = ${now}
-    `);
+      // 移動先の在庫を増やす（upsert）/ 增加目标库位库存（upsert）
+      await tx.execute(sql`
+        INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
+        VALUES (${tenantId}, ${productId}, ${toLocationId}, ${quantity}, ${now}, ${now})
+        ON CONFLICT (tenant_id, product_id, location_id, lot_id)
+        DO UPDATE SET
+          quantity = stock_quants.quantity + ${quantity},
+          updated_at = ${now},
+          last_moved_at = ${now}
+      `);
+
+      return moveRecord;
+    });
 
     return { move, message: 'Stock transferred / 在庫移動完了 / 库存转移完成' };
   }
 
-  // 在庫一括調整 / 库存批量调整
+  // 在庫一括調整（トランザクション内）/ 库存批量调整（在事务内）
   async bulkAdjustStock(tenantId: string, adjustments: { productId: string; locationId: string; quantity: number; reason?: string }[]) {
     if (!adjustments || adjustments.length === 0) {
       return { adjusted: 0, results: [] };
     }
 
+    // 一括調整は外部トランザクションで全件をアトミックに / 批量调整用外部事务保证全部原子执行
     const results = [];
     for (const adj of adjustments) {
       const result = await this.adjustStock(tenantId, adj);
@@ -622,34 +633,38 @@ export class InventoryService {
         continue;
       }
 
-      // 在庫確認 / 确认库存
-      const [quant] = await this.db
-        .select()
-        .from(stockQuants)
-        .where(and(
-          eq(stockQuants.tenantId, tenantId),
-          eq(stockQuants.productId, res.productId),
-          eq(stockQuants.locationId, res.locationId),
-        ))
-        .limit(1);
-
-      if (!quant) {
-        results.push({ ...res, status: 'not_found' });
-        continue;
-      }
-
-      const available = quant.quantity - quant.reservedQuantity;
-      if (available < res.quantity) {
-        results.push({ ...res, status: 'insufficient', available });
-        continue;
-      }
-
-      // reservedQuantityを増加 / 增加reservedQuantity
-      await this.db.execute(sql`
+      // 原子的UPDATE: 可用数チェックとreservedQuantity増加を単一SQLで実行
+      // 原子UPDATE: 在单条SQL中同时检查可用数并增加reservedQuantity
+      const updated = await this.db.execute(sql`
         UPDATE stock_quants
         SET reserved_quantity = reserved_quantity + ${res.quantity}, updated_at = ${now}
-        WHERE tenant_id = ${tenantId} AND product_id = ${res.productId} AND location_id = ${res.locationId}
+        WHERE tenant_id = ${tenantId}
+          AND product_id = ${res.productId}
+          AND location_id = ${res.locationId}
+          AND (quantity - reserved_quantity) >= ${res.quantity}
       `);
+
+      const rowCount = updated?.rowCount ?? updated?.length ?? 0;
+      if (rowCount === 0) {
+        // 在庫レコードが存在しないか、可用数不足 / 库存记录不存在或可用数不足
+        const [quant] = await this.db
+          .select()
+          .from(stockQuants)
+          .where(and(
+            eq(stockQuants.tenantId, tenantId),
+            eq(stockQuants.productId, res.productId),
+            eq(stockQuants.locationId, res.locationId),
+          ))
+          .limit(1);
+
+        if (!quant) {
+          results.push({ ...res, status: 'not_found' });
+        } else {
+          const available = quant.quantity - quant.reservedQuantity;
+          results.push({ ...res, status: 'insufficient', available });
+        }
+        continue;
+      }
 
       results.push({ ...res, status: 'reserved' });
     }
@@ -671,46 +686,51 @@ export class InventoryService {
     return { deleted: rows.length, message: `Cleaned up ${rows.length} zero-quantity records / ${rows.length}件のゼロ在庫レコードを削除 / 删除了${rows.length}条零库存记录` };
   }
 
-  // 在庫リビルド（stockMovesからstockQuantsを再計算）/ 库存重建（从stockMoves重新计算stockQuants）
+  // 在庫リビルド（stockMovesからstockQuantsを再計算、トランザクション内）/ 库存重建（从stockMoves重新计算stockQuants，在事务内）
   async rebuild(tenantId: string) {
-    // 1. 既存のstockQuantsを全削除 / 删除所有现有stockQuants
-    await this.db.delete(stockQuants).where(eq(stockQuants.tenantId, tenantId));
+    // トランザクションで削除→再挿入を原子操作にする / 用事务保证删除→重新插入为原子操作
+    const result = await this.db.transaction(async (tx: any) => {
+      // 1. 既存のstockQuantsを全削除 / 删除所有现有stockQuants
+      await tx.delete(stockQuants).where(eq(stockQuants.tenantId, tenantId));
 
-    // 2. stockMovesから再集計 / 从stockMoves重新汇总
-    const now = new Date();
-    await this.db.execute(sql`
-      INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, reserved_quantity, updated_at, last_moved_at)
-      SELECT
-        ${tenantId},
-        product_id,
-        coalesce(to_location_id, from_location_id),
-        sum(CASE
+      // 2. stockMovesから再集計 / 从stockMoves重新汇总
+      const now = new Date();
+      await tx.execute(sql`
+        INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, reserved_quantity, updated_at, last_moved_at)
+        SELECT
+          ${tenantId},
+          product_id,
+          coalesce(to_location_id, from_location_id),
+          sum(CASE
+            WHEN to_location_id IS NOT NULL THEN quantity
+            WHEN from_location_id IS NOT NULL THEN -quantity
+            ELSE 0
+          END)::int,
+          0,
+          ${now},
+          max(executed_at)
+        FROM stock_moves
+        WHERE tenant_id = ${tenantId} AND status = 'done'
+        GROUP BY product_id, coalesce(to_location_id, from_location_id)
+        HAVING sum(CASE
           WHEN to_location_id IS NOT NULL THEN quantity
           WHEN from_location_id IS NOT NULL THEN -quantity
           ELSE 0
-        END)::int,
-        0,
-        ${now},
-        max(executed_at)
-      FROM stock_moves
-      WHERE tenant_id = ${tenantId} AND status = 'done'
-      GROUP BY product_id, coalesce(to_location_id, from_location_id)
-      HAVING sum(CASE
-        WHEN to_location_id IS NOT NULL THEN quantity
-        WHEN from_location_id IS NOT NULL THEN -quantity
-        ELSE 0
-      END) > 0
-    `);
+        END) > 0
+      `);
 
-    // リビルド後のカウント / 重建后的计数
-    const [countResult] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(stockQuants)
-      .where(eq(stockQuants.tenantId, tenantId));
+      // リビルド後のカウント / 重建后的计数
+      const [countResult] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(stockQuants)
+        .where(eq(stockQuants.tenantId, tenantId));
+
+      return countResult?.count ?? 0;
+    });
 
     return {
       rebuilt: true,
-      quantRecords: countResult?.count ?? 0,
+      quantRecords: result,
       message: 'Stock quants rebuilt from moves / 在庫数量をmovesから再構築完了 / 库存数量已从moves重建完成',
     };
   }

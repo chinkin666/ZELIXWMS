@@ -130,7 +130,7 @@ export class FbaShipmentPlansService {
 
     // ステータスチェック / 状态检查
     if (plan.status !== 'draft') {
-      throw new WmsException('SHIP_INVALID_STATUS', `Cannot submit from status: ${plan.status}`);
+      throw new WmsException('FBA_INVALID_STATUS', `Cannot submit from status: ${plan.status}`);
     }
 
     const rows = await this.db

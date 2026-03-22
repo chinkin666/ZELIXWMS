@@ -13,11 +13,13 @@ export const supabaseProvider = {
     const url = config.get<string>('SUPABASE_URL');
     const serviceKey = config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
     if (!url || !serviceKey) {
-      throw new Error(
-        'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required / ' +
-        'SUPABASE_URL と SUPABASE_SERVICE_ROLE_KEY は必須です / ' +
-        'SUPABASE_URL 和 SUPABASE_SERVICE_ROLE_KEY 是必需的',
+      // 開発環境ではSupabase未設定でも起動可能（auth機能は無効化）
+      // 开发环境下未配置Supabase也可启动（auth功能将不可用）
+      console.warn(
+        '[SUPABASE] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set — Supabase auth disabled / ' +
+        'Supabase認証無効 / Supabase认证已禁用',
       );
+      return null;
     }
     return createClient(url, serviceKey, {
       auth: {

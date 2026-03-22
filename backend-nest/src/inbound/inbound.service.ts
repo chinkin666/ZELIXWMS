@@ -147,59 +147,79 @@ export class InboundService {
     return rows[0];
   }
 
-  // 入庫オーダー確認（draft → confirmed）/ 入库订单确认（draft → confirmed）
+  // 入庫オーダー確認（draft → confirmed、WHERE句でステータスガード）
+  // 入库订单确认（draft → confirmed，WHERE子句中加状态守卫）
   async confirm(tenantId: string, id: string) {
-    const order = await this.findById(tenantId, id);
-    if (order.status !== 'draft') {
-      throw new WmsException('INBOUND_INVALID_STATUS', `Cannot confirm: current status is ${order.status}`);
-    }
     const rows = await this.db
       .update(inboundOrders)
       .set({ status: 'confirmed', updatedAt: new Date() })
-      .where(and(eq(inboundOrders.id, id), eq(inboundOrders.tenantId, tenantId)))
+      .where(and(
+        eq(inboundOrders.id, id),
+        eq(inboundOrders.tenantId, tenantId),
+        eq(inboundOrders.status, 'draft'),
+      ))
       .returning();
+    if (rows.length === 0) {
+      const order = await this.findById(tenantId, id);
+      throw new WmsException('INBOUND_INVALID_STATUS', `Cannot confirm: current status is ${order.status}`);
+    }
     return rows[0];
   }
 
-  // 入庫オーダー入荷開始（confirmed → receiving）/ 入库订单开始收货（confirmed → receiving）
+  // 入庫オーダー入荷開始（confirmed → receiving、WHERE句でステータスガード）
+  // 入库订单开始收货（confirmed → receiving，WHERE子句中加状态守卫）
   async receive(tenantId: string, id: string) {
-    const order = await this.findById(tenantId, id);
-    if (order.status !== 'confirmed') {
-      throw new WmsException('INBOUND_INVALID_STATUS', `Cannot receive: current status is ${order.status}`);
-    }
     const rows = await this.db
       .update(inboundOrders)
       .set({ status: 'receiving', updatedAt: new Date() })
-      .where(and(eq(inboundOrders.id, id), eq(inboundOrders.tenantId, tenantId)))
+      .where(and(
+        eq(inboundOrders.id, id),
+        eq(inboundOrders.tenantId, tenantId),
+        eq(inboundOrders.status, 'confirmed'),
+      ))
       .returning();
+    if (rows.length === 0) {
+      const order = await this.findById(tenantId, id);
+      throw new WmsException('INBOUND_INVALID_STATUS', `Cannot receive: current status is ${order.status}`);
+    }
     return rows[0];
   }
 
-  // 入庫オーダー完了（receiving → done）/ 入库订单完成（receiving → done）
+  // 入庫オーダー完了（receiving → done、WHERE句でステータスガード）
+  // 入库订单完成（receiving → done，WHERE子句中加状态守卫）
   async complete(tenantId: string, id: string) {
-    const order = await this.findById(tenantId, id);
-    if (order.status !== 'receiving') {
-      throw new WmsException('INBOUND_INVALID_STATUS', `Cannot complete: current status is ${order.status}`);
-    }
     const rows = await this.db
       .update(inboundOrders)
       .set({ status: 'done', updatedAt: new Date() })
-      .where(and(eq(inboundOrders.id, id), eq(inboundOrders.tenantId, tenantId)))
+      .where(and(
+        eq(inboundOrders.id, id),
+        eq(inboundOrders.tenantId, tenantId),
+        eq(inboundOrders.status, 'receiving'),
+      ))
       .returning();
+    if (rows.length === 0) {
+      const order = await this.findById(tenantId, id);
+      throw new WmsException('INBOUND_INVALID_STATUS', `Cannot complete: current status is ${order.status}`);
+    }
     return rows[0];
   }
 
-  // 入庫オーダーキャンセル（any → cancelled、done/cancelled 除外）/ 入库订单取消（any → cancelled、排除 done/cancelled）
+  // 入庫オーダーキャンセル（any → cancelled、done/cancelled 除外、WHERE句でステータスガード）
+  // 入库订单取消（any → cancelled、排除 done/cancelled，WHERE子句中加状态守卫）
   async cancel(tenantId: string, id: string) {
-    const order = await this.findById(tenantId, id);
-    if (order.status === 'done' || order.status === 'cancelled') {
-      throw new WmsException('INBOUND_INVALID_STATUS', `Cannot cancel: current status is ${order.status}`);
-    }
     const rows = await this.db
       .update(inboundOrders)
       .set({ status: 'cancelled', updatedAt: new Date() })
-      .where(and(eq(inboundOrders.id, id), eq(inboundOrders.tenantId, tenantId)))
+      .where(and(
+        eq(inboundOrders.id, id),
+        eq(inboundOrders.tenantId, tenantId),
+        sql`${inboundOrders.status} NOT IN ('done', 'cancelled')`,
+      ))
       .returning();
+    if (rows.length === 0) {
+      const order = await this.findById(tenantId, id);
+      throw new WmsException('INBOUND_INVALID_STATUS', `Cannot cancel: current status is ${order.status}`);
+    }
     return rows[0];
   }
 

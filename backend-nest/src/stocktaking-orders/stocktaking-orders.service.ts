@@ -140,7 +140,7 @@ export class StocktakingOrdersService {
 
     // ステータスチェック / 状态检查
     if (order.status !== 'draft' && order.status !== 'in_progress') {
-      throw new WmsException('SHIP_INVALID_STATUS', `Cannot register count for status: ${order.status}`);
+      throw new WmsException('STOCKTAKING_INVALID_STATUS', `Cannot register count for status: ${order.status}`);
     }
 
     // 既存のitemsにカウント結果を追加/更新 / 在现有items中添加/更新计数结果
@@ -174,7 +174,7 @@ export class StocktakingOrdersService {
 
     // ステータスチェック / 状态检查
     if (order.status !== 'in_progress') {
-      throw new WmsException('SHIP_INVALID_STATUS', `Cannot complete from status: ${order.status}`);
+      throw new WmsException('STOCKTAKING_INVALID_STATUS', `Cannot complete from status: ${order.status}`);
     }
 
     const rows = await this.db
@@ -199,7 +199,7 @@ export class StocktakingOrdersService {
 
     // 完了済みはキャンセル不可 / 已完成的不可取消
     if (order.status === 'completed' || order.status === 'cancelled') {
-      throw new WmsException('SHIP_INVALID_STATUS', `Cannot cancel from status: ${order.status}`);
+      throw new WmsException('STOCKTAKING_INVALID_STATUS', `Cannot cancel from status: ${order.status}`);
     }
 
     const rows = await this.db
