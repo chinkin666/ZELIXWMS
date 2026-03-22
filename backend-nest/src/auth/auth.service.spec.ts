@@ -106,7 +106,7 @@ describe('AuthService', () => {
         role: mockUser.role,
         tenantId: mockUser.tenantId,
       });
-      expect(result.session).toEqual(mockSession);
+      expect((result as any).session).toEqual(mockSession);
       expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalledWith({
         email: 'test@example.com',
         password: 'pass',
@@ -335,7 +335,7 @@ describe('AuthService', () => {
       const result = await service.portalLogin('test@example.com', 'pass');
 
       expect(result.user.role).toBe('client');
-      expect(result.session).toEqual(mockSession);
+      expect((result as any).session).toEqual(mockSession);
     });
 
     // Supabase Auth 認証失敗 / Supabase Auth认证失败

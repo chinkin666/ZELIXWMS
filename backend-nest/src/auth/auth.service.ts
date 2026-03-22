@@ -29,7 +29,11 @@ export class AuthService {
 
   // ログイン（Supabase Auth でパスワード検証）/ 登录（通过Supabase Auth验证密码）
   async login(dto: LoginDto) {
-    const supabase = this.ensureSupabase();
+    // 開発モード: Supabase未設定時はローカルDBで認証 / 开发模式: Supabase未配置时用本地DB认证
+    if (!this.supabase) {
+      return this.devLogin(dto);
+    }
+    const supabase = this.supabase;
     // Supabase Auth でメール+パスワード認証 / 通过Supabase Auth进行邮箱+密码认证
     const { data: authData, error: authError } =
       await supabase.auth.signInWithPassword({
@@ -86,6 +90,55 @@ export class AuthService {
         expires_in: authData.session.expires_in,
         expires_at: authData.session.expires_at,
         token_type: authData.session.token_type,
+      },
+    };
+  }
+
+  // 開発モード専用ログイン（Supabase不要）/ 开发模式专用登录（不需要Supabase）
+  private async devLogin(dto: LoginDto) {
+    // ローカルDBからメールでユーザー検索 / 从本地DB按邮箱查找用户
+    const rows = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.email, dto.email))
+      .limit(1);
+
+    // ユーザーが見つからない場合、dev userを自動返却 / 找不到用户时自动返回dev user
+    if (rows.length === 0) {
+      // dev ユーザーを返す / 返回 dev 用户
+      return {
+        token: 'dev-token-' + Date.now(),
+        user: {
+          _id: '00000000-0000-0000-0000-000000000099',
+          id: '00000000-0000-0000-0000-000000000099',
+          email: 'dev@zelix.local',
+          displayName: 'Dev User',
+          role: 'admin',
+          tenantId: '00000000-0000-0000-0000-000000000001',
+          warehouseIds: [],
+        },
+      };
+    }
+
+    const user = rows[0];
+
+    if (!user.isActive) {
+      throw new WmsException('AUTH_FORBIDDEN', 'Account deactivated');
+    }
+
+    // 最終ログイン更新 / 更新最后登录时间
+    await this.db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
+
+    return {
+      token: 'dev-token-' + Date.now(),
+      user: {
+        _id: user.id,
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        role: user.role,
+        tenantId: user.tenantId,
+        warehouseIds: (user as any).warehouseIds ?? [],
       },
     };
   }
