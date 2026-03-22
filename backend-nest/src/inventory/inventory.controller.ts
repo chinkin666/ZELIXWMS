@@ -115,6 +115,52 @@ export class InventoryController {
     return this.inventoryService.crossSiteTransfer(tenantId, body);
   }
 
+  // ========================================
+  // 拠点間移動ワークフロー / 跨仓库转移工作流
+  // ========================================
+
+  // 拠点間移動一覧取得 / 获取跨仓库转移列表
+  @Get('transfers')
+  findAllTransfers(
+    @TenantId() tenantId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.inventoryService.findAllTransfers(tenantId, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      status,
+    });
+  }
+
+  // 拠点間移動確認（出荷確認）/ 跨仓库转移确认（出货确认）
+  @Post('transfers/:id/confirm')
+  confirmTransfer(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.inventoryService.confirmTransfer(tenantId, id);
+  }
+
+  // 拠点間移動受入（受入確認・在庫反映）/ 跨仓库转移接收（接收确认・库存反映）
+  @Post('transfers/:id/receive')
+  receiveTransfer(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.inventoryService.receiveTransfer(tenantId, id);
+  }
+
+  // 拠点間移動キャンセル / 跨仓库转移取消
+  @Post('transfers/:id/cancel')
+  cancelTransfer(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.inventoryService.cancelTransfer(tenantId, id);
+  }
+
   // 在庫移動 / 库存转移
   @Post('transfer')
   transferStock(

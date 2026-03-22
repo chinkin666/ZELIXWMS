@@ -206,6 +206,10 @@ export const WMS_ERROR_CODES = {
   DISCREPANCY_NOT_FOUND: { code: 'DISC-001', status: 404, message: 'Stocktaking discrepancy not found' },
   DISCREPANCY_INVALID_STATUS: { code: 'DISC-002', status: 422, message: 'Invalid discrepancy status transition' },
 
+  // Transfer 拠点間移動 / 跨仓库转移
+  TRANSFER_NOT_FOUND: { code: 'XFER-001', status: 404, message: 'Transfer not found' },
+  TRANSFER_INVALID_STATUS: { code: 'XFER-002', status: 422, message: 'Invalid transfer status transition' },
+
   // General 一般 / 通用
   DUPLICATE_RESOURCE: { code: 'GEN-001', status: 409, message: 'Resource already exists' },
   VALIDATION_ERROR: { code: 'GEN-002', status: 422, message: 'Validation failed' },

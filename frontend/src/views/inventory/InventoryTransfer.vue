@@ -176,6 +176,107 @@
           </OButton>
         </div>
       </template>
+
+      <!-- 移動管理タブ / 转移管理标签 -->
+      <template v-if="mode === 'transfers'">
+        <p class="form-desc">{{ t('wms.inventory.transferWorkflowDesc', '拠点間移動の進捗を管理します。ステータス: 下書き → 確認済（出荷）→ 受入完了') }}</p>
+
+        <!-- ステータスフィルタ / 状态筛选 -->
+        <div class="transfer-filters">
+          <button
+            v-for="sf in statusFilters"
+            :key="sf.value"
+            class="filter-btn"
+            :class="{ active: transferStatusFilter === sf.value }"
+            @click="transferStatusFilter = sf.value; loadTransfers()"
+          >
+            {{ sf.label }}
+          </button>
+        </div>
+
+        <!-- 移動管理テーブル / 转移管理表 -->
+        <div v-if="isLoadingTransfers" class="loading-state">
+          {{ t('wms.inventory.loading', '読み込み中...') }}
+        </div>
+        <div v-else-if="transferRows.length === 0" class="empty-state">
+          {{ t('wms.inventory.noTransfers', '拠点間移動レコードがありません') }}
+        </div>
+        <div v-else class="transfer-cards">
+          <div
+            v-for="tr in transferRows"
+            :key="tr.id"
+            class="transfer-card"
+            :class="`transfer-card--${tr.status}`"
+          >
+            <div class="transfer-card-header">
+              <span class="move-number">{{ tr.moveNumber }}</span>
+              <span class="status-badge" :class="`status-badge--${tr.status}`">
+                {{ formatTransferStatus(tr.status) }}
+              </span>
+            </div>
+            <div class="transfer-card-body">
+              <div class="transfer-info-row">
+                <span class="info-label">{{ t('wms.inventory.product', '商品') }}</span>
+                <span class="info-value">{{ tr.productSku }} {{ tr.productName ? `- ${tr.productName}` : '' }}</span>
+              </div>
+              <div class="transfer-info-row">
+                <span class="info-label">{{ t('wms.inventory.quantity', '数量') }}</span>
+                <span class="info-value text-info">{{ tr.quantity }}</span>
+              </div>
+              <div class="transfer-info-row">
+                <span class="info-label">{{ t('wms.inventory.fromLocation', '移動元') }}</span>
+                <span class="info-value">
+                  <span class="location-badge">{{ tr.fromLocationCode || '-' }}</span>
+                  <span v-if="tr.fromWarehouseName" class="warehouse-hint">({{ tr.fromWarehouseName }})</span>
+                </span>
+              </div>
+              <div class="transfer-info-row">
+                <span class="info-label">{{ t('wms.inventory.toLocation', '移動先') }}</span>
+                <span class="info-value">
+                  <span class="location-badge">{{ tr.toLocationCode || '-' }}</span>
+                  <span v-if="tr.toWarehouseName" class="warehouse-hint">({{ tr.toWarehouseName }})</span>
+                </span>
+              </div>
+              <div v-if="tr.reason" class="transfer-info-row">
+                <span class="info-label">{{ t('wms.inventory.reason', '理由') }}</span>
+                <span class="info-value">{{ tr.reason }}</span>
+              </div>
+              <div class="transfer-info-row">
+                <span class="info-label">{{ t('wms.inventory.createdAt', '作成日') }}</span>
+                <span class="info-value">{{ formatDateTime(tr.createdAt) }}</span>
+              </div>
+              <div v-if="tr.executedAt" class="transfer-info-row">
+                <span class="info-label">{{ t('wms.inventory.confirmedAt', '確認日') }}</span>
+                <span class="info-value">{{ formatDateTime(tr.executedAt) }}</span>
+              </div>
+            </div>
+            <div class="transfer-card-actions">
+              <!-- draft → 確認 or キャンセル / draft → 确认 or 取消 -->
+              <template v-if="tr.status === 'draft'">
+                <OButton variant="primary" size="sm" :disabled="isProcessingTransfer" @click="handleConfirmTransfer(tr.id)">
+                  {{ t('wms.inventory.confirmShipment', '出荷確認') }}
+                </OButton>
+                <OButton variant="secondary" size="sm" :disabled="isProcessingTransfer" @click="handleCancelTransfer(tr.id)">
+                  {{ t('wms.inventory.cancelTransfer', 'キャンセル') }}
+                </OButton>
+              </template>
+              <!-- confirmed → 受入 / confirmed → 接收 -->
+              <template v-if="tr.status === 'confirmed'">
+                <OButton variant="primary" size="sm" :disabled="isProcessingTransfer" @click="handleReceiveTransfer(tr.id)">
+                  {{ t('wms.inventory.receiveTransfer', '受入確認') }}
+                </OButton>
+              </template>
+              <!-- done / cancelled → 表示のみ / done / cancelled → 仅显示 -->
+              <template v-if="tr.status === 'done'">
+                <span class="completed-label">{{ t('wms.inventory.transferCompleted', '完了') }}</span>
+              </template>
+              <template v-if="tr.status === 'cancelled'">
+                <span class="cancelled-label">{{ t('wms.inventory.transferCancelled', 'キャンセル済') }}</span>
+              </template>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- 移動履歴 / 移动履历 -->
@@ -209,12 +310,12 @@ import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import Table from '@/components/table/Table.vue'
-import { transferStock, crossSiteTransfer, fetchMovements } from '@/api/inventory'
+import { transferStock, crossSiteTransfer, fetchMovements, fetchTransfers, confirmTransfer, receiveTransfer, cancelTransfer } from '@/api/inventory'
 import { fetchLocations } from '@/api/location'
 import { fetchProducts } from '@/api/product'
 import { fetchWarehouses } from '@/api/warehouse'
 import type { Product } from '@/types/product'
-import type { Location } from '@/types/inventory'
+import type { Location, TransferRecord } from '@/types/inventory'
 import type { StockMove } from '@/types/inventory'
 import type { TableColumn } from '@/types/table'
 import type { Warehouse } from '@/api/warehouse'
@@ -223,7 +324,7 @@ const toast = useToast()
 const { t } = useI18n()
 
 // 移動モード / 移动模式
-const mode = ref<'intra' | 'cross'>('intra')
+const mode = ref<'intra' | 'cross' | 'transfers'>('intra')
 
 const products = ref<Product[]>([])
 const allLocations = ref<Location[]>([])
@@ -231,6 +332,22 @@ const warehouses = ref<Warehouse[]>([])
 const isSubmitting = ref(false)
 const isLoadingHistory = ref(false)
 const historyRows = ref<StockMove[]>([])
+
+// 移動管理タブ用 / 转移管理标签用
+const transferRows = ref<TransferRecord[]>([])
+const isLoadingTransfers = ref(false)
+const isProcessingTransfer = ref(false)
+const transferStatusFilter = ref<string>('')
+const pendingTransferCount = ref(0)
+
+// ステータスフィルタ選択肢 / 状态筛选选项
+const statusFilters = computed(() => [
+  { value: '', label: t('wms.inventory.allStatuses', 'すべて') },
+  { value: 'draft', label: t('wms.inventory.statusDraft', '下書き') },
+  { value: 'confirmed', label: t('wms.inventory.statusConfirmed', '確認済') },
+  { value: 'done', label: t('wms.inventory.statusDone', '完了') },
+  { value: 'cancelled', label: t('wms.inventory.statusCancelled', 'キャンセル') },
+])
 
 // 倉庫内移動フォーム / 仓库内移动表单
 const intraForm = ref({
@@ -434,6 +551,90 @@ const loadHistory = async () => {
   }
 }
 
+// ステータス表示テキスト / 状态显示文本
+const formatTransferStatus = (status: string) => {
+  const map: Record<string, string> = {
+    draft: t('wms.inventory.statusDraft', '下書き'),
+    confirmed: t('wms.inventory.statusConfirmed', '確認済（出荷中）'),
+    done: t('wms.inventory.statusDone', '受入完了'),
+    cancelled: t('wms.inventory.statusCancelled', 'キャンセル'),
+  }
+  return map[status] ?? status
+}
+
+// 拠点間移動一覧ロード / 加载跨仓库转移列表
+const loadTransfers = async () => {
+  isLoadingTransfers.value = true
+  try {
+    const res = await fetchTransfers({
+      limit: 50,
+      status: transferStatusFilter.value || undefined,
+    })
+    transferRows.value = (res.items ?? []) as unknown as TransferRecord[]
+  } catch (e: any) {
+    toast.showError(e?.message || t('wms.inventory.transfersFetchFailed', '移動一覧の取得に失敗しました'))
+  } finally {
+    isLoadingTransfers.value = false
+  }
+}
+
+// 未処理件数の取得 / 获取未处理数量
+const loadPendingCount = async () => {
+  try {
+    const res = await fetchTransfers({ limit: 1, status: 'draft' })
+    const res2 = await fetchTransfers({ limit: 1, status: 'confirmed' })
+    pendingTransferCount.value = (res.total ?? 0) + (res2.total ?? 0)
+  } catch {
+    // サイレントエラー / 静默错误
+  }
+}
+
+// 出荷確認ハンドラ / 出货确认处理
+const handleConfirmTransfer = async (id: string) => {
+  isProcessingTransfer.value = true
+  try {
+    const result = await confirmTransfer(id)
+    toast.showSuccess(result.message)
+    await loadTransfers()
+    await loadPendingCount()
+  } catch (e: any) {
+    toast.showError(e?.message || t('wms.inventory.confirmTransferFailed', '出荷確認に失敗しました'))
+  } finally {
+    isProcessingTransfer.value = false
+  }
+}
+
+// 受入確認ハンドラ / 接收确认处理
+const handleReceiveTransfer = async (id: string) => {
+  isProcessingTransfer.value = true
+  try {
+    const result = await receiveTransfer(id)
+    toast.showSuccess(result.message)
+    await loadTransfers()
+    await loadPendingCount()
+    await loadHistory()
+  } catch (e: any) {
+    toast.showError(e?.message || t('wms.inventory.receiveTransferFailed', '受入確認に失敗しました'))
+  } finally {
+    isProcessingTransfer.value = false
+  }
+}
+
+// キャンセルハンドラ / 取消处理
+const handleCancelTransfer = async (id: string) => {
+  isProcessingTransfer.value = true
+  try {
+    const result = await cancelTransfer(id)
+    toast.showSuccess(result.message)
+    await loadTransfers()
+    await loadPendingCount()
+  } catch (e: any) {
+    toast.showError(e?.message || t('wms.inventory.cancelTransferFailed', 'キャンセルに失敗しました'))
+  } finally {
+    isProcessingTransfer.value = false
+  }
+}
+
 // CSV出力 / CSV导出
 const exportTransferCsv = () => {
   const csvRows: string[] = [
@@ -486,7 +687,7 @@ onMounted(async () => {
   } catch (e: any) {
     toast.showError(t('wms.inventory.masterDataFetchFailed', 'マスタデータの取得に失敗しました'))
   }
-  await loadHistory()
+  await Promise.all([loadHistory(), loadPendingCount()])
 })
 </script>
 
@@ -643,6 +844,151 @@ onMounted(async () => {
 
 .text-info { color: #409eff; font-weight: 600; }
 
+/* 移動管理タブ用スタイル / 转移管理标签样式 */
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: #dc3545;
+  border-radius: 9px;
+}
+
+.transfer-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: 16px;
+  background: var(--o-view-background, #fff);
+  color: var(--o-gray-600, #606266);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  border-color: var(--o-brand-primary, #714b67);
+  color: var(--o-brand-primary, #714b67);
+}
+
+.filter-btn.active {
+  background: var(--o-brand-primary, #714b67);
+  color: #fff;
+  border-color: var(--o-brand-primary, #714b67);
+}
+
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--o-gray-500, #909399);
+  font-size: 14px;
+}
+
+.transfer-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transfer-card {
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: 8px;
+  padding: 1rem;
+  background: var(--o-view-background, #fff);
+  transition: border-color 0.2s;
+}
+
+.transfer-card--draft { border-left: 4px solid #e6a23c; }
+.transfer-card--confirmed { border-left: 4px solid #409eff; }
+.transfer-card--done { border-left: 4px solid #67c23a; }
+.transfer-card--cancelled { border-left: 4px solid #c0c4cc; opacity: 0.7; }
+
+.transfer-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--o-border-color, #e4e7ed);
+}
+
+.status-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.status-badge--draft { background: #fdf6ec; color: #e6a23c; }
+.status-badge--confirmed { background: #ecf5ff; color: #409eff; }
+.status-badge--done { background: #f0f9eb; color: #67c23a; }
+.status-badge--cancelled { background: #f4f4f5; color: #909399; }
+
+.transfer-card-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+  margin-bottom: 0.75rem;
+}
+
+.transfer-info-row {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  align-items: baseline;
+}
+
+.info-label {
+  color: var(--o-gray-500, #909399);
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.info-value {
+  color: var(--o-gray-700, #303133);
+  font-weight: 500;
+}
+
+.warehouse-hint {
+  font-size: 11px;
+  color: var(--o-gray-400, #c0c4cc);
+  margin-left: 4px;
+}
+
+.transfer-card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--o-border-color, #e4e7ed);
+}
+
+.completed-label {
+  font-size: 12px;
+  color: #67c23a;
+  font-weight: 600;
+}
+
+.cancelled-label {
+  font-size: 12px;
+  color: #909399;
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
   /* フォームグリッド1列化 / 表单网格单列化 */
   .form-grid { grid-template-columns: 1fr; }
@@ -668,5 +1014,9 @@ onMounted(async () => {
 
   /* アクションボタン折り返し / 操作按钮换行 */
   .form-actions { text-align: center; }
+
+  /* 移動カードレイアウト調整 / 转移卡片布局调整 */
+  .transfer-card-body { grid-template-columns: 1fr; }
+  .transfer-card-actions { flex-wrap: wrap; justify-content: center; }
 }
 </style>

@@ -120,6 +120,51 @@ export async function crossSiteTransfer(data: {
   return res.json()
 }
 
+// 拠点間移動一覧取得 / 获取跨仓库转移列表
+export async function fetchTransfers(params?: {
+  page?: number
+  limit?: number
+  status?: string
+}): Promise<{ items: StockMove[]; total: number; page: number; limit: number }> {
+  const url = new URL(`${API_BASE_URL}/inventory/transfers`)
+  if (params?.page) url.searchParams.append('page', String(params.page))
+  if (params?.limit) url.searchParams.append('limit', String(params.limit))
+  if (params?.status) url.searchParams.append('status', params.status)
+  const res = await apiFetch(url.toString())
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch transfers / 拠点間移動一覧の取得に失敗 / 获取跨仓库转移列表失败')
+  return res.json()
+}
+
+// 拠点間移動確認 / 跨仓库转移确认
+export async function confirmTransfer(id: string): Promise<{ message: string }> {
+  const res = await apiFetch(`${API_BASE_URL}/inventory/transfers/${id}/confirm`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to confirm transfer / 移動確認に失敗 / 转移确认失败')
+  return res.json()
+}
+
+// 拠点間移動受入 / 跨仓库转移接收
+export async function receiveTransfer(id: string): Promise<{ message: string }> {
+  const res = await apiFetch(`${API_BASE_URL}/inventory/transfers/${id}/receive`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to receive transfer / 移動受入に失敗 / 转移接收失败')
+  return res.json()
+}
+
+// 拠点間移動キャンセル / 跨仓库转移取消
+export async function cancelTransfer(id: string): Promise<{ message: string }> {
+  const res = await apiFetch(`${API_BASE_URL}/inventory/transfers/${id}/cancel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to cancel transfer / 移動キャンセルに失敗 / 转移取消失败')
+  return res.json()
+}
+
 export async function transferStock(data: {
   productId: string
   fromLocationId: string

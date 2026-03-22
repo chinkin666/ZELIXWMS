@@ -223,6 +223,31 @@ export interface ExpiryAlert {
   totalAvailable: number
 }
 
+// 拠点間移動レコード（拡張フィールド付き）/ 跨仓库转移记录（带扩展字段）
+export interface TransferRecord {
+  id: string
+  moveNumber: string
+  moveType: string
+  status: 'draft' | 'confirmed' | 'done' | 'cancelled'
+  productId: string
+  productSku: string
+  productName?: string
+  quantity: number
+  fromLocationId: string
+  toLocationId: string
+  fromLocationCode?: string
+  fromLocationName?: string
+  toLocationCode?: string
+  toLocationName?: string
+  fromWarehouseName?: string
+  toWarehouseName?: string
+  reason?: string
+  executedBy?: string
+  executedAt?: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface TransferStockPayload {
   productId: string
   fromLocationId: string

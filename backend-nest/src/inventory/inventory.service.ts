@@ -403,37 +403,26 @@ export class InventoryService {
       if (!sourceQuant || availableQty < quantity) {
         throw new WmsException('INV_INSUFFICIENT_STOCK', `Required: ${quantity}, available: ${availableQty} / 必要数: ${quantity}, 利用可能数: ${availableQty} / 需要: ${quantity}, 可用: ${availableQty}`);
       }
-      // stockMoves に拠点間移動レコード挿入 / 在stockMoves中插入跨仓库转移记录
+      // stockMoves に拠点間移動レコード挿入（draft状態で作成、引当として予約数を増加）
+      // 在stockMoves中插入跨仓库转移记录（以draft状态创建，作为引当增加预留数）
       const [moveRecord] = await tx.insert(stockMoves).values({
         tenantId,
         moveNumber,
         moveType: 'site_transfer',
-        status: 'done',
+        status: 'draft',
         productId,
         fromLocationId,
         toLocationId,
         quantity,
         referenceType: 'site_transfer',
         reason: reason ?? '',
-        executedAt: now,
       }).returning();
 
-      // 移動元の在庫を減らす / 减少源库位库存
+      // 移動元の在庫を引当（reservedQuantityを増加）/ 预留源库位库存（增加reservedQuantity）
       await tx.execute(sql`
         UPDATE stock_quants
-        SET quantity = quantity - ${quantity}, updated_at = ${nowIso}::timestamp, last_moved_at = ${nowIso}::timestamp
+        SET reserved_quantity = reserved_quantity + ${quantity}, updated_at = ${nowIso}::timestamp
         WHERE tenant_id = ${tenantId} AND product_id = ${productId} AND location_id = ${fromLocationId}
-      `);
-
-      // 移動先の在庫を増やす（upsert）/ 增加目标库位库存（upsert）
-      await tx.execute(sql`
-        INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
-        VALUES (${tenantId}, ${productId}, ${toLocationId}, ${quantity}, ${nowIso}::timestamp, ${nowIso}::timestamp)
-        ON CONFLICT (tenant_id, product_id, location_id) WHERE lot_id IS NULL
-        DO UPDATE SET
-          quantity = stock_quants.quantity + ${quantity},
-          updated_at = ${nowIso}::timestamp,
-          last_moved_at = ${nowIso}::timestamp
       `);
 
       return moveRecord;
@@ -441,7 +430,222 @@ export class InventoryService {
 
     return {
       move,
-      message: 'Cross-site transfer completed / 拠点間移動完了 / 跨仓库转移完成',
+      message: 'Cross-site transfer created (draft) / 拠点間移動指示を作成しました（下書き）/ 跨仓库转移指示已创建（草稿）',
+    };
+  }
+
+  // 拠点間移動一覧取得 / 获取跨仓库转移列表
+  async findAllTransfers(tenantId: string, query: { page?: number; limit?: number; status?: string }) {
+    const page = Math.max(1, query.page || 1);
+    const limit = Math.min(200, Math.max(1, query.limit || 50));
+    const offset = (page - 1) * limit;
+
+    const conditions: SQL[] = [
+      eq(stockMoves.tenantId, tenantId),
+      eq(stockMoves.moveType, 'site_transfer'),
+    ];
+
+    if (query.status) {
+      conditions.push(eq(stockMoves.status, query.status));
+    }
+
+    const where = and(...conditions);
+
+    const [items, countResult] = await Promise.all([
+      this.db
+        .select({
+          id: stockMoves.id,
+          tenantId: stockMoves.tenantId,
+          moveNumber: stockMoves.moveNumber,
+          moveType: stockMoves.moveType,
+          status: stockMoves.status,
+          productId: stockMoves.productId,
+          productSku: stockMoves.productSku,
+          fromLocationId: stockMoves.fromLocationId,
+          toLocationId: stockMoves.toLocationId,
+          quantity: stockMoves.quantity,
+          reason: stockMoves.reason,
+          executedBy: stockMoves.executedBy,
+          executedAt: stockMoves.executedAt,
+          createdAt: stockMoves.createdAt,
+          updatedAt: stockMoves.updatedAt,
+          // 商品名結合 / 关联商品名
+          productName: products.name,
+          // ロケーション情報はSQLで取得 / 用SQL获取库位信息
+          fromLocationCode: sql<string>`(SELECT code FROM locations WHERE id = ${stockMoves.fromLocationId})`,
+          fromLocationName: sql<string>`(SELECT name FROM locations WHERE id = ${stockMoves.fromLocationId})`,
+          toLocationCode: sql<string>`(SELECT code FROM locations WHERE id = ${stockMoves.toLocationId})`,
+          toLocationName: sql<string>`(SELECT name FROM locations WHERE id = ${stockMoves.toLocationId})`,
+          fromWarehouseName: sql<string>`(SELECT l2.name FROM locations l2 WHERE l2.id = (SELECT warehouse_id FROM locations WHERE id = ${stockMoves.fromLocationId}))`,
+          toWarehouseName: sql<string>`(SELECT l2.name FROM locations l2 WHERE l2.id = (SELECT warehouse_id FROM locations WHERE id = ${stockMoves.toLocationId}))`,
+        })
+        .from(stockMoves)
+        .leftJoin(products, eq(stockMoves.productId, products.id))
+        .where(where)
+        .limit(limit)
+        .offset(offset)
+        .orderBy(sql`${stockMoves.createdAt} DESC`),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(stockMoves)
+        .where(where),
+    ]);
+
+    return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
+  }
+
+  // 拠点間移動確認（出荷確認）: draft → confirmed / 跨仓库转移确认（出货确认）: draft → confirmed
+  async confirmTransfer(tenantId: string, moveId: string) {
+    const [move] = await this.db
+      .select()
+      .from(stockMoves)
+      .where(and(
+        eq(stockMoves.id, moveId),
+        eq(stockMoves.tenantId, tenantId),
+        eq(stockMoves.moveType, 'site_transfer'),
+      ))
+      .limit(1);
+
+    if (!move) {
+      throw new WmsException('TRANSFER_NOT_FOUND', 'Transfer not found / 移動レコードが見つかりません / 转移记录未找到');
+    }
+
+    if (move.status !== 'draft') {
+      throw new WmsException('TRANSFER_INVALID_STATUS', `Cannot confirm transfer in status '${move.status}' / ステータス '${move.status}' の移動は確認できません / 状态 '${move.status}' 的转移无法确认`);
+    }
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+
+    // confirmed = 出荷確認済み（移動元から在庫減少、移動先にはまだ反映しない）
+    // confirmed = 出货已确认（从源库位减少库存，目标库位暂不反映）
+    await this.db.transaction(async (tx: any) => {
+      // ステータス更新 / 更新状态
+      await tx
+        .update(stockMoves)
+        .set({ status: 'confirmed', executedAt: now, updatedAt: now })
+        .where(eq(stockMoves.id, moveId));
+
+      // 引当を解除し、実在庫を減らす / 释放预留，减少实际库存
+      await tx.execute(sql`
+        UPDATE stock_quants
+        SET quantity = quantity - ${move.quantity},
+            reserved_quantity = reserved_quantity - ${move.quantity},
+            updated_at = ${nowIso}::timestamp,
+            last_moved_at = ${nowIso}::timestamp
+        WHERE tenant_id = ${tenantId} AND product_id = ${move.productId} AND location_id = ${move.fromLocationId}
+      `);
+    });
+
+    return {
+      message: 'Transfer confirmed (shipped) / 移動確認済み（出荷済み）/ 转移已确认（已出货）',
+    };
+  }
+
+  // 拠点間移動受入: confirmed → done / 跨仓库转移接收: confirmed → done
+  async receiveTransfer(tenantId: string, moveId: string) {
+    const [move] = await this.db
+      .select()
+      .from(stockMoves)
+      .where(and(
+        eq(stockMoves.id, moveId),
+        eq(stockMoves.tenantId, tenantId),
+        eq(stockMoves.moveType, 'site_transfer'),
+      ))
+      .limit(1);
+
+    if (!move) {
+      throw new WmsException('TRANSFER_NOT_FOUND', 'Transfer not found / 移動レコードが見つかりません / 转移记录未找到');
+    }
+
+    if (move.status !== 'confirmed') {
+      throw new WmsException('TRANSFER_INVALID_STATUS', `Cannot receive transfer in status '${move.status}' / ステータス '${move.status}' の移動は受入できません / 状态 '${move.status}' 的转移无法接收`);
+    }
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+
+    // done = 受入完了（移動先に在庫を反映）/ done = 接收完成（在目标库位反映库存）
+    await this.db.transaction(async (tx: any) => {
+      // ステータス更新 / 更新状态
+      await tx
+        .update(stockMoves)
+        .set({ status: 'done', updatedAt: now })
+        .where(eq(stockMoves.id, moveId));
+
+      // 移動先の在庫を増やす（upsert）/ 增加目标库位库存（upsert）
+      await tx.execute(sql`
+        INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
+        VALUES (${tenantId}, ${move.productId}, ${move.toLocationId}, ${move.quantity}, ${nowIso}::timestamp, ${nowIso}::timestamp)
+        ON CONFLICT (tenant_id, product_id, location_id) WHERE lot_id IS NULL
+        DO UPDATE SET
+          quantity = stock_quants.quantity + ${move.quantity},
+          updated_at = ${nowIso}::timestamp,
+          last_moved_at = ${nowIso}::timestamp
+      `);
+
+      // 在庫台帳に記録 / 在库存台账中记录
+      await tx.insert(inventoryLedger).values({
+        tenantId,
+        productId: move.productId,
+        productSku: move.productSku,
+        locationId: move.toLocationId,
+        type: 'inbound',
+        quantity: move.quantity,
+        referenceType: 'site_transfer',
+        referenceId: moveId,
+        referenceNumber: move.moveNumber,
+        reason: `Site transfer received / 拠点間移動受入 / 跨仓库转移接收`,
+        executedAt: now,
+      });
+    });
+
+    return {
+      message: 'Transfer received (completed) / 移動受入完了 / 转移接收完成',
+    };
+  }
+
+  // 拠点間移動キャンセル: draft → cancelled / 跨仓库转移取消: draft → cancelled
+  async cancelTransfer(tenantId: string, moveId: string) {
+    const [move] = await this.db
+      .select()
+      .from(stockMoves)
+      .where(and(
+        eq(stockMoves.id, moveId),
+        eq(stockMoves.tenantId, tenantId),
+        eq(stockMoves.moveType, 'site_transfer'),
+      ))
+      .limit(1);
+
+    if (!move) {
+      throw new WmsException('TRANSFER_NOT_FOUND', 'Transfer not found / 移動レコードが見つかりません / 转移记录未找到');
+    }
+
+    if (move.status !== 'draft') {
+      throw new WmsException('TRANSFER_INVALID_STATUS', `Cannot cancel transfer in status '${move.status}' / ステータス '${move.status}' の移動はキャンセルできません / 状态 '${move.status}' 的转移无法取消`);
+    }
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+
+    // 引当を解放し、ステータスをcancelledに / 释放预留，状态改为cancelled
+    await this.db.transaction(async (tx: any) => {
+      await tx
+        .update(stockMoves)
+        .set({ status: 'cancelled', updatedAt: now })
+        .where(eq(stockMoves.id, moveId));
+
+      // 引当解除 / 释放预留
+      await tx.execute(sql`
+        UPDATE stock_quants
+        SET reserved_quantity = GREATEST(0, reserved_quantity - ${move.quantity}),
+            updated_at = ${nowIso}::timestamp
+        WHERE tenant_id = ${tenantId} AND product_id = ${move.productId} AND location_id = ${move.fromLocationId}
+      `);
+    });
+
+    return {
+      message: 'Transfer cancelled / 移動キャンセル済み / 转移已取消',
     };
   }
 
