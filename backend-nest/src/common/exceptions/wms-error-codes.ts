@@ -188,6 +188,24 @@ export const WMS_ERROR_CODES = {
   // Integration 連携 / 集成
   INTEGRATION_NOT_CONFIGURED: { code: 'INTG-001', status: 422, message: 'Integration not configured or disabled' },
 
+  // Country Code 国コード / 国家代码
+  COUNTRY_CODE_NOT_FOUND: { code: 'CC-002', status: 404, message: 'Country code not found' },
+
+  // Shortage Record 欠品 / 缺货
+  SHORTAGE_NOT_FOUND: { code: 'SHORT-001', status: 404, message: 'Shortage record not found' },
+  SHORTAGE_INVALID_STATUS: { code: 'SHORT-002', status: 422, message: 'Invalid shortage status transition' },
+
+  // Assembly Order セット組み / 组装作业
+  ASSEMBLY_NOT_FOUND: { code: 'ASSY-001', status: 404, message: 'Assembly order not found' },
+  ASSEMBLY_INVALID_STATUS: { code: 'ASSY-002', status: 422, message: 'Invalid assembly order status transition' },
+
+  // Gift Option ギフト / 礼品
+  GIFT_OPTION_NOT_FOUND: { code: 'GIFT-001', status: 404, message: 'Gift option not found' },
+
+  // Stocktaking Discrepancy 棚卸差異 / 盘点差异
+  DISCREPANCY_NOT_FOUND: { code: 'DISC-001', status: 404, message: 'Stocktaking discrepancy not found' },
+  DISCREPANCY_INVALID_STATUS: { code: 'DISC-002', status: 422, message: 'Invalid discrepancy status transition' },
+
   // General 一般 / 通用
   DUPLICATE_RESOURCE: { code: 'GEN-001', status: 409, message: 'Resource already exists' },
   VALIDATION_ERROR: { code: 'GEN-002', status: 422, message: 'Validation failed' },

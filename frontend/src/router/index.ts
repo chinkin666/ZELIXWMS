@@ -238,6 +238,13 @@ const router = createRouter({
               component: () => import('@/views/shipment-operations/TrackingManagement.vue'),
               meta: { title: '伝票管理', requiresAuth: true },
             },
+            // === ギフト設定 / 礼品设置 ===
+            {
+              path: 'gift-options',
+              name: 'GiftOptions',
+              component: () => import('@/views/shipment/GiftOptions.vue'),
+              meta: { title: 'ギフト設定', requiresAuth: true },
+            },
           ],
         },
         // === FBA管理 / FBA管理 ===
@@ -453,6 +460,20 @@ const router = createRouter({
               component: () => import('@/views/inventory/ReplenishmentApproval.vue'),
               meta: { title: '補充承認', requiresAuth: true },
             },
+            // === 欠品管理 / 欠品管理 ===
+            {
+              path: 'shortage-records',
+              name: 'ShortageRecords',
+              component: () => import('@/views/inventory/ShortageRecords.vue'),
+              meta: { title: '欠品管理', requiresAuth: true },
+            },
+            // === 棚卸差異 / 盘点差异 ===
+            {
+              path: 'stocktaking-discrepancies',
+              name: 'StocktakingDiscrepancies',
+              component: () => import('@/views/inventory/StocktakingDiscrepancies.vue'),
+              meta: { title: '棚卸差異', requiresAuth: true },
+            },
           ],
         },
         {
@@ -545,6 +566,13 @@ const router = createRouter({
               name: 'ReplenishmentDashboard',
               component: () => import('@/views/warehouse/ReplenishmentDashboard.vue'),
               meta: { title: '補充管理', requiresAuth: true },
+            },
+            // === セット組み作業 / 套装组装作业 ===
+            {
+              path: 'assembly-orders',
+              name: 'AssemblyOrders',
+              component: () => import('@/views/warehouse/AssemblyOrders.vue'),
+              meta: { title: 'セット組み', requiresAuth: true },
             },
           ],
         },

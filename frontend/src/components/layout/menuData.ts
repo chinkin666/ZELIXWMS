@@ -138,6 +138,8 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '受払一覧', to: '/inventory/ledger-view' },
     { label: '在庫ダッシュボード', to: '/inventory/ledger' },
     { label: '庫内作業', to: '/warehouse-ops/tasks' },
+    { label: '欠品管理', to: '/inventory/shortage-records' },
+    { label: '棚卸差異', to: '/inventory/stocktaking-discrepancies' },
   ],
   // 出荷管理 ← FBA + RSL / 出荷管理 ← FBA + RSL
   // 並び順: コア → オペレーション → 管理 → チャネル / 排序: 核心 → 作业 → 管理 → 渠道
@@ -154,6 +156,7 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '伝票管理', to: '/shipment/tracking' },
     { label: 'FBA', to: '/fba/plans' },
     { label: 'RSL', to: '/rsl/plans' },
+    { label: 'ギフト設定', to: '/shipment/gift-options' },
   ],
   '/returns': [
     { label: 'ダッシュボード', to: '/returns/dashboard' },
@@ -199,5 +202,6 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: 'タスクダッシュボード', to: '/warehouse-ops/tasks' },
     { label: 'ウェーブ管理', to: '/warehouse-ops/waves' },
     { label: 'シリアル番号', to: '/warehouse-ops/serial-numbers' },
+    { label: 'セット組み作業', to: '/warehouse-ops/assembly-orders' },
   ],
 }

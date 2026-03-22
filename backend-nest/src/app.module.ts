@@ -69,6 +69,12 @@ import { WmsSchedulesModule } from './wms-schedules/wms-schedules.module.js';
 import { NotificationPreferencesModule } from './notification-preferences/notification-preferences.module.js';
 import { PhotosModule } from './photos/photos.module.js';
 import { WorkflowsModule } from './workflows/workflows.module.js';
+import { CountryCodesModule } from './country-codes/country-codes.module.js';
+import { ShortageRecordsModule } from './shortage-records/shortage-records.module.js';
+import { AssemblyOrdersModule } from './assembly-orders/assembly-orders.module.js';
+import { GiftOptionsModule } from './gift-options/gift-options.module.js';
+import { StocktakingDiscrepanciesModule } from './stocktaking-discrepancies/stocktaking-discrepancies.module.js';
+import { HandlingLabelTypesModule } from './handling-label-types/handling-label-types.module.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
 import envConfig from './config/env.js';
@@ -141,6 +147,12 @@ import envConfig from './config/env.js';
     NotificationPreferencesModule,
     PhotosModule,
     WorkflowsModule,
+    CountryCodesModule,
+    ShortageRecordsModule,
+    AssemblyOrdersModule,
+    GiftOptionsModule,
+    StocktakingDiscrepanciesModule,
+    HandlingLabelTypesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

@@ -191,6 +191,11 @@ export class StocktakingOrdersService {
       ))
       .returning();
 
+    // TODO: 棚卸完了時に stocktaking_discrepancies テーブルへ差異データを自動生成する
+    // TODO: 盘点完成时自动向 stocktaking_discrepancies 表生成差异数据
+    // 比較: items内のcountedQuantity vs inventoryのsystemQuantity → discrepancy レコード作成
+    // 对比: items中的countedQuantity vs inventory的systemQuantity → 创建discrepancy记录
+
     return rows[0];
   }
 
