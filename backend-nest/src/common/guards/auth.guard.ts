@@ -23,8 +23,10 @@ export class AuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const token = this.extractToken(request);
 
-    // 開発環境: トークンなしでもdev userを注入 / 开发环境: 无token时注入dev用户
-    if (!token && this.configService.get('NODE_ENV') === 'development') {
+    // 開発環境: トークンなし or dev-token でdev userを注入
+    // 开发环境: 无token 或 dev-token 时注入dev用户
+    const isDev = this.configService.get('NODE_ENV') === 'development';
+    if (isDev && (!token || token.startsWith('dev-token-'))) {
       request.user = {
         id: '00000000-0000-0000-0000-000000000099',
         email: 'dev@zelix.local',
