@@ -4,6 +4,7 @@ import { tenants } from './tenants';
 import { warehouses } from './warehouses';
 import { products } from './products';
 import { locations } from './inventory';
+import { clients } from './clients';
 
 // ウェーブ / 波次
 export const waves = pgTable('waves', {
@@ -64,6 +65,43 @@ export const stocktakingOrders = pgTable('stocktaking_orders', {
   completedAt: timestamp('completed_at'),
   memo: text('memo'),
   items: jsonb('items').default([]),               // 棚卸明細 / 盘点明细
+
+  // --- 要件ギャップ追加フィールド / 需求差距补充字段 ---
+  // タイトル名称 / 标题名称
+  title: text('title'),
+  // 顧客ID / 客户ID
+  clientId: uuid('client_id').references(() => clients.id),
+  // 棚卸区分 / 盘点区分 (full/partial/random/cyclic)
+  stocktakingCategory: text('stocktaking_category').default('full'),
+  // 棚番号FROM / 库位编号FROM
+  locationFrom: text('location_from'),
+  // 棚番号TO / 库位编号TO
+  locationTo: text('location_to'),
+  // 指示日 / 指示日期
+  instructionDate: timestamp('instruction_date'),
+  // 差異区分 / 差异区分 (none/has_discrepancy)
+  discrepancyCategory: text('discrepancy_category'),
+  // 間口数 / 间口数
+  totalSlots: integer('total_slots').default(0),
+  // 実施間口数 / 已实施间口数
+  completedSlots: integer('completed_slots').default(0),
+  // 理論アイテム数 / 理论品项数
+  theoreticalItemCount: integer('theoretical_item_count').default(0),
+  // 実アイテム数 / 实际品项数
+  actualItemCount: integer('actual_item_count').default(0),
+  // 理論ピース数 / 理论件数
+  theoreticalPieceCount: integer('theoretical_piece_count').default(0),
+  // 実棚数 / 实际盘点数
+  actualPieceCount: integer('actual_piece_count').default(0),
+  // 判定 / 判定 (pass/fail)
+  judgment: text('judgment'),
+  // 確定日時 / 确定日期时间
+  confirmedAt: timestamp('confirmed_at'),
+  // 顧客へ連絡日 / 客户通知日
+  customerNotificationDate: timestamp('customer_notification_date'),
+  // 顧客へ連絡者 / 客户通知人
+  customerNotifier: text('customer_notifier'),
+
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
@@ -71,6 +109,7 @@ export const stocktakingOrders = pgTable('stocktaking_orders', {
   uniqueIndex('stocktaking_orders_tenant_number_idx').on(table.tenantId, table.orderNumber),
   index('stocktaking_orders_warehouse_idx').on(table.warehouseId),
   index('stocktaking_orders_status_idx').on(table.tenantId, table.status),
+  index('stocktaking_orders_client_idx').on(table.tenantId, table.clientId),
 ]);
 
 // 資材 / 物料
@@ -155,4 +194,57 @@ export const stocktakingDiscrepancies = pgTable('stocktaking_discrepancies', {
 }, (table) => [
   index('stocktaking_discrepancies_tenant_idx').on(table.tenantId),
   index('stocktaking_discrepancies_order_idx').on(table.stocktakingOrderId),
+]);
+
+// 棚卸明細行 / 盘点明细行
+export const stocktakingLines = pgTable('stocktaking_lines', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+
+  // 棚卸指示ID / 盘点单ID
+  stocktakingOrderId: uuid('stocktaking_order_id').references(() => stocktakingOrders.id).notNull(),
+  // 商品ID / 商品ID
+  productId: uuid('product_id').references(() => products.id).notNull(),
+  // ロケーションID / 库位ID
+  locationId: uuid('location_id').references(() => locations.id),
+
+  // 棚卸回数 / 盘点回数
+  countRound: integer('count_round').default(1).notNull(),
+  // WMS理論数 / WMS理论数
+  systemQuantity: integer('system_quantity').default(0).notNull(),
+  // 実棚数 / 实际盘点数
+  countedQuantity: integer('counted_quantity'),
+  // 差異 / 差异
+  discrepancy: integer('discrepancy'),
+  // 前回実施数 / 上次盘点数
+  previousCount: integer('previous_count'),
+
+  // 倉庫コード（良品/不良品）/ 仓库编码（良品/不良品）
+  warehouseCode: text('warehouse_code'),
+  // 倉庫種類（常温/冷蔵/冷凍）/ 仓库种类（常温/冷藏/冷冻）
+  warehouseType: text('warehouse_type'),
+  // 結果（OK/NG）/ 结果（OK/NG）
+  resultMark: text('result_mark'),
+
+  // ロットID / 批次ID
+  lotId: uuid('lot_id'),
+  // 有効期限 / 有效期限
+  expiryDate: timestamp('expiry_date'),
+  // 賞味期限 / 保质期限
+  bestBeforeDate: timestamp('best_before_date'),
+  // シリアルNo / 序列号
+  serialNumber: text('serial_number'),
+
+  // 最終更新者 / 最后更新人
+  lastUpdatedBy: uuid('last_updated_by'),
+  // 備考 / 备注
+  notes: text('notes'),
+
+  // タイムスタンプ / 时间戳
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('stocktaking_lines_tenant_idx').on(table.tenantId),
+  index('stocktaking_lines_order_idx').on(table.stocktakingOrderId),
+  index('stocktaking_lines_product_idx').on(table.productId),
 ]);

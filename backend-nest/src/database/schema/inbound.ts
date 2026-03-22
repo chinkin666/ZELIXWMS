@@ -48,6 +48,40 @@ export const inboundOrders = pgTable('inbound_orders', {
   // 予定外入庫 / 计划外入库
   isUnplanned: boolean('is_unplanned').default(false),
 
+  // --- 要件ギャップ追加フィールド / 需求差距补充字段 ---
+  // 発注番号 / 采购订单号
+  poNumber: text('po_number'),
+  // 入庫希望日 / 期望入库日期
+  desiredDate: timestamp('desired_date'),
+  // 納品元名称 / 供货方名称
+  supplierName: text('supplier_name'),
+  // 納品元電話番号 / 供货方电话
+  supplierPhone: text('supplier_phone'),
+  // 納品元郵便番号 / 供货方邮编
+  supplierPostalCode: text('supplier_postal_code'),
+  // 納品元住所 / 供货方地址
+  supplierAddress: text('supplier_address'),
+  // 完納フラグ / 完纳标志
+  completionFlag: boolean('completion_flag').default(false),
+  // 完納日付 / 完纳日期
+  completionDate: timestamp('completion_date'),
+  // 取込管理番号 / 导入管理编号
+  importControlNumber: text('import_control_number'),
+  // 取込管理日 / 导入管理日期
+  importControlDate: timestamp('import_control_date'),
+  // 入庫/納品会社 / 入库/交货公司
+  deliveryCompany: text('delivery_company'),
+  // 入庫/納品伝票番号 / 入库/交货单号
+  deliverySlipNumber: text('delivery_slip_number'),
+  // 入庫コメント / 入库备注
+  inboundComment: text('inbound_comment'),
+  // 入庫コンテナ / 入库集装箱 (20ft/40ft/40ftH)
+  containerType: text('container_type'),
+  // 入庫立方数 / 入库立方数
+  totalCbm: text('total_cbm'),
+  // 入庫パレット数 / 入库托盘数
+  totalPallets: integer('total_pallets').default(0),
+
   // タイムスタンプ / 时间戳
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -94,6 +128,60 @@ export const inboundOrderLines = pgTable('inbound_order_lines', {
 
   // メモ / 备注
   memo: text('memo'),
+
+  // --- 要件ギャップ追加フィールド / 需求差距补充字段 ---
+  // 入庫予定明細番号 / 入库预定明细编号
+  detailNumber: text('detail_number'),
+  // 商品取扱区分 / 商品处理区分 (normal/urgent)
+  handlingCategory: text('handling_category'),
+  // 入庫区分 / 入库区分 (stock/passthrough)
+  inboundType: text('inbound_type'),
+  // 倉庫コード / 仓库编码
+  warehouseCode: text('warehouse_code'),
+  // 倉庫種類 / 仓库种类 (normal/refrigerated/frozen/hazardous)
+  warehouseType: text('warehouse_type'),
+  // ケース数 / 箱数
+  caseQuantity: integer('case_quantity'),
+  // ケース単位 / 箱单位 (piece/case/unit/box/roll)
+  caseUnitType: text('case_unit_type'),
+  // ケース単位入数 / 箱单位入数
+  caseUnitQuantity: integer('case_unit_quantity'),
+  // インナー箱数 / 内箱数
+  innerBoxQuantity: integer('inner_box_quantity'),
+  // シリアル番号 / 序列号
+  serialNumber: text('serial_number'),
+  // 賞味期限 / 保质期限
+  bestBeforeDate: timestamp('best_before_date'),
+  // 有効期限（入力）/ 有效期限（输入）
+  expiryDateInput: text('expiry_date_input'),
+  // ラック番号 / 货架号
+  rackNumber: text('rack_number'),
+  // 危険区分 / 危险区分
+  hazardousFlag: boolean('hazardous_flag').default(false),
+  // 有償無償区分 / 有偿无偿区分
+  paidFreeFlag: text('paid_free_flag').default('free'),
+  // 原産国 / 原产国
+  originCountry: text('origin_country'),
+  // 航空搭載禁止 / 禁止航空运输
+  airShippingProhibited: boolean('air_shipping_prohibited').default(false),
+  // 商品委託作業区分 / 商品委托作业区分
+  serviceWorkType: text('service_work_type'),
+  // 販売単価 / 销售单价
+  sellingPrice: text('selling_price'),
+  // 販売単位 / 销售单位
+  sellingPriceUnit: text('selling_price_unit'),
+  // 仕入単価 / 采购单价
+  purchasePrice: text('purchase_price'),
+  // 仕入単位 / 采购单位
+  purchasePriceUnit: text('purchase_price_unit'),
+  // 税区分 / 税区分
+  taxType: text('tax_type'),
+  // 税率 / 税率
+  taxRate: text('tax_rate'),
+  // 通貨 / 货币
+  currency: text('currency').default('JPY'),
+  // 予備項目1-6 / 预留字段1-6
+  reserveFields: jsonb('reserve_fields').default({}),
 
   // タイムスタンプ / 时间戳
   createdAt: timestamp('created_at').defaultNow().notNull(),

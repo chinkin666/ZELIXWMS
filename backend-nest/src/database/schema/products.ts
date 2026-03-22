@@ -126,6 +126,30 @@ export const products = pgTable('products', {
   index('products_tenant_client_idx').on(table.tenantId, table.clientId),
 ]);
 
+// セットマスタ / 套装主数据
+export const setMaster = pgTable('set_master', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+
+  // セット商品 / 套装商品
+  setProductId: uuid('set_product_id').references(() => products.id).notNull(),
+  // 構成商品 / 组成商品
+  componentProductId: uuid('component_product_id').references(() => products.id).notNull(),
+  // 必要数量 / 所需数量
+  quantity: integer('quantity').default(1).notNull(),
+  // 並び順 / 排序
+  sortOrder: integer('sort_order').default(0),
+  // 備考 / 备注
+  notes: text('notes'),
+
+  // タイムスタンプ / 时间戳
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('set_master_tenant_idx').on(table.tenantId),
+  index('set_master_set_product_idx').on(table.setProductId),
+]);
+
 // 子SKU / 子SKU
 export const productSubSkus = pgTable('product_sub_skus', {
   id: uuid('id').primaryKey().defaultRandom(),
