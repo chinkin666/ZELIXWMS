@@ -682,7 +682,7 @@ function handleProductMatch(input: string) {
 
 // ─── Completion ───────────────────────────────────────────────────────
 
-function checkCompletion() {
+async function checkCompletion() {
   const allDone = inspectionItems.value.every(item => item.remainingQuantity === 0)
   if (!allDone) return
 

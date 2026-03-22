@@ -12,6 +12,30 @@
 # ============================================================
 
 services:
+  # Nginx リバースプロキシ（統一エントリポイント）/ Nginx 反向代理（统一入口）
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+      # 将来の SSL 用 / 未来 SSL 用
+      # - "443:443"
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+      admin:
+        condition: service_started
+      portal:
+        condition: service_started
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+    networks:
+      - internal
+
   # NestJS Backend API server / NestJS バックエンド API サーバー
   backend:
     build: ./backend-nest
@@ -47,14 +71,13 @@ services:
       - internal
 
   # Warehouse Frontend (Nginx + Vue SPA) / 仓库端フロントエンド
+  # ポート公開は nginx 経由 / 端口通过 nginx 暴露
   frontend:
     build:
       context: ./frontend
       args:
         VITE_BACKEND_ORIGIN: ""
         VITE_BACKEND_API_PREFIX: /api
-    ports:
-      - "3000:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -67,14 +90,13 @@ services:
       - internal
 
   # Admin Dashboard / 管理端ダッシュボード
+  # ポート公開は nginx 経由 / 端口通过 nginx 暴露
   admin:
     build:
       context: ./admin
       args:
         VITE_BACKEND_ORIGIN: ""
         VITE_BACKEND_API_PREFIX: /api
-    ports:
-      - "3001:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -87,14 +109,13 @@ services:
       - internal
 
   # Client Portal / 客户门户
+  # ポート公開は nginx 経由 / 端口通过 nginx 暴露
   portal:
     build:
       context: ./portal
       args:
         VITE_BACKEND_ORIGIN: ""
         VITE_BACKEND_API_PREFIX: /api
-    ports:
-      - "3002:80"
     depends_on:
       backend:
         condition: service_healthy

@@ -19,9 +19,8 @@
     "seed": "npm run seed --workspace backend",
     "db:dump": "npm run db:dump --workspace backend",
     "db:restore": "npm run db:restore --workspace backend"
+  },
+  "dependencies": {
+    "@rollup/rollup-win32-x64-msvc": "^4.59.1"
   }
 }
-
-
-
-
