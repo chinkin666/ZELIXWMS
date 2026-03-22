@@ -47,7 +47,8 @@ export class KpiController {
     @TenantId() tenantId: string,
     @Query('threshold') threshold?: string,
   ) {
-    return this.kpiService.getAlerts(tenantId, threshold ? parseInt(threshold, 10) : undefined);
+    const parsed = threshold ? parseInt(threshold, 10) : undefined;
+    return this.kpiService.getAlerts(tenantId, parsed !== undefined && !isNaN(parsed) ? parsed : undefined);
   }
 
   // 注文統計取得 / 获取订单统计
@@ -84,7 +85,8 @@ export class KpiController {
     @TenantId() tenantId: string,
     @Query('period') period?: string,
   ) {
-    return this.kpiService.getAbcAnalysis(tenantId, period ? parseInt(period, 10) : undefined);
+    const parsedPeriod = period ? parseInt(period, 10) : undefined;
+    return this.kpiService.getAbcAnalysis(tenantId, parsedPeriod !== undefined && !isNaN(parsedPeriod) ? parsedPeriod : undefined);
   }
 
   // 在庫回転率（商品別の出荷数/平均在庫数）/ 库存周转率（各商品出货数/平均库存数）
@@ -93,6 +95,7 @@ export class KpiController {
     @TenantId() tenantId: string,
     @Query('period') period?: string,
   ) {
-    return this.kpiService.getInventoryTurnover(tenantId, period ? parseInt(period, 10) : undefined);
+    const parsedPeriod = period ? parseInt(period, 10) : undefined;
+    return this.kpiService.getInventoryTurnover(tenantId, parsedPeriod !== undefined && !isNaN(parsedPeriod) ? parsedPeriod : undefined);
   }
 }
