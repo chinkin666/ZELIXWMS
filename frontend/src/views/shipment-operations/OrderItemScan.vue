@@ -881,5 +881,17 @@ onMounted(async () => {
 
   /* 検品進捗バー縮小 / 检品进度条缩小 */
   .inspection-progress { padding: 6px 10px; }
+
+  /* 注文情報グリッド縦積み / 订单信息网格纵向排列 */
+  .order-info-grid { grid-template-columns: 100px 1fr; }
+
+  /* テーブル横スクロール / 表格横向滚动 */
+  .table-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* タッチターゲット拡大 / 触摸目标放大 */
+  button, .o-btn, .el-button { min-height: 44px; min-width: 44px; }
+
+  /* バーコードスキャン入力常時表示 / 条码扫描输入始终可见 */
+  .input-section { position: sticky; top: 0; z-index: 10; }
 }
 </style>

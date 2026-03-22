@@ -538,4 +538,27 @@ onMounted(() => loadData())
 .import-hint { color: var(--o-gray-500, #909399); font-size: 12px; }
 .import-panel-body { padding: 14px; }
 .import-preview { margin-top: 10px; font-size: 13px; }
+
+/* モバイルレスポンシブ対応 / 移动端响应式适配 */
+@media (max-width: 768px) {
+  /* 全体パディング縮小 / 整体内边距缩小 */
+  .inventory-stock { padding: 0 12px 12px; }
+
+  /* テーブル横スクロール / 表格横向滚动 */
+  .table-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* 検索フォーム縦積み / 搜索表单纵向排列 */
+  .search-section :deep(.search-form),
+  .search-section :deep([class*="grid"]) { grid-template-columns: 1fr !important; }
+
+  /* インポートパネル縦積み / 导入面板纵向排列 */
+  .import-panel-header { flex-direction: column; gap: 4px; }
+  .import-panel-body { padding: 10px; }
+
+  /* タッチターゲット拡大 / 触摸目标放大 */
+  button, .o-btn, .el-button { min-height: 44px; min-width: 44px; }
+
+  /* アクションボタン折り返し / 操作按钮换行 */
+  .actions, [class*="action"] { flex-wrap: wrap; }
+}
 </style>

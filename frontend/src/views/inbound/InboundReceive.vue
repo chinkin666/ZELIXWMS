@@ -630,5 +630,14 @@ onMounted(() => loadOrder())
 
   /* 差異サマリー縦積み / 差异摘要纵向排列 */
   .variance-summary { flex-direction: column; gap: 4px; }
+
+  /* タッチターゲット拡大 / 触摸目标放大 */
+  button, .o-btn, .el-button { min-height: 44px; min-width: 44px; }
+
+  /* アクションボタン折り返し / 操作按钮换行 */
+  .actions, [class*="action"] { flex-wrap: wrap; }
+
+  /* バーコードスキャン入力常時表示 / 条码扫描输入始终可见 */
+  .scan-card { position: sticky; top: 0; z-index: 10; }
 }
 </style>

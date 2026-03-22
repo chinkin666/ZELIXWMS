@@ -208,4 +208,25 @@ onMounted(() => loadData())
 .line-status--verified { background: #f0f9eb; color: #67c23a; }
 .o-status-tag--draft { background: #f4f4f5; color: #909399; }
 .o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
+
+/* モバイルレスポンシブ対応 / 移动端响应式适配 */
+@media (max-width: 768px) {
+  /* 全体パディング縮小 / 整体内边距缩小 */
+  .stocktaking-detail { padding: 0 12px 12px; }
+
+  /* 情報バー縦積み / 信息栏纵向排列 */
+  .info-bar { flex-direction: column; gap: 6px; padding: 10px; }
+
+  /* テーブル横スクロール / 表格横向滚动 */
+  .o-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* 入力フィールド全幅 / 输入框全宽 */
+  .o-input, .o-input-sm { width: 100% !important; }
+
+  /* タッチターゲット拡大 / 触摸目标放大 */
+  button, .o-btn, .el-button { min-height: 44px; min-width: 44px; }
+
+  /* アクションボタン折り返し / 操作按钮换行 */
+  .actions, [class*="action"] { flex-wrap: wrap; }
+}
 </style>

@@ -950,4 +950,57 @@ onBeforeUnmount(() => {
 
 .b2-cloud-text { color: #854d0e; font-size: 16px; font-weight: 600; }
 .b2-cloud-tracking { color: #a16207; font-size: 14px; font-family: monospace; }
+
+/* ─── タブレット対応 / 平板适配 (768-1024px) ─────── */
+@media (max-width: 1024px) {
+  .inspection-page {
+    flex-direction: column;
+    height: auto;
+    padding-bottom: 64px;
+  }
+
+  .inspection-page :deep(.left-panel) {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .inspection-page :deep(.right-panel) {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .fkey-bar { gap: 3px; padding: 6px 8px; }
+  .fkey-btn { padding: 6px 10px; font-size: 12px; }
+  .fkey-btn .fkey-key { font-size: 10px; padding: 2px 6px; min-width: 24px; }
+}
+
+/* ─── モバイル対応 / 手机适配 (<768px) ─────────────── */
+@media (max-width: 768px) {
+  .inspection-page { padding-bottom: 56px; }
+
+  .inspection-page :deep(.left-panel) { padding: 12px; gap: 8px; }
+
+  .inspection-page :deep(.scan-input) {
+    font-size: 18px;
+    padding: 12px 40px 12px 14px;
+  }
+
+  .inspection-page :deep(.product-image-section) { display: none; }
+
+  .fkey-bar { gap: 2px; padding: 4px 6px; }
+  .fkey-btn { padding: 8px 8px; font-size: 11px; }
+  .fkey-btn .fkey-label { display: none; }
+  .fkey-btn .fkey-key { font-size: 11px; min-width: 32px; }
+
+  .wrong-scan-icon { width: 56px; height: 56px; font-size: 32px; }
+  .wrong-scan-title { font-size: 18px; }
+  .print-preview-section { height: 300px; }
+
+  /* タッチターゲット拡大 / 触摸目标放大 */
+  button, .o-btn, .el-button { min-height: 44px; min-width: 44px; }
+}
 </style>

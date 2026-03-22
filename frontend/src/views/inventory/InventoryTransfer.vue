@@ -19,6 +19,14 @@
         >
           {{ t('wms.inventory.interWarehouseTransfer', '拠点間移動') }}
         </button>
+        <button
+          class="mode-tab"
+          :class="{ active: mode === 'transfers' }"
+          @click="mode = 'transfers'; loadTransfers()"
+        >
+          {{ t('wms.inventory.transferWorkflow', '移動管理') }}
+          <span v-if="pendingTransferCount > 0" class="tab-badge">{{ pendingTransferCount }}</span>
+        </button>
       </div>
 
       <!-- 倉庫内移動 / 仓库内移动 -->
@@ -636,6 +644,29 @@ onMounted(async () => {
 .text-info { color: #409eff; font-weight: 600; }
 
 @media (max-width: 768px) {
+  /* フォームグリッド1列化 / 表单网格单列化 */
   .form-grid { grid-template-columns: 1fr; }
+
+  /* 全体パディング縮小 / 整体内边距缩小 */
+  .inventory-transfer { padding: 0 12px 12px; }
+
+  /* カードパディング縮小 / 卡片内边距缩小 */
+  .o-card { padding: 1rem; }
+
+  /* テーブル横スクロール / 表格横向滚动 */
+  .table-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* モードタブ縦積み / 模式标签纵向排列 */
+  .mode-tabs { flex-direction: column; }
+  .mode-tab { text-align: center; padding: 10px 12px; }
+
+  /* タッチターゲット拡大 / 触摸目标放大 */
+  button, .o-btn, .el-button { min-height: 44px; min-width: 44px; }
+
+  /* セクションタイトル折り返し / 标题换行 */
+  .section-title { flex-direction: column; gap: 8px; align-items: flex-start !important; }
+
+  /* アクションボタン折り返し / 操作按钮换行 */
+  .form-actions { text-align: center; }
 }
 </style>

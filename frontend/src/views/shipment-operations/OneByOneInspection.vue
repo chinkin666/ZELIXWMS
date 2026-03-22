@@ -1623,5 +1623,11 @@ onBeforeUnmount(() => {
   .print-preview-section {
     height: 300px;
   }
+
+  /* タッチターゲット拡大 / 触摸目标放大 */
+  button, .o-btn, .el-button { min-height: 44px; min-width: 44px; }
+
+  /* バーコードスキャン入力常時表示 / 条码扫描输入始终可见 */
+  .inspection-page :deep(.scan-section) { position: sticky; top: 0; z-index: 10; }
 }
 </style>
