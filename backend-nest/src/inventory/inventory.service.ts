@@ -248,6 +248,7 @@ export class InventoryService {
     }
 
     const now = new Date();
+    const nowIso = now.toISOString();
     const moveNumber = `ADJ-${crypto.randomUUID()}`;
 
     // トランザクションで原子操作を保証 / 用事务保证原子操作
@@ -269,12 +270,12 @@ export class InventoryService {
       // stockQuants を upsert / upsert stockQuants
       await tx.execute(sql`
         INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
-        VALUES (${tenantId}, ${productId}, ${locationId}, ${quantity}, ${now}, ${now})
-        ON CONFLICT (tenant_id, product_id, location_id, COALESCE(lot_id, '00000000-0000-0000-0000-000000000000'))
+        VALUES (${tenantId}, ${productId}, ${locationId}, ${quantity}, ${nowIso}::timestamp, ${nowIso}::timestamp)
+        ON CONFLICT (tenant_id, product_id, location_id) WHERE lot_id IS NULL
         DO UPDATE SET
           quantity = stock_quants.quantity + ${quantity},
-          updated_at = ${now},
-          last_moved_at = ${now}
+          updated_at = ${nowIso}::timestamp,
+          last_moved_at = ${nowIso}::timestamp
       `);
 
       return move;
@@ -292,6 +293,7 @@ export class InventoryService {
     }
 
     const now = new Date();
+    const nowIso = now.toISOString();
     const moveNumber = `TRF-${crypto.randomUUID()}`;
 
     // トランザクションで原子操作を保証 / 用事务保证原子操作
@@ -313,19 +315,19 @@ export class InventoryService {
       // 移動元の在庫を減らす / 减少来源库位库存
       await tx.execute(sql`
         UPDATE stock_quants
-        SET quantity = quantity - ${quantity}, updated_at = ${now}, last_moved_at = ${now}
+        SET quantity = quantity - ${quantity}, updated_at = ${nowIso}::timestamp, last_moved_at = ${nowIso}::timestamp
         WHERE tenant_id = ${tenantId} AND product_id = ${productId} AND location_id = ${fromLocationId}
       `);
 
       // 移動先の在庫を増やす（upsert）/ 增加目标库位库存（upsert）
       await tx.execute(sql`
         INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
-        VALUES (${tenantId}, ${productId}, ${toLocationId}, ${quantity}, ${now}, ${now})
-        ON CONFLICT (tenant_id, product_id, location_id, COALESCE(lot_id, '00000000-0000-0000-0000-000000000000'))
+        VALUES (${tenantId}, ${productId}, ${toLocationId}, ${quantity}, ${nowIso}::timestamp, ${nowIso}::timestamp)
+        ON CONFLICT (tenant_id, product_id, location_id) WHERE lot_id IS NULL
         DO UPDATE SET
           quantity = stock_quants.quantity + ${quantity},
-          updated_at = ${now},
-          last_moved_at = ${now}
+          updated_at = ${nowIso}::timestamp,
+          last_moved_at = ${nowIso}::timestamp
       `);
 
       return moveRecord;
@@ -625,6 +627,7 @@ export class InventoryService {
     }
 
     const now = new Date();
+    const nowIso = now.toISOString();
     const results = [];
 
     for (const res of reservations) {
@@ -637,7 +640,7 @@ export class InventoryService {
       // 原子UPDATE: 在单条SQL中同时检查可用数并增加reservedQuantity
       const updated = await this.db.execute(sql`
         UPDATE stock_quants
-        SET reserved_quantity = reserved_quantity + ${res.quantity}, updated_at = ${now}
+        SET reserved_quantity = reserved_quantity + ${res.quantity}, updated_at = ${nowIso}::timestamp
         WHERE tenant_id = ${tenantId}
           AND product_id = ${res.productId}
           AND location_id = ${res.locationId}
