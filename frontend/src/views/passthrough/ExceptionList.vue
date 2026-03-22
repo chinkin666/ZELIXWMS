@@ -64,6 +64,8 @@ async function createReport() {
       showCreateDialog.value = false
       createForm.value = { level: 'A', category: 'appearance_defect', description: '', sku: '', affectedQuantity: 0, suggestedAction: '' }
       await loadData()
+    } else {
+      ElMessage.error('処理に失敗しました / 处理失败')
     }
   } catch (e: any) { ElMessage.error(e.message) }
 }
@@ -76,12 +78,16 @@ async function resolveReport(id: string) {
   ).catch(() => ({ value: null }))
   if (!resolution) return
   try {
-    await fetch(`${baseUrl}/exceptions/${id}/resolve`, {
+    const res = await fetch(`${baseUrl}/exceptions/${id}/resolve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${userStore.token}` },
       body: JSON.stringify({ resolvedBy: userStore.currentUser?.displayName, resolution }),
     })
-    ElMessage.success('処理完了')
+    if (res.ok) {
+      ElMessage.success('処理完了')
+    } else {
+      ElMessage.error('処理に失敗しました / 处理失败')
+    }
     await loadData()
   } catch (e: any) { ElMessage.error(e.message) }
 }

@@ -380,12 +380,12 @@ const processFile = async (file: File) => {
       return
     }
 
-    const headers = (lines[0] ?? '').split(',').map(h => h.trim().replace(/^["']|["']$/g, ''))
+    const headers = parseCsvLine(lines[0] ?? '')
     csvHeaders.value = headers
 
     const dataRows: string[][] = []
     for (let i = 1; i < lines.length; i++) {
-      dataRows.push((lines[i] ?? '').split(',').map(c => c.trim().replace(/^["']|["']$/g, '')))
+      dataRows.push(parseCsvLine(lines[i] ?? ''))
     }
     csvDataLines.value = dataRows
 
@@ -408,6 +408,41 @@ const readFileAsText = (file: File): Promise<string> => {
     reader.onerror = () => reject(new Error(t('wms.inbound.fileReadError', 'ファイル読み込みエラー')))
     reader.readAsText(file, 'UTF-8')
   })
+}
+
+/**
+ * CSV行パーサー — ダブルクォート囲みフィールド対応 / CSV行解析器 — 支持双引号包围的字段
+ */
+const parseCsvLine = (line: string): string[] => {
+  const fields: string[] = []
+  let current = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          current += '"'
+          i++ // エスケープされたダブルクォート / 转义双引号
+        } else {
+          inQuotes = false
+        }
+      } else {
+        current += ch
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true
+      } else if (ch === ',') {
+        fields.push(current.trim())
+        current = ''
+      } else {
+        current += ch
+      }
+    }
+  }
+  fields.push(current.trim())
+  return fields
 }
 
 // --- Apply mapping and build rows ---

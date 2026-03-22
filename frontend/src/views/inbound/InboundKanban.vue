@@ -78,11 +78,13 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
+import { useToast } from '@/composables/useToast'
 import { fetchInboundOrder } from '@/api/inboundOrder'
 import type { InboundOrder } from '@/types/inventory'
 
 const { t } = useI18n()
 const route = useRoute()
+const toast = useToast()
 const isLoading = ref(true)
 const order = ref<InboundOrder | null>(null)
 
@@ -93,8 +95,8 @@ const handlePrint = () => window.print()
 onMounted(async () => {
   try {
     order.value = await fetchInboundOrder(route.params.id as string)
-  } catch {
-    // ignore
+  } catch (e: any) {
+    toast.showError(e?.message || t('wms.inbound.fetchOrderFailed', '入庫指示の取得に失敗しました'))
   } finally {
     isLoading.value = false
   }

@@ -302,12 +302,12 @@ async function handleTrackingSearch() {
 }
 
 // フォーマッター / 格式化函数
-function formatNumber(n: number): string {
-  return n.toLocaleString()
+function formatNumber(n: number | null | undefined): string {
+  return (n ?? 0).toLocaleString()
 }
 
-function formatCurrency(amount: number): string {
-  return `¥${amount.toLocaleString()}`
+function formatCurrency(amount: number | null | undefined): string {
+  return `¥${(amount ?? 0).toLocaleString()}`
 }
 
 function formatDate(dateStr: string): string {

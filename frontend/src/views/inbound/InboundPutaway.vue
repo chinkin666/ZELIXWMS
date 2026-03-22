@@ -216,15 +216,27 @@ const handlePutaway = async (lineNumber: number) => {
 const handleBulkPutaway = async () => {
   if (!order.value || !bulkLocationId.value || isPutaway.value) return
   isPutaway.value = true
+  let successCount = 0
+  let failCount = 0
   try {
     for (const line of order.value.lines) {
       if (line.putawayQuantity >= line.receivedQuantity) continue
-      await putawayInboundLine(order.value._id, {
-        lineNumber: line.lineNumber,
-        locationId: bulkLocationId.value,
-      })
+      try {
+        await putawayInboundLine(order.value._id, {
+          lineNumber: line.lineNumber,
+          locationId: bulkLocationId.value,
+        })
+        successCount++
+      } catch (e: any) {
+        failCount++
+        console.error(`棚入れ失敗 行${line.lineNumber}:`, e?.message)
+      }
     }
-    toast.showSuccess(t('wms.inbound.allPutawayComplete', '全行の棚入れが完了しました'))
+    if (failCount === 0) {
+      toast.showSuccess(t('wms.inbound.allPutawayComplete', '全行の棚入れが完了しました'))
+    } else {
+      toast.showWarning(`成功: ${successCount}行 / 失敗: ${failCount}行`)
+    }
     await loadOrder()
   } catch (e: any) {
     toast.showError(e?.message || t('wms.inbound.bulkPutawayFailed', '一括棚入れに失敗しました'))

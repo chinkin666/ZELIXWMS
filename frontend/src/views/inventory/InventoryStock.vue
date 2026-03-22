@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { h, onMounted, ref } from 'vue'
+import { h, onMounted, ref, watch } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -439,6 +439,9 @@ const loadData = async () => {
     isLoading.value = false
   }
 }
+
+// showZeroトグル変更時にリロード / showZero切换时重新加载
+watch(showZero, () => loadData())
 
 onMounted(() => loadData())
 </script>

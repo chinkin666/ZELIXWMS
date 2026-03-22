@@ -58,6 +58,7 @@
 import { nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
+import { useToast } from '@/composables/useToast'
 import { fetchInboundOrder } from '@/api/inboundOrder'
 import type { InboundOrder } from '@/types/inventory'
 // JsBarcode动态导入，减少初始包大小 / JsBarcodeを動的インポートし初期バンドルサイズを削減
@@ -65,6 +66,7 @@ const loadJsBarcode = () => import('jsbarcode')
 
 const { t } = useI18n()
 const route = useRoute()
+const toast = useToast()
 const isLoading = ref(true)
 const order = ref<InboundOrder | null>(null)
 const showOrderBarcode = ref(true)
@@ -131,8 +133,8 @@ onMounted(async () => {
     order.value = await fetchInboundOrder(route.params.id as string)
     await nextTick()
     rerenderAll()
-  } catch {
-    // ignore
+  } catch (e: any) {
+    toast.showError(e?.message || t('wms.inbound.fetchOrderFailed', '入庫指示の取得に失敗しました'))
   } finally {
     isLoading.value = false
   }
