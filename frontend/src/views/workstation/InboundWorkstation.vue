@@ -8,7 +8,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
-import { http } from '@/api/http'
 import { fetchInboundOrders } from '@/api/inboundOrder'
 import type { InboundOrder } from '@/types/inventory'
 
@@ -33,11 +32,8 @@ const alerts = ref<Array<{ type: string; message: string; action: string }>>([])
 async function loadDashboard() {
   loading.value = true
   try {
-    // 並列でデータ取得 / 并行获取数据
-    const [kpi, ordersRes] = await Promise.all([
-      http.get<any>('/api/kpi/dashboard'),
-      fetchInboundOrders({ limit: 500 }),
-    ])
+    // 入庫指示取得 / 获取入库指示
+    const ordersRes = await fetchInboundOrders({ limit: 500 })
 
     const items = ordersRes.items ?? []
     recentOrders.value = items.slice(0, 20)
@@ -63,7 +59,7 @@ async function loadDashboard() {
     const newAlerts: typeof alerts.value = []
     if (overdue > 0) {
       newAlerts.push({
-        type: 'danger',
+        type: 'error',
         message: `${overdue}件の入庫が期限超過 / ${overdue}件入库已逾期`,
         action: '/inbound/orders',
       })
@@ -106,10 +102,10 @@ function statusLabel(status: string): string {
 
 // 進捗計算 / 进度计算
 function totalExpected(row: InboundOrder): number {
-  return row.lines.reduce((s, l) => s + l.expectedQuantity, 0)
+  return (row.lines ?? []).reduce((s, l) => s + (l.expectedQuantity ?? 0), 0)
 }
 function totalReceived(row: InboundOrder): number {
-  return row.lines.reduce((s, l) => s + l.receivedQuantity, 0)
+  return (row.lines ?? []).reduce((s, l) => s + (l.receivedQuantity ?? 0), 0)
 }
 function progressPercent(row: InboundOrder): number {
   const exp = totalExpected(row)
@@ -163,7 +159,7 @@ onMounted(loadDashboard)
         <div class="ws-action-badge" v-if="stats.confirmed">{{ stats.confirmed }}件</div>
       </div>
 
-      <div class="ws-action-card" @click="goTo('/inbound/orders')">
+      <div class="ws-action-card" @click="goTo('/inbound/orders?status=received')">
         <div class="ws-action-icon">📦</div>
         <div class="ws-action-label">棚入れ</div>
         <div class="ws-action-badge" v-if="stats.received">{{ stats.received }}件</div>
@@ -207,7 +203,7 @@ onMounted(loadDashboard)
         </div>
       </el-col>
       <el-col :span="4">
-        <div class="ws-stat-card ws-stat-success">
+        <div class="ws-stat-card ws-stat-success" @click="goTo('/inbound/history')">
           <div class="ws-stat-value">{{ stats.done }}</div>
           <div class="ws-stat-label">完了</div>
         </div>
@@ -248,7 +244,7 @@ onMounted(loadDashboard)
           <template #default="{ row }">{{ row.expectedDate ? new Date(row.expectedDate).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' }) : '-' }}</template>
         </el-table-column>
         <el-table-column label="日時" width="120">
-          <template #default="{ row }">{{ new Date(row.createdAt).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) }}</template>
+          <template #default="{ row }">{{ row.createdAt ? new Date(row.createdAt).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-' }}</template>
         </el-table-column>
       </el-table>
       <el-empty v-if="!recentOrders.length && !loading" description="入庫指示がありません" />
