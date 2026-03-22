@@ -17,11 +17,21 @@ export class AuthService {
     @Inject(SUPABASE) private readonly supabase: SupabaseClient,
   ) {}
 
+  // Supabase未設定チェック / Supabase未配置检查
+  private ensureSupabase(): SupabaseClient {
+    if (!this.supabase) {
+      throw new WmsException('AUTH_INVALID_CREDENTIALS',
+        'Auth service unavailable — Supabase not configured / 認証サービス利用不可 — Supabase未設定 / 认证服务不可用 — Supabase未配置');
+    }
+    return this.supabase;
+  }
+
   // ログイン（Supabase Auth でパスワード検証）/ 登录（通过Supabase Auth验证密码）
   async login(dto: LoginDto) {
+    const supabase = this.ensureSupabase();
     // Supabase Auth でメール+パスワード認証 / 通过Supabase Auth进行邮箱+密码认证
     const { data: authData, error: authError } =
-      await this.supabase.auth.signInWithPassword({
+      await supabase.auth.signInWithPassword({
         email: dto.email,
         password: dto.password,
       });
@@ -94,7 +104,7 @@ export class AuthService {
 
     // Supabase Auth にユーザー作成 / 在Supabase Auth中创建用户
     const { data: authData, error: authError } =
-      await this.supabase.auth.admin.createUser({
+      await this.ensureSupabase().auth.admin.createUser({
         email: dto.email,
         password: dto.password,
         email_confirm: true,
@@ -211,7 +221,7 @@ export class AuthService {
       );
     }
 
-    const { data, error } = await this.supabase.auth.refreshSession({
+    const { data, error } = await this.ensureSupabase().auth.refreshSession({
       refresh_token: refreshToken,
     });
 
@@ -237,7 +247,7 @@ export class AuthService {
   async portalLogin(email: string, password: string) {
     // Supabase Auth でパスワード認証 / 通过Supabase Auth进行密码认证
     const { data: authData, error: authError } =
-      await this.supabase.auth.signInWithPassword({ email, password });
+      await this.ensureSupabase().auth.signInWithPassword({ email, password });
 
     if (authError) {
       throw new WmsException('AUTH_INVALID_CREDENTIALS', authError.message);
@@ -314,7 +324,7 @@ export class AuthService {
 
     // Supabase Auth にユーザー作成（client ロール）/ 在Supabase Auth中创建用户（client角色）
     const { data: authData, error: authError } =
-      await this.supabase.auth.admin.createUser({
+      await this.ensureSupabase().auth.admin.createUser({
         email,
         password,
         email_confirm: true,

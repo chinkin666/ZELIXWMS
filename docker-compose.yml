@@ -51,7 +51,7 @@ services:
     ports:
       - "4100:4100"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-production}
       - PORT=4100
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/zelixwms
       - REDIS_HOST=redis

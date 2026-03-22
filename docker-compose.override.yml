@@ -13,6 +13,10 @@ services:
     environment:
       - NODE_ENV=development
 
+  backend-nest:
+    environment:
+      - NODE_ENV=development
+
   mongo:
     ports:
       - "27017:27017"
