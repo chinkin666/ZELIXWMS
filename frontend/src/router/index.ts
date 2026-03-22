@@ -332,8 +332,15 @@ const router = createRouter({
         {
           path: 'inbound',
           meta: { title: '入庫管理', requiresAuth: true },
-          redirect: '/inbound/dashboard',
+          redirect: '/inbound/workstation',
           children: [
+            // 入庫ワークステーション / 入库工作台
+            {
+              path: 'workstation',
+              name: 'InboundWorkstation',
+              component: () => import('@/views/workstation/InboundWorkstation.vue'),
+              meta: { title: '入庫ワークステーション', requiresAuth: true },
+            },
             {
               path: 'dashboard',
               name: 'InboundDashboard',
@@ -657,6 +664,20 @@ const router = createRouter({
               name: 'DailyReportDetail',
               component: () => import('@/views/daily/DailyReportDetail.vue'),
               meta: { title: '日次レポート詳細', requiresAuth: true },
+            },
+          ],
+        },
+        // === 管理者ダッシュボード / 管理者仪表盘 ===
+        {
+          path: 'manager',
+          meta: { title: '管理者ダッシュボード', requiresAuth: true },
+          redirect: '/manager/dashboard',
+          children: [
+            {
+              path: 'dashboard',
+              name: 'ManagerDashboard',
+              component: () => import('@/views/workstation/ManagerDashboard.vue'),
+              meta: { title: '管理者ダッシュボード', requiresAuth: true },
             },
           ],
         },

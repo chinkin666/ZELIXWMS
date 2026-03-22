@@ -19,6 +19,7 @@ export const wmsMenuItems: Array<{ label: string; to: string }> = [
   { label: '棚卸管理', to: '/stocktaking' },
   { label: '日次管理', to: '/daily' },
   { label: '請求管理', to: '/billing' },
+  { label: '管理者', to: '/manager' },
   { label: '設定', to: '/settings' },
 ]
 
@@ -113,6 +114,7 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
   ],
   // 入庫管理 ← 通過型受付 / 入库管理 ← 通过型受付
   '/inbound': [
+    { label: 'ワークステーション', to: '/inbound/workstation' },
     { label: 'ダッシュボード', to: '/inbound/dashboard' },
     { label: '入庫指示一覧', to: '/inbound/orders' },
     { label: '入庫指示作成', to: '/inbound/create' },
@@ -173,6 +175,12 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '月次請求', to: '/billing/monthly' },
     { label: '作業チャージ', to: '/billing/charges' },
     { label: '保管料', to: '/billing/storage' },
+  ],
+  // 管理者ダッシュボード / 管理者仪表盘
+  '/manager': [
+    { label: '管理者ダッシュボード', to: '/manager/dashboard' },
+    { label: '業績レポート', to: '/reports' },
+    { label: '日次レポート', to: '/daily/list' },
   ],
   '/settings': settingsGroups.flatMap((g) => g.items),
   // 旧メニューの互換ルーティング（子ページから親メニューへのハイライト用）
