@@ -7,12 +7,12 @@ import { map } from 'rxjs/operators';
 export class TransformInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
-      map(data => {
+      map((data: any) => {
         if (!data) return data;
         // 配列の場合は各要素を変換 / 数组时转换每个元素
         if (Array.isArray(data)) return data.map(this.addIdAlias);
         // items 配列を持つページネーション → 旧フォーマット互換
-        // 带items数组的分页 → 兼容旧格式（data数组 + 分页メタをフラット展開）
+        // 带items数组的分页 → 兼容旧格式
         if (data.items && Array.isArray(data.items)) {
           return this.addIdAlias({ ...data, items: data.items.map(this.addIdAlias) });
         }
