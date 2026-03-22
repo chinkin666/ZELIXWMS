@@ -36,7 +36,9 @@ export async function fetchInventoryCategories(): Promise<InventoryCategoryListR
     const json = await response.json().catch(() => ({}))
     throw new Error(json?.message || '在庫区分の取得に失敗しました')
   }
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchInventoryCategory(id: string): Promise<InventoryCategory> {

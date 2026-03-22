@@ -279,8 +279,8 @@ const loadList = async () => {
       page: currentPage.value,
       limit: pageSize.value,
     })
-    serialNumbers.value = result.data
-    total.value = result.total
+    serialNumbers.value = result?.data ?? []
+    total.value = result?.total ?? 0
   } catch (error: any) {
     showToast(error?.message || t('wms.warehouse.fetchFailed', '取得に失敗しました'), 'danger')
   } finally {

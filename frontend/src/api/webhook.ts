@@ -59,7 +59,9 @@ export async function fetchWebhooks(params?: { event?: string; enabled?: string 
   if (params?.enabled) url.searchParams.append('enabled', params.enabled)
   const response = await apiFetch(url.toString())
   if (!response.ok) throw new Error(`Webhook の取得に失敗しました: ${response.statusText}`)
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function createWebhook(data: Partial<Webhook>): Promise<Webhook> {
@@ -130,5 +132,7 @@ export async function fetchWebhookLogs(
   if (params?.limit) url.searchParams.append('limit', String(params.limit))
   const response = await apiFetch(url.toString())
   if (!response.ok) throw new Error(`Webhook ログの取得に失敗しました: ${response.statusText}`)
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }

@@ -15,7 +15,10 @@ export async function fetchInboundOrders(params?: {
   if (params?.limit) url.searchParams.append('limit', String(params.limit))
   const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch inbound orders')
-  return res.json()
+  const json = await res.json()
+  // バックエンドが items/data 形式どちらでも対応 / 兼容后端 items/data 两种格式
+  const items = json?.items ?? json?.data ?? (Array.isArray(json) ? json : [])
+  return { items, total: json?.total ?? items.length, page: json?.page ?? 1, limit: json?.limit ?? items.length }
 }
 
 export async function fetchInboundOrder(id: string): Promise<InboundOrder> {
@@ -153,7 +156,10 @@ export async function searchInboundHistory(params?: {
   }
   const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to search history')
-  return res.json()
+  const json = await res.json()
+  // バックエンドが items/data 形式どちらでも対応 / 兼容后端 items/data 两种格式
+  const historyItems = json?.items ?? json?.data ?? (Array.isArray(json) ? json : [])
+  return { items: historyItems, total: json?.total ?? historyItems.length, page: json?.page ?? 1, limit: json?.limit ?? historyItems.length }
 }
 
 /** 差異レポート / 差异报告 */

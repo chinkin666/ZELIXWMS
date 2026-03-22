@@ -7,7 +7,7 @@
     </ControlPanel>
 
     <!-- KPI 概況カード / KPI概览卡片 -->
-    <div v-if="overview" class="kpi-grid">
+    <div v-if="overview && overview.productCount != null" class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-value">{{ overview.productCount }}</div>
         <div class="kpi-label">商品数</div>
@@ -15,7 +15,7 @@
       <div class="kpi-card">
         <div class="kpi-value">{{ overview.totalQuantity.toLocaleString() }}</div>
         <div class="kpi-label">総在庫数</div>
-        <div class="kpi-sub">引当: {{ overview.totalReserved }} / 有効: {{ overview.availableQuantity }}</div>
+        <div class="kpi-sub">引当: {{ overview.totalReserved ?? 0 }} / 有効: {{ overview.availableQuantity ?? 0 }}</div>
       </div>
       <div class="kpi-card" :class="{ 'kpi-card--warning': overview.lowStockCount > 0 }">
         <div class="kpi-value">{{ overview.lowStockCount }}</div>
@@ -27,14 +27,14 @@
         <div v-if="overview.expiredCount > 0" class="kpi-sub kpi-sub--danger">期限切れ: {{ overview.expiredCount }}件</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-value">{{ overview.locationUsage.percent }}%</div>
+        <div class="kpi-value">{{ overview.locationUsage?.percent ?? 0 }}%</div>
         <div class="kpi-label">ロケーション使用率</div>
-        <div class="kpi-sub">{{ overview.locationUsage.used }} / {{ overview.locationUsage.total }}</div>
+        <div class="kpi-sub">{{ overview.locationUsage?.used ?? 0 }} / {{ overview.locationUsage?.total ?? 0 }}</div>
       </div>
     </div>
 
     <!-- 期限切れ近い商品 / 即将过期商品 -->
-    <div v-if="overview && overview.expiringDetails.length > 0" class="expiry-alert-section">
+    <div v-if="overview && overview.expiringDetails && overview.expiringDetails.length > 0" class="expiry-alert-section">
       <h4 class="expiry-alert-title">&#x26A0; 期限切れ近い商品（30日以内）</h4>
       <div class="expiry-alert-list">
         <div v-for="item in overview.expiringDetails" :key="item.lotNumber" class="expiry-alert-item">
@@ -327,8 +327,8 @@ const loadStockLevels = async () => {
       page: stockPage.value,
       limit: stockPageSize.value,
     })
-    stockLevels.value = result.data
-    stockTotal.value = result.total
+    stockLevels.value = result?.data ?? []
+    stockTotal.value = result?.total ?? 0
   } catch (error: any) {
     showToast(error?.message || '在庫水準の取得に失敗しました', 'danger')
   } finally {
@@ -378,8 +378,8 @@ const loadLedgerEntries = async () => {
       page: ledgerPage.value,
       limit: ledgerPageSize.value,
     })
-    ledgerEntries.value = result.data
-    ledgerTotal.value = result.total
+    ledgerEntries.value = result?.data ?? []
+    ledgerTotal.value = result?.total ?? 0
   } catch (error: any) {
     showToast(error?.message || '台帳の取得に失敗しました', 'danger')
   } finally {
@@ -440,8 +440,8 @@ const loadReservations = async () => {
       page: reservationsPage.value,
       limit: reservationsPageSize.value,
     })
-    reservations.value = result.data
-    reservationsTotal.value = result.total
+    reservations.value = result?.data ?? []
+    reservationsTotal.value = result?.total ?? 0
   } catch (error: any) {
     showToast(error?.message || '引当の取得に失敗しました', 'danger')
   } finally {

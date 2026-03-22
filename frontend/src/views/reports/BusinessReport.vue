@@ -30,15 +30,15 @@
           <div class="kpi-label">{{ t('wms.report.totalQuantity', '出荷個数') }}</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-value">{{ turnover?.summary.currentStock ?? '-' }}</div>
+          <div class="kpi-value">{{ turnover?.summary?.currentStock ?? '-' }}</div>
           <div class="kpi-label">{{ t('wms.report.currentStock', '現在庫数') }}</div>
         </div>
         <div class="kpi-card kpi-card--accent">
-          <div class="kpi-value">{{ turnover?.summary.turnoverRate ?? '-' }}</div>
+          <div class="kpi-value">{{ turnover?.summary?.turnoverRate ?? '-' }}</div>
           <div class="kpi-label">{{ t('wms.report.turnoverRate', '在庫回転率') }}</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-value">{{ turnover?.summary.turnoverDays ?? '-' }}{{ t('wms.report.days', '日') }}</div>
+          <div class="kpi-value">{{ turnover?.summary?.turnoverDays ?? '-' }}{{ t('wms.report.days', '日') }}</div>
           <div class="kpi-label">{{ t('wms.report.turnoverDays', '在庫回転日数') }}</div>
         </div>
       </div>
@@ -46,7 +46,7 @@
       <!-- 日別出荷トレンド / 日别出货趋势 -->
       <div class="section">
         <h3 class="section-title">{{ t('wms.report.dailyTrend', '日別出荷トレンド') }}</h3>
-        <div class="chart-card" v-if="shipStats && shipStats.daily.length > 0">
+        <div class="chart-card" v-if="shipStats && shipStats.daily?.length > 0">
           <div class="bar-chart">
             <div v-for="day in shipStats.daily" :key="day.date" class="bar-col">
               <div class="bar-stack">
@@ -181,11 +181,11 @@ const periodPresets = [
   { days: 90, label: '90日' },
 ]
 
-const maxDailyCount = computed(() => Math.max(1, ...(shipStats.value?.daily.map(d => d.count) || [1])))
-const maxTurnover = computed(() => Math.max(1, ...(turnover.value?.topSkus.map(s => s.turnover) || [1])))
+const maxDailyCount = computed(() => Math.max(1, ...(shipStats.value?.daily?.map(d => d.count) || [1])))
+const maxTurnover = computed(() => Math.max(1, ...(turnover.value?.topSkus?.map(s => s.turnover) || [1])))
 
 function formatNumber(n: number): string {
-  return n.toLocaleString()
+  return (n ?? 0).toLocaleString()
 }
 
 function formatDateShort(d: string): string {

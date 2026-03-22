@@ -67,7 +67,9 @@ function appendParams(url: URL, params?: Record<string, unknown>): void {
 export async function fetchApiLogs(params?: FetchApiLogsParams) {
   const url = new URL(getBase())
   appendParams(url, params as Record<string, unknown>)
-  return apiFetch<{ data: ApiLogItem[]; total: number; page: number; limit: number }>(url.toString())
+  const json = await apiFetch<any>(url.toString())
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length, page: json?.page ?? 1, limit: json?.limit ?? 20 }
 }
 
 export async function fetchApiLog(id: string) {

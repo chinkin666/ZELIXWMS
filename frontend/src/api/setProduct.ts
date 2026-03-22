@@ -15,11 +15,13 @@ async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
 
 // ─── SetProduct CRUD ───
 
-export async function fetchSetProducts(params?: { search?: string; isActive?: boolean }) {
+export async function fetchSetProducts(params?: { search?: string; isActive?: boolean }): Promise<SetProduct[]> {
   const url = new URL(getBase())
   if (params?.search) url.searchParams.append('search', params.search)
   if (params?.isActive !== undefined) url.searchParams.append('isActive', String(params.isActive))
-  return apiFetch<SetProduct[]>(url.toString())
+  // バックエンドがページネーション応答を返す場合の正規化 / 后端返回分页响应时的规范化
+  const json = await apiFetch<any>(url.toString())
+  return Array.isArray(json) ? json : (json?.items ?? json?.data ?? [])
 }
 
 export async function fetchSetProduct(id: string) {
@@ -92,7 +94,10 @@ export async function fetchSetOrders(params?: {
       if (v !== undefined && v !== '' && v !== null) url.searchParams.append(k, String(v))
     }
   }
-  return apiFetch<{ items: SetOrder[]; total: number; page: number; limit: number }>(url.toString())
+  // バックエンドが items/data 形式どちらでも対応 / 兼容后端 items/data 两种格式
+  const json = await apiFetch<any>(url.toString())
+  const items = json?.items ?? json?.data ?? (Array.isArray(json) ? json : [])
+  return { items, total: json?.total ?? items.length, page: json?.page ?? 1, limit: json?.limit ?? items.length }
 }
 
 export async function fetchSetOrder(id: string) {

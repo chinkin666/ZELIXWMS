@@ -38,19 +38,19 @@ export interface ErpTestResult {
 // === API 関数 / API 函数 ===
 
 export async function getErpStatus(): Promise<ErpStatus> {
-  const response = await apiFetch(`${API_BASE_URL}/erp/status`)
+  const response = await apiFetch(`${API_BASE_URL}/integrations/erp/status`)
   if (!response.ok) throw new Error(`ERP ステータスの取得に失敗しました: ${response.statusText}`)
   return response.json()
 }
 
 export async function getErpConfig(): Promise<ErpConfig> {
-  const response = await apiFetch(`${API_BASE_URL}/erp/config`)
+  const response = await apiFetch(`${API_BASE_URL}/integrations/erp/config`)
   if (!response.ok) throw new Error(`ERP 設定の取得に失敗しました: ${response.statusText}`)
   return response.json()
 }
 
 export async function updateErpConfig(data: Partial<ErpConfig>): Promise<ErpConfig> {
-  const response = await apiFetch(`${API_BASE_URL}/erp/config`, {
+  const response = await apiFetch(`${API_BASE_URL}/integrations/erp/config`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -63,7 +63,7 @@ export async function updateErpConfig(data: Partial<ErpConfig>): Promise<ErpConf
 }
 
 export async function testErpConnection(): Promise<ErpTestResult> {
-  const response = await apiFetch(`${API_BASE_URL}/erp/test`, { method: 'POST' })
+  const response = await apiFetch(`${API_BASE_URL}/integrations/erp/test`, { method: 'POST' })
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
     throw new Error(body.error || `ERP 接続テストに失敗しました: ${response.statusText}`)
@@ -72,7 +72,7 @@ export async function testErpConnection(): Promise<ErpTestResult> {
 }
 
 export async function syncErp(): Promise<{ message: string }> {
-  const response = await apiFetch(`${API_BASE_URL}/erp/sync`, { method: 'POST' })
+  const response = await apiFetch(`${API_BASE_URL}/integrations/erp/sync`, { method: 'POST' })
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
     throw new Error(body.error || `ERP 同期に失敗しました: ${response.statusText}`)

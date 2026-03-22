@@ -29,7 +29,9 @@ export interface FeatureFlagStatusResponse {
 export async function fetchFeatureFlags(): Promise<FeatureFlagListResponse> {
   const response = await apiFetch(`${API_BASE_URL}/extensions/feature-flags`)
   if (!response.ok) throw new Error(`フィーチャーフラグの取得に失敗しました: ${response.statusText}`)
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchFeatureFlagStatus(

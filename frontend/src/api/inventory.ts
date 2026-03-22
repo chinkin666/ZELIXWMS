@@ -219,7 +219,20 @@ export interface InventoryOverview {
 export async function fetchInventoryOverview(): Promise<InventoryOverview> {
   const res = await apiFetch(`${API_BASE_URL}/inventory/overview`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch overview')
-  return res.json()
+  const json = await res.json()
+  // バックエンドが data でラップする場合の対応 / 兼容后端用 data 包装的情况
+  const overview = json?.data ?? json
+  return {
+    productCount: overview?.productCount ?? 0,
+    totalQuantity: overview?.totalQuantity ?? 0,
+    totalReserved: overview?.totalReserved ?? 0,
+    availableQuantity: overview?.availableQuantity ?? 0,
+    lowStockCount: overview?.lowStockCount ?? 0,
+    expiringCount: overview?.expiringCount ?? 0,
+    expiredCount: overview?.expiredCount ?? 0,
+    locationUsage: overview?.locationUsage ?? { total: 0, used: 0, percent: 0 },
+    expiringDetails: overview?.expiringDetails ?? [],
+  }
 }
 
 export async function cleanupZeroStock(): Promise<{ message: string; deletedCount: number }> {

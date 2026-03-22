@@ -101,7 +101,7 @@ async function load() {
   loading.value = true
   try {
     const params = statusFilter.value ? `?status=${statusFilter.value}` : ''
-    const json = await http.get<any>(`/api/assembly-orders${params}`)
+    const json = await http.get<any>(`/assembly-orders${params}`)
     items.value = Array.isArray(json) ? json : (json.items ?? [])
   } catch (e) {
     console.error(e)
@@ -114,7 +114,7 @@ async function load() {
 // アクション / 操作
 async function handleAction(row: any, action: 'start' | 'complete' | 'cancel') {
   try {
-    await http.patch<any>(`/api/assembly-orders/${row._id}`, { action })
+    await http.patch<any>(`/assembly-orders/${row._id}`, { action })
     showToast(t('wms.common.success', '成功'), 'success')
     await load()
   } catch (e: any) {

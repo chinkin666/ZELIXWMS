@@ -26,6 +26,21 @@ export class ApiLogsController {
     });
   }
 
+  // APIログ統計取得（スタブ） / 获取API日志统计（存根）
+  @Get('stats')
+  getStats(
+    @TenantId() tenantId: string,
+  ) {
+    return {
+      totalCalls: 0,
+      successRate: 100,
+      avgDurationMs: 0,
+      errorTotal: 0,
+      byStatus: {},
+      byApiName: [],
+    };
+  }
+
   // APIログ詳細取得 / 获取API日志详情
   @Get(':id')
   findById(

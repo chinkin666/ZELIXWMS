@@ -48,7 +48,7 @@
             </div>
             <div class="today-info">
               <span v-if="row.supplier?.name">{{ row.supplier.name }}</span>
-              <span>{{ row.lines.length }} {{ t('wms.inbound.lines', '行') }}</span>
+              <span>{{ (row.lines ?? []).length }} {{ t('wms.inbound.lines', '行') }}</span>
               <span>{{ totalExpected(row) }} {{ t('wms.inbound.pieces', '個') }}</span>
             </div>
             <div class="today-progress">
@@ -83,7 +83,7 @@
                 <td class="o-table-td"><span class="order-number">{{ row.orderNumber }}</span></td>
                 <td class="o-table-td"><span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></td>
                 <td class="o-table-td">{{ row.supplier?.name || '-' }}</td>
-                <td class="o-table-td o-table-td--right">{{ row.lines.length }}</td>
+                <td class="o-table-td o-table-td--right">{{ (row.lines ?? []).length }}</td>
                 <td class="o-table-td o-table-td--right">{{ totalReceived(row) }} / {{ totalExpected(row) }}</td>
                 <td class="o-table-td">{{ row.expectedDate ? formatDate(row.expectedDate) : '-' }}</td>
                 <td class="o-table-td">
@@ -194,8 +194,8 @@ const statusClass = (s: string) => {
   return map[s] || ''
 }
 
-const totalExpected = (row: InboundOrder) => row.lines.reduce((s, l) => s + l.expectedQuantity, 0)
-const totalReceived = (row: InboundOrder) => row.lines.reduce((s, l) => s + l.receivedQuantity, 0)
+const totalExpected = (row: InboundOrder) => (row.lines ?? []).reduce((s, l) => s + (l.expectedQuantity ?? 0), 0)
+const totalReceived = (row: InboundOrder) => (row.lines ?? []).reduce((s, l) => s + (l.receivedQuantity ?? 0), 0)
 const orderProgress = (row: InboundOrder) => {
   const exp = totalExpected(row)
   return exp > 0 ? Math.round((totalReceived(row) / exp) * 100) : 0
@@ -222,7 +222,7 @@ const loadData = async () => {
   isLoading.value = true
   try {
     const res = await fetchInboundOrders({ limit: 500 })
-    allOrders.value = res.items
+    allOrders.value = res?.items ?? []
   } catch (e: any) {
     toast.showError(e?.message || t('wms.common.fetchError', 'データの取得に失敗しました'))
   } finally {

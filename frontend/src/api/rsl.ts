@@ -72,12 +72,15 @@ export interface RslPlansParams {
 // ── API 関数 / API 函数 ──────────────────────────────────────────────────────
 
 /** RSLプラン一覧を取得 / 获取RSL计划列表 */
-export function fetchRslPlans(params?: RslPlansParams): Promise<RslPlansResponse> {
+export async function fetchRslPlans(params?: RslPlansParams): Promise<RslPlansResponse> {
   const query: Record<string, string> = {}
   if (params?.status) query.status = params.status
   if (params?.page) query.page = String(params.page)
   if (params?.limit) query.limit = String(params.limit)
-  return http.get<RslPlansResponse>('/rsl/plans', Object.keys(query).length > 0 ? query : undefined)
+  const json = await http.get<any>('/rsl/plans', Object.keys(query).length > 0 ? query : undefined)
+  // バックエンドが items/data 形式どちらでも対応 / 兼容后端 items/data 两种格式
+  const items = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data: items, total: json?.total ?? items.length }
 }
 
 /** RSLプランを作成 / 创建RSL计划 */

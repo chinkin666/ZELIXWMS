@@ -22,6 +22,12 @@ export class WorkflowsController {
     });
   }
 
+  // 補充ワークフローステータス / 补货工作流状态
+  @Get('api/workflows/replenishment/status')
+  getReplenishmentStatus(@TenantId() tenantId: string) {
+    return { enabled: false, lastRun: null, pendingCount: 0 };
+  }
+
   // ワークフロー詳細取得 / 获取工作流详情
   @Get('api/workflows/:id')
   findById(

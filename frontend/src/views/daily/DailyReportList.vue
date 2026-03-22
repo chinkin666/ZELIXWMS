@@ -276,8 +276,8 @@ const loadData = async () => {
   isLoading.value = true
   try {
     const res = await fetchDailyReports({ page: currentPage.value, limit: pageSize.value })
-    rows.value = res.data
-    total.value = res.total
+    rows.value = res?.data ?? []
+    total.value = res?.total ?? 0
   } catch (e: any) { toast.showError(e?.message || t('wms.daily.fetchFailed', '取得に失敗')) } finally { isLoading.value = false }
 }
 

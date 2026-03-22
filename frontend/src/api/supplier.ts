@@ -13,6 +13,8 @@ export interface SupplierData {
   address2?: string
   address3?: string
   phone?: string
+  contactName?: string
+  contactEmail?: string
   isActive: boolean
   memo?: string
   createdAt: string
@@ -54,7 +56,9 @@ export async function fetchSuppliers(params?: SupplierFilters): Promise<Supplier
   if (!response.ok) {
     throw new Error(`仕入先の取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchSupplier(id: string): Promise<SupplierData> {

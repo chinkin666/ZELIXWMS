@@ -133,7 +133,7 @@ const statusClass = (s: string) => ({
 const reasonLabel = (r: string) => ({
   customer_request: t('wms.returns.reasonCustomerRequest', 'お客様都合'), defective: t('wms.returns.reasonDefective', '不良品'), wrong_item: t('wms.returns.reasonWrongItem', '誤配送'), damaged: t('wms.returns.reasonDamaged', '破損'), other: t('wms.returns.reasonOther', 'その他'),
 }[r] || r)
-const totalQty = (row: ReturnOrder) => row.lines.reduce((s, l) => s + l.quantity, 0)
+const totalQty = (row: ReturnOrder) => (row.lines ?? []).reduce((s, l) => s + (l.quantity ?? 0), 0)
 const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('ja-JP') : '-'
 const formatDateTime = (d: string) => d ? new Date(d).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'
 
@@ -235,7 +235,7 @@ const baseColumns: TableColumn[] = [
     width: 70,
     fieldType: 'number',
     cellRenderer: ({ rowData }: { rowData: ReturnOrder }) =>
-      h('span', { style: 'text-align:right;display:block;' }, String(rowData.lines.length)),
+      h('span', { style: 'text-align:right;display:block;' }, String(rowData.lines?.length ?? 0)),
   },
   {
     key: 'totalQty',
@@ -369,7 +369,7 @@ function exportCsv() {
     [t('wms.returns.returnNumber', '返品番号'), t('wms.returns.status', '状態'), t('wms.returns.returnReason', '返品理由'), t('wms.returns.customerName', '顧客名'), t('wms.returns.originalShipmentNumber', '元出荷番号'), t('wms.returns.productSku', '品番'), t('wms.returns.productName', '品名'), t('wms.returns.quantity', '数量'), t('wms.returns.inspectedQuantity', '検品数'), t('wms.returns.disposition', '処分'), t('wms.returns.restockedQuantity', '再入庫数'), t('wms.returns.disposedQuantity', '廃棄数'), t('wms.returns.receivedDate', '受付日'), t('wms.returns.createdAt', '作成日'), t('wms.returns.memo', 'メモ')].join(','),
   ]
   for (const r of rows.value) {
-    for (const l of r.lines) {
+    for (const l of (r.lines ?? [])) {
       csvRows.push([
         `"${r.orderNumber}"`,
         statusLabel(r.status),
@@ -476,8 +476,8 @@ const loadData = async () => {
   isLoading.value = true
   try {
     const res = await fetchReturnOrders({ status: currentFilterStatus.value || undefined, page: currentPage.value, limit: pageSize.value })
-    rows.value = res.data
-    total.value = res.total
+    rows.value = res?.data ?? []
+    total.value = res?.total ?? 0
     selectedIds.value = new Set()
   } catch (e: any) { toast.showError(e?.message || t('wms.returns.fetchFailed', '取得に失敗')) } finally { isLoading.value = false }
 }

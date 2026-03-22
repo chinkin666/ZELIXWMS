@@ -3,6 +3,47 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-23] Playwright全105画面テスト + 一括修正 + メニュー整理
+
+**変更種別 / 变更类型**: fix + chore
+**影響範囲 / 影响范围**: frontend 30+ files, backend-nest 15+ files, seed data
+**関連ドキュメント / 关联文档**: TODOS.md
+
+### 内容 / 内容
+
+**Playwright 自動テスト**
+- 全105画面をPlaywrightで自動巡回テスト → 最終結果: 105/105通過, console error 0
+- 種子データ作成（71テーブル向け完全なテストデータ: テナント、ユーザー5名、倉庫2拠点、商品20、在庫23、出荷10、入庫5、配送4社等）
+
+**バックエンド修正**
+- API路径修正: client-portal, set-products/orders, passthrough/staging, exceptions/sla-status
+- 欠落端点追加: work-charges/summary, workflows/replenishment/status, sdk-info, oms/erp config
+- shipment controller `:id`ワイルドカード優先度修正
+- billing dashboard返却形式をフロントエンドインタフェースに整合
+- carrier_automation_configs 種子データ追加
+
+**フロントエンド修正**
+- 20+コンポーネントのnull safety追加（`?.`, `?? []`, `?? 0`）
+- 10+ API関数のレスポンス形式正規化（ページネーションオブジェクト ↔ 配列互換）
+- API路径修正7箇所（auto-processing, shipping-rates, service-rates, tenants, oms, erp, marketplace）
+- `/api/api/` 二重プレフィックス修正（assembly-orders）
+- work-charges路径 `/work-charges` → `/billing/work-charges`
+
+**メニュー整理（非表示化）**
+以下のメニュー項目を非表示にした（ルート・コンポーネントは保持、コメント解除で復元可能）:
+
+| 非表示項目 / 隐藏项目 | 復元タイミング / 恢复时机 |
+|---|---|
+| 設定 > 拡張・開発（ルール、Webhook、プラグイン、スクリプト、カスタムフィールド、フィーチャーフラグ） | 拡張機能の需要発生時 / 有扩展需求时 |
+| 設定 > テナント管理 | マルチテナント運用開始時 / 多租户运营开始时 |
+| FBA/RSLプラン（サブメニュー） | Amazon FBA/RSL連携開始時 / Amazon对接时 |
+| 倉庫オペ詳細（サブメニュー） | 在庫管理に統合済み、個別不要 / 已整合到库存管理 |
+| 入庫 > サイズ登録 | アパレル等サイズ管理が必要な荷主が来た時 / 有尺码管理需求时 |
+| 在庫 > 補充承認 | ワークフロー連携時 / 工作流对接时 |
+| 管理者 > ピークモード | 繁忙期運用確立後 / 繁忙期运营模式确立后 |
+
+---
+
 ## [2026-03-22] 全面品質改善 + 業務流程GAP補完 + 配送4社対応
 
 **変更種別 / 变更类型**: feat + fix + security

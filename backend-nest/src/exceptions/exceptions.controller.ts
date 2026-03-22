@@ -24,6 +24,12 @@ export class ExceptionsController {
     });
   }
 
+  // SLAステータス / SLA状态
+  @Get('sla-status')
+  getSlaStatus(@TenantId() tenantId: string) {
+    return { openCount: 0, breachedCount: 0, avgResolutionMinutes: 0 };
+  }
+
   // ID検索 / 按ID查找
   @Get(':id')
   findOne(

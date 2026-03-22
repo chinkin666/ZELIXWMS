@@ -36,7 +36,9 @@ export async function fetchCustomFieldDefinitions(params?: {
   if (params?.tenantId) url.searchParams.append('tenantId', params.tenantId)
   const response = await apiFetch(url.toString())
   if (!response.ok) throw new Error(`カスタムフィールド定義の取得に失敗しました: ${response.statusText}`)
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchActiveDefinitions(
@@ -47,7 +49,9 @@ export async function fetchActiveDefinitions(
   if (tenantId) url.searchParams.append('tenantId', tenantId)
   const response = await apiFetch(url.toString())
   if (!response.ok) throw new Error(`カスタムフィールド定義の取得に失敗しました: ${response.statusText}`)
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function createCustomFieldDefinition(

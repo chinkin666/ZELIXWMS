@@ -48,7 +48,9 @@ export async function fetchClients(params?: ClientListParams): Promise<ClientLis
   if (!response.ok) {
     throw new Error(`顧客の取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchClient(id: string): Promise<Client> {

@@ -48,7 +48,9 @@ export async function fetchWaves(params?: WaveListParams): Promise<WaveListRespo
   if (!response.ok) {
     throw new Error(`ウェーブの取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchWave(id: string): Promise<Wave> {

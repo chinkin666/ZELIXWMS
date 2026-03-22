@@ -37,6 +37,35 @@ export class IntegrationsController {
     return this.integrationsService.getErpStatus(tenantId);
   }
 
+  // OMS設定取得（スタブ） / 获取OMS配置（存根）
+  @Get('oms/config')
+  getOmsConfig(@TenantId() tenantId: string) {
+    return {
+      endpointUrl: '',
+      apiKey: '',
+      syncInterval: 3600,
+      autoSync: false,
+      syncOrders: false,
+      syncInventory: false,
+      syncShipments: false,
+    };
+  }
+
+  // ERP設定取得（スタブ） / 获取ERP配置（存根）
+  @Get('erp/config')
+  getErpConfig(@TenantId() tenantId: string) {
+    return {
+      erpType: '',
+      endpointUrl: '',
+      apiKey: '',
+      exportShipments: false,
+      exportInvoices: false,
+      exportInventory: false,
+      syncInterval: 3600,
+      autoSync: false,
+    };
+  }
+
   // OMS同期 / OMS同步
   @Post('oms/sync')
   syncOms(

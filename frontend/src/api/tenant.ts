@@ -47,7 +47,7 @@ export interface TenantListResponse {
 }
 
 export async function fetchTenants(params?: TenantListParams): Promise<TenantListResponse> {
-  const url = new URL(`${API_BASE_URL}/tenants`)
+  const url = new URL(`${API_BASE_URL}/admin/tenants`)
   if (params) {
     if (params.search) url.searchParams.append('search', params.search)
     if (params.status) url.searchParams.append('status', params.status)
@@ -59,7 +59,9 @@ export async function fetchTenants(params?: TenantListParams): Promise<TenantLis
   if (!response.ok) {
     throw new Error(`テナントの取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchTenant(id: string): Promise<Tenant> {
@@ -71,7 +73,7 @@ export async function fetchTenant(id: string): Promise<Tenant> {
 }
 
 export async function createTenant(data: Partial<Tenant>): Promise<Tenant> {
-  const response = await apiFetch(`${API_BASE_URL}/tenants`, {
+  const response = await apiFetch(`${API_BASE_URL}/admin/tenants`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),

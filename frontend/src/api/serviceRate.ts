@@ -101,7 +101,7 @@ export interface WorkChargeSummary {
 export async function fetchServiceRates(
   params?: ServiceRateFilters,
 ): Promise<{ data: ServiceRate[]; total: number }> {
-  const url = new URL(`${API_BASE_URL}/service-rates`)
+  const url = new URL(`${API_BASE_URL}/billing/service-rates`)
   if (params) {
     if (params.search) url.searchParams.append('search', params.search)
     if (params.chargeType) url.searchParams.append('chargeType', params.chargeType)
@@ -114,11 +114,13 @@ export async function fetchServiceRates(
   if (!response.ok) {
     throw new Error(`料金マスタの取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function createServiceRate(data: Partial<ServiceRate>): Promise<ServiceRate> {
-  const response = await apiFetch(`${API_BASE_URL}/service-rates`, {
+  const response = await apiFetch(`${API_BASE_URL}/billing/service-rates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -158,7 +160,7 @@ export async function deleteServiceRate(id: string): Promise<void> {
 export async function fetchWorkCharges(
   params?: WorkChargeFilters,
 ): Promise<{ data: WorkCharge[]; total: number }> {
-  const url = new URL(`${API_BASE_URL}/work-charges`)
+  const url = new URL(`${API_BASE_URL}/billing/work-charges`)
   if (params) {
     if (params.period) url.searchParams.append('period', params.period)
     if (params.clientId) url.searchParams.append('clientId', params.clientId)
@@ -171,13 +173,15 @@ export async function fetchWorkCharges(
   if (!response.ok) {
     throw new Error(`作業チャージの取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchWorkChargeSummary(
   params?: { period?: string; clientId?: string },
 ): Promise<WorkChargeSummary[]> {
-  const url = new URL(`${API_BASE_URL}/work-charges/summary`)
+  const url = new URL(`${API_BASE_URL}/billing/work-charges/summary`)
   if (params) {
     if (params.period) url.searchParams.append('period', params.period)
     if (params.clientId) url.searchParams.append('clientId', params.clientId)
@@ -191,7 +195,7 @@ export async function fetchWorkChargeSummary(
 }
 
 export async function createWorkCharge(data: Partial<WorkCharge>): Promise<WorkCharge> {
-  const response = await apiFetch(`${API_BASE_URL}/work-charges`, {
+  const response = await apiFetch(`${API_BASE_URL}/billing/work-charges`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -204,7 +208,7 @@ export async function createWorkCharge(data: Partial<WorkCharge>): Promise<WorkC
 }
 
 export async function deleteWorkCharge(id: string): Promise<void> {
-  const response = await apiFetch(`${API_BASE_URL}/work-charges/${id}`, {
+  const response = await apiFetch(`${API_BASE_URL}/billing/work-charges/${id}`, {
     method: 'DELETE',
   })
   if (!response.ok) {

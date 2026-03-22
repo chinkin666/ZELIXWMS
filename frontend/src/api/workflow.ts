@@ -39,7 +39,8 @@ export async function getWorkflows(): Promise<Workflow[]> {
   const response = await apiFetch(`${API_BASE_URL}/workflows`)
   if (!response.ok) throw new Error(`ワークフロー一覧の取得に失敗しました: ${response.statusText}`)
   const result = await response.json()
-  return result.data ?? result
+  // バックエンドが items/data 形式どちらでも対応 / 兼容后端 items/data 两种格式
+  return Array.isArray(result) ? result : (result?.data ?? result?.items ?? [])
 }
 
 export async function getWorkflow(id: string): Promise<Workflow> {

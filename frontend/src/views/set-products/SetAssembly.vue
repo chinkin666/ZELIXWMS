@@ -255,7 +255,7 @@ async function loadOrders() {
   ordersLoading.value = true
   try {
     const res = await fetchSetOrders({ type: mode.value, limit: 20 })
-    recentOrders.value = res.items
+    recentOrders.value = res?.items ?? []
   } catch {
     // silent
   } finally {
@@ -323,7 +323,8 @@ function statusLabel(s: SetOrderStatus): string {
 
 onMounted(async () => {
   try {
-    setProducts.value = await fetchSetProducts({ isActive: true })
+    const res = await fetchSetProducts({ isActive: true })
+    setProducts.value = Array.isArray(res) ? res : []
   } catch {
     // silent
   }

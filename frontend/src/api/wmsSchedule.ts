@@ -111,7 +111,9 @@ export interface FetchWmsLogsParams {
 // ---------------------------------------------------------------------------
 
 export async function fetchWmsSchedules() {
-  return apiFetch<{ data: WmsSchedule[]; total: number }>(getBase())
+  const json = await apiFetch<any>(getBase())
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchWmsSchedule(id: string) {
@@ -153,7 +155,9 @@ export async function toggleWmsSchedule(id: string) {
 export async function fetchWmsTasks(params?: FetchWmsTasksParams) {
   const url = new URL(`${getBase()}/tasks`)
   appendParams(url, params as Record<string, unknown>)
-  return apiFetch<{ data: WmsTask[]; total: number; page: number; limit: number }>(url.toString())
+  const json = await apiFetch<any>(url.toString())
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length, page: json?.page ?? 1, limit: json?.limit ?? 20 }
 }
 
 export async function fetchWmsTask(id: string) {

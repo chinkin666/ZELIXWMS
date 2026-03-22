@@ -116,6 +116,16 @@ export class BillingController {
     });
   }
 
+  // 作業チャージサマリ / 作业费用汇总
+  @Get('work-charges/summary')
+  getWorkChargeSummary(
+    @TenantId() tenantId: string,
+    @Query('period') period?: string,
+    @Query('clientId') clientId?: string,
+  ) {
+    return [];
+  }
+
   // 作業チャージ作成 / 创建作业费用
   @Post('work-charges')
   createWorkCharge(

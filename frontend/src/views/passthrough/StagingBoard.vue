@@ -21,7 +21,21 @@ async function load() {
     const res = await fetch(`${baseUrl}/passthrough/staging`, {
       headers: { Authorization: `Bearer ${userStore.token}` },
     })
-    dashboard.value = await res.json()
+    if (res.ok) {
+      const json = await res.json()
+      // バックエンドが data でラップする場合の対応 / 兼容后端用 data 包装的情况
+      const raw = json?.data ?? json
+      dashboard.value = {
+        totalOrders: raw?.totalOrders ?? 0,
+        totalBoxes: raw?.totalBoxes ?? 0,
+        byDuration: raw?.byDuration ?? { under24h: 0, under48h: 0, under72h: 0, over72h: 0 },
+        alerts: raw?.alerts ?? [],
+        byClient: raw?.byClient ?? {},
+      }
+    } else {
+      // エンドポイント未実装時はデフォルト値を設定 / 端点未实装时设置默认值
+      dashboard.value = { totalOrders: 0, totalBoxes: 0, byDuration: { under24h: 0, under48h: 0, under72h: 0, over72h: 0 }, alerts: [], byClient: {} }
+    }
   } catch (e) {
     console.error(e)
   } finally {
@@ -45,32 +59,32 @@ onMounted(load)
         <el-col :span="6">
           <el-card shadow="hover">
             <div style="color: #909399">暂存中</div>
-            <div style="font-size: 32px; font-weight: bold">{{ dashboard.totalOrders }}</div>
-            <div style="font-size: 13px; color: #909399">{{ dashboard.totalBoxes }} 箱</div>
+            <div style="font-size: 32px; font-weight: bold">{{ dashboard.totalOrders ?? 0 }}</div>
+            <div style="font-size: 13px; color: #909399">{{ dashboard.totalBoxes ?? 0 }} 箱</div>
           </el-card>
         </el-col>
         <el-col :span="4">
           <el-card shadow="hover">
             <div style="color: #67c23a">&lt;24h</div>
-            <div style="font-size: 28px; font-weight: bold">{{ dashboard.byDuration.under24h }}</div>
+            <div style="font-size: 28px; font-weight: bold">{{ dashboard.byDuration?.under24h ?? 0 }}</div>
           </el-card>
         </el-col>
         <el-col :span="4">
           <el-card shadow="hover">
             <div style="color: #e6a23c">24-48h</div>
-            <div style="font-size: 28px; font-weight: bold">{{ dashboard.byDuration.under48h }}</div>
+            <div style="font-size: 28px; font-weight: bold">{{ dashboard.byDuration?.under48h ?? 0 }}</div>
           </el-card>
         </el-col>
         <el-col :span="4">
           <el-card shadow="hover">
             <div style="color: #f56c6c">48-72h</div>
-            <div style="font-size: 28px; font-weight: bold">{{ dashboard.byDuration.under72h }}</div>
+            <div style="font-size: 28px; font-weight: bold">{{ dashboard.byDuration?.under72h ?? 0 }}</div>
           </el-card>
         </el-col>
         <el-col :span="6">
-          <el-card shadow="hover" :body-style="{ background: dashboard.byDuration.over72h > 0 ? '#fef0f0' : '' }">
+          <el-card shadow="hover" :body-style="{ background: (dashboard.byDuration?.over72h ?? 0) > 0 ? '#fef0f0' : '' }">
             <div style="color: #f56c6c; font-weight: bold">&gt;72h ⚠</div>
-            <div style="font-size: 28px; font-weight: bold; color: #f56c6c">{{ dashboard.byDuration.over72h }}</div>
+            <div style="font-size: 28px; font-weight: bold; color: #f56c6c">{{ dashboard.byDuration?.over72h ?? 0 }}</div>
           </el-card>
         </el-col>
       </el-row>

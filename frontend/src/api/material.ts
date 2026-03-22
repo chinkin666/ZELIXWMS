@@ -22,6 +22,7 @@ export interface Material {
   supplierCode?: string
   caseQuantity?: number
   leadTime?: number
+  description?: string
   isActive: boolean
   memo?: string
   createdAt: string
@@ -65,7 +66,10 @@ export async function fetchMaterials(params?: MaterialFilters): Promise<Material
   if (!response.ok) {
     throw new Error(`耗材の取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  // バックエンドが items/data 形式どちらでも対応 / 兼容后端 items/data 两种格式
+  const items = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data: items, total: json?.total ?? items.length }
 }
 
 // 耗材作成 / 创建耗材

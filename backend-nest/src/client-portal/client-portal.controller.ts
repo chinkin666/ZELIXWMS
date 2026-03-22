@@ -4,8 +4,8 @@ import { ClientPortalService } from './client-portal.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
-@Controller('api/portal')
-@RequireRole('client')
+@Controller('api/client-portal')
+@RequireRole('client', 'admin', 'manager')
 export class ClientPortalController {
   constructor(private readonly clientPortalService: ClientPortalService) {}
 
@@ -16,6 +16,25 @@ export class ClientPortalController {
     @Query('clientId') clientId: string,
   ) {
     return this.clientPortalService.getDashboard(tenantId, clientId);
+  }
+
+  // クライアントの在庫サマリ / 获取客户库存概要
+  @Get('stock')
+  getStock(
+    @TenantId() tenantId: string,
+    @Query('clientId') clientId: string,
+  ) {
+    return this.clientPortalService.getInventory(tenantId, clientId, {});
+  }
+
+  // 追跡検索 / 追踪查询
+  @Get('tracking')
+  getTracking(
+    @TenantId() tenantId: string,
+    @Query('clientId') clientId: string,
+    @Query('q') query: string,
+  ) {
+    return this.clientPortalService.getOrders(tenantId, clientId, { status: query });
   }
 
   // クライアントの出荷注文一覧 / 获取客户出货订单列表

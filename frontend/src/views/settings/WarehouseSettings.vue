@@ -206,6 +206,34 @@ const baseColumns: TableColumn[] = [
     searchType: 'string',
   },
   {
+    key: 'postalCode',
+    dataKey: 'postalCode',
+    title: '郵便番号',
+    width: 110,
+    fieldType: 'string',
+  },
+  {
+    key: 'fullAddress',
+    dataKey: 'fullAddress',
+    title: '住所',
+    width: 250,
+    fieldType: 'string',
+  },
+  {
+    key: 'operatingHours',
+    dataKey: 'operatingHours',
+    title: '営業時間',
+    width: 120,
+    fieldType: 'string',
+  },
+  {
+    key: 'memo',
+    dataKey: 'memo',
+    title: 'メモ',
+    width: 150,
+    fieldType: 'string',
+  },
+  {
     key: 'phone',
     dataKey: 'phone',
     title: '電話番号',
@@ -258,7 +286,21 @@ const tableColumns: TableColumn[] = [
         cellRenderer: ({ rowData }: { rowData: Warehouse }) => formatCoolTypes(rowData.coolTypes),
       }
     }
-    if (col.key === 'phone' || col.key === 'capacity') {
+    if (col.key === 'fullAddress') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Warehouse }) =>
+          [rowData.prefecture, rowData.city, rowData.address].filter(Boolean).join('') || '-',
+      }
+    }
+    if (col.key === 'memo') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Warehouse }) =>
+          (rowData.memo?.length ?? 0) > 30 ? rowData.memo!.substring(0, 30) + '...' : rowData.memo ?? '-',
+      }
+    }
+    if (col.key === 'phone' || col.key === 'capacity' || col.key === 'postalCode' || col.key === 'operatingHours') {
       return {
         ...col,
         cellRenderer: ({ rowData }: { rowData: Warehouse }) => (rowData as any)[col.dataKey || col.key] ?? '-',

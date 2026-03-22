@@ -279,7 +279,7 @@ async function loadDashboard() {
       fetchClientStock().catch(() => []),
     ])
     dashboardData.value = dashboard
-    stockItems.value = stock
+    stockItems.value = Array.isArray(stock) ? stock : []
   } catch (err) {
     error.value = (err as Error).message
   } finally {

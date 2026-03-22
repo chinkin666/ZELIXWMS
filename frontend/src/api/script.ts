@@ -50,7 +50,9 @@ export async function fetchScripts(params?: { event?: string; enabled?: string }
   if (params?.enabled) url.searchParams.append('enabled', params.enabled)
   const response = await apiFetch(url.toString())
   if (!response.ok) throw new Error(`スクリプトの取得に失敗しました: ${response.statusText}`)
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchScript(id: string): Promise<AutomationScript> {
@@ -144,5 +146,7 @@ export async function fetchScriptLogs(
   if (params?.limit) url.searchParams.append('limit', String(params.limit))
   const response = await apiFetch(url.toString())
   if (!response.ok) throw new Error(`実行ログの取得に失敗しました: ${response.statusText}`)
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }

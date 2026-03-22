@@ -51,7 +51,9 @@ export async function fetchEmailTemplates(params?: EmailTemplateListParams): Pro
   if (!response.ok) {
     throw new Error(`メールテンプレートの取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchEmailTemplate(id: string): Promise<EmailTemplate> {

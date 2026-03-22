@@ -208,8 +208,8 @@ async function loadData() {
       page: currentPage.value,
       limit: pageSize.value,
     })
-    rows.value = res.data
-    total.value = res.total
+    rows.value = res?.data ?? []
+    total.value = res?.total ?? 0
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : '取得に失敗しました'
     toast.showError(message)

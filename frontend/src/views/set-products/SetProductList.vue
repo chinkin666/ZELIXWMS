@@ -349,7 +349,8 @@ function exportCsv() {
 async function loadData() {
   isLoading.value = true
   try {
-    items.value = await fetchSetProducts()
+    const res = await fetchSetProducts()
+    items.value = Array.isArray(res) ? res : []
   } catch (e: any) {
     toast.showError(t('wms.setProduct.fetchFailed', 'セット組の取得に失敗しました'))
   } finally {
@@ -360,7 +361,8 @@ async function loadData() {
 async function loadProducts() {
   try {
     const all = await fetchProducts()
-    productOptions.value = all.map((p) => ({ _id: p._id, sku: p.sku, name: p.name }))
+    const arr = Array.isArray(all) ? all : []
+    productOptions.value = arr.map((p) => ({ _id: p._id, sku: p.sku, name: p.name }))
   } catch {
     // silent
   }

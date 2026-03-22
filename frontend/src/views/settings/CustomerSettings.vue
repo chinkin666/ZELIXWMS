@@ -251,6 +251,41 @@ const baseColumns: TableColumn[] = [
     searchType: 'string',
   },
   {
+    key: 'fullAddress',
+    dataKey: 'fullAddress',
+    title: '住所',
+    width: 250,
+    fieldType: 'string',
+  },
+  {
+    key: 'department',
+    dataKey: 'department',
+    title: '部署',
+    width: 120,
+    fieldType: 'string',
+  },
+  {
+    key: 'contactPerson',
+    dataKey: 'contactPerson',
+    title: '担当者名',
+    width: 120,
+    fieldType: 'string',
+  },
+  {
+    key: 'fax',
+    dataKey: 'fax',
+    title: 'FAX',
+    width: 140,
+    fieldType: 'string',
+  },
+  {
+    key: 'corporateNumber',
+    dataKey: 'corporateNumber',
+    title: '法人番号',
+    width: 140,
+    fieldType: 'string',
+  },
+  {
     key: 'isActive',
     dataKey: 'isActive',
     title: '有効',
@@ -276,9 +311,16 @@ const tableColumns: TableColumn[] = [
           ),
       }
     }
+    if (col.key === 'fullAddress') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Customer }) =>
+          [rowData.prefecture, rowData.city, rowData.address].filter(Boolean).join('') || '-',
+      }
+    }
     return {
       ...col,
-      cellRenderer: ({ rowData }: { rowData: Customer }) => (rowData as any)[col.dataKey || col.key] || '-',
+      cellRenderer: ({ rowData }: { rowData: Customer }) => (rowData as any)[col.dataKey || col.key] ?? '-',
     }
   }),
   {

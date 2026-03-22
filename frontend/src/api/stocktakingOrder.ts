@@ -49,7 +49,10 @@ export async function fetchStocktakingOrders(params?: {
   if (params?.limit) url.searchParams.append('limit', String(params.limit))
   const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Failed to fetch')
-  return res.json()
+  const json = await res.json()
+  // バックエンドが items/data 形式どちらでも対応 / 兼容后端 items/data 两种格式
+  const items = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data: items, total: json?.total ?? items.length }
 }
 
 export async function fetchStocktakingOrder(id: string): Promise<StocktakingOrder> {

@@ -24,13 +24,17 @@ export interface PluginListResponse {
 export async function fetchPlugins(): Promise<PluginListResponse> {
   const response = await apiFetch(`${API_BASE_URL}/extensions/plugins`)
   if (!response.ok) throw new Error(`プラグインの取得に失敗しました: ${response.statusText}`)
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchPlugin(name: string): Promise<PluginInfo> {
   const response = await apiFetch(`${API_BASE_URL}/extensions/plugins/${name}`)
   if (!response.ok) throw new Error(`プラグインの取得に失敗しました: ${response.statusText}`)
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function enablePlugin(name: string): Promise<{ message: string }> {

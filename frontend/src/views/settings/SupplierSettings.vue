@@ -218,6 +218,20 @@ const baseColumns: TableColumn[] = [
     searchType: 'string',
   },
   {
+    key: 'contactName',
+    dataKey: 'contactName',
+    title: '担当者名',
+    width: 120,
+    fieldType: 'string',
+  },
+  {
+    key: 'contactEmail',
+    dataKey: 'contactEmail',
+    title: 'メール',
+    width: 180,
+    fieldType: 'string',
+  },
+  {
     key: 'postalCode',
     dataKey: 'postalCode',
     title: '郵便番号',
@@ -266,10 +280,10 @@ const tableColumns: TableColumn[] = [
           ),
       }
     }
-    if (col.key === 'postalCode' || col.key === 'address1' || col.key === 'phone') {
+    if (col.key === 'postalCode' || col.key === 'address1' || col.key === 'phone' || col.key === 'contactName' || col.key === 'contactEmail') {
       return {
         ...col,
-        cellRenderer: ({ rowData }: { rowData: SupplierData }) => (rowData as any)[col.dataKey || col.key] || '-',
+        cellRenderer: ({ rowData }: { rowData: SupplierData }) => (rowData as any)[col.dataKey || col.key] ?? '-',
       }
     }
     return col

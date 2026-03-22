@@ -215,6 +215,27 @@ const baseColumns: TableColumn[] = [
     fieldType: 'string',
   },
   {
+    key: 'email',
+    dataKey: 'email',
+    title: 'メール',
+    width: 180,
+    fieldType: 'string',
+  },
+  {
+    key: 'postalCode',
+    dataKey: 'postalCode',
+    title: '郵便番号',
+    width: 110,
+    fieldType: 'string',
+  },
+  {
+    key: 'fullAddress',
+    dataKey: 'fullAddress',
+    title: '住所',
+    width: 250,
+    fieldType: 'string',
+  },
+  {
     key: 'phone',
     dataKey: 'phone',
     title: '電話番号',
@@ -269,6 +290,13 @@ const tableColumns: TableColumn[] = [
       return {
         ...col,
         cellRenderer: ({ rowData }: { rowData: Client }) => planLabel(rowData.plan),
+      }
+    }
+    if (col.key === 'fullAddress') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Client }) =>
+          [rowData.prefecture, rowData.city, rowData.address].filter(Boolean).join('') || '-',
       }
     }
     return {

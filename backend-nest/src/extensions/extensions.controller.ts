@@ -9,6 +9,16 @@ import { createWebhookSchema, updateWebhookSchema, type CreateWebhookDto, type U
 export class ExtensionsController {
   constructor(private readonly extensionsService: ExtensionsService) {}
 
+  // SDK情報取得（スタブ） / 获取SDK信息（存根）
+  @Get('sdk-info')
+  getSdkInfo() {
+    return {
+      version: '1.0.0',
+      availablePlugins: [],
+      documentation: '',
+    };
+  }
+
   // ===== Webhook エンドポイント / Webhook 端点 =====
 
   // Webhook一覧取得 / 获取Webhook列表

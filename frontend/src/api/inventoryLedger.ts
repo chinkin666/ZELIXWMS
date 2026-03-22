@@ -80,7 +80,10 @@ export async function fetchStockLevels(params?: {
   if (!response.ok) {
     throw new Error(`在庫水準の取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  // バックエンドが items/data 形式どちらでも対応 / 兼容后端 items/data 两种格式
+  const items = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data: items, total: json?.total ?? items.length }
 }
 
 export async function fetchStockLevel(params: {
@@ -121,7 +124,10 @@ export async function fetchLedgerEntries(params?: {
   if (!response.ok) {
     throw new Error(`台帳の取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  // バックエンドが items/data 形式どちらでも対応 / 兼容后端 items/data 两种格式
+  const ledgerItems = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data: ledgerItems, total: json?.total ?? ledgerItems.length }
 }
 
 export async function fetchReservations(params?: {
@@ -141,7 +147,10 @@ export async function fetchReservations(params?: {
   if (!response.ok) {
     throw new Error(`引当の取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  // バックエンドが items/data 形式どちらでも対応 / 兼容后端 items/data 两种格式
+  const reservationItems = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data: reservationItems, total: json?.total ?? reservationItems.length }
 }
 
 export async function createLedgerEntry(data: {

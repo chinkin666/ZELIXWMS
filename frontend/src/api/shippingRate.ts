@@ -61,7 +61,7 @@ export interface CalculateResult {
  * クエリURLを構築 / 构建查询URL
  */
 function buildQueryUrl(params?: ShippingRateFilters): string {
-  const url = new URL(`${API_BASE_URL}/shipping-rates`)
+  const url = new URL(`${API_BASE_URL}/billing/shipping-rates`)
   if (params) {
     if (params.carrierId) url.searchParams.append('carrierId', params.carrierId)
     if (params.isActive) url.searchParams.append('isActive', params.isActive)
@@ -80,7 +80,9 @@ export async function fetchShippingRates(params?: ShippingRateFilters): Promise<
   if (!response.ok) {
     throw new Error(`運賃率表の取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 /**
@@ -98,7 +100,7 @@ export async function fetchShippingRate(id: string): Promise<ShippingRateData> {
  * 运费率表を作成 / 创建运费率表
  */
 export async function createShippingRate(data: Partial<ShippingRateData>): Promise<ShippingRateData> {
-  const response = await apiFetch(`${API_BASE_URL}/shipping-rates`, {
+  const response = await apiFetch(`${API_BASE_URL}/billing/shipping-rates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),

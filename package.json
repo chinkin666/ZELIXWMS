@@ -25,7 +25,5 @@
     "db:generate": "cd backend-nest && npx drizzle-kit generate",
     "prod:check": "bash scripts/prod-check.sh"
   },
-  "dependencies": {
-    "@rollup/rollup-win32-x64-msvc": "^4.59.1"
-  }
+  "dependencies": {}
 }

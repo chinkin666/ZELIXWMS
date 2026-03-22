@@ -30,6 +30,12 @@ export class PassthroughController {
     return this.passthroughService.getDashboard(tenantId);
   }
 
+  // 暫存エリア一覧 / 暂存区列表
+  @Get('staging')
+  getStaging(@TenantId() tenantId: string) {
+    return this.passthroughService.findAll(tenantId, { status: 'arrived' });
+  }
+
   // 保管超過一覧取得 — 7日間無料保管を超過した注文
   // 获取保管超期列表 — 超过7天免费保管期的订单
   @Get('storage-overdue')

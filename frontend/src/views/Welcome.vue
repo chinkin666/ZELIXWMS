@@ -424,12 +424,12 @@ function formatTime(dateStr: string): string {
 }
 
 function formatNumber(n: number): string {
-  return n.toLocaleString()
+  return (n ?? 0).toLocaleString()
 }
 
 // 通貨フォーマット / 货币格式化
 function formatCurrency(amount: number): string {
-  return `¥${amount.toLocaleString()}`
+  return `¥${(amount ?? 0).toLocaleString()}`
 }
 
 function navigateTo(path: string) {

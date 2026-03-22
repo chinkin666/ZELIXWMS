@@ -168,6 +168,18 @@ export class ShipmentController {
     return this.shipmentService.issueAdditionalLabel(tenantId, id, body);
   }
 
+  // グループ別件数取得 / 获取分组计数
+  @Get('group-counts')
+  getGroupCounts(@TenantId() tenantId: string) {
+    return this.shipmentService.getGroupCounts(tenantId);
+  }
+
+  // 保留6日目アラート対象取得 / 获取保留第6天告警订单
+  @Get('held/near-expiry')
+  findHeldOrdersNearExpiry(@TenantId() tenantId: string) {
+    return this.shipmentService.findHeldOrdersNearExpiry(tenantId);
+  }
+
   // 出荷注文ID検索 / 按ID查找出货订单
   @Get(':id')
   findOne(
@@ -279,12 +291,6 @@ export class ShipmentController {
     return this.shipmentService.importCarrierReceipts(tenantId, body);
   }
 
-  // グループ別件数取得 / 获取分组计数
-  @Get('group-counts')
-  getGroupCounts(@TenantId() tenantId: string) {
-    return this.shipmentService.getGroupCounts(tenantId);
-  }
-
   // エクスポート / 导出
   @Post('export')
   exportOrders(@TenantId() tenantId: string) {
@@ -324,11 +330,5 @@ export class ShipmentController {
   @Post('held/cleanup')
   cleanupExpiredHeldOrders(@TenantId() tenantId: string) {
     return this.shipmentService.cleanupExpiredHeldOrders(tenantId);
-  }
-
-  // 保留6日目アラート対象取得 / 获取保留第6天告警订单
-  @Get('held/near-expiry')
-  findHeldOrdersNearExpiry(@TenantId() tenantId: string) {
-    return this.shipmentService.findHeldOrdersNearExpiry(tenantId);
   }
 }

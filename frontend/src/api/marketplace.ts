@@ -29,7 +29,7 @@ export interface MarketplaceConfig {
 // === API 関数 / API 函数 ===
 
 export async function getMarketplaceProviders(): Promise<MarketplaceProvider[]> {
-  const response = await apiFetch(`${API_BASE_URL}/marketplace/providers`)
+  const response = await apiFetch(`${API_BASE_URL}/integrations/marketplace/providers`)
   if (!response.ok) throw new Error(`プロバイダ一覧の取得に失敗しました: ${response.statusText}`)
   const result = await response.json()
   return result.data ?? result
@@ -37,21 +37,21 @@ export async function getMarketplaceProviders(): Promise<MarketplaceProvider[]> 
 
 export async function syncMarketplace(providerId?: string): Promise<{ message: string }> {
   const url = providerId
-    ? `${API_BASE_URL}/marketplace/sync?providerId=${providerId}`
-    : `${API_BASE_URL}/marketplace/sync`
+    ? `${API_BASE_URL}/integrations/marketplace/sync?providerId=${providerId}`
+    : `${API_BASE_URL}/integrations/marketplace/sync`
   const response = await apiFetch(url, { method: 'POST' })
   if (!response.ok) throw new Error(`同期に失敗しました: ${response.statusText}`)
   return response.json()
 }
 
 export async function getMarketplaceConfig(providerId: string): Promise<MarketplaceConfig> {
-  const response = await apiFetch(`${API_BASE_URL}/marketplace/config?providerId=${providerId}`)
+  const response = await apiFetch(`${API_BASE_URL}/integrations/marketplace/config?providerId=${providerId}`)
   if (!response.ok) throw new Error(`設定の取得に失敗しました: ${response.statusText}`)
   return response.json()
 }
 
 export async function updateMarketplaceConfig(data: MarketplaceConfig): Promise<MarketplaceConfig> {
-  const response = await apiFetch(`${API_BASE_URL}/marketplace/config`, {
+  const response = await apiFetch(`${API_BASE_URL}/integrations/marketplace/config`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -64,7 +64,7 @@ export async function updateMarketplaceConfig(data: MarketplaceConfig): Promise<
 }
 
 export async function connectMarketplace(providerId: string, config: Partial<MarketplaceConfig>): Promise<{ message: string }> {
-  const response = await apiFetch(`${API_BASE_URL}/marketplace/providers/${providerId}/connect`, {
+  const response = await apiFetch(`${API_BASE_URL}/integrations/marketplace/providers/${providerId}/connect`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(config),
@@ -77,7 +77,7 @@ export async function connectMarketplace(providerId: string, config: Partial<Mar
 }
 
 export async function disconnectMarketplace(providerId: string): Promise<{ message: string }> {
-  const response = await apiFetch(`${API_BASE_URL}/marketplace/providers/${providerId}/disconnect`, {
+  const response = await apiFetch(`${API_BASE_URL}/integrations/marketplace/providers/${providerId}/disconnect`, {
     method: 'POST',
   })
   if (!response.ok) {

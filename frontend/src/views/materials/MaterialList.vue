@@ -213,6 +213,15 @@ const tableColumns: TableColumn[] = [
     fieldType: 'string',
   },
   {
+    key: 'description',
+    dataKey: 'description',
+    title: '説明',
+    width: 200,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Material }) =>
+      (rowData.description?.length ?? 0) > 30 ? rowData.description!.substring(0, 30) + '...' : rowData.description ?? '-',
+  },
+  {
     key: 'category',
     dataKey: 'category',
     title: 'カテゴリ',
@@ -234,7 +243,7 @@ const tableColumns: TableColumn[] = [
     width: 100,
     fieldType: 'number',
     cellRenderer: ({ rowData }: { rowData: Material }) =>
-      rowData.unitCost != null ? `\u00A5${rowData.unitCost.toLocaleString()}` : '-',
+      rowData.unitCost != null ? `\u00A5${Number(rowData.unitCost).toLocaleString()}` : '-',
   },
   {
     key: 'currentStock',
@@ -295,8 +304,8 @@ const loadList = async () => {
       page: currentPage.value,
       limit: pageSize.value,
     })
-    list.value = result.data
-    total.value = result.total
+    list.value = result?.data ?? []
+    total.value = result?.total ?? 0
   } catch (error: any) {
     showToast(error?.message || '取得に失敗しました', 'danger')
   } finally {

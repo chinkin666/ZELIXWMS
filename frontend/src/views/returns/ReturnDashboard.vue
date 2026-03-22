@@ -11,7 +11,7 @@
 
     <div v-if="isLoading" class="loading-state">{{ t('wms.common.loading', '読み込み中...') }}</div>
 
-    <template v-else-if="stats">
+    <template v-else-if="stats && stats.statusCounts">
       <!-- ステータス別KPIカード / 按状态KPI卡片 -->
       <div class="kpi-grid">
         <div class="kpi-card">
@@ -19,19 +19,19 @@
           <div class="kpi-label">{{ t('wms.returns.totalReturns', '返品合計') }}</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-value">{{ stats.statusCounts.draft }}</div>
+          <div class="kpi-value">{{ stats.statusCounts?.draft ?? 0 }}</div>
           <div class="kpi-label">{{ t('wms.returns.statusDraft', '下書き') }}</div>
         </div>
         <div class="kpi-card kpi-card--warning">
-          <div class="kpi-value">{{ stats.statusCounts.inspecting }}</div>
+          <div class="kpi-value">{{ stats.statusCounts?.inspecting ?? 0 }}</div>
           <div class="kpi-label">{{ t('wms.returns.statusInspecting', '検品中') }}</div>
         </div>
         <div class="kpi-card kpi-card--success">
-          <div class="kpi-value">{{ stats.statusCounts.completed }}</div>
+          <div class="kpi-value">{{ stats.statusCounts?.completed ?? 0 }}</div>
           <div class="kpi-label">{{ t('wms.returns.statusCompleted', '完了') }}</div>
         </div>
         <div class="kpi-card kpi-card--danger">
-          <div class="kpi-value">{{ stats.statusCounts.cancelled }}</div>
+          <div class="kpi-value">{{ stats.statusCounts?.cancelled ?? 0 }}</div>
           <div class="kpi-label">{{ t('wms.returns.statusCancelled', 'キャンセル') }}</div>
         </div>
       </div>
@@ -39,11 +39,11 @@
       <!-- 再入庫・廃棄集計 / 再入库・废弃汇总 -->
       <div class="kpi-grid kpi-grid--secondary">
         <div class="kpi-card">
-          <div class="kpi-value">{{ stats.totalRestocked }}</div>
+          <div class="kpi-value">{{ stats.totalRestocked ?? 0 }}</div>
           <div class="kpi-label">{{ t('wms.returns.totalRestocked', '再入庫合計') }}</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-value">{{ stats.totalDisposed }}</div>
+          <div class="kpi-value">{{ stats.totalDisposed ?? 0 }}</div>
           <div class="kpi-label">{{ t('wms.returns.totalDisposed', '廃棄合計') }}</div>
         </div>
         <div class="kpi-card">
@@ -56,7 +56,7 @@
       <div class="section">
         <h2 class="section-title">{{ t('wms.returns.reasonBreakdown', '返品理由別内訳') }}</h2>
         <div class="reason-grid">
-          <div v-for="(count, reason) in stats.reasonBreakdown" :key="reason" class="reason-card">
+          <div v-for="(count, reason) in (stats.reasonBreakdown ?? {})" :key="reason" class="reason-card">
             <div class="reason-count">{{ count }}</div>
             <div class="reason-label">{{ reasonLabel(String(reason)) }}</div>
           </div>
@@ -66,7 +66,7 @@
       <!-- 最近の返品（10件） / 最近的退货（10件） -->
       <div class="section">
         <h2 class="section-title">{{ t('wms.returns.recentReturns', '最近の返品') }}</h2>
-        <div v-if="stats.recentReturns.length === 0" class="empty-state">{{ t('wms.returns.noReturns', '返品データがありません') }}</div>
+        <div v-if="!stats.recentReturns || stats.recentReturns.length === 0" class="empty-state">{{ t('wms.returns.noReturns', '返品データがありません') }}</div>
         <div class="o-table-wrapper" v-else>
           <table class="o-table">
             <thead>
@@ -81,12 +81,12 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in stats.recentReturns" :key="row._id" class="o-table-row">
+              <tr v-for="row in (stats.recentReturns ?? [])" :key="row._id" class="o-table-row">
                 <td class="o-table-td"><span class="order-number">{{ row.orderNumber }}</span></td>
                 <td class="o-table-td"><span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></td>
                 <td class="o-table-td">{{ reasonLabel(row.returnReason) }}</td>
                 <td class="o-table-td">{{ row.customerName || '-' }}</td>
-                <td class="o-table-td o-table-td--right">{{ row.lines.length }}</td>
+                <td class="o-table-td o-table-td--right">{{ row.lines?.length ?? 0 }}</td>
                 <td class="o-table-td">{{ formatDate(row.receivedDate) }}</td>
                 <td class="o-table-td">
                   <OButton variant="primary" size="sm" @click="goToDetail(row)">{{ t('wms.common.detail', '詳細') }}</OButton>
@@ -117,17 +117,17 @@ const stats = ref<ReturnDashboardStats | null>(null)
 
 // 返品合計数 / 退货合计数
 const totalReturns = computed(() => {
-  if (!stats.value) return 0
+  if (!stats.value?.statusCounts) return 0
   const c = stats.value.statusCounts
-  return c.draft + c.inspecting + c.completed + c.cancelled
+  return (c.draft ?? 0) + (c.inspecting ?? 0) + (c.completed ?? 0) + (c.cancelled ?? 0)
 })
 
 // 再入庫率 / 再入库率
 const restockRatio = computed(() => {
   if (!stats.value) return 0
-  const total = stats.value.totalRestocked + stats.value.totalDisposed
+  const total = (stats.value.totalRestocked ?? 0) + (stats.value.totalDisposed ?? 0)
   if (total === 0) return 0
-  return Math.round((stats.value.totalRestocked / total) * 100)
+  return Math.round(((stats.value.totalRestocked ?? 0) / total) * 100)
 })
 
 // ステータスラベル / 状态标签

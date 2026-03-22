@@ -47,7 +47,9 @@ export async function fetchOperationLogs(params?: FetchOperationLogsParams) {
       if (v !== undefined && v !== '' && v !== null) url.searchParams.append(k, String(v))
     }
   }
-  return apiFetch<{ data: OperationLogItem[]; total: number; page: number; limit: number }>(url.toString())
+  const json = await apiFetch<any>(url.toString())
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length, page: json?.page ?? 1, limit: json?.limit ?? 20 }
 }
 
 export async function exportOperationLogs(params?: FetchOperationLogsParams) {

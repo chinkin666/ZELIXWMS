@@ -54,7 +54,15 @@ export interface ClientPortalDashboard {
 // ── API ──
 
 export async function fetchClientDashboard(): Promise<ClientPortalDashboard> {
-  return http.get<ClientPortalDashboard>('/client-portal/dashboard')
+  const json = await http.get<any>('/client-portal/dashboard')
+  // バックエンドが data でラップする場合の対応 / 兼容后端用 data 包装的情况
+  const dashboard = json?.data ?? json
+  return {
+    clientName: dashboard?.clientName ?? '',
+    stats: dashboard?.stats ?? { totalOrders: 0, shippedOrders: 0, pendingOrders: 0, totalShippingCost: 0 },
+    recentOrders: dashboard?.recentOrders ?? [],
+    invoices: dashboard?.invoices ?? [],
+  }
 }
 
 /** 荷主在庫照会 / 荷主库存查询 */

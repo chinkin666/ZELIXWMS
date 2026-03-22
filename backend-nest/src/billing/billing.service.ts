@@ -498,10 +498,52 @@ export class BillingService {
         .limit(5),
     ]);
 
+    // フロントエンド BillingDashboardKpi インターフェースに合わせてマッピング
+    // 映射为前端 BillingDashboardKpi 接口格式
+    const unbilled = workChargeStats[0] ?? { count: 0, totalAmount: '0' };
+    const now = new Date();
+    const currentPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // 未払い請求書の合計（sent + issuedステータス）/ 未支付发票合计（sent + issued状态）
+    const unpaidAmount = invoiceStats
+      .filter((s: { status: string }) => s.status === 'sent' || s.status === 'issued')
+      .reduce((sum: number, s: { totalAmount: string }) => sum + parseFloat(s.totalAmount || '0'), 0);
+
+    // 月次出荷コスト（paid請求書の合計）/ 月度出货费用（paid发票合计）
+    const monthlyShippingCost = invoiceStats
+      .filter((s: { status: string }) => s.status === 'paid')
+      .reduce((sum: number, s: { totalAmount: string }) => sum + parseFloat(s.totalAmount || '0'), 0);
+
+    // 月次注文数（全ステータスの請求書数合計）/ 月度订单数（全状态发票数合计）
+    const monthlyOrderCount = invoiceStats
+      .reduce((sum: number, s: { count: number }) => sum + s.count, 0);
+
+    // 最近の請求書をBillingRecord形式に変換 / 将最近的发票转换为BillingRecord格式
+    const recentRecords = recentInvoices.map((inv: any) => ({
+      _id: inv.id,
+      period: inv.period ?? currentPeriod,
+      clientId: inv.clientId ?? '',
+      clientName: inv.clientName ?? '',
+      orderCount: 0,
+      totalQuantity: 0,
+      totalShippingCost: parseFloat(inv.totalAmount || '0'),
+      handlingFee: 0,
+      storageFee: 0,
+      otherFees: 0,
+      totalAmount: parseFloat(inv.totalAmount || '0'),
+      status: inv.status === 'paid' ? 'paid' : inv.status === 'sent' ? 'invoiced' : inv.status === 'issued' ? 'confirmed' : 'draft',
+      confirmedAt: inv.updatedAt ?? undefined,
+      createdAt: inv.createdAt,
+      updatedAt: inv.updatedAt,
+    }));
+
     return {
-      invoiceStats,
-      unbilledCharges: workChargeStats[0] ?? { count: 0, totalAmount: '0' },
-      recentInvoices,
+      monthlyOrderCount,
+      monthlyShippingCost,
+      unbilledAmount: parseFloat(unbilled.totalAmount || '0'),
+      unpaidAmount,
+      currentPeriod,
+      recentRecords,
     };
   }
 

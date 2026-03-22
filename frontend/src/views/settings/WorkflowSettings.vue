@@ -187,7 +187,8 @@ const parsedActions = computed(() => {
 const loadList = async () => {
   loading.value = true
   try {
-    workflows.value = await getWorkflows()
+    const res = await getWorkflows()
+    workflows.value = Array.isArray(res) ? res : []
   } catch (error: any) {
     showToast(error?.message || 'ワークフロー取得に失敗しました / 获取工作流失败', 'danger')
   } finally {

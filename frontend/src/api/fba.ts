@@ -74,13 +74,16 @@ export interface FbaPlansParams {
 // ── API 関数 / API 函数 ──────────────────────────────────────────────────────
 
 /** FBAプラン一覧を取得 / 获取FBA计划列表 */
-export function fetchFbaPlans(params?: FbaPlansParams): Promise<FbaPlansResponse> {
+export async function fetchFbaPlans(params?: FbaPlansParams): Promise<FbaPlansResponse> {
   const query: Record<string, string> = {}
   if (params?.status) query.status = params.status
   if (params?.page) query.page = String(params.page)
   if (params?.limit) query.limit = String(params.limit)
   // バックエンドは /fba/shipment-plans を使用 / 后端使用 /fba/shipment-plans
-  return http.get<FbaPlansResponse>('/fba/shipment-plans', Object.keys(query).length > 0 ? query : undefined)
+  const json = await http.get<any>('/fba/shipment-plans', Object.keys(query).length > 0 ? query : undefined)
+  // バックエンドが items/data 形式どちらでも対応 / 兼容后端 items/data 两种格式
+  const items = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data: items, total: json?.total ?? items.length }
 }
 
 /** FBAプランを作成 / 创建FBA计划 */

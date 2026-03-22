@@ -14,6 +14,10 @@ export interface Customer {
   address2?: string
   phone?: string
   email?: string
+  department?: string
+  contactPerson?: string
+  fax?: string
+  corporateNumber?: string
   memo?: string
   isActive: boolean
   createdAt: string
@@ -54,8 +58,10 @@ function buildCustomerParams(params?: CustomerListParams): Record<string, string
 // ─── API Functions / API 関数 ───────────────────────────────────────────────
 
 /** 得意先一覧を取得 / Fetch customer list */
-export function fetchCustomers(params?: CustomerListParams): Promise<CustomerListResponse> {
-  return http.get<CustomerListResponse>('/customers', buildCustomerParams(params))
+export async function fetchCustomers(params?: CustomerListParams): Promise<CustomerListResponse> {
+  const json = await http.get<any>('/customers', buildCustomerParams(params))
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 /** 得意先を取得 / Fetch single customer */

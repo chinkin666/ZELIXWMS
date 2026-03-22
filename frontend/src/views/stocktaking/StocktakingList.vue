@@ -80,8 +80,8 @@ const statusClass = (s: string) => ({
   cancelled: 'o-status-tag--cancelled',
 }[s] || '')
 
-const countedLines = (row: StocktakingOrder) => row.lines.filter(l => l.status !== 'pending').length
-const varianceLines = (row: StocktakingOrder) => row.lines.filter(l => l.variance && l.variance !== 0).length
+const countedLines = (row: StocktakingOrder) => (row.lines ?? []).filter(l => l.status !== 'pending').length
+const varianceLines = (row: StocktakingOrder) => (row.lines ?? []).filter(l => l.variance && l.variance !== 0).length
 
 const formatDate = (d: string) => new Date(d).toLocaleDateString('ja-JP')
 const formatDateTime = (d: string) => new Date(d).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -138,7 +138,7 @@ const baseColumns = computed<TableColumn[]>(() => [
     width: 80,
     fieldType: 'number',
     cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) =>
-      h('span', { style: 'text-align:right;display:block;' }, String(rowData.lines.length)),
+      h('span', { style: 'text-align:right;display:block;' }, String(rowData.lines?.length ?? 0)),
   },
   {
     key: 'countedLines',
@@ -146,7 +146,7 @@ const baseColumns = computed<TableColumn[]>(() => [
     width: 90,
     fieldType: 'number',
     cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) =>
-      h('span', { style: 'text-align:right;display:block;' }, `${countedLines(rowData)} / ${rowData.lines.length}`),
+      h('span', { style: 'text-align:right;display:block;' }, `${countedLines(rowData)} / ${rowData.lines?.length ?? 0}`),
   },
   {
     key: 'varianceLines',
@@ -247,8 +247,8 @@ const loadData = async () => {
       page: currentPage.value,
       limit: pageSize.value,
     })
-    rows.value = res.data
-    total.value = res.total
+    rows.value = res?.data ?? []
+    total.value = res?.total ?? 0
   } catch (e: any) {
     toast.showError(e?.message || 'データの取得に失敗しました')
   } finally {

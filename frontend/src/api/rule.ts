@@ -71,7 +71,9 @@ export async function fetchRules(params?: RuleListParams): Promise<RuleListRespo
   if (!response.ok) {
     throw new Error(`ルールの取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchRule(id: string): Promise<RuleDefinition> {

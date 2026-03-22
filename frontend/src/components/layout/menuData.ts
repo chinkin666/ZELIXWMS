@@ -33,9 +33,11 @@ export const passthroughSubMenu: SubMenuItem[] = [
   { label: '異常報告', to: '/passthrough/exceptions' },
 ]
 
+// ============================================================
 // 設定サイドバー / 设置侧边栏
 // 整理済み: 頻度別4グループ、名称統一
 // 已整理: 按使用频率分4组，名称统一
+// ============================================================
 export const settingsGroups: SubMenuGroup[] = [
   {
     groupLabel: '基本設定',
@@ -81,21 +83,30 @@ export const settingsGroups: SubMenuGroup[] = [
       { label: 'プリンター', to: '/settings/printer' },
     ],
   },
-  {
-    groupLabel: '拡張・開発',
-    items: [
-      { label: 'ルールエンジン', to: '/settings/rules' },
-      { label: 'Webhook', to: '/settings/webhooks' },
-      { label: 'プラグイン', to: '/settings/plugins' },
-      { label: 'スクリプト', to: '/settings/scripts' },
-      { label: 'カスタムフィールド', to: '/settings/custom-fields' },
-      { label: 'フィーチャーフラグ', to: '/settings/feature-flags' },
-    ],
-  },
+  // ============================================================
+  // [HIDDEN] 拡張・開発 — 2026-03-23 非表示
+  // 理由: 上線初期は不要。ルート・コンポーネントは保持。
+  // 原因: 上线初期不需要。路由和组件保留。
+  // 復元方法: このコメントブロックを解除するだけ
+  // 恢复方法: 取消注释即可
+  // ============================================================
+  // {
+  //   groupLabel: '拡張・開発',
+  //   items: [
+  //     { label: 'ルールエンジン', to: '/settings/rules' },
+  //     { label: 'Webhook', to: '/settings/webhooks' },
+  //     { label: 'プラグイン', to: '/settings/plugins' },
+  //     { label: 'スクリプト', to: '/settings/scripts' },
+  //     { label: 'カスタムフィールド', to: '/settings/custom-fields' },
+  //     { label: 'フィーチャーフラグ', to: '/settings/feature-flags' },
+  //   ],
+  // },
   {
     groupLabel: '管理・ログ',
     items: [
-      { label: 'テナント管理', to: '/settings/tenants' },
+      // [HIDDEN] テナント管理 — マルチテナント運用開始時に復元
+      // [隐藏] 租户管理 — 多租户运营时恢复
+      // { label: 'テナント管理', to: '/settings/tenants' },
       { label: 'スケジュール', to: '/settings/wms-schedules' },
       { label: '操作ログ', to: '/settings/operation-logs' },
       { label: 'API連携ログ', to: '/settings/api-logs' },
@@ -103,8 +114,10 @@ export const settingsGroups: SubMenuGroup[] = [
   },
 ]
 
+// ============================================================
 // 各セクションのサブメニュー / 各模块子菜单
 // 整合: 耗材→商品, 通過型→入庫, FBA/RSL→出荷, セット組→商品, 倉庫オペ→在庫, 業績→日次
+// ============================================================
 export const subMenuMap: Record<string, SubMenuItem[]> = {
   // 商品管理 ← 耗材 + セット組 / 商品管理 ← 耗材 + 套装
   '/products': [
@@ -122,13 +135,13 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '入庫指示作成', to: '/inbound/create' },
     { label: 'CSV取込', to: '/inbound/import' },
     { label: '入庫履歴', to: '/inbound/history' },
-    { label: 'サイズ登録', to: '/inbound/sizes' },
+    // [HIDDEN] サイズ登録 — 初期は不要 / 尺寸登记 — 初期不需要
+    // { label: 'サイズ登録', to: '/inbound/sizes' },
     { label: '入庫請求', to: '/inbound/billing' },
     { label: '通過型受付', to: '/passthrough/receive' },
     { label: '写真登録', to: '/inbound/photos' },
   ],
   // 在庫管理 ← 倉庫オペレーション / 库存管理 ← 仓库作业
-  // 並び順: コア → トラッキング → 補充・受払 → 概要 / 排序: 核心 → 追踪 → 补充·台账 → 概览
   '/inventory': [
     { label: '在庫一覧', to: '/inventory/stock' },
     { label: '在庫調整', to: '/inventory/adjustments' },
@@ -138,7 +151,8 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '賞味期限アラート', to: '/inventory/expiry-alerts' },
     { label: 'ロケーション', to: '/inventory/locations' },
     { label: '補充管理（定点割れ）', to: '/inventory/low-stock-alerts' },
-    { label: '補充承認', to: '/inventory/replenishment-approval' },
+    // [HIDDEN] 補充承認 — ワークフロー連携時に復元 / 补货审批 — 工作流对接时恢复
+    // { label: '補充承認', to: '/inventory/replenishment-approval' },
     { label: '受払一覧', to: '/inventory/ledger-view' },
     { label: '在庫ダッシュボード', to: '/inventory/ledger' },
     { label: '庫内作業', to: '/warehouse-ops/tasks' },
@@ -146,7 +160,6 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '棚卸差異', to: '/inventory/stocktaking-discrepancies' },
   ],
   // 出荷管理 ← FBA + RSL / 出荷管理 ← FBA + RSL
-  // 並び順: コア → オペレーション → 管理 → チャネル / 排序: 核心 → 作业 → 管理 → 渠道
   '/shipment': [
     { label: 'ワークステーション', to: '/shipment/workstation' },
     { label: '出荷処理', to: '/shipment/operations/tasks' },
@@ -185,6 +198,8 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '管理者ダッシュボード', to: '/manager/dashboard' },
     { label: '業績レポート', to: '/reports' },
     { label: '日次レポート', to: '/daily/list' },
+    // [HIDDEN] ピークモード — 繁忙期運用確立後に復元 / 高峰模式 — 繁忙期运营确立后恢复
+    // { label: 'ピークモード', to: '/settings/peak-mode' },
   ],
   '/settings': settingsGroups.flatMap((g) => g.items),
   // 旧メニューの互換ルーティング（子ページから親メニューへのハイライト用）
@@ -196,18 +211,21 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '指示履歴', to: '/set-products/history' },
   ],
   '/passthrough': passthroughSubMenu,
-  '/fba': [
-    { label: 'FBAプラン一覧', to: '/fba/plans' },
-    { label: 'FBAプラン作成', to: '/fba/plans/create' },
-  ],
-  '/rsl': [
-    { label: 'RSLプラン一覧', to: '/rsl/plans' },
-    { label: 'RSLプラン作成', to: '/rsl/plans/create' },
-  ],
-  '/warehouse-ops': [
-    { label: 'タスクダッシュボード', to: '/warehouse-ops/tasks' },
-    { label: 'ウェーブ管理', to: '/warehouse-ops/waves' },
-    { label: 'シリアル番号', to: '/warehouse-ops/serial-numbers' },
-    { label: 'セット組み作業', to: '/warehouse-ops/assembly-orders' },
-  ],
+  // [HIDDEN] FBA/RSL — Amazon連携開始時に復元 / FBA/RSL — Amazon对接时恢复
+  // '/fba': [
+  //   { label: 'FBAプラン一覧', to: '/fba/plans' },
+  //   { label: 'FBAプラン作成', to: '/fba/plans/create' },
+  // ],
+  // '/rsl': [
+  //   { label: 'RSLプラン一覧', to: '/rsl/plans' },
+  //   { label: 'RSLプラン作成', to: '/rsl/plans/create' },
+  // ],
+  // [HIDDEN] 倉庫オペ詳細 — 在庫管理に統合済み、個別メニュー不要
+  // [隐藏] 仓库作业详细 — 已整合到库存管理，不需要单独菜单
+  // '/warehouse-ops': [
+  //   { label: 'タスクダッシュボード', to: '/warehouse-ops/tasks' },
+  //   { label: 'ウェーブ管理', to: '/warehouse-ops/waves' },
+  //   { label: 'シリアル番号', to: '/warehouse-ops/serial-numbers' },
+  //   { label: 'セット組み作業', to: '/warehouse-ops/assembly-orders' },
+  // ],
 }

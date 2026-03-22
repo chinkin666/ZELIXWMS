@@ -48,7 +48,9 @@ export async function fetchWarehouses(params?: WarehouseListParams): Promise<War
   if (!response.ok) {
     throw new Error(`倉庫の取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function fetchWarehouse(id: string): Promise<Warehouse> {

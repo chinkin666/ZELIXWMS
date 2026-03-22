@@ -34,19 +34,19 @@ export interface OmsTestResult {
 // === API 関数 / API 函数 ===
 
 export async function getOmsStatus(): Promise<OmsStatus> {
-  const response = await apiFetch(`${API_BASE_URL}/oms/status`)
+  const response = await apiFetch(`${API_BASE_URL}/integrations/oms/status`)
   if (!response.ok) throw new Error(`OMS ステータスの取得に失敗しました: ${response.statusText}`)
   return response.json()
 }
 
 export async function getOmsConfig(): Promise<OmsConfig> {
-  const response = await apiFetch(`${API_BASE_URL}/oms/config`)
+  const response = await apiFetch(`${API_BASE_URL}/integrations/oms/config`)
   if (!response.ok) throw new Error(`OMS 設定の取得に失敗しました: ${response.statusText}`)
   return response.json()
 }
 
 export async function updateOmsConfig(data: Partial<OmsConfig>): Promise<OmsConfig> {
-  const response = await apiFetch(`${API_BASE_URL}/oms/config`, {
+  const response = await apiFetch(`${API_BASE_URL}/integrations/oms/config`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -59,7 +59,7 @@ export async function updateOmsConfig(data: Partial<OmsConfig>): Promise<OmsConf
 }
 
 export async function testOmsConnection(): Promise<OmsTestResult> {
-  const response = await apiFetch(`${API_BASE_URL}/oms/test`, { method: 'POST' })
+  const response = await apiFetch(`${API_BASE_URL}/integrations/oms/test`, { method: 'POST' })
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
     throw new Error(body.error || `OMS 接続テストに失敗しました: ${response.statusText}`)
@@ -68,7 +68,7 @@ export async function testOmsConnection(): Promise<OmsTestResult> {
 }
 
 export async function syncOms(): Promise<{ message: string }> {
-  const response = await apiFetch(`${API_BASE_URL}/oms/sync`, { method: 'POST' })
+  const response = await apiFetch(`${API_BASE_URL}/integrations/oms/sync`, { method: 'POST' })
   if (!response.ok) {
     const body = await response.json().catch(() => ({}))
     throw new Error(body.error || `OMS 同期に失敗しました: ${response.statusText}`)

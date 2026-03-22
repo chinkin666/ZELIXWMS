@@ -69,7 +69,7 @@
                 {{ wavePriorityLabel(w.priority) }}
               </span>
             </td>
-            <td class="o-table-td" style="text-align: center">{{ w.shipmentIds.length }}</td>
+            <td class="o-table-td" style="text-align: center">{{ w.shipmentIds?.length ?? 0 }}</td>
             <td class="o-table-td">{{ w.assignedName || '-' }}</td>
             <td class="o-table-td">{{ formatDateTime(w.startedAt) }}</td>
             <td class="o-table-td">{{ formatDateTime(w.completedAt) }}</td>
@@ -256,8 +256,8 @@ const loadList = async () => {
       page: currentPage.value,
       limit: pageSize.value,
     })
-    waves.value = result.data
-    total.value = result.total
+    waves.value = result?.data ?? []
+    total.value = result?.total ?? 0
   } catch (error: any) {
     showToast(error?.message || t('wms.warehouse.fetchFailed', '取得に失敗しました'), 'danger')
   } finally {

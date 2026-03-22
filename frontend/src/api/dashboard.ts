@@ -121,6 +121,19 @@ export interface InventoryTurnoverResult {
   }>
 }
 
-export function fetchInventoryTurnover(days?: number): Promise<InventoryTurnoverResult> {
-  return http.get<InventoryTurnoverResult>(`/dashboard/inventory-turnover${days ? `?days=${days}` : ''}`)
+export async function fetchInventoryTurnover(days?: number): Promise<InventoryTurnoverResult> {
+  const raw = await http.get<any>(`/dashboard/inventory-turnover${days ? `?days=${days}` : ''}`)
+  // バックエンドのフォーマット互換 / 兼容后端格式
+  const products = raw?.products ?? raw?.topSkus ?? []
+  return {
+    period: typeof raw?.period === 'object' ? raw.period : { days: raw?.period ?? days ?? 30, from: '' },
+    summary: raw?.summary ?? { totalOutbound: 0, currentStock: 0, skuCount: products.length, turnoverRate: 0, turnoverDays: 0 },
+    topSkus: products.map((p: any) => ({
+      sku: p.productSku ?? p.sku ?? '',
+      productName: p.productName ?? p.name ?? '',
+      outboundQty: p.totalOutbound ?? p.outboundQty ?? 0,
+      currentStock: p.avgInventory ?? p.currentStock ?? 0,
+      turnover: p.turnoverRate ?? p.turnover ?? 0,
+    })),
+  }
 }

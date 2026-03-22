@@ -114,7 +114,10 @@ export async function fetchUsers(params?: UserListParams): Promise<UserListRespo
   if (!response.ok) {
     throw new Error(`ユーザーの取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  // バックエンド items/data 形式どちらでも対応 / 兼容后端 items/data 两种格式
+  const data = json?.data ?? json?.items ?? (Array.isArray(json) ? json : [])
+  return { data, total: json?.total ?? data.length }
 }
 
 export async function createUser(data: CreateUserDto): Promise<User> {

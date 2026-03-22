@@ -285,9 +285,9 @@ const loadData = async () => {
         clientId: filterClientId.value || undefined,
       }),
     ])
-    rows.value = chargeResult.data
-    total.value = chargeResult.total
-    summaryItems.value = summary
+    rows.value = chargeResult?.data ?? chargeResult?.items ?? []
+    total.value = chargeResult?.total ?? 0
+    summaryItems.value = Array.isArray(summary) ? summary : []
   } catch (error: any) {
     showToast(error?.message || '取得に失敗しました', 'danger')
   } finally {
