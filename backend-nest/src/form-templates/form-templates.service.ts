@@ -11,6 +11,8 @@ interface FindAllQuery {
   page?: number;
   limit?: number;
   targetType?: string;
+  scope?: string;
+  clientId?: string;
 }
 
 @Injectable()
@@ -26,6 +28,14 @@ export class FormTemplatesService {
     const conditions = [eq(formTemplates.tenantId, tenantId)];
     if (query.targetType) {
       conditions.push(eq(formTemplates.targetType, query.targetType));
+    }
+    // スコープフィルタ / 作用域过滤
+    if (query.scope) {
+      conditions.push(eq(formTemplates.scope, query.scope));
+    }
+    // クライアントフィルタ / 客户过滤
+    if (query.clientId) {
+      conditions.push(eq(formTemplates.clientId, query.clientId));
     }
 
     const where = and(...conditions);
@@ -52,6 +62,127 @@ export class FormTemplatesService {
     return rows[0];
   }
 
+  // テンプレート解決（3階層継承）/ 模板解析（三层继承）
+  // 優先順位: client → tenant → system
+  // 优先级: client → tenant → system
+  async resolveTemplate(tenantId: string, targetType: string, clientId?: string) {
+    // 1. クライアント専用テンプレートを検索 / 搜索客户专用模板
+    if (clientId) {
+      const clientRows = await this.db
+        .select()
+        .from(formTemplates)
+        .where(and(
+          eq(formTemplates.tenantId, tenantId),
+          eq(formTemplates.targetType, targetType),
+          eq(formTemplates.scope, 'client'),
+          eq(formTemplates.clientId, clientId),
+          eq(formTemplates.isActive, true),
+        ))
+        .limit(1);
+
+      if (clientRows.length > 0) {
+        return clientRows[0];
+      }
+    }
+
+    // 2. テナントカスタムテンプレートを検索 / 搜索租户自定义模板
+    const tenantRows = await this.db
+      .select()
+      .from(formTemplates)
+      .where(and(
+        eq(formTemplates.tenantId, tenantId),
+        eq(formTemplates.targetType, targetType),
+        eq(formTemplates.scope, 'tenant'),
+        eq(formTemplates.isActive, true),
+      ))
+      .limit(1);
+
+    if (tenantRows.length > 0) {
+      return tenantRows[0];
+    }
+
+    // 3. システムデフォルトテンプレートを検索 / 搜索系统默认模板
+    const systemRows = await this.db
+      .select()
+      .from(formTemplates)
+      .where(and(
+        eq(formTemplates.tenantId, tenantId),
+        eq(formTemplates.targetType, targetType),
+        eq(formTemplates.scope, 'system'),
+      ))
+      .limit(1);
+
+    if (systemRows.length > 0) {
+      return systemRows[0];
+    }
+
+    throw new WmsException('TEMPLATE_NOT_FOUND', `targetType: ${targetType}, clientId: ${clientId ?? 'none'}`);
+  }
+
+  // 新バージョン作成 / 创建新版本
+  // 既存テンプレートをコピーしてバージョンを上げる / 复制现有模板并提升版本号
+  async createVersion(tenantId: string, templateId: string, changes: Record<string, unknown>) {
+    const existing = await this.findById(tenantId, templateId);
+
+    // 旧バージョンを非アクティブ化 / 将旧版本设为非激活
+    await this.db
+      .update(formTemplates)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(eq(formTemplates.id, templateId), eq(formTemplates.tenantId, tenantId)));
+
+    // 新バージョンを作成 / 创建新版本
+    const newVersion = {
+      tenantId: existing.tenantId,
+      name: existing.name,
+      targetType: existing.targetType,
+      columns: existing.columns,
+      styles: existing.styles,
+      isDefault: existing.isDefault,
+      scope: existing.scope,
+      clientId: existing.clientId,
+      parentId: existing.parentId ?? existing.id,
+      isActive: true,
+      version: existing.version + 1,
+      description: existing.description,
+      ...changes,
+    };
+
+    const rows = await this.db
+      .insert(formTemplates)
+      .values(newVersion as any)
+      .returning();
+
+    return rows[0];
+  }
+
+  // クライアント専用テンプレート作成 / 创建客户专用模板
+  // 既存のtenant/systemテンプレートをクライアント用にコピー / 将现有tenant/system模板复制为客户专用
+  async createClientTemplate(tenantId: string, templateId: string, clientId: string) {
+    const existing = await this.findById(tenantId, templateId);
+
+    const clientTemplate = {
+      tenantId: existing.tenantId,
+      name: existing.name,
+      targetType: existing.targetType,
+      columns: existing.columns,
+      styles: existing.styles,
+      isDefault: false,
+      scope: 'client' as const,
+      clientId,
+      parentId: existing.id,
+      isActive: true,
+      version: 1,
+      description: `Client copy from: ${existing.name}`,
+    };
+
+    const rows = await this.db
+      .insert(formTemplates)
+      .values(clientTemplate as any)
+      .returning();
+
+    return rows[0];
+  }
+
   // 作成 / 创建
   async create(tenantId: string, dto: Record<string, unknown>) {
     const rows = await this.db
@@ -75,7 +206,12 @@ export class FormTemplatesService {
 
   // 削除 / 删除
   async remove(tenantId: string, id: string) {
-    await this.findById(tenantId, id);
+    const existing = await this.findById(tenantId, id);
+
+    // システムテンプレートは削除不可 / 系统模板不可删除
+    if (existing.scope === 'system') {
+      throw new WmsException('TEMPLATE_NOT_FOUND', 'System templates cannot be deleted / システムテンプレートは削除できません');
+    }
 
     const rows = await this.db
       .delete(formTemplates)

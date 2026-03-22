@@ -1,6 +1,7 @@
 // テンプレート（印刷・メール・フォーム・マッピング）/ 模板（打印・邮件・表单・映射）
-import { pgTable, uuid, text, boolean, timestamp, jsonb, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, boolean, timestamp, jsonb, integer, index } from 'drizzle-orm/pg-core';
 import { tenants } from './tenants';
+import { clients } from './clients';
 
 // ===== 印刷テンプレート / 打印模板 =====
 
@@ -26,12 +27,30 @@ export const printTemplates = pgTable('print_templates', {
   // デフォルト / 默认
   isDefault: boolean('is_default').default(false).notNull(),
 
+  // === 継承システム / 继承系统 ===
+  // スコープ: 'system'=システムデフォルト, 'tenant'=テナントカスタム, 'client'=クライアント専用
+  // 作用域: 'system'=系统默认, 'tenant'=租户自定义, 'client'=客户专用
+  scope: text('scope').notNull().default('tenant'),
+  // クライアントID（scope='client'の時のみ）/ 客户ID（仅scope='client'时使用）
+  clientId: uuid('client_id').references(() => clients.id),
+  // 親テンプレートID（派生元）/ 父模板ID（派生来源）
+  parentId: uuid('parent_id'),
+  // アクティブフラグ / 激活标志
+  isActive: boolean('is_active').default(true).notNull(),
+  // バージョン番号 / 版本号
+  version: integer('version').default(1).notNull(),
+  // 説明 / 描述
+  description: text('description'),
+
   // タイムスタンプ / 时间戳
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   index('print_templates_tenant_idx').on(table.tenantId),
   index('print_templates_tenant_type_idx').on(table.tenantId, table.type),
+  // 継承システム用インデックス / 继承系统用索引
+  index('print_templates_scope_idx').on(table.tenantId, table.type, table.scope, table.isActive),
+  index('print_templates_client_idx').on(table.tenantId, table.type, table.clientId),
 ]);
 
 // ===== メールテンプレート / 邮件模板 =====
@@ -83,12 +102,30 @@ export const formTemplates = pgTable('form_templates', {
   // デフォルト / 默认
   isDefault: boolean('is_default').default(false).notNull(),
 
+  // === 継承システム / 继承系统 ===
+  // スコープ: 'system'=システムデフォルト, 'tenant'=テナントカスタム, 'client'=クライアント専用
+  // 作用域: 'system'=系统默认, 'tenant'=租户自定义, 'client'=客户专用
+  scope: text('scope').notNull().default('tenant'),
+  // クライアントID（scope='client'の時のみ）/ 客户ID（仅scope='client'时使用）
+  clientId: uuid('client_id').references(() => clients.id),
+  // 親テンプレートID（派生元）/ 父模板ID（派生来源）
+  parentId: uuid('parent_id'),
+  // アクティブフラグ / 激活标志
+  isActive: boolean('is_active').default(true).notNull(),
+  // バージョン番号 / 版本号
+  version: integer('version').default(1).notNull(),
+  // 説明 / 描述
+  description: text('description'),
+
   // タイムスタンプ / 时间戳
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   index('form_templates_tenant_idx').on(table.tenantId),
   index('form_templates_tenant_target_idx').on(table.tenantId, table.targetType),
+  // 継承システム用インデックス / 继承系统用索引
+  index('form_templates_scope_idx').on(table.tenantId, table.targetType, table.scope, table.isActive),
+  index('form_templates_client_idx').on(table.tenantId, table.targetType, table.clientId),
 ]);
 
 // ===== マッピング設定 / 映射配置 =====
