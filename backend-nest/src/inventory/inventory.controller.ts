@@ -98,6 +98,23 @@ export class InventoryController {
     return this.inventoryService.adjustStock(tenantId, body);
   }
 
+  // 拠点間移動 / 跨仓库转移
+  @Post('cross-site-transfer')
+  crossSiteTransfer(
+    @TenantId() tenantId: string,
+    @Body() body: {
+      productId: string;
+      fromWarehouseId: string;
+      fromLocationId: string;
+      toWarehouseId: string;
+      toLocationId: string;
+      quantity: number;
+      reason?: string;
+    },
+  ) {
+    return this.inventoryService.crossSiteTransfer(tenantId, body);
+  }
+
   // 在庫移動 / 库存转移
   @Post('transfer')
   transferStock(

@@ -1,5 +1,5 @@
 // レンダリングコントローラ / 渲染控制器
-import { Controller, Get, Post, Body, Param, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { RenderService } from './render.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
@@ -98,6 +98,80 @@ export class RenderController {
       tenantId,
       body.type,
       body.orderIds,
+    );
+    res.setHeader('Content-Type', result.contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${result.fileName}"`);
+    res.send(result.buffer);
+  }
+
+  // ===================================================================
+  // 入庫予定リストPDF / 入库预定列表PDF
+  // 入庫指示のライン明細と予定数量をPDF出力
+  // 输出入库指示的行明细和预期数量PDF
+  // ===================================================================
+  @Get('inbound/:id/schedule-pdf')
+  async renderInboundSchedulePdf(
+    @TenantId() tenantId: string,
+    @Param('id') orderId: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.renderService.renderInboundSchedule(tenantId, orderId);
+    res.setHeader('Content-Type', result.contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${result.fileName}"`);
+    res.send(result.buffer);
+  }
+
+  // ===================================================================
+  // 入庫予定一覧表PDF / 入库预定一览表PDF
+  // 複数入庫指示のサマリテーブルをランドスケープPDF出力
+  // 以横向PDF输出多个入库指示的汇总表
+  // ===================================================================
+  @Get('inbound/:id/schedule-summary-pdf')
+  async renderInboundScheduleSummaryPdf(
+    @TenantId() tenantId: string,
+    @Param('id') orderId: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.renderService.renderInboundScheduleSummary(tenantId, orderId);
+    res.setHeader('Content-Type', result.contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${result.fileName}"`);
+    res.send(result.buffer);
+  }
+
+  // ===================================================================
+  // ロケーション看板PDF / 库位看板PDF
+  // 棚に貼る大文字ロケーションラベルをA4横でPDF出力
+  // 以A4横向大字体输出库位标签PDF（贴在货架上）
+  // ===================================================================
+  @Get('inventory/location-signage-pdf')
+  async renderLocationSignagePdf(
+    @TenantId() tenantId: string,
+    @Query('locationIds') locationIds: string,
+    @Res() res: Response,
+  ) {
+    const ids = locationIds ? locationIds.split(',').map((id) => id.trim()) : [];
+    const result = await this.renderService.renderLocationSignage(tenantId, ids);
+    res.setHeader('Content-Type', result.contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${result.fileName}"`);
+    res.send(result.buffer);
+  }
+
+  // ===================================================================
+  // 在庫証明書PDF / 库存证明书PDF
+  // 在庫数量・日付・テナント情報付きの証明書PDF出力
+  // 输出带库存数量、日期、租户信息的库存证明书PDF
+  // ===================================================================
+  @Get('inventory/certificate-pdf')
+  async renderInventoryCertificatePdf(
+    @TenantId() tenantId: string,
+    @Query('date') date: string,
+    @Query('clientId') clientId: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.renderService.renderInventoryCertificate(
+      tenantId,
+      date ?? new Date().toISOString().slice(0, 10),
+      clientId ?? '',
     );
     res.setHeader('Content-Type', result.contentType);
     res.setHeader('Content-Disposition', `inline; filename="${result.fileName}"`);

@@ -72,7 +72,7 @@ export interface StockSummary {
   isBelowSafety: boolean
 }
 
-export type MoveType = 'inbound' | 'outbound' | 'transfer' | 'adjustment' | 'return'
+export type MoveType = 'inbound' | 'outbound' | 'transfer' | 'site_transfer' | 'adjustment' | 'return'
 export type MoveState = 'draft' | 'confirmed' | 'done' | 'cancelled'
 
 export interface StockMove {
@@ -94,6 +94,7 @@ export interface StockMove {
   scheduledDate?: string
   executedAt?: string
   executedBy?: string
+  reason?: string
   memo?: string
   createdAt: string
 }

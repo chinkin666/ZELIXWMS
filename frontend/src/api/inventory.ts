@@ -101,6 +101,25 @@ export async function reserveOrdersStock(ids: string[]): Promise<{
   return res.json()
 }
 
+// 拠点間移動 / 跨仓库转移
+export async function crossSiteTransfer(data: {
+  productId: string
+  fromWarehouseId: string
+  fromLocationId: string
+  toWarehouseId: string
+  toLocationId: string
+  quantity: number
+  reason?: string
+}): Promise<{ message: string; move: Record<string, unknown> }> {
+  const res = await apiFetch(`${API_BASE_URL}/inventory/cross-site-transfer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to cross-site transfer / 拠点間移動に失敗しました / 跨仓库转移失败')
+  return res.json()
+}
+
 export async function transferStock(data: {
   productId: string
   fromLocationId: string

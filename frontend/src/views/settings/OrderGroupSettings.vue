@@ -2,6 +2,9 @@
   <div class="order-group-settings">
     <ControlPanel :title="t('wms.settings.orderGroupSettings', '出荷グループ設定')" :show-search="false">
       <template #actions>
+        <OButton variant="secondary" @click="runAutoAssign" :disabled="isAutoAssigning">
+          {{ isAutoAssigning ? '振り分け中...' : '自動振り分け実行' }}
+        </OButton>
         <OButton variant="primary" @click="openCreate">{{ t('wms.settings.addGroup', 'グループを追加') }}</OButton>
       </template>
     </ControlPanel>
@@ -46,6 +49,11 @@
                 <span class="group-id">{{ group.orderGroupId }}</span>
                 <span v-if="group.description" class="group-description">— {{ group.description }}</span>
               </div>
+              <!-- 分組条件表示 / 分组条件显示 -->
+              <div v-if="group.sortCriteria" class="group-criteria-tag">
+                <span class="criteria-type-badge">{{ getCriteriaLabel(group.sortCriteria) }}</span>
+                <span class="criteria-detail-text">{{ getCriteriaSummary(group.sortCriteria) }}</span>
+              </div>
               <div class="group-stats" v-if="groupOrderCounts[group.orderGroupId] !== undefined">
                 <span>{{ groupOrderCounts[group.orderGroupId] }}件の注文</span>
               </div>
@@ -70,6 +78,30 @@
       </draggable>
     </div>
 
+    <!-- 自動振り分け結果ダイアログ / 自动分配结果对话框 -->
+    <ODialog
+      :open="showAssignResult"
+      title="自動振り分け結果 / 自动分配结果"
+      size="sm"
+      @close="showAssignResult = false"
+    >
+      <div v-if="assignResults.length === 0" class="assign-empty">
+        振り分け対象の注文がありませんでした / 没有可分配的订单
+      </div>
+      <div v-else class="assign-results">
+        <div v-for="result in assignResults" :key="result.groupId" class="assign-result-item">
+          <span class="assign-group-name">{{ result.groupName }}</span>
+          <span class="assign-count">{{ result.orderIds.length }}件</span>
+        </div>
+        <div class="assign-total">
+          合計: {{ assignResults.reduce((sum, r) => sum + r.orderIds.length, 0) }}件の注文を振り分けました
+        </div>
+      </div>
+      <template #footer>
+        <OButton variant="primary" @click="showAssignResult = false">閉じる</OButton>
+      </template>
+    </ODialog>
+
     <!-- 创建/编辑对话框 -->
     <OrderGroupFormDialog
       v-model="dialogVisible"
@@ -86,6 +118,7 @@ import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
+import ODialog from '@/components/odoo/ODialog.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import draggable from 'vuedraggable'
 import {
@@ -94,8 +127,10 @@ import {
   updateOrderGroup,
   deleteOrderGroup,
   reorderOrderGroups,
+  autoAssignOrderGroups,
 } from '@/api/orderGroup'
-import type { OrderGroup, OrderGroupFormData } from '@/types/orderGroup'
+import type { OrderGroup, OrderGroupFormData, SortCriteria, AutoAssignResult } from '@/types/orderGroup'
+import { SORT_CRITERIA_TYPE_LABELS, BUSINESS_TYPE_LABELS } from '@/types/orderGroup'
 import OrderGroupFormDialog from '@/components/order-group/OrderGroupFormDialog.vue'
 
 const { show: showToast } = useToast()
@@ -107,6 +142,11 @@ const dialogVisible = ref(false)
 const isEditing = ref(false)
 const editingGroup = ref<OrderGroup | null>(null)
 const groupOrderCounts = ref<Record<string, number>>({})
+
+// 自動振り分けのステート / 自动分配状态
+const isAutoAssigning = ref(false)
+const showAssignResult = ref(false)
+const assignResults = ref<AutoAssignResult[]>([])
 
 const loadGroups = async () => {
   isLoading.value = true
@@ -197,6 +237,57 @@ const onDragEnd = async () => {
   } catch (e: any) {
     showToast(e.message || t('wms.settings.reorderFailed', '優先順位の更新に失敗しました'), 'danger')
     await loadGroups()
+  }
+}
+
+// 自動振り分け実行 / 执行自动分配
+const runAutoAssign = async () => {
+  isAutoAssigning.value = true
+  try {
+    const results = await autoAssignOrderGroups()
+    assignResults.value = results
+    showAssignResult.value = true
+    // 注文数を再取得 / 重新获取订单数
+    await loadGroupCounts()
+  } catch (e: any) {
+    showToast(e.message || '自動振り分けに失敗しました / 自动分配失败', 'danger')
+  } finally {
+    isAutoAssigning.value = false
+  }
+}
+
+// 分組条件のラベル取得 / 获取分组条件标签
+const getCriteriaLabel = (criteria: SortCriteria): string => {
+  const labels = SORT_CRITERIA_TYPE_LABELS[criteria.type]
+  return labels ? labels.ja : criteria.type
+}
+
+// 分組条件の概要テキスト取得 / 获取分组条件概要文本
+const getCriteriaSummary = (criteria: SortCriteria): string => {
+  switch (criteria.type) {
+    case 'prefecture': {
+      const regions = criteria.prefecture?.regions ?? []
+      if (regions.length <= 3) return regions.join(', ')
+      return `${regions.slice(0, 3).join(', ')} 他${regions.length - 3}件`
+    }
+    case 'customer': {
+      const ids = criteria.customer?.clientIds ?? []
+      return `${ids.length}荷主`
+    }
+    case 'sku_count': {
+      const parts: string[] = []
+      if (criteria.skuCount?.single) parts.push('単品')
+      if (criteria.skuCount?.multi) parts.push('複数品')
+      return parts.join(' + ')
+    }
+    case 'business_type': {
+      const types = criteria.businessType?.types ?? []
+      return types.map((bt) => BUSINESS_TYPE_LABELS[bt]?.ja ?? bt).join(', ')
+    }
+    case 'sla':
+      return `${criteria.sla?.maxHours ?? 0}時間以内`
+    default:
+      return ''
   }
 }
 
@@ -334,6 +425,33 @@ onMounted(() => {
 }
 .group-badge--off { background: var(--o-gray-200); color: var(--o-gray-500); }
 
+/* 分組条件タグ / 分组条件标签 */
+.group-criteria-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.criteria-type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--o-brand-lighter, #e6f0ff);
+  color: var(--o-brand-primary, #0052A3);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.criteria-detail-text {
+  font-size: 12px;
+  color: var(--o-gray-500, #909399);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .group-stats {
   margin-top: 2px;
   font-size: 12px;
@@ -356,5 +474,47 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+
+/* 自動振り分け結果 / 自动分配结果 */
+.assign-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--o-gray-500, #909399);
+}
+
+.assign-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.assign-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--o-gray-50, #fafafa);
+  border-radius: 6px;
+}
+
+.assign-group-name {
+  font-weight: 500;
+  color: var(--o-gray-700, #303133);
+}
+
+.assign-count {
+  font-weight: 600;
+  color: var(--o-brand-primary, #0052A3);
+}
+
+.assign-total {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--o-border-color, #e4e7ed);
+  text-align: right;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--o-gray-700, #303133);
 }
 </style>

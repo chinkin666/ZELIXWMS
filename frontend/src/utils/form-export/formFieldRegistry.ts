@@ -861,6 +861,50 @@ const deliveryNoteFields: FormFieldDefinition[] = [
 ]
 
 /**
+ * 入庫予定リスト用フィールド定義
+ * 入庫指示のライン明細と予定数量を出力
+ * 入库预定列表用字段定义（入库指示行明细和预期数量）
+ */
+const inboundScheduleListFields: FormFieldDefinition[] = [
+  { key: 'orderNumber', label: '入庫指示No', description: '入庫指示番号 / 入库指示编号', fieldType: 'string', defaultEnabled: true, supportBarcode: true },
+  { key: 'sku', label: 'SKU', description: '商品SKUコード / 商品SKU代码', fieldType: 'string', defaultEnabled: true, supportBarcode: true },
+  { key: 'productName', label: '商品名', description: '商品名 / 商品名称', fieldType: 'string', defaultEnabled: true, supportBarcode: false },
+  { key: 'expectedQuantity', label: '予定数量', description: '入庫予定数量 / 入库预期数量', fieldType: 'number', defaultEnabled: true, supportBarcode: false },
+  { key: 'locationCode', label: 'ロケーション', description: '入庫先ロケーション / 入库目标库位', fieldType: 'string', defaultEnabled: true, supportBarcode: true },
+  { key: 'scheduledDate', label: '入荷予定日', description: '入荷予定日 / 到货预定日', fieldType: 'date', defaultEnabled: true, supportBarcode: false },
+  { key: 'supplierName', label: '仕入先', description: '仕入先名 / 供应商名称', fieldType: 'string', defaultEnabled: false, supportBarcode: false },
+  { key: 'memo', label: '備考', description: '備考 / 备注', fieldType: 'string', defaultEnabled: false, supportBarcode: false },
+]
+
+/**
+ * 入庫予定一覧表用フィールド定義
+ * 複数入庫指示のサマリ情報を出力
+ * 入库预定一览表用字段定义（多个入库指示的汇总信息）
+ */
+const inboundScheduleSummaryFields: FormFieldDefinition[] = [
+  { key: 'orderNumber', label: '入庫No', description: '入庫指示番号 / 入库指示编号', fieldType: 'string', defaultEnabled: true, supportBarcode: true },
+  { key: 'clientName', label: '荷主', description: '荷主名 / 货主名', fieldType: 'string', defaultEnabled: true, supportBarcode: false },
+  { key: 'scheduledDate', label: '入荷予定日', description: '入荷予定日 / 到货预定日', fieldType: 'date', defaultEnabled: true, supportBarcode: false },
+  { key: 'skuCount', label: 'SKU数', description: 'SKU種類数 / SKU种类数', fieldType: 'number', defaultEnabled: true, supportBarcode: false },
+  { key: 'totalExpectedQuantity', label: '予定総数', description: '予定総数量 / 预期总数量', fieldType: 'number', defaultEnabled: true, supportBarcode: false },
+  { key: 'receivedQuantity', label: '入庫済数', description: '入庫済み数量 / 已入库数量', fieldType: 'number', defaultEnabled: true, supportBarcode: false },
+  { key: 'status', label: 'ステータス', description: '処理ステータス / 处理状态', fieldType: 'string', defaultEnabled: true, supportBarcode: false },
+  { key: 'variance', label: '差異', description: '予定と実績の差異 / 预期与实际的差异', fieldType: 'number', defaultEnabled: true, supportBarcode: false },
+]
+
+/**
+ * ロケーション看板用フィールド定義
+ * 棚に貼る大文字ロケーションラベル
+ * 库位看板用字段定义（贴在货架上的大号库位标签）
+ */
+const locationSignageFields: FormFieldDefinition[] = [
+  { key: 'locationCode', label: 'ロケーションコード', description: 'ロケーションコード / 库位代码', fieldType: 'string', defaultEnabled: true, supportBarcode: true },
+  { key: 'zoneName', label: 'ゾーン', description: 'ゾーン名 / 区域名', fieldType: 'string', defaultEnabled: true, supportBarcode: false },
+  { key: 'aisle', label: '通路', description: '通路番号 / 通道号', fieldType: 'string', defaultEnabled: false, supportBarcode: false },
+  { key: 'shelf', label: '棚段', description: '棚段番号 / 货架层', fieldType: 'string', defaultEnabled: false, supportBarcode: false },
+]
+
+/**
  * フォームタイプ登録表 / 帳票タイプ登録表
  */
 export const formTypeRegistry: FormTypeDefinition[] = [
@@ -903,6 +947,18 @@ export const formTypeRegistry: FormTypeDefinition[] = [
     label: '商品ラベル',
     description: '商品小標籤・外箱ラベル等を出力します',
     fields: productLabelFields,
+  },
+  {
+    type: 'inbound-schedule-list',
+    label: '入庫予定リスト',
+    description: '入庫指示のライン明細と予定数量を出力します / 输出入库指示行明细和预期数量',
+    fields: inboundScheduleListFields,
+  },
+  {
+    type: 'inbound-schedule-summary',
+    label: '入庫予定一覧表',
+    description: '複数入庫指示のサマリ情報を出力します / 输出多个入库指示的汇总信息',
+    fields: inboundScheduleSummaryFields,
   },
   // 入庫差異・看板・実績系 / 入库差异・看板・实绩系
   {
@@ -968,6 +1024,12 @@ export const formTypeRegistry: FormTypeDefinition[] = [
     fields: podDeliveryProofFields,
   },
   // 在庫・FBA系 / 库存・FBA系
+  {
+    type: 'location-signage',
+    label: 'ロケーション看板',
+    description: '棚に貼る大文字ロケーションラベルを出力します / 输出贴在货架上的大号库位标签',
+    fields: locationSignageFields,
+  },
   {
     type: 'inventory-certificate',
     label: '在庫証明書',

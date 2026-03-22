@@ -99,6 +99,8 @@ const presetTemplates = [
   // 入庫系 / 入库系
   { type: 'inbound-detail-list', name: '入庫リスト', description: '入庫指示のライン明細' },
   { type: 'inbound-inspection-sheet', name: '入庫検品シート', description: '入庫検品チェックリスト' },
+  { type: 'inbound-schedule-list', name: '入庫予定リスト', description: '入庫予定のライン明細と数量' },
+  { type: 'inbound-schedule-summary', name: '入庫予定一覧表', description: '複数入庫指示のサマリ表' },
   { type: 'inbound-variance-list', name: '入庫差異リスト', description: '入荷予定と実績の差異' },
   { type: 'inbound-kanban', name: '入庫看板', description: '入庫指示サマリの看板' },
   { type: 'inbound-actual-list', name: '入庫実績一覧表', description: '完了済み入庫の実績' },
@@ -114,7 +116,8 @@ const presetTemplates = [
   // 納品書・ラベル系 / 交货单・标签系
   { type: 'delivery-note', name: '納品書', description: 'B2B出荷用の納品書' },
   { type: 'product-label', name: '商品ラベル', description: '商品小標籤・外箱ラベル' },
-  // 在庫・FBA系 / 库存・FBA系
+  // 在庫・ロケーション・FBA系 / 库存・库位・FBA系
+  { type: 'location-signage', name: 'ロケーション看板', description: '棚に貼る大文字ラベル' },
   { type: 'inventory-certificate', name: '在庫証明書', description: '在庫の証明データ' },
   { type: 'fba-report', name: 'FBA報告データ', description: 'Amazon FBA出荷プラン報告' },
 ]

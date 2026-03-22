@@ -285,6 +285,121 @@ export class InventoryService {
     return { move: result, message: 'Stock adjusted / 在庫調整完了 / 库存调整完成' };
   }
 
+  // 拠点間移動（倉庫間在庫転送、トランザクション内）/ 跨仓库转移（仓库间库存转移，在事务内）
+  async crossSiteTransfer(tenantId: string, dto: {
+    productId: string;
+    fromWarehouseId: string;
+    fromLocationId: string;
+    toWarehouseId: string;
+    toLocationId: string;
+    quantity: number;
+    reason?: string;
+  }) {
+    const { productId, fromWarehouseId, fromLocationId, toWarehouseId, toLocationId, quantity, reason } = dto;
+
+    // バリデーション / 验证
+    if (!productId || !fromWarehouseId || !fromLocationId || !toWarehouseId || !toLocationId || !quantity || quantity <= 0) {
+      throw new WmsException('VALIDATION_ERROR', 'productId, fromWarehouseId, fromLocationId, toWarehouseId, toLocationId, quantity (> 0) are required / 必須パラメータ不足 / 必填参数不足');
+    }
+
+    if (fromWarehouseId === toWarehouseId && fromLocationId === toLocationId) {
+      throw new WmsException('VALIDATION_ERROR', 'Source and destination must differ / 移動元と移動先は異なる必要があります / 移动源和目标必须不同');
+    }
+
+    // 移動元ロケーションの倉庫所属確認 / 验证源库位归属仓库
+    const [fromLoc] = await this.db
+      .select()
+      .from(locations)
+      .where(and(
+        eq(locations.id, fromLocationId),
+        eq(locations.tenantId, tenantId),
+        eq(locations.warehouseId, fromWarehouseId),
+      ))
+      .limit(1);
+
+    if (!fromLoc) {
+      throw new WmsException('INV_LOCATION_NOT_FOUND', `Source location ${fromLocationId} not found in warehouse ${fromWarehouseId} / 移動元ロケーションが倉庫に存在しません / 源库位不在指定仓库中`);
+    }
+
+    // 移動先ロケーションの倉庫所属確認 / 验证目标库位归属仓库
+    const [toLoc] = await this.db
+      .select()
+      .from(locations)
+      .where(and(
+        eq(locations.id, toLocationId),
+        eq(locations.tenantId, tenantId),
+        eq(locations.warehouseId, toWarehouseId),
+      ))
+      .limit(1);
+
+    if (!toLoc) {
+      throw new WmsException('INV_LOCATION_NOT_FOUND', `Destination location ${toLocationId} not found in warehouse ${toWarehouseId} / 移動先ロケーションが倉庫に存在しません / 目标库位不在指定仓库中`);
+    }
+
+    // 移動元の在庫確認 / 确认源库位库存
+    const [sourceQuant] = await this.db
+      .select()
+      .from(stockQuants)
+      .where(and(
+        eq(stockQuants.tenantId, tenantId),
+        eq(stockQuants.productId, productId),
+        eq(stockQuants.locationId, fromLocationId),
+      ))
+      .limit(1);
+
+    const availableQty = (sourceQuant?.quantity ?? 0) - (sourceQuant?.reservedQuantity ?? 0);
+    if (!sourceQuant || availableQty < quantity) {
+      throw new WmsException('INV_INSUFFICIENT_STOCK', `Required: ${quantity}, available: ${availableQty} / 必要数: ${quantity}, 利用可能数: ${availableQty} / 需要: ${quantity}, 可用: ${availableQty}`);
+    }
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const moveNumber = `XFER-${crypto.randomUUID()}`;
+
+    // トランザクションで原子操作を保証 / 用事务保证原子操作
+    const move = await this.db.transaction(async (tx: any) => {
+      // stockMoves に拠点間移動レコード挿入 / 在stockMoves中插入跨仓库转移记录
+      const [moveRecord] = await tx.insert(stockMoves).values({
+        tenantId,
+        moveNumber,
+        moveType: 'site_transfer',
+        status: 'done',
+        productId,
+        fromLocationId,
+        toLocationId,
+        quantity,
+        referenceType: 'site_transfer',
+        reason: reason ?? '',
+        executedAt: now,
+      }).returning();
+
+      // 移動元の在庫を減らす / 减少源库位库存
+      await tx.execute(sql`
+        UPDATE stock_quants
+        SET quantity = quantity - ${quantity}, updated_at = ${nowIso}::timestamp, last_moved_at = ${nowIso}::timestamp
+        WHERE tenant_id = ${tenantId} AND product_id = ${productId} AND location_id = ${fromLocationId}
+      `);
+
+      // 移動先の在庫を増やす（upsert）/ 增加目标库位库存（upsert）
+      await tx.execute(sql`
+        INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
+        VALUES (${tenantId}, ${productId}, ${toLocationId}, ${quantity}, ${nowIso}::timestamp, ${nowIso}::timestamp)
+        ON CONFLICT (tenant_id, product_id, location_id) WHERE lot_id IS NULL
+        DO UPDATE SET
+          quantity = stock_quants.quantity + ${quantity},
+          updated_at = ${nowIso}::timestamp,
+          last_moved_at = ${nowIso}::timestamp
+      `);
+
+      return moveRecord;
+    });
+
+    return {
+      move,
+      message: 'Cross-site transfer completed / 拠点間移動完了 / 跨仓库转移完成',
+    };
+  }
+
   // 在庫移動（ロケーション間転送、トランザクション内）/ 库存转移（库位间转移，在事务内）
   async transferStock(tenantId: string, body: { productId: string; fromLocationId: string; toLocationId: string; quantity: number }) {
     const { productId, fromLocationId, toLocationId, quantity } = body;

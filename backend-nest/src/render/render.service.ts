@@ -467,6 +467,327 @@ export class RenderService {
   }
 
   // ===================================================================
+  // 入庫予定リストPDF生成 / 入库预定列表PDF生成
+  // ===================================================================
+
+  /**
+   * 入庫予定リストPDF生成 / 生成入库预定列表PDF
+   * 入庫指示のライン明細と予定数量をPDFで出力
+   * 输出入库指示的行明细和预期数量PDF
+   */
+  async renderInboundSchedule(
+    tenantId: string,
+    orderId: string,
+  ): Promise<PdfResult> {
+    const printDate = new Date().toISOString().slice(0, 10);
+    const buffer = await this.buildGenericTablePdf(
+      `入庫予定リスト / 入库预定列表 — ${orderId}`,
+      ['#', 'SKU', '商品名', '予定数量', 'ロケーション', '備考'],
+      [30, 80, 160, 70, 80, 80],
+      // データはAPIコール先から取得する想定 / 数据预计从API获取
+      // 現時点ではプレースホルダ行を生成 / 目前生成占位行
+      [['1', '—', '（データ取得未実装 / 数据获取未实装）', '', '', '']],
+      `印刷日 / 打印日: ${printDate}`,
+    );
+
+    return {
+      success: true,
+      buffer,
+      contentType: 'application/pdf',
+      fileName: `inbound-schedule-${orderId}-${Date.now()}.pdf`,
+    };
+  }
+
+  // ===================================================================
+  // 入庫予定一覧表PDF生成 / 入库预定一览表PDF生成
+  // ===================================================================
+
+  /**
+   * 入庫予定一覧表PDF生成 / 生成入库预定一览表PDF
+   * 複数入庫指示のサマリテーブルをランドスケープPDF出力
+   * 以横向PDF输出多个入库指示的汇总表
+   */
+  async renderInboundScheduleSummary(
+    tenantId: string,
+    orderId: string,
+  ): Promise<PdfResult> {
+    const printDate = new Date().toISOString().slice(0, 10);
+    const buffer = await new Promise<Buffer>((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          layout: 'landscape',
+          margin: 40,
+          info: {
+            Title: `入庫予定一覧表 / 入库预定一览表 — ${orderId}`,
+            Author: 'ZELIXWMS',
+            Creator: 'ZELIXWMS RenderService',
+          },
+        });
+
+        const chunks: Buffer[] = [];
+        doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', (err: Error) => reject(err));
+
+        // タイトル / 标题
+        doc.fontSize(16).font('Helvetica-Bold').text('入庫予定一覧表', { align: 'left' });
+        const titleY = doc.y;
+        doc.moveTo(40, titleY + 4).lineTo(802, titleY + 4).strokeColor('#333333').lineWidth(2).stroke();
+        doc.moveDown(0.5);
+        doc.fontSize(10).font('Helvetica').fillColor('#666666').text(`印刷日 / 打印日: ${printDate}    基準ID / 基准ID: ${orderId}`);
+        doc.moveDown(1);
+
+        // テーブルヘッダー / 表头
+        const tableLeft = 40;
+        const colWidths: readonly number[] = [40, 100, 100, 140, 80, 80, 80, 80, 60];
+        const headers: readonly string[] = ['#', '入庫No', '荷主', '商品名', '予定日', '予定数量', '入庫済数', 'ステータス', '差異'];
+        const rowHeight = 22;
+        const textPadding = 4;
+        let currentY = doc.y + 4;
+
+        // ヘッダー背景 / 表头背景
+        const totalWidth = colWidths.reduce((sum, w) => sum + w, 0);
+        doc.rect(tableLeft, currentY, totalWidth, rowHeight).fillColor('#F5F5F5').fill();
+
+        let xOffset = tableLeft;
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#333333');
+        for (let i = 0; i < headers.length; i++) {
+          doc.text(headers[i], xOffset + textPadding, currentY + 5, {
+            width: colWidths[i] - textPadding * 2,
+            align: 'left',
+          });
+          xOffset += colWidths[i];
+        }
+        this.drawPdfRowBorder(doc, tableLeft, currentY, colWidths, rowHeight);
+        currentY += rowHeight;
+
+        // プレースホルダ行 / 占位行
+        doc.fontSize(9).font('Helvetica').fillColor('#333333');
+        const placeholderRow: readonly string[] = ['1', orderId, '—', '（データ取得未実装 / 待实装）', '—', '—', '—', '—', '—'];
+        xOffset = tableLeft;
+        for (let i = 0; i < placeholderRow.length && i < colWidths.length; i++) {
+          doc.text(placeholderRow[i], xOffset + textPadding, currentY + 5, {
+            width: colWidths[i] - textPadding * 2,
+            align: 'left',
+          });
+          xOffset += colWidths[i];
+        }
+        this.drawPdfRowBorder(doc, tableLeft, currentY, colWidths, rowHeight);
+
+        // フッター / 页脚
+        doc.y = currentY + rowHeight + 16;
+        doc.fontSize(9).font('Helvetica').fillColor('#999999').text(`Generated at ${new Date().toISOString()}`, { align: 'left' });
+
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+    return {
+      success: true,
+      buffer,
+      contentType: 'application/pdf',
+      fileName: `inbound-schedule-summary-${orderId}-${Date.now()}.pdf`,
+    };
+  }
+
+  // ===================================================================
+  // ロケーション看板PDF生成 / 库位看板PDF生成
+  // ===================================================================
+
+  /**
+   * ロケーション看板PDF生成 / 生成库位看板PDF
+   * 棚に貼る大文字ロケーションラベルをA4横でPDF出力
+   * 以A4横向大字体输出库位标签PDF（贴在货架上）
+   */
+  async renderLocationSignage(
+    tenantId: string,
+    locationIds: readonly string[],
+  ): Promise<PdfResult> {
+    const ids = locationIds.length > 0 ? locationIds : ['A-01-01'];
+
+    const buffer = await new Promise<Buffer>((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          layout: 'landscape',
+          margin: 40,
+          info: {
+            Title: 'ロケーション看板 / 库位看板',
+            Author: 'ZELIXWMS',
+            Creator: 'ZELIXWMS RenderService',
+          },
+        });
+
+        const chunks: Buffer[] = [];
+        doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', (err: Error) => reject(err));
+
+        for (let i = 0; i < ids.length; i++) {
+          if (i > 0) {
+            doc.addPage();
+          }
+
+          const locId = ids[i];
+
+          // 中央に大きなロケーションコードを描画 / 在中央绘制大号库位代码
+          doc.fontSize(120).font('Helvetica-Bold').fillColor('#000000');
+          doc.text(locId, 40, 120, {
+            width: 762,
+            align: 'center',
+          });
+
+          // 下部に小さいテナント情報 / 底部小字租户信息
+          doc.fontSize(12).font('Helvetica').fillColor('#999999');
+          doc.text(`Tenant: ${tenantId}`, 40, 460, {
+            width: 762,
+            align: 'center',
+          });
+
+          // バーコードテキスト / 条形码文本
+          doc.fontSize(10).fillColor('#666666');
+          doc.text(`Barcode: ${locId}`, 40, 490, {
+            width: 762,
+            align: 'center',
+          });
+        }
+
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+    return {
+      success: true,
+      buffer,
+      contentType: 'application/pdf',
+      fileName: `location-signage-${Date.now()}.pdf`,
+    };
+  }
+
+  // ===================================================================
+  // 在庫証明書PDF生成 / 库存证明书PDF生成
+  // ===================================================================
+
+  /**
+   * 在庫証明書PDF生成 / 生成库存证明书PDF
+   * 在庫数量・日付・テナント情報付きの証明書を出力
+   * 输出带库存数量、日期、租户信息的库存证明书
+   */
+  async renderInventoryCertificate(
+    tenantId: string,
+    date: string,
+    clientId: string,
+  ): Promise<PdfResult> {
+    const buffer = await new Promise<Buffer>((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margin: 50,
+          info: {
+            Title: `在庫証明書 / 库存证明书 — ${date}`,
+            Author: 'ZELIXWMS',
+            Creator: 'ZELIXWMS RenderService',
+          },
+        });
+
+        const chunks: Buffer[] = [];
+        doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', (err: Error) => reject(err));
+
+        // タイトル / 标题
+        doc.fontSize(22).font('Helvetica-Bold').text('在庫証明書', { align: 'center' });
+        doc.moveDown(0.3);
+        doc.fontSize(12).font('Helvetica').fillColor('#666666').text('Inventory Certificate', { align: 'center' });
+        doc.moveDown(1);
+
+        // 区切り線 / 分隔线
+        doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#333333').lineWidth(2).stroke();
+        doc.moveDown(1);
+
+        // 基本情報 / 基本信息
+        doc.fontSize(12).font('Helvetica-Bold').fillColor('#333333');
+        const labelOpts = { continued: true } as const;
+        doc.text('発行日 / 发行日: ', labelOpts).font('Helvetica').text(date);
+        doc.moveDown(0.5);
+        doc.font('Helvetica-Bold').text('テナント / 租户: ', labelOpts).font('Helvetica').text(tenantId);
+        doc.moveDown(0.5);
+        doc.font('Helvetica-Bold').text('荷主ID / 货主ID: ', labelOpts).font('Helvetica').text(clientId || '（全荷主 / 全货主）');
+        doc.moveDown(1.5);
+
+        // 在庫テーブル（プレースホルダ）/ 库存表格（占位）
+        const tableLeft = 50;
+        const colWidths: readonly number[] = [80, 180, 80, 80, 80];
+        const headers: readonly string[] = ['SKU', '商品名', '在庫数', '引当済', 'ロケーション'];
+        const rowHeight = 22;
+        const textPadding = 4;
+        let currentY = doc.y + 4;
+
+        const totalWidth = colWidths.reduce((sum, w) => sum + w, 0);
+        doc.rect(tableLeft, currentY, totalWidth, rowHeight).fillColor('#F5F5F5').fill();
+
+        let xOffset = tableLeft;
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#333333');
+        for (let i = 0; i < headers.length; i++) {
+          doc.text(headers[i], xOffset + textPadding, currentY + 5, {
+            width: colWidths[i] - textPadding * 2,
+            align: 'left',
+          });
+          xOffset += colWidths[i];
+        }
+        this.drawPdfRowBorder(doc, tableLeft, currentY, colWidths, rowHeight);
+        currentY += rowHeight;
+
+        // プレースホルダ行 / 占位行
+        doc.fontSize(9).font('Helvetica').fillColor('#333333');
+        xOffset = tableLeft;
+        const placeholderRow: readonly string[] = ['—', '（データ取得未実装 / 数据获取未实装）', '—', '—', '—'];
+        for (let i = 0; i < placeholderRow.length && i < colWidths.length; i++) {
+          doc.text(placeholderRow[i], xOffset + textPadding, currentY + 5, {
+            width: colWidths[i] - textPadding * 2,
+            align: 'left',
+          });
+          xOffset += colWidths[i];
+        }
+        this.drawPdfRowBorder(doc, tableLeft, currentY, colWidths, rowHeight);
+        currentY += rowHeight;
+
+        // 押印欄 / 盖章栏
+        doc.y = currentY + 40;
+        // 印の円を描画 / 绘制印章圆
+        const sealCenterX = 480;
+        const sealCenterY = doc.y + 30;
+        const sealRadius = 30;
+        doc.strokeColor('#CC0000').lineWidth(2);
+        doc.circle(sealCenterX, sealCenterY, sealRadius).stroke();
+        // 「印」テキスト / "印"文字
+        doc.fontSize(20).font('Helvetica-Bold').fillColor('#CC0000');
+        doc.text('印', sealCenterX - 12, sealCenterY - 12, { width: 24, align: 'center' });
+
+        // フッター / 页脚
+        doc.y = sealCenterY + sealRadius + 40;
+        doc.fontSize(9).font('Helvetica').fillColor('#999999').text(`Generated at ${new Date().toISOString()}`, { align: 'left' });
+
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+    return {
+      success: true,
+      buffer,
+      contentType: 'application/pdf',
+      fileName: `inventory-certificate-${date}-${Date.now()}.pdf`,
+    };
+  }
+
+  // ===================================================================
   // 汎用テーブルPDF生成ヘルパー / 通用表格PDF生成辅助方法
   // ===================================================================
 
@@ -480,6 +801,7 @@ export class RenderService {
     headers: readonly string[],
     colWidths: readonly number[],
     rows: readonly (readonly string[])[],
+    subtitle?: string,
   ): Promise<Buffer> {
     return new Promise<Buffer>((resolve, reject) => {
       try {
@@ -498,6 +820,10 @@ export class RenderService {
         doc.fontSize(16).font('Helvetica-Bold').text(title, { align: 'left' });
         const titleY = doc.y;
         doc.moveTo(50, titleY + 4).lineTo(545, titleY + 4).strokeColor('#333333').lineWidth(2).stroke();
+        if (subtitle) {
+          doc.moveDown(0.5);
+          doc.fontSize(10).font('Helvetica').fillColor('#666666').text(subtitle);
+        }
         doc.moveDown(1);
 
         const tableLeft = 50;
