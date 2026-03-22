@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import WmsLayout from '@/layouts/WmsLayout.vue'
 import Welcome from '@/views/Welcome.vue'
 import { useAuth } from '@/stores/auth'
+import { useWmsUserStore } from '@/stores/wms/useWmsUserStore'
 
 // ルートメタ型拡張 / Route meta type augmentation
 declare module 'vue-router' {
@@ -993,15 +994,21 @@ const router = createRouter({
 router.beforeEach((to, _from, next) => {
   const { isAuthenticated, user, setAuth } = useAuth()
 
-  // 开发环境跳过认证 / 開発環境で認証をスキップ
+  // 开发环境跳过认证（仅首次）/ 開発環境で認証をスキップ（初回のみ）
   if (import.meta.env.DEV && !isAuthenticated.value) {
-    setAuth('dev-token', {
-      id: 'dev-admin',
-      email: 'dev@zelix.local',
-      displayName: 'Dev Admin',
-      role: 'admin',
-      warehouseIds: [],
-    })
+    // 先尝试从 localStorage 恢复 / まずlocalStorageから復元を試行
+    const store = useWmsUserStore()
+    store.loadFromStorage()
+    // 恢复后仍未认证才注入 / 復元後もまだ未認証なら注入
+    if (!isAuthenticated.value) {
+      setAuth('dev-token', {
+        id: 'dev-admin',
+        email: 'dev@zelix.local',
+        displayName: 'Dev Admin',
+        role: 'admin',
+        warehouseIds: [],
+      })
+    }
   }
 
   // ログインページ：認証済みならホームへリダイレクト / 登录页：已认证则重定向到首页
