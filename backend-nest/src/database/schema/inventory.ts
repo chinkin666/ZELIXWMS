@@ -2,6 +2,7 @@
 import { pgTable, uuid, text, integer, numeric, boolean, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { tenants } from './tenants';
 import { products } from './products';
+import { shipmentOrders } from './shipments';
 
 // ロケーション / 库位
 export const locations = pgTable('locations', {
@@ -108,4 +109,34 @@ export const inventoryLedger = pgTable('inventory_ledger', {
 }, (table) => [
   index('ledger_tenant_created_idx').on(table.tenantId, table.createdAt),
   index('ledger_product_idx').on(table.productId),
+]);
+
+// 欠品レコード / 缺货记录
+export const shortageRecords = pgTable('shortage_records', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+
+  // 出荷オーダーID / 出货订单ID
+  shipmentOrderId: uuid('shipment_order_id').references(() => shipmentOrders.id).notNull(),
+  // 商品ID / 商品ID
+  productId: uuid('product_id').references(() => products.id).notNull(),
+
+  // 数量情報 / 数量信息
+  requestedQuantity: integer('requested_quantity').notNull(),   // 要求数量 / 请求数量
+  availableQuantity: integer('available_quantity').notNull(),   // 利用可能数量 / 可用数量
+  shortageQuantity: integer('shortage_quantity').notNull(),     // 欠品数量 / 缺货数量
+
+  // ステータス / 状态 (pending/reserved/fulfilled/cancelled)
+  status: text('status').default('pending').notNull(),
+
+  // タイムスタンプ / 时间戳
+  reservedAt: timestamp('reserved_at'),
+  fulfilledAt: timestamp('fulfilled_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('shortage_records_tenant_idx').on(table.tenantId),
+  index('shortage_records_shipment_order_idx').on(table.shipmentOrderId),
+  index('shortage_records_product_idx').on(table.productId),
+  index('shortage_records_status_idx').on(table.status),
 ]);

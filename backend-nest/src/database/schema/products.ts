@@ -104,6 +104,11 @@ export const products = pgTable('products', {
   whRequiresOppBag: boolean('wh_requires_opp_bag').default(false),
   whStorageType: text('wh_storage_type'),  // ambient/chilled/frozen
 
+  // サイズ査定ステータス / 尺寸评估状态 (pending/measured/confirmed)
+  sizeAssessmentStatus: text('size_assessment_status').default('pending'),
+  // 顧客の顧客の商品コード / 客户的客户的商品编码
+  customerCustomerCodes: jsonb('customer_customer_codes').default({}),
+
   // 子SKU は別テーブル / 子SKU在单独表
   // 所属 / 归属
   clientId: uuid('client_id'),

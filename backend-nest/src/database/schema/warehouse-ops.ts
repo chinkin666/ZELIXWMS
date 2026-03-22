@@ -2,6 +2,8 @@
 import { pgTable, uuid, text, integer, numeric, boolean, timestamp, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { tenants } from './tenants';
 import { warehouses } from './warehouses';
+import { products } from './products';
+import { locations } from './inventory';
 
 // ウェーブ / 波次
 export const waves = pgTable('waves', {
@@ -87,4 +89,70 @@ export const materials = pgTable('materials', {
 }, (table) => [
   uniqueIndex('materials_tenant_sku_idx').on(table.tenantId, table.sku),
   index('materials_tenant_category_idx').on(table.tenantId, table.category),
+]);
+
+// セット組み作業 / 组装作业
+export const assemblyOrders = pgTable('assembly_orders', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+
+  // 組立番号 / 组装编号
+  assemblyNumber: text('assembly_number').notNull(),
+  // ステータス / 状态 (draft/in_progress/completed/cancelled)
+  status: text('status').default('draft').notNull(),
+
+  // セット商品ID / 套装商品ID
+  setProductId: uuid('set_product_id'),
+  // 構成品目 / 组成品目 [{productId, quantity}]
+  items: jsonb('items').default([]),
+
+  // 数量 / 数量
+  assembledQuantity: integer('assembled_quantity').default(0).notNull(),  // 完成数 / 完成数
+  targetQuantity: integer('target_quantity').notNull(),                    // 目標数 / 目标数
+
+  // 担当者 / 负责人
+  assignedTo: text('assigned_to'),
+  // 備考 / 备注
+  notes: text('notes'),
+
+  // タイムスタンプ / 时间戳
+  startedAt: timestamp('started_at'),
+  completedAt: timestamp('completed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('assembly_orders_tenant_idx').on(table.tenantId),
+  index('assembly_orders_status_idx').on(table.tenantId, table.status),
+]);
+
+// 棚卸差異 / 盘点差异
+export const stocktakingDiscrepancies = pgTable('stocktaking_discrepancies', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+
+  // 棚卸指示ID / 盘点单ID
+  stocktakingOrderId: uuid('stocktaking_order_id').references(() => stocktakingOrders.id).notNull(),
+  // 商品ID / 商品ID
+  productId: uuid('product_id').references(() => products.id).notNull(),
+  // ロケーションID / 库位ID
+  locationId: uuid('location_id').references(() => locations.id).notNull(),
+
+  // 数量比較 / 数量比较
+  systemQuantity: integer('system_quantity').notNull(),     // システム在庫 / 系统库存
+  countedQuantity: integer('counted_quantity').notNull(),   // 実数 / 实际数量
+  discrepancy: integer('discrepancy').notNull(),            // 差異（実数 - システム）/ 差异（实际 - 系统）
+
+  // ステータス / 状态 (pending/approved/adjusted/rejected)
+  status: text('status').default('pending').notNull(),
+
+  // 調整情報 / 调整信息
+  adjustedBy: uuid('adjusted_by'),                          // 調整者ID / 调整人ID
+  adjustedAt: timestamp('adjusted_at'),                     // 調整日時 / 调整时间
+  notes: text('notes'),                                     // 備考 / 备注
+
+  // タイムスタンプ / 时间戳
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('stocktaking_discrepancies_tenant_idx').on(table.tenantId),
+  index('stocktaking_discrepancies_order_idx').on(table.stocktakingOrderId),
 ]);

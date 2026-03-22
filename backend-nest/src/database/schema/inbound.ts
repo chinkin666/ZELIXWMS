@@ -1,5 +1,5 @@
 // 入庫オーダー / 入库订单
-import { pgTable, uuid, text, numeric, integer, timestamp, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, numeric, integer, boolean, timestamp, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { tenants } from './tenants';
 import { products } from './products';
 
@@ -42,6 +42,11 @@ export const inboundOrders = pgTable('inbound_orders', {
 
   // 作業オプション / 作业选项（課金ポイント / 收费点）
   serviceOptions: jsonb('service_options').default([]),
+
+  // 着払い入庫 / 到付入库
+  isCodDelivery: boolean('is_cod_delivery').default(false),
+  // 予定外入庫 / 计划外入库
+  isUnplanned: boolean('is_unplanned').default(false),
 
   // タイムスタンプ / 时间戳
   createdAt: timestamp('created_at').defaultNow().notNull(),

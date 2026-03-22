@@ -76,6 +76,12 @@ export const customers = pgTable('customers', {
   address: text('address'),
   phone: text('phone'),
   email: text('email'),
+  corporateNumber: text('corporate_number'),                       // 法人番号 / 法人编号
+  invoiceRegistrationNumber: text('invoice_registration_number'),  // インボイス登録番号 / 发票登记号
+  fax: text('fax'),                                                // FAX番号 / 传真号
+  snsNumber: text('sns_number'),                                   // SNS番号 / SNS号码
+  department: text('department'),                                  // 部署名 / 部门名称
+  contactPerson: text('contact_person'),                           // 担当者名 / 联系人姓名
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [

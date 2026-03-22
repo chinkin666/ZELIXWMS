@@ -21,3 +21,5 @@ export * from './passthrough';
 export * from './api-logs';
 export * from './photos';
 export * from './workflows';
+export * from './reference';
+export * from './gift-options';
