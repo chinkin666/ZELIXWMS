@@ -167,8 +167,15 @@ const router = createRouter({
         {
           path: 'shipment',
           meta: { title: '出荷管理', requiresAuth: true },
-          redirect: '/shipment/orders/create',
+          redirect: '/shipment/workstation',
           children: [
+            // 出荷ワークステーション / 出货工作台
+            {
+              path: 'workstation',
+              name: 'OutboundWorkstation',
+              component: () => import('@/views/workstation/OutboundWorkstation.vue'),
+              meta: { title: '出荷ワークステーション', requiresAuth: true },
+            },
             // 出荷指示 / 出荷指示
             {
               path: 'orders/create',

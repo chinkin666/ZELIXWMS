@@ -144,19 +144,13 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
   // 出荷管理 ← FBA + RSL / 出荷管理 ← FBA + RSL
   // 並び順: コア → オペレーション → 管理 → チャネル / 排序: 核心 → 作业 → 管理 → 渠道
   '/shipment': [
+    { label: 'ワークステーション', to: '/shipment/workstation' },
+    { label: '出荷処理', to: '/shipment/operations/tasks' },
+    { label: '検品', to: '/shipment/operations/one-by-one/inspection' },
+    { label: 'ピッキング', to: '/shipment/picking-list' },
     { label: '出荷指示作成', to: '/shipment/orders/create' },
-    { label: '出荷作業一覧', to: '/shipment/operations/tasks' },
     { label: '出荷一覧', to: '/shipment/operations/list' },
     { label: '出荷実績', to: '/shipment/results' },
-    { label: '1-1検品', to: '/shipment/operations/one-by-one/inspection' },
-    { label: 'N-1検品', to: '/shipment/operations/n-by-one/inspection' },
-    { label: 'ピッキングリスト', to: '/shipment/picking-list' },
-    { label: '配完管理', to: '/shipment/delivery' },
-    { label: '受注訂正', to: '/shipment/correction' },
-    { label: '伝票管理', to: '/shipment/tracking' },
-    { label: 'FBA', to: '/fba/plans' },
-    { label: 'RSL', to: '/rsl/plans' },
-    { label: 'ギフト設定', to: '/shipment/gift-options' },
   ],
   '/returns': [
     { label: 'ダッシュボード', to: '/returns/dashboard' },
