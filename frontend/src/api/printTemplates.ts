@@ -36,7 +36,8 @@ export async function fetchPrintTemplates(params?: {
   if (!res.ok) {
     throw new Error(`Failed to fetch print templates: ${res.statusText}`)
   }
-  return res.json()
+  const json = await res.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export async function fetchPrintTemplate(id: string, includeSampleData = false): Promise<PrintTemplateApiModel> {

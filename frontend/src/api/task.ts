@@ -168,5 +168,6 @@ export async function fetchTaskQueue(params: { warehouseId?: string; type?: stri
   if (!response.ok) {
     throw new Error(`タスクキューの取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }

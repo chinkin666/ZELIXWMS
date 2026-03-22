@@ -17,7 +17,8 @@ export async function fetchFormTemplates(targetType?: string): Promise<FormTempl
   if (!res.ok) {
     throw new Error(`Failed to fetch form templates: ${res.status}`)
   }
-  return res.json()
+  const json = await res.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 /**

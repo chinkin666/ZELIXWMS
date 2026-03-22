@@ -135,7 +135,8 @@ export async function getAllMappingConfigs(
   if (!response.ok) {
     throw new Error(`Failed to fetch mapping configs: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 /**

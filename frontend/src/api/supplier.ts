@@ -119,5 +119,6 @@ export async function exportSuppliers(): Promise<SupplierData[]> {
   if (!response.ok) {
     throw new Error(`仕入先のエクスポートに失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }

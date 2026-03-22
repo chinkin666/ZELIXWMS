@@ -100,5 +100,6 @@ export async function exportClients(): Promise<Client[]> {
   if (!response.ok) {
     throw new Error(`顧客のエクスポートに失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }

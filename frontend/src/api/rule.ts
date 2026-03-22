@@ -139,5 +139,6 @@ export async function testRule(data: { module: string; context: Record<string, a
     const message = (await response.json().catch(() => ({}))).message || response.statusText
     throw new Error(`ルールテストに失敗しました: ${message}`)
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }

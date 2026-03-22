@@ -27,7 +27,8 @@ export async function fetchProducts(filters?: ProductFilters): Promise<Product[]
   if (!response.ok) {
     throw new Error(`商品の取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export async function createProduct(payload: UpsertProductDto): Promise<Product> {
@@ -189,7 +190,8 @@ export async function fetchProductShipmentStats(params?: {
   if (!response.ok) {
     throw new Error(`出荷統計の取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export async function bulkUpdateProducts(

@@ -78,7 +78,8 @@ export async function fetchSagawaInvoiceTypes(): Promise<SagawaInvoiceType[]> {
   if (!response.ok) {
     throw new Error(`送り状種類の取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 /** 插件配置 / プラグイン設定 */

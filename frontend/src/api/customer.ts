@@ -84,6 +84,7 @@ export function bulkImportCustomers(customers: Partial<Customer>[]): Promise<Bul
 }
 
 /** 得意先をエクスポート / Export customers */
-export function exportCustomers(): Promise<Customer[]> {
-  return http.get<Customer[]>('/customers/export')
+export async function exportCustomers(): Promise<Customer[]> {
+  const json = await http.get<any>('/customers/export')
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }

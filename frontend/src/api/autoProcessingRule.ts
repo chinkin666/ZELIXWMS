@@ -9,7 +9,8 @@ export async function fetchAutoProcessingRules(): Promise<AutoProcessingRule[]> 
   if (!response.ok) {
     throw new Error('ルールの取得に失敗しました')
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export async function fetchAutoProcessingRule(id: string): Promise<AutoProcessingRule> {

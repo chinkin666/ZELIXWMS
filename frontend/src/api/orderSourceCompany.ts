@@ -26,7 +26,8 @@ export async function fetchOrderSourceCompanies(
   if (!response.ok) {
     throw new Error(`ご依頼主の取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export async function fetchOrderSourceCompanyById(id: string): Promise<OrderSourceCompany | null> {

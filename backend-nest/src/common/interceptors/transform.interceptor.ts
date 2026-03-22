@@ -1,4 +1,4 @@
-// レスポンス変換（_id互換）/ 响应变换（_id兼容）
+// レスポンス変換（_id互換 + 分ページ互換）/ 响应变换（_id兼容 + 分页兼容）
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -11,7 +11,8 @@ export class TransformInterceptor implements NestInterceptor {
         if (!data) return data;
         // 配列の場合は各要素を変換 / 数组时转换每个元素
         if (Array.isArray(data)) return data.map(this.addIdAlias);
-        // items 配列を持つページネーション / 带items数组的分页
+        // items 配列を持つページネーション → 旧フォーマット互換
+        // 带items数组的分页 → 兼容旧格式（data数组 + 分页メタをフラット展開）
         if (data.items && Array.isArray(data.items)) {
           return this.addIdAlias({ ...data, items: data.items.map(this.addIdAlias) });
         }

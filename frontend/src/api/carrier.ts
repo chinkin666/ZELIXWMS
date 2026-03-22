@@ -18,8 +18,9 @@ function buildCarrierParams(filters?: CarrierFilters): Record<string, string> | 
  * 配送業者一覧を取得 / Fetch carrier list
  * バックエンドAPIには組み込み配送業者が含まれている（リストの先頭に配置） / 后端API已包含内置配送业者（放在列表最前面）
  */
-export function fetchCarriers(filters?: CarrierFilters): Promise<Carrier[]> {
-  return http.get<Carrier[]>('/carriers', buildCarrierParams(filters))
+export async function fetchCarriers(filters?: CarrierFilters): Promise<Carrier[]> {
+  const json = await http.get<any>('/carriers', buildCarrierParams(filters))
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 /** 配送業者を作成 / Create carrier */

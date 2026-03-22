@@ -18,7 +18,8 @@ export interface LocationUsage {
 export async function fetchLocationUsage(): Promise<LocationUsage[]> {
   const res = await apiFetch(`${API_BASE_URL}/inventory/location-usage`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch location usage')
-  return res.json()
+  const json = await res.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export async function fetchLocations(params?: {
@@ -34,7 +35,8 @@ export async function fetchLocations(params?: {
   if (params?.isActive !== undefined) url.searchParams.append('isActive', String(params.isActive))
   const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch locations')
-  return res.json()
+  const json = await res.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export async function fetchLocation(id: string): Promise<Location> {

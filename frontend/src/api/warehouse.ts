@@ -100,5 +100,6 @@ export async function exportWarehouses(): Promise<Warehouse[]> {
   if (!response.ok) {
     throw new Error(`倉庫のエクスポートに失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }

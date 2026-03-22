@@ -19,7 +19,8 @@ export async function fetchStock(params?: {
   if (params?.stockType) url.searchParams.append('stockType', params.stockType)
   const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch stock')
-  return res.json()
+  const json = await res.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export async function fetchStockSummary(params?: { search?: string; stockType?: string }): Promise<StockSummary[]> {
@@ -28,13 +29,15 @@ export async function fetchStockSummary(params?: { search?: string; stockType?: 
   if (params?.stockType) url.searchParams.append('stockType', params.stockType)
   const res = await apiFetch(url.toString())
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch stock summary')
-  return res.json()
+  const json = await res.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export async function fetchProductStock(productId: string): Promise<StockQuant[]> {
   const res = await apiFetch(`${API_BASE_URL}/inventory/stock/${productId}`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch product stock')
-  return res.json()
+  const json = await res.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export async function adjustStock(data: {
@@ -74,7 +77,8 @@ export async function fetchMovements(params?: {
 export async function fetchLowStockAlerts(): Promise<LowStockAlert[]> {
   const res = await apiFetch(`${API_BASE_URL}/inventory/alerts/low-stock`)
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Failed to fetch low stock alerts')
-  return res.json()
+  const json = await res.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export async function reserveOrdersStock(ids: string[]): Promise<{

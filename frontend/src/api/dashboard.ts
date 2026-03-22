@@ -51,8 +51,9 @@ export function fetchDashboardOverview(): Promise<DashboardOverview> {
 }
 
 /** 7日間出荷トレンドを取得 / Fetch 7-day shipment trend */
-export function fetchShipmentTrend(): Promise<TrendItem[]> {
-  return http.get<TrendItem[]>('/dashboard/trend')
+export async function fetchShipmentTrend(): Promise<TrendItem[]> {
+  const json = await http.get<any>('/dashboard/trend')
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export interface ShipmentStatsResult {

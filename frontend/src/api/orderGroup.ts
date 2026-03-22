@@ -12,7 +12,8 @@ export async function fetchOrderGroups(): Promise<OrderGroup[]> {
   if (!response.ok) {
     throw new Error(`出荷グループの取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 /**

@@ -158,7 +158,8 @@ export async function fetchSubUsers(parentUserId: string): Promise<User[]> {
   if (!response.ok) {
     throw new Error(`サブユーザーの取得に失敗しました: ${response.statusText}`)
   }
-  return response.json()
+  const json = await response.json()
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 export async function changePassword(id: string, data: ChangePasswordDto): Promise<void> {

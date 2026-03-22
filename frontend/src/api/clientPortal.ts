@@ -67,7 +67,8 @@ export interface ClientStockItem {
 }
 
 export async function fetchClientStock(): Promise<ClientStockItem[]> {
-  return http.get<ClientStockItem[]>('/client-portal/stock')
+  const json = await http.get<any>('/client-portal/stock')
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
 
 /** 追跡番号検索 / 追踪号查询 */
@@ -81,5 +82,6 @@ export interface TrackingResult {
 }
 
 export async function searchTracking(query: string): Promise<TrackingResult[]> {
-  return http.get<TrackingResult[]>('/client-portal/tracking', { q: query })
+  const json = await http.get<any>('/client-portal/tracking', { q: query })
+  return Array.isArray(json) ? json : (json.items ?? json.data ?? [])
 }
