@@ -41,6 +41,8 @@ import { ExceptionsModule } from './exceptions/exceptions.module.js';
 import { FbaModule } from './fba/fba.module.js';
 import { RslModule } from './rsl/rsl.module.js';
 import { SagawaModule } from './sagawa/sagawa.module.js';
+import { JapanPostModule } from './japan-post/japan-post.module.js';
+import { SeinoModule } from './seino/seino.module.js';
 import { CarrierAutomationModule } from './carrier-automation/carrier-automation.module.js';
 import { ApiLogsModule } from './api-logs/api-logs.module.js';
 import { OperationLogsModule } from './operation-logs/operation-logs.module.js';
@@ -119,6 +121,8 @@ import envConfig from './config/env.js';
     FbaModule,
     RslModule,
     SagawaModule,
+    JapanPostModule,
+    SeinoModule,
     CarrierAutomationModule,
     ApiLogsModule,
     OperationLogsModule,

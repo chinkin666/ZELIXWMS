@@ -793,6 +793,18 @@ const router = createRouter({
               meta: { title: '佐川急便 e飛伝Ⅲ連携', requiresAuth: true },
             },
             {
+              path: 'japan-post',
+              name: 'JapanPostSettings',
+              component: () => import('@/views/settings/JapanPostSettings.vue'),
+              meta: { title: '日本郵便', requiresAuth: true },
+            },
+            {
+              path: 'seino',
+              name: 'SeinoSettings',
+              component: () => import('@/views/settings/SeinoSettings.vue'),
+              meta: { title: '西濃運輸', requiresAuth: true },
+            },
+            {
               path: 'order-groups',
               name: 'OrderGroupSettings',
               component: () => import('@/views/settings/OrderGroupSettings.vue'),

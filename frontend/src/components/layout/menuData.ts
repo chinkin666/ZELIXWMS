@@ -53,6 +53,8 @@ export const settingsGroups: SubMenuGroup[] = [
       { label: '配送業者', to: '/settings/carrier' },
       { label: '配送自動化', to: '/settings/carrier-automation' },
       { label: '佐川急便', to: '/settings/sagawa' },
+      { label: '日本郵便', to: '/settings/japan-post' },
+      { label: '西濃運輸', to: '/settings/seino' },
       { label: '出荷グループ', to: '/settings/order-groups' },
       { label: '自動処理ルール', to: '/settings/auto-processing' },
       { label: 'メールテンプレート', to: '/settings/email-templates' },
