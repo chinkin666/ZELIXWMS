@@ -13,13 +13,9 @@ services:
     environment:
       - NODE_ENV=development
 
-  backend-nest:
-    environment:
-      - NODE_ENV=development
-
-  mongo:
+  postgres:
     ports:
-      - "27017:27017"
+      - "5432:5432"
 
   redis:
     ports:

@@ -1,4 +1,4 @@
-const DEFAULT_BACKEND_ORIGIN = 'http://localhost:4000'
+const DEFAULT_BACKEND_ORIGIN = 'http://localhost:4100'
 const DEFAULT_API_PREFIX = '/api'
 
 function trimTrailingSlashes(value: string): string {
