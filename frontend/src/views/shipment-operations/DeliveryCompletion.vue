@@ -58,13 +58,13 @@
             <td class="o-table-td">{{ order.trackingId || '未発行' }}</td>
             <td class="o-table-td">{{ getCarrierName(order.carrierId) }}</td>
             <td class="o-table-td">{{ order.recipient?.name || '-' }}</td>
-            <td class="o-table-td">{{ formatDate(order.status?.shipped?.shippedAt) }}</td>
+            <td class="o-table-td">{{ formatDate(order.statusShippedAt) }}</td>
             <td class="o-table-td">
-              <span v-if="order.status?.delivered?.isDelivered" class="badge badge-success">配完</span>
+              <span v-if="order.statusCarrierReceived" class="badge badge-success">配完</span>
               <span v-else class="badge badge-warning">未配完</span>
             </td>
             <td class="o-table-td">
-              <button v-if="!order.status?.delivered?.isDelivered" class="btn-action" @click="markDelivered(order._id)">配完</button>
+              <button v-if="!order.statusCarrierReceived" class="btn-action" @click="markDelivered(order._id)">配完</button>
             </td>
           </tr>
         </tbody>
@@ -114,27 +114,31 @@ async function loadData() {
     // 出荷済み注文を取得 / 获取已出荷订单
     const params = new URLSearchParams({ limit: '200', sortBy: 'createdAt', sortOrder: 'desc' })
     const res = await apiFetch(`/api/shipment-orders?${params}`)
-    if (!res.ok) { orders.value = []; return }
+    if (!res.ok) {
+      toast.showError('データの取得に失敗しました')
+      return
+    }
     const data = await res.json()
     const items = Array.isArray(data) ? data : data.items || data.data || []
 
-    // フィルター / 筛选
-    const shipped = items.filter((o: any) => o.status?.shipped?.isShipped)
+    // NestJS扁平構造に適応 / 适配NestJS扁平结构
+    // statusShipped / statusCarrierReceived フラグを使用
+    const shipped = items.filter((o: any) => o.statusShipped)
     if (filter.value === 'shipped') {
-      orders.value = shipped.filter((o: any) => !o.status?.delivered?.isDelivered)
+      orders.value = shipped.filter((o: any) => !o.statusCarrierReceived)
     } else if (filter.value === 'delivered') {
-      orders.value = shipped.filter((o: any) => o.status?.delivered?.isDelivered)
+      orders.value = shipped.filter((o: any) => o.statusCarrierReceived)
     } else {
       orders.value = shipped
     }
 
     // 集計 / 统计
     stats.value = {
-      shipped: shipped.filter((o: any) => !o.status?.delivered?.isDelivered).length,
-      delivered: shipped.filter((o: any) => o.status?.delivered?.isDelivered).length,
+      shipped: shipped.filter((o: any) => !o.statusCarrierReceived).length,
+      delivered: shipped.filter((o: any) => o.statusCarrierReceived).length,
       undelivered: shipped.filter((o: any) => {
-        if (o.status?.delivered?.isDelivered) return false
-        const shippedAt = o.status?.shipped?.shippedAt
+        if (o.statusCarrierReceived) return false
+        const shippedAt = o.statusShippedAt
         if (!shippedAt) return false
         const days = (Date.now() - new Date(shippedAt).getTime()) / (1000 * 60 * 60 * 24)
         return days > 3
@@ -145,13 +149,13 @@ async function loadData() {
   }
 }
 
-// 配完処理 / 标记配达完成
+// 配完処理（carrier_received ステータスに変更）/ 标记配达完成（变更为carrier_received状态）
 async function markDelivered(orderId: string) {
   try {
     await apiFetch('/api/shipment-orders/status/bulk', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: [orderId], action: 'mark-shipped' }),
+      body: JSON.stringify({ ids: [orderId], status: 'carrier_received' }),
     })
     toast.showSuccess('配完しました')
     loadData()
@@ -166,7 +170,7 @@ async function markDeliveredBulk() {
     await apiFetch('/api/shipment-orders/status/bulk', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: selectedIds.value, action: 'mark-shipped' }),
+      body: JSON.stringify({ ids: selectedIds.value, status: 'carrier_received' }),
     })
     toast.showSuccess(`${selectedIds.value.length}件を配完しました`)
     selectedIds.value = []
@@ -179,7 +183,7 @@ async function markDeliveredBulk() {
 
 function toggleSelectAll() {
   if (selectAll.value) {
-    selectedIds.value = orders.value.filter(o => !o.status?.delivered?.isDelivered).map(o => o._id)
+    selectedIds.value = orders.value.filter((o: any) => !o.statusCarrierReceived).map((o: any) => o._id)
   } else {
     selectedIds.value = []
   }
