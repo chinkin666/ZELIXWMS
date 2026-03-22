@@ -688,9 +688,17 @@ async function loadTemplate() {
 
   try {
     template.value = await fetchFormTemplate(id)
-    // 列が空の場合はデフォルト列を自動追加 / 列为空时自动填充默认列
-    if (template.value && template.value.columns.length === 0) {
-      template.value.columns = createDefaultColumns(template.value.targetType)
+    if (template.value) {
+      // 列が空の場合はデフォルト列を自動追加 / 列为空时自动填充默认列
+      if (!template.value.columns || template.value.columns.length === 0) {
+        template.value.columns = createDefaultColumns(template.value.targetType)
+      }
+      // 未設定フィールドにデフォルト値を補完 / 未设置字段补充默认值
+      if (!template.value.pageSize) template.value.pageSize = 'A4'
+      if (!template.value.pageOrientation) template.value.pageOrientation = 'landscape'
+      if (!template.value.pageMargins) template.value.pageMargins = [40, 60, 40, 60]
+      if (!template.value.headerFooterItems) template.value.headerFooterItems = []
+      if (!template.value.styles) template.value.styles = { fontSize: 9, headerBgColor: '#2a3474', headerTextColor: '#ffffff', borderColor: '#cccccc', cellPadding: 4, horizontalAlign: 'left' }
     }
   } catch (e: any) {
     showToast(e?.message || t('wms.formEditor.loadFailed', 'テンプレートの読み込みに失敗しました'), 'danger')
