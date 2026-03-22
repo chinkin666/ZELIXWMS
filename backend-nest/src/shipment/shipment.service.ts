@@ -6,6 +6,7 @@ import { DRIZZLE } from '../database/database.module.js';
 import { shipmentOrders, shipmentOrderProducts } from '../database/schema/shipments.js';
 import type { CreateShipmentOrderDto, UpdateShipmentOrderDto } from './dto/create-shipment-order.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -18,7 +19,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class ShipmentService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 出荷注文一覧取得（テナント分離・ページネーション・検索）/ 获取出货订单列表（租户隔离・分页・搜索）
   async findAll(tenantId: string, query: FindAllQuery) {

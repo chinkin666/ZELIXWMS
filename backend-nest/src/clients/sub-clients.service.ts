@@ -6,6 +6,7 @@ import { DRIZZLE } from '../database/database.module.js';
 import { subClients } from '../database/schema/clients.js';
 import type { CreateSubClientDto, UpdateSubClientDto } from './dto/create-sub-client.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -17,7 +18,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class SubClientsService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // サブクライアント一覧取得 / 获取子客户列表
   async findAll(tenantId: string, query: FindAllQuery) {

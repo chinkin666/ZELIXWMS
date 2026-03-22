@@ -6,6 +6,7 @@ import { DRIZZLE } from '../database/database.module.js';
 import { webhooks, webhookLogs, featureFlags, plugins, scripts, customFieldDefinitions, autoProcessingRules } from '../database/schema/extensions.js';
 import type { CreateWebhookDto, UpdateWebhookDto } from './dto/create-webhook.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllWebhooksQuery {
   page?: number;
@@ -25,7 +26,7 @@ interface FindAllCustomFieldsQuery extends PaginationQuery {
 
 @Injectable()
 export class ExtensionsService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // ===== Webhook CRUD / Webhook 增删改查 =====
 
@@ -218,7 +219,7 @@ export class ExtensionsService {
   async createScript(tenantId: string, dto: Record<string, unknown>) {
     const rows = await this.db
       .insert(scripts)
-      .values({ tenantId, ...dto })
+      .values({ tenantId, ...dto } as any)
       .returning();
 
     return rows[0];
@@ -279,7 +280,7 @@ export class ExtensionsService {
   async createCustomField(tenantId: string, dto: Record<string, unknown>) {
     const rows = await this.db
       .insert(customFieldDefinitions)
-      .values({ tenantId, ...dto })
+      .values({ tenantId, ...dto } as any)
       .returning();
 
     return rows[0];
@@ -349,7 +350,7 @@ export class ExtensionsService {
   async createAutoProcessingRule(tenantId: string, dto: Record<string, unknown>) {
     const rows = await this.db
       .insert(autoProcessingRules)
-      .values({ tenantId, ...dto })
+      .values({ tenantId, ...dto } as any)
       .returning();
 
     return rows[0];
@@ -460,7 +461,7 @@ export class ExtensionsService {
 
     const rows = await this.db
       .insert(featureFlags)
-      .values(dto)
+      .values(dto as any)
       .returning();
 
     return rows[0];
@@ -503,7 +504,7 @@ export class ExtensionsService {
 
     const rows = await this.db
       .insert(plugins)
-      .values({ tenantId, ...dto, enabled: false })
+      .values({ tenantId, ...dto, enabled: false } as any)
       .returning();
 
     return rows[0];

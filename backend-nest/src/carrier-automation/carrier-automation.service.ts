@@ -5,6 +5,7 @@ import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { carrierAutomationConfigs } from '../database/schema/carriers.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 // Expressプロキシレスポンス型 / Express代理响应类型
 interface ProxyResponse<T = any> {
@@ -19,7 +20,7 @@ export class CarrierAutomationService {
   private readonly expressPort: number;
 
   constructor(
-    @Inject(DRIZZLE) private readonly db: any,
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly configService: ConfigService,
   ) {
     this.expressPort = this.configService.get<number>('EXPRESS_API_PORT', 4000);

@@ -182,6 +182,8 @@ describe('PhotosService', () => {
   describe('upload', () => {
     it('should upload a photo and return created record', async () => {
       const created = { ...mockPhoto, id: 'new-photo' };
+      // ストレージチェック用モック / 存储检查用mock
+      mockDb.select.mockReturnValueOnce(createChain([{ total: 0 }]));
       mockDb.returning.mockResolvedValueOnce([created]);
 
       const result = await service.upload(tenantId, {
@@ -290,6 +292,8 @@ describe('PhotosService', () => {
         { ...mockPhoto, id: 'bulk-1' },
         { ...mockPhoto, id: 'bulk-2' },
       ];
+      // ストレージチェック用モック / 存储检查用mock
+      mockDb.select.mockReturnValueOnce(createChain([{ total: 0 }]));
       mockDb.returning.mockResolvedValueOnce(createdPhotos);
 
       const result = await service.bulkUpload(tenantId, [

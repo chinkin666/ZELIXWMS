@@ -10,6 +10,9 @@ import { WmsException } from '../common/exceptions/wms.exception.js';
 // 最大ファイルサイズ（5MB）/ 最大文件大小（5MB）
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
+// テナントごとの最大ストレージ容量（1GB）/ 每个租户的最大存储容量（1GB）
+export const MAX_STORAGE_BYTES = 1 * 1024 * 1024 * 1024;
+
 interface FindAllQuery {
   page?: number;
   limit?: number;
@@ -20,6 +23,26 @@ interface FindAllQuery {
 @Injectable()
 export class PhotosService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+
+  // テナントの現在のストレージ使用量を取得 / 获取租户当前存储使用量
+  private async getTenantStorageUsage(tenantId: string): Promise<number> {
+    const [result] = await this.db
+      .select({ total: sql<number>`COALESCE(SUM(${photos.size}), 0)` })
+      .from(photos)
+      .where(eq(photos.tenantId, tenantId));
+    return Number(result?.total ?? 0);
+  }
+
+  // ストレージ容量チェック / 存储容量检查
+  private async checkStorageCapacity(tenantId: string, newBytesSize: number): Promise<void> {
+    const currentTotal = await this.getTenantStorageUsage(tenantId);
+    if (currentTotal + newBytesSize > MAX_STORAGE_BYTES) {
+      throw new WmsException(
+        'PHOTO_STORAGE_FULL',
+        `Current usage: ${currentTotal} bytes, new file: ${newBytesSize} bytes, limit: ${MAX_STORAGE_BYTES} bytes`,
+      );
+    }
+  }
 
   // 写真一覧取得（テナント分離・ページネーション・フィルタ）
   // 获取照片列表（租户隔离・分页・过滤）
@@ -86,6 +109,11 @@ export class PhotosService {
       throw new WmsException('PHOTO_INVALID_TYPE', `MIME type: ${dto.mimeType}`);
     }
 
+    // ストレージ容量チェック / 存储容量检查
+    if (dto.size) {
+      await this.checkStorageCapacity(tenantId, dto.size);
+    }
+
     // ファイル名サニタイズ（パストラバーサル防止）/ 文件名消毒（防止路径遍历）
     const safeFilename = (dto.filename || 'unnamed').replace(/[\/\\\.\.]+/g, '_').replace(/^_+|_+$/g, '');
 
@@ -143,6 +171,12 @@ export class PhotosService {
       if (dto.mimeType && !dto.mimeType.startsWith('image/')) {
         throw new WmsException('PHOTO_INVALID_TYPE', `File "${dto.filename}" MIME type: ${dto.mimeType}`);
       }
+    }
+
+    // ストレージ容量チェック（全ファイルの合計サイズ）/ 存储容量检查（全部文件总大小）
+    const totalNewSize = photoDtos.reduce((sum, dto) => sum + (dto.size || 0), 0);
+    if (totalNewSize > 0) {
+      await this.checkStorageCapacity(tenantId, totalNewSize);
     }
 
     // 全バリデーション通過後に一括挿入 / 全部验证通过后批量插入

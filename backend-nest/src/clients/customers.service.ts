@@ -6,6 +6,7 @@ import { DRIZZLE } from '../database/database.module.js';
 import { customers } from '../database/schema/clients.js';
 import type { CreateCustomerDto, UpdateCustomerDto } from './dto/create-customer.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -18,7 +19,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class CustomersService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // カスタマー一覧取得 / 获取顾客列表
   async findAll(tenantId: string, query: FindAllQuery) {

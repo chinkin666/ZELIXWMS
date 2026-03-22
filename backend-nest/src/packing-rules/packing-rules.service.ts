@@ -6,6 +6,7 @@ import { eq, and, ilike, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { ruleDefinitions } from '../database/schema/extensions.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 // 梱包ルール固定モジュール名 / 包装规则固定模块名
 const PACKING_MODULE = 'packing';
@@ -19,7 +20,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class PackingRulesService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 梱包ルール一覧取得 / 获取包装规则列表
   async findAll(tenantId: string, query: FindAllQuery) {

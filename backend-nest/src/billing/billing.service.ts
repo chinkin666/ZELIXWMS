@@ -6,6 +6,7 @@ import { DRIZZLE } from '../database/database.module.js';
 import { serviceRates, workCharges, shippingRates, invoices } from '../database/schema/billing.js';
 import type { CreateServiceRateDto, UpdateServiceRateDto } from './dto/create-service-rate.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 // サービス料金検索パラメータ / 服务费率查询参数
 interface FindAllServiceRatesQuery {
@@ -45,7 +46,7 @@ interface FindAllInvoicesQuery {
 
 @Injectable()
 export class BillingService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // ============================================
   // サービス料金 CRUD / 服务费率 CRUD
@@ -201,7 +202,7 @@ export class BillingService {
       ...dto,
     };
 
-    const rows = await this.db.insert(workCharges).values(insertData).returning();
+    const rows = await this.db.insert(workCharges).values(insertData as any).returning();
     return rows[0];
   }
 
@@ -303,7 +304,7 @@ export class BillingService {
   async createShippingRate(tenantId: string, dto: Record<string, unknown>) {
     const rows = await this.db
       .insert(shippingRates)
-      .values({ tenantId, ...dto })
+      .values({ tenantId, ...dto } as any)
       .returning();
 
     return rows[0];
@@ -394,7 +395,7 @@ export class BillingService {
   async createInvoice(tenantId: string, dto: Record<string, unknown>) {
     const rows = await this.db
       .insert(invoices)
-      .values({ tenantId, ...dto })
+      .values({ tenantId, ...dto } as any)
       .returning();
 
     return rows[0];
@@ -564,7 +565,7 @@ export class BillingService {
         .where(and(
           eq(workCharges.tenantId, tenantId),
           eq(workCharges.billingPeriod, period),
-          eq(workCharges.clientId, group.clientId),
+          eq(workCharges.clientId, group.clientId!),
           eq(workCharges.isBilled, false),
         ));
 

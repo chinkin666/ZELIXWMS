@@ -9,11 +9,12 @@ import { users } from '../database/schema/users.js';
 import type { LoginDto } from './dto/login.dto.js';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { UpdateProfileDto } from './dto/update-profile.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject(DRIZZLE) private readonly db: any,
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
     @Inject(SUPABASE) private readonly supabase: SupabaseClient,
   ) {}
 

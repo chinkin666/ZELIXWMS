@@ -4,6 +4,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { systemSettings } from '../database/schema/settings.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 // 通知設定キー / 通知设置键
 const NOTIF_PREF_KEY = 'notification_preferences';
@@ -41,7 +42,7 @@ const DEFAULT_PREFERENCES = {
 
 @Injectable()
 export class NotificationPreferencesService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 通知設定取得（存在しない場合はデフォルト返却）/ 获取通知偏好（不存在时返回默认值）
   async findAll(tenantId: string) {

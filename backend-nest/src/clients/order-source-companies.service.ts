@@ -6,6 +6,7 @@ import { DRIZZLE } from '../database/database.module.js';
 import { orderSourceCompanies } from '../database/schema/shipments.js';
 import type { CreateOrderSourceCompanyDto, UpdateOrderSourceCompanyDto } from './dto/create-order-source-company.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -16,7 +17,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class OrderSourceCompaniesService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 依頼元会社一覧取得 / 获取委托方公司列表
   async findAll(tenantId: string, query: FindAllQuery) {

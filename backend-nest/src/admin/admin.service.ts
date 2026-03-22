@@ -12,6 +12,7 @@ import { inboundOrders } from '../database/schema/inbound.js';
 import { stockQuants } from '../database/schema/inventory.js';
 import type { CreateUserDto, UpdateUserDto } from './dto/create-user.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 // ===== ユーザー検索クエリ / 用户查询参数 =====
 interface FindAllUsersQuery {
@@ -32,7 +33,7 @@ interface FindOperationLogsQuery {
 
 @Injectable()
 export class AdminService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // ========== ユーザー管理 / 用户管理 ==========
 
@@ -183,7 +184,7 @@ export class AdminService {
   async createTenant(dto: Record<string, unknown>) {
     const rows = await this.db
       .insert(tenants)
-      .values(dto)
+      .values(dto as any)
       .returning();
 
     return rows[0];

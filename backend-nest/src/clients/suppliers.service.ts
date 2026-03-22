@@ -6,6 +6,7 @@ import { DRIZZLE } from '../database/database.module.js';
 import { suppliers } from '../database/schema/clients.js';
 import type { CreateSupplierDto, UpdateSupplierDto } from './dto/create-supplier.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -17,7 +18,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class SuppliersService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 仕入先一覧取得 / 获取供应商列表
   async findAll(tenantId: string, query: FindAllQuery) {

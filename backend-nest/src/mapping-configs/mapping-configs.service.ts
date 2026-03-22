@@ -5,6 +5,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { mappingConfigs } from '../database/schema/templates.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -14,7 +15,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class MappingConfigsService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 一覧取得 / 获取列表
   async findAll(tenantId: string, query: FindAllQuery) {
@@ -55,7 +56,7 @@ export class MappingConfigsService {
   async create(tenantId: string, dto: Record<string, unknown>) {
     const rows = await this.db
       .insert(mappingConfigs)
-      .values({ tenantId, ...dto })
+      .values({ tenantId, ...dto } as any)
       .returning();
     return rows[0];
   }
@@ -66,7 +67,7 @@ export class MappingConfigsService {
 
     const rows = await this.db
       .update(mappingConfigs)
-      .set({ ...dto, updatedAt: new Date() })
+      .set({ ...dto, updatedAt: new Date() } as any)
       .where(and(eq(mappingConfigs.id, id), eq(mappingConfigs.tenantId, tenantId)))
       .returning();
     return rows[0];

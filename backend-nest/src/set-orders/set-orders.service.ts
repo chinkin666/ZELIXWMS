@@ -6,6 +6,7 @@ import { eq, and, sql, SQL, isNull } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { shipmentOrders } from '../database/schema/shipments.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -14,7 +15,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class SetOrdersService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // セットオーダー一覧取得（ページネーション付き）/ 获取套装订单列表（带分页）
   async findAll(tenantId: string, query: FindAllQuery) {

@@ -6,6 +6,7 @@ import { eq, and, sql, SQL, ilike } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { systemSettings } from '../database/schema/settings.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 // スケジュール設定キーのプレフィックス / 排程设置键前缀
 const SCHEDULE_KEY_PREFIX = 'wms_schedule';
@@ -17,7 +18,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class WmsSchedulesService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // スケジュール一覧取得 / 获取排程列表
   async findAll(tenantId: string, query: FindAllQuery) {

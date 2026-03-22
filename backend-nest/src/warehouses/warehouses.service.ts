@@ -6,6 +6,7 @@ import { DRIZZLE } from '../database/database.module.js';
 import { warehouses } from '../database/schema/warehouses.js';
 import type { CreateWarehouseDto, UpdateWarehouseDto } from './dto/create-warehouse.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -17,7 +18,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class WarehousesService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 倉庫一覧取得（テナント分離・ページネーション・検索）/ 获取仓库列表（租户隔离・分页・搜索）
   async findAll(tenantId: string, query: FindAllQuery) {

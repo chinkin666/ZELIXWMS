@@ -6,6 +6,7 @@ import { eq, and, ilike, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { serviceRates } from '../database/schema/billing.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -18,7 +19,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class PriceCatalogsService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 価格カタログ一覧取得 / 获取价格目录列表
   async findAll(tenantId: string, query: FindAllQuery) {

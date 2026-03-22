@@ -5,12 +5,13 @@ import { Job } from 'bullmq';
 import { DRIZZLE } from '../../database/database.module.js';
 import { operationLogs } from '../../database/schema/settings.js';
 import { QUEUE_NAMES } from '../queue.constants.js';
+import type { DrizzleDB } from '../../database/database.types.js';
 
 @Processor(QUEUE_NAMES.AUDIT)
 export class AuditProcessor extends WorkerHost {
   private readonly logger = new Logger(AuditProcessor.name);
 
-  constructor(@Inject(DRIZZLE) private readonly db: any) {
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {
     super();
   }
 

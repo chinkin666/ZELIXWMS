@@ -6,6 +6,7 @@ import { DRIZZLE } from '../database/database.module.js';
 import { materials } from '../database/schema/warehouse-ops.js';
 import type { CreateMaterialDto, UpdateMaterialDto } from './dto/create-material.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -18,7 +19,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class MaterialsService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 資材一覧取得（テナント分離・ページネーション・検索・フィルタ）/ 获取物料列表（租户隔离・分页・搜索・筛选）
   async findAll(tenantId: string, query: FindAllQuery) {

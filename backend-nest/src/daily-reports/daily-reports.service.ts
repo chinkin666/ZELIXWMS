@@ -9,6 +9,7 @@ import { inboundOrders } from '../database/schema/inbound.js';
 import { stockMoves } from '../database/schema/inventory.js';
 import type { CreateDailyReportDto, UpdateDailyReportDto } from './dto/create-daily-report.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -19,7 +20,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class DailyReportsService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 日次レポート一覧取得（テナント分離・ページネーション・日付範囲フィルタ）/ 获取日报列表（租户隔离・分页・日期范围筛选）
   async findAll(tenantId: string, query: FindAllQuery) {

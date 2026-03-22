@@ -5,6 +5,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { WmsException } from '../common/exceptions/wms.exception.js';
 import { DRIZZLE } from '../database/database.module.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -21,7 +22,7 @@ const DEFAULT_CATEGORIES = [
 
 @Injectable()
 export class InventoryCategoriesService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 在庫区分一覧取得（プレースホルダー）/ 获取库存分类列表（占位符）
   async findAll(tenantId: string, query: FindAllQuery) {

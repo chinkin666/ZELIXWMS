@@ -6,6 +6,7 @@ import { eq, and, sql, SQL, desc } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { operationLogs } from '../database/schema/settings.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -17,7 +18,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class OperationLogsService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 操作ログ一覧取得（ページネーション・フィルター対応）
   // 获取操作日志列表（支持分页和过滤）

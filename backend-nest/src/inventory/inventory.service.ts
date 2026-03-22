@@ -6,6 +6,7 @@ import { DRIZZLE } from '../database/database.module.js';
 import { locations, stockQuants, stockMoves, inventoryLedger } from '../database/schema/inventory.js';
 import type { CreateLocationDto, UpdateLocationDto } from './dto/create-location.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 // ロケーション検索クエリ / 库位查询参数
 interface FindLocationsQuery {
@@ -25,7 +26,7 @@ interface StockLevelsQuery {
 
 @Injectable()
 export class InventoryService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // ========================================
   // ロケーション CRUD / 库位 CRUD
@@ -647,7 +648,7 @@ export class InventoryService {
           AND (quantity - reserved_quantity) >= ${res.quantity}
       `);
 
-      const rowCount = updated?.rowCount ?? updated?.length ?? 0;
+      const rowCount = (updated as any)?.rowCount ?? updated?.length ?? 0;
       if (rowCount === 0) {
         // 在庫レコードが存在しないか、可用数不足 / 库存记录不存在或可用数不足
         const [quant] = await this.db

@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module.js';
 import { sql } from 'drizzle-orm';
+import type { DrizzleDB } from '../database/database.types.js';
 
 @Injectable()
 export class HealthService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 完全ヘルスチェック / 完整健康检查
   async getFullHealth() {

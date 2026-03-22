@@ -5,6 +5,7 @@ import { eq, and, sql, desc, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { fbaShipmentPlans, fbaBoxes } from '../database/schema/fba.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 // 検索クエリ / 查询参数
 interface FindFbaPlansQuery {
@@ -15,7 +16,7 @@ interface FindFbaPlansQuery {
 
 @Injectable()
 export class FbaShipmentPlansService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 一覧取得（テナント分離・ページネーション）/ 获取列表（租户隔离・分页）
   async findAll(tenantId: string, query: FindFbaPlansQuery = {}) {

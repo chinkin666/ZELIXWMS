@@ -3,12 +3,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { systemSettings } from '../database/schema/settings.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 const PEAK_MODE_KEY = 'peak_mode';
 
 @Injectable()
 export class PeakModeService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // ピークモードステータス取得 / 获取高峰模式状态
   async getStatus(tenantId: string) {

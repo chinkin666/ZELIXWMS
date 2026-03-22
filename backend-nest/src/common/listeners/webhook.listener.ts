@@ -10,6 +10,7 @@ import { Inject } from '@nestjs/common';
 import { DRIZZLE } from '../../database/database.module.js';
 import { webhooks } from '../../database/schema/extensions.js';
 import { eq, and } from 'drizzle-orm';
+import type { DrizzleDB } from '../../database/database.types.js';
 
 @Injectable()
 export class WebhookListener {
@@ -17,7 +18,7 @@ export class WebhookListener {
 
   constructor(
     private readonly queueService: QueueService,
-    @Inject(DRIZZLE) private readonly db: any,
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
   ) {}
 
   // 出荷完了 → Webhook 送信 / 出货完成 → Webhook发送

@@ -6,6 +6,7 @@ import { eq, and, ilike, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { ruleDefinitions } from '../database/schema/extensions.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -17,7 +18,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class RulesService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // ルール一覧取得 / 获取规则列表
   async findAll(tenantId: string, query: FindAllQuery) {

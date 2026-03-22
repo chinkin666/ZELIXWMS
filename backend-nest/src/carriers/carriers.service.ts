@@ -5,6 +5,7 @@ import { eq, and, or, ilike, isNull, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { carriers } from '../database/schema/carriers.js';
 import type { CreateCarrierDto, UpdateCarrierDto } from './dto/create-carrier.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -16,7 +17,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class CarriersService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 配送業者一覧取得（共有＋テナント固有、ページネーション・検索対応）
   // 获取配送业者列表（共享＋租户专属，支持分页和搜索）

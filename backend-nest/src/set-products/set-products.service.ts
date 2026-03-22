@@ -5,6 +5,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { WmsException } from '../common/exceptions/wms.exception.js';
 import { DRIZZLE } from '../database/database.module.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
+import type { DrizzleDB } from '../database/database.types.js';
 
 interface FindAllQuery {
   page?: number;
@@ -13,7 +14,7 @@ interface FindAllQuery {
 
 @Injectable()
 export class SetProductsService {
-  constructor(@Inject(DRIZZLE) private readonly db: any) {}
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // セット商品一覧取得（プレースホルダー）/ 获取组合商品列表（占位符）
   async findAll(tenantId: string, query: FindAllQuery) {
