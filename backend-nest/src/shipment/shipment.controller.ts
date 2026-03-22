@@ -35,6 +35,52 @@ export class ShipmentController {
     });
   }
 
+  // ============================================
+  // ピッキングリスト / 拣货清单
+  // ============================================
+
+  // トータルピッキングリスト取得 / 获取总拣货清单
+  @Get('picking-list/total')
+  getPickingListTotal(
+    @TenantId() tenantId: string,
+    @Query('orderIds') orderIds: string,
+  ) {
+    const ids = orderIds ? orderIds.split(',').filter(Boolean) : [];
+    return this.shipmentService.generatePickingList(tenantId, 'total', ids);
+  }
+
+  // シングルピッキングリスト取得 / 获取单拣货清单
+  @Get('picking-list/single')
+  getPickingListSingle(
+    @TenantId() tenantId: string,
+    @Query('orderIds') orderIds: string,
+  ) {
+    const ids = orderIds ? orderIds.split(',').filter(Boolean) : [];
+    return this.shipmentService.generatePickingList(tenantId, 'single', ids);
+  }
+
+  // サブトータルピッキングリスト取得 / 获取小计拣货清单
+  @Get('picking-list/subtotal')
+  getPickingListSubtotal(
+    @TenantId() tenantId: string,
+    @Query('groupId') groupId: string,
+  ) {
+    return this.shipmentService.generatePickingList(tenantId, 'subtotal', undefined, groupId);
+  }
+
+  // ============================================
+  // 受注取りまとめ / 订单合并
+  // ============================================
+
+  // 注文統合（同一送付先の注文をマージ）/ 订单合并（合并同一收件人的订单）
+  @Post('consolidate')
+  consolidateOrders(
+    @TenantId() tenantId: string,
+    @Body() body: { orderIds: string[] },
+  ) {
+    return this.shipmentService.consolidateOrders(tenantId, body.orderIds);
+  }
+
   // 出荷注文作成 / 创建出货订单
   @Post()
   create(
@@ -183,6 +229,15 @@ export class ShipmentController {
   @Post('export')
   exportOrders(@TenantId() tenantId: string) {
     return this.shipmentService.exportOrders(tenantId);
+  }
+
+  // 出荷検品取消 / 出货检品取消
+  @Post(':id/cancel-inspection')
+  cancelInspection(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.shipmentService.cancelInspection(tenantId, id);
   }
 
   // 追跡情報取得 / 获取跟踪信息

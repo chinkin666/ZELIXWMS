@@ -3,7 +3,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, ilike, isNull, or, sql, SQL, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
-import { shipmentOrders, shipmentOrderProducts } from '../database/schema/shipments.js';
+import { shipmentOrders, shipmentOrderProducts, orderGroups } from '../database/schema/shipments.js';
+import { stockQuants, locations } from '../database/schema/inventory.js';
+import { products } from '../database/schema/products.js';
 import type { CreateShipmentOrderDto, UpdateShipmentOrderDto } from './dto/create-shipment-order.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 import type { DrizzleDB } from '../database/database.types.js';
@@ -454,6 +456,332 @@ export class ShipmentService {
       .update(shipmentOrders)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(and(eq(shipmentOrders.id, id), eq(shipmentOrders.tenantId, tenantId)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // ============================================
+  // ピッキングリスト生成 / 拣货清单生成
+  // ============================================
+
+  // トータルピッキング: 全注文の商品をロケーション別に集約
+  // 总拣货: 将所有订单的商品按库位汇总
+  private async generateTotalPickingList(tenantId: string, orderIds: string[]) {
+    const rows = await this.db
+      .select({
+        productSku: shipmentOrderProducts.productSku,
+        productName: shipmentOrderProducts.productName,
+        locationCode: locations.code,
+        quantity: shipmentOrderProducts.quantity,
+        shipmentOrderId: shipmentOrderProducts.shipmentOrderId,
+      })
+      .from(shipmentOrderProducts)
+      .innerJoin(stockQuants, and(
+        eq(stockQuants.productId, shipmentOrderProducts.productId),
+        eq(stockQuants.tenantId, tenantId),
+      ))
+      .innerJoin(locations, eq(locations.id, stockQuants.locationId))
+      .where(and(
+        eq(shipmentOrderProducts.tenantId, tenantId),
+        inArray(shipmentOrderProducts.shipmentOrderId, orderIds),
+      ));
+
+    // 商品SKU + ロケーションコードでグルーピング / 按商品SKU + 库位编码分组
+    const grouped = new Map<string, {
+      productSku: string | null;
+      productName: string | null;
+      locationCode: string;
+      totalQuantity: number;
+      orderIds: Set<string>;
+    }>();
+
+    for (const row of rows) {
+      const key = `${row.productSku ?? ''}::${row.locationCode}`;
+      const existing = grouped.get(key);
+      if (existing) {
+        existing.totalQuantity += row.quantity;
+        existing.orderIds.add(row.shipmentOrderId);
+      } else {
+        grouped.set(key, {
+          productSku: row.productSku,
+          productName: row.productName,
+          locationCode: row.locationCode,
+          totalQuantity: row.quantity,
+          orderIds: new Set([row.shipmentOrderId]),
+        });
+      }
+    }
+
+    // ロケーションコード順にソート（歩行効率化）/ 按库位编码排序（提高行走效率）
+    const items = Array.from(grouped.values())
+      .map((g) => ({
+        productSku: g.productSku,
+        productName: g.productName,
+        locationCode: g.locationCode,
+        totalQuantity: g.totalQuantity,
+        orderCount: g.orderIds.size,
+      }))
+      .sort((a, b) => a.locationCode.localeCompare(b.locationCode));
+
+    return { type: 'total' as const, items };
+  }
+
+  // シングルピッキング: 1注文1リスト
+  // 单拣货: 每个订单一个清单
+  private async generateSinglePickingList(tenantId: string, orderIds: string[]) {
+    // 注文情報と商品を取得 / 获取订单信息和商品
+    const [orders, productRows] = await Promise.all([
+      this.db.select({ id: shipmentOrders.id, orderNumber: shipmentOrders.orderNumber })
+        .from(shipmentOrders)
+        .where(and(
+          eq(shipmentOrders.tenantId, tenantId),
+          inArray(shipmentOrders.id, orderIds),
+          isNull(shipmentOrders.deletedAt),
+        )),
+      this.db
+        .select({
+          shipmentOrderId: shipmentOrderProducts.shipmentOrderId,
+          productSku: shipmentOrderProducts.productSku,
+          quantity: shipmentOrderProducts.quantity,
+          productId: shipmentOrderProducts.productId,
+          locationCode: locations.code,
+        })
+        .from(shipmentOrderProducts)
+        .leftJoin(stockQuants, and(
+          eq(stockQuants.productId, shipmentOrderProducts.productId),
+          eq(stockQuants.tenantId, tenantId),
+        ))
+        .leftJoin(locations, eq(locations.id, stockQuants.locationId))
+        .where(and(
+          eq(shipmentOrderProducts.tenantId, tenantId),
+          inArray(shipmentOrderProducts.shipmentOrderId, orderIds),
+        )),
+    ]);
+
+    // 注文番号マップ / 订单编号映射
+    const orderMap = new Map(orders.map((o) => [o.id, o.orderNumber]));
+
+    // 注文ごとにグループ化 / 按订单分组
+    const orderProductsMap = new Map<string, Array<{ productSku: string | null; locationCode: string | null; quantity: number }>>();
+    for (const row of productRows) {
+      const list = orderProductsMap.get(row.shipmentOrderId) ?? [];
+      list.push({
+        productSku: row.productSku,
+        locationCode: row.locationCode,
+        quantity: row.quantity,
+      });
+      orderProductsMap.set(row.shipmentOrderId, list);
+    }
+
+    // 注文番号順→ロケーション順にソート / 按订单编号 → 库位排序
+    const items = Array.from(orderProductsMap.entries())
+      .map(([orderId, prods]) => ({
+        orderNumber: orderMap.get(orderId) ?? orderId,
+        items: prods.sort((a, b) => (a.locationCode ?? '').localeCompare(b.locationCode ?? '')),
+      }))
+      .sort((a, b) => a.orderNumber.localeCompare(b.orderNumber));
+
+    return { type: 'single' as const, orders: items };
+  }
+
+  // サブトータルピッキング: 注文グループ別に商品集約
+  // 小计拣货: 按订单分组汇总商品
+  private async generateSubtotalPickingList(tenantId: string, groupId: string) {
+    // グループ情報取得 / 获取分组信息
+    const [group] = await this.db
+      .select({ id: orderGroups.id, name: orderGroups.name })
+      .from(orderGroups)
+      .where(and(eq(orderGroups.id, groupId), eq(orderGroups.tenantId, tenantId)))
+      .limit(1);
+
+    if (!group) {
+      throw new WmsException('SHIP_NOT_FOUND', `Order group not found: ${groupId} / 注文グループが見つかりません / 订单分组未找到`);
+    }
+
+    // グループに属する注文の商品を取得 / 获取分组内订单的商品
+    const rows = await this.db
+      .select({
+        productSku: shipmentOrderProducts.productSku,
+        productName: shipmentOrderProducts.productName,
+        quantity: shipmentOrderProducts.quantity,
+        orderNumber: shipmentOrders.orderNumber,
+        locationCode: locations.code,
+      })
+      .from(shipmentOrderProducts)
+      .innerJoin(shipmentOrders, eq(shipmentOrders.id, shipmentOrderProducts.shipmentOrderId))
+      .leftJoin(stockQuants, and(
+        eq(stockQuants.productId, shipmentOrderProducts.productId),
+        eq(stockQuants.tenantId, tenantId),
+      ))
+      .leftJoin(locations, eq(locations.id, stockQuants.locationId))
+      .where(and(
+        eq(shipmentOrderProducts.tenantId, tenantId),
+        eq(shipmentOrders.orderGroupId, groupId),
+        isNull(shipmentOrders.deletedAt),
+      ));
+
+    // 商品SKU別にグルーピング / 按商品SKU分组
+    const grouped = new Map<string, {
+      productSku: string | null;
+      locationCode: string | null;
+      totalQuantity: number;
+      orderNumbers: Set<string>;
+    }>();
+
+    for (const row of rows) {
+      const key = row.productSku ?? 'unknown';
+      const existing = grouped.get(key);
+      if (existing) {
+        existing.totalQuantity += row.quantity;
+        existing.orderNumbers.add(row.orderNumber);
+      } else {
+        grouped.set(key, {
+          productSku: row.productSku,
+          locationCode: row.locationCode,
+          totalQuantity: row.quantity,
+          orderNumbers: new Set([row.orderNumber]),
+        });
+      }
+    }
+
+    const productsList = Array.from(grouped.values())
+      .map((g) => ({
+        productSku: g.productSku,
+        locationCode: g.locationCode,
+        totalQuantity: g.totalQuantity,
+        orderNumbers: Array.from(g.orderNumbers),
+      }))
+      .sort((a, b) => (a.locationCode ?? '').localeCompare(b.locationCode ?? ''));
+
+    return { type: 'subtotal' as const, groupName: group.name, products: productsList };
+  }
+
+  // ピッキングリスト生成（3タイプ統合エントリポイント）
+  // 拣货清单生成（3种类型统一入口）
+  async generatePickingList(tenantId: string, type: 'total' | 'single' | 'subtotal', orderIds?: string[], groupId?: string) {
+    if (type === 'total') {
+      if (!orderIds || orderIds.length === 0) {
+        throw new WmsException('VALIDATION_ERROR', 'orderIds is required for total picking / トータルピッキングにはorderIdsが必要 / 总拣货需要orderIds');
+      }
+      return this.generateTotalPickingList(tenantId, orderIds);
+    }
+
+    if (type === 'single') {
+      if (!orderIds || orderIds.length === 0) {
+        throw new WmsException('VALIDATION_ERROR', 'orderIds is required for single picking / シングルピッキングにはorderIdsが必要 / 单拣货需要orderIds');
+      }
+      return this.generateSinglePickingList(tenantId, orderIds);
+    }
+
+    if (type === 'subtotal') {
+      if (!groupId) {
+        throw new WmsException('VALIDATION_ERROR', 'groupId is required for subtotal picking / サブトータルピッキングにはgroupIdが必要 / 小计拣货需要groupId');
+      }
+      return this.generateSubtotalPickingList(tenantId, groupId);
+    }
+
+    throw new WmsException('VALIDATION_ERROR', `Unknown picking type: ${type} / 不明なピッキングタイプ / 未知拣货类型`);
+  }
+
+  // ============================================
+  // 受注取りまとめ / 订单合并
+  // ============================================
+
+  // 同一送付先の注文を統合（郵便番号+電話+名前+住所が一致）
+  // 合并同一收件人的订单（邮编+电话+姓名+地址一致）
+  async consolidateOrders(tenantId: string, orderIds: string[]) {
+    if (!orderIds || orderIds.length < 2) {
+      throw new WmsException('VALIDATION_ERROR', 'At least 2 order IDs required / 最低2件のIDが必要 / 至少需要2个ID');
+    }
+
+    // 対象注文を取得 / 获取目标订单
+    const orders = await this.db
+      .select()
+      .from(shipmentOrders)
+      .where(and(
+        eq(shipmentOrders.tenantId, tenantId),
+        inArray(shipmentOrders.id, orderIds),
+        isNull(shipmentOrders.deletedAt),
+      ));
+
+    if (orders.length < 2) {
+      throw new WmsException('VALIDATION_ERROR', 'Not enough valid orders found / 有効な注文が不足 / 有效订单不足');
+    }
+
+    // 統合可能チェック: 送付先が全て一致するか / 合并可行性检查: 收件人是否全部一致
+    const master = orders[0];
+    const canConsolidate = orders.every(
+      (o) =>
+        o.recipientPostalCode === master.recipientPostalCode &&
+        o.recipientPhone === master.recipientPhone &&
+        o.recipientName === master.recipientName &&
+        o.recipientStreet === master.recipientStreet,
+    );
+
+    if (!canConsolidate) {
+      throw new WmsException('SHIP_INVALID_STATUS', 'Orders have different recipients, cannot consolidate / 送付先が異なるため統合不可 / 收件人不同无法合并');
+    }
+
+    // 最初の注文をマスターとして使用、他の注文の商品をマスターに移動
+    // 使用第一个订单作为主订单，将其他订单的商品移动到主订单
+    const mergedOrderIds = orders.slice(1).map((o) => o.id);
+
+    // 他注文の商品をマスターに紐付け変更 / 将其他订单的商品关联到主订单
+    for (const mergedId of mergedOrderIds) {
+      await this.db
+        .update(shipmentOrderProducts)
+        .set({ shipmentOrderId: master.id })
+        .where(and(
+          eq(shipmentOrderProducts.shipmentOrderId, mergedId),
+          eq(shipmentOrderProducts.tenantId, tenantId),
+        ));
+    }
+
+    // 統合された注文を論理削除 / 软删除被合并的订单
+    const now = new Date();
+    await this.db
+      .update(shipmentOrders)
+      .set({ deletedAt: now, updatedAt: now })
+      .where(and(
+        inArray(shipmentOrders.id, mergedOrderIds),
+        eq(shipmentOrders.tenantId, tenantId),
+      ));
+
+    return {
+      masterOrderId: master.id,
+      mergedCount: mergedOrderIds.length,
+      mergedOrderIds,
+    };
+  }
+
+  // ============================================
+  // 出荷検品取消 / 出货检品取消
+  // ============================================
+
+  // 検品ステータスをリセット（出荷前のみ許可）
+  // 重置检品状态（仅在出货前允许）
+  async cancelInspection(tenantId: string, orderId: string) {
+    const order = await this.findById(tenantId, orderId);
+
+    // 出荷済みの場合は取消不可 / 已出货时不允许取消
+    if (order.statusShipped) {
+      throw new WmsException('SHIP_INVALID_STATUS', 'Cannot cancel inspection after shipment / 出荷後の検品取消は不可 / 出货后不能取消检品');
+    }
+
+    // 検品ステータスが未設定の場合 / 检品状态未设置时
+    if (!order.statusInspected) {
+      throw new WmsException('SHIP_INVALID_STATUS', 'Order is not inspected / 未検品の注文です / 订单未检品');
+    }
+
+    const rows = await this.db
+      .update(shipmentOrders)
+      .set({
+        statusInspected: false,
+        statusInspectedAt: null,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(shipmentOrders.id, orderId), eq(shipmentOrders.tenantId, tenantId)))
       .returning();
 
     return rows[0];

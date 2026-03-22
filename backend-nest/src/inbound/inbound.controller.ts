@@ -35,6 +35,51 @@ export class InboundController {
     });
   }
 
+  // 入庫履歴取得 / 获取入库历史
+  @Get('history')
+  getHistory(
+    @TenantId() tenantId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.inboundService.getHistory(tenantId, {
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
+  }
+
+  // 5. 入庫実績ダウンロード（CSV形式）/ 入库实绩下载（CSV格式）
+  @Get('export')
+  exportResults(
+    @TenantId() tenantId: string,
+    @Query('status') status?: string,
+    @Query('clientId') clientId?: string,
+    @Query('warehouseId') warehouseId?: string,
+  ) {
+    return this.inboundService.exportResults(tenantId, { status, clientId, warehouseId });
+  }
+
+  // 4. 30日自動削除（未処理draftオーダーの論理削除）/ 30天自动删除（未处理draft订单的软删除）
+  @Post('cleanup')
+  cleanupExpiredOrders(@TenantId() tenantId: string) {
+    return this.inboundService.cleanupExpiredOrders(tenantId);
+  }
+
+  // 入庫インポート / 入库导入
+  @Post('import')
+  importOrders(
+    @TenantId() tenantId: string,
+    @Body() body: { orders: Record<string, any>[] },
+  ) {
+    return this.inboundService.importOrders(tenantId, body);
+  }
+
+  // 入庫エクスポート（全オーダー）/ 入库导出（全部订单）
+  @Post('export')
+  exportOrders(@TenantId() tenantId: string) {
+    return this.inboundService.exportOrders(tenantId);
+  }
+
   // 入庫オーダーID検索 / 按ID查找入库订单
   @Get(':id')
   findOne(
@@ -51,6 +96,24 @@ export class InboundController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.inboundService.findLines(tenantId, id);
+  }
+
+  // 1. 入庫差異リスト（差異のある行のみ）/ 入库差异列表（仅有差异的行）
+  @Get(':id/variance')
+  getVariance(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.inboundService.getVarianceReport(tenantId, id);
+  }
+
+  // 2. 入庫チェックリスト（ヘッダー + 明細行 + サマリー）/ 入库检查清单（头 + 明细行 + 汇总）
+  @Get(':id/checklist')
+  getChecklist(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.inboundService.getChecklist(tenantId, id);
   }
 
   // 入庫オーダー作成 / 创建入库订单
@@ -90,7 +153,7 @@ export class InboundController {
     return this.inboundService.receive(tenantId, id);
   }
 
-  // 入庫オーダー完了（receiving → done）/ 入库订单完成（receiving → done）
+  // 3. 入庫オーダー完了（receiving → done、在庫自動更新含む）/ 入库订单完成（receiving → done，含自动库存更新）
   @Post(':id/complete')
   complete(
     @TenantId() tenantId: string,
@@ -126,43 +189,6 @@ export class InboundController {
     @Body() body: Record<string, unknown>,
   ) {
     return this.inboundService.putaway(tenantId, id, body);
-  }
-
-  // 入庫オーダー差異取得 / 获取入库订单差异
-  @Get(':id/variance')
-  getVariance(
-    @TenantId() tenantId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
-    return this.inboundService.getVariance(tenantId, id);
-  }
-
-  // 入庫履歴取得 / 获取入库历史
-  @Get('history')
-  getHistory(
-    @TenantId() tenantId: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.inboundService.getHistory(tenantId, {
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
-    });
-  }
-
-  // 入庫インポート / 入库导入
-  @Post('import')
-  importOrders(
-    @TenantId() tenantId: string,
-    @Body() body: { orders: Record<string, any>[] },
-  ) {
-    return this.inboundService.importOrders(tenantId, body);
-  }
-
-  // 入庫エクスポート / 入库导出
-  @Post('export')
-  exportOrders(@TenantId() tenantId: string) {
-    return this.inboundService.exportOrders(tenantId);
   }
 
   // 入庫オーダー削除（論理削除）/ 删除入库订单（软删除）

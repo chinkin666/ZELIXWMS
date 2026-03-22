@@ -1,5 +1,5 @@
 // ダッシュボードコントローラ / 仪表盘控制器
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { KpiService } from './kpi.service.js';
 

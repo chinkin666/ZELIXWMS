@@ -8,10 +8,20 @@ export class StocktakingOrdersController {
   constructor(private readonly stocktakingOrdersService: StocktakingOrdersService) {}
 
   @Get()
-  findAll(@TenantId() tenantId: string, @Query('page') page?: string, @Query('limit') limit?: string) {
+  findAll(
+    @TenantId() tenantId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('type') type?: string,
+    @Query('stocktakingCategory') stocktakingCategory?: string,
+  ) {
     return this.stocktakingOrdersService.findAll(tenantId, {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
+      status,
+      type,
+      stocktakingCategory,
     });
   }
 
@@ -41,7 +51,25 @@ export class StocktakingOrdersController {
     return this.stocktakingOrdersService.registerCount(tenantId, id, body);
   }
 
-  // 完了 / 完成
+  // 棚卸進捗ダッシュボード / 盘点进度看板
+  @Get(':id/progress')
+  getProgress(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string) {
+    return this.stocktakingOrdersService.getProgress(tenantId, id);
+  }
+
+  // 許容誤差チェック / 容差检查
+  @Get(':id/tolerance-check')
+  checkTolerance(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string) {
+    return this.stocktakingOrdersService.checkTolerance(tenantId, id);
+  }
+
+  // 棚卸明細行自動生成 / 自动生成盘点明细行
+  @Post(':id/generate-lines')
+  generateLines(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string) {
+    return this.stocktakingOrdersService.generateLines(tenantId, id);
+  }
+
+  // 完了（確定 + 在庫調整）/ 完成（确定 + 库存调整）
   @Post(':id/complete')
   complete(@TenantId() tenantId: string, @Param('id', ParseUUIDPipe) id: string) {
     return this.stocktakingOrdersService.complete(tenantId, id);

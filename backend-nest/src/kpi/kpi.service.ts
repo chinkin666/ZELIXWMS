@@ -2,8 +2,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE } from '../database/database.module.js';
 import type { DrizzleDB } from '../database/database.types.js';
-import { sql, count, eq, and, gte, lte, sum } from 'drizzle-orm';
-import { shipmentOrders } from '../database/schema/shipments.js';
+import { sql, count, eq, and, gte, lte, sum, desc } from 'drizzle-orm';
+import { shipmentOrders, shipmentOrderProducts } from '../database/schema/shipments.js';
 import { inboundOrders } from '../database/schema/inbound.js';
 import { stockQuants } from '../database/schema/inventory.js';
 import { products } from '../database/schema/products.js';
@@ -54,6 +54,31 @@ export interface InventoryMetrics {
 export interface PerformanceMetrics {
   fulfillmentRate: number;
   averageProcessingHours: number | null;
+}
+
+// ABC分析結果 / ABC分析结果
+export interface AbcAnalysisResult {
+  period: number;
+  totalVolume: number;
+  products: Array<{
+    productId: string | null;
+    productSku: string | null;
+    totalShipped: number;
+    rank: number;
+    classification: 'A' | 'B' | 'C';
+  }>;
+}
+
+// 在庫回転率結果 / 库存周转率结果
+export interface InventoryTurnoverResult {
+  period: number;
+  products: Array<{
+    productId: string | null;
+    productSku: string | null;
+    totalOutbound: number;
+    avgInventory: number;
+    turnoverRate: number;
+  }>;
 }
 
 // 低在庫アラート / 低库存警报
@@ -363,6 +388,125 @@ export class KpiService {
   async getFulfillmentRate(tenantId: string): Promise<{ rate: number }> {
     const metrics = await this.getPerformanceMetrics(tenantId);
     return { rate: metrics.fulfillmentRate };
+  }
+
+  // ============================================
+  // ABC分析 / ABC分析
+  // ============================================
+
+  // 商品をABC分類（出荷数量ベース）/ 基于出货数量对商品进行ABC分类
+  async getAbcAnalysis(tenantId: string, period?: number): Promise<AbcAnalysisResult> {
+    const days = period ?? 90;
+    const dateFrom = new Date();
+    dateFrom.setDate(dateFrom.getDate() - days);
+
+    // 出荷済み注文の商品別出荷数を集計 / 汇总已出货订单的各商品出货数
+    const rows = await this.db
+      .select({
+        productId: shipmentOrderProducts.productId,
+        productSku: shipmentOrderProducts.productSku,
+        totalShipped: sum(shipmentOrderProducts.quantity),
+      })
+      .from(shipmentOrderProducts)
+      .innerJoin(shipmentOrders, eq(shipmentOrders.id, shipmentOrderProducts.shipmentOrderId))
+      .where(and(
+        eq(shipmentOrderProducts.tenantId, tenantId),
+        eq(shipmentOrders.statusShipped, true),
+        gte(shipmentOrders.statusShippedAt, dateFrom),
+        sql`${shipmentOrders.deletedAt} IS NULL`,
+      ))
+      .groupBy(shipmentOrderProducts.productId, shipmentOrderProducts.productSku)
+      .orderBy(desc(sum(shipmentOrderProducts.quantity)));
+
+    // 累積比率でABC分類 / 按累计比率进行ABC分类
+    const totalVolume = rows.reduce((acc, r) => acc + Number(r.totalShipped ?? 0), 0);
+    let cumulative = 0;
+
+    const classified = rows.map((row, index) => {
+      const shipped = Number(row.totalShipped ?? 0);
+      cumulative += shipped;
+      const cumulativePercent = totalVolume > 0 ? (cumulative / totalVolume) * 100 : 0;
+
+      // 上位20% = A, 次の30% = B, 残り50% = C / 前20% = A, 接下来30% = B, 剩余50% = C
+      let classification: 'A' | 'B' | 'C';
+      if (cumulativePercent <= 20) {
+        classification = 'A';
+      } else if (cumulativePercent <= 50) {
+        classification = 'B';
+      } else {
+        classification = 'C';
+      }
+
+      return {
+        productId: row.productId,
+        productSku: row.productSku,
+        totalShipped: shipped,
+        rank: index + 1,
+        classification,
+      };
+    });
+
+    return { period: days, totalVolume, products: classified };
+  }
+
+  // ============================================
+  // 在庫回転率 / 库存周转率
+  // ============================================
+
+  // 商品別在庫回転率（出荷数量 / 平均在庫数量）
+  // 各商品库存周转率（出货数量 / 平均库存数量）
+  async getInventoryTurnover(tenantId: string, period?: number): Promise<InventoryTurnoverResult> {
+    const days = period ?? 90;
+    const dateFrom = new Date();
+    dateFrom.setDate(dateFrom.getDate() - days);
+
+    // 出荷数量の集計 / 出货数量汇总
+    const shippedRows = await this.db
+      .select({
+        productId: shipmentOrderProducts.productId,
+        productSku: shipmentOrderProducts.productSku,
+        totalOutbound: sum(shipmentOrderProducts.quantity),
+      })
+      .from(shipmentOrderProducts)
+      .innerJoin(shipmentOrders, eq(shipmentOrders.id, shipmentOrderProducts.shipmentOrderId))
+      .where(and(
+        eq(shipmentOrderProducts.tenantId, tenantId),
+        eq(shipmentOrders.statusShipped, true),
+        gte(shipmentOrders.statusShippedAt, dateFrom),
+        sql`${shipmentOrders.deletedAt} IS NULL`,
+      ))
+      .groupBy(shipmentOrderProducts.productId, shipmentOrderProducts.productSku);
+
+    // 現在の在庫数量（平均在庫の近似値として使用）/ 当前库存数量（作为平均库存的近似值）
+    const stockRows = await this.db
+      .select({
+        productId: stockQuants.productId,
+        avgInventory: sum(stockQuants.quantity),
+      })
+      .from(stockQuants)
+      .where(eq(stockQuants.tenantId, tenantId))
+      .groupBy(stockQuants.productId);
+
+    // 在庫マップ構築 / 构建库存映射
+    const stockMap = new Map(stockRows.map((r) => [r.productId, Number(r.avgInventory ?? 0)]));
+
+    // 回転率計算 / 计算周转率
+    const productsList = shippedRows.map((row) => {
+      const totalOutbound = Number(row.totalOutbound ?? 0);
+      const avgInventory = stockMap.get(row.productId ?? '') ?? 0;
+      // 回転率 = 出荷数 / 平均在庫（0除算防止）/ 周转率 = 出货数 / 平均库存（防止除零）
+      const turnoverRate = avgInventory > 0 ? Math.round((totalOutbound / avgInventory) * 100) / 100 : 0;
+
+      return {
+        productId: row.productId,
+        productSku: row.productSku,
+        totalOutbound,
+        avgInventory,
+        turnoverRate,
+      };
+    });
+
+    return { period: days, products: productsList };
   }
 
   // スループット（直近30日の1日あたり出荷数）/ 吞吐量（最近30天每日出货数）
