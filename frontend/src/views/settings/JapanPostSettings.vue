@@ -98,7 +98,7 @@ const form = ref({
 
 async function checkPlugin() {
   try {
-    const res = await fetch(`${getApiBaseUrl()}/api/japan-post/invoice-types`)
+    const res = await fetch(`${getApiBaseUrl()}/japan-post/invoice-types`)
     if (res.ok) {
       pluginRunning.value = true
       pluginVersion.value = ''
@@ -119,7 +119,7 @@ async function loadConfig() {
 async function handleSave() {
   saving.value = true
   try {
-    const res = await fetch(`${getApiBaseUrl()}/api/japan-post/config`, {
+    const res = await fetch(`${getApiBaseUrl()}/japan-post/config`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -77,6 +77,8 @@ import { AssemblyOrdersModule } from './assembly-orders/assembly-orders.module.j
 import { GiftOptionsModule } from './gift-options/gift-options.module.js';
 import { StocktakingDiscrepanciesModule } from './stocktaking-discrepancies/stocktaking-discrepancies.module.js';
 import { HandlingLabelTypesModule } from './handling-label-types/handling-label-types.module.js';
+import { SystemSettingsModule } from './system-settings/system-settings.module.js';
+import { UsersModule } from './users/users.module.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter.js';
 import envConfig from './config/env.js';
@@ -157,6 +159,8 @@ import envConfig from './config/env.js';
     GiftOptionsModule,
     StocktakingDiscrepanciesModule,
     HandlingLabelTypesModule,
+    SystemSettingsModule,
+    UsersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },

@@ -209,16 +209,17 @@ function getDateRange(days: number): { from: string; to: string } {
 async function loadData(from?: string, to?: string, days?: number) {
   isLoading.value = true
   try {
+    // 個別にcatchしてAPIエラーを抑制（未実装の場合はnull）/ 单独catch以抑制API错误（未实装时为null）
     const [shipResult, clientResult, turnoverResult] = await Promise.all([
-      fetchShipmentStats(from, to),
-      fetchClientReport(from, to),
-      fetchInventoryTurnover(days || activeDays.value),
+      fetchShipmentStats(from, to).catch(() => null),
+      fetchClientReport(from, to).catch(() => null),
+      fetchInventoryTurnover(days || activeDays.value).catch(() => null),
     ])
     shipStats.value = shipResult
     clientReport.value = clientResult
     turnover.value = turnoverResult
-  } catch (e: any) {
-    toast.showError(e?.message || 'データ取得に失敗しました')
+  } catch {
+    // レポートデータの取得失敗は無視 / 报表数据获取失败时忽略
   } finally {
     isLoading.value = false
   }

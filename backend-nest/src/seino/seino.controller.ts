@@ -1,11 +1,24 @@
 // 西濃運輸コントローラ / 西浓运输控制器
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body } from '@nestjs/common';
 import { SeinoService } from './seino.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 
 @Controller('api/seino')
 export class SeinoController {
   constructor(private readonly seinoService: SeinoService) {}
+
+  // プラグイン設定取得 / 获取插件配置
+  @Get('config')
+  getConfig() {
+    return { defaultInvoiceType: '1', defaultWeight: '' };
+  }
+
+  // プラグイン設定保存 / 保存插件配置
+  @Put('config')
+  saveConfig(@Body() _dto: Record<string, any>) {
+    // 将来的にDB保存を実装 / 将来实装DB保存
+    return { message: '設定を保存しました / 设置已保存' };
+  }
 
   // CSV エクスポート（西濃フォーマット） / CSV导出（西浓格式）
   @Post('export')

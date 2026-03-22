@@ -1,11 +1,24 @@
 // 佐川急便コントローラ / 佐川急便控制器
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body } from '@nestjs/common';
 import { SagawaService } from './sagawa.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 
 @Controller('api/sagawa')
 export class SagawaController {
   constructor(private readonly sagawaService: SagawaService) {}
+
+  // プラグイン設定取得 / 获取插件配置
+  @Get('config')
+  getConfig() {
+    return { billingCode: '', defaultInvoiceType: '0', defaultSize: '80' };
+  }
+
+  // プラグイン設定保存 / 保存插件配置
+  @Put('config')
+  saveConfig(@Body() _dto: Record<string, any>) {
+    // 将来的にDB保存を実装 / 将来实装DB保存
+    return { message: '設定を保存しました / 设置已保存' };
+  }
 
   // CSV エクスポート（佐川フォーマット） / CSV导出（佐川格式）
   @Post('export')

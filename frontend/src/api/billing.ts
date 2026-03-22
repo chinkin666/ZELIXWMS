@@ -77,7 +77,8 @@ export interface BillingDashboardKpi {
 // ── 月次請求API / 月次請求API ──
 // 後端: /api/billing/*
 export async function generateMonthlyBilling(period: string): Promise<BillingRecord> {
-  const response = await apiFetch(`${API_BASE_URL}/billing/generate`, {
+  // バックエンドは /billing/generate-monthly を使用 / 后端使用 /billing/generate-monthly
+  const response = await apiFetch(`${API_BASE_URL}/billing/generate-monthly`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ period }),
@@ -95,7 +96,8 @@ export async function fetchBillingRecords(params?: {
   page?: number
   limit?: number
 }): Promise<{ data: BillingRecord[]; total: number }> {
-  const url = new URL(`${API_BASE_URL}/billing`)
+  // バックエンドは /billing/records を使用 / 后端使用 /billing/records
+  const url = new URL(`${API_BASE_URL}/billing/records`)
   if (params) {
     if (params.period) url.searchParams.append('period', params.period)
     if (params.status) url.searchParams.append('status', params.status)

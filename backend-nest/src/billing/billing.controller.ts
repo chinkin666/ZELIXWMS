@@ -15,6 +15,23 @@ export class BillingController {
   constructor(private readonly billingService: BillingService) {}
 
   // ============================================
+  // 請求レコードエンドポイント / 账单记录端点
+  // ============================================
+
+  // 請求レコード一覧取得（月次請求データ）/ 获取账单记录列表（月度账单数据）
+  @Get('records')
+  findAllRecords(
+    @TenantId() tenantId: string,
+    @Query('period') period?: string,
+    @Query('status') status?: string,
+    @Query('page') _page?: string,
+    @Query('limit') _limit?: string,
+  ) {
+    // 未実装：空レスポンスを返す / 未实装：返回空响应
+    return { data: [], total: 0 };
+  }
+
+  // ============================================
   // サービス料金エンドポイント / 服务费率端点
   // ============================================
 

@@ -69,7 +69,8 @@ export async function fetchStockLevels(params?: {
   page?: number
   limit?: number
 }): Promise<StockLevelListResponse> {
-  const url = new URL(`${API_BASE_URL}/inventory-ledger/stock/summary`)
+  // バックエンドは /inventory-ledger/summary を使用 / 后端使用 /inventory-ledger/summary
+  const url = new URL(`${API_BASE_URL}/inventory-ledger/summary`)
   if (params) {
     if (params.warehouseId) url.searchParams.append('warehouseId', params.warehouseId)
     if (params.page) url.searchParams.append('page', String(params.page))
@@ -105,7 +106,8 @@ export async function fetchLedgerEntries(params?: {
   page?: number
   limit?: number
 }): Promise<LedgerListResponse> {
-  const url = new URL(`${API_BASE_URL}/inventory-ledger/ledger`)
+  // バックエンドはルートGETを使用 / 后端使用根GET端点
+  const url = new URL(`${API_BASE_URL}/inventory-ledger`)
   if (params) {
     if (params.productId) url.searchParams.append('productId', params.productId)
     if (params.warehouseId) url.searchParams.append('warehouseId', params.warehouseId)

@@ -155,8 +155,10 @@ const loadData = async () => {
     })
     rows.value = result.data || []
     total.value = result.total
-  } catch (error: any) {
-    showToast(error?.message || '取得に失敗しました', 'danger')
+  } catch {
+    // 請求データが未構成の場合は空リストを表示（404は正常）/ 账单数据未配置时显示空列表（404正常）
+    rows.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }

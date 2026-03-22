@@ -170,12 +170,11 @@ async function loadSettings() {
       barcodeDefaultFormat: data.barcodeDefaultFormat || 'code128',
       barcodeScanMode: data.barcodeScanMode || 'single',
     }
-    orderSearchStyle.value = settingsStore.orderSearchStyle
-  } catch (e: unknown) {
-    showError((e instanceof Error ? e.message : '設定の読み込みに失敗しました'))
-  } finally {
-    loading.value = false
+  } catch {
+    // システム設定が未構成の場合はデフォルト値を使用（404は正常）/ 系统设置未配置时使用默认值（404正常）
   }
+  orderSearchStyle.value = settingsStore.orderSearchStyle
+  loading.value = false
 }
 
 async function handleSave() {

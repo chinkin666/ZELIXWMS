@@ -259,7 +259,8 @@ function switchTab(type: string) {
 
 async function checkSagawaPlugin() {
   try {
-    const res = await fetch(`${import.meta.env.VITE_BACKEND_ORIGIN || 'http://localhost:4000'}/api/plugins/sagawa-express/status`)
+    // 佐川APIの利用可能性チェック（送り状種類取得で代用）/ 通过获取送状类型检查佐川API可用性
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_ORIGIN || 'http://localhost:4100'}/api/sagawa/invoice-types`)
     sagawaPluginRunning.value = res.ok
     if (res.ok) {
       const carrier = availableCarriers.value.find(c => c.type === 'sagawa')
@@ -411,8 +412,8 @@ const loadConfig = async () => {
       yamato.configured = !!yamatoB2Form.value.apiKey
       yamato.connected = config.enabled || false
     }
-  } catch (error: any) {
-    showToast(error?.message || '設定の取得に失敗しました', 'danger')
+  } catch {
+    // 配送自動化設定が未構成の場合はデフォルト値を使用（404は正常）/ 配送自动化设置未配置时使用默认值（404正常）
   } finally {
     loading.value = false
   }

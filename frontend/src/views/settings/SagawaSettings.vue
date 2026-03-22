@@ -106,11 +106,11 @@ const form = ref({
 
 async function checkPlugin() {
   try {
-    const res = await fetch(`${getApiBaseUrl()}/plugins/sagawa-express/status`)
+    // 佐川APIの利用可能性チェック（送り状種類取得で代用）/ 通过获取送状类型检查佐川API可用性
+    const res = await fetch(`${getApiBaseUrl()}/sagawa/invoice-types`)
     if (res.ok) {
-      const data = await res.json()
       pluginRunning.value = true
-      pluginVersion.value = data.version || ''
+      pluginVersion.value = ''
     }
   } catch { pluginRunning.value = false }
 }

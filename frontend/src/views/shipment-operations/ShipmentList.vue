@@ -655,9 +655,12 @@ const loadPrintTemplates = async () => {
     const templates = await fetchPrintTemplates()
     printTemplatesCache.value = templates
     localStorage.setItem('allPrintTemplatesCache', JSON.stringify(templates))
-  } catch (e) {
-    // 印刷テンプレート読み込み失敗 / Failed to load print templates
-    showToast('印刷テンプレートの読み込みに失敗しました', 'danger')
+  } catch {
+    // 印刷テンプレート読み込み失敗は無視（キャッシュを使用）/ 加载印刷模板失败时忽略（使用缓存）
+    try {
+      const cached = localStorage.getItem('allPrintTemplatesCache')
+      if (cached) printTemplatesCache.value = JSON.parse(cached)
+    } catch { /* ignore */ }
   }
 }
 

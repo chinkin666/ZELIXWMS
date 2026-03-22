@@ -9,8 +9,8 @@ import { getApiBaseUrl } from '@/api/base'
 import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
-// 插件 API 路径 / プラグイン API パス
-const SAGAWA_API = `${API_BASE_URL}/plugins/sagawa-express`
+// NestJS API パス（プラグインから移行済み）/ NestJS API 路径（已从插件迁移）
+const SAGAWA_API = `${API_BASE_URL}/sagawa`
 
 /** 佐川送り状種類 / 佐川送り状種類 */
 export interface SagawaInvoiceType {

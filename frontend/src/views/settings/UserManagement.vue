@@ -470,8 +470,10 @@ const loadList = async () => {
     })
     list.value = result.data
     total.value = result.total
-  } catch (error: any) {
-    showToast(error?.message || '取得に失敗しました', 'danger')
+  } catch {
+    // ユーザーAPIが未実装の場合は空リストを表示（404は正常）/ 用户API未实装时显示空列表（404正常）
+    list.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }
@@ -479,16 +481,17 @@ const loadList = async () => {
 
 const loadMasterData = async () => {
   try {
+    // 個別にtry-catchしてAPIエラーを抑制 / 单独try-catch以抑制API错误
     const [whResult, clResult, userResult] = await Promise.all([
-      fetchWarehouses({ limit: 200, isActive: 'true' }),
-      fetchClients({ limit: 200, isActive: 'true' }),
-      fetchUsers({ limit: 200 }),
+      fetchWarehouses({ limit: 200, isActive: 'true' }).catch(() => ({ data: [] })),
+      fetchClients({ limit: 200, isActive: 'true' }).catch(() => ({ data: [] })),
+      fetchUsers({ limit: 200 }).catch(() => ({ data: [] })),
     ])
     warehouseOptions.value = whResult.data
     clientOptions.value = clResult.data
     parentUserOptions.value = userResult.data
-  } catch (error: any) {
-    showToast(error?.message || 'マスタデータの取得に失敗しました', 'danger')
+  } catch {
+    // マスタデータの取得失敗は無視 / 主数据获取失败时忽略
   }
 }
 

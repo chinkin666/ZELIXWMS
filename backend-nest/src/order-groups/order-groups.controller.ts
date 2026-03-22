@@ -15,6 +15,19 @@ export class OrderGroupsController {
     return this.orderGroupsService.assignOrdersToGroups(tenantId);
   }
 
+  // グループ別注文数取得 / 获取各分组订单数
+  // NOTE: :id ルートより先に配置 / 注意: 必须在 :id 路由之前
+  @Get('counts')
+  getCounts(@TenantId() tenantId: string) {
+    return this.orderGroupsService.getCounts(tenantId);
+  }
+
+  // 並び替え / 排序
+  @Post('reorder')
+  reorder(@TenantId() tenantId: string, @Body() body: { orderedIds: string[] }) {
+    return this.orderGroupsService.reorder(tenantId, body.orderedIds);
+  }
+
   // 一覧取得 / 获取列表
   @Get()
   findAll(

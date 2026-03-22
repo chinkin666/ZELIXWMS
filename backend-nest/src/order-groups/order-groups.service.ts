@@ -37,6 +37,68 @@ export class OrderGroupsService {
 
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
+  // グループ別注文数取得 / 获取各分组订单数
+  async getCounts(tenantId: string) {
+    const groups = await this.db
+      .select({
+        id: orderGroups.id,
+        name: orderGroups.name,
+      })
+      .from(orderGroups)
+      .where(eq(orderGroups.tenantId, tenantId));
+
+    const counts: Record<string, number> = {};
+    let uncategorized = 0;
+
+    // 各グループの注文数を取得 / 获取各分组的订单数
+    for (const group of groups) {
+      const result = await this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(shipmentOrders)
+        .where(
+          and(
+            eq(shipmentOrders.tenantId, tenantId),
+            eq(shipmentOrders.orderGroupId, group.id),
+            isNull(shipmentOrders.deletedAt),
+          ),
+        );
+      counts[group.id] = result[0]?.count ?? 0;
+    }
+
+    // 未分類の注文数 / 未分类的订单数
+    const uncatResult = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(shipmentOrders)
+      .where(
+        and(
+          eq(shipmentOrders.tenantId, tenantId),
+          isNull(shipmentOrders.orderGroupId),
+          isNull(shipmentOrders.deletedAt),
+        ),
+      );
+    uncategorized = uncatResult[0]?.count ?? 0;
+
+    const total = Object.values(counts).reduce((a, b) => a + b, 0) + uncategorized;
+
+    return { total, groups: counts, uncategorized };
+  }
+
+  // 並び替え / 排序
+  async reorder(tenantId: string, orderedIds: string[]) {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await this.db
+        .update(orderGroups)
+        .set({ priority: i + 1 })
+        .where(
+          and(
+            eq(orderGroups.tenantId, tenantId),
+            eq(orderGroups.id, orderedIds[i]),
+          ),
+        );
+    }
+    return { message: '並び替えを保存しました / 排序已保存' };
+  }
+
   // オーダーグループ一覧取得 / 获取订单分组列表
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);

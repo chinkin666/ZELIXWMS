@@ -79,35 +79,36 @@ export function fetchFbaPlans(params?: FbaPlansParams): Promise<FbaPlansResponse
   if (params?.status) query.status = params.status
   if (params?.page) query.page = String(params.page)
   if (params?.limit) query.limit = String(params.limit)
-  return http.get<FbaPlansResponse>('/fba/plans', Object.keys(query).length > 0 ? query : undefined)
+  // バックエンドは /fba/shipment-plans を使用 / 后端使用 /fba/shipment-plans
+  return http.get<FbaPlansResponse>('/fba/shipment-plans', Object.keys(query).length > 0 ? query : undefined)
 }
 
 /** FBAプランを作成 / 创建FBA计划 */
 export function createFbaPlan(payload: UpsertFbaPlanDto): Promise<FbaShipmentPlan> {
-  return http.post<FbaShipmentPlan>('/fba/plans', payload)
+  return http.post<FbaShipmentPlan>('/fba/shipment-plans', payload)
 }
 
 /** FBAプランを取得 / 获取FBA计划 */
 export function getFbaPlan(id: string): Promise<FbaShipmentPlan> {
-  return http.get<FbaShipmentPlan>(`/fba/plans/${id}`)
+  return http.get<FbaShipmentPlan>(`/fba/shipment-plans/${id}`)
 }
 
 /** FBAプランを更新 / 更新FBA计划 */
 export function updateFbaPlan(id: string, payload: UpsertFbaPlanDto): Promise<FbaShipmentPlan> {
-  return http.put<FbaShipmentPlan>(`/fba/plans/${id}`, payload)
+  return http.put<FbaShipmentPlan>(`/fba/shipment-plans/${id}`, payload)
 }
 
 /** FBAプランを確定 / 确认FBA计划 */
 export function confirmFbaPlan(id: string): Promise<FbaShipmentPlan> {
-  return http.post<FbaShipmentPlan>(`/fba/plans/${id}/confirm`)
+  return http.post<FbaShipmentPlan>(`/fba/shipment-plans/${id}/confirm`)
 }
 
 /** FBAプランを出荷 / 出货FBA计划 */
 export function shipFbaPlan(id: string, payload?: { trackingNumber?: string; boxCount?: number }): Promise<FbaShipmentPlan> {
-  return http.post<FbaShipmentPlan>(`/fba/plans/${id}/ship`, payload)
+  return http.post<FbaShipmentPlan>(`/fba/shipment-plans/${id}/ship`, payload)
 }
 
 /** FBAプランを削除 / 删除FBA计划 */
 export function deleteFbaPlan(id: string): Promise<void> {
-  return http.delete<void>(`/fba/plans/${id}`)
+  return http.delete<void>(`/fba/shipment-plans/${id}`)
 }

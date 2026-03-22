@@ -97,7 +97,7 @@ const form = ref({
 
 async function checkPlugin() {
   try {
-    const res = await fetch(`${getApiBaseUrl()}/api/seino/invoice-types`)
+    const res = await fetch(`${getApiBaseUrl()}/seino/invoice-types`)
     if (res.ok) {
       pluginRunning.value = true
       pluginVersion.value = ''
@@ -118,7 +118,7 @@ async function loadConfig() {
 async function handleSave() {
   saving.value = true
   try {
-    const res = await fetch(`${getApiBaseUrl()}/api/seino/config`, {
+    const res = await fetch(`${getApiBaseUrl()}/seino/config`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

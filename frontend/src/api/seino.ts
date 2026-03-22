@@ -10,7 +10,9 @@ import { apiFetch } from '@/api/http'
 
 const API_BASE_URL = getApiBaseUrl()
 // API パス / API 路径
-const SEINO_API = `${API_BASE_URL}/api/seino`
+// NOTE: API_BASE_URL already includes /api prefix, so no need to add /api again
+// 注意: API_BASE_URL 已包含 /api 前缀，无需再次添加
+const SEINO_API = `${API_BASE_URL}/seino`
 
 /** 西濃送り状種類 / 西浓送状类型 */
 export interface SeinoInvoiceType {

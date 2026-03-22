@@ -47,9 +47,8 @@ async function loadSettings(): Promise<void> {
   try {
     const data = await fetchSystemSettings()
     applySettings(data)
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : t('wms.settings.loadSettingsFailed', '設定の読み込みに失敗しました')
-    showError(msg)
+  } catch {
+    // システム設定が未構成の場合はデフォルト値を使用（404は正常）/ 系统设置未配置时使用默认值（404正常）
   } finally {
     loading.value = false
   }

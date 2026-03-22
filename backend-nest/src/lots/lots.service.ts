@@ -1,9 +1,10 @@
 // ロットサービス / 批次服务
 import { Inject, Injectable } from '@nestjs/common';
 import { WmsException } from '../common/exceptions/wms.exception.js';
-import { eq, and, ilike, sql } from 'drizzle-orm';
+import { eq, and, ilike, sql, lte, isNotNull } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { lots } from '../database/schema/inventory.js';
+import { products } from '../database/schema/products.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 import type { DrizzleDB } from '../database/database.types.js';
 
@@ -86,5 +87,71 @@ export class LotsService {
       .where(and(eq(lots.id, id), eq(lots.tenantId, tenantId)))
       .returning();
     return rows[0];
+  }
+
+  // 賞味期限アラート取得 / 获取保质期预警
+  async getExpiryAlerts(tenantId: string, daysAhead: number = 30) {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + daysAhead);
+
+    const rows = await this.db
+      .select({
+        lotId: lots.id,
+        lotNumber: lots.lotNumber,
+        productId: lots.productId,
+        productSku: products.sku,
+        productName: products.name,
+        expiryDate: lots.expiryDate,
+      })
+      .from(lots)
+      .innerJoin(products, eq(lots.productId, products.id))
+      .where(
+        and(
+          eq(lots.tenantId, tenantId),
+          isNotNull(lots.expiryDate),
+          lte(lots.expiryDate, futureDate),
+        ),
+      )
+      .orderBy(lots.expiryDate);
+
+    const now = new Date();
+    const alerts = rows.map((row) => {
+      const expiry = row.expiryDate ? new Date(row.expiryDate) : null;
+      const daysUntilExpiry = expiry
+        ? Math.ceil((expiry.getTime() - now.getTime()) / 86400000)
+        : null;
+      const isExpired = daysUntilExpiry !== null && daysUntilExpiry < 0;
+
+      return {
+        lotId: row.lotId,
+        lotNumber: row.lotNumber,
+        productId: row.productId,
+        productSku: row.productSku,
+        productName: row.productName,
+        expiryDate: row.expiryDate?.toISOString() ?? null,
+        daysUntilExpiry,
+        isExpired,
+      };
+    });
+
+    return { alerts, daysAhead };
+  }
+
+  // 期限切れロット一括更新 / 批量更新过期批次
+  async updateExpiredLots(tenantId: string) {
+    const now = new Date();
+    // 期限切れロットを取得 / 获取过期批次
+    const expiredLots = await this.db
+      .select({ id: lots.id })
+      .from(lots)
+      .where(
+        and(
+          eq(lots.tenantId, tenantId),
+          isNotNull(lots.expiryDate),
+          lte(lots.expiryDate, now),
+        ),
+      );
+
+    return { message: `${expiredLots.length}件の期限切れロットを確認しました`, modifiedCount: expiredLots.length };
   }
 }

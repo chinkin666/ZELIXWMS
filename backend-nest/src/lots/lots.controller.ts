@@ -7,6 +7,22 @@ import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 export class LotsController {
   constructor(private readonly lotsService: LotsService) {}
 
+  // 賞味期限アラート取得 / 获取保质期预警
+  // NOTE: :id ルートより先に配置 / 注意: 必须在 :id 路由之前
+  @Get('expiry-alerts')
+  getExpiryAlerts(
+    @TenantId() tenantId: string,
+    @Query('daysAhead') daysAhead?: string,
+  ) {
+    return this.lotsService.getExpiryAlerts(tenantId, daysAhead ? parseInt(daysAhead, 10) : 30);
+  }
+
+  // 期限切れロット一括更新 / 批量更新过期批次
+  @Post('update-expired')
+  updateExpired(@TenantId() tenantId: string) {
+    return this.lotsService.updateExpiredLots(tenantId);
+  }
+
   // ロット一覧取得 / 获取批次列表
   @Get()
   findAll(
