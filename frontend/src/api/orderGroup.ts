@@ -1,4 +1,4 @@
-import type { OrderGroup, OrderGroupFormData } from '@/types/orderGroup'
+import type { OrderGroup, OrderGroupFormData, AutoAssignResult } from '@/types/orderGroup'
 import { getApiBaseUrl } from '@/api/base'
 import { apiFetch } from '@/api/http'
 
@@ -86,6 +86,20 @@ export async function fetchOrderGroupCounts(): Promise<OrderGroupCounts> {
   const response = await apiFetch(`${API_BASE_URL}/order-groups/counts`)
   if (!response.ok) {
     throw new Error('カウントの取得に失敗しました')
+  }
+  return response.json()
+}
+
+/**
+ * 自動振り分け実行 / 执行自动分配
+ */
+export async function autoAssignOrderGroups(): Promise<AutoAssignResult[]> {
+  const response = await apiFetch(`${API_BASE_URL}/order-groups/auto-assign`, {
+    method: 'POST',
+  })
+  if (!response.ok) {
+    const json = await response.json().catch(() => ({}))
+    throw new Error(json?.message || '自動振り分けに失敗しました / 自动分配失败')
   }
   return response.json()
 }

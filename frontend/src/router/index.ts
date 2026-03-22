@@ -245,6 +245,13 @@ const router = createRouter({
               component: () => import('@/views/shipment-operations/TrackingManagement.vue'),
               meta: { title: '伝票管理', requiresAuth: true },
             },
+            // 出荷停止 / 出货停止
+            {
+              path: 'stop',
+              name: 'ShipmentStop',
+              component: () => import('@/views/shipment-operations/ShipmentStop.vue'),
+              meta: { title: '出荷停止', requiresAuth: true },
+            },
             // 出荷注文スキャン / 出货订单扫描
             {
               path: 'operations/scan',
@@ -258,6 +265,13 @@ const router = createRouter({
               name: 'ShipmentOrderHistory',
               component: () => import('@/views/shipment-orders/ShipmentOrderHistory.vue'),
               meta: { title: '出荷取込履歴', requiresAuth: true },
+            },
+            // 送り状再発行 / 运单重新发行
+            {
+              path: 'label-reissue',
+              name: 'LabelReissue',
+              component: () => import('@/views/shipment-operations/LabelReissue.vue'),
+              meta: { title: '送り状再発行', requiresAuth: true },
             },
             // === ギフト設定 / 礼品设置 ===
             {

@@ -153,6 +153,8 @@ export const subMenuMap: Record<string, SubMenuItem[]> = {
     { label: '出荷指示作成', to: '/shipment/orders/create' },
     { label: '出荷一覧', to: '/shipment/operations/list' },
     { label: '出荷実績', to: '/shipment/results' },
+    { label: '出荷停止', to: '/shipment/stop' },
+    { label: '送り状再発行', to: '/shipment/label-reissue' },
   ],
   '/returns': [
     { label: 'ダッシュボード', to: '/returns/dashboard' },

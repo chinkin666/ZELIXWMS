@@ -108,6 +108,66 @@ export class ShipmentController {
     return this.shipmentService.bulkDelete(tenantId, body.ids);
   }
 
+  // ============================================
+  // 出荷停止 / 出货停止
+  // ============================================
+
+  // 出荷停止（指定IDの注文を保留に設定）/ 出货停止（将指定ID的订单设为保留）
+  @Post('stop')
+  stopOrders(
+    @TenantId() tenantId: string,
+    @Body() body: { ids: string[]; reason: string },
+  ) {
+    return this.shipmentService.stopOrders(tenantId, body.ids, body.reason);
+  }
+
+  // CSV一括出荷停止（注文番号で停止）/ CSV批量出货停止（按订单编号停止）
+  @Post('stop/bulk-csv')
+  stopOrdersByCsv(
+    @TenantId() tenantId: string,
+    @Body() body: { orderNumbers: string[]; reason: string },
+  ) {
+    return this.shipmentService.stopOrdersByNumbers(tenantId, body.orderNumbers, body.reason);
+  }
+
+  // 出荷停止解除 / 出货停止解除
+  @Post('stop/release')
+  releaseStoppedOrders(
+    @TenantId() tenantId: string,
+    @Body() body: { ids: string[] },
+  ) {
+    return this.shipmentService.releaseStoppedOrders(tenantId, body.ids);
+  }
+
+  // 出荷停止一覧 / 出货停止列表
+  @Get('stop/list')
+  findStoppedOrders(@TenantId() tenantId: string) {
+    return this.shipmentService.findStoppedOrders(tenantId);
+  }
+
+  // ============================================
+  // 送り状再発行・追加発行 / 运单重新发行・追加发行
+  // ============================================
+
+  // 送り状再発行（同一追跡番号で再印刷）/ 运单重新发行（使用相同追踪号重新打印）
+  @Post(':id/reissue-label')
+  reissueLabel(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.shipmentService.reissueLabel(tenantId, id);
+  }
+
+  // 追加発行（追加個口用の送り状発行）/ 追加发行（追加包裹用的运单发行）
+  @Post(':id/additional-label')
+  issueAdditionalLabel(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { parcelCount: number },
+  ) {
+    return this.shipmentService.issueAdditionalLabel(tenantId, id, body);
+  }
+
   // 出荷注文ID検索 / 按ID查找出货订单
   @Get(':id')
   findOne(
@@ -256,5 +316,19 @@ export class ShipmentController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.shipmentService.remove(tenantId, id);
+  }
+
+  // === 保留注文管理 / 保留订单管理 ===
+
+  // 保留7日超過注文クリーンアップ / 清理超过7天的保留订单
+  @Post('held/cleanup')
+  cleanupExpiredHeldOrders(@TenantId() tenantId: string) {
+    return this.shipmentService.cleanupExpiredHeldOrders(tenantId);
+  }
+
+  // 保留6日目アラート対象取得 / 获取保留第6天告警订单
+  @Get('held/near-expiry')
+  findHeldOrdersNearExpiry(@TenantId() tenantId: string) {
+    return this.shipmentService.findHeldOrdersNearExpiry(tenantId);
   }
 }

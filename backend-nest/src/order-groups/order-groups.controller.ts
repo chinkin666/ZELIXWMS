@@ -7,6 +7,14 @@ import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 export class OrderGroupsController {
   constructor(private readonly orderGroupsService: OrderGroupsService) {}
 
+  // 自動振り分け実行 / 执行自动分配
+  // NOTE: この定義は :id ルートより先に配置する必要がある /
+  // 注意: 此路由必须在 :id 路由之前定义
+  @Post('auto-assign')
+  autoAssign(@TenantId() tenantId: string) {
+    return this.orderGroupsService.assignOrdersToGroups(tenantId);
+  }
+
   // 一覧取得 / 获取列表
   @Get()
   findAll(

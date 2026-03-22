@@ -30,6 +30,15 @@ export class PassthroughController {
     return this.passthroughService.getDashboard(tenantId);
   }
 
+  // 保管超過一覧取得 — 7日間無料保管を超過した注文
+  // 获取保管超期列表 — 超过7天免费保管期的订单
+  @Get('storage-overdue')
+  getStorageOverdue(
+    @TenantId() tenantId: string,
+  ) {
+    return this.passthroughService.checkStorageOverdue(tenantId);
+  }
+
   // パススルー注文詳細取得 / 获取直通订单详情
   @Get(':id')
   findById(

@@ -462,6 +462,203 @@ export class ShipmentService {
   }
 
   // ============================================
+  // 出荷停止 / 出货停止
+  // ============================================
+
+  // 出荷停止（指定IDの注文を保留に設定、出荷済みは除外）
+  // 出货停止（将指定ID的订单设为保留，已出货的除外）
+  async stopOrders(tenantId: string, ids: string[], reason: string) {
+    if (!ids || ids.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'No IDs provided / IDが未指定 / 未提供ID');
+    }
+    if (!reason || reason.trim().length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'Reason is required / 理由は必須 / 理由为必填');
+    }
+
+    const now = new Date();
+
+    // 対象注文を先に取得してcustomFieldsをマージ / 先获取目标订单以合并customFields
+    const targets = await this.db
+      .select({ id: shipmentOrders.id, customFields: shipmentOrders.customFields })
+      .from(shipmentOrders)
+      .where(and(
+        inArray(shipmentOrders.id, ids),
+        eq(shipmentOrders.tenantId, tenantId),
+        eq(shipmentOrders.statusShipped, false),
+        isNull(shipmentOrders.deletedAt),
+      ));
+
+    const results = [];
+    for (const target of targets) {
+      const existing = (target.customFields as Record<string, unknown>) || {};
+      const merged = { ...existing, holdReason: reason.trim() };
+      const [updated] = await this.db
+        .update(shipmentOrders)
+        .set({
+          statusHeld: true,
+          statusHeldAt: now,
+          customFields: merged,
+          updatedAt: now,
+        })
+        .where(and(eq(shipmentOrders.id, target.id), eq(shipmentOrders.tenantId, tenantId)))
+        .returning();
+      if (updated) results.push(updated);
+    }
+
+    return { stopped: results.length, items: results };
+  }
+
+  // 出荷停止解除（保留フラグをリセット）
+  // 出货停止解除（重置保留标志）
+  async releaseStoppedOrders(tenantId: string, ids: string[]) {
+    if (!ids || ids.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'No IDs provided / IDが未指定 / 未提供ID');
+    }
+
+    const rows = await this.db
+      .update(shipmentOrders)
+      .set({
+        statusHeld: false,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        inArray(shipmentOrders.id, ids),
+        eq(shipmentOrders.tenantId, tenantId),
+        eq(shipmentOrders.statusHeld, true),
+        isNull(shipmentOrders.deletedAt),
+      ))
+      .returning();
+
+    return { released: rows.length, items: rows };
+  }
+
+  // 出荷停止一覧（保留中の注文を全件取得）
+  // 出货停止列表（获取所有保留中的订单）
+  async findStoppedOrders(tenantId: string) {
+    const rows = await this.db
+      .select()
+      .from(shipmentOrders)
+      .where(and(
+        eq(shipmentOrders.tenantId, tenantId),
+        eq(shipmentOrders.statusHeld, true),
+        isNull(shipmentOrders.deletedAt),
+      ))
+      .orderBy(shipmentOrders.statusHeldAt);
+
+    return { items: rows, total: rows.length };
+  }
+
+  // 注文番号で出荷停止（CSV一括停止用）
+  // 按订单编号出货停止（用于CSV批量停止）
+  async stopOrdersByNumbers(tenantId: string, orderNumbers: string[], reason: string) {
+    if (!orderNumbers || orderNumbers.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'No order numbers provided / 注文番号が未指定 / 未提供订单编号');
+    }
+    if (!reason || reason.trim().length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'Reason is required / 理由は必須 / 理由为必填');
+    }
+
+    // 注文番号からIDを検索 / 按订单编号查找ID
+    const orders = await this.db
+      .select({ id: shipmentOrders.id, orderNumber: shipmentOrders.orderNumber })
+      .from(shipmentOrders)
+      .where(and(
+        eq(shipmentOrders.tenantId, tenantId),
+        inArray(shipmentOrders.orderNumber, orderNumbers),
+        eq(shipmentOrders.statusShipped, false),
+        isNull(shipmentOrders.deletedAt),
+      ));
+
+    if (orders.length === 0) {
+      return { stopped: 0, items: [], notFound: orderNumbers };
+    }
+
+    const ids = orders.map((o) => o.id);
+    const foundNumbers = new Set(orders.map((o) => o.orderNumber));
+    const notFound = orderNumbers.filter((n) => !foundNumbers.has(n));
+
+    const result = await this.stopOrders(tenantId, ids, reason);
+    return { ...result, notFound };
+  }
+
+  // ============================================
+  // 送り状再発行・追加発行 / 运单重新发行・追加发行
+  // ============================================
+
+  // 送り状再発行（同一追跡番号で再印刷）/ 运单重新发行（使用相同追踪号重新打印）
+  async reissueLabel(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+
+    // 追跡番号が未設定の場合は再発行不可 / 追踪号未设置时不可重新发行
+    if (!order.trackingId) {
+      throw new WmsException('SHIP_INVALID_STATUS', 'No tracking ID assigned, cannot reissue label / 追跡番号が未設定のため再発行不可 / 未分配追踪号，无法重新发行');
+    }
+
+    // 印刷ステータスを更新 / 更新打印状态
+    const now = new Date();
+    const rows = await this.db
+      .update(shipmentOrders)
+      .set({
+        statusPrinted: true,
+        statusPrintedAt: now,
+        updatedAt: now,
+      })
+      .where(and(eq(shipmentOrders.id, id), eq(shipmentOrders.tenantId, tenantId)))
+      .returning();
+
+    return {
+      order: rows[0],
+      reissuedAt: now,
+      trackingId: order.trackingId,
+      type: 'reissue' as const,
+    };
+  }
+
+  // 追加発行（追加個口用の送り状発行）/ 追加发行（追加包裹用的运单发行）
+  async issueAdditionalLabel(tenantId: string, id: string, body: { parcelCount: number }) {
+    const order = await this.findById(tenantId, id);
+
+    // 追跡番号が未設定の場合は追加発行不可 / 追踪号未设置时不可追加发行
+    if (!order.trackingId) {
+      throw new WmsException('SHIP_INVALID_STATUS', 'No tracking ID assigned, cannot issue additional label / 追跡番号が未設定のため追加発行不可 / 未分配追踪号，无法追加发行');
+    }
+
+    // 個口数バリデーション / 包裹数验证
+    if (!body.parcelCount || body.parcelCount < 1) {
+      throw new WmsException('VALIDATION_ERROR', 'parcelCount must be at least 1 / 個口数は1以上必須 / 包裹数至少为1');
+    }
+
+    // carrierDataにparcelCount情報を追記（既存データを維持）
+    // 在carrierData中追加parcelCount信息（保留现有数据）
+    const now = new Date();
+    const existingCarrierData = (order.carrierData as Record<string, unknown>) ?? {};
+    const updatedCarrierData = {
+      ...existingCarrierData,
+      parcelCount: body.parcelCount,
+      additionalLabelIssuedAt: now.toISOString(),
+    };
+
+    const rows = await this.db
+      .update(shipmentOrders)
+      .set({
+        carrierData: updatedCarrierData,
+        statusPrinted: true,
+        statusPrintedAt: now,
+        updatedAt: now,
+      })
+      .where(and(eq(shipmentOrders.id, id), eq(shipmentOrders.tenantId, tenantId)))
+      .returning();
+
+    return {
+      order: rows[0],
+      issuedAt: now,
+      trackingId: order.trackingId,
+      parcelCount: body.parcelCount,
+      type: 'additional' as const,
+    };
+  }
+
+  // ============================================
   // ピッキングリスト生成 / 拣货清单生成
   // ============================================
 
@@ -785,5 +982,51 @@ export class ShipmentService {
       .returning();
 
     return rows[0];
+  }
+
+  // ============================================
+  // 保留注文自動管理 / 保留订单自动管理
+  // ============================================
+
+  // 保留7日超過注文を自動削除（ソフトデリート）/ 自动删除超过7天的保留订单（软删除）
+  async cleanupExpiredHeldOrders(tenantId: string) {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const expired = await this.db
+      .update(shipmentOrders)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(and(
+        eq(shipmentOrders.tenantId, tenantId),
+        eq(shipmentOrders.statusHeld, true),
+        eq(shipmentOrders.statusShipped, false),
+        isNull(shipmentOrders.deletedAt),
+        sql`${shipmentOrders.statusHeldAt} < ${sevenDaysAgo}`,
+      ))
+      .returning();
+
+    return { deleted: expired.length, items: expired };
+  }
+
+  // 保留6日目アラート対象を取得 / 获取保留第6天需要告警的订单
+  async findHeldOrdersNearExpiry(tenantId: string) {
+    const sixDaysAgo = new Date();
+    sixDaysAgo.setDate(sixDaysAgo.getDate() - 6);
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const nearExpiry = await this.db
+      .select()
+      .from(shipmentOrders)
+      .where(and(
+        eq(shipmentOrders.tenantId, tenantId),
+        eq(shipmentOrders.statusHeld, true),
+        eq(shipmentOrders.statusShipped, false),
+        isNull(shipmentOrders.deletedAt),
+        sql`${shipmentOrders.statusHeldAt} <= ${sixDaysAgo}`,
+        sql`${shipmentOrders.statusHeldAt} > ${sevenDaysAgo}`,
+      ));
+
+    return { count: nearExpiry.length, items: nearExpiry };
   }
 }

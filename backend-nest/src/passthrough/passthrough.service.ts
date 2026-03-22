@@ -1,9 +1,10 @@
 // パススルーサービス / 直通服务
-import { Inject, Injectable } from '@nestjs/common';
-import { eq, and, sql, SQL } from 'drizzle-orm';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { eq, and, sql, lt, ne, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import type { DrizzleDB } from '../database/database.types.js';
 import { passthroughOrders } from '../database/schema/passthrough.js';
+import { shipmentOrders } from '../database/schema/shipments.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 import { WmsException } from '../common/exceptions/wms.exception.js';
 
@@ -24,8 +25,16 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   cancelled: [],
 };
 
+// 保管料無料期間（日数）/ 免费保管期（天数）
+const FREE_STORAGE_DAYS = 7;
+
+// 超過保管料（1日あたり）/ 超期保管费（每天）
+const DAILY_STORAGE_FEE = 100;
+
 @Injectable()
 export class PassthroughService {
+  private readonly logger = new Logger(PassthroughService.name);
+
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // ステータス遷移バリデーション / 状态迁移校验
@@ -39,6 +48,88 @@ export class PassthroughService {
         `不能从「${currentStatus}」迁移到「${targetStatus}」`,
       );
     }
+  }
+
+  // 通過型完了時に出荷指示を自動生成 / 通过型完成时自动生成出货指示
+  private async autoGenerateShipmentOrder(tenantId: string, passthroughOrder: any): Promise<void> {
+    try {
+      const shipmentData = {
+        tenantId,
+        orderNumber: `PT-${passthroughOrder.orderNumber}`,
+        recipientName: passthroughOrder.destinationName ?? '',
+        recipientPostalCode: passthroughOrder.destinationPostalCode ?? '',
+        recipientPrefecture: passthroughOrder.destinationPrefecture ?? '',
+        recipientCity: passthroughOrder.destinationCity ?? '',
+        recipientStreet: passthroughOrder.destinationAddress ?? '',
+        recipientBuilding: passthroughOrder.destinationBuilding ?? '',
+        recipientPhone: passthroughOrder.destinationPhone ?? '',
+        customFields: {
+          source: 'passthrough',
+          passthroughOrderId: passthroughOrder.id,
+          passthroughOrderNumber: passthroughOrder.orderNumber,
+          memo: `通過型入庫から自動生成 / 通过型自动生成 (${passthroughOrder.orderNumber})`,
+        },
+      } satisfies typeof shipmentOrders.$inferInsert;
+
+      const rows = await this.db
+        .insert(shipmentOrders)
+        .values(shipmentData)
+        .returning();
+
+      this.logger.log(
+        `出荷指示自動生成完了 / 出货指示自动生成完成: passthrough=${passthroughOrder.orderNumber} → shipment=${rows[0]?.orderNumber}`,
+      );
+    } catch (error) {
+      // 出荷指示生成失敗でもパススルー完了は取り消さない / 出货指示生成失败也不回滚通过型完成
+      this.logger.error(
+        `出荷指示自動生成失敗 / 出货指示自动生成失败: passthrough=${passthroughOrder.orderNumber}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    }
+  }
+
+  // 保管超過チェック — 7日間無料保管を超過した注文一覧
+  // 保管超期检查 — 超过7天免费保管期的订单列表
+  async checkStorageOverdue(tenantId: string) {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - FREE_STORAGE_DAYS);
+
+    // 未完了かつ作成日が7日以上前の注文を取得 / 获取未完成且创建日超过7天的订单
+    const overdueOrders = await this.db
+      .select()
+      .from(passthroughOrders)
+      .where(
+        and(
+          eq(passthroughOrders.tenantId, tenantId),
+          ne(passthroughOrders.status, 'completed'),
+          ne(passthroughOrders.status, 'cancelled'),
+          lt(passthroughOrders.createdAt, cutoffDate),
+        ),
+      )
+      .orderBy(passthroughOrders.createdAt);
+
+    const now = new Date();
+    const items = overdueOrders.map((order) => {
+      const createdAt = new Date(order.createdAt);
+      const totalDays = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+      const overdueDays = totalDays - FREE_STORAGE_DAYS;
+      const estimatedStorageFee = overdueDays * DAILY_STORAGE_FEE;
+
+      return {
+        ...order,
+        totalDays,
+        overdueDays,
+        estimatedStorageFee,
+      };
+    });
+
+    return {
+      tenantId,
+      freeStorageDays: FREE_STORAGE_DAYS,
+      dailyStorageFee: DAILY_STORAGE_FEE,
+      overdueCount: items.length,
+      items,
+    };
   }
 
   // パススルー注文一覧取得（テナント分離・ページネーション・ステータスフィルタ）
@@ -100,6 +191,13 @@ export class PassthroughService {
         clientId: dto.clientId ?? null,
         items: dto.items ?? null,
         notes: dto.notes ?? null,
+        destinationName: dto.destinationName ?? null,
+        destinationPostalCode: dto.destinationPostalCode ?? null,
+        destinationPrefecture: dto.destinationPrefecture ?? null,
+        destinationCity: dto.destinationCity ?? null,
+        destinationAddress: dto.destinationAddress ?? null,
+        destinationBuilding: dto.destinationBuilding ?? null,
+        destinationPhone: dto.destinationPhone ?? null,
         status: 'draft',
       } satisfies typeof passthroughOrders.$inferInsert)
       .returning();
@@ -133,7 +231,14 @@ export class PassthroughService {
         .where(and(eq(passthroughOrders.id, id), eq(passthroughOrders.tenantId, tenantId)))
         .returning();
 
-      return rows[0];
+      const updated = rows[0];
+
+      // 完了時に出荷指示を自動生成 / 完成时自动生成出货指示
+      if (dto.status === 'completed' && updated) {
+        await this.autoGenerateShipmentOrder(tenantId, updated);
+      }
+
+      return updated;
     }
 
     // ステータス変更なしの通常更新 / 无状态变更的普通更新

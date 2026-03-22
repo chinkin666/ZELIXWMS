@@ -16,6 +16,16 @@ export const orderGroups = pgTable('order_groups', {
   enabled: boolean('enabled').default(true).notNull(),
   description: text('description'),
 
+  // 分組条件（自動振り分け用）/ 分组条件（自动分配用）
+  sortCriteria: jsonb('sort_criteria').$type<{
+    type: 'prefecture' | 'customer' | 'sku_count' | 'business_type' | 'sla';
+    prefecture?: { regions: string[] };
+    customer?: { clientIds: string[] };
+    skuCount?: { single: boolean; multi: boolean };
+    businessType?: { types: ('btoc' | 'btob' | 'btob_afc' | 'fba' | 'rsl')[] };
+    sla?: { maxHours: number };
+  }>(),
+
   // タイムスタンプ / 时间戳
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

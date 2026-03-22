@@ -20,6 +20,15 @@ export const passthroughOrders = pgTable('passthrough_orders', {
   // アイテム情報 / 商品信息
   items: jsonb('items'),                                    // [{ sku, quantity, ... }]
 
+  // 送付先情報 / 收件人信息
+  destinationName: text('destination_name'),                   // 送付先名 / 收件人名
+  destinationPostalCode: text('destination_postal_code'),      // 送付先郵便番号 / 收件人邮编
+  destinationPrefecture: text('destination_prefecture'),       // 送付先都道府県 / 收件人都道府县
+  destinationCity: text('destination_city'),                   // 送付先市区町村 / 收件人城市
+  destinationAddress: text('destination_address'),             // 送付先住所 / 收件人地址
+  destinationBuilding: text('destination_building'),           // 送付先建物名 / 收件人建筑名
+  destinationPhone: text('destination_phone'),                 // 送付先電話番号 / 收件人电话
+
   // 備考 / 备注
   notes: text('notes'),
 
