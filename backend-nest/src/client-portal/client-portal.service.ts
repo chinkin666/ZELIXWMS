@@ -20,7 +20,16 @@ export class ClientPortalService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // ポータルダッシュボード（出荷・入庫・請求の集計）/ 门户仪表盘（出货・入库・账单的汇总）
-  async getDashboard(tenantId: string, clientId: string) {
+  async getDashboard(tenantId: string, clientId?: string) {
+    // clientId未指定時は空のダッシュボードを返す / clientId未指定时返回空仪表盘
+    if (!clientId) {
+      return {
+        stats: { inProgress: 0, pending: 0, monthlyFee: 0, creditUsage: 0 },
+        client: { name: 'Dev Client', creditUsage: 0 },
+        needsAttention: [],
+        recentOrders: [],
+      };
+    }
     // 並列でクライアント関連データを集計 / 并行汇总客户相关数据
     const [
       shipmentStats,

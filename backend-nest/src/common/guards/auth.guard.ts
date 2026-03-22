@@ -27,11 +27,13 @@ export class AuthGuard implements CanActivate {
     // 开发环境: 无token 或 dev-token 时注入dev用户
     const isDev = this.configService.get('NODE_ENV') === 'development';
     if (isDev && (!token || token.startsWith('dev-token-'))) {
+      // ポータルパスはclientロール、それ以外はadmin / 门户路径用client角色，其他用admin
+      const isPortalPath = request.url?.startsWith('/api/portal');
       request.user = {
         id: '00000000-0000-0000-0000-000000000099',
-        email: 'dev@zelix.local',
+        email: isPortalPath ? 'dev-client@zelix.local' : 'dev@zelix.local',
         tenantId: '00000000-0000-0000-0000-000000000001',
-        role: 'admin',
+        role: isPortalPath ? 'client' : 'admin',
       };
       return true;
     }

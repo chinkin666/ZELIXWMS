@@ -299,9 +299,22 @@ export class AuthService {
 
   // ポータルログイン（クライアント向け）/ 门户登录（面向客户）
   async portalLogin(email: string, password: string) {
-    // 開発モード: Supabase未設定時はdev loginへ / 开发模式: Supabase未配置时走dev login
+    // 開発モード: Supabase未設定時はclientロールでdev login / 开发模式: Supabase未配置时用client角色dev login
     if (!this.supabase) {
-      return this.devLogin({ email, password } as any);
+      return {
+        token: 'dev-token-' + Date.now(),
+        user: {
+          _id: '00000000-0000-0000-0000-000000000099',
+          id: '00000000-0000-0000-0000-000000000099',
+          email,
+          displayName: 'Dev Client User',
+          role: 'client',
+          tenantId: '00000000-0000-0000-0000-000000000001',
+          clientId: '00000000-0000-0000-0000-000000000001',
+          clientName: 'Dev Client Co.',
+          warehouseIds: [],
+        },
+      };
     }
     // Supabase Auth でパスワード認証 / 通过Supabase Auth进行密码认证
     const { data: authData, error: authError } =
