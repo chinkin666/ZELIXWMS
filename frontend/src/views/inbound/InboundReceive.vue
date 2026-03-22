@@ -314,7 +314,8 @@ const handleReceiveLine = async (lineNumber: number, qty: number) => {
     if (result.orderStatus === 'received') {
       beepComplete()
       toast.showSuccess(t('wms.inbound.allInspectionComplete', '検品が全て完了しました。棚入れを行ってください。'))
-      setTimeout(() => router.push(`/inbound/putaway/${order.value!._id}`), 1500)
+      const orderId = order.value._id
+      setTimeout(() => router.push(`/inbound/putaway/${orderId}`), 1500)
     }
 
     await nextTick()
@@ -344,7 +345,8 @@ const handleBulkReceive = async () => {
     scanMessage.value = result.message
     scanIsError.value = false
     toast.showSuccess(t('wms.inbound.allInspectionComplete', '検品が全て完了しました。棚入れを行ってください。'))
-    setTimeout(() => router.push(`/inbound/putaway/${order.value!._id}`), 1500)
+    const orderId = order.value._id
+    setTimeout(() => router.push(`/inbound/putaway/${orderId}`), 1500)
   } catch (e: any) {
     scanMessage.value = e?.message || t('wms.inbound.bulkReceiveFailed', '一括検品に失敗しました')
     scanIsError.value = true

@@ -209,14 +209,14 @@ function getDateRange(days: number): { from: string; to: string } {
 async function loadData(from?: string, to?: string, days?: number) {
   isLoading.value = true
   try {
-    const [s, c, t] = await Promise.all([
+    const [shipResult, clientResult, turnoverResult] = await Promise.all([
       fetchShipmentStats(from, to),
       fetchClientReport(from, to),
       fetchInventoryTurnover(days || activeDays.value),
     ])
-    shipStats.value = s
-    clientReport.value = c
-    turnover.value = t
+    shipStats.value = shipResult
+    clientReport.value = clientResult
+    turnover.value = turnoverResult
   } catch (e: any) {
     toast.showError(e?.message || 'データ取得に失敗しました')
   } finally {

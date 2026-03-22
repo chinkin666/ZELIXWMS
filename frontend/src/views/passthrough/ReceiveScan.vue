@@ -53,7 +53,7 @@ async function fetchOrder(orderNumber: string) {
 }
 
 // スキャン済み箱番号の重複チェック用 / 已扫描箱号去重检查用
-const scannedBoxNumbers = ref<Set<string>>(new Set())
+const scannedBoxNumbers = ref<string[]>([])
 
 function handleScan() {
   if (!scanInput.value.trim()) return
@@ -63,10 +63,10 @@ function handleScan() {
   } else {
     const boxCode = scanInput.value.trim()
     // 重複チェック / 去重检查
-    if (scannedBoxNumbers.value.has(boxCode)) {
+    if (scannedBoxNumbers.value.includes(boxCode)) {
       ElMessage.warning(`この箱は既にスキャン済みです: ${boxCode}`)
     } else {
-      scannedBoxNumbers.value.add(boxCode)
+      scannedBoxNumbers.value = [...scannedBoxNumbers.value, boxCode]
       scannedBoxes.value++
       ElMessage.success(`箱 #${scannedBoxes.value} スキャン完了: ${boxCode}`)
     }
@@ -115,7 +115,7 @@ async function submitArrive() {
 function reset() {
   order.value = null
   scannedBoxes.value = 0
-  scannedBoxNumbers.value = new Set()
+  scannedBoxNumbers.value = []
   varianceDetails.value = []
   scanInput.value = ''
 }

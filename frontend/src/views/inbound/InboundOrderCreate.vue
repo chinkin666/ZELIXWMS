@@ -296,7 +296,7 @@ const addLine = () => {
 }
 
 const removeLine = (i: number) => {
-  form.value.lines.splice(i, 1)
+  form.value.lines = form.value.lines.filter((_, idx) => idx !== i)
 }
 
 // 商品検索・選択ヘルパー / 商品搜索选择辅助函数

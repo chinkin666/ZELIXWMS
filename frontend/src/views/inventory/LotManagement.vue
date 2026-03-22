@@ -318,7 +318,7 @@ async function loadData() {
     lots.value = res.items
     total.value = res.total
   } catch (e: any) {
-    // ロット一覧取得エラー / Lot list fetch error
+    showToast(e?.message || 'データの取得に失敗しました', 'danger')
   } finally {
     isLoading.value = false
   }
@@ -358,6 +358,12 @@ function openEditDialog(lot: Lot) {
 }
 
 async function handleSave() {
+  if (!editingId.value) {
+    if (!form.value.productId || !form.value.lotNumber.trim()) {
+      showToast(t('wms.inventory.productAndLotRequired', '商品とロット番号は必須です'), 'warning')
+      return
+    }
+  }
   isSaving.value = true
   try {
     if (editingId.value) {
@@ -368,10 +374,6 @@ async function handleSave() {
         memo: form.value.memo,
       })
     } else {
-      if (!form.value.productId || !form.value.lotNumber.trim()) {
-        showToast(t('wms.inventory.productAndLotRequired', '商品とロット番号は必須です'), 'warning')
-        return
-      }
       await createLot({
         lotNumber: form.value.lotNumber.trim(),
         productId: form.value.productId,

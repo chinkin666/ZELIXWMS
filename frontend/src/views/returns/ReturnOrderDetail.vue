@@ -194,7 +194,7 @@ const statusLabel = (s: string) => ({ draft: t('wms.returns.statusDraft', '下�
 const statusClass = (s: string) => ({ draft: 'o-status-tag--draft', inspecting: 'o-status-tag--printed', completed: 'o-status-tag--confirmed', cancelled: 'o-status-tag--cancelled' }[s] || '')
 const reasonLabel = (r: string) => ({ customer_request: t('wms.returns.reasonCustomerRequest', 'お客様都合'), defective: t('wms.returns.reasonDefective', '不良品'), wrong_item: t('wms.returns.reasonWrongItem', '誤配送'), damaged: t('wms.returns.reasonDamaged', '破損'), other: t('wms.returns.reasonOther', 'その他') }[r] || r)
 const dispLabel = (d: string) => ({ restock: t('wms.returns.dispRestock', '再入庫'), dispose: t('wms.returns.dispDispose', '廃棄'), repair: t('wms.returns.dispRepair', '修理'), pending: t('wms.returns.dispPending', '未判定') }[d] || d)
-const formatDate = (d: string) => new Date(d).toLocaleDateString('ja-JP')
+const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('ja-JP') : '-'
 
 const loadData = async () => {
   isLoading.value = true
@@ -212,12 +212,12 @@ const loadData = async () => {
       disposedQuantity: l.disposedQuantity,
       locationId: l.locationId || '',
     }))
-  } catch (e: any) { toast.showError(e?.message) } finally { isLoading.value = false }
+  } catch (e: any) { toast.showError(e?.message || 'エラーが発生しました') } finally { isLoading.value = false }
 }
 
 const handleStartInspection = async () => {
   try { await startReturnInspection(route.params.id as string); toast.showSuccess(t('wms.returns.inspectionStarted', '検品を開始しました')); await loadData() }
-  catch (e: any) { toast.showError(e?.message) }
+  catch (e: any) { toast.showError(e?.message || 'エラーが発生しました') }
 }
 
 const handleSaveInspection = async () => {
@@ -234,7 +234,7 @@ const handleSaveInspection = async () => {
     const data = await inspectReturnLines(route.params.id as string, inspections)
     order.value = data
     toast.showSuccess(t('wms.returns.inspectionSaved', '検品結果を保存しました'))
-  } catch (e: any) { toast.showError(e?.message) }
+  } catch (e: any) { toast.showError(e?.message || 'エラーが発生しました') }
 }
 
 const handleComplete = async () => {
@@ -250,7 +250,7 @@ const handleComplete = async () => {
     toast.showSuccess(t('wms.returns.completeSuccess', `完了: 再入庫${res.restockedTotal}点 / 廃棄${res.disposedTotal}点`))
     if (res.errors.length) toast.showError(res.errors.join(', '))
     await loadData()
-  } catch (e: any) { toast.showError(e?.message) }
+  } catch (e: any) { toast.showError(e?.message || 'エラーが発生しました') }
 }
 
 onMounted(() => loadData())

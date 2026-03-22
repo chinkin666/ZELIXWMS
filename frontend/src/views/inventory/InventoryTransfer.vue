@@ -125,7 +125,7 @@ const form = ref({
 // 物理ロケーションのみ表示（仮想ロケーション除外）
 // 只显示物理库位（排除虚拟库位）
 const physicalLocations = computed(() =>
-  locations.value.filter(l => !l.type.startsWith('virtual/')),
+  locations.value.filter(l => l.type && !l.type.startsWith('virtual/')),
 )
 
 // 移動先は移動元と同じロケーションを除外

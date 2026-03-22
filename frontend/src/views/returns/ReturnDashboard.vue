@@ -164,7 +164,7 @@ const reasonLabel = (r: string) => {
   return map[r] || r
 }
 
-const formatDate = (d: string) => new Date(d).toLocaleDateString('ja-JP')
+const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('ja-JP') : '-'
 
 const goToDetail = (row: ReturnOrder) => {
   router.push(`/returns/${row._id}`)

@@ -103,7 +103,7 @@ const form = ref({
 })
 
 const physicalLocations = computed(() =>
-  locations.value.filter(l => !l.type.startsWith('virtual/')),
+  locations.value.filter(l => l.type && !l.type.startsWith('virtual/')),
 )
 
 const canSubmit = computed(() =>

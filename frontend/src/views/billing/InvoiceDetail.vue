@@ -72,13 +72,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(item, idx) in invoice.lineItems" :key="idx">
+          <tr v-for="(item, idx) in (invoice.lineItems ?? [])" :key="idx">
             <td class="col-desc">{{ item.description }}</td>
-            <td class="col-qty">{{ item.quantity.toLocaleString() }}</td>
-            <td class="col-unit">&yen;{{ item.unitPrice.toLocaleString() }}</td>
-            <td class="col-amount">&yen;{{ item.amount.toLocaleString() }}</td>
+            <td class="col-qty">{{ (item.quantity ?? 0).toLocaleString() }}</td>
+            <td class="col-unit">&yen;{{ (item.unitPrice ?? 0).toLocaleString() }}</td>
+            <td class="col-amount">&yen;{{ (item.amount ?? 0).toLocaleString() }}</td>
           </tr>
-          <tr v-if="invoice.lineItems.length === 0">
+          <tr v-if="invoice.lineItems?.length === 0">
             <td colspan="4" style="text-align:center;color:#999;">明細なし</td>
           </tr>
         </tbody>
@@ -89,15 +89,15 @@
         <table class="totals-table">
           <tr>
             <th>小計</th>
-            <td>&yen;{{ invoice.subtotal.toLocaleString() }}</td>
+            <td>&yen;{{ (invoice.subtotal ?? 0).toLocaleString() }}</td>
           </tr>
           <tr>
-            <th>消費税（{{ Math.round(invoice.taxRate * 100) }}%）</th>
-            <td>&yen;{{ invoice.taxAmount.toLocaleString() }}</td>
+            <th>消費税（{{ Math.round((invoice.taxRate ?? 0) * 100) }}%）</th>
+            <td>&yen;{{ (invoice.taxAmount ?? 0).toLocaleString() }}</td>
           </tr>
           <tr class="total-row">
             <th>合計</th>
-            <td>&yen;{{ invoice.totalAmount.toLocaleString() }}</td>
+            <td>&yen;{{ (invoice.totalAmount ?? 0).toLocaleString() }}</td>
           </tr>
         </table>
       </div>

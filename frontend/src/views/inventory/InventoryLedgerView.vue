@@ -48,7 +48,7 @@
  * 指定期間の在庫受払を集計表示する。
  * 显示指定期间的库存收发汇总。
  */
-import { computed, h, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
@@ -163,6 +163,8 @@ const exportCsv = () => {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+onMounted(() => handleSearch())
 </script>
 
 <style scoped>

@@ -337,14 +337,13 @@ const confirmDelete = async (w: Wave) => {
       { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
     )
   } catch { return }
-  deleteWave(w._id)
-    .then(async () => {
-      showToast(t('wms.warehouse.deleted', '削除しました'), 'success')
-      await loadList()
-    })
-    .catch((err: any) => {
-      showToast(err?.message || t('wms.warehouse.deleteFailed', '削除に失敗しました'), 'danger')
-    })
+  try {
+    await deleteWave(w._id)
+    showToast(t('wms.warehouse.deleted', '削除しました'), 'success')
+    await loadList()
+  } catch (err: any) {
+    showToast(err?.message || t('wms.warehouse.deleteFailed', '削除に失敗しました'), 'danger')
+  }
 }
 
 // Lifecycle actions

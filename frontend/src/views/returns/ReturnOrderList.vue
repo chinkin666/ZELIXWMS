@@ -322,14 +322,17 @@ async function bulkStartInspection() {
   const targets = rows.value.filter(r => selectedIds.value.has(r._id) && r.status === 'draft')
   if (targets.length === 0) { toast.showWarning(t('wms.returns.noDraftSelected', '下書き状態の返品が選択されていません')); return }
   bulkProcessing.value = true
-  let ok = 0; let fail = 0
-  for (const r of targets) {
-    try { await startReturnInspection(r._id); ok++ } catch { fail++ }
+  try {
+    let ok = 0; let fail = 0
+    for (const r of targets) {
+      try { await startReturnInspection(r._id); ok++ } catch { fail++ }
+    }
+    toast.showSuccess(`${t('wms.returns.startInspection', '検品開始')}: ${ok}${t('wms.returns.successCount', '件成功')}${fail > 0 ? `、${fail}${t('wms.returns.failCount', '件失敗')}` : ''}`)
+    selectedIds.value = new Set()
+    await loadData()
+  } finally {
+    bulkProcessing.value = false
   }
-  toast.showSuccess(`${t('wms.returns.startInspection', '検品開始')}: ${ok}${t('wms.returns.successCount', '件成功')}${fail > 0 ? `、${fail}${t('wms.returns.failCount', '件失敗')}` : ''}`)
-  selectedIds.value = new Set()
-  bulkProcessing.value = false
-  await loadData()
 }
 
 async function bulkCancel() {
@@ -343,14 +346,17 @@ async function bulkCancel() {
     )
   } catch { return }
   bulkProcessing.value = true
-  let ok = 0; let fail = 0
-  for (const r of targets) {
-    try { await cancelReturnOrder(r._id); ok++ } catch { fail++ }
+  try {
+    let ok = 0; let fail = 0
+    for (const r of targets) {
+      try { await cancelReturnOrder(r._id); ok++ } catch { fail++ }
+    }
+    toast.showSuccess(`${t('wms.returns.cancel', 'キャンセル')}: ${ok}${t('wms.returns.successCount', '件成功')}${fail > 0 ? `、${fail}${t('wms.returns.failCount', '件失敗')}` : ''}`)
+    selectedIds.value = new Set()
+    await loadData()
+  } finally {
+    bulkProcessing.value = false
   }
-  toast.showSuccess(`${t('wms.returns.cancel', 'キャンセル')}: ${ok}${t('wms.returns.successCount', '件成功')}${fail > 0 ? `、${fail}${t('wms.returns.failCount', '件失敗')}` : ''}`)
-  selectedIds.value = new Set()
-  bulkProcessing.value = false
-  await loadData()
 }
 
 // --- CSV Export ---

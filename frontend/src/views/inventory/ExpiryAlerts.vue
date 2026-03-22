@@ -288,7 +288,7 @@ async function loadData() {
     const res = await fetchExpiryAlerts(daysAhead.value)
     alerts.value = res.alerts
   } catch (e: any) {
-    // アラート取得エラー / Alert fetch error
+    showToast(e?.message || 'データの取得に失敗しました', 'danger')
   } finally {
     isLoading.value = false
   }
