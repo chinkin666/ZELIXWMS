@@ -163,6 +163,17 @@ export class InventoryController {
     return this.inventoryService.getAgingAnalysis(tenantId, warehouseId);
   }
 
+  // 在庫サマリ取得（/stock/summaryを/stock/:productIdより前に配置）
+  // 库存汇总（放在/stock/:productId之前避免路由冲突）
+  @Get('stock/summary')
+  getStockSummary(
+    @TenantId() tenantId: string,
+    @Query('search') search?: string,
+    @Query('stockType') stockType?: string,
+  ) {
+    return this.inventoryService.getStockSummary(tenantId, { search, stockType });
+  }
+
   // 在庫レベル取得（商品別集計）/ 获取库存水平（按商品汇总）
   @Get('stock')
   getStockLevels(
@@ -171,12 +182,18 @@ export class InventoryController {
     @Query('limit') limit?: string,
     @Query('warehouseId') warehouseId?: string,
     @Query('locationId') locationId?: string,
+    @Query('productSku') productSku?: string,
+    @Query('showZero') showZero?: string,
+    @Query('stockType') stockType?: string,
   ) {
     return this.inventoryService.getStockLevels(tenantId, {
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
       warehouseId,
       locationId,
+      productSku,
+      showZero: showZero === 'true',
+      stockType,
     });
   }
 
@@ -199,12 +216,6 @@ export class InventoryController {
   @Get('location-usage')
   getLocationUsage(@TenantId() tenantId: string) {
     return this.inventoryService.getLocationUsage(tenantId);
-  }
-
-  // 在庫サマリー / 库存汇总
-  @Get('stock/summary')
-  getStockSummary(@TenantId() tenantId: string) {
-    return this.inventoryService.getStockSummary(tenantId);
   }
 
   // 低在庫アラート / 低库存警报

@@ -4,6 +4,7 @@ import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, sql, SQL, gt, lte } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { locations, stockQuants, stockMoves, inventoryLedger } from '../database/schema/inventory.js';
+import { products } from '../database/schema/products.js';
 import type { CreateLocationDto, UpdateLocationDto } from './dto/create-location.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 import type { DrizzleDB } from '../database/database.types.js';
@@ -22,6 +23,9 @@ interface StockLevelsQuery {
   limit?: number;
   warehouseId?: string;
   locationId?: string;
+  productSku?: string;
+  showZero?: boolean;
+  stockType?: string;
 }
 
 @Injectable()
@@ -181,6 +185,20 @@ export class InventoryService {
     if (query.locationId) {
       conditions.push(eq(stockQuants.locationId, query.locationId));
     }
+    // SKUフィルタ（商品テーブルJOIN）/ SKU过滤（关联商品表）
+    if (query.productSku) {
+      conditions.push(
+        sql`${stockQuants.productId} IN (
+          SELECT ${products.id} FROM ${products}
+          WHERE ${products.tenantId} = ${tenantId}
+          AND ${products.sku} ILIKE ${'%' + query.productSku + '%'}
+        )`,
+      );
+    }
+    // ゼロ在庫を除外 / 排除零库存
+    if (!query.showZero) {
+      conditions.push(sql`${stockQuants.quantity} > 0`);
+    }
 
     const where = and(...conditions);
 
@@ -206,6 +224,33 @@ export class InventoryService {
     ]);
 
     return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
+  }
+
+  // 在庫サマリ取得 / 库存汇总
+  async getStockSummary(tenantId: string, params: { search?: string; stockType?: string }) {
+    const conditions: SQL[] = [eq(stockQuants.tenantId, tenantId)];
+    if (params.search) {
+      conditions.push(
+        sql`${stockQuants.productId} IN (
+          SELECT ${products.id} FROM ${products}
+          WHERE ${products.tenantId} = ${tenantId}
+          AND (${products.sku} ILIKE ${'%' + params.search + '%'} OR ${products.name} ILIKE ${'%' + params.search + '%'})
+        )`,
+      );
+    }
+    const items = await this.db
+      .select({
+        productId: stockQuants.productId,
+        totalQuantity: sql<number>`sum(${stockQuants.quantity})::int`,
+        reservedQuantity: sql<number>`sum(${stockQuants.reservedQuantity})::int`,
+        availableQuantity: sql<number>`(sum(${stockQuants.quantity}) - sum(${stockQuants.reservedQuantity}))::int`,
+      })
+      .from(stockQuants)
+      .where(and(...conditions))
+      .groupBy(stockQuants.productId)
+      .orderBy(stockQuants.productId)
+      .limit(200);
+    return items;
   }
 
   // 商品別在庫詳細（ロケーション別）/ 按商品查看库存详情（按库位）
@@ -697,8 +742,8 @@ export class InventoryService {
     };
   }
 
-  // 在庫サマリー（商品数・総数量・予約数・利用可能数）/ 库存汇总（商品数・总数量・预约数・可用数）
-  async getStockSummary(tenantId: string) {
+  // 在庫集計統計（商品数・総数量・予約数・利用可能数）/ 库存聚合统计
+  async getStockAggregateStats(tenantId: string) {
     const [result] = await this.db
       .select({
         totalProducts: sql<number>`count(DISTINCT ${stockQuants.productId})::int`,
