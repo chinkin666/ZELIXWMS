@@ -8,13 +8,13 @@
 
 ## Phase 1: Architecture & Infrastructure
 
-### 1.1 yamatoB2Service NestJS Wrapper
-- [ ] Copy yamatoB2Service.ts to backend-nest
-- [ ] Replace MongoDB session cache with Redis
-- [ ] Keep API call logic frozen (no changes)
-- [ ] Write integration tests for session cache
-- [ ] **CRITICAL:** Handle Redis connection failure gracefully (fallback to API-only)
-- CC: ~1h
+### 1.1 yamatoB2 NestJS Direct Integration
+- [x] CarrierAutomationService → Python FastAPI直接呼出（Express排除）
+- [x] テナント別インメモリセッションキャッシュ（3.5h TTL）
+- [x] DB設定から自動ログイン（Redis不要 — インメモリで十分）
+- [x] Docker Compose b2-proxyサービス追加
+- [x] .env.production.example作成
+- CC: ~30min ✅ Done
 
 ### 1.2 New Drizzle Schema Tables
 - [x] FBA tables (fba_shipment_plans, fba_boxes)
@@ -126,7 +126,7 @@
 ## Phase 5: Testing (~200-300 new tests)
 
 - [x] Unit tests for all new/modified services (590 tests, 46 suites)
-- [ ] Integration tests for B2 wrapper (blocked by Phase 1.1)
+- [x] B2 integration: proxyToB2メソッド + セッションキャッシュ（Phase 1.1完了で解除）
 - [x] Migration tests for new tables (schema-validation.spec.ts)
 - [x] Regression tests for pagination/error handling unification
 - [x] Tests for 3 critical failure modes (storage full, import limits, schema validation)
@@ -136,7 +136,7 @@
 
 ## Critical Gaps (must address)
 
-1. **B2 Redis connection failure** — blocked by Phase 1.1 (yamatoB2 wrapper not yet built)
+1. ~~**B2 Redis connection failure**~~ ✅ Resolved — インメモリキャッシュ（Redis不要）+ Python FastAPI直接呼出
 2. ~~**CSV import OOM** — no file size limit on upload~~ ✅ Fixed (10MB limit)
 3. ~~**Photo storage full** — no graceful error handling~~ ✅ Fixed (1GB per-tenant limit)
 
@@ -147,7 +147,7 @@
 ### 6.1 VPS + Docker Compose Deployment (P1)
 - [ ] VPS setup (选择提供商, SSH配置)
 - [x] Docker Compose: NestJS + PostgreSQL + Redis (restart: always) ✅ 本地验证通过
-- [ ] 环境变量管理 (.env.production)
+- [x] 环境变量管理 (.env.production.example) ✅ Done
 - [ ] SSL/HTTPS 配置 (Let's Encrypt)
 - [ ] DNS 配置
 - [x] Drizzle migration 运行 ✅ 迁移文件就绪
