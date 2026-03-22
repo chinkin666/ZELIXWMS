@@ -98,11 +98,10 @@ async function load() {
   loading.value = true
   try {
     const params = statusFilter.value ? `?status=${statusFilter.value}` : ''
-    const json = await http.get<any>(`/api/stocktaking-discrepancies${params}`)
+    const json = await http.get<any>(`/stocktaking-discrepancies${params}`)
     items.value = Array.isArray(json) ? json : (json.items ?? [])
-  } catch (e) {
-    console.error(e)
-    showToast(t('wms.inventory.discrepancy.loadError', '棚卸差異の読み込みに失敗しました'), 'danger')
+  } catch (e: any) {
+    showToast(e?.message || t('wms.inventory.discrepancy.loadError', '棚卸差異の読み込みに失敗しました'), 'danger')
   } finally {
     loading.value = false
   }
@@ -111,7 +110,7 @@ async function load() {
 // アクション / 操作
 async function handleAction(row: any, action: 'approve' | 'reject') {
   try {
-    await http.patch<any>(`/api/stocktaking-discrepancies/${row._id}`, { action })
+    await http.patch<any>(`/stocktaking-discrepancies/${row._id}`, { action })
     showToast(t('wms.common.success', '成功'), 'success')
     await load()
   } catch (e: any) {

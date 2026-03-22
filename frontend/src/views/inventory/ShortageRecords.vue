@@ -99,11 +99,10 @@ async function load() {
   loading.value = true
   try {
     const params = statusFilter.value ? `?status=${statusFilter.value}` : ''
-    const json = await http.get<any>(`/api/shortage-records${params}`)
+    const json = await http.get<any>(`/shortage-records${params}`)
     items.value = Array.isArray(json) ? json : (json.items ?? [])
-  } catch (e) {
-    console.error(e)
-    showToast(t('wms.inventory.shortage.loadError', '欠品データの読み込みに失敗しました'), 'danger')
+  } catch (e: any) {
+    showToast(e?.message || t('wms.inventory.shortage.loadError', '欠品データの読み込みに失敗しました'), 'danger')
   } finally {
     loading.value = false
   }
@@ -112,7 +111,7 @@ async function load() {
 // アクション / 操作
 async function handleAction(row: any, action: 'reserve' | 'fulfill' | 'cancel') {
   try {
-    await http.patch<any>(`/api/shortage-records/${row._id}`, { action })
+    await http.patch<any>(`/shortage-records/${row._id}`, { action })
     showToast(t('wms.common.success', '成功'), 'success')
     await load()
   } catch (e: any) {

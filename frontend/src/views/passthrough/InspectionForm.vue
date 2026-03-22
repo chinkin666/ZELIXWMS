@@ -137,15 +137,15 @@ onMounted(loadOrder)
       <el-card style="margin-bottom: 16px">
         <template #header>6次元チェック / 6维度检查</template>
         <el-form label-width="140px">
-          <el-form-item v-for="(key, label) in {
-            'SKU 一致': 'skuMatch',
-            'バーコード一致': 'barcodeMatch',
-            '数量一致': 'quantityMatch',
-            '外観OK': 'appearanceOk',
-            '付属品OK': 'accessoriesOk',
-            '包装OK': 'packagingOk',
-          }" :key="label" :label="key">
-            <el-radio-group v-model="(checks as any)[label]">
+          <el-form-item v-for="(displayLabel, fieldKey) in {
+            skuMatch: 'SKU 一致',
+            barcodeMatch: 'バーコード一致',
+            quantityMatch: '数量一致',
+            appearanceOk: '外観OK',
+            accessoriesOk: '付属品OK',
+            packagingOk: '包装OK',
+          }" :key="fieldKey" :label="displayLabel">
+            <el-radio-group v-model="(checks as any)[fieldKey]">
               <el-radio-button v-for="opt in checkOptions" :key="opt.value" :value="opt.value">
                 {{ opt.label }}
               </el-radio-button>

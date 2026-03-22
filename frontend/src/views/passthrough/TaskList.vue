@@ -47,6 +47,7 @@ async function loadOrders() {
 
 // 作业完成实际数量输入 / 作業完了実数量入力
 const completingOrder = ref<string | null>(null)
+const completingDialogVisible = ref(false)
 const completingOption = ref('')
 const actualQuantity = ref(0)
 const submitting = ref(false)
@@ -55,6 +56,7 @@ function startComplete(orderId: string, optionCode: string, qty: number) {
   completingOrder.value = orderId
   completingOption.value = optionCode
   actualQuantity.value = qty
+  completingDialogVisible.value = true
 }
 
 async function submitComplete() {
@@ -74,6 +76,7 @@ async function submitComplete() {
     })
     if (res.ok) {
       ElMessage.success('作業完了 / 作业完成')
+      completingDialogVisible.value = false
       completingOrder.value = null
       await loadOrders()
     } else {
@@ -166,7 +169,7 @@ onMounted(loadOrders)
     </div>
 
     <!-- 完了ダイアログ / 完成对话框 -->
-    <el-dialog v-model="completingOrder" title="作業完了 / 作业完成" width="400px" :close-on-click-modal="false" @close="completingOrder = null">
+    <el-dialog v-model="completingDialogVisible" title="作業完了 / 作业完成" width="400px" :close-on-click-modal="false" @close="completingOrder = null">
       <el-form label-width="100px">
         <el-form-item label="作業">{{ completingOption }}</el-form-item>
         <el-form-item label="実数量">
@@ -174,7 +177,7 @@ onMounted(loadOrders)
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="completingOrder = null">キャンセル</el-button>
+        <el-button @click="completingDialogVisible = false">キャンセル</el-button>
         <el-button type="primary" :loading="submitting" @click="submitComplete">完了</el-button>
       </template>
     </el-dialog>
