@@ -1,1 +1,0 @@
-{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"createdAt":{"$numberInt":"-1"}},"name":"createdAt_-1","background":true}],"uuid":"51c7c3977d664956b642e1046804d924","collectionName":"wms_schedule_logs","type":"collection"}

@@ -1,24 +1,29 @@
 {
-  "name": "nexand-shipment-manager",
-  "version": "0.1.0",
+  "name": "zelixwms",
+  "version": "1.0.0",
   "private": true,
-  "description": "Monorepo for Nexand 出荷管理システム",
+  "description": "ZELIX WMS — 出荷管理システム / 出货管理系统",
   "workspaces": [
-    "backend",
+    "backend-nest",
     "frontend",
-    "mobile",
-    "packages/*"
+    "admin",
+    "portal"
   ],
   "scripts": {
-    "postinstall": "npm run bootstrap --workspaces --if-present",
-    "lint": "npm run lint --workspace backend",
-    "db": "mongod --dbpath ./local-db/mongo",
-    "dev:backend": "npm run dev --workspace backend",
-    "dev:frontend": "npm run dev --workspace frontend",
-    "dev:prod": "npm run dev:prod --workspace frontend",
-    "seed": "npm run seed --workspace backend",
-    "db:dump": "npm run db:dump --workspace backend",
-    "db:restore": "npm run db:restore --workspace backend"
+    "dev": "cd backend-nest && npm run start:dev",
+    "build": "cd backend-nest && npm run build",
+    "test": "cd backend-nest && npx jest --passWithNoTests",
+    "typecheck": "cd backend-nest && npx tsc --noEmit",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:admin": "cd admin && npm run dev",
+    "dev:portal": "cd portal && npm run dev",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "docker:rebuild": "docker compose up -d --build",
+    "db:migrate": "cd backend-nest && npx drizzle-kit migrate",
+    "db:generate": "cd backend-nest && npx drizzle-kit generate",
+    "prod:check": "bash scripts/prod-check.sh"
   },
   "dependencies": {
     "@rollup/rollup-win32-x64-msvc": "^4.59.1"

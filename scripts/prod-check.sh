@@ -1,128 +1,33 @@
 #!/usr/bin/env bash
 # =============================================================================
 # 生产环境就绪检查脚本 / 本番環境レディネスチェックスクリプト
-#
-# 用途: 在部署前验证所有构建和配置是否正常
-# 用途: デプロイ前にすべてのビルドと設定が正常かを検証する
 # =============================================================================
-
 set -euo pipefail
-
-# 项目根目录 / プロジェクトルートディレクトリ
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PASSED=0; FAILED=0; TOTAL=0
+GREEN='\033[0;32m'; RED='\033[0;31m'; YELLOW='\033[1;33m'; NC='\033[0m'
 
-# 计数器 / カウンター
-PASSED=0
-FAILED=0
-TOTAL=0
-
-# 颜色定义 / カラー定義
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-# 检查函数 / チェック関数
-# 参数1: 检查名称 / パラメータ1: チェック名
-# 参数2: 要执行的命令 / パラメータ2: 実行するコマンド
 run_check() {
-  local name="$1"
-  shift
-  TOTAL=$((TOTAL + 1))
-
+  local name="$1"; shift; TOTAL=$((TOTAL + 1))
   printf "  %-45s " "$name"
-
-  # 执行命令并捕获输出 / コマンドを実行して出力をキャプチャ
   if output=$("$@" 2>&1); then
-    echo -e "${GREEN}[PASS]${NC}"
-    PASSED=$((PASSED + 1))
-    return 0
+    echo -e "${GREEN}[PASS]${NC}"; PASSED=$((PASSED + 1))
   else
-    echo -e "${RED}[FAIL]${NC}"
-    # 显示错误详情（最多10行）/ エラー詳細を表示（最大10行）
-    echo "$output" | tail -10 | sed 's/^/    > /'
-    FAILED=$((FAILED + 1))
-    return 1
+    echo -e "${RED}[FAIL]${NC}"; echo "$output" | tail -5 | sed 's/^/    > /'; FAILED=$((FAILED + 1))
   fi
 }
 
-# =============================================================================
-# 开始检查 / チェック開始
-# =============================================================================
-echo ""
-echo -e "${YELLOW}=============================================${NC}"
-echo -e "${YELLOW}  ZELIXWMS 生产环境就绪检查${NC}"
-echo -e "${YELLOW}  ZELIXWMS 本番環境レディネスチェック${NC}"
-echo -e "${YELLOW}=============================================${NC}"
-echo ""
+echo -e "\n${YELLOW}  ZELIXWMS 生产环境就绪检查 / 本番レディネスチェック${NC}\n"
 
-# -----------------------------------------------------------------------------
-# 1. 后端 TypeScript 编译检查 / バックエンド TypeScript コンパイルチェック
-# -----------------------------------------------------------------------------
-echo "[ 构建检查 / ビルドチェック ]"
-echo ""
+run_check "Backend (NestJS) TypeScript"   bash -c "cd '$ROOT_DIR/backend-nest' && npx tsc --noEmit" || true
+run_check "Backend (NestJS) Tests"        bash -c "cd '$ROOT_DIR/backend-nest' && npx jest --passWithNoTests" || true
+run_check "Frontend build"                bash -c "cd '$ROOT_DIR/frontend' && npm run build" || true
+run_check "Admin build"                   bash -c "cd '$ROOT_DIR/admin' && npm run build" || true
+run_check "Portal build"                  bash -c "cd '$ROOT_DIR/portal' && npm run build" || true
+run_check "Docker Compose config"         bash -c "cd '$ROOT_DIR' && docker compose config --quiet" || true
+run_check "Drizzle migrations"            test -d "$ROOT_DIR/backend-nest/drizzle" || true
+run_check "Nginx config"                  test -f "$ROOT_DIR/nginx/nginx.conf" || true
 
-run_check "Backend TypeScript 编译 / コンパイル" \
-  bash -c "cd '$ROOT_DIR/backend' && npx tsc --project tsconfig.json --noEmit" || true
-
-# -----------------------------------------------------------------------------
-# 2. 前端构建检查 / フロントエンドビルドチェック
-# -----------------------------------------------------------------------------
-run_check "Frontend 构建 / ビルド" \
-  bash -c "cd '$ROOT_DIR/frontend' && npm run build-only" || true
-
-# -----------------------------------------------------------------------------
-# 3. Admin 构建检查 / Admin ビルドチェック
-# -----------------------------------------------------------------------------
-run_check "Admin 构建 / ビルド" \
-  bash -c "cd '$ROOT_DIR/admin' && npm run build" || true
-
-# -----------------------------------------------------------------------------
-# 4. Portal 构建检查 / Portal ビルドチェック
-# -----------------------------------------------------------------------------
-run_check "Portal 构建 / ビルド" \
-  bash -c "cd '$ROOT_DIR/portal' && npm run build" || true
-
-# -----------------------------------------------------------------------------
-# 5. Docker Compose 配置验证 / Docker Compose 設定検証
-# -----------------------------------------------------------------------------
-echo ""
-echo "[ 配置检查 / 設定チェック ]"
-echo ""
-
-run_check "Docker Compose 配置有效 / 設定有効" \
-  bash -c "cd '$ROOT_DIR' && docker compose config --quiet" || true
-
-# -----------------------------------------------------------------------------
-# 6. 环境变量文件检查 / 環境変数ファイルチェック
-# -----------------------------------------------------------------------------
-run_check "backend/.env.example 存在 / 存在確認" \
-  test -f "$ROOT_DIR/backend/.env.example" || true
-
-run_check "backend/.env.production.example 存在 / 存在確認" \
-  test -f "$ROOT_DIR/backend/.env.production.example" || true
-
-# =============================================================================
-# 结果汇总 / 結果サマリー
-# =============================================================================
-echo ""
-echo -e "${YELLOW}=============================================${NC}"
-echo -e "${YELLOW}  检查结果汇总 / チェック結果サマリー${NC}"
-echo -e "${YELLOW}=============================================${NC}"
-echo ""
-echo -e "  总计 / 合計:   $TOTAL"
-echo -e "  ${GREEN}通过 / 合格:   $PASSED${NC}"
-echo -e "  ${RED}失败 / 不合格: $FAILED${NC}"
-echo ""
-
-if [ "$FAILED" -eq 0 ]; then
-  echo -e "  ${GREEN}✅ 所有检查通过！可以部署到生产环境。${NC}"
-  echo -e "  ${GREEN}✅ すべてのチェック合格！本番環境へデプロイ可能です。${NC}"
-  echo ""
-  exit 0
-else
-  echo -e "  ${RED}❌ 有 $FAILED 项检查未通过，请修复后再部署。${NC}"
-  echo -e "  ${RED}❌ $FAILED 件のチェックが不合格です。修正後に再デプロイしてください。${NC}"
-  echo ""
-  exit 1
-fi
+echo -e "\n  总计: $TOTAL | ${GREEN}通过: $PASSED${NC} | ${RED}失败: $FAILED${NC}\n"
+[ "$FAILED" -eq 0 ] && echo -e "  ${GREEN}✅ All checks passed${NC}" && exit 0
+echo -e "  ${RED}❌ $FAILED checks failed${NC}" && exit 1
