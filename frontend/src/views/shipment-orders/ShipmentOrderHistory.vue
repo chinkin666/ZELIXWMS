@@ -196,7 +196,7 @@ onMounted(async () => {
   margin-bottom: 20px;
 }
 
-::deep(.error-cell) {
+:deep(.error-cell) {
   background-color: #ffebee !important;
 }
 </style>

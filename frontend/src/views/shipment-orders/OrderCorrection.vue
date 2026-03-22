@@ -122,7 +122,11 @@ const order = ref<OrderData | null>(null)
 
 // 注文検索 / 搜索订单
 const handleSearch = async () => {
-  if (!searchQuery.value) return
+  if (!searchQuery.value) {
+    order.value = null
+    searchDone.value = false
+    return
+  }
   isSearching.value = true
   searchDone.value = false
   order.value = null
@@ -156,16 +160,16 @@ const handleSearch = async () => {
   }
 }
 
-// 商品行追加 / 添加商品行
+// 商品行追加（不変パターン）/ 添加商品行（不可变模式）
 const addItem = () => {
   if (!order.value) return
-  order.value.items.push({ sku: '', productName: '', quantity: 1 })
+  order.value = { ...order.value, items: [...order.value.items, { sku: '', productName: '', quantity: 1 }] }
 }
 
-// 商品行削除 / 删除商品行
+// 商品行削除（不変パターン）/ 删除商品行（不可变模式）
 const removeItem = (idx: number) => {
   if (!order.value) return
-  order.value.items.splice(idx, 1)
+  order.value = { ...order.value, items: order.value.items.filter((_: any, i: number) => i !== idx) }
 }
 
 // 保存 / 保存
