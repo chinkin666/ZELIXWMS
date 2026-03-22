@@ -78,13 +78,13 @@ async function loadDashboard() {
       http.get<any>('/api/kpi/throughput'),
     ])
 
-    dashboard.value = dashRes
-    overview.value = overviewRes
-    shipment.value = shipRes
-    inventory.value = invRes
-    performance.value = perfRes
+    dashboard.value = { ...dashboard.value, ...(dashRes ?? {}) }
+    overview.value = { ...overview.value, ...(overviewRes ?? {}) }
+    shipment.value = { ...shipment.value, ...(shipRes ?? {}) }
+    inventory.value = { ...inventory.value, ...(invRes ?? {}) }
+    performance.value = { ...performance.value, ...(perfRes ?? {}) }
     stockAlerts.value = Array.isArray(alertsRes) ? alertsRes.slice(0, 10) : []
-    throughput.value = thruRes
+    throughput.value = thruRes ?? { rate: 0 }
   } catch (e) {
     console.error('Manager dashboard load failed', e)
   } finally {
@@ -96,8 +96,8 @@ function goTo(path: string) {
   router.push(path)
 }
 
-function formatNumber(n: number): string {
-  return n.toLocaleString('ja-JP')
+function formatNumber(n: number | null | undefined): string {
+  return (n ?? 0).toLocaleString('ja-JP')
 }
 
 onMounted(loadDashboard)
