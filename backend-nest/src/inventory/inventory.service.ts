@@ -270,7 +270,7 @@ export class InventoryService {
       await tx.execute(sql`
         INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
         VALUES (${tenantId}, ${productId}, ${locationId}, ${quantity}, ${now}, ${now})
-        ON CONFLICT (tenant_id, product_id, location_id, lot_id)
+        ON CONFLICT (tenant_id, product_id, location_id, COALESCE(lot_id, '00000000-0000-0000-0000-000000000000'))
         DO UPDATE SET
           quantity = stock_quants.quantity + ${quantity},
           updated_at = ${now},
@@ -321,7 +321,7 @@ export class InventoryService {
       await tx.execute(sql`
         INSERT INTO stock_quants (tenant_id, product_id, location_id, quantity, updated_at, last_moved_at)
         VALUES (${tenantId}, ${productId}, ${toLocationId}, ${quantity}, ${now}, ${now})
-        ON CONFLICT (tenant_id, product_id, location_id, lot_id)
+        ON CONFLICT (tenant_id, product_id, location_id, COALESCE(lot_id, '00000000-0000-0000-0000-000000000000'))
         DO UPDATE SET
           quantity = stock_quants.quantity + ${quantity},
           updated_at = ${now},
