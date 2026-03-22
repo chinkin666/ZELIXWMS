@@ -1,7 +1,7 @@
 // オーダーグループサービス / 订单分组服务
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { WmsException } from '../common/exceptions/wms.exception.js';
-import { eq, and, ilike, sql, SQL, isNull } from 'drizzle-orm';
+import { eq, and, ilike, sql, SQL, isNull, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
 import { orderGroups, shipmentOrders, shipmentOrderProducts } from '../database/schema/shipments.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
@@ -240,7 +240,7 @@ export class OrderGroupsService {
         .where(
           and(
             eq(shipmentOrders.tenantId, tenantId),
-            sql`${shipmentOrders.id} = ANY(${sql.raw(`ARRAY[${orderIds.map((id) => `'${id}'::uuid`).join(',')}]`)})`,
+            inArray(shipmentOrders.id, orderIds),
           ),
         );
 

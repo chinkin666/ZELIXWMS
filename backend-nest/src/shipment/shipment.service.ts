@@ -500,7 +500,12 @@ export class ShipmentService {
           customFields: merged,
           updatedAt: now,
         })
-        .where(and(eq(shipmentOrders.id, target.id), eq(shipmentOrders.tenantId, tenantId)))
+        .where(and(
+          eq(shipmentOrders.id, target.id),
+          eq(shipmentOrders.tenantId, tenantId),
+          eq(shipmentOrders.statusShipped, false),
+          isNull(shipmentOrders.deletedAt),
+        ))
         .returning();
       if (updated) results.push(updated);
     }
@@ -603,7 +608,11 @@ export class ShipmentService {
         statusPrintedAt: now,
         updatedAt: now,
       })
-      .where(and(eq(shipmentOrders.id, id), eq(shipmentOrders.tenantId, tenantId)))
+      .where(and(
+        eq(shipmentOrders.id, id),
+        eq(shipmentOrders.tenantId, tenantId),
+        sql`${shipmentOrders.trackingId} IS NOT NULL`,
+      ))
       .returning();
 
     return {
