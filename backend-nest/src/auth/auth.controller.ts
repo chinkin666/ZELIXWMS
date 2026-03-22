@@ -71,10 +71,24 @@ export class PortalAuthController {
     return this.authService.portalLogin(body.email, body.password);
   }
 
+  // ポータルログイン（/auth/login パス互換）/ 门户登录（/auth/login 路径兼容）
+  @Public()
+  @Post('auth/login')
+  portalAuthLogin(@Body() body: { email: string; password: string }) {
+    return this.authService.portalLogin(body.email, body.password);
+  }
+
   // ポータル登録 / 门户注册
   @Public()
   @Post('register')
   portalRegister(@Body() body: { email: string; password: string; companyName?: string }) {
+    return this.authService.portalRegister(body.email, body.password, body.companyName);
+  }
+
+  // ポータル登録（/auth/register パス互換）/ 门户注册（/auth/register 路径兼容）
+  @Public()
+  @Post('auth/register')
+  portalAuthRegister(@Body() body: { email: string; password: string; companyName?: string }) {
     return this.authService.portalRegister(body.email, body.password, body.companyName);
   }
 }

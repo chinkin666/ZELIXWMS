@@ -299,9 +299,13 @@ export class AuthService {
 
   // ポータルログイン（クライアント向け）/ 门户登录（面向客户）
   async portalLogin(email: string, password: string) {
+    // 開発モード: Supabase未設定時はdev loginへ / 开发模式: Supabase未配置时走dev login
+    if (!this.supabase) {
+      return this.devLogin({ email, password } as any);
+    }
     // Supabase Auth でパスワード認証 / 通过Supabase Auth进行密码认证
     const { data: authData, error: authError } =
-      await this.ensureSupabase().auth.signInWithPassword({ email, password });
+      await this.supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
       throw new WmsException('AUTH_INVALID_CREDENTIALS', authError.message);
