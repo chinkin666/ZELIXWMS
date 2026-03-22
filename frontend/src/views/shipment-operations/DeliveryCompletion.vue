@@ -86,7 +86,9 @@ import { useI18n } from '@/composables/useI18n'
 import OButton from '@/components/odoo/OButton.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import { apiFetch } from '@/api/http'
+import { getApiBaseUrl } from '@/api/base'
 
+const API_BASE_URL = getApiBaseUrl()
 const toast = useToast()
 const { t } = useI18n()
 const orders = ref<any[]>([])
@@ -113,7 +115,7 @@ async function loadData() {
   try {
     // 出荷済み注文を取得 / 获取已出荷订单
     const params = new URLSearchParams({ limit: '200', sortBy: 'createdAt', sortOrder: 'desc' })
-    const res = await apiFetch(`/api/shipment-orders?${params}`)
+    const res = await apiFetch(`${API_BASE_URL}/shipment-orders?${params}`)
     if (!res.ok) {
       toast.showError('データの取得に失敗しました')
       return
@@ -152,7 +154,7 @@ async function loadData() {
 // 配完処理（carrier_received ステータスに変更）/ 标记配达完成（变更为carrier_received状态）
 async function markDelivered(orderId: string) {
   try {
-    await apiFetch('/api/shipment-orders/status/bulk', {
+    await apiFetch(`${API_BASE_URL}/shipment-orders/status/bulk`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids: [orderId], status: 'carrier_received' }),
@@ -167,7 +169,7 @@ async function markDelivered(orderId: string) {
 // 一括配完 / 批量配达完成
 async function markDeliveredBulk() {
   try {
-    await apiFetch('/api/shipment-orders/status/bulk', {
+    await apiFetch(`${API_BASE_URL}/shipment-orders/status/bulk`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids: selectedIds.value, status: 'carrier_received' }),
