@@ -32,8 +32,8 @@ async function loadDashboard() {
   try {
     // 並列でデータ取得 / 并行获取数据
     const [kpi, orders] = await Promise.all([
-      http.get<any>('/api/kpi/dashboard'),
-      http.get<any>('/api/shipment-orders?limit=20'),
+      http.get<any>('/kpi/dashboard'),
+      http.get<any>('/shipment-orders?limit=20'),
     ])
 
     // KPIからステータス集計 / 从KPI提取状态统计

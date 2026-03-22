@@ -119,7 +119,7 @@ const typeLabel = (type: string): string => {
 async function load() {
   loading.value = true
   try {
-    const json = await http.get<any>('/api/gift-options')
+    const json = await http.get<any>('/gift-options')
     items.value = Array.isArray(json) ? json : (json.items ?? [])
   } catch (e) {
     console.error(e)

@@ -69,13 +69,13 @@ async function loadDashboard() {
   try {
     // 全KPIを並列取得 / 并行获取所有KPI
     const [dashRes, overviewRes, shipRes, invRes, perfRes, alertsRes, thruRes] = await Promise.all([
-      http.get<any>('/api/kpi/dashboard'),
-      http.get<any>('/api/kpi/overview-metrics'),
-      http.get<any>('/api/kpi/shipment-metrics'),
-      http.get<any>('/api/kpi/inventory-metrics'),
-      http.get<any>('/api/kpi/performance'),
-      http.get<any>('/api/kpi/alerts?threshold=10'),
-      http.get<any>('/api/kpi/throughput'),
+      http.get<any>('/kpi/dashboard'),
+      http.get<any>('/kpi/overview-metrics'),
+      http.get<any>('/kpi/shipment-metrics'),
+      http.get<any>('/kpi/inventory-metrics'),
+      http.get<any>('/kpi/performance'),
+      http.get<any>('/kpi/alerts?threshold=10'),
+      http.get<any>('/kpi/throughput'),
     ])
 
     dashboard.value = { ...dashboard.value, ...(dashRes ?? {}) }
