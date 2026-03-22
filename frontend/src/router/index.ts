@@ -245,6 +245,20 @@ const router = createRouter({
               component: () => import('@/views/shipment-operations/TrackingManagement.vue'),
               meta: { title: '伝票管理', requiresAuth: true },
             },
+            // 出荷注文スキャン / 出货订单扫描
+            {
+              path: 'operations/scan',
+              name: 'OrderItemScan',
+              component: () => import('@/views/shipment-operations/OrderItemScan.vue'),
+              meta: { title: '出荷スキャン', requiresAuth: true },
+            },
+            // 出荷指示取込履歴 / 出货指示导入历史
+            {
+              path: 'orders/history',
+              name: 'ShipmentOrderHistory',
+              component: () => import('@/views/shipment-orders/ShipmentOrderHistory.vue'),
+              meta: { title: '出荷取込履歴', requiresAuth: true },
+            },
             // === ギフト設定 / 礼品设置 ===
             {
               path: 'gift-options',
