@@ -780,6 +780,89 @@ function generateSampleData(type: string): Record<string, any>[] {
     ]
   }
 
+  // 入庫差異リスト / 入库差异
+  if (type === 'inbound-variance-list') {
+    return [
+      { orderNumber: 'IN-001', poNumber: 'PO-001', productSku: 'SKU-001', productName: 'サンプル商品A', expectedQuantity: 100, receivedQuantity: 95, damagedQuantity: 2, variance: -5, variancePercent: '-5.0%' },
+      { orderNumber: 'IN-001', poNumber: 'PO-001', productSku: 'SKU-002', productName: 'サンプル商品B', expectedQuantity: 50, receivedQuantity: 50, damagedQuantity: 0, variance: 0, variancePercent: '0%' },
+    ]
+  }
+
+  // 入庫看板 / 入库看板
+  if (type === 'inbound-kanban') {
+    return [{ orderNumber: 'IN-20260322-001', clientName: '田中商事', expectedDate: '2026/03/22', totalSku: 15, totalQuantity: 1200, warehouseLocation: 'RCV-A01', barcode: 'IN20260322001' }]
+  }
+
+  // 入庫実績一覧表 / 入库实绩
+  if (type === 'inbound-actual-list') {
+    return [
+      { orderNumber: 'IN-001', poNumber: 'PO-001', productSku: 'SKU-001', productName: 'サンプル商品A', receivedQuantity: 95, damagedQuantity: 2, completedAt: '2026/03/22 14:30', warehouseName: 'メイン倉庫' },
+      { orderNumber: 'IN-001', poNumber: 'PO-001', productSku: 'SKU-002', productName: 'サンプル商品B', receivedQuantity: 50, damagedQuantity: 0, completedAt: '2026/03/22 14:30', warehouseName: 'メイン倉庫' },
+    ]
+  }
+
+  // 棚卸指示書 / 盘点指示
+  if (type === 'stocktaking-instruction') {
+    return [{ orderNumber: 'ST-001', title: '田中商事_棚卸20260322', stocktakingCategory: '完全棚卸', instructionDate: '2026/03/22', locationFrom: 'A-01-01', locationTo: 'A-05-10', clientName: '田中商事', totalSlots: 50 }]
+  }
+
+  // 棚卸チェックリスト / 盘点检查表
+  if (type === 'stocktaking-checklist') {
+    return [
+      { locationCode: 'A-01-01', productSku: 'SKU-001', productName: 'サンプル商品A', systemQuantity: 100, countedQuantity: 98, discrepancy: -2, resultMark: 'OK', countRound: 1 },
+      { locationCode: 'A-01-02', productSku: 'SKU-002', productName: 'サンプル商品B', systemQuantity: 50, countedQuantity: 50, discrepancy: 0, resultMark: 'OK', countRound: 1 },
+    ]
+  }
+
+  // 棚卸差異リスト / 盘点差异
+  if (type === 'stocktaking-variance') {
+    return [
+      { locationCode: 'A-01-01', productSku: 'SKU-001', productName: 'サンプル商品A', systemQuantity: 100, countedQuantity: 98, discrepancy: -2, warehouseType: '常温', previousCount: 100, resultMark: 'NG', notes: '破損あり' },
+    ]
+  }
+
+  // 棚卸報告書 / 盘点报告
+  if (type === 'stocktaking-report') {
+    return [{ orderNumber: 'ST-001', title: '田中商事_棚卸20260322', totalSlots: 50, completedSlots: 50, theoreticalPieceCount: 5000, actualPieceCount: 4995, judgment: '合格', confirmedAt: '2026/03/22 17:00', customerNotificationDate: '2026/03/23' }]
+  }
+
+  // 梱包明細 / 包装明细
+  if (type === 'packing-detail') {
+    return [
+      { orderNumber: 'ORD-001', boxNumber: 1, productSku: 'SKU-001', productName: 'サンプル商品A', quantity: 5, weight: '2.5kg', dimensions: '30x20x15cm' },
+      { orderNumber: 'ORD-001', boxNumber: 1, productSku: 'SKU-002', productName: 'サンプル商品B', quantity: 3, weight: '1.2kg', dimensions: '25x15x10cm' },
+    ]
+  }
+
+  // 出荷未検品一覧 / 未检品列表
+  if (type === 'unshipped-list') {
+    return [
+      { orderNumber: 'ORD-001', recipientName: '田中太郎', recipientAddress: '東京都千代田区', carrierName: 'ヤマト運輸', shipPlanDate: '2026/03/22', createdAt: '2026/03/21' },
+      { orderNumber: 'ORD-002', recipientName: '鈴木花子', recipientAddress: '大阪府大阪市', carrierName: '佐川急便', shipPlanDate: '2026/03/22', createdAt: '2026/03/21' },
+    ]
+  }
+
+  // 配送証明 POD / 配送证明
+  if (type === 'pod-delivery-proof') {
+    return [{ orderNumber: 'ORD-001', recipientName: '田中太郎', recipientAddress: '東京都千代田区丸の内1-1-1', carrierName: 'ヤマト運輸', trackingNumber: '1234-5678-9012', shippedAt: '2026/03/22 10:00', deliveredAt: '2026/03/23 14:30', signature: '田中' }]
+  }
+
+  // 在庫証明書 / 库存证明
+  if (type === 'inventory-certificate') {
+    return [
+      { productSku: 'SKU-001', productName: 'サンプル商品A', locationCode: 'A-01-01', quantity: 100, reservedQuantity: 10, lastMovedAt: '2026/03/20', certifiedDate: '2026/03/22' },
+      { productSku: 'SKU-002', productName: 'サンプル商品B', locationCode: 'B-02-03', quantity: 50, reservedQuantity: 0, lastMovedAt: '2026/03/18', certifiedDate: '2026/03/22' },
+    ]
+  }
+
+  // FBA報告データ / FBA报告
+  if (type === 'fba-report') {
+    return [
+      { planName: 'FBA-2026-001', boxNumber: 1, productSku: 'SKU-001', productName: 'サンプル商品A', quantity: 20, width: 30, depth: 20, height: 15, weight: 5.2, fnsku: 'X001234567' },
+      { planName: 'FBA-2026-001', boxNumber: 2, productSku: 'SKU-002', productName: 'サンプル商品B', quantity: 10, width: 25, depth: 15, height: 10, weight: 3.1, fnsku: 'X001234568' },
+    ]
+  }
+
   // 出荷明細リスト（デフォルト）/ 出货明细
   return [
     { orderNumber: 'ORD-2026-0001', customerManagementNumber: 'CUST-123', ecCompanyName: 'Amazon', carrierName: 'ヤマト運輸', invoiceTypeName: '発払い宅急便', shipPlanDate: '2026/01/04', deliveryDatePreference: '2026/01/06', deliveryTimeSlot: '14-16', coolTypeName: '通常', products: 'サンプル商品A x2, サンプル商品B x1', productTotalQuantity: 3, recipientPostalCode: '100-0001', recipientAddress: '東京都千代田区丸の内1-1-1', recipientName: '田中太郎', recipientPhone: '090-1234-5678', senderPostalCode: '150-0001', senderAddress: '東京都渋谷区神宮前1-1-1', senderName: 'サンプル倉庫', senderPhone: '03-1234-5678', ordererPostalCode: '100-0001', ordererAddress: '東京都千代田区丸の内1-1-1', ordererName: '田中太郎', ordererPhone: '090-1234-5678', honorific: '様', handlingTags: 'ワレモノ', createdAt: '2026/01/03', statusPrintedAt: '2026/01/04', statusCarrierReceiptAt: '2026/01/04' },
