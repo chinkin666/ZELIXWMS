@@ -13,12 +13,12 @@ RUN npm ci
 
 COPY . .
 
-ARG VITE_BACKEND_ORIGIN=http://localhost:4000
+ARG VITE_BACKEND_ORIGIN=http://localhost:4100
 ARG VITE_BACKEND_API_PREFIX=/api
 ENV VITE_BACKEND_ORIGIN=${VITE_BACKEND_ORIGIN}
 ENV VITE_BACKEND_API_PREFIX=${VITE_BACKEND_API_PREFIX}
 
-RUN npm run build-only
+RUN npx vite build
 
 # ---- Stage 2: Nginx / 本番ステージ ----
 FROM nginx:alpine AS production

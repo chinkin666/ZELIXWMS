@@ -16,7 +16,7 @@ COPY package.json package-lock.json* ./
 
 # Install all dependencies (including devDependencies for building)
 # 全依存パッケージをインストール（ビルド用 devDependencies 含む）
-RUN npm ci
+RUN npm install
 
 # Copy source and config files / ソースと設定ファイルをコピー
 COPY . .
@@ -25,7 +25,7 @@ COPY . .
 # Vite でビルド（本番モード）
 # Backend URL is configured via .env.production or build args
 # バックエンド URL は .env.production またはビルド引数で設定
-ARG VITE_BACKEND_ORIGIN=http://localhost:4000
+ARG VITE_BACKEND_ORIGIN=http://localhost:4100
 ARG VITE_BACKEND_API_PREFIX=/api
 ENV VITE_BACKEND_ORIGIN=${VITE_BACKEND_ORIGIN}
 ENV VITE_BACKEND_API_PREFIX=${VITE_BACKEND_API_PREFIX}
