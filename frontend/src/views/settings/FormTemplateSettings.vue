@@ -93,12 +93,30 @@ const createForm = ref({
 
 // 预设模板列表 / プリセットテンプレート一覧
 const presetTemplates = [
+  // 出荷系 / 出库系
   { type: 'shipment-list-picking', name: 'ピッキングリスト', description: '出荷商品の集計リスト' },
   { type: 'shipment-detail-list', name: '出荷明細リスト', description: '出荷指示の詳細一覧' },
+  // 入庫系 / 入库系
   { type: 'inbound-detail-list', name: '入庫リスト', description: '入庫指示のライン明細' },
   { type: 'inbound-inspection-sheet', name: '入庫検品シート', description: '入庫検品チェックリスト' },
+  { type: 'inbound-variance-list', name: '入庫差異リスト', description: '入荷予定と実績の差異' },
+  { type: 'inbound-kanban', name: '入庫看板', description: '入庫指示サマリの看板' },
+  { type: 'inbound-actual-list', name: '入庫実績一覧表', description: '完了済み入庫の実績' },
+  // 棚卸系 / 盘点系
+  { type: 'stocktaking-instruction', name: '棚卸指示書', description: '棚卸実施の指示情報' },
+  { type: 'stocktaking-checklist', name: '棚卸チェックリスト', description: '棚卸実施チェック用' },
+  { type: 'stocktaking-variance', name: '棚卸差異リスト', description: '棚卸結果の差異抽出' },
+  { type: 'stocktaking-report', name: '棚卸報告書', description: '棚卸最終報告サマリ' },
+  // 梱包・配送系 / 装箱・配送系
+  { type: 'packing-detail', name: '梱包明細', description: '箱単位の梱包内容' },
+  { type: 'unshipped-list', name: '出荷未検品一覧', description: '未検品の出荷注文一覧' },
+  { type: 'pod-delivery-proof', name: '配送証明 POD', description: '配達完了の証明データ' },
+  // 納品書・ラベル系 / 交货单・标签系
   { type: 'delivery-note', name: '納品書', description: 'B2B出荷用の納品書' },
   { type: 'product-label', name: '商品ラベル', description: '商品小標籤・外箱ラベル' },
+  // 在庫・FBA系 / 库存・FBA系
+  { type: 'inventory-certificate', name: '在庫証明書', description: '在庫の証明データ' },
+  { type: 'fba-report', name: 'FBA報告データ', description: 'Amazon FBA出荷プラン報告' },
 ]
 
 function applyPreset(preset: { type: string; name: string }) {

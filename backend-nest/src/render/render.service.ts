@@ -267,6 +267,294 @@ export class RenderService {
   }
 
   // ===================================================================
+  // 入庫差異PDF生成 / 入库差异PDF生成
+  // ===================================================================
+
+  /**
+   * 入庫差異PDF生成 / 生成入库差异PDF
+   * 入庫指示の予定数と実績数の差異をPDFで出力
+   * 输出入库指示的预期数量与实际数量差异PDF
+   */
+  async renderInboundVariance(
+    tenantId: string,
+    orderId: string,
+  ): Promise<PdfResult> {
+    const buffer = await this.buildGenericTablePdf(
+      `入庫差異レポート / 入库差异报告 — ${orderId}`,
+      ['SKU', '商品名', '予定数', '受入数', '破損数', '差異', '差異率%'],
+      [60, 140, 60, 60, 60, 60, 60],
+      // データはAPIコール先から取得する想定 / 数据预计从API获取
+      // 現時点ではプレースホルダ行を生成 / 目前生成占位行
+      [['—', '（データ取得未実装 / 数据获取未实装）', '', '', '', '', '']],
+    );
+
+    return {
+      success: true,
+      buffer,
+      contentType: 'application/pdf',
+      fileName: `inbound-variance-${orderId}-${Date.now()}.pdf`,
+    };
+  }
+
+  /**
+   * 入庫看板PDF生成 / 生成入库看板PDF
+   * 入庫指示のサマリをA4看板形式でPDF出力（バーコード付き）
+   * 以A4看板形式输出入库指示汇总PDF（含条形码）
+   */
+  async renderInboundKanban(
+    tenantId: string,
+    orderId: string,
+  ): Promise<PdfResult> {
+    const buffer = await new Promise<Buffer>((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margin: 50,
+          info: {
+            Title: `入庫看板 / 入库看板 — ${orderId}`,
+            Author: 'ZELIXWMS',
+            Creator: 'ZELIXWMS RenderService',
+          },
+        });
+
+        const chunks: Buffer[] = [];
+        doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', (err: Error) => reject(err));
+
+        // タイトル / 标题
+        doc.fontSize(24).font('Helvetica-Bold').text(`入庫看板`, { align: 'center' });
+        doc.moveDown(0.5);
+        doc.fontSize(14).font('Helvetica').text(`Order: ${orderId}`, { align: 'center' });
+        doc.moveDown(1);
+
+        // 区切り線 / 分隔线
+        doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#333333').lineWidth(2).stroke();
+        doc.moveDown(1);
+
+        // 情報ブロック / 信息块
+        const labelStyle = { continued: true };
+        doc.fontSize(12).font('Helvetica-Bold');
+        doc.text('入庫指示No: ', labelStyle).font('Helvetica').text(orderId);
+        doc.moveDown(0.5);
+        doc.font('Helvetica-Bold').text('荷主名 / 货主: ', labelStyle).font('Helvetica').text('（データ取得未実装 / 待实装）');
+        doc.moveDown(0.5);
+        doc.font('Helvetica-Bold').text('入荷予定日 / 到货日: ', labelStyle).font('Helvetica').text('—');
+        doc.moveDown(0.5);
+        doc.font('Helvetica-Bold').text('SKU数 / SKU数: ', labelStyle).font('Helvetica').text('—');
+        doc.moveDown(0.5);
+        doc.font('Helvetica-Bold').text('合計数量 / 总数: ', labelStyle).font('Helvetica').text('—');
+        doc.moveDown(1.5);
+
+        // バーコード（SVGではなくテキスト表現）/ 条形码（文本表示）
+        doc.fontSize(10).font('Helvetica').fillColor('#666666').text(`Barcode: ${orderId}`, { align: 'center' });
+        doc.moveDown(2);
+
+        // フッター / 页脚
+        doc.fontSize(9).fillColor('#999999').text(`Generated at ${new Date().toISOString()}`, { align: 'left' });
+
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+    return {
+      success: true,
+      buffer,
+      contentType: 'application/pdf',
+      fileName: `inbound-kanban-${orderId}-${Date.now()}.pdf`,
+    };
+  }
+
+  /**
+   * 棚卸報告書PDF生成 / 生成盘点报告书PDF
+   * 棚卸結果のサマリ報告をPDF出力
+   * 输出盘点结果汇总报告PDF
+   */
+  async renderStocktakingReport(
+    tenantId: string,
+    orderId: string,
+  ): Promise<PdfResult> {
+    const buffer = await new Promise<Buffer>((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margin: 50,
+          info: {
+            Title: `棚卸報告書 / 盘点报告书 — ${orderId}`,
+            Author: 'ZELIXWMS',
+            Creator: 'ZELIXWMS RenderService',
+          },
+        });
+
+        const chunks: Buffer[] = [];
+        doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', (err: Error) => reject(err));
+
+        // タイトル / 标题
+        doc.fontSize(20).font('Helvetica-Bold').text('棚卸報告書', { align: 'left' });
+        const titleY = doc.y;
+        doc.moveTo(50, titleY + 4).lineTo(545, titleY + 4).strokeColor('#333333').lineWidth(2).stroke();
+        doc.moveDown(1);
+
+        // 基本情報 / 基本信息
+        doc.fontSize(12).font('Helvetica-Bold');
+        doc.text(`棚卸番号 / 盘点编号: ${orderId}`);
+        doc.moveDown(0.5);
+        doc.text('タイトル / 标题: —');
+        doc.moveDown(0.5);
+        doc.text('対象スロット数 / 目标库位数: —');
+        doc.moveDown(0.5);
+        doc.text('完了スロット数 / 已完成库位数: —');
+        doc.moveDown(0.5);
+        doc.text('理論個数 / 系统总数: —');
+        doc.moveDown(0.5);
+        doc.text('実際個数 / 实际总数: —');
+        doc.moveDown(0.5);
+        doc.text('総合判定 / 综合判定: —');
+        doc.moveDown(0.5);
+        doc.text(`確認日 / 确认日: ${new Date().toISOString().slice(0, 10)}`);
+        doc.moveDown(2);
+
+        // フッター / 页脚
+        doc.fontSize(9).font('Helvetica').fillColor('#999999').text(`Generated at ${new Date().toISOString()}`, { align: 'left' });
+
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+    return {
+      success: true,
+      buffer,
+      contentType: 'application/pdf',
+      fileName: `stocktaking-report-${orderId}-${Date.now()}.pdf`,
+    };
+  }
+
+  /**
+   * ピッキングリストPDF生成 / 生成拣货单PDF
+   * 指定された注文IDのピッキングリストをPDF出力
+   * 为指定的订单ID输出拣货单PDF
+   */
+  async renderPickingListPdf(
+    tenantId: string,
+    type: string,
+    orderIds: readonly string[],
+  ): Promise<PdfResult> {
+    const buffer = await this.buildGenericTablePdf(
+      `ピッキングリスト / 拣货单 (${type})`,
+      ['#', 'Order ID', 'SKU', '商品名', '数量'],
+      [30, 100, 100, 180, 60],
+      orderIds.map((id, idx) => [
+        String(idx + 1),
+        id,
+        '—',
+        '（データ取得未実装 / 数据获取未实装）',
+        '—',
+      ]),
+    );
+
+    return {
+      success: true,
+      buffer,
+      contentType: 'application/pdf',
+      fileName: `picking-list-${type}-${Date.now()}.pdf`,
+    };
+  }
+
+  // ===================================================================
+  // 汎用テーブルPDF生成ヘルパー / 通用表格PDF生成辅助方法
+  // ===================================================================
+
+  /**
+   * 汎用テーブルPDF生成 / 生成通用表格PDF
+   * ヘッダー + 行データからA4テーブルPDFを構築
+   * 从表头+行数据构建A4表格PDF
+   */
+  private buildGenericTablePdf(
+    title: string,
+    headers: readonly string[],
+    colWidths: readonly number[],
+    rows: readonly (readonly string[])[],
+  ): Promise<Buffer> {
+    return new Promise<Buffer>((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margin: 50,
+          info: { Title: title, Author: 'ZELIXWMS', Creator: 'ZELIXWMS RenderService' },
+        });
+
+        const chunks: Buffer[] = [];
+        doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', (err: Error) => reject(err));
+
+        // タイトル / 标题
+        doc.fontSize(16).font('Helvetica-Bold').text(title, { align: 'left' });
+        const titleY = doc.y;
+        doc.moveTo(50, titleY + 4).lineTo(545, titleY + 4).strokeColor('#333333').lineWidth(2).stroke();
+        doc.moveDown(1);
+
+        const tableLeft = 50;
+        const rowHeight = 22;
+        const textPadding = 4;
+        let currentY = doc.y + 4;
+
+        // ヘッダー背景描画 / 绘制表头背景
+        const totalWidth = colWidths.reduce((sum, w) => sum + w, 0);
+        doc.rect(tableLeft, currentY, totalWidth, rowHeight).fillColor('#F5F5F5').fill();
+
+        // ヘッダーテキスト / 表头文字
+        let xOffset = tableLeft;
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#333333');
+        for (let i = 0; i < headers.length; i++) {
+          doc.text(headers[i], xOffset + textPadding, currentY + 5, {
+            width: colWidths[i] - textPadding * 2,
+            align: 'left',
+          });
+          xOffset += colWidths[i];
+        }
+        this.drawPdfRowBorder(doc, tableLeft, currentY, colWidths, rowHeight);
+        currentY += rowHeight;
+
+        // データ行 / 数据行
+        doc.fontSize(9).font('Helvetica').fillColor('#333333');
+        for (const row of rows) {
+          if (currentY + rowHeight > 750) {
+            doc.addPage();
+            currentY = 50;
+          }
+          xOffset = tableLeft;
+          for (let i = 0; i < row.length && i < colWidths.length; i++) {
+            doc.text(row[i], xOffset + textPadding, currentY + 5, {
+              width: colWidths[i] - textPadding * 2,
+              align: 'left',
+            });
+            xOffset += colWidths[i];
+          }
+          this.drawPdfRowBorder(doc, tableLeft, currentY, colWidths, rowHeight);
+          currentY += rowHeight;
+        }
+
+        doc.y = currentY + 8;
+
+        // フッター / 页脚
+        doc.moveDown(1);
+        doc.fontSize(9).font('Helvetica').fillColor('#999999').text(`Generated at ${new Date().toISOString()}`, { align: 'left' });
+
+        doc.end();
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  // ===================================================================
   // PDFKit PDF生成 / PDFKit PDF生成
   // ===================================================================
 
