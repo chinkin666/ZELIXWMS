@@ -54,6 +54,24 @@ export class DailyReportsController {
     return this.dailyReportsService.update(tenantId, id, dto);
   }
 
+  // 日次レポートクローズ / 关闭日报
+  @Post(':date/close')
+  close(
+    @TenantId() tenantId: string,
+    @Param('date') date: string,
+  ) {
+    return this.dailyReportsService.close(tenantId, date);
+  }
+
+  // 日次レポートロック / 锁定日报
+  @Post(':date/lock')
+  lock(
+    @TenantId() tenantId: string,
+    @Param('date') date: string,
+  ) {
+    return this.dailyReportsService.lock(tenantId, date);
+  }
+
   // 日次レポート生成 / 生成日报
   @Post('generate')
   generate(

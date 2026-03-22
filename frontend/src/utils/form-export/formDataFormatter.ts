@@ -56,11 +56,11 @@ export function formatShipmentDetailData(
     ordererPhone: order.orderer?.phone || '-',
     handlingTags: order.handlingTags?.join(', ') || '-',
     createdAt: order.createdAt ? new Date(order.createdAt).toLocaleString('ja-JP') : '-',
-    statusPrintedAt: order.status?.printed?.printedAt
-      ? new Date(order.status.printed.printedAt).toLocaleString('ja-JP')
+    statusPrintedAt: order.statusPrintedAt
+      ? new Date(order.statusPrintedAt).toLocaleString('ja-JP')
       : '-',
-    statusCarrierReceiptAt: order.status?.carrierReceipt?.receivedAt
-      ? new Date(order.status.carrierReceipt.receivedAt).toLocaleString('ja-JP')
+    statusCarrierReceiptAt: order.statusCarrierReceiptAt
+      ? new Date(order.statusCarrierReceiptAt).toLocaleString('ja-JP')
       : '-',
   }))
 }

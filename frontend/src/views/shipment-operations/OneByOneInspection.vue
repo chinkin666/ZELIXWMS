@@ -689,7 +689,7 @@ async function checkCompletion() {
   // 検品完了チャイム / 检品完成提示音
   beepComplete()
 
-  const alreadyPrinted = !!(currentOrder.value as any)?.status?.printed?.isPrinted
+  const alreadyPrinted = !!(currentOrder.value as any)?.statusPrinted
 
   if (alreadyPrinted) {
     try {
@@ -1125,10 +1125,10 @@ onMounted(async () => {
   if (orderGroupId.value) {
     try {
       const q: Record<string, any> = {
-        'status.confirm.isConfirmed': { operator: 'is', value: true },
-        'status.carrierReceipt.isReceived': { operator: 'is', value: true },
-        'status.shipped.isShipped': { operator: 'is', value: false },
-        'status.inspected.isInspected': { operator: 'is', value: false },
+        'statusConfirmed': { operator: 'is', value: true },
+        'statusCarrierReceived': { operator: 'is', value: true },
+        'statusShipped': { operator: 'is', value: false },
+        'statusInspected': { operator: 'is', value: false },
       }
       if (orderGroupId.value !== '__all__') {
         q['orderGroupId'] = { operator: 'is', value: orderGroupId.value }

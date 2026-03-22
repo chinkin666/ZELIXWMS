@@ -893,7 +893,7 @@ export function getOrderFieldDefinitions(opts?: {
     },
     {
       key: 'statusPrinted',
-      dataKey: 'status.printed.printedAt',
+      dataKey: 'statusPrintedAt',
       title: '印刷日時',
       description: '送り状を印刷した日時。',
       width: 170,
@@ -903,11 +903,11 @@ export function getOrderFieldDefinitions(opts?: {
       formEditable: false,
       tableVisible: true,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) =>
-        rowData.status?.printed?.printedAt ? new Date(rowData.status.printed.printedAt).toLocaleString('ja-JP') : '-',
+        rowData.statusPrintedAt ? new Date(rowData.statusPrintedAt).toLocaleString('ja-JP') : '-',
     },
     {
       key: 'statusInspected',
-      dataKey: 'status.inspected.inspectedAt',
+      dataKey: 'statusInspectedAt',
       title: '検品日時',
       description: '検品が完了した日時。',
       width: 170,
@@ -917,11 +917,11 @@ export function getOrderFieldDefinitions(opts?: {
       formEditable: false,
       tableVisible: false,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) =>
-        rowData.status?.inspected?.inspectedAt ? new Date(rowData.status.inspected.inspectedAt).toLocaleString('ja-JP') : '-',
+        rowData.statusInspectedAt ? new Date(rowData.statusInspectedAt).toLocaleString('ja-JP') : '-',
     },
     {
       key: 'statusCarrierReceipt',
-      dataKey: 'status.carrierReceipt.receivedAt',
+      dataKey: 'statusCarrierReceiptAt',
       title: '取り込み日時',
       description: '配送業者から回执（受付/レスポンス）を取得した日時。',
       width: 170,
@@ -931,7 +931,7 @@ export function getOrderFieldDefinitions(opts?: {
       formEditable: false,
       tableVisible: true,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) =>
-        rowData.status?.carrierReceipt?.receivedAt ? new Date(rowData.status.carrierReceipt.receivedAt).toLocaleString('ja-JP') : '-',
+        rowData.statusCarrierReceiptAt ? new Date(rowData.statusCarrierReceiptAt).toLocaleString('ja-JP') : '-',
     },
     // 非表示フィールド
     {
@@ -951,7 +951,7 @@ export function getOrderFieldDefinitions(opts?: {
     },
     {
       key: 'statusPrintReady',
-      dataKey: 'status.confirm.confirmedAt',
+      dataKey: 'statusConfirmedAt',
       title: '確認日時',
       description: '印刷準備が完了し、確認済みとなった日時。',
       width: 170,
@@ -961,11 +961,11 @@ export function getOrderFieldDefinitions(opts?: {
       formEditable: false,
       tableVisible: false,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) =>
-        rowData.status?.confirm?.confirmedAt ? new Date(rowData.status.confirm.confirmedAt).toLocaleString('ja-JP') : '-',
+        rowData.statusConfirmedAt ? new Date(rowData.statusConfirmedAt).toLocaleString('ja-JP') : '-',
     },
     {
       key: 'statusShipped',
-      dataKey: 'status.shipped.shippedAt',
+      dataKey: 'statusShippedAt',
       title: '出荷完了日時',
       description: '出荷作業が完了した日時。',
       width: 170,
@@ -975,11 +975,11 @@ export function getOrderFieldDefinitions(opts?: {
       formEditable: false,
       tableVisible: true,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) =>
-        rowData.status?.shipped?.shippedAt ? new Date(rowData.status.shipped.shippedAt).toLocaleString('ja-JP') : '-',
+        rowData.statusShippedAt ? new Date(rowData.statusShippedAt).toLocaleString('ja-JP') : '-',
     },
     {
       key: 'statusEcExported',
-      dataKey: 'status.ecExported.isExported',
+      dataKey: 'statusEcExported',
       title: 'EC連携',
       description: 'ECへ連携済みかどうか。',
       width: 100,
@@ -989,11 +989,11 @@ export function getOrderFieldDefinitions(opts?: {
       formEditable: false,
       tableVisible: false,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) =>
-        rowData.status?.ecExported?.isExported ? 'はい' : 'いいえ',
+        rowData.statusEcExported ? 'はい' : 'いいえ',
     },
     {
       key: 'statusEcExportedAt',
-      dataKey: 'status.ecExported.exportedAt',
+      dataKey: 'statusEcExportedAt',
       title: 'EC連携日時',
       description: 'ECへ連携した日時。',
       width: 170,
@@ -1003,7 +1003,7 @@ export function getOrderFieldDefinitions(opts?: {
       formEditable: false,
       tableVisible: false,
       cellRenderer: ({ rowData }: { rowData: OrderDocument }) =>
-        rowData.status?.ecExported?.exportedAt ? new Date(rowData.status.ecExported.exportedAt).toLocaleString('ja-JP') : '-',
+        rowData.statusEcExportedAt ? new Date(rowData.statusEcExportedAt).toLocaleString('ja-JP') : '-',
     },
     {
       key: 'internalRecord',

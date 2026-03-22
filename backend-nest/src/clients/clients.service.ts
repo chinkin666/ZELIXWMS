@@ -123,6 +123,17 @@ export class ClientsService {
     return rows[0];
   }
 
+  // 顧客エクスポート（JSON配列を返す）/ 导出客户（返回JSON数组）
+  async exportClients(tenantId: string) {
+    const items = await this.db
+      .select()
+      .from(clients)
+      .where(and(eq(clients.tenantId, tenantId), isNull(clients.deletedAt)))
+      .orderBy(clients.code);
+
+    return { items, total: items.length };
+  }
+
   // 顧客論理削除 / 客户软删除
   async remove(tenantId: string, id: string) {
     // 存在確認 / 确认存在

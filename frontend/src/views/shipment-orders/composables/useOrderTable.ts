@@ -111,7 +111,7 @@ export function useOrderTable(
   const baseColumns = computed(() => {
     const excludedDataKeys = new Set([
       'orderNumber', 'createdAt', 'updatedAt', 'sourceRawRows', 'carrierRawRow',
-      'status.carrierReceipt.isReceived', 'status.confirm.isConfirmed', 'status.printed.isPrinted',
+      'statusCarrierReceived', 'statusConfirmed', 'statusPrinted',
       'handlingTags', 'coolType', 'deliveryTimeSlot',
       'recipient.postalCode', 'recipient.prefecture', 'recipient.city', 'recipient.street', 'recipient.building', 'recipient.name', 'recipient.phone',
       'honorific',
@@ -144,8 +144,8 @@ export function useOrderTable(
     const showKeys = new Set([
       'orderNumber', 'customerManagementNumber', 'carrierId', 'invoiceType',
       'shipPlanDate', 'deliveryDatePreference', 'trackingId', 'products', 'createdAt', 'updatedAt',
-      'status.printed.printedAt', 'status.confirm.confirmedAt', 'status.carrierReceipt.receivedAt',
-      'status.shipped.shippedAt', 'internalRecord',
+      'statusPrintedAt', 'statusConfirmedAt', 'statusCarrierReceiptAt',
+      'statusShippedAt', 'internalRecord',
     ])
     const cols = (allFieldDefinitions.value || []).filter((col) => {
       const dataKey = col.dataKey ?? undefined
@@ -181,7 +181,7 @@ export function useOrderTable(
   })
 
   // グループ化する列キー（出荷管理番号 + 配送情報）
-  const groupedColumnKeys = new Set(['orderNumber', 'customerManagementNumber', 'trackingId', 'carrierId', 'invoiceType', 'coolType', 'shipPlanDate', 'deliveryDatePreference', 'deliveryTimeSlot', 'createdAt', 'updatedAt', 'status.printed.printedAt'])
+  const groupedColumnKeys = new Set(['orderNumber', 'customerManagementNumber', 'trackingId', 'carrierId', 'invoiceType', 'coolType', 'shipPlanDate', 'deliveryDatePreference', 'deliveryTimeSlot', 'createdAt', 'updatedAt', 'statusPrintedAt'])
 
   const managementGroupColumns = computed(() => {
     const keys = ['orderNumber', 'customerManagementNumber', 'trackingId']
@@ -306,7 +306,7 @@ export function useOrderTable(
     if (displayFilter.value === 'processing') {
       // 処理中: 未確定（isConfirmed でない）& 保留なし
       const rows = pendingWaybillRows.value.filter((row: any) =>
-        !row.status?.held?.isHeld && !row.status?.confirm?.isConfirmed
+        !row.statusHeld && !row.statusConfirmed
       )
       return filterBackendRowsBySearch(rows)
     }
@@ -315,7 +315,7 @@ export function useOrderTable(
       // 送り状未発行: 確定済み & trackingId 未設定 & 保留なし
       // trackingId がある注文は出荷作業（shipment-operations/tasks）に移動
       const rows = pendingWaybillRows.value.filter((row: any) =>
-        !row.status?.held?.isHeld && row.status?.confirm?.isConfirmed && !row.trackingId
+        !row.statusHeld && row.statusConfirmed && !row.trackingId
       )
       return filterBackendRowsBySearch(rows)
     }
@@ -325,7 +325,7 @@ export function useOrderTable(
       const localHeld = searchedRows.value.filter((row: UserOrderRow) => isHeld(row.id))
       const localHeldIds = new Set(localHeld.map(r => r.id))
       const backendHeld = pendingWaybillRows.value.filter((row: UserOrderRow) =>
-        (row as any).status?.held?.isHeld && !localHeldIds.has(row.id)
+        (row as any).statusHeld && !localHeldIds.has(row.id)
       )
       return [...localHeld, ...backendHeld]
     }

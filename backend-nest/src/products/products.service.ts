@@ -315,6 +315,103 @@ export class ProductsService {
     };
   }
 
+  // インポート行バリデーション / 导入行验证
+  async validateImport(tenantId: string, rows: Record<string, any>[]) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'rows array is required / 行配列は必須 / 行数组必填');
+    }
+
+    const results = rows.map((row, index) => {
+      const errors: string[] = [];
+
+      if (!row.sku || typeof row.sku !== 'string' || row.sku.trim() === '') {
+        errors.push('SKU is required / SKUは必須 / SKU为必填');
+      }
+      if (!row.name || typeof row.name !== 'string' || row.name.trim() === '') {
+        errors.push('Name is required / 名前は必須 / 名称为必填');
+      }
+
+      return { row: index, sku: row.sku ?? null, valid: errors.length === 0, errors };
+    });
+
+    return {
+      total: rows.length,
+      valid: results.filter((r) => r.valid).length,
+      invalid: results.filter((r) => !r.valid).length,
+      results,
+    };
+  }
+
+  // 商品一括インポート（挿入/アップサート）/ 商品批量导入（插入/更新插入）
+  async importBulk(tenantId: string, rows: Record<string, any>[]) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'rows array is required / 行配列は必須 / 行数组必填');
+    }
+
+    const results = [];
+    const errors: Array<{ row: number; error: string }> = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      try {
+        // 既存SKUチェック → 更新、なければ新規作成 / 检查现有SKU → 更新，否则新建
+        const existing = await this.db
+          .select({ id: products.id })
+          .from(products)
+          .where(and(
+            eq(products.tenantId, tenantId),
+            eq(products.sku, rows[i].sku),
+            isNull(products.deletedAt),
+          ))
+          .limit(1);
+
+        if (existing.length > 0) {
+          const updated = await this.update(tenantId, existing[0].id, rows[i]);
+          results.push(updated);
+        } else {
+          const created = await this.create(tenantId, rows[i] as CreateProductDto);
+          results.push(created);
+        }
+      } catch (e: any) {
+        errors.push({ row: i, error: e.message ?? String(e) });
+      }
+    }
+
+    return { imported: results.length, errors, items: results };
+  }
+
+  // SKU利用可否チェック / SKU可用性检查
+  async checkSkuAvailability(tenantId: string, sku: string) {
+    if (!sku) {
+      throw new WmsException('VALIDATION_ERROR', 'sku is required / SKUは必須 / SKU为必填');
+    }
+
+    const existing = await this.db
+      .select({ id: products.id })
+      .from(products)
+      .where(and(
+        eq(products.tenantId, tenantId),
+        eq(products.sku, sku),
+        isNull(products.deletedAt),
+      ))
+      .limit(1);
+
+    return { sku, available: existing.length === 0 };
+  }
+
+  // 商品出荷統計 / 商品出货统计
+  async getShipmentStats(tenantId: string) {
+    // 商品数を返す（将来的に出荷統計テーブルと結合）/ 返回商品数（将来与出货统计表关联）
+    const [totalResult] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(products)
+      .where(and(eq(products.tenantId, tenantId), isNull(products.deletedAt)));
+
+    return {
+      totalProducts: totalResult?.count ?? 0,
+      message: 'Full shipment stats require shipment-product join / 完全な出荷統計には出荷-商品結合が必要 / 完整出货统计需要出货-商品关联',
+    };
+  }
+
   // 商品変更履歴取得（updatedAtベースの簡易履歴）/ 获取商品变更历史（基于updatedAt的简易历史）
   async getHistory(tenantId: string, productId: string) {
     // 商品存在確認 / 确认商品存在

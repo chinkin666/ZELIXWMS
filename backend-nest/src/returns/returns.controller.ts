@@ -31,6 +31,12 @@ export class ReturnsController {
     });
   }
 
+  // 返品ダッシュボード統計 / 退货仪表盘统计
+  @Get('dashboard-stats')
+  getDashboardStats(@TenantId() tenantId: string) {
+    return this.returnsService.getDashboardStats(tenantId);
+  }
+
   // 返品オーダーID検索 / 按ID查找退货订单
   @Get(':id')
   findOne(
@@ -93,6 +99,15 @@ export class ReturnsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.returnsService.cancel(tenantId, id);
+  }
+
+  // 返品オーダー検品開始（draft → inspecting）/ 退货订单开始检品（draft → inspecting）
+  @Post(':id/start-inspection')
+  startInspection(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.returnsService.startInspection(tenantId, id);
   }
 
   // 返品オーダー検品（inspecting状態更新）/ 退货订单检品（inspecting状态更新）

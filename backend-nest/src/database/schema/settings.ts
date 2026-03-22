@@ -85,6 +85,7 @@ export const dailyReports = pgTable('daily_reports', {
 
   // レポート内容 / 报表内容
   date: timestamp('date').notNull(),               // 対象日 / 对象日期
+  status: text('status').notNull().default('open'), // open/closed/locked / オープン/クローズ/ロック
   summary: jsonb('summary').default({}).notNull(),  // 集計データ / 汇总数据
 
   // タイムスタンプ / 时间戳

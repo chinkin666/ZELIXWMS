@@ -155,8 +155,8 @@ const loadOrders = async () => {
   try {
     const q: Record<string, { operator: Operator; value: any }> = {
       ...(currentSearchPayload.value || {}),
-      'status.printed.isPrinted': { operator: 'is', value: true },
-      'status.shipped.isShipped': { operator: 'is', value: true },
+      'statusPrinted': { operator: 'is', value: true },
+      'statusShipped': { operator: 'is', value: true },
     }
     const result = await fetchShipmentOrdersPage({
       page: currentPage.value,

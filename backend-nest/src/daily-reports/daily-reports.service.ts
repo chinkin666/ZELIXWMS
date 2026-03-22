@@ -184,6 +184,57 @@ export class DailyReportsService {
     }
   }
 
+  // 日次レポートクローズ（open → closed）/ 关闭日报（open → closed）
+  async close(tenantId: string, dateStr: string) {
+    const reportDate = new Date(dateStr);
+
+    const existing = await this.db
+      .select()
+      .from(dailyReports)
+      .where(and(eq(dailyReports.tenantId, tenantId), eq(dailyReports.date, reportDate)))
+      .limit(1);
+
+    if (existing.length === 0) {
+      throw new WmsException('DAILY_REPORT_NOT_FOUND', `Date: ${dateStr}`);
+    }
+
+    const report = existing[0];
+    if ((report as any).status === 'locked') {
+      throw new WmsException('VALIDATION_ERROR', 'Report is locked / レポートはロック済み / 报表已锁定');
+    }
+
+    const rows = await this.db
+      .update(dailyReports)
+      .set({ status: 'closed', updatedAt: new Date() } as any)
+      .where(and(eq(dailyReports.tenantId, tenantId), eq(dailyReports.date, reportDate)))
+      .returning();
+
+    return rows[0];
+  }
+
+  // 日次レポートロック（any → locked）/ 锁定日报（any → locked）
+  async lock(tenantId: string, dateStr: string) {
+    const reportDate = new Date(dateStr);
+
+    const existing = await this.db
+      .select()
+      .from(dailyReports)
+      .where(and(eq(dailyReports.tenantId, tenantId), eq(dailyReports.date, reportDate)))
+      .limit(1);
+
+    if (existing.length === 0) {
+      throw new WmsException('DAILY_REPORT_NOT_FOUND', `Date: ${dateStr}`);
+    }
+
+    const rows = await this.db
+      .update(dailyReports)
+      .set({ status: 'locked', updatedAt: new Date() } as any)
+      .where(and(eq(dailyReports.tenantId, tenantId), eq(dailyReports.date, reportDate)))
+      .returning();
+
+    return rows[0];
+  }
+
   // 日次レポートエクスポート（CSV形式のバッファを返す）/ 导出日报（返回CSV格式buffer）
   async exportReports(tenantId: string) {
     const items = await this.db

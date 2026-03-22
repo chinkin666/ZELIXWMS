@@ -70,12 +70,12 @@
             </td>
             <td class="o-table-td o-table-td--status">
               <div class="status-cell">
-                <span v-if="row.status?.confirm?.isConfirmed" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipmentResult.statusConfirmed', '確定済') }}</span>
-                <span v-if="row.status?.carrierReceipt?.isReceived" class="o-status-tag o-status-tag--issued">{{ t('wms.shipmentResult.statusWaybillIssued', '送り状発行済') }}</span>
-                <span v-if="row.status?.printed?.isPrinted" class="o-status-tag o-status-tag--printed">{{ t('wms.shipmentResult.statusPrinted', '印刷済') }}</span>
-                <span v-if="row.status?.inspected?.isInspected" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipmentResult.statusInspected', '検品済') }}</span>
-                <span v-if="row.status?.shipped?.isShipped" class="o-status-tag o-status-tag--shipped">{{ t('wms.shipmentResult.statusShipped', '出荷済') }}</span>
-                <span v-if="row.status?.ecExported?.isExported" class="o-status-tag o-status-tag--exported">{{ t('wms.shipmentResult.statusExported', '連携済') }}</span>
+                <span v-if="row.statusConfirmed" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipmentResult.statusConfirmed', '確定済') }}</span>
+                <span v-if="row.statusCarrierReceived" class="o-status-tag o-status-tag--issued">{{ t('wms.shipmentResult.statusWaybillIssued', '送り状発行済') }}</span>
+                <span v-if="row.statusPrinted" class="o-status-tag o-status-tag--printed">{{ t('wms.shipmentResult.statusPrinted', '印刷済') }}</span>
+                <span v-if="row.statusInspected" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipmentResult.statusInspected', '検品済') }}</span>
+                <span v-if="row.statusShipped" class="o-status-tag o-status-tag--shipped">{{ t('wms.shipmentResult.statusShipped', '出荷済') }}</span>
+                <span v-if="row.statusEcExported" class="o-status-tag o-status-tag--exported">{{ t('wms.shipmentResult.statusExported', '連携済') }}</span>
               </div>
             </td>
             <!-- 出荷管理番号 -->
@@ -155,15 +155,15 @@
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipmentResult.shippedAt', '出荷完了') }}</span>
-                  <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.shipped?.shippedAt) }}</span>
+                  <span class="mgmt-cell__value">{{ fmtDateTime(row.statusShippedAt) }}</span>
                 </div>
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipmentResult.ecExport', 'EC連携') }}</span>
-                  <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.ecExported?.exportedAt) }}</span>
+                  <span class="mgmt-cell__value">{{ fmtDateTime(row.statusEcExportedAt) }}</span>
                 </div>
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipmentResult.printedAt', '印刷日時') }}</span>
-                  <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.printed?.printedAt) }}</span>
+                  <span class="mgmt-cell__value">{{ fmtDateTime(row.statusPrintedAt) }}</span>
                 </div>
               </div>
             </td>
@@ -316,10 +316,10 @@ const effectiveSearchPayload = computed(() => {
   const base = currentSearchPayload.value || searchInitialValues.value
   const q: Record<string, { operator: Operator; value: any }> = { ...(base || {}) }
 
-  q['status.shipped.isShipped'] = { operator: 'is', value: true }
+  q['statusShipped'] = { operator: 'is', value: true }
 
   if (!showExportedRows.value) {
-    q['status.ecExported.isExported'] = { operator: 'is', value: false }
+    q['statusEcExported'] = { operator: 'is', value: false }
   }
 
   return q

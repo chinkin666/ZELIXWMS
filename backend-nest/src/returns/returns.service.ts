@@ -58,6 +58,41 @@ export class ReturnsService {
     return createPaginatedResult(items, countResult[0]?.count ?? 0, page, limit);
   }
 
+  // 返品ダッシュボード統計（ステータス別件数）/ 退货仪表盘统计（按状态计数）
+  async getDashboardStats(tenantId: string) {
+    const rows = await this.db
+      .select({
+        status: returnOrders.status,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(returnOrders)
+      .where(and(eq(returnOrders.tenantId, tenantId), isNull(returnOrders.deletedAt)))
+      .groupBy(returnOrders.status);
+
+    const stats: Record<string, number> = {};
+    let total = 0;
+    for (const row of rows) {
+      stats[row.status] = row.count;
+      total += row.count;
+    }
+
+    return { total, byStatus: stats };
+  }
+
+  // 返品オーダー検品開始（draft → inspecting）/ 退货订单开始检品（draft → inspecting）
+  async startInspection(tenantId: string, id: string) {
+    const order = await this.findById(tenantId, id);
+    if (order.status !== 'draft') {
+      throw new WmsException('RETURN_INVALID_STATUS', `Cannot start inspection: current status is ${order.status}`);
+    }
+    const rows = await this.db
+      .update(returnOrders)
+      .set({ status: 'inspecting', updatedAt: new Date() })
+      .where(and(eq(returnOrders.id, id), eq(returnOrders.tenantId, tenantId)))
+      .returning();
+    return rows[0];
+  }
+
   // 返品オーダーID検索（テナント分離・論理削除除外）/ 按ID查找退货订单（租户隔离・排除软删除）
   async findById(tenantId: string, id: string) {
     const rows = await this.db

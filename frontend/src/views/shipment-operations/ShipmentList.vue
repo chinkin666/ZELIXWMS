@@ -92,10 +92,10 @@
             </td>
             <td class="o-table-td o-table-td--status">
               <div class="status-cell">
-                <span v-if="row.status?.confirm?.isConfirmed" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipment.confirmed', '確定済') }}</span>
-                <span v-if="row.status?.carrierReceipt?.isReceived" class="o-status-tag o-status-tag--issued">{{ t('wms.shipment.invoiceIssued', '送り状発行済') }}</span>
-                <span v-if="row.status?.printed?.isPrinted" class="o-status-tag o-status-tag--printed">{{ t('wms.shipment.printed', '印刷済') }}</span>
-                <span v-if="row.status?.inspected?.isInspected" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipment.inspected', '検品済') }}</span>
+                <span v-if="row.statusConfirmed" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipment.confirmed', '確定済') }}</span>
+                <span v-if="row.statusCarrierReceived" class="o-status-tag o-status-tag--issued">{{ t('wms.shipment.invoiceIssued', '送り状発行済') }}</span>
+                <span v-if="row.statusPrinted" class="o-status-tag o-status-tag--printed">{{ t('wms.shipment.printed', '印刷済') }}</span>
+                <span v-if="row.statusInspected" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipment.inspected', '検品済') }}</span>
               </div>
             </td>
             <!-- 出荷管理番号 -->
@@ -176,15 +176,15 @@
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipment.confirmedAt', '確定日時') }}</span>
-                  <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.confirm?.confirmedAt) }}</span>
+                  <span class="mgmt-cell__value">{{ fmtDateTime(row.statusConfirmedAt) }}</span>
                 </div>
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipment.invoiceIssuedAt', '送り状発行') }}</span>
-                  <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.carrierReceipt?.receivedAt) }}</span>
+                  <span class="mgmt-cell__value">{{ fmtDateTime(row.statusCarrierReceivedAt) }}</span>
                 </div>
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipment.printedAt', '印刷日時') }}</span>
-                  <span class="mgmt-cell__value">{{ fmtDateTime(row.status?.printed?.printedAt) }}</span>
+                  <span class="mgmt-cell__value">{{ fmtDateTime(row.statusPrintedAt) }}</span>
                 </div>
               </div>
             </td>
@@ -576,14 +576,14 @@ const effectiveSearchPayload = computed(() => {
       q.orderGroupId = { operator: 'is', value: selectedOrderGroupId.value }
     }
   }
-  q['status.confirm.isConfirmed'] = { operator: 'is', value: true }
-  q['status.carrierReceipt.isReceived'] = { operator: 'is', value: true }
-  q['status.shipped.isShipped'] = { operator: 'isNot', value: true }
+  q['statusConfirmed'] = { operator: 'is', value: true }
+  q['statusCarrierReceived'] = { operator: 'is', value: true }
+  q['statusShipped'] = { operator: 'isNot', value: true }
   if (!showInspected.value) {
-    q['status.inspected.isInspected'] = { operator: 'isNot', value: true }
+    q['statusInspected'] = { operator: 'isNot', value: true }
   }
   if (!showPrinted.value) {
-    q['status.printed.isPrinted'] = { operator: 'isNot', value: true }
+    q['statusPrinted'] = { operator: 'isNot', value: true }
   }
   return q
 })

@@ -395,7 +395,7 @@ function handleScan() {
 
 async function handleOrderCompletion(order: OrderDocument) {
   beepComplete()
-  const alreadyPrinted = !!(order as any)?.status?.printed?.isPrinted
+  const alreadyPrinted = !!(order as any)?.statusPrinted
 
   if (alreadyPrinted) {
     let reprintConfirmed = false

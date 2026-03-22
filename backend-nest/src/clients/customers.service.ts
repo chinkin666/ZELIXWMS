@@ -107,6 +107,38 @@ export class CustomersService {
     return rows[0];
   }
 
+  // カスタマーエクスポート（JSON配列を返す）/ 导出顾客（返回JSON数组）
+  async exportCustomers(tenantId: string) {
+    const items = await this.db
+      .select()
+      .from(customers)
+      .where(eq(customers.tenantId, tenantId))
+      .orderBy(customers.code);
+
+    return { items, total: items.length };
+  }
+
+  // カスタマー一括インポート / 顾客批量导入
+  async bulkImport(tenantId: string, customerList: Record<string, any>[]) {
+    if (!Array.isArray(customerList) || customerList.length === 0) {
+      throw new WmsException('VALIDATION_ERROR', 'customers array is required / customers配列は必須 / customers数组必填');
+    }
+
+    const results = [];
+    const errors: Array<{ row: number; error: string }> = [];
+
+    for (let i = 0; i < customerList.length; i++) {
+      try {
+        const created = await this.create(tenantId, customerList[i] as CreateCustomerDto);
+        results.push(created);
+      } catch (e: any) {
+        errors.push({ row: i, error: e.message ?? String(e) });
+      }
+    }
+
+    return { imported: results.length, errors, items: results };
+  }
+
   // カスタマー削除（物理削除）/ 删除顾客（硬删除）
   async remove(tenantId: string, id: string) {
     await this.findById(tenantId, id);

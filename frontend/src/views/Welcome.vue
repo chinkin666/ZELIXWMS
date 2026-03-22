@@ -242,8 +242,8 @@
             >
               <td>{{ order.orderNumber }}</td>
               <td>
-                <span :class="['status-badge', getStatusClass(order.status)]">
-                  {{ getStatusText(order.status) }}
+                <span :class="['status-badge', getStatusClass(order)]">
+                  {{ getStatusText(order) }}
                 </span>
               </td>
               <td>{{ order._productsMeta?.totalQuantity || '-' }}</td>
@@ -398,19 +398,17 @@ function trendBarHeight(value: number): string {
   return `${Math.max(2, (value / max) * 100)}%`
 }
 
-function getStatusClass(status: Record<string, unknown>): string {
-  const s = status as Record<string, Record<string, boolean>>
-  if (s.shipped?.isShipped) return 'status-shipped'
-  if (s.held?.isHeld) return 'status-held'
-  if (s.confirm?.isConfirmed) return 'status-confirmed'
+function getStatusClass(order: Record<string, unknown>): string {
+  if (order.statusShipped) return 'status-shipped'
+  if (order.statusHeld) return 'status-held'
+  if (order.statusConfirmed) return 'status-confirmed'
   return 'status-draft'
 }
 
-function getStatusText(status: Record<string, unknown>): string {
-  const s = status as Record<string, Record<string, boolean>>
-  if (s.shipped?.isShipped) return t('wms.ui.statusShipped', '出荷済')
-  if (s.held?.isHeld) return t('wms.ui.statusHeld', '保留')
-  if (s.confirm?.isConfirmed) return t('wms.ui.statusConfirmed', '確認済')
+function getStatusText(order: Record<string, unknown>): string {
+  if (order.statusShipped) return t('wms.ui.statusShipped', '出荷済')
+  if (order.statusHeld) return t('wms.ui.statusHeld', '保留')
+  if (order.statusConfirmed) return t('wms.ui.statusConfirmed', '確認済')
   return t('wms.ui.statusDraft', '下書き')
 }
 

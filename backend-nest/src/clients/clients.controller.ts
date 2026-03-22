@@ -28,6 +28,12 @@ export class ClientsController {
     });
   }
 
+  // 顧客エクスポート / 导出客户
+  @Get('export')
+  exportClients(@TenantId() tenantId: string) {
+    return this.clientsService.exportClients(tenantId);
+  }
+
   // 顧客ID検索 / 按ID查找客户
   @Get(':id')
   findOne(

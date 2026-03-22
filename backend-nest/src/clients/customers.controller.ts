@@ -30,6 +30,12 @@ export class CustomersController {
     });
   }
 
+  // カスタマーエクスポート / 导出顾客
+  @Get('export')
+  exportCustomers(@TenantId() tenantId: string) {
+    return this.customersService.exportCustomers(tenantId);
+  }
+
   // カスタマーID検索 / 按ID查找顾客
   @Get(':id')
   findOne(
@@ -37,6 +43,15 @@ export class CustomersController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.customersService.findById(tenantId, id);
+  }
+
+  // カスタマー一括インポート / 顾客批量导入
+  @Post('bulk-import')
+  bulkImport(
+    @TenantId() tenantId: string,
+    @Body() body: { customers: Record<string, any>[] },
+  ) {
+    return this.customersService.bulkImport(tenantId, body.customers);
   }
 
   // カスタマー作成 / 创建顾客

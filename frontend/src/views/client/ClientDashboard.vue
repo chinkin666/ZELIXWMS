@@ -108,7 +108,7 @@
               <td>{{ order.orderNumber || '-' }}</td>
               <td>{{ order._productsMeta?.totalQuantity ?? '-' }}</td>
               <td>{{ order.shippingCost != null ? formatCurrency(order.shippingCost) : '-' }}</td>
-              <td>{{ order.status?.shipped?.shippedAt ? formatDate(order.status.shipped.shippedAt) : '-' }}</td>
+              <td>{{ order.statusShippedAt ? formatDate(order.statusShippedAt) : '-' }}</td>
               <td>{{ order.shipPlanDate || '-' }}</td>
             </tr>
             <tr v-if="dashboardData.recentOrders.length === 0">

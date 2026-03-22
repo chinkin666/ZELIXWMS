@@ -78,6 +78,39 @@ export class ProductsController {
     }));
   }
 
+  // インポート行バリデーション / 导入行验证
+  @Post('validate-import')
+  validateImport(
+    @TenantId() tenantId: string,
+    @Body() body: Record<string, any>[],
+  ) {
+    return this.productsService.validateImport(tenantId, body);
+  }
+
+  // 商品一括インポート（挿入/アップサート）/ 商品批量导入（插入/更新插入）
+  @Post('import-bulk')
+  importBulk(
+    @TenantId() tenantId: string,
+    @Body() body: Record<string, any>[],
+  ) {
+    return this.productsService.importBulk(tenantId, body);
+  }
+
+  // SKU利用可否チェック / SKU可用性检查
+  @Post('check-sku-availability')
+  checkSkuAvailability(
+    @TenantId() tenantId: string,
+    @Body() body: { sku: string },
+  ) {
+    return this.productsService.checkSkuAvailability(tenantId, body.sku);
+  }
+
+  // 商品出荷統計 / 商品出货统计
+  @Get('shipment-stats')
+  getShipmentStats(@TenantId() tenantId: string) {
+    return this.productsService.getShipmentStats(tenantId);
+  }
+
   // 商品CSVインポート / 商品CSV导入
   @Post('import')
   importCsv(

@@ -179,8 +179,8 @@ const handleSearch = async () => {
       customerOrderNumber: o.customerManagementNumber || '',
       trackingNumber: o.trackingId || '',
       carrier: o.carrierId === '__builtin_yamato_b2__' ? 'ヤマト運輸' : o.carrierId?.includes('sagawa') ? '佐川急便' : (o.carrierId || ''),
-      shipDate: o.status?.shipped?.shippedAt || o.createdAt || '',
-      deliveryStatus: o.status?.shipped?.isShipped ? (o.status?.delivered?.isDelivered ? 'delivered' : 'shipped') : 'pending',
+      shipDate: o.statusShippedAt || o.createdAt || '',
+      deliveryStatus: o.statusShipped ? (o.statusCarrierReceived ? 'delivered' : 'shipped') : 'pending',
     }))
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '出荷データの取得に失敗しました'
