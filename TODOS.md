@@ -182,3 +182,30 @@
 - [x] auth: ensureSupabase() null-check
 - [x] ListenersModule 导入 QueueModule
 - [x] supabase.provider: 未配置时 warn 而非 throw
+
+---
+
+## GAP補完 + INFORMATIONAL修正 (2026-03-22)
+
+### 業務流程GAP補完 / 业务流程GAP补完
+- [x] 入庫ワークステーション + 管理者ダッシュボード / 入库工作台 + 管理者仪表盘
+- [x] 出荷停止（画面+CSV）、送り状再発行/追加発行 / 出货停止、运单重新/追加发行
+- [x] 通過型→自動出荷指示生成、7日保管超過チェック / 通过型→自动出货指示、7日超期检查
+- [x] 作業グループ5分組条件 / 作业分组5种条件
+- [x] 保留注文7日自動削除 + 6日目アラート / 保留订单7日自动删除 + 第6天告警
+- [x] PDF帳票4種追加 / PDF帐票4种追加
+- [x] 拠点間在庫移動 / 跨仓库库存转移
+- [x] 日本郵便 + 西濃運輸 CSV連携 / 日本邮便 + 西浓运输 CSV对接
+- [x] 送り状プリセットテンプレート4社 / 运单预设模板4家
+
+### INFORMATIONAL セキュリティ修正 / INFORMATIONAL 安全修正
+- [x] crossSiteTransfer: 在庫チェックをトランザクション内に移動 / 库存检查移入事务内
+- [x] issueAdditionalLabel: trackingId IS NOT NULL 原子ガード追加 / trackingId原子守卫追加
+- [x] EmailTemplateSettings: v-html → sandbox iframe
+
+### 品質改善 / 品质改善
+- [x] 全量QA 137ページ: CRITICAL 5 + HIGH 33 + deferred 12 修正
+- [x] MongoDB→NestJS扁平フィールド適配 37箇所 / 37处扁平字段适配
+- [x] 缺失API端点14個補完 / 14个缺失API端点补完
+- [x] yamatoB2 NestJS直接統合 / yamatoB2 NestJS直接集成
+- [x] Docker PostgreSQL + seed data

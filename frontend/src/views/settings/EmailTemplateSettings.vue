@@ -519,7 +519,7 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
       @close="showPreviewDialog = false"
     >
       <div v-if="isPreviewLoading" class="loading-state">{{ t('wms.settings.email.generatingPreview', 'プレビュー生成中...') }}</div>
-      <div v-else class="preview-content" v-html="previewHtml"></div>
+      <iframe v-else-if="previewHtml" :srcdoc="previewHtml" sandbox="" style="width:100%;height:400px;border:1px solid #eee;border-radius:4px;" />
 
       <template #footer>
         <OButton variant="secondary" @click="showPreviewDialog = false">{{ t('wms.settings.email.close', '閉じる') }}</OButton>

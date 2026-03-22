@@ -336,28 +336,28 @@ export class InventoryService {
       throw new WmsException('INV_LOCATION_NOT_FOUND', `Destination location ${toLocationId} not found in warehouse ${toWarehouseId} / 移動先ロケーションが倉庫に存在しません / 目标库位不在指定仓库中`);
     }
 
-    // 移動元の在庫確認 / 确认源库位库存
-    const [sourceQuant] = await this.db
-      .select()
-      .from(stockQuants)
-      .where(and(
-        eq(stockQuants.tenantId, tenantId),
-        eq(stockQuants.productId, productId),
-        eq(stockQuants.locationId, fromLocationId),
-      ))
-      .limit(1);
-
-    const availableQty = (sourceQuant?.quantity ?? 0) - (sourceQuant?.reservedQuantity ?? 0);
-    if (!sourceQuant || availableQty < quantity) {
-      throw new WmsException('INV_INSUFFICIENT_STOCK', `Required: ${quantity}, available: ${availableQty} / 必要数: ${quantity}, 利用可能数: ${availableQty} / 需要: ${quantity}, 可用: ${availableQty}`);
-    }
-
     const now = new Date();
     const nowIso = now.toISOString();
     const moveNumber = `XFER-${crypto.randomUUID()}`;
 
-    // トランザクションで原子操作を保証 / 用事务保证原子操作
+    // トランザクションで原子操作を保証（在庫チェック含む）/ 用事务保证原子操作（含库存检查）
     const move = await this.db.transaction(async (tx: any) => {
+      // 移動元の在庫確認（トランザクション内で実行し並行転送の競合を防止）
+      // 确认源库位库存（在事务内执行，防止并发转移竞争）
+      const [sourceQuant] = await tx
+        .select()
+        .from(stockQuants)
+        .where(and(
+          eq(stockQuants.tenantId, tenantId),
+          eq(stockQuants.productId, productId),
+          eq(stockQuants.locationId, fromLocationId),
+        ))
+        .limit(1);
+
+      const availableQty = (sourceQuant?.quantity ?? 0) - (sourceQuant?.reservedQuantity ?? 0);
+      if (!sourceQuant || availableQty < quantity) {
+        throw new WmsException('INV_INSUFFICIENT_STOCK', `Required: ${quantity}, available: ${availableQty} / 必要数: ${quantity}, 利用可能数: ${availableQty} / 需要: ${quantity}, 可用: ${availableQty}`);
+      }
       // stockMoves に拠点間移動レコード挿入 / 在stockMoves中插入跨仓库转移记录
       const [moveRecord] = await tx.insert(stockMoves).values({
         tenantId,

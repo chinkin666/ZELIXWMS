@@ -655,7 +655,11 @@ export class ShipmentService {
         statusPrintedAt: now,
         updatedAt: now,
       })
-      .where(and(eq(shipmentOrders.id, id), eq(shipmentOrders.tenantId, tenantId)))
+      .where(and(
+        eq(shipmentOrders.id, id),
+        eq(shipmentOrders.tenantId, tenantId),
+        sql`${shipmentOrders.trackingId} IS NOT NULL`,
+      ))
       .returning();
 
     return {
