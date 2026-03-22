@@ -3,6 +3,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
+  base: '/portal/',
   plugins: [vue()],
   resolve: {
     alias: {
@@ -24,7 +25,7 @@ export default defineConfig({
     port: 4002,
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: 'http://localhost:4100',
         changeOrigin: true,
       },
     },
