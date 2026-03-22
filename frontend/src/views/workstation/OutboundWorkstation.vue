@@ -60,7 +60,7 @@ async function loadDashboard() {
       alerts.value.push({ type: 'warning', message: `${held}件の出荷保留あり / ${held}件出货暂停`, action: '/shipment/operations/list?statusHeld=true' })
     }
     if (unprocessed > 10) {
-      alerts.value.push({ type: 'danger', message: `未処理${unprocessed}件 — 処理を開始してください / 未处理${unprocessed}件`, action: '/shipment/operations/tasks' })
+      alerts.value.push({ type: 'error', message: `未処理${unprocessed}件 — 処理を開始してください / 未处理${unprocessed}件`, action: '/shipment/operations/tasks' })
     }
   } catch (e) {
     console.error('Dashboard load failed', e)
