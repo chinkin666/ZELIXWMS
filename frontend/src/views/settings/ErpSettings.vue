@@ -1,17 +1,17 @@
 <template>
   <div class="erp-settings">
-    <ControlPanel title="ERP 連携設定 / ERP 集成设置" :show-search="false">
+    <PageHeader title="ERP 連携設定 / ERP 集成设置" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" :disabled="syncing" @click="handleSync">
+        <Button variant="secondary" :disabled="syncing" @click="handleSync">
           {{ syncing ? '同期中... / 同步中...' : '今すぐ同期 / 立即同步' }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- ステータスカード / 状态卡片 -->
-    <div class="status-card o-card">
-      <div class="status-header">
-        <h3 class="section-title">接続ステータス / 连接状态</h3>
+    <Card class="status-card">
+      <CardHeader class="status-header">
+        <CardTitle>接続ステータス / 连接状态</CardTitle>
         <span
           :class="status.connected
             ? 'o-status-tag o-status-tag--confirmed'
@@ -19,7 +19,7 @@
         >
           {{ status.connected ? '接続済み / 已连接' : '未接続 / 未连接' }}
         </span>
-      </div>
+      </CardHeader>
       <div v-if="status.erpType" class="status-detail">
         ERP タイプ / ERP 类型: {{ status.erpType }}
       </div>
@@ -29,100 +29,116 @@
       <div v-if="status.syncStatus === 'error'" class="status-error">
         エラー / 错误: {{ status.errorMessage }}
       </div>
-    </div>
+    </Card>
 
     <!-- 設定フォーム / 配置表单 -->
-    <div class="config-card o-card">
-      <h3 class="section-title">接続設定 / 连接配置</h3>
+    <Card class="config-card">
+      <CardHeader>
+        <CardTitle>接続設定 / 连接配置</CardTitle>
+      </CardHeader>
+      <CardContent>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">ERP タイプ / ERP 类型 <span class="required-badge">必須</span></label>
-          <select v-model="config.erpType" class="o-input">
-            <option value="" disabled>選択してください / 请选择</option>
-            <option v-for="opt in erpTypes" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-          </select>
+          <Label>ERP タイプ / ERP 类型 <span class="text-destructive">*</span></Label>
+          <Select v-model="config.erpType">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="選択してください / 请选择" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="opt in erpTypes" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div class="form-field">
-          <label class="form-label">同期間隔（分）/ 同步间隔（分钟）</label>
-          <input v-model.number="config.syncInterval" type="number" class="o-input" min="1" max="1440" />
+          <Label>同期間隔（分）/ 同步间隔（分钟）</Label>
+          <Input v-model.number="config.syncInterval" type="number" min="1" max="1440" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">エンドポイント URL <span class="required-badge">必須</span></label>
-          <input v-model="config.endpointUrl" type="url" class="o-input" placeholder="https://erp.example.com/api" />
+          <Label>エンドポイント URL <span class="text-destructive">*</span></Label>
+          <Input v-model="config.endpointUrl" type="url" placeholder="https://erp.example.com/api" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">API キー / API 密钥 <span class="required-badge">必須</span></label>
+          <Label>API キー / API 密钥 <span class="text-destructive">*</span></Label>
           <div class="secret-field">
             <input
               v-model="config.apiKey"
               :type="showApiKey ? 'text' : 'password'"
-              class="o-input"
+             
               placeholder="ERP API Key"
             />
-            <button type="button" class="secret-toggle" @click="showApiKey = !showApiKey">
+            <Button type="button" class="secret-toggle" @click="showApiKey = !showApiKey">
               {{ showApiKey ? '隠す / 隐藏' : '表示 / 显示' }}
-            </button>
+            </Button>
           </div>
         </div>
         <div class="form-field">
-          <label class="form-label">ユーザー名 / 用户名</label>
-          <input v-model="config.username" type="text" class="o-input" placeholder="ERP Username" />
+          <Label>ユーザー名 / 用户名</Label>
+          <Input v-model="config.username" type="text" placeholder="ERP Username" />
         </div>
         <div class="form-field">
-          <label class="form-label">パスワード / 密码</label>
+          <Label>パスワード / 密码</Label>
           <div class="secret-field">
             <input
               v-model="config.password"
               :type="showPassword ? 'text' : 'password'"
-              class="o-input"
+             
               placeholder="ERP Password"
             />
-            <button type="button" class="secret-toggle" @click="showPassword = !showPassword">
+            <Button type="button" class="secret-toggle" @click="showPassword = !showPassword">
               {{ showPassword ? '隠す / 隐藏' : '表示 / 显示' }}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
-    </div>
+    </CardContent>
+    </Card>
 
     <!-- エクスポート設定 / 导出设置 -->
-    <div class="config-card o-card">
-      <h3 class="section-title">エクスポート設定 / 导出设置</h3>
+    <Card class="config-card">
+      <CardHeader>
+        <CardTitle>エクスポート設定 / 导出设置</CardTitle>
+      </CardHeader>
+      <CardContent>
       <div class="export-options">
         <label class="toggle-wrapper">
-          <input v-model="config.exportShipments" type="checkbox" class="toggle-input" />
+          <Checkbox :checked="config.exportShipments" @update:checked="val => config.exportShipments = val" />
           <span class="toggle-label">出荷データ / 出货数据</span>
         </label>
         <label class="toggle-wrapper">
-          <input v-model="config.exportInvoices" type="checkbox" class="toggle-input" />
+          <Checkbox :checked="config.exportInvoices" @update:checked="val => config.exportInvoices = val" />
           <span class="toggle-label">請求書データ / 发票数据</span>
         </label>
         <label class="toggle-wrapper">
-          <input v-model="config.exportInventory" type="checkbox" class="toggle-input" />
+          <Checkbox :checked="config.exportInventory" @update:checked="val => config.exportInventory = val" />
           <span class="toggle-label">在庫データ / 库存数据</span>
         </label>
         <label class="toggle-wrapper">
-          <input v-model="config.autoSync" type="checkbox" class="toggle-input" />
+          <Checkbox :checked="config.autoSync" @update:checked="val => config.autoSync = val" />
           <span class="toggle-label">自動同期 / 自动同步</span>
         </label>
       </div>
       <div class="form-actions">
-        <OButton variant="secondary" :disabled="testing" @click="handleTest">
+        <Button variant="secondary" :disabled="testing" @click="handleTest">
           {{ testing ? 'テスト中... / 测试中...' : '接続テスト / 测试连接' }}
-        </OButton>
-        <OButton variant="primary" :disabled="saving" @click="handleSave">
+        </Button>
+        <Button variant="default" :disabled="saving" @click="handleSave">
           {{ saving ? '保存中... / 保存中...' : '保存 / 保存' }}
-        </OButton>
+        </Button>
       </div>
-    </div>
+    </CardContent>
+    </Card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   getErpStatus,
   getErpConfig,
@@ -132,7 +148,8 @@ import {
   type ErpStatus,
   type ErpConfig,
 } from '@/api/erp'
-
+import { onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const { show: showToast } = useToast()
 
 // === ERP タイプ選択肢 / ERP 类型选项 ===
@@ -333,7 +350,7 @@ onMounted(() => {
   gap: 4px;
 }
 
-.secret-field .o-input {
+.secret-field input {
   flex: 1;
 }
 

@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="visible"
-    title="出荷指示一括登録"
-    size="lg"
-    @close="handleClose"
-  >
+  <Dialog :open="visible" @update:open="(val: boolean) => { if (!val) handleClose() }">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>出荷指示一括登録</DialogTitle>
+      </DialogHeader>
     <div class="import-dialog-content">
       <form class="import-form">
         <!-- 出荷予定日 -->
@@ -13,7 +12,7 @@
             <span class="form-label">出荷予定日</span>
             <span class="required-badge">必須</span>
           </label>
-          <ODatePicker
+          <Input type="date"
             v-model="formData.shipPlanDate"
             :min="todayStr"
           />
@@ -177,28 +176,28 @@
       </div>
     </div>
 
-    <template #footer>
+    <DialogFooter>
       <div class="dialog-footer">
-        <OButton type="button" variant="secondary" @click="handleClose">キャンセル</OButton>
-        <OButton
+        <Button type="button" variant="secondary" @click="handleClose">キャンセル</Button>
+        <Button
           type="button"
-          variant="primary"
+          variant="default"
           :disabled="!canImport || importing || hasCriticalErrors"
           @click="handleImport"
         >
           <span v-if="importing" class="spinner"></span>
           一括登録
-        </OButton>
+        </Button>
       </div>
-    </template>
-  </ODialog>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
-import ODatePicker from '@/components/odoo/ODatePicker.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 // XLSX动态导入，减少初始包大小 / XLSXを動的インポートし初期バンドルサイズを削減
 const loadXLSX = () => import('xlsx')
 import { getAllMappingConfigs, type MappingConfig, type TransformMapping } from '@/api/mappingConfig'

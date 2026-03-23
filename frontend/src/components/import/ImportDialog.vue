@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="visible"
-    title="ファイル登録"
-    size="lg"
-    @close="handleClose"
-  >
+  <Dialog :open="visible" @update:open="(val: boolean) => { if (!val) handleClose() }">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>ファイル登録</DialogTitle>
+      </DialogHeader>
     <div class="import-dialog-content">
       <!-- 上部：ファイルアップロード / 上半部分：文件上传 -->
       <div class="upload-section">
@@ -121,27 +120,28 @@
       </div>
     </div>
 
-    <template #footer>
+    <DialogFooter>
       <div class="dialog-footer">
-        <OButton type="button" variant="secondary" @click="handleClose">キャンセル</OButton>
-        <OButton
+        <Button type="button" variant="secondary" @click="handleClose">キャンセル</Button>
+        <Button
           type="button"
-          variant="primary"
+          variant="default"
           :disabled="!canImport || importing"
           @click="handleImport"
         >
           <span v-if="importing" class="spinner"></span>
           取り込み
-        </OButton>
+        </Button>
       </div>
-    </template>
-  </ODialog>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 // XLSX动态导入，减少初始包大小 / XLSXを動的インポートし初期バンドルサイズを削減
 const loadXLSX = () => import('xlsx')
 import { getAllMappingConfigs, type MappingConfig, type TransformMapping } from '@/api/mappingConfig'

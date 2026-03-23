@@ -24,24 +24,24 @@
           </span>
         </summary>
         <div class="printer-content">
-          <table class="o-table">
-            <thead>
-              <tr>
-                <th>{{ t('wms.printer.paperName', '用紙名') }}</th>
-                <th style="text-align: right">{{ t('wms.printer.widthMm', '幅 (mm)') }}</th>
-                <th style="text-align: right">{{ t('wms.printer.heightMm', '高さ (mm)') }}</th>
-                <th>{{ t('wms.printer.size', 'サイズ') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in printer.paper_sizes" :key="row.name">
-                <td>{{ row.name }}</td>
-                <td style="text-align: right">{{ row.width_mm.toFixed(1) }}</td>
-                <td style="text-align: right">{{ row.height_mm.toFixed(1) }}</td>
-                <td>{{ row.width_mm.toFixed(0) }} × {{ row.height_mm.toFixed(0) }} mm</td>
-              </tr>
-            </tbody>
-          </table>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{{ t('wms.printer.paperName', '用紙名') }}</TableHead>
+                <TableHead style="text-align: right">{{ t('wms.printer.widthMm', '幅 (mm)') }}</TableHead>
+                <TableHead style="text-align: right">{{ t('wms.printer.heightMm', '高さ (mm)') }}</TableHead>
+                <TableHead>{{ t('wms.printer.size', 'サイズ') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="row in printer.paper_sizes" :key="row.name">
+                <TableCell>{{ row.name }}</TableCell>
+                <TableCell style="text-align: right">{{ row.width_mm.toFixed(1) }}</TableCell>
+                <TableCell style="text-align: right">{{ row.height_mm.toFixed(1) }}</TableCell>
+                <TableCell>{{ row.width_mm.toFixed(0) }} × {{ row.height_mm.toFixed(0) }} mm</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </details>
     </template>
@@ -59,6 +59,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import type { PrinterInfo } from '@/utils/print/printConfig'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 const props = defineProps<{
   printers: PrinterInfo[]

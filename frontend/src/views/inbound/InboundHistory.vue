@@ -1,18 +1,17 @@
 <template>
   <div class="inbound-history">
-    <ControlPanel :title="t('wms.inbound.history', '入庫履歴')" :show-search="false">
+    <PageHeader :title="t('wms.inbound.history', '入庫履歴')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" @click="showExportSettings = !showExportSettings">
+          <Button variant="secondary" size="sm" @click="showExportSettings = !showExportSettings">
             {{ t('wms.inbound.csvSettings', 'CSV設定') }}
-          </OButton>
-          <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inbound.csvExport', 'CSV出力') }}</OButton>
+          </Button>
+          <Button variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inbound.csvExport', 'CSV出力') }}</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- 検索パネル -->
-    <SearchForm
       :columns="searchColumns"
       :show-save="false"
       :initial-values="searchInitialValues"
@@ -21,21 +20,24 @@
     />
 
     <!-- CSV導出設定パネル -->
-    <div v-if="showExportSettings" class="o-card">
+    <div v-if="showExportSettings" class="rounded-lg border bg-card p-4">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h3 class="card-title" style="margin:0;">{{ t('wms.inbound.csvExportSettings', 'CSV導出設定') }}</h3>
         <div style="display:flex;gap:6px;">
-          <select v-model="selectedExportPreset" class="o-input o-input-sm" style="width:160px;" @change="loadExportPreset">
-            <option value="">{{ t('wms.common.default', 'デフォルト') }}</option>
-            <option v-for="p in exportPresets" :key="p.name" :value="p.name">{{ p.name }}</option>
-          </select>
-          <OButton variant="secondary" size="sm" @click="saveExportPreset">{{ t('wms.common.save', '保存') }}</OButton>
-          <OButton
+          <Select :model-value="selectedExportPreset || '__all__'" @update:model-value="(v: string) => { selectedExportPreset = v === '__all__' ? '' : v; loadExportPreset() }">
+            <SelectTrigger class="h-8 text-sm" style="width:160px;"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">{{ t('wms.common.default', 'デフォルト') }}</SelectItem>
+              <SelectItem v-for="p in exportPresets" :key="p.name" :value="p.name">{{ p.name }}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="secondary" size="sm" @click="saveExportPreset">{{ t('wms.common.save', '保存') }}</Button>
+          <Button
             v-if="selectedExportPreset"
             variant="secondary" size="sm"
             style="border-color:var(--o-danger);color:var(--o-danger);"
             @click="deleteExportPreset"
-          >{{ t('wms.common.delete', '削除') }}</OButton>
+          >{{ t('wms.common.delete', '削除') }}</Button>
         </div>
       </div>
       <div class="export-col-grid">
@@ -50,92 +52,106 @@
         </label>
       </div>
       <div style="margin-top:8px;display:flex;gap:6px;">
-        <OButton variant="secondary" size="sm" @click="selectAllExportCols">{{ t('wms.inbound.selectAll', '全選択') }}</OButton>
-        <OButton variant="secondary" size="sm" @click="exportColumns = []">{{ t('wms.inbound.deselectAll', '全解除') }}</OButton>
+        <Button variant="secondary" size="sm" @click="selectAllExportCols">{{ t('wms.inbound.selectAll', '全選択') }}</Button>
+        <Button variant="secondary" size="sm" @click="exportColumns = []">{{ t('wms.inbound.deselectAll', '全解除') }}</Button>
       </div>
     </div>
 
     <!-- 結果テーブル -->
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width:140px;">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</th>
-            <th class="o-table-th" style="width:110px;">{{ t('wms.inbound.productSku', '品番') }}</th>
-            <th class="o-table-th" style="width:150px;">{{ t('wms.product.productName', '商品名') }}</th>
-            <th class="o-table-th" style="width:90px;">{{ t('wms.inbound.location', 'ロケーション') }}</th>
-            <th class="o-table-th" style="width:60px;">{{ t('wms.inbound.stockCategory', '区分') }}</th>
-            <th class="o-table-th o-table-th--right" style="width:70px;">{{ t('wms.inbound.expectedQty', '予定数') }}</th>
-            <th class="o-table-th o-table-th--right" style="width:70px;">{{ t('wms.inbound.receivedQty', '実績数') }}</th>
-            <th class="o-table-th" style="width:100px;">{{ t('wms.inbound.supplier', '仕入先') }}</th>
-            <th class="o-table-th" style="width:100px;">{{ t('wms.inbound.orderReferenceNumber', '注文番号') }}</th>
-            <th class="o-table-th" style="width:80px;">{{ t('wms.inbound.lot', 'ロット') }}</th>
-            <th class="o-table-th" style="width:100px;">{{ t('wms.inbound.completedAt', '完了日時') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoading">
-            <td colspan="11" class="o-table-empty">{{ t('wms.common.loading', '読み込み中...') }}</td>
-          </tr>
-          <tr v-else-if="rows.length === 0">
-            <td colspan="11" class="o-table-empty">{{ t('wms.common.noData', 'データがありません') }}</td>
-          </tr>
-          <tr v-for="(row, idx) in rows" :key="idx" class="o-table-row">
-            <td class="o-table-td"><span class="order-number">{{ row.orderNumber }}</span></td>
-            <td class="o-table-td"><span class="sku-text">{{ row.productSku }}</span></td>
-            <td class="o-table-td">{{ row.productName || '-' }}</td>
-            <td class="o-table-td">
+    <div class="rounded-md border overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width:140px;">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</TableHead>
+            <TableHead style="width:110px;">{{ t('wms.inbound.productSku', '品番') }}</TableHead>
+            <TableHead style="width:150px;">{{ t('wms.product.productName', '商品名') }}</TableHead>
+            <TableHead style="width:90px;">{{ t('wms.inbound.location', 'ロケーション') }}</TableHead>
+            <TableHead style="width:60px;">{{ t('wms.inbound.stockCategory', '区分') }}</TableHead>
+            <TableHead class="text-right" style="width:70px;">{{ t('wms.inbound.expectedQty', '予定数') }}</TableHead>
+            <TableHead class="text-right" style="width:70px;">{{ t('wms.inbound.receivedQty', '実績数') }}</TableHead>
+            <TableHead style="width:100px;">{{ t('wms.inbound.supplier', '仕入先') }}</TableHead>
+            <TableHead style="width:100px;">{{ t('wms.inbound.orderReferenceNumber', '注文番号') }}</TableHead>
+            <TableHead style="width:80px;">{{ t('wms.inbound.lot', 'ロット') }}</TableHead>
+            <TableHead style="width:100px;">{{ t('wms.inbound.completedAt', '完了日時') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="isLoading">
+            <TableCell colspan="11">
+              <div class="space-y-3 p-4">
+                <Skeleton class="h-4 w-[250px] mx-auto" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+              </div>
+            </TableCell>
+          </TableRow>
+          <TableRow v-else-if="rows.length === 0">
+            <TableCell colspan="11" class="text-center py-8 text-muted-foreground">{{ t('wms.common.noData', 'データがありません') }}</TableCell>
+          </TableRow>
+          <TableRow v-for="(row, idx) in rows" :key="idx">
+            <TableCell><span class="order-number">{{ row.orderNumber }}</span></TableCell>
+            <TableCell><span class="sku-text">{{ row.productSku }}</span></TableCell>
+            <TableCell>{{ row.productName || '-' }}</TableCell>
+            <TableCell>
               <span v-if="row.putawayLocationCode" class="location-badge">{{ row.putawayLocationCode }}</span>
               <span v-else-if="row.locationCode" class="location-badge">{{ row.locationCode }}</span>
               <span v-else>-</span>
-            </td>
-            <td class="o-table-td">
+            </TableCell>
+            <TableCell>
               <span class="o-status-tag" :class="row.stockCategory === 'damaged' ? 'o-status-tag--held' : 'o-status-tag--confirmed'">
                 {{ row.stockCategory === 'damaged' ? t('wms.inbound.stockDamaged', '仕損') : t('wms.inbound.stockNew', '新品') }}
               </span>
-            </td>
-            <td class="o-table-td o-table-td--right">{{ row.expectedQuantity }}</td>
-            <td class="o-table-td o-table-td--right">
+            </TableCell>
+            <TableCell class="text-right">{{ row.expectedQuantity }}</TableCell>
+            <TableCell class="text-right">
               <strong>{{ row.receivedQuantity }}</strong>
-            </td>
-            <td class="o-table-td">{{ row.supplierName || '-' }}</td>
-            <td class="o-table-td">{{ row.orderReferenceNumber || '-' }}</td>
-            <td class="o-table-td">{{ row.lotNumber || '-' }}</td>
-            <td class="o-table-td">{{ row.completedAt ? formatDateTime(row.completedAt) : '-' }}</td>
-          </tr>
-        </tbody>
-      </table>
+            </TableCell>
+            <TableCell>{{ row.supplierName || '-' }}</TableCell>
+            <TableCell>{{ row.orderReferenceNumber || '-' }}</TableCell>
+            <TableCell>{{ row.lotNumber || '-' }}</TableCell>
+            <TableCell>{{ row.completedAt ? formatDateTime(row.completedAt) : '-' }}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <!-- Pagination -->
     <div class="o-table-pagination">
       <span class="o-table-pagination__info">{{ total }} {{ t('wms.common.items', '件') }}</span>
       <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;" @change="currentPage = 1; loadData()">
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-          <option :value="200">200</option>
-        </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--; loadData()">&lsaquo;</OButton>
+        <Select :model-value="String(pageSize)" @update:model-value="(v: string) => { pageSize = Number(v); currentPage = 1; loadData() }">
+          <SelectTrigger class="h-8 text-sm" style="width:80px;"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+            <SelectItem value="200">200</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--; loadData()">&lsaquo;</Button>
         <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++; loadData()">&rsaquo;</OButton>
+        <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++; loadData()">&rsaquo;</Button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { searchInboundHistory } from '@/api/inboundOrder'
 import type { InboundHistoryLine } from '@/types/inventory'
 import type { TableColumn, Operator } from '@/types/table'
-
+import { computed, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const EXPORT_STORAGE_KEY = 'zelix_inbound_export_presets'
 
 interface ExportColumn {
@@ -279,11 +295,7 @@ const loadExportPreset = () => {
 }
 
 const saveExportPreset = async () => {
-  const { value: name } = await ElMessageBox.prompt(
-    t('wms.inbound.presetNamePrompt', 'プリセット名を入力してください / 请输入预设名称:'),
-    '入力 / 输入',
-    { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消' },
-  ).catch(() => ({ value: null }))
+  const name = window.prompt('入力してください')
   if (!name) return
   const existing = exportPresets.value.findIndex(p => p.name === name)
   const preset: ExportPreset = { name, columns: [...exportColumns.value] }
@@ -299,13 +311,7 @@ const saveExportPreset = async () => {
 
 const deleteExportPreset = async () => {
   if (!selectedExportPreset.value) return
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inbound.presetDeleteConfirm', 'このプリセットを削除しますか？ / 确定要删除此预设吗？'),
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   exportPresets.value = exportPresets.value.filter(p => p.name !== selectedExportPreset.value)
   persistExportPresets()
   selectedExportPreset.value = ''

@@ -26,7 +26,7 @@ export function useUnsavedChanges() {
 
   function confirmLeave(): boolean {
     if (!isDirty.value) return true
-    return window.confirm(LEAVE_MESSAGE)
+    return confirm(LEAVE_MESSAGE)
   }
 
   function handleBeforeUnload(event: BeforeUnloadEvent): void {

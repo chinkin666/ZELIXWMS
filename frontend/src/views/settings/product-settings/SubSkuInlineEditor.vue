@@ -1,67 +1,56 @@
 <template>
   <div class="sub-sku-inline-section">
-    <div class="o-divider">
+    <div>
       <span class="o-divider-text">{{ t('wms.product.subSkuManagement', '子SKU管理') }}</span>
     </div>
-    <table class="o-list-table" style="width: 100%">
-      <thead>
-        <tr>
-          <th :style="{ width: skuColumnWidth }">{{ t('wms.product.subSkuCode', '子SKUコード') }}</th>
-          <th :style="{ width: priceColumnWidth }">{{ t('wms.product.price', '価格') }}</th>
-          <th>{{ t('wms.product.description', '説明') }}</th>
-          <th style="width: 60px; text-align: center">{{ t('wms.product.active', '有効') }}</th>
-          <th style="width: 60px; text-align: center"></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(row, $index) in subSkus" :key="$index">
-          <td>
+    <Table style="width: 100%">
+      <TableHeader>
+        <TableRow>
+          <TableHead :style="{ width: skuColumnWidth }">{{ t('wms.product.subSkuCode', '子SKUコード') }}</TableHead>
+          <TableHead :style="{ width: priceColumnWidth }">{{ t('wms.product.price', '価格') }}</TableHead>
+          <TableHead>{{ t('wms.product.description', '説明') }}</TableHead>
+          <TableHead style="width: 60px; text-align: center">{{ t('wms.product.active', '有効') }}</TableHead>
+          <TableHead style="width: 60px; text-align: center"></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableRow v-for="(row, $index) in subSkus" :key="$index">
+          <TableCell>
             <div>
-              <input
-                v-model="row.subSku"
-                type="text"
-                class="o-input o-input-sm"
-                :class="{ 'is-error': validationErrors[$index] }"
-                :placeholder="t('wms.product.subSkuCode', '子SKUコード')"
-                @blur="$emit('validate', $index)"
-              />
+              <Input v-model="row.subSku" type="text" :class="{ 'is-error': validationErrors[$index] }" :placeholder="t('wms.product.subSkuCode', '子SKUコード')" @blur="$emit('validate', $index)" />
               <div v-if="validationErrors[$index]" class="sku-error-message">
                 {{ validationErrors[$index] }}
               </div>
             </div>
-          </td>
-          <td>
-            <input
-              v-model.number="row.price"
-              type="number"
-              class="o-input o-input-sm"
-              :min="0"
-              :placeholder="t('wms.product.parentPrice', '親価格')"
-              style="width: 100%"
-            />
-          </td>
-          <td>
-            <input v-model="row.description" type="text" class="o-input o-input-sm" :placeholder="t('wms.product.descriptionExample', '説明（例: セール価格）')" />
-          </td>
-          <td style="text-align: center">
-            <input type="checkbox" v-model="row.isActive" />
-          </td>
-          <td style="text-align: center">
-            <OButton variant="danger" size="sm" @click="$emit('remove', $index)">{{ t('wms.common.delete', '削除') }}</OButton>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          </TableCell>
+          <TableCell>
+            <Input v-model.number="row.price" type="number" :min="0" :placeholder="t('wms.product.parentPrice', '親価格')" style="width: 100%" />
+          </TableCell>
+          <TableCell>
+            <Input v-model="row.description" type="text" :placeholder="t('wms.product.descriptionExample', '説明（例: セール価格）')" />
+          </TableCell>
+          <TableCell style="text-align: center">
+            <Checkbox :checked="row.isActive" @update:checked="val => row.isActive = val" />
+          </TableCell>
+          <TableCell style="text-align: center">
+            <Button variant="destructive" size="sm" @click="$emit('remove', $index)">{{ t('wms.common.delete', '削除') }}</Button>
+          </TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
     <div class="sub-sku-actions">
-      <OButton variant="primary" size="sm" @click="$emit('add')">+ {{ t('wms.product.addSubSku', '子SKUを追加') }}</OButton>
+      <Button variant="default" size="sm" @click="$emit('add')">+ {{ t('wms.product.addSubSku', '子SKUを追加') }}</Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
 import { useI18n } from '@/composables/useI18n'
 import type { SubSku } from '@/types/product'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 const { t } = useI18n()
 

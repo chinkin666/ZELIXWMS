@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 /**
  * 検品操作ページ / 检品操作页面
  *
@@ -6,15 +8,18 @@
  * 对入库预定的商品进行6维度检查，记录异常。
  */
 import { ref, onMounted } from 'vue'
+import { Card, CardContent } from '@/components/ui/card'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { useToast } from '@/composables/useToast'
 import { getApiBaseUrl } from '@/api/base'
 import { useWmsUserStore } from '@/stores/wms/useWmsUserStore'
+import { Button } from '@/components/ui/button'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useWmsUserStore()
 const baseUrl = getApiBaseUrl()
+const { showSuccess, showError } = useToast()
 
 const orderId = route.params.orderId as string
 const order = ref<any>(null)
@@ -56,9 +61,9 @@ const categoryOptions = [
 ]
 
 const checkOptions = [
-  { value: 'pass', label: '✓ 合格', type: 'success' },
-  { value: 'fail', label: '✗ 不合格', type: 'danger' },
-  { value: 'na', label: '— N/A', type: 'info' },
+  { value: 'pass', label: '✓ 合格', color: 'bg-green-100 text-green-800' },
+  { value: 'fail', label: '✗ 不合格', color: 'bg-red-100 text-red-800' },
+  { value: 'na', label: '— N/A', color: 'bg-muted text-muted-foreground' },
 ]
 
 async function loadOrder() {
@@ -100,13 +105,13 @@ async function submitInspection() {
       body: JSON.stringify(body),
     })
     if (res.ok) {
-      ElMessage.success('検品記録を保存しました / 检品记录已保存')
+      showSuccess('検品記録を保存しました / 检品记录已保存')
       router.back()
     } else {
       const data = await res.json()
-      ElMessage.error(data.message || '保存に失敗')
+      showError(data.message || '保存に失敗')
     }
-  } catch (e: any) { ElMessage.error(e.message) }
+  } catch (e: any) { showError(e.message) }
   finally { submitting.value = false }
 }
 
@@ -114,97 +119,123 @@ onMounted(loadOrder)
 </script>
 
 <template>
-  <div style="max-width: 800px; margin: 0 auto" v-loading="loading">
-    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px">
-      <el-button @click="router.back()">戻る</el-button>
-      <h2 style="margin: 0">検品 / 检品: {{ order?.orderNumber || '...' }}</h2>
+  <div style="max-width: 800px; margin: 0 auto">
+    <div v-if="loading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
     </div>
-
-    <template v-if="order">
-      <!-- 検品方式 / 检品方式 -->
-      <el-card style="margin-bottom: 16px">
-        <template #header>検品方式 / 检品方式</template>
-        <el-radio-group v-model="inspectionMode">
-          <el-radio value="full">全数検品 / 全检</el-radio>
-          <el-radio value="sampling">抜取検品 / 抽检</el-radio>
-        </el-radio-group>
-        <div v-if="inspectionMode === 'sampling'" style="margin-top: 8px">
-          抜取率 / 抽检比例: <el-input-number v-model="samplingRate" :min="0.01" :max="1" :step="0.05" size="small" /> ({{ Math.round(samplingRate * 100) }}%)
-        </div>
-      </el-card>
-
-      <!-- 6次元チェック / 6维度检查 -->
-      <el-card style="margin-bottom: 16px">
-        <template #header>6次元チェック / 6维度检查</template>
-        <el-form label-width="140px">
-          <el-form-item v-for="(displayLabel, fieldKey) in {
-            skuMatch: 'SKU 一致',
-            barcodeMatch: 'バーコード一致',
-            quantityMatch: '数量一致',
-            appearanceOk: '外観OK',
-            accessoriesOk: '付属品OK',
-            packagingOk: '包装OK',
-          }" :key="fieldKey" :label="displayLabel">
-            <el-radio-group v-model="(checks as any)[fieldKey]">
-              <el-radio-button v-for="opt in checkOptions" :key="opt.value" :value="opt.value">
-                {{ opt.label }}
-              </el-radio-button>
-            </el-radio-group>
-          </el-form-item>
-        </el-form>
-      </el-card>
-
-      <!-- 数量 / 数量 -->
-      <el-card style="margin-bottom: 16px">
-        <el-row :gutter="16">
-          <el-col :span="8">
-            <div style="color: #909399; font-size: 12px">検品数量</div>
-            <el-input-number v-model="inspectedQuantity" :min="0" />
-          </el-col>
-          <el-col :span="8">
-            <div style="color: #909399; font-size: 12px">合格数量</div>
-            <el-input-number v-model="passedQuantity" :min="0" />
-          </el-col>
-          <el-col :span="8">
-            <div style="color: #909399; font-size: 12px">不合格数量</div>
-            <el-input-number v-model="failedQuantity" :min="0" />
-          </el-col>
-        </el-row>
-      </el-card>
-
-      <!-- 異常 / 异常 -->
-      <el-card style="margin-bottom: 16px">
-        <template #header>
-          <div style="display: flex; justify-content: space-between; align-items: center">
-            <span>異常記録 / 异常记录</span>
-            <el-button size="small" @click="addException">+ 追加</el-button>
-          </div>
-        </template>
-        <div v-for="(exc, idx) in exceptions" :key="idx" style="border-bottom: 1px solid #f0f0f0; padding: 12px 0">
-          <el-row :gutter="8">
-            <el-col :span="8">
-              <el-select v-model="exc.category" size="small" style="width: 100%">
-                <el-option v-for="c in categoryOptions" :key="c.value" :label="c.label" :value="c.value" />
-              </el-select>
-            </el-col>
-            <el-col :span="4">
-              <el-input-number v-model="exc.quantity" :min="0" size="small" style="width: 100%" />
-            </el-col>
-            <el-col :span="10">
-              <el-input v-model="exc.description" placeholder="説明 / 描述" size="small" />
-            </el-col>
-            <el-col :span="2">
-              <el-button text type="danger" size="small" @click="removeException(idx)">X</el-button>
-            </el-col>
-          </el-row>
-        </div>
-        <el-empty v-if="!exceptions.length" description="異常なし / 无异常" :image-size="40" />
-      </el-card>
-
-      <div style="display: flex; justify-content: flex-end; gap: 8px">
-        <el-button @click="router.back()">キャンセル</el-button>
-        <el-button type="primary" :loading="submitting" @click="submitInspection">検品完了 / 检品完成</el-button>
+    <template v-else>
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px">
+        <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-input bg-background hover:bg-accent" @click="router.back()">戻る</Button>
+        <h2 style="margin: 0">検品 / 检品: {{ order?.orderNumber || '...' }}</h2>
       </div>
+
+      <template v-if="order">
+        <!-- 検品方式 / 检品方式 -->
+        <div class="rounded-lg border bg-card shadow-sm" style="margin-bottom: 16px">
+          <div class="border-b px-4 py-3">検品方式 / 检品方式</div>
+          <div class="p-4">
+            <div class="flex gap-4">
+              <label class="inline-flex items-center gap-1 text-sm"><input type="radio" v-model="inspectionMode" value="full" /> 全数検品 / 全检</label>
+              <label class="inline-flex items-center gap-1 text-sm"><input type="radio" v-model="inspectionMode" value="sampling" /> 抜取検品 / 抽检</label>
+            </div>
+            <div v-if="inspectionMode === 'sampling'" style="margin-top: 8px">
+              抜取率 / 抽检比例: <input v-model.number="samplingRate" type="number" min="0.01" max="1" step="0.05" class="inline-flex h-8 w-20 rounded-md border border-input bg-transparent px-2 py-1 text-sm" /> ({{ Math.round(samplingRate * 100) }}%)
+            </div>
+          </div>
+        </div>
+
+        <!-- 6次元チェック / 6维度检查 -->
+        <div class="rounded-lg border bg-card shadow-sm" style="margin-bottom: 16px">
+          <div class="border-b px-4 py-3">6次元チェック / 6维度检查</div>
+          <div class="p-4">
+            <div class="grid gap-4">
+              <div v-for="(displayLabel, fieldKey) in {
+                skuMatch: 'SKU 一致',
+                barcodeMatch: 'バーコード一致',
+                quantityMatch: '数量一致',
+                appearanceOk: '外観OK',
+                accessoriesOk: '付属品OK',
+                packagingOk: '包装OK',
+              }" :key="fieldKey" class="grid grid-cols-4 items-center gap-4">
+                <label class="text-right text-sm font-medium">{{ displayLabel }}</label>
+                <div class="col-span-3 flex gap-2">
+                  <Button v-for="opt in checkOptions" :key="opt.value"
+                    :class="[(checks as any)[fieldKey] === opt.value ? opt.color + ' ring-2 ring-offset-1' : 'bg-muted/30 text-muted-foreground']"
+                    class="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium cursor-pointer"
+                    @click="(checks as any)[fieldKey] = opt.value"
+                  >
+                    {{ opt.label }}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 数量 / 数量 -->
+        <div class="rounded-lg border bg-card shadow-sm" style="margin-bottom: 16px">
+          <div class="p-4">
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <div style="color: #909399; font-size: 12px">検品数量</div>
+                <input v-model.number="inspectedQuantity" type="number" min="0" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              </div>
+              <div>
+                <div style="color: #909399; font-size: 12px">合格数量</div>
+                <input v-model.number="passedQuantity" type="number" min="0" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              </div>
+              <div>
+                <div style="color: #909399; font-size: 12px">不合格数量</div>
+                <input v-model.number="failedQuantity" type="number" min="0" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 異常 / 异常 -->
+        <div class="rounded-lg border bg-card shadow-sm" style="margin-bottom: 16px">
+          <div class="border-b px-4 py-3">
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <span>異常記録 / 异常记录</span>
+              <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 border border-input bg-background hover:bg-accent" @click="addException">+ 追加</Button>
+            </div>
+          </div>
+          <div class="p-4">
+            <div v-for="(exc, idx) in exceptions" :key="idx" style="border-bottom: 1px solid #f0f0f0; padding: 12px 0">
+              <div class="grid grid-cols-12 gap-2">
+                <div class="col-span-4">
+                  <select v-model="exc.category" class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm">
+                    <option v-for="c in categoryOptions" :key="c.value" :value="c.value">{{ c.label }}</option>
+                  </select>
+                </div>
+                <div class="col-span-2">
+                  <input v-model.number="exc.quantity" type="number" min="0" class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm" />
+                </div>
+                <div class="col-span-5">
+                  <input v-model="exc.description" placeholder="説明 / 描述" class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm" />
+                </div>
+                <div class="col-span-1">
+                  <Button class="text-sm text-destructive hover:underline" @click="removeException(idx)">X</Button>
+                </div>
+              </div>
+            </div>
+            <div v-if="!exceptions.length" class="flex flex-col items-center justify-center py-6 text-muted-foreground">
+              <p>異常なし / 无异常</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 8px">
+          <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-input bg-background hover:bg-accent" @click="router.back()">キャンセル</Button>
+          <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90" :disabled="submitting" @click="submitInspection">
+            {{ submitting ? '処理中...' : '検品完了 / 检品完成' }}
+          </Button>
+        </div>
+      </template>
     </template>
   </div>
 </template>

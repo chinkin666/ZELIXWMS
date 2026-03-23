@@ -1,8 +1,7 @@
 <template>
   <div class="shipment-results">
-    <ControlPanel :title="t('wms.shipmentResult.title', '出荷実績一覧')" :show-search="false" />
+    <PageHeader :title="t('wms.shipmentResult.title', '出荷実績一覧')" :show-search="false" />
 
-    <OrderSearchFormWrapper
       class="search-section"
       :columns="searchColumns"
       :initial-values="searchInitialValues"
@@ -20,55 +19,59 @@
     </div>
 
     <!-- Plain table (same style as shipment-orders/create) -->
-    <div class="o-table-wrapper">
+    <div class="rounded-md border overflow-auto">
       <div v-if="tableSelectedKeys.length > 0" class="o-list-toolbar o-toolbar-active">
         <span class="o-selected-count">{{ tableSelectedKeys.length }}{{ t('wms.shipmentResult.selectedCount', '件選択中') }}</span>
       </div>
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th o-table-th--checkbox" style="width:40px;">
-              <input
-                type="checkbox"
-                :checked="isAllCurrentPageSelected"
-                :indeterminate="isSomeCurrentPageSelected && !isAllCurrentPageSelected"
-                @change="toggleSelectAll"
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width:40px;">
+              <Checkbox
+                :checked="isAllCurrentPageSelected ? true : (isSomeCurrentPageSelected ? 'indeterminate' : false)"
+                @update:checked="toggleSelectAll"
               />
-            </th>
-            <th class="o-table-th" style="width:90px;">{{ t('wms.shipmentResult.status', '状態') }}</th>
-            <th class="o-table-th o-table-th--sortable" style="width:220px;" @click="handleSortClick('orderNumber')">
+            </TableHead>
+            <TableHead style="width:90px;">{{ t('wms.shipmentResult.status', '状態') }}</TableHead>
+            <TableHead style="width:220px;" @click="handleSortClick('orderNumber')">
               {{ t('wms.shipmentResult.orderNumber', '出荷管理番号') }}
               <span v-if="sortBy === 'orderNumber'" class="o-sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-            </th>
-            <th class="o-table-th" style="width:200px;">{{ t('wms.shipmentResult.deliveryInfo', '配送情報') }}</th>
-            <th class="o-table-th" style="width:180px;">{{ t('wms.shipmentResult.deliveryPreference', '配送指定') }}</th>
-            <th class="o-table-th" style="width:200px;">{{ t('wms.shipmentResult.recipient', 'お届け先') }}</th>
-            <th class="o-table-th" style="width:200px;">{{ t('wms.shipmentResult.products', '商品') }}</th>
-            <th class="o-table-th" style="width:170px;">{{ t('wms.shipmentResult.history', '履歴') }}</th>
-            <th class="o-table-th" style="width:100px;">{{ t('wms.common.actions', '操作') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoadingOrders">
-            <td colspan="9" class="o-table-empty">{{ t('wms.shipmentResult.loading', '読み込み中...') }}</td>
-          </tr>
-          <tr v-else-if="paginatedRows.length === 0">
-            <td colspan="9" class="o-table-empty">{{ t('wms.shipmentResult.noData', 'データがありません') }}</td>
-          </tr>
-          <tr
+            </TableHead>
+            <TableHead style="width:200px;">{{ t('wms.shipmentResult.deliveryInfo', '配送情報') }}</TableHead>
+            <TableHead style="width:180px;">{{ t('wms.shipmentResult.deliveryPreference', '配送指定') }}</TableHead>
+            <TableHead style="width:200px;">{{ t('wms.shipmentResult.recipient', 'お届け先') }}</TableHead>
+            <TableHead style="width:200px;">{{ t('wms.shipmentResult.products', '商品') }}</TableHead>
+            <TableHead style="width:160px;">{{ t('wms.shipmentResult.dates', '日付') }}</TableHead>
+            <TableHead style="width:170px;">{{ t('wms.shipmentResult.history', '履歴') }}</TableHead>
+            <TableHead style="width:100px;">{{ t('wms.common.actions', '操作') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="isLoadingOrders">
+            <TableCell colspan="10">
+              <div class="space-y-3 p-4">
+                <Skeleton class="h-4 w-[250px] mx-auto" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+              </div>
+            </TableCell>
+          </TableRow>
+          <TableRow v-else-if="paginatedRows.length === 0">
+            <TableCell colspan="10" class="text-center py-8 text-muted-foreground">{{ t('wms.shipmentResult.noData', 'データがありません') }}</TableCell>
+          </TableRow>
+          <TableRow
             v-for="row in paginatedRows"
             :key="row._id"
-            class="o-table-row"
-            :class="{ 'o-table-row--selected': tableSelectedKeys.includes(String(row._id)) }"
+            :class="{ 'bg-accent': tableSelectedKeys.includes(String(row._id)) }"
           >
-            <td class="o-table-td o-table-td--checkbox">
-              <input
-                type="checkbox"
+            <TableCell>
+              <Checkbox
                 :checked="tableSelectedKeys.includes(String(row._id))"
-                @change="toggleRowSelection(row)"
+                @update:checked="() => toggleRowSelection(row)"
               />
-            </td>
-            <td class="o-table-td o-table-td--status">
+            </TableCell>
+            <TableCell>
               <div class="status-cell">
                 <span v-if="row.statusConfirmed" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipmentResult.statusConfirmed', '確定済') }}</span>
                 <span v-if="row.statusCarrierReceived" class="o-status-tag o-status-tag--issued">{{ t('wms.shipmentResult.statusWaybillIssued', '送り状発行済') }}</span>
@@ -77,9 +80,9 @@
                 <span v-if="row.statusShipped" class="o-status-tag o-status-tag--shipped">{{ t('wms.shipmentResult.statusShipped', '出荷済') }}</span>
                 <span v-if="row.statusEcExported" class="o-status-tag o-status-tag--exported">{{ t('wms.shipmentResult.statusExported', '連携済') }}</span>
               </div>
-            </td>
+            </TableCell>
             <!-- 出荷管理番号 -->
-            <td class="o-table-td o-table-td--mgmt">
+            <TableCell>
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipmentResult.orderNo', '出荷管理No') }}</span>
@@ -94,9 +97,9 @@
                   <span class="mgmt-cell__value">{{ row.trackingId || '-' }}</span>
                 </div>
               </div>
-            </td>
+            </TableCell>
             <!-- 配送情報 -->
-            <td class="o-table-td o-table-td--mgmt">
+            <TableCell>
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipmentResult.carrier', '配送会社') }}</span>
@@ -110,10 +113,14 @@
                   <span class="mgmt-cell__label">{{ t('wms.shipmentResult.temperatureZone', '温度帯') }}</span>
                   <span class="mgmt-cell__value" :style="{ color: getCoolTypeInfo(row).color }">{{ getCoolTypeInfo(row).label }}</span>
                 </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">{{ t('wms.shipmentResult.shippingCost', '送料') }}</span>
+                  <span class="mgmt-cell__value">{{ row.shippingCost != null ? `¥${Number(row.shippingCost).toLocaleString()}` : '-' }}</span>
+                </div>
               </div>
-            </td>
+            </TableCell>
             <!-- 配送指定 -->
-            <td class="o-table-td o-table-td--mgmt">
+            <TableCell>
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipmentResult.shipPlanDate', '出荷予定日') }}</span>
@@ -128,18 +135,18 @@
                   <span class="mgmt-cell__value">{{ getTimeSlotLabel(row) }}</span>
                 </div>
               </div>
-            </td>
+            </TableCell>
             <!-- お届け先 -->
-            <td class="o-table-td">
+            <TableCell>
               <div class="recipient-cell">
                 <div>〒{{ fmtPostal(row.recipient?.postalCode) }}</div>
                 <div>{{ [row.recipient?.prefecture, row.recipient?.city, row.recipient?.street, row.recipient?.building].filter(Boolean).join(' ') || '-' }}</div>
                 <div>{{ row.recipient?.phone || '-' }}</div>
                 <div class="recipient-cell__name">{{ row.recipient?.name || '-' }} {{ row.honorific || '様' }}</div>
               </div>
-            </td>
+            </TableCell>
             <!-- 商品 -->
-            <td class="o-table-td">
+            <TableCell>
               <div class="product-list">
                 <div v-for="(p, pi) in (row.products || [])" :key="pi" class="product-item">
                   <div class="product-item__info">
@@ -149,9 +156,22 @@
                 </div>
                 <span v-if="!row.products?.length" class="o-cell">-</span>
               </div>
-            </td>
+            </TableCell>
+            <!-- 出荷予定日・受注日 / 出货预定日・受注日 -->
+            <TableCell>
+              <div class="mgmt-cell">
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">{{ t('wms.shipmentResult.shipPlanDateCol', '出荷予定日') }}</span>
+                  <span class="mgmt-cell__value">{{ row.shipPlanDate ? new Date(row.shipPlanDate).toLocaleDateString('ja-JP') : '-' }}</span>
+                </div>
+                <div class="mgmt-cell__row">
+                  <span class="mgmt-cell__label">{{ t('wms.shipmentResult.sourceOrderAt', '受注日') }}</span>
+                  <span class="mgmt-cell__value">{{ row.sourceOrderAt ? new Date(row.sourceOrderAt).toLocaleDateString('ja-JP') : '-' }}</span>
+                </div>
+              </div>
+            </TableCell>
             <!-- 履歴 -->
-            <td class="o-table-td o-table-td--mgmt">
+            <TableCell>
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipmentResult.shippedAt', '出荷完了') }}</span>
@@ -166,30 +186,30 @@
                   <span class="mgmt-cell__value">{{ fmtDateTime(row.statusPrintedAt) }}</span>
                 </div>
               </div>
-            </td>
+            </TableCell>
             <!-- 操作 -->
-            <td class="o-table-td o-table-td--actions">
-              <OButton variant="primary" size="sm" @click="handleView(row)">{{ t('wms.shipmentResult.detail', '詳細') }}</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            <TableCell class="text-right">
+              <Button variant="default" size="sm" @click="handleView(row)">{{ t('wms.shipmentResult.detail', '詳細') }}</Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <!-- Pagination -->
     <div class="o-table-pagination">
       <span class="o-table-pagination__info">{{ totalItems }} {{ t('wms.shipmentResult.ofTotal', '件中') }} {{ paginatedRows.length }} {{ t('wms.shipmentResult.displayed', '件表示') }}</span>
       <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;">
+        <select class="h-8 text-sm" v-model.number="pageSize" style="width:80px;">
           <option :value="10">10</option>
           <option :value="25">25</option>
           <option :value="50">50</option>
           <option :value="100">100</option>
           <option :value="500">500</option>
         </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--">&lsaquo;</OButton>
+        <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--">&lsaquo;</Button>
         <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">&rsaquo;</OButton>
+        <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">&rsaquo;</Button>
       </div>
     </div>
 
@@ -200,20 +220,20 @@
       :total-label="t('wms.shipmentResult.totalCount', '総件数')"
     >
       <template #right>
-        <OButton
+        <Button
           variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleCustomExportClick"
         >
           {{ t('wms.shipmentResult.exportCsv', '出荷明細リスト出力(csv)') }}
-        </OButton>
-        <OButton
+        </Button>
+        <Button
           variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleFormExportClick"
         >
           {{ t('wms.shipmentResult.exportPdf', '出荷明細リスト出力(pdf)') }}
-        </OButton>
+        </Button>
       </template>
     </OrderBottomBar>
 
@@ -243,14 +263,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import { useOrderCellHelpers } from '@/composables/useOrderCellHelpers'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
-import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
 import OrderViewDialog from '@/components/shipment-orders/OrderViewDialog.vue'
 import CustomExportDialog from '@/components/export/CustomExportDialog.vue'
 import FormExportDialog from '@/components/form-export/FormExportDialog.vue'
@@ -261,7 +282,8 @@ import { fetchCarriers } from '@/api/carrier'
 import type { Carrier } from '@/types/carrier'
 import { fetchProducts } from '@/api/product'
 import type { Product } from '@/types/product'
-
+import { computed, onMounted, ref, watch } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const { show: showToast } = useToast()
 const { t } = useI18n()
 

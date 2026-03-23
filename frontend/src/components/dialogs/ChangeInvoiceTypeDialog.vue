@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="visible"
-    title="送り状種類変更"
-    @close="handleCancel"
-    width="500px"
-  >
+  <Dialog :open="visible" @update:open="(val: boolean) => { if (!val) handleCancel() }">
+    <DialogContent class="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>送り状種類変更</DialogTitle>
+      </DialogHeader>
     <div class="dialog-content">
       <div class="order-info">
         <p>選択中の出荷指示: <strong>{{ orderCount }}</strong>件</p>
@@ -41,23 +40,24 @@
       </div>
     </div>
 
-    <template #footer>
-      <OButton variant="secondary" @click="handleCancel">キャンセル</OButton>
-      <OButton
-        variant="primary"
+    <DialogFooter>
+      <Button variant="secondary" @click="handleCancel">キャンセル</Button>
+      <Button
+        variant="default"
         :disabled="!selectedInvoiceType || loading"
         @click="handleConfirm"
       >
         {{ loading ? '処理中...' : '変更して再提交' }}
-      </OButton>
-    </template>
-  </ODialog>
+      </Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { OrderDocument } from '@/types/order'
 import { isBuiltInCarrierId } from '@/utils/carrier'
 import { useEnabledInvoiceTypes } from '@/composables/useEnabledInvoiceTypes'

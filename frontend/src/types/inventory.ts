@@ -34,6 +34,9 @@ export interface StockQuant {
     imageUrl?: string
     coolType?: string
     safetyStock?: number
+    barcode?: string[]
+    janCode?: string
+    category?: string
   }
   locationId: string
   location?: {
@@ -41,6 +44,7 @@ export interface StockQuant {
     name: string
     fullPath: string
     type: string
+    warehouseName?: string
   }
   lotId?: string
   lot?: {
@@ -64,12 +68,17 @@ export interface StockSummary {
     imageUrl?: string
     coolType?: string
     safetyStock?: number
+    barcode?: string[]
+    janCode?: string
+    category?: string
   }
   totalQuantity: number
   totalReserved: number
   totalAvailable: number
   locationCount: number
   isBelowSafety: boolean
+  lastMovedAt?: string
+  warehouseName?: string
 }
 
 export type MoveType = 'inbound' | 'outbound' | 'transfer' | 'site_transfer' | 'adjustment' | 'return'

@@ -1,11 +1,68 @@
 <script setup lang="ts">
+/**
+ * ナビバー / 导航栏
+ *
+ * shadcn-vue デフォルトスタイルでリビルド。白背景 + border-b。
+ * 用 shadcn-vue 默认样式重建。白色背景 + border-b。
+ * 既存ロジック（認証、倉庫選択、ナビゲーション）はすべて維持。
+ * 保留所有现有逻辑（认证、仓库选择、导航）。
+ */
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from '../../composables/useI18n'
+import { useI18n } from '@/composables/useI18n'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { useAuth } from '@/stores/auth'
 import { useWarehouseStore } from '@/stores/warehouse'
 import { fetchWarehouses, type Warehouse } from '@/api/warehouse'
+import { cn } from '@/lib/utils'
 import NotificationBell from './NotificationBell.vue'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import {
+  Home,
+  Sun,
+  Moon,
+  Bell,
+  Search,
+  User,
+  LogOut,
+  Settings,
+  ChevronDown,
+  Menu,
+  X,
+  Warehouse as WarehouseIcon,
+} from 'lucide-vue-next'
 
 const props = defineProps<{
   menuItems: Array<{ label: string; to: string }>
@@ -20,16 +77,16 @@ const emit = defineEmits<{
 const route = useRoute()
 const router = useRouter()
 const { locale, setLocale, availableLocales } = useI18n()
-
 const { user, isAuthenticated, clearAuth } = useAuth()
 
 // 倉庫選択 / 仓库选择
 const { selectedWarehouseId, setWarehouse } = useWarehouseStore()
 const warehouses = ref<Warehouse[]>([])
-const localWarehouseId = ref(selectedWarehouseId.value)
+const localWarehouseId = computed(() => selectedWarehouseId.value || '__all__')
 
-function onWarehouseChange() {
-  setWarehouse(localWarehouseId.value)
+function onWarehouseChange(val: string) {
+  const actual = val === '__all__' ? '' : val
+  setWarehouse(actual)
 }
 
 onMounted(async () => {
@@ -41,8 +98,6 @@ onMounted(async () => {
   }
 })
 
-const showUserMenu = ref(false)
-const showLangMenu = ref(false)
 const isDark = ref(document.documentElement.getAttribute('data-theme') === 'dark')
 
 // ユーザー表示情報 / 用户显示信息
@@ -50,10 +105,10 @@ const userDisplayName = computed(() => user.value?.displayName ?? 'User')
 const userInitial = computed(() => userDisplayName.value.charAt(0).toUpperCase())
 const userRole = computed(() => user.value?.role ?? '')
 
+const { confirm } = useConfirmDialog()
+
 async function handleLogout() {
-  showUserMenu.value = false
-  // ログアウト確認 / 退出确认
-  const ok = await (window.confirm('ログアウトしますか？') as unknown as Promise<boolean>)
+  const ok = await confirm('ログアウトしますか？')
   if (!ok) return
   clearAuth()
   router.push('/login')
@@ -69,7 +124,7 @@ function toggleTheme() {
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
 }
 
-// 启动时恢复主题 / 起動時にテーマを復元
+// 起動時にテーマを復元 / 启动时恢复主题
 ;(() => {
   const saved = localStorage.getItem('theme')
   if (saved === 'dark') {
@@ -103,378 +158,229 @@ function navigateTo(to: string) {
   emit('navigate', to)
 }
 
-function closeMenus(e: MouseEvent) {
-  const target = e.target as HTMLElement
-  if (!target.closest('.o-user-menu')) showUserMenu.value = false
-  if (!target.closest('.o-lang-switcher')) showLangMenu.value = false
-}
+// 言語表示 / 语言显示
+const langDisplay = computed(() => {
+  if (locale.value === 'en') return 'EN'
+  if (locale.value === 'ja') return 'JA'
+  return '中'
+})
 </script>
 
 <template>
-  <nav class="o-navbar" @click="closeMenus">
-    <!-- Mobile hamburger -->
-    <button
-      class="o-mobile-hamburger"
-      :class="{ active: mobileSidebarOpen }"
-      title="Menu"
-      @click.stop="emit('update:mobileSidebarOpen', !mobileSidebarOpen)"
-    >
-      <svg v-if="!mobileSidebarOpen" width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-        <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
-      </svg>
-      <svg v-else width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-        <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-      </svg>
-    </button>
-
-    <!-- Home button -->
-    <button
-      class="o-navbar-entry o-home-btn"
-      :class="{ active: isActive('/home') }"
-      title="ホーム"
-      @click="navigateTo('/home')"
-    >
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
-        <rect x="1" y="1" width="4" height="4" rx="1"/>
-        <rect x="7" y="1" width="4" height="4" rx="1"/>
-        <rect x="13" y="1" width="4" height="4" rx="1"/>
-        <rect x="1" y="7" width="4" height="4" rx="1"/>
-        <rect x="7" y="7" width="4" height="4" rx="1"/>
-        <rect x="13" y="7" width="4" height="4" rx="1"/>
-        <rect x="1" y="13" width="4" height="4" rx="1"/>
-        <rect x="7" y="13" width="4" height="4" rx="1"/>
-        <rect x="13" y="13" width="4" height="4" rx="1"/>
-      </svg>
-    </button>
-
-    <!-- Menu entries -->
-    <div class="o-navbar-menu" :class="{ 'o-mobile-open': mobileSidebarOpen }">
-      <button
-        v-for="item in visibleMenuItems"
-        :key="item.to"
-        class="o-navbar-entry"
-        :class="{ active: isActive(item.to) }"
-        @click="navigateTo(item.to)"
-      >
-        {{ item.label }}
-      </button>
-    </div>
-
-    <!-- 倉庫セレクター / 仓库选择器 -->
-    <div class="o-warehouse-selector" v-if="warehouses.length > 0">
-      <select class="o-warehouse-select" v-model="localWarehouseId" @change="onWarehouseChange">
-        <option value="">全倉庫</option>
-        <option v-for="wh in warehouses" :key="wh._id" :value="wh._id">
-          {{ wh.code }} - {{ wh.name }}
-        </option>
-      </select>
-    </div>
-
-    <!-- Systray -->
-    <div class="o-navbar-systray">
-      <!-- Language Switcher -->
-      <div class="o-lang-switcher" @click.stop>
-        <button
-          class="o-systray-btn"
-          :class="{ active: showLangMenu }"
-          @click="showLangMenu = !showLangMenu"
-        >
-          <span style="font-size: 0.8rem; font-weight: 600;">{{ locale === 'en' ? 'EN' : locale === 'ja' ? 'JA' : '中' }}</span>
-        </button>
-        <div v-if="showLangMenu" class="o-lang-dropdown">
-          <button
-            v-for="loc in availableLocales"
-            :key="loc.code"
-            class="o-lang-option"
-            :class="{ active: locale === loc.code }"
-            @click="setLocale(loc.code); showLangMenu = false"
+  <header class="fixed top-0 left-0 right-0 z-[1000] h-14 border-b bg-background">
+    <div class="flex h-full items-center px-4 gap-2">
+      <!-- モバイルメニュー / 移动端菜单 (Sheet) -->
+      <Sheet :open="mobileSidebarOpen" @update:open="(v: boolean) => emit('update:mobileSidebarOpen', v)">
+        <SheetTrigger as-child>
+          <Button
+            variant="ghost"
+            size="icon"
+            class="md:hidden shrink-0"
+            @click.stop="emit('update:mobileSidebarOpen', !mobileSidebarOpen)"
           >
-            <span class="o-lang-flag">{{ loc.flag }}</span>
-            <span class="o-lang-label">{{ loc.label }}</span>
-            <svg v-if="locale === loc.code" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
-            </svg>
-          </button>
-        </div>
-      </div>
+            <Menu class="size-5" />
+            <span class="sr-only">メニュー</span>
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" class="w-[280px] p-0">
+          <SheetHeader class="border-b px-4 py-3">
+            <SheetTitle class="text-lg font-bold tracking-tight">ZELIX WMS</SheetTitle>
+          </SheetHeader>
+          <nav class="flex flex-col py-2">
+            <button
+              :class="cn(
+                'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left',
+                isActive('/home')
+                  ? 'bg-accent text-accent-foreground font-medium'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+              )"
+              @click="navigateTo('/home'); emit('update:mobileSidebarOpen', false)"
+            >
+              <Home class="size-4" />
+              ホーム
+            </button>
+            <button
+              v-for="item in visibleMenuItems"
+              :key="item.to"
+              :class="cn(
+                'flex items-center px-4 py-2.5 text-sm transition-colors text-left',
+                isActive(item.to)
+                  ? 'bg-accent text-accent-foreground font-medium'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+              )"
+              @click="navigateTo(item.to); emit('update:mobileSidebarOpen', false)"
+            >
+              {{ item.label }}
+            </button>
+          </nav>
+        </SheetContent>
+      </Sheet>
 
-      <!-- Quick search hint / クイック検索ヒント -->
-      <button class="o-systray-btn o-search-hint" title="Ctrl+K" @click="openCommandPalette">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
-        </svg>
-        <kbd class="o-nav-kbd">Ctrl K</kbd>
+      <!-- ロゴ / Logo -->
+      <button
+        class="flex items-center gap-2 shrink-0 mr-2"
+        @click="navigateTo('/home')"
+      >
+        <span class="text-lg font-bold tracking-tight">ZELIX WMS</span>
       </button>
 
-      <!-- 通知ベル / 通知铃铛 -->
-      <NotificationBell />
+      <Separator orientation="vertical" class="h-6 hidden md:block" />
 
-      <!-- Theme toggle / テーマ切替 -->
-      <button class="o-systray-btn" :title="isDark ? 'ライトモード' : 'ダークモード'" @click="toggleTheme">
-        <svg v-if="isDark" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
-        </svg>
-        <svg v-else width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
-        </svg>
-      </button>
+      <!-- ホームボタン / 首页按钮 (desktop) -->
+      <TooltipProvider :delay-duration="300">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button
+              variant="ghost"
+              size="icon"
+              :class="cn(
+                'hidden md:inline-flex shrink-0',
+                isActive('/home') && 'bg-accent text-accent-foreground',
+              )"
+              @click="navigateTo('/home')"
+            >
+              <Home class="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>ホーム</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
-      <!-- ユーザーメニュー / 用户菜单 -->
-      <div class="o-user-menu" @click.stop>
-        <button class="o-navbar-entry o-user-btn" @click="showUserMenu = !showUserMenu">
-          <span class="o-user-avatar">{{ userInitial }}</span>
-          <span class="o-user-name">{{ userDisplayName }}</span>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" style="opacity:0.7">
-            <path d="M2 3.5L5 7l3-3.5H2z"/>
-          </svg>
-        </button>
-        <div v-if="showUserMenu" class="o-user-dropdown">
-          <div class="o-user-dropdown-header">
-            <strong>{{ userDisplayName }}</strong>
-            <span class="o-user-dropdown-role">{{ userRole }}</span>
-          </div>
-          <div class="o-dropdown-divider" />
-          <button class="o-dropdown-item" @click="router.push('/settings/basic'); showUserMenu = false">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.421 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.421-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/></svg>
-            設定
-          </button>
-          <button class="o-dropdown-item o-logout-item" @click="handleLogout">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
-            ログアウト
-          </button>
+      <!-- メニュー項目 / 菜单项 (desktop) -->
+      <nav
+        class="hidden md:flex items-center gap-0.5 flex-1 overflow-x-auto overflow-y-hidden h-full"
+        style="scrollbar-width: none;"
+      >
+        <Button
+          v-for="item in visibleMenuItems"
+          :key="item.to"
+          variant="ghost"
+          size="sm"
+          :class="cn(
+            'shrink-0 text-muted-foreground font-normal h-8',
+            isActive(item.to) && 'bg-accent text-accent-foreground font-medium',
+          )"
+          @click="navigateTo(item.to)"
+        >
+          {{ item.label }}
+        </Button>
+      </nav>
+
+      <!-- 右側ツールバー / 右侧工具栏 -->
+      <div class="flex items-center gap-1 ml-auto">
+        <!-- 倉庫セレクター / 仓库选择器 -->
+        <div v-if="warehouses.length > 0" class="hidden sm:flex items-center">
+          <Select :model-value="localWarehouseId" @update:model-value="onWarehouseChange">
+            <SelectTrigger class="h-8 w-auto max-w-[200px] text-xs gap-1">
+              <WarehouseIcon class="size-3.5 text-muted-foreground shrink-0" />
+              <SelectValue placeholder="全倉庫" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">全倉庫</SelectItem>
+              <SelectItem v-for="wh in warehouses" :key="wh._id" :value="wh._id">
+                {{ wh.code }} - {{ wh.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
+        <Separator orientation="vertical" class="h-6 hidden sm:block mx-1" />
+
+        <!-- 言語切替 / 语言切换 -->
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="ghost" size="sm" class="h-8 px-2 text-xs font-semibold">
+              {{ langDisplay }}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="w-40">
+            <DropdownMenuItem
+              v-for="loc in availableLocales"
+              :key="loc.code"
+              :class="cn(locale === loc.code && 'font-semibold text-primary')"
+              @click="setLocale(loc.code)"
+            >
+              <span class="w-6 text-center font-semibold text-sm">{{ loc.flag }}</span>
+              <span class="flex-1">{{ loc.label }}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <!-- クイック検索 / 快速搜索 -->
+        <TooltipProvider :delay-duration="300">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Button
+                variant="ghost"
+                size="sm"
+                class="h-8 gap-1.5 px-2"
+                @click="openCommandPalette"
+              >
+                <Search class="size-4 text-muted-foreground" />
+                <Badge variant="outline" class="hidden md:inline-flex text-[10px] px-1.5 py-0 h-5 font-mono">
+                  ⌘K
+                </Badge>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>検索 (Ctrl+K)</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <!-- 通知ベル / 通知铃铛 -->
+        <NotificationBell />
+
+        <!-- テーマ切替 / 主题切换 -->
+        <TooltipProvider :delay-duration="300">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Button
+                variant="ghost"
+                size="icon"
+                class="h-8 w-8"
+                @click="toggleTheme"
+              >
+                <Sun v-if="isDark" class="size-4" />
+                <Moon v-else class="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{{ isDark ? 'ライトモード' : 'ダークモード' }}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <Separator orientation="vertical" class="h-6 mx-1" />
+
+        <!-- ユーザーメニュー / 用户菜单 -->
+        <DropdownMenu>
+          <DropdownMenuTrigger as-child>
+            <Button variant="ghost" class="h-8 gap-2 px-2">
+              <Avatar class="size-6">
+                <AvatarFallback class="text-xs font-semibold bg-primary text-primary-foreground">
+                  {{ userInitial }}
+                </AvatarFallback>
+              </Avatar>
+              <span class="text-sm max-md:hidden">{{ userDisplayName }}</span>
+              <ChevronDown class="size-3 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="w-56">
+            <DropdownMenuLabel class="flex flex-col gap-0.5">
+              <span>{{ userDisplayName }}</span>
+              <span class="text-[11px] text-muted-foreground capitalize font-normal">{{ userRole }}</span>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem @click="router.push('/settings/basic')">
+                <Settings class="size-4" />
+                <span>設定</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem class="text-destructive focus:text-destructive" @click="handleLogout">
+                <LogOut class="size-4" />
+                <span>ログアウト</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
-  </nav>
+  </header>
 </template>
-
-<style scoped>
-.o-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--o-navbar-height);
-  background: var(--o-brand-primary);
-  display: flex;
-  align-items: center;
-  z-index: 1000;
-  padding: 0;
-  font-size: var(--o-font-size-base);
-}
-
-.o-home-btn {
-  padding: 0 14px;
-  border-right: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.o-navbar-menu {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  flex: 1;
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-.o-navbar-menu::-webkit-scrollbar { display: none; }
-
-.o-navbar-entry {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  color: var(--NavBar-entry-color);
-  font-size: var(--o-font-size-small);
-  font-weight: 400;
-  white-space: nowrap;
-  text-decoration: none;
-  transition: background 0.1s;
-  border: none;
-  background: none;
-  cursor: pointer;
-}
-.o-navbar-entry:hover {
-  background: var(--NavBar-entry-bg-hover);
-  color: #fff;
-}
-.o-navbar-entry.active {
-  background: rgba(0, 0, 0, 0.15);
-  color: #fff;
-  font-weight: 500;
-  box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.8);
-}
-
-/* 倉庫セレクター / 仓库选择器 */
-.o-warehouse-selector {
-  margin-left: auto;
-  margin-right: 4px;
-  display: flex;
-  align-items: center;
-  height: 100%;
-}
-.o-warehouse-select {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 4px 8px;
-  font-size: 12px;
-  border-radius: 4px;
-  outline: none;
-  cursor: pointer;
-  max-width: 200px;
-}
-.o-warehouse-select:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-.o-warehouse-select:focus {
-  border-color: rgba(255, 255, 255, 0.6);
-}
-.o-warehouse-select option {
-  background: #1a2332;
-  color: #fff;
-}
-
-.o-navbar-systray {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  margin-left: 0;
-  gap: 0;
-}
-.o-systray-btn {
-  position: relative;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  min-width: 40px;
-  justify-content: center;
-  color: var(--NavBar-entry-color);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: background 0.1s;
-}
-.o-systray-btn:hover { background: var(--NavBar-entry-bg-hover); }
-
-.o-search-hint {
-  gap: 6px;
-}
-.o-nav-kbd {
-  font-size: 10px;
-  padding: 1px 5px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: rgba(255, 255, 255, 0.7);
-  font-family: var(--o-font-family-mono);
-}
-
-@media (max-width: 768px) {
-  .o-nav-kbd { display: none; }
-}
-
-/* Language Switcher */
-.o-lang-switcher { position: relative; height: 100%; display: flex; align-items: center; }
-.o-lang-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  min-width: 160px;
-  background: var(--o-view-background);
-  border: 1px solid var(--o-border-color);
-  border-radius: var(--o-border-radius);
-  box-shadow: var(--o-shadow-lg);
-  z-index: 1050;
-  padding: 0.25rem 0;
-}
-.o-lang-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.5rem 1rem;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: var(--o-font-size-base);
-  color: var(--o-gray-800);
-  transition: background 0.1s;
-}
-.o-lang-option:hover { background: var(--o-gray-100); }
-.o-lang-option.active { font-weight: 600; color: var(--o-brand-primary); }
-.o-lang-flag { font-size: 0.875rem; font-weight: 600; width: 1.5rem; text-align: center; }
-.o-lang-label { flex: 1; text-align: left; }
-
-/* User menu */
-.o-user-menu { position: relative; height: 100%; }
-.o-user-btn { gap: 0.375rem; padding: 0 14px !important; }
-.o-user-avatar {
-  width: 24px; height: 24px; border-radius: 50%;
-  background: rgba(255, 255, 255, 0.25); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.6875rem; font-weight: 600;
-}
-.o-user-name { font-size: var(--o-font-size-small); }
-.o-user-dropdown {
-  position: absolute;
-  top: 100%; right: 0; min-width: 220px;
-  background: var(--o-view-background);
-  border: 1px solid var(--o-border-color);
-  border-radius: var(--o-border-radius);
-  box-shadow: var(--o-shadow-lg);
-  z-index: 1050;
-  padding: 0.25rem 0;
-}
-.o-user-dropdown-header {
-  display: flex; flex-direction: column; gap: 2px;
-  padding: 0.75rem 1rem;
-  font-size: var(--o-font-size-base); color: var(--o-gray-800);
-}
-.o-user-dropdown-role {
-  font-size: 0.6875rem; color: var(--o-gray-500); text-transform: capitalize;
-}
-.o-dropdown-divider { height: 1px; margin: 0.25rem 0; background: var(--o-border-color); }
-.o-dropdown-item {
-  display: flex; align-items: center; gap: 0.5rem;
-  width: 100%; padding: 0.5rem 1rem;
-  border: none; background: none; cursor: pointer;
-  font-size: var(--o-font-size-base); color: var(--o-gray-800);
-  transition: background 0.1s; text-align: left;
-}
-.o-dropdown-item:hover { background: var(--o-gray-100); }
-.o-logout-item { color: #c62828; }
-.o-logout-item:hover { background: #fef2f2; }
-
-.o-mobile-hamburger {
-  display: none;
-  align-items: center; justify-content: center;
-  width: 46px; height: 100%;
-  background: none; border: none;
-  color: var(--NavBar-entry-color); cursor: pointer;
-}
-.o-mobile-hamburger:hover,
-.o-mobile-hamburger.active { background: var(--NavBar-entry-bg-hover); }
-
-@media (max-width: 768px) {
-  .o-mobile-hamburger { display: flex; }
-  .o-navbar-menu {
-    position: fixed;
-    top: var(--o-navbar-height); left: 0; bottom: 0;
-    width: 260px; flex-direction: column; align-items: stretch;
-    background: var(--o-brand-primary); z-index: 1001;
-    overflow-y: auto;
-    transform: translateX(-100%);
-    transition: transform 0.2s ease;
-  }
-  .o-navbar-menu.o-mobile-open {
-    transform: translateX(0);
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
-  }
-  .o-navbar-menu .o-navbar-entry {
-    height: auto; padding: 12px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  }
-  .o-user-name { display: none; }
-  .o-warehouse-select { max-width: 140px; font-size: 11px; }
-}
-</style>

@@ -1,12 +1,12 @@
 <template>
   <div class="japan-post-settings">
-    <ControlPanel title="日本郵便 ゆうパック 設定" :show-search="false">
+    <PageHeader title="日本郵便 ゆうパック 設定" :show-search="false">
       <template #actions>
-        <OButton variant="primary" :disabled="saving" @click="handleSave">
+        <Button variant="default" :disabled="saving" @click="handleSave">
           {{ saving ? '保存中...' : '保存' }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- プラグイン状態 / 插件状态 -->
     <div class="plugin-status" :class="pluginRunning ? 'plugin-status--ok' : 'plugin-status--off'">
@@ -15,35 +15,46 @@
       <span v-if="pluginVersion" class="plugin-status__ver">v{{ pluginVersion }}</span>
     </div>
 
-    <div v-if="loading" class="loading-state">読み込み中...</div>
+    <div v-if="loading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else>
       <!-- 基本設定 / 基本设定 -->
-      <div class="o-card settings-card">
+      <Card class="settings-card">
         <div class="card-header">
           <span class="card-title">基本設定</span>
           <span class="card-description">ゆうパック CSV 出力時のデフォルト値を設定します</span>
         </div>
         <div class="card-body">
           <div class="o-form-group">
-            <label class="form-label">デフォルト送り状種類</label>
-            <select class="o-input" v-model="form.defaultInvoiceType" style="max-width:250px">
-              <option value="1">1: ゆうパック</option>
-              <option value="2">2: ゆうパケット</option>
-              <option value="3">3: ゆうメール</option>
-              <option value="4">4: レターパック</option>
-            </select>
+            <label>デフォルト送り状種類</label>
+            <Select v-model="form.defaultInvoiceType">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="1">1: ゆうパック</SelectItem>
+        <SelectItem value="2">2: ゆうパケット</SelectItem>
+        <SelectItem value="3">3: ゆうメール</SelectItem>
+        <SelectItem value="4">4: レターパック</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
           <div class="o-form-group">
-            <label class="form-label">デフォルト個口数</label>
-            <input class="o-input" v-model="form.defaultPackageCount" placeholder="1" maxlength="3" style="max-width:250px" />
+            <label>デフォルト個口数</label>
+            <Input v-model="form.defaultPackageCount" placeholder="1" maxlength="3" style="max-width:250px" />
             <div class="field-hint">通常は1を設定してください</div>
           </div>
         </div>
-      </div>
+      </Card>
 
       <!-- 使い方ガイド / 使用说明 -->
-      <div class="o-card settings-card guide-card">
+      <Card class="settings-card guide-card">
         <div class="card-header">
           <span class="card-title">使い方</span>
         </div>
@@ -72,7 +83,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </Card>
     </template>
   </div>
 </template>
@@ -80,10 +91,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { fetchJapanPostConfig } from '@/api/japanPost'
 import { getApiBaseUrl } from '@/api/base'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const toast = useToast()
 const loading = ref(false)

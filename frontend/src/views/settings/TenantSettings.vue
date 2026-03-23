@@ -1,24 +1,18 @@
 <template>
   <div class="tenant-settings">
-    <ControlPanel title="テナント管理" :show-search="false">
+    <PageHeader title="テナント管理" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">新規テナント</OButton>
+        <Button variant="default" @click="openCreate">新規テナント</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="tenantSettingsSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="tenants"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         highlight-columns-on-hover
         pagination-enabled
         pagination-mode="server"
@@ -26,106 +20,125 @@
         :page-sizes="[10, 20, 50, 100]"
         :total="total"
         :current-page="currentPage"
-        :global-search-text="globalSearchText"
         @page-change="handlePageChange"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogOpen" :title="isEditing ? 'テナントを編集' : 'テナントを追加'" size="lg" @confirm="handleSave">
+    <Dialog :open="dialogOpen" @update:open="dialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? 'テナントを編集' : 'テナントを追加' }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">テナントコード <span class="required-badge">必須</span></label>
-          <input v-model="form.tenantCode" type="text" class="o-input" />
+          <label>テナントコード <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.tenantCode" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">テナント名 <span class="required-badge">必須</span></label>
-          <input v-model="form.name" type="text" class="o-input" />
+          <label>テナント名 <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.name" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">プラン</label>
-          <select v-model="form.plan" class="o-input">
-            <option value="free">フリー</option>
-            <option value="starter">スターター</option>
-            <option value="standard">スタンダード</option>
-            <option value="pro">プロ</option>
-            <option value="enterprise">エンタープライズ</option>
-          </select>
+          <label>プラン</label>
+          <Select v-model="form.plan">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="free">フリー</SelectItem>
+        <SelectItem value="starter">スターター</SelectItem>
+        <SelectItem value="standard">スタンダード</SelectItem>
+        <SelectItem value="pro">プロ</SelectItem>
+        <SelectItem value="enterprise">エンタープライズ</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div v-if="isEditing" class="form-field">
-          <label class="form-label">ステータス</label>
-          <select v-model="form.status" class="o-input">
-            <option value="active">有効</option>
-            <option value="suspended">停止中</option>
-            <option value="cancelled">解約</option>
-            <option value="trial">トライアル</option>
-          </select>
+          <label>ステータス</label>
+          <Select v-model="form.status">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="active">有効</SelectItem>
+        <SelectItem value="suspended">停止中</SelectItem>
+        <SelectItem value="cancelled">解約</SelectItem>
+        <SelectItem value="trial">トライアル</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div class="form-field">
-          <label class="form-label">上限ユーザー数</label>
-          <input v-model.number="form.maxUsers" type="number" class="o-input" />
+          <label>上限ユーザー数</label>
+          <Input v-model.number="form.maxUsers" type="number" />
         </div>
         <div class="form-field">
-          <label class="form-label">上限倉庫数</label>
-          <input v-model.number="form.maxWarehouses" type="number" class="o-input" />
+          <label>上限倉庫数</label>
+          <Input v-model.number="form.maxWarehouses" type="number" />
         </div>
         <div class="form-field">
-          <label class="form-label">上限顧客数</label>
-          <input v-model.number="form.maxClients" type="number" class="o-input" />
+          <label>上限顧客数</label>
+          <Input v-model.number="form.maxClients" type="number" />
         </div>
         <div class="form-field">
-          <label class="form-label">担当者名</label>
-          <input v-model="form.contactName" type="text" class="o-input" />
+          <label>担当者名</label>
+          <Input v-model="form.contactName" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">メール</label>
-          <input v-model="form.contactEmail" type="text" class="o-input" />
+          <label>メール</label>
+          <Input v-model="form.contactEmail" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">電話番号</label>
-          <input v-model="form.contactPhone" type="text" class="o-input" />
+          <label>電話番号</label>
+          <Input v-model="form.contactPhone" type="text" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">備考</label>
-          <textarea v-model="form.memo" class="o-input form-textarea" rows="3" />
+          <label>備考</label>
+          <textarea v-model="form.memo" class="form-textarea" rows="3" />
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
 
     <!-- Status Change Dialog -->
-    <ODialog v-model="statusDialogOpen" title="ステータス変更" size="sm" @confirm="handleStatusChange">
+    <Dialog :open="statusDialogOpen" @update:open="statusDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>ステータス変更</DialogTitle></DialogHeader>
       <div class="status-change-form">
         <div class="form-field">
-          <label class="form-label">現在のステータス</label>
+          <label>現在のステータス</label>
           <span class="o-status-tag" :class="statusTagClass(statusChangeTarget?.status || 'active')">
             {{ statusLabel(statusChangeTarget?.status || 'active') }}
           </span>
         </div>
         <div class="form-field" style="margin-top: 16px;">
-          <label class="form-label">新しいステータス</label>
-          <select v-model="newStatus" class="o-input">
-            <option value="active">有効</option>
-            <option value="suspended">停止中</option>
-            <option value="cancelled">解約</option>
-            <option value="trial">トライアル</option>
-          </select>
+          <label>新しいステータス</label>
+          <Select v-model="newStatus">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="active">有効</SelectItem>
+        <SelectItem value="suspended">停止中</SelectItem>
+        <SelectItem value="cancelled">解約</SelectItem>
+        <SelectItem value="trial">トライアル</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { h, computed, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   fetchTenants,
   createTenant,
@@ -136,7 +149,10 @@ import {
   type TenantPlan,
   type TenantStatus,
 } from '@/api/tenant'
-
+import { h, computed, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 const { t } = useI18n()
 
@@ -275,9 +291,9 @@ const tableColumns: TableColumn[] = [
     align: 'center',
     cellRenderer: ({ rowData }: { rowData: Tenant }) =>
       h('div', { class: 'o-table-td--actions' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openStatusChange(rowData) }, () => 'ステータス変更'),
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'secondary', size: 'sm', onClick: () => openStatusChange(rowData) }, () => 'ステータス変更'),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ]),
   },
 ]
@@ -290,7 +306,7 @@ const currentPage = ref(1)
 const pageSize = ref(20)
 const globalSearchText = ref('')
 
-// Current search filters from SearchForm
+// Current search filters from DataTable search
 const currentFilters = ref<Record<string, { operator: Operator; value: any }>>({})
 
 // Dialog
@@ -414,13 +430,7 @@ const handleSave = async () => {
 }
 
 const confirmDelete = async (t: Tenant) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${t.name}」(${t.tenantCode}) を削除してもよろしいですか？ / 确定要删除「${t.name}」(${t.tenantCode}) 吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   deleteTenant(t._id)
     .then(async () => {
       showToast('削除しました', 'success')

@@ -1,10 +1,10 @@
 <template>
   <div class="inventory-dashboard">
-    <ControlPanel :title="t('wms.inventory.dashboard', '在庫ダッシュボード（台帳）')" :show-search="false">
+    <PageHeader :title="t('wms.inventory.dashboard', '在庫ダッシュボード（台帳）')" :show-search="false">
       <template #actions>
-        <OButton v-if="activeTab === 'ledger'" variant="primary" @click="openAdjustmentDialog">{{ t('wms.inventory.manualAdjustment', '手動調整') }}</OButton>
+        <Button v-if="activeTab === 'ledger'" variant="default" @click="openAdjustmentDialog">{{ t('wms.inventory.manualAdjustment', '手動調整') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- KPI 概況カード / KPI概览卡片 -->
     <div v-if="overview && overview.productCount != null" class="kpi-grid">
@@ -48,60 +48,70 @@
 
     <!-- Tab header -->
     <div class="tab-header">
-      <button :class="['tab-btn', { active: activeTab === 'stock' }]" @click="activeTab = 'stock'">{{ t('wms.inventory.stockLevels', '在庫水位') }}</button>
-      <button :class="['tab-btn', { active: activeTab === 'ledger' }]" @click="activeTab = 'ledger'">{{ t('wms.inventory.ledger', '在庫台帳') }}</button>
-      <button :class="['tab-btn', { active: activeTab === 'reservations' }]" @click="activeTab = 'reservations'">{{ t('wms.inventory.reservationList', '引当一覧') }}</button>
+      <Button :class="['tab-btn', { active: activeTab === 'stock' }]" @click="activeTab = 'stock'">{{ t('wms.inventory.stockLevels', '在庫水位') }}</Button>
+      <Button :class="['tab-btn', { active: activeTab === 'ledger' }]" @click="activeTab = 'ledger'">{{ t('wms.inventory.ledger', '在庫台帳') }}</Button>
+      <Button :class="['tab-btn', { active: activeTab === 'reservations' }]" @click="activeTab = 'reservations'">{{ t('wms.inventory.reservationList', '引当一覧') }}</Button>
     </div>
 
     <!-- Tab 1: Stock Levels -->
     <div v-if="activeTab === 'stock'">
-      <div class="o-table-wrapper">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width: 160px">{{ t('wms.inventory.productSku', '商品SKU') }}</th>
-              <th class="o-table-th" style="width: 240px">{{ t('wms.inventory.productName', '商品名') }}</th>
-              <th class="o-table-th" style="width: 120px; text-align: right">{{ t('wms.inventory.totalStock', '総在庫') }}</th>
-              <th class="o-table-th" style="width: 120px; text-align: right">{{ t('wms.inventory.reserved', '引当済') }}</th>
-              <th class="o-table-th" style="width: 120px; text-align: right">{{ t('wms.inventory.availableStock', '有効在庫') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="stockLoading">
-              <td class="o-table-td o-table-empty" colspan="5">{{ t('wms.common.loading', '読み込み中...') }}</td>
-            </tr>
-            <tr v-else-if="stockLevels.length === 0">
-              <td class="o-table-td o-table-empty" colspan="5">{{ t('wms.common.noData', 'データがありません') }}</td>
-            </tr>
-            <tr
+      <div class="rounded-md border overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width: 160px">{{ t('wms.inventory.productSku', '商品SKU') }}</TableHead>
+              <TableHead style="width: 240px">{{ t('wms.inventory.productName', '商品名') }}</TableHead>
+              <TableHead style="width: 120px; text-align: right">{{ t('wms.inventory.totalStock', '総在庫') }}</TableHead>
+              <TableHead style="width: 120px; text-align: right">{{ t('wms.inventory.reserved', '引当済') }}</TableHead>
+              <TableHead style="width: 120px; text-align: right">{{ t('wms.inventory.availableStock', '有効在庫') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-if="stockLoading">
+              <TableCell colspan="5">
+                <div class="space-y-3 p-4">
+                  <Skeleton class="h-4 w-[250px] mx-auto" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                </div>
+              </TableCell>
+            </TableRow>
+            <TableRow v-else-if="stockLevels.length === 0">
+              <TableCell class="text-center py-8 text-muted-foreground" colspan="5">{{ t('wms.common.noData', 'データがありません') }}</TableCell>
+            </TableRow>
+            <TableRow
               v-for="s in stockLevels"
               :key="s.productId"
-              class="o-table-row"
+
               :class="stockRowClass(s)"
             >
-              <td class="o-table-td">{{ s.productSku }}</td>
-              <td class="o-table-td">{{ s.productName || '-' }}</td>
-              <td class="o-table-td" style="text-align: right">{{ s.totalStock }}</td>
-              <td class="o-table-td" style="text-align: right">{{ s.reservedStock }}</td>
-              <td class="o-table-td" style="text-align: right; font-weight: 600">{{ s.availableStock }}</td>
-            </tr>
-          </tbody>
-        </table>
+              <TableCell>{{ s.productSku }}</TableCell>
+              <TableCell>{{ s.productName || '-' }}</TableCell>
+              <TableCell style="text-align: right">{{ s.totalStock }}</TableCell>
+              <TableCell style="text-align: right">{{ s.reservedStock }}</TableCell>
+              <TableCell style="text-align: right; font-weight: 600">{{ s.availableStock }}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
 
       <!-- Stock Pagination -->
       <div class="o-table-pagination">
         <span class="o-table-pagination__info">{{ t('wms.common.paginationInfo', '全{total}件中 {start}-{end}件').replace('{total}', String(stockTotal)).replace('{start}', String(stockPaginationStart)).replace('{end}', String(stockPaginationEnd)) }}</span>
         <div class="o-table-pagination__controls">
-          <select class="o-input o-input-sm" v-model.number="stockPageSize" style="width:80px;" @change="handleStockPageSizeChange">
-            <option :value="10">10</option>
-            <option :value="20">20</option>
-            <option :value="50">50</option>
-            <option :value="100">100</option>
-          </select>
-          <OButton variant="secondary" size="sm" :disabled="stockPage <= 1" @click="goToStockPage(stockPage - 1)">&lsaquo;</OButton>
+          <Select :model-value="String(stockPageSize)" @update:model-value="(v: string) => { stockPageSize = Number(v); handleStockPageSizeChange() }">
+            <SelectTrigger class="h-8 text-sm" style="width:80px;"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="secondary" size="sm" :disabled="stockPage <= 1" @click="goToStockPage(stockPage - 1)">&lsaquo;</Button>
           <span class="o-table-pagination__page">{{ stockPage }} / {{ stockTotalPages }}</span>
-          <OButton variant="secondary" size="sm" :disabled="stockPage >= stockTotalPages" @click="goToStockPage(stockPage + 1)">&rsaquo;</OButton>
+          <Button variant="secondary" size="sm" :disabled="stockPage >= stockTotalPages" @click="goToStockPage(stockPage + 1)">&rsaquo;</Button>
         </div>
       </div>
     </div>
@@ -110,170 +120,204 @@
     <div v-if="activeTab === 'ledger'">
       <!-- Filters -->
       <div class="filter-section">
-        <select v-model="ledgerTypeFilter" class="o-input" style="width: 160px" @change="handleLedgerFilterChange">
-          <option value="">{{ t('wms.inventory.allTypes', '全タイプ') }}</option>
-          <option value="inbound">{{ t('wms.inventory.inbound', '入庫') }}</option>
-          <option value="outbound">{{ t('wms.inventory.outbound', '出庫') }}</option>
-          <option value="reserve">{{ t('wms.inventory.reserve', '引当') }}</option>
-          <option value="release">{{ t('wms.inventory.release', '解放') }}</option>
-          <option value="adjustment">{{ t('wms.inventory.adjustment', '調整') }}</option>
-          <option value="count">{{ t('wms.inventory.count', '棚卸') }}</option>
-        </select>
+        <Select :model-value="ledgerTypeFilter || '__all__'" @update:model-value="(v: string) => { ledgerTypeFilter = v === '__all__' ? '' : v; handleLedgerFilterChange() }">
+          <SelectTrigger style="width: 160px"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">{{ t('wms.inventory.allTypes', '全タイプ') }}</SelectItem>
+            <SelectItem value="inbound">{{ t('wms.inventory.inbound', '入庫') }}</SelectItem>
+            <SelectItem value="outbound">{{ t('wms.inventory.outbound', '出庫') }}</SelectItem>
+            <SelectItem value="reserve">{{ t('wms.inventory.reserve', '引当') }}</SelectItem>
+            <SelectItem value="release">{{ t('wms.inventory.release', '解放') }}</SelectItem>
+            <SelectItem value="adjustment">{{ t('wms.inventory.adjustment', '調整') }}</SelectItem>
+            <SelectItem value="count">{{ t('wms.inventory.count', '棚卸') }}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      <div class="o-table-wrapper">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width: 160px">{{ t('wms.inventory.dateTime', '日時') }}</th>
-              <th class="o-table-th" style="width: 140px">{{ t('wms.inventory.productSku', '商品SKU') }}</th>
-              <th class="o-table-th" style="width: 100px">{{ t('wms.inventory.type', 'タイプ') }}</th>
-              <th class="o-table-th" style="width: 100px; text-align: right">{{ t('wms.inventory.quantity', '数量') }}</th>
-              <th class="o-table-th" style="width: 140px">{{ t('wms.inventory.referenceNumber', '参照番号') }}</th>
-              <th class="o-table-th" style="width: 120px">{{ t('wms.inventory.executedBy', '実行者') }}</th>
-              <th class="o-table-th">{{ t('wms.inventory.memo', '備考') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="ledgerLoading">
-              <td class="o-table-td o-table-empty" colspan="7">{{ t('wms.common.loading', '読み込み中...') }}</td>
-            </tr>
-            <tr v-else-if="ledgerEntries.length === 0">
-              <td class="o-table-td o-table-empty" colspan="7">{{ t('wms.common.noData', 'データがありません') }}</td>
-            </tr>
-            <tr v-for="e in ledgerEntries" :key="e._id" class="o-table-row">
-              <td class="o-table-td">{{ formatDateTime(e.createdAt) }}</td>
-              <td class="o-table-td">{{ e.productSku }}</td>
-              <td class="o-table-td">
+      <div class="rounded-md border overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width: 160px">{{ t('wms.inventory.dateTime', '日時') }}</TableHead>
+              <TableHead style="width: 140px">{{ t('wms.inventory.productSku', '商品SKU') }}</TableHead>
+              <TableHead style="width: 100px">{{ t('wms.inventory.type', 'タイプ') }}</TableHead>
+              <TableHead style="width: 100px; text-align: right">{{ t('wms.inventory.quantity', '数量') }}</TableHead>
+              <TableHead style="width: 140px">{{ t('wms.inventory.referenceNumber', '参照番号') }}</TableHead>
+              <TableHead style="width: 120px">{{ t('wms.inventory.executedBy', '実行者') }}</TableHead>
+              <TableHead>{{ t('wms.inventory.memo', '備考') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-if="ledgerLoading">
+              <TableCell colspan="7">
+                <div class="space-y-3 p-4">
+                  <Skeleton class="h-4 w-[250px] mx-auto" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                </div>
+              </TableCell>
+            </TableRow>
+            <TableRow v-else-if="ledgerEntries.length === 0">
+              <TableCell class="text-center py-8 text-muted-foreground" colspan="7">{{ t('wms.common.noData', 'データがありません') }}</TableCell>
+            </TableRow>
+            <TableRow v-for="e in ledgerEntries" :key="e._id">
+              <TableCell>{{ formatDateTime(e.createdAt) }}</TableCell>
+              <TableCell>{{ e.productSku }}</TableCell>
+              <TableCell>
                 <span :class="['type-tag', `type-tag--${e.type}`]">{{ ledgerTypeLabel(e.type) }}</span>
-              </td>
-              <td class="o-table-td" style="text-align: right">
+              </TableCell>
+              <TableCell style="text-align: right">
                 <span :class="e.quantity >= 0 ? 'qty-positive' : 'qty-negative'">
                   {{ e.quantity >= 0 ? `+${e.quantity}` : e.quantity }}
                 </span>
-              </td>
-              <td class="o-table-td">{{ e.referenceNumber || '-' }}</td>
-              <td class="o-table-td">{{ e.executedBy || '-' }}</td>
-              <td class="o-table-td">{{ e.memo || '-' }}</td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+              <TableCell>{{ e.referenceNumber || '-' }}</TableCell>
+              <TableCell>{{ e.executedBy || '-' }}</TableCell>
+              <TableCell>{{ e.memo || '-' }}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
 
       <!-- Ledger Pagination -->
       <div class="o-table-pagination">
         <span class="o-table-pagination__info">{{ t('wms.common.paginationInfo', '全{total}件中 {start}-{end}件').replace('{total}', String(ledgerTotal)).replace('{start}', String(ledgerPaginationStart)).replace('{end}', String(ledgerPaginationEnd)) }}</span>
         <div class="o-table-pagination__controls">
-          <select class="o-input o-input-sm" v-model.number="ledgerPageSize" style="width:80px;" @change="handleLedgerPageSizeChange">
-            <option :value="10">10</option>
-            <option :value="20">20</option>
-            <option :value="50">50</option>
-            <option :value="100">100</option>
-          </select>
-          <OButton variant="secondary" size="sm" :disabled="ledgerPage <= 1" @click="goToLedgerPage(ledgerPage - 1)">&lsaquo;</OButton>
+          <Select :model-value="String(ledgerPageSize)" @update:model-value="(v: string) => { ledgerPageSize = Number(v); handleLedgerPageSizeChange() }">
+            <SelectTrigger class="h-8 text-sm" style="width:80px;"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="secondary" size="sm" :disabled="ledgerPage <= 1" @click="goToLedgerPage(ledgerPage - 1)">&lsaquo;</Button>
           <span class="o-table-pagination__page">{{ ledgerPage }} / {{ ledgerTotalPages }}</span>
-          <OButton variant="secondary" size="sm" :disabled="ledgerPage >= ledgerTotalPages" @click="goToLedgerPage(ledgerPage + 1)">&rsaquo;</OButton>
+          <Button variant="secondary" size="sm" :disabled="ledgerPage >= ledgerTotalPages" @click="goToLedgerPage(ledgerPage + 1)">&rsaquo;</Button>
         </div>
       </div>
     </div>
 
     <!-- Tab 3: Reservations -->
     <div v-if="activeTab === 'reservations'">
-      <div class="o-table-wrapper">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width: 140px">{{ t('wms.inventory.productSku', '商品SKU') }}</th>
-              <th class="o-table-th" style="width: 100px; text-align: right">{{ t('wms.inventory.quantity', '数量') }}</th>
-              <th class="o-table-th" style="width: 100px">{{ t('wms.inventory.reservationStatus', 'ステータス') }}</th>
-              <th class="o-table-th" style="width: 100px">{{ t('wms.inventory.source', 'ソース') }}</th>
-              <th class="o-table-th" style="width: 140px">{{ t('wms.inventory.referenceNumber', '参照番号') }}</th>
-              <th class="o-table-th" style="width: 160px">{{ t('wms.inventory.expiresAt', '有効期限') }}</th>
-              <th class="o-table-th" style="width: 100px">{{ t('wms.common.actions', '操作') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="reservationsLoading">
-              <td class="o-table-td o-table-empty" colspan="7">{{ t('wms.common.loading', '読み込み中...') }}</td>
-            </tr>
-            <tr v-else-if="reservations.length === 0">
-              <td class="o-table-td o-table-empty" colspan="7">{{ t('wms.common.noData', 'データがありません') }}</td>
-            </tr>
-            <tr v-for="r in reservations" :key="r._id" class="o-table-row">
-              <td class="o-table-td">{{ r.productSku }}</td>
-              <td class="o-table-td" style="text-align: right">{{ r.quantity }}</td>
-              <td class="o-table-td">
+      <div class="rounded-md border overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width: 140px">{{ t('wms.inventory.productSku', '商品SKU') }}</TableHead>
+              <TableHead style="width: 100px; text-align: right">{{ t('wms.inventory.quantity', '数量') }}</TableHead>
+              <TableHead style="width: 100px">{{ t('wms.inventory.reservationStatus', 'ステータス') }}</TableHead>
+              <TableHead style="width: 100px">{{ t('wms.inventory.source', 'ソース') }}</TableHead>
+              <TableHead style="width: 140px">{{ t('wms.inventory.referenceNumber', '参照番号') }}</TableHead>
+              <TableHead style="width: 160px">{{ t('wms.inventory.expiresAt', '有効期限') }}</TableHead>
+              <TableHead style="width: 100px">{{ t('wms.common.actions', '操作') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-if="reservationsLoading">
+              <TableCell colspan="7">
+                <div class="space-y-3 p-4">
+                  <Skeleton class="h-4 w-[250px] mx-auto" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                </div>
+              </TableCell>
+            </TableRow>
+            <TableRow v-else-if="reservations.length === 0">
+              <TableCell class="text-center py-8 text-muted-foreground" colspan="7">{{ t('wms.common.noData', 'データがありません') }}</TableCell>
+            </TableRow>
+            <TableRow v-for="r in reservations" :key="r._id">
+              <TableCell>{{ r.productSku }}</TableCell>
+              <TableCell style="text-align: right">{{ r.quantity }}</TableCell>
+              <TableCell>
                 <span :class="['status-tag', `status-tag--${r.status}`]">{{ reservationStatusLabel(r.status) }}</span>
-              </td>
-              <td class="o-table-td">{{ reservationSourceLabel(r.source) }}</td>
-              <td class="o-table-td">{{ r.referenceNumber || '-' }}</td>
-              <td class="o-table-td">{{ r.expiresAt ? formatDateTime(r.expiresAt) : '-' }}</td>
-              <td class="o-table-td">
-                <OButton
+              </TableCell>
+              <TableCell>{{ reservationSourceLabel(r.source) }}</TableCell>
+              <TableCell>{{ r.referenceNumber || '-' }}</TableCell>
+              <TableCell>{{ r.expiresAt ? formatDateTime(r.expiresAt) : '-' }}</TableCell>
+              <TableCell>
+                <Button
                   v-if="r.status === 'active'"
                   variant="secondary"
                   size="sm"
                   @click="handleReleaseReservation(r)"
-                >{{ t('wms.inventory.release', '解放') }}</OButton>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                >{{ t('wms.inventory.release', '解放') }}</Button>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
 
       <!-- Reservations Pagination -->
       <div class="o-table-pagination">
         <span class="o-table-pagination__info">{{ t('wms.common.paginationInfo', '全{total}件中 {start}-{end}件').replace('{total}', String(reservationsTotal)).replace('{start}', String(reservationsPaginationStart)).replace('{end}', String(reservationsPaginationEnd)) }}</span>
         <div class="o-table-pagination__controls">
-          <select class="o-input o-input-sm" v-model.number="reservationsPageSize" style="width:80px;" @change="handleReservationsPageSizeChange">
-            <option :value="10">10</option>
-            <option :value="20">20</option>
-            <option :value="50">50</option>
-            <option :value="100">100</option>
-          </select>
-          <OButton variant="secondary" size="sm" :disabled="reservationsPage <= 1" @click="goToReservationsPage(reservationsPage - 1)">&lsaquo;</OButton>
+          <Select :model-value="String(reservationsPageSize)" @update:model-value="(v: string) => { reservationsPageSize = Number(v); handleReservationsPageSizeChange() }">
+            <SelectTrigger class="h-8 text-sm" style="width:80px;"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="secondary" size="sm" :disabled="reservationsPage <= 1" @click="goToReservationsPage(reservationsPage - 1)">&lsaquo;</Button>
           <span class="o-table-pagination__page">{{ reservationsPage }} / {{ reservationsTotalPages }}</span>
-          <OButton variant="secondary" size="sm" :disabled="reservationsPage >= reservationsTotalPages" @click="goToReservationsPage(reservationsPage + 1)">&rsaquo;</OButton>
+          <Button variant="secondary" size="sm" :disabled="reservationsPage >= reservationsTotalPages" @click="goToReservationsPage(reservationsPage + 1)">&rsaquo;</Button>
         </div>
       </div>
     </div>
 
     <!-- Adjustment Dialog -->
-    <ODialog v-model="adjustmentDialogOpen" :title="t('wms.inventory.manualAdjustment', '手動調整')" size="md" @confirm="handleCreateAdjustment">
-      <div class="form-grid">
-        <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.productSku', '商品SKU') }} <span class="required-badge">必須</span></label>
-          <input v-model="adjustmentForm.productSku" type="text" class="o-input" />
+    <Dialog :open="adjustmentDialogOpen" @update:open="adjustmentDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{{ t('wms.inventory.manualAdjustment', '手動調整') }}</DialogTitle>
+        </DialogHeader>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>{{ t('wms.inventory.productSku', '商品SKU') }} <span class="text-destructive text-xs">*</span></label>
+            <Input v-model="adjustmentForm.productSku" type="text" />
+          </div>
+          <div class="form-field">
+            <label>{{ t('wms.inventory.quantity', '数量') }} <span class="text-destructive text-xs">*</span></label>
+            <Input v-model.number="adjustmentForm.quantity" type="number" />
+          </div>
+          <div class="form-field">
+            <label>{{ t('wms.inventory.warehouseId', '倉庫ID') }}</label>
+            <Input v-model="adjustmentForm.warehouseId" type="text" />
+          </div>
+          <div class="form-field">
+            <label>{{ t('wms.inventory.reason', '理由') }}</label>
+            <Input v-model="adjustmentForm.reason" type="text" />
+          </div>
+          <div class="form-field form-field--full">
+            <label>{{ t('wms.inventory.memo', '備考') }}</label>
+            <textarea v-model="adjustmentForm.memo" class="form-textarea" rows="3" />
+          </div>
         </div>
-        <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.quantity', '数量') }} <span class="required-badge">必須</span></label>
-          <input v-model.number="adjustmentForm.quantity" type="number" class="o-input" />
-        </div>
-        <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.warehouseId', '倉庫ID') }}</label>
-          <input v-model="adjustmentForm.warehouseId" type="text" class="o-input" />
-        </div>
-        <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.reason', '理由') }}</label>
-          <input v-model="adjustmentForm.reason" type="text" class="o-input" />
-        </div>
-        <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.inventory.memo', '備考') }}</label>
-          <textarea v-model="adjustmentForm.memo" class="o-input form-textarea" rows="3" />
-        </div>
-      </div>
-    </ODialog>
+        <DialogFooter>
+          <Button variant="secondary" @click="adjustmentDialogOpen = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+          <Button variant="default" @click="handleCreateAdjustment">{{ t('wms.common.confirm', '確定') }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { ref, computed, onMounted, watch } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   fetchStockLevels,
   fetchLedgerEntries,
@@ -285,6 +329,8 @@ import {
   type Reservation,
 } from '@/api/inventoryLedger'
 import { fetchInventoryOverview, type InventoryOverview } from '@/api/inventory'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
@@ -460,13 +506,7 @@ const goToReservationsPage = (page: number) => {
 }
 
 const handleReleaseReservation = async (r: Reservation) => {
-  try {
-    await ElMessageBox.confirm(
-      `引当（${r.productSku} x ${r.quantity}）を解放しますか？ / 确定要释放预留（${r.productSku} x ${r.quantity}）吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '解放 / 释放', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await releaseReservation(r._id)
     showToast('引当を解放しました', 'success')

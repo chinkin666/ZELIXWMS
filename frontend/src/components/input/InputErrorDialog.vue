@@ -1,5 +1,9 @@
 <template>
-  <ODialog :open="visibleProxy" title="入力エラー" @close="visibleProxy = false" width="860px">
+  <Dialog :open="visibleProxy" @update:open="visibleProxy = $event">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>入力エラー</DialogTitle>
+      </DialogHeader>
     <div class="summary">
       <div class="alert-error">
         取込を実行できません。以下のエラーを修正してください。
@@ -27,16 +31,17 @@
       </table>
     </div>
 
-    <template #footer>
-      <OButton variant="primary" @click="visibleProxy = false">閉じる</OButton>
-    </template>
-  </ODialog>
+    <DialogFooter>
+      <Button variant="default" @click="visibleProxy = false">閉じる</Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 export type InputRowError = {
   rowIndex: number

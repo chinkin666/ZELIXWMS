@@ -1,131 +1,128 @@
 <template>
   <div class="shipping-rate-settings">
-    <ControlPanel title="運賃率表" :show-search="false">
+    <PageHeader title="運賃率表" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate"><span class="o-icon">+</span> 新規追加</OButton>
+        <Button variant="default" @click="openCreate"><span>+</span> 新規追加</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="shippingRateSettingsSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="list"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         pagination-enabled
         pagination-mode="server"
         :page-size="pageSize"
         :page-sizes="[10, 20, 50]"
         :total="total"
         :current-page="currentPage"
-        :global-search-text="globalSearchText"
         @page-change="handlePageChangeEvent"
       />
     </div>
 
     <!-- 作成/編集ダイアログ / 创建/编辑对话框 -->
-    <ODialog v-model="dialogVisible" :title="isEditing ? '運賃率表を編集' : '運賃率表を追加'" size="lg" @close="closeDialog">
-      <template #default>
+    <Dialog :open="dialogVisible" @update:open="dialogVisible = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? '運賃率表を編集' : '運賃率表を追加' }}</DialogTitle></DialogHeader>
+      
         <form class="rate-form" @submit.prevent="handleSubmit">
           <div class="form-row">
-            <label class="form-label">プラン名 <span class="required-badge">必須</span></label>
-            <input class="o-input" v-model="form.name" required placeholder="例: ヤマト 関東→関東 60サイズ" />
+            <label>プラン名 <span class="text-destructive text-xs">*</span></label>
+            <Input v-model="form.name" required placeholder="例: ヤマト 関東→関東 60サイズ" />
           </div>
           <div class="form-row">
-            <label class="form-label">配送業者ID <span class="required-badge">必須</span></label>
-            <input class="o-input" v-model="form.carrierId" required />
+            <label>配送業者ID <span class="text-destructive text-xs">*</span></label>
+            <Input v-model="form.carrierId" required />
           </div>
           <div class="form-row">
-            <label class="form-label">配送業者名（表示用）</label>
-            <input class="o-input" v-model="form.carrierName" placeholder="例: ヤマト運輸" />
+            <label>配送業者名（表示用）</label>
+            <Input v-model="form.carrierName" placeholder="例: ヤマト運輸" />
           </div>
 
           <div class="form-section-title">サイズ条件 / 尺寸条件</div>
           <div class="form-row-inline">
             <div class="form-row">
-              <label class="form-label">種別</label>
-              <select class="o-input" v-model="form.sizeType">
-                <option value="flat">一律</option>
-                <option value="weight">重量ベース</option>
-                <option value="dimension">才数ベース</option>
-              </select>
+              <label>種別</label>
+              <Select v-model="form.sizeType">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="flat">一律</SelectItem>
+        <SelectItem value="weight">重量ベース</SelectItem>
+        <SelectItem value="dimension">才数ベース</SelectItem>
+        </SelectContent>
+      </Select>
             </div>
             <div class="form-row" v-if="form.sizeType !== 'flat'">
-              <label class="form-label">最小値</label>
-              <input class="o-input" type="number" v-model.number="form.sizeMin" min="0" step="0.1" />
+              <label>最小値</label>
+              <Input type="number" v-model.number="form.sizeMin" min="0" step="0.1" />
             </div>
             <div class="form-row" v-if="form.sizeType !== 'flat'">
-              <label class="form-label">最大値</label>
-              <input class="o-input" type="number" v-model.number="form.sizeMax" min="0" step="0.1" />
+              <label>最大値</label>
+              <Input type="number" v-model.number="form.sizeMax" min="0" step="0.1" />
             </div>
           </div>
 
           <div class="form-section-title">料金 / 费用</div>
           <div class="form-row-inline">
             <div class="form-row">
-              <label class="form-label">基本料金 <span class="required-badge">必須</span></label>
-              <input class="o-input" type="number" v-model.number="form.basePrice" required min="0" />
+              <label>基本料金 <span class="text-destructive text-xs">*</span></label>
+              <Input type="number" v-model.number="form.basePrice" required min="0" />
             </div>
             <div class="form-row">
-              <label class="form-label">クール便追加</label>
-              <input class="o-input" type="number" v-model.number="form.coolSurcharge" min="0" />
+              <label>クール便追加</label>
+              <Input type="number" v-model.number="form.coolSurcharge" min="0" />
             </div>
             <div class="form-row">
-              <label class="form-label">代引手数料</label>
-              <input class="o-input" type="number" v-model.number="form.codSurcharge" min="0" />
+              <label>代引手数料</label>
+              <Input type="number" v-model.number="form.codSurcharge" min="0" />
             </div>
             <div class="form-row">
-              <label class="form-label">燃油サーチャージ</label>
-              <input class="o-input" type="number" v-model.number="form.fuelSurcharge" min="0" />
+              <label>燃油サーチャージ</label>
+              <Input type="number" v-model.number="form.fuelSurcharge" min="0" />
             </div>
           </div>
 
           <div class="form-section-title">有効期間 / 有效期间</div>
           <div class="form-row-inline">
             <div class="form-row">
-              <label class="form-label">開始日</label>
-              <input class="o-input" type="date" v-model="form.validFrom" />
+              <label>開始日</label>
+              <Input type="date" v-model="form.validFrom" />
             </div>
             <div class="form-row">
-              <label class="form-label">終了日</label>
-              <input class="o-input" type="date" v-model="form.validTo" />
+              <label>終了日</label>
+              <Input type="date" v-model="form.validTo" />
             </div>
           </div>
 
           <div class="form-row">
-            <label class="form-label">備考</label>
-            <textarea class="o-input" v-model="form.memo" rows="2" />
+            <label>備考</label>
+            <textarea v-model="form.memo" rows="2" />
           </div>
 
           <div class="form-actions">
-            <OButton variant="secondary" type="button" @click="closeDialog">キャンセル</OButton>
-            <OButton variant="primary" type="submit" :disabled="saving">
+            <Button variant="secondary" type="button" @click="closeDialog">キャンセル</Button>
+            <Button variant="default" type="submit" :disabled="saving">
               {{ saving ? '保存中...' : '保存' }}
-            </OButton>
+            </Button>
           </div>
         </form>
-      </template>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchShippingRates,
@@ -134,7 +131,12 @@ import {
   deleteShippingRate,
 } from '@/api/shippingRate'
 import type { ShippingRateData } from '@/api/shippingRate'
-
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 const { t } = useI18n()
 
@@ -240,6 +242,41 @@ const baseColumns: TableColumn[] = [
     fieldType: 'number',
   },
   {
+    key: 'sizeMin',
+    dataKey: 'sizeMin',
+    title: 'サイズ下限',
+    width: 90,
+    fieldType: 'number',
+  },
+  {
+    key: 'sizeMax',
+    dataKey: 'sizeMax',
+    title: 'サイズ上限',
+    width: 90,
+    fieldType: 'number',
+  },
+  {
+    key: 'validFrom',
+    dataKey: 'validFrom',
+    title: '有効開始',
+    width: 110,
+    fieldType: 'string',
+  },
+  {
+    key: 'validTo',
+    dataKey: 'validTo',
+    title: '有効終了',
+    width: 110,
+    fieldType: 'string',
+  },
+  {
+    key: 'memo',
+    dataKey: 'memo',
+    title: 'メモ',
+    width: 150,
+    fieldType: 'string',
+  },
+  {
     key: 'isActive',
     dataKey: 'isActive',
     title: '有効',
@@ -294,8 +331,8 @@ const tableColumns: TableColumn[] = [
     width: 160,
     cellRenderer: ({ rowData }: { rowData: ShippingRateData }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ]),
   },
 ]
@@ -430,13 +467,7 @@ const handleSubmit = async () => {
 // Delete / 删除
 // ---------------------------------------------------------------------------
 const confirmDelete = async (item: ShippingRateData) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${item.name}」を無効にしてもよろしいですか？ / 确定要禁用「${item.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '無効化 / 禁用', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteShippingRate(item._id)
     showToast('無効にしました', 'success')

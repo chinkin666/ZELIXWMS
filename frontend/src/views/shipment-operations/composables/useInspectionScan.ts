@@ -1,9 +1,9 @@
 import { nextTick } from 'vue'
 import type { Ref } from 'vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import type { OrderDocument } from '@/types/order'
 import type { Product } from '@/types/product'
 import type { InspectionItem, ScannedProductInfo, InspectionState } from './useInspectionState'
-import { ElMessageBox } from 'element-plus'
 import { resolvePdfSource } from '@/utils/print/resolvePrintTemplate'
 import { isBuiltInCarrierId } from '@/utils/carrier'
 import { isCarrierDeleteError, yamatoB2Unconfirm, changeInvoiceType, splitOrder as splitOrderApi } from '@/api/carrierAutomation'
@@ -33,6 +33,7 @@ export function useInspectionScan(
 ) {
   const { show: showToast } = useToast()
   const { t } = useI18n()
+  const { confirm } = useConfirmDialog()
 
   // ─── フォーカス制御 / 焦点控制 ────────────────────────────────────────
 
@@ -252,11 +253,7 @@ export function useInspectionScan(
 
     if (alreadyPrinted) {
       try {
-        await ElMessageBox.confirm(
-          t('wms.inspection.alreadyPrintedConfirm', 'この注文は既に印刷済みです。もう一度印刷しますか？ / 此订单已打印，确定要再次打印吗？'),
-          '確認 / 确认',
-          { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-        )
+        if (!(await confirm('この操作を実行しますか？'))) return
         if (autoPrintEnabled.value) {
           triggerAutoPrint()
         } else {
@@ -459,11 +456,7 @@ export function useInspectionScan(
       if (builtIn && isCarrierDeleteError(e)) {
         state.isUnconfirming.value = false
         try {
-          await ElMessageBox.confirm(
-            t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDelete', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？ / 跳过B2 Cloud删除，仅更新本地吗？')}`,
-            '確認 / 确认',
-            { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-          )
+          if (!(await confirm('B2 Cloud削除をスキップして、ローカルのみ更新しますか？'))) return
           await handleUnconfirmConfirm(reason, true)
           return
         } catch { return }
@@ -519,11 +512,7 @@ export function useInspectionScan(
       if (builtIn && isCarrierDeleteError(e)) {
         state.isChangingInvoiceType.value = false
         try {
-          await ElMessageBox.confirm(
-            t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDelete', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？ / 跳过B2 Cloud删除，仅更新本地吗？')}`,
-            '確認 / 确认',
-            { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-          )
+          if (!(await confirm('B2 Cloud削除をスキップして、ローカルのみ更新しますか？'))) return
           await handleChangeInvoiceTypeConfirm(newInvoiceType, true)
           return
         } catch { return }
@@ -593,11 +582,7 @@ export function useInspectionScan(
       if (builtIn && isCarrierDeleteError(e)) {
         state.isSplittingOrder.value = false
         try {
-          await ElMessageBox.confirm(
-            t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteContinue', 'B2 Cloud削除をスキップして続行しますか？ / 跳过B2 Cloud删除继续吗？')}`,
-            '確認 / 确认',
-            { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-          )
+          if (!(await confirm('B2 Cloud削除をスキップして続行しますか？'))) return
           await handleSplitOrderConfirm(request, true)
           return
         } catch { return }
@@ -674,11 +659,7 @@ export function useInspectionScan(
   async function fkeyManualComplete() {
     if (!state.currentOrder.value) return
     try {
-      await ElMessageBox.confirm(
-        t('wms.inspection.confirmManualComplete', `${state.currentOrder.value.orderNumber} を手動で検品完了にしますか？\n（バーコードが読めない場合等にご使用ください） / 确定要手动将 ${state.currentOrder.value.orderNumber} 标记为检品完成吗？\n（请在条码无法读取时使用）`),
-        '確認 / 确认',
-        { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-      )
+      if (!(await confirm('この操作を実行しますか？'))) return
     } catch { return }
     for (const item of state.inspectionItems.value) {
       item.inspectedQuantity = item.totalQuantity

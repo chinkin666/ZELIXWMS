@@ -1,5 +1,9 @@
 <template>
-  <ODialog :open="visible" title="出荷明細リスト出力" @close="visible = false" width="980px">
+  <Dialog :open="visible" @update:open="visible = $event">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>出荷明細リスト出力</DialogTitle>
+      </DialogHeader>
     <div class="meta">
       <div class="meta__row">
         <div class="meta__item meta__item--select">
@@ -38,25 +42,26 @@
       <div v-else class="empty-state">出力レイアウトを選択してください</div>
     </div>
 
-    <template #footer>
+    <DialogFooter>
       <div class="footer">
         <div class="footer__left">
           <span class="hint">CSV / Excel をダウンロードできます。</span>
         </div>
         <div class="footer__right">
-          <OButton variant="secondary" :disabled="outputRows.length === 0" @click="downloadCsv">CSV出力</OButton>
-          <OButton variant="primary" :disabled="outputRows.length === 0" @click="downloadExcel">Excel出力</OButton>
-          <OButton variant="secondary" @click="visible = false">閉じる</OButton>
+          <Button variant="secondary" :disabled="outputRows.length === 0" @click="downloadCsv">CSV出力</Button>
+          <Button variant="default" :disabled="outputRows.length === 0" @click="downloadExcel">Excel出力</Button>
+          <Button variant="secondary" @click="visible = false">閉じる</Button>
         </div>
       </div>
-    </template>
-  </ODialog>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 // XLSX动态导入，减少初始包大小 / XLSXを動的インポートし初期バンドルサイズを削減
 const loadXLSX = () => import('xlsx')
 import { getAllMappingConfigs, type MappingConfig } from '@/api/mappingConfig'

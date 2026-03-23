@@ -1,17 +1,22 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 /**
  * FBA箱管理ページ / FBA箱管理页面
  */
 import { ref, onMounted } from 'vue'
+import { Card, CardContent } from '@/components/ui/card'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { useToast } from '@/composables/useToast'
 import { getApiBaseUrl } from '@/api/base'
 import { useWmsUserStore } from '@/stores/wms/useWmsUserStore'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useWmsUserStore()
 const baseUrl = getApiBaseUrl()
+const { showSuccess, showError } = useToast()
 
 const orderId = route.params.orderId as string
 const boxes = ref<any[]>([])
@@ -51,12 +56,12 @@ async function createBox() {
       body: JSON.stringify({ ...addForm.value, inboundOrderId: orderId }),
     })
     if (res.ok) {
-      ElMessage.success('箱を作成しました / 箱已创建')
+      showSuccess('箱を作成しました / 箱已创建')
       showAddDialog.value = false
       addForm.value = { items: [{ sku: '', fnsku: '', quantity: 0, productId: '000000000000000000000000' }], weight: 0, length: 0, width: 0, height: 0, destinationFc: '' }
       await loadBoxes()
     }
-  } catch (e: any) { ElMessage.error(e.message) }
+  } catch (e: any) { showError(e.message) }
 }
 
 async function sealBox(boxId: string) {
@@ -66,9 +71,9 @@ async function sealBox(boxId: string) {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${userStore.token}` },
       body: JSON.stringify({ sealedBy: userStore.currentUser?.displayName }),
     })
-    ElMessage.success('封箱完了')
+    showSuccess('封箱完了')
     await loadBoxes()
-  } catch (e: any) { ElMessage.error(e.message) }
+  } catch (e: any) { showError(e.message) }
 }
 
 async function deleteBox(boxId: string) {
@@ -78,7 +83,7 @@ async function deleteBox(boxId: string) {
       headers: { Authorization: `Bearer ${userStore.token}` },
     })
     await loadBoxes()
-  } catch (e: any) { ElMessage.error(e.message) }
+  } catch (e: any) { showError(e.message) }
 }
 
 function getValidation(boxNumber: string) {
@@ -89,25 +94,32 @@ onMounted(loadBoxes)
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px">
-      <el-button @click="router.back()">戻る</el-button>
-      <h2 style="margin: 0">FBA箱管理</h2>
-      <div style="flex: 1" />
-      <el-tag v-if="validation" :type="validation.allValid ? 'success' : 'danger'">
-        {{ validation.allValid ? '全箱検証OK' : '検証エラーあり' }} ({{ validation.totalBoxes }}箱)
-      </el-tag>
-      <el-button type="primary" @click="showAddDialog = true">+ 箱追加</el-button>
+  <div>
+    <div v-if="loading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
     </div>
+    <template v-else>
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px">
+        <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-input bg-background hover:bg-accent" @click="router.back()">戻る</Button>
+        <h2 style="margin: 0">FBA箱管理</h2>
+        <div style="flex: 1" />
+        <span v-if="validation" :class="validation.allValid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium">
+          {{ validation.allValid ? '全箱検証OK' : '検証エラーあり' }} ({{ validation.totalBoxes }}箱)
+        </span>
+        <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90" @click="showAddDialog = true">+ 箱追加</Button>
+      </div>
 
-    <el-row :gutter="12">
-      <el-col :span="8" v-for="box in boxes" :key="box._id">
-        <el-card style="margin-bottom: 12px" :body-style="{ padding: '16px' }">
+      <div class="grid grid-cols-3 gap-3">
+        <div v-for="box in boxes" :key="box._id" class="rounded-lg border bg-card shadow-sm p-4" style="margin-bottom: 12px">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px">
             <span style="font-weight: bold; font-size: 16px">{{ box.boxNumber }}</span>
-            <el-tag :type="box.status === 'sealed' ? 'success' : box.status === 'labeled' ? 'warning' : 'info'" size="small">
+            <span :class="box.status === 'sealed' ? 'bg-green-100 text-green-800' : box.status === 'labeled' ? 'bg-yellow-100 text-yellow-800' : 'bg-muted text-muted-foreground'" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium">
               {{ box.status }}
-            </el-tag>
+            </span>
           </div>
 
           <!-- 箱内容 / 箱内容 -->
@@ -122,57 +134,72 @@ onMounted(loadBoxes)
 
           <!-- 検証結果 / 校验结果 -->
           <div v-if="getValidation(box.boxNumber)" style="margin-top: 8px">
-            <el-tag v-if="getValidation(box.boxNumber).valid" type="success" size="small">規格OK</el-tag>
+            <span v-if="getValidation(box.boxNumber).valid" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">規格OK</span>
             <div v-else>
-              <el-tag type="danger" size="small" v-for="(err, i) in getValidation(box.boxNumber).errors" :key="i" style="margin: 2px">
+              <span v-for="(err, i) in getValidation(box.boxNumber).errors" :key="i" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800" style="margin: 2px">
                 {{ err }}
-              </el-tag>
+              </span>
             </div>
           </div>
 
           <!-- 操作 / 操作 -->
           <div style="display: flex; gap: 4px; margin-top: 8px">
-            <el-button v-if="box.status === 'packing'" size="small" type="success" @click="sealBox(box._id)">封箱</el-button>
-            <el-button v-if="box.status === 'packing'" size="small" type="danger" @click="deleteBox(box._id)">削除</el-button>
+            <Button v-if="box.status === 'packing'" class="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 bg-green-600 text-white hover:bg-green-700" @click="sealBox(box._id)">封箱</Button>
+            <Button v-if="box.status === 'packing'" class="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 bg-destructive text-destructive-foreground hover:bg-destructive/90" @click="deleteBox(box._id)">削除</Button>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </div>
+      </div>
 
-    <el-empty v-if="!loading && boxes.length === 0" description="箱がありません / 暂无箱" />
+      <div v-if="!loading && boxes.length === 0" class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <p>箱がありません / 暂无箱</p>
+      </div>
 
-    <!-- 新規箱ダイアログ / 新建箱对话框 -->
-    <el-dialog v-model="showAddDialog" title="箱追加 / 添加箱" width="500px">
-      <el-form label-width="100px">
-        <el-form-item label="SKU">
-          <el-input v-model="addForm.items[0]!.sku" />
-        </el-form-item>
-        <el-form-item label="FNSKU">
-          <el-input v-model="addForm.items[0]!.fnsku" />
-        </el-form-item>
-        <el-form-item label="数量">
-          <el-input-number v-model="addForm.items[0]!.quantity" :min="1" />
-        </el-form-item>
-        <el-form-item label="重量(kg)">
-          <el-input-number v-model="addForm.weight" :min="0" :precision="1" />
-        </el-form-item>
-        <el-form-item label="長さ(cm)">
-          <el-input-number v-model="addForm.length" :min="0" :precision="1" />
-        </el-form-item>
-        <el-form-item label="幅(cm)">
-          <el-input-number v-model="addForm.width" :min="0" :precision="1" />
-        </el-form-item>
-        <el-form-item label="高さ(cm)">
-          <el-input-number v-model="addForm.height" :min="0" :precision="1" />
-        </el-form-item>
-        <el-form-item label="目的FC">
-          <el-input v-model="addForm.destinationFc" placeholder="NRT5" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showAddDialog = false">キャンセル</el-button>
-        <el-button type="primary" @click="createBox">作成</el-button>
-      </template>
-    </el-dialog>
+      <!-- 新規箱ダイアログ / 新建箱对话框 -->
+      <Dialog :open="showAddDialog" @update:open="showAddDialog = $event">
+        <DialogContent class="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>箱追加 / 添加箱</DialogTitle>
+          </DialogHeader>
+          <div class="grid gap-4 py-4">
+            <div class="grid grid-cols-4 items-center gap-4">
+              <label class="text-right text-sm">SKU</label>
+              <input v-model="addForm.items[0]!.sku" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            </div>
+            <div class="grid grid-cols-4 items-center gap-4">
+              <label class="text-right text-sm">FNSKU</label>
+              <input v-model="addForm.items[0]!.fnsku" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            </div>
+            <div class="grid grid-cols-4 items-center gap-4">
+              <label class="text-right text-sm">数量</label>
+              <input v-model.number="addForm.items[0]!.quantity" type="number" min="1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            </div>
+            <div class="grid grid-cols-4 items-center gap-4">
+              <label class="text-right text-sm">重量(kg)</label>
+              <input v-model.number="addForm.weight" type="number" min="0" step="0.1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            </div>
+            <div class="grid grid-cols-4 items-center gap-4">
+              <label class="text-right text-sm">長さ(cm)</label>
+              <input v-model.number="addForm.length" type="number" min="0" step="0.1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            </div>
+            <div class="grid grid-cols-4 items-center gap-4">
+              <label class="text-right text-sm">幅(cm)</label>
+              <input v-model.number="addForm.width" type="number" min="0" step="0.1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            </div>
+            <div class="grid grid-cols-4 items-center gap-4">
+              <label class="text-right text-sm">高さ(cm)</label>
+              <input v-model.number="addForm.height" type="number" min="0" step="0.1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            </div>
+            <div class="grid grid-cols-4 items-center gap-4">
+              <label class="text-right text-sm">目的FC</label>
+              <input v-model="addForm.destinationFc" placeholder="NRT5" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-input bg-background hover:bg-accent" @click="showAddDialog = false">キャンセル</Button>
+            <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90" @click="createBox">作成</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </template>
   </div>
 </template>

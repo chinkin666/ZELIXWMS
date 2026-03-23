@@ -12,9 +12,9 @@
         <span class="last-update" v-if="dashboardData">
           {{ t('wms.ui.lastUpdate', '最終更新') }}: {{ formatTime(new Date().toISOString()) }}
         </span>
-        <button class="refresh-btn" @click="loadDashboard" :disabled="loading">
+        <Button variant="outline" class="refresh-btn" @click="loadDashboard" :disabled="loading">
           {{ loading ? t('wms.ui.loadingShort', '読込中...') : t('wms.ui.refresh', '更新') }}
-        </button>
+        </Button>
       </div>
     </div>
 
@@ -32,195 +32,217 @@
     </div>
 
     <!-- エラー / 错误 -->
-    <div v-else-if="error" class="error-state o-card">
-      <p>{{ t('wms.ui.fetchError', 'データの取得に失敗しました') }}: {{ error }}</p>
-      <button class="retry-btn" @click="loadDashboard">{{ t('wms.ui.retry', '再試行') }}</button>
-    </div>
+    <Card v-else-if="error" class="error-state">
+      <CardContent class="pt-6">
+        <p>{{ t('wms.ui.fetchError', 'データの取得に失敗しました') }}: {{ error }}</p>
+        <Button class="retry-btn" @click="loadDashboard">{{ t('wms.ui.retry', '再試行') }}</Button>
+      </CardContent>
+    </Card>
 
     <template v-else-if="dashboardData">
       <!-- KPI カード / KPI 卡片 -->
       <h2 class="section-title">{{ t('wms.clientPortal.kpiTitle', '出荷概要') }}</h2>
       <div class="kpi-grid">
-        <div class="kpi-card o-card">
-          <div class="kpi-icon-wrap kpi-icon--blue">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zM9.5 3A1.5 1.5 0 0 0 8 1.5V3h1.5z" />
-            </svg>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-value">{{ formatNumber(dashboardData.stats.totalOrders) }}</div>
-            <div class="kpi-label">{{ t('wms.clientPortal.totalOrders', '総出荷件数') }}</div>
-          </div>
-        </div>
+        <Card class="kpi-card">
+          <CardContent class="kpi-card-inner">
+            <div class="kpi-icon-wrap kpi-icon--blue">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zM9.5 3A1.5 1.5 0 0 0 8 1.5V3h1.5z" />
+              </svg>
+            </div>
+            <div class="kpi-content">
+              <div class="kpi-value">{{ formatNumber(dashboardData.stats.totalOrders) }}</div>
+              <div class="kpi-label">{{ t('wms.clientPortal.totalOrders', '総出荷件数') }}</div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div class="kpi-card o-card">
-          <div class="kpi-icon-wrap kpi-icon--green">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z" />
-            </svg>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-value">{{ formatNumber(dashboardData.stats.shippedOrders) }}</div>
-            <div class="kpi-label">{{ t('wms.clientPortal.shippedOrders', '出荷済') }}</div>
-          </div>
-        </div>
+        <Card class="kpi-card">
+          <CardContent class="kpi-card-inner">
+            <div class="kpi-icon-wrap kpi-icon--green">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z" />
+              </svg>
+            </div>
+            <div class="kpi-content">
+              <div class="kpi-value">{{ formatNumber(dashboardData.stats.shippedOrders) }}</div>
+              <div class="kpi-label">{{ t('wms.clientPortal.shippedOrders', '出荷済') }}</div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div class="kpi-card o-card">
-          <div class="kpi-icon-wrap kpi-icon--orange">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.399l-.395.016-.089-.416 2.414-.528h.005z" />
-            </svg>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-value">{{ formatNumber(dashboardData.stats.pendingOrders) }}</div>
-            <div class="kpi-label">{{ t('wms.clientPortal.pendingOrders', '保留中') }}</div>
-          </div>
-        </div>
+        <Card class="kpi-card">
+          <CardContent class="kpi-card-inner">
+            <div class="kpi-icon-wrap kpi-icon--orange">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.399l-.395.016-.089-.416 2.414-.528h.005z" />
+              </svg>
+            </div>
+            <div class="kpi-content">
+              <div class="kpi-value">{{ formatNumber(dashboardData.stats.pendingOrders) }}</div>
+              <div class="kpi-label">{{ t('wms.clientPortal.pendingOrders', '保留中') }}</div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <div class="kpi-card o-card">
-          <div class="kpi-icon-wrap kpi-icon--purple">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4zm3.391-3.836c-1.043-.263-1.6-.825-1.6-1.616 0-.944.704-1.641 1.8-1.828v3.495l-.2-.05zm1.591 1.872c1.287.323 1.852.859 1.852 1.769 0 1.097-.826 1.828-2.2 1.939V8.73l.348.086z" />
-            </svg>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-value">{{ formatCurrency(dashboardData.stats.totalShippingCost) }}</div>
-            <div class="kpi-label">{{ t('wms.clientPortal.totalShippingCost', '配送料金合計') }}</div>
-          </div>
-        </div>
+        <Card class="kpi-card">
+          <CardContent class="kpi-card-inner">
+            <div class="kpi-icon-wrap kpi-icon--purple">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4zm3.391-3.836c-1.043-.263-1.6-.825-1.6-1.616 0-.944.704-1.641 1.8-1.828v3.495l-.2-.05zm1.591 1.872c1.287.323 1.852.859 1.852 1.769 0 1.097-.826 1.828-2.2 1.939V8.73l.348.086z" />
+              </svg>
+            </div>
+            <div class="kpi-content">
+              <div class="kpi-value">{{ formatCurrency(dashboardData.stats.totalShippingCost) }}</div>
+              <div class="kpi-label">{{ t('wms.clientPortal.totalShippingCost', '配送料金合計') }}</div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <!-- 最近の出荷 / 最近出荷 -->
       <h2 class="section-title">{{ t('wms.clientPortal.recentOrders', '最近の出荷') }}</h2>
-      <div class="o-card table-card">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th>{{ t('wms.ui.orderNumber', '注文番号') }}</th>
-              <th>{{ t('wms.clientPortal.quantity', '個数') }}</th>
-              <th>{{ t('wms.clientPortal.shippingCost', '配送料') }}</th>
-              <th>{{ t('wms.clientPortal.shippedAt', '出荷日') }}</th>
-              <th>{{ t('wms.ui.shipPlanDate', '出荷予定日') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="order in dashboardData.recentOrders" :key="order._id">
-              <td>{{ order.orderNumber || '-' }}</td>
-              <td>{{ order._productsMeta?.totalQuantity ?? '-' }}</td>
-              <td>{{ order.shippingCost != null ? formatCurrency(order.shippingCost) : '-' }}</td>
-              <td>{{ order.statusShippedAt ? formatDate(order.statusShippedAt) : '-' }}</td>
-              <td>{{ order.shipPlanDate || '-' }}</td>
-            </tr>
-            <tr v-if="dashboardData.recentOrders.length === 0">
-              <td colspan="5" class="empty-row">{{ t('wms.ui.noData', 'データがありません') }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <Card class="table-card">
+        <CardContent class="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{{ t('wms.ui.orderNumber', '注文番号') }}</TableHead>
+                <TableHead>{{ t('wms.clientPortal.quantity', '個数') }}</TableHead>
+                <TableHead>{{ t('wms.clientPortal.shippingCost', '配送料') }}</TableHead>
+                <TableHead>{{ t('wms.clientPortal.shippedAt', '出荷日') }}</TableHead>
+                <TableHead>{{ t('wms.ui.shipPlanDate', '出荷予定日') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="order in dashboardData.recentOrders" :key="order._id">
+                <TableCell>{{ order.orderNumber || '-' }}</TableCell>
+                <TableCell>{{ order._productsMeta?.totalQuantity ?? '-' }}</TableCell>
+                <TableCell>{{ order.shippingCost != null ? formatCurrency(order.shippingCost) : '-' }}</TableCell>
+                <TableCell>{{ order.statusShippedAt ? formatDate(order.statusShippedAt) : '-' }}</TableCell>
+                <TableCell>{{ order.shipPlanDate || '-' }}</TableCell>
+              </TableRow>
+              <TableRow v-if="dashboardData.recentOrders.length === 0">
+                <TableCell colspan="5" class="empty-row">{{ t('wms.ui.noData', 'データがありません') }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <!-- 請求書 / 发票 -->
       <h2 class="section-title">{{ t('wms.clientPortal.recentInvoices', '最近の請求書') }}</h2>
-      <div class="o-card table-card">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th>{{ t('wms.clientPortal.invoiceNumber', '請求書番号') }}</th>
-              <th>{{ t('wms.clientPortal.period', '対象期間') }}</th>
-              <th>{{ t('wms.clientPortal.issueDate', '発行日') }}</th>
-              <th>{{ t('wms.clientPortal.dueDate', '支払期限') }}</th>
-              <th>{{ t('wms.clientPortal.amount', '金額') }}</th>
-              <th>{{ t('wms.ui.status', 'ステータス') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="inv in dashboardData.invoices" :key="inv._id">
-              <td>{{ inv.invoiceNumber }}</td>
-              <td>{{ inv.period }}</td>
-              <td>{{ formatDate(inv.issueDate) }}</td>
-              <td>{{ formatDate(inv.dueDate) }}</td>
-              <td>{{ formatCurrency(inv.totalAmount) }}</td>
-              <td>
-                <span :class="['status-badge', `status-${inv.status}`]">
-                  {{ invoiceStatusLabel(inv.status) }}
-                </span>
-              </td>
-            </tr>
-            <tr v-if="dashboardData.invoices.length === 0">
-              <td colspan="6" class="empty-row">{{ t('wms.ui.noData', 'データがありません') }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <Card class="table-card">
+        <CardContent class="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{{ t('wms.clientPortal.invoiceNumber', '請求書番号') }}</TableHead>
+                <TableHead>{{ t('wms.clientPortal.period', '対象期間') }}</TableHead>
+                <TableHead>{{ t('wms.clientPortal.issueDate', '発行日') }}</TableHead>
+                <TableHead>{{ t('wms.clientPortal.dueDate', '支払期限') }}</TableHead>
+                <TableHead>{{ t('wms.clientPortal.amount', '金額') }}</TableHead>
+                <TableHead>{{ t('wms.ui.status', 'ステータス') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="inv in dashboardData.invoices" :key="inv._id">
+                <TableCell>{{ inv.invoiceNumber }}</TableCell>
+                <TableCell>{{ inv.period }}</TableCell>
+                <TableCell>{{ formatDate(inv.issueDate) }}</TableCell>
+                <TableCell>{{ formatDate(inv.dueDate) }}</TableCell>
+                <TableCell>{{ formatCurrency(inv.totalAmount) }}</TableCell>
+                <TableCell>
+                  <span :class="['status-badge', `status-${inv.status}`]">
+                    {{ invoiceStatusLabel(inv.status) }}
+                  </span>
+                </TableCell>
+              </TableRow>
+              <TableRow v-if="dashboardData.invoices.length === 0">
+                <TableCell colspan="6" class="empty-row">{{ t('wms.ui.noData', 'データがありません') }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
       <!-- 追跡番号検索 / 追踪号查询 -->
       <h2 class="section-title">{{ t('wms.clientPortal.trackingSearch', '出荷追跡') }}</h2>
-      <div class="o-card search-card">
+      <Card class="search-card">
+        <CardContent class="p-4">
         <div class="tracking-search-row">
           <input
             v-model="trackingQuery"
             type="text"
-            class="o-input tracking-input"
+            class="tracking-input"
             :placeholder="t('wms.clientPortal.trackingPlaceholder', '注文番号・追跡番号・管理番号で検索...')"
             @keydown.enter="handleTrackingSearch"
           />
-          <button class="search-btn" @click="handleTrackingSearch" :disabled="trackingLoading">
+          <Button class="search-btn" @click="handleTrackingSearch" :disabled="trackingLoading">
             {{ trackingLoading ? '...' : t('wms.common.search', '検索') }}
-          </button>
+          </Button>
         </div>
         <div v-if="trackingResults.length > 0" class="tracking-results">
-          <table class="o-table">
-            <thead>
-              <tr>
-                <th>{{ t('wms.ui.orderNumber', '注文番号') }}</th>
-                <th>{{ t('wms.clientPortal.trackingId', '追跡番号') }}</th>
-                <th>{{ t('wms.clientPortal.recipient', '届け先') }}</th>
-                <th>{{ t('wms.ui.status', 'ステータス') }}</th>
-                <th>{{ t('wms.clientPortal.shippedAt', '出荷日') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="r in trackingResults" :key="r.orderNumber">
-                <td>{{ r.orderNumber }}</td>
-                <td class="mono">{{ r.trackingId || '-' }}</td>
-                <td>{{ r.recipient }}</td>
-                <td><span :class="['status-badge', r.status === '出荷済' ? 'status-shipped' : 'status-pending']">{{ r.status }}</span></td>
-                <td>{{ r.shippedAt ? formatDate(r.shippedAt) : '-' }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{{ t('wms.ui.orderNumber', '注文番号') }}</TableHead>
+                <TableHead>{{ t('wms.clientPortal.trackingId', '追跡番号') }}</TableHead>
+                <TableHead>{{ t('wms.clientPortal.recipient', '届け先') }}</TableHead>
+                <TableHead>{{ t('wms.ui.status', 'ステータス') }}</TableHead>
+                <TableHead>{{ t('wms.clientPortal.shippedAt', '出荷日') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="r in trackingResults" :key="r.orderNumber">
+                <TableCell>{{ r.orderNumber }}</TableCell>
+                <TableCell class="mono">{{ r.trackingId || '-' }}</TableCell>
+                <TableCell>{{ r.recipient }}</TableCell>
+                <TableCell><span :class="['status-badge', r.status === '出荷済' ? 'status-shipped' : 'status-pending']">{{ r.status }}</span></TableCell>
+                <TableCell>{{ r.shippedAt ? formatDate(r.shippedAt) : '-' }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
         <div v-else-if="trackingSearched && !trackingLoading" class="empty-hint">
           {{ t('wms.clientPortal.noTrackingResults', '該当する出荷情報が見つかりませんでした') }}
         </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <!-- 在庫状況 / 库存状况 -->
       <h2 class="section-title">{{ t('wms.clientPortal.stockStatus', '在庫状況') }}</h2>
-      <div class="o-card table-card">
-        <div v-if="stockLoading" class="loading-hint">{{ t('wms.ui.loading', '読み込み中...') }}</div>
-        <table v-else class="o-table">
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>{{ t('wms.clientPortal.productName', '商品名') }}</th>
-              <th class="text-right">{{ t('wms.clientPortal.totalStock', '在庫数') }}</th>
-              <th class="text-right">{{ t('wms.clientPortal.reserved', '引当済') }}</th>
-              <th class="text-right">{{ t('wms.clientPortal.available', '利用可能') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in stockItems" :key="item.productSku">
-              <td class="mono">{{ item.productSku }}</td>
-              <td>{{ item.productName }}</td>
-              <td class="text-right">{{ formatNumber(item.quantity) }}</td>
-              <td class="text-right">{{ formatNumber(item.reservedQuantity) }}</td>
-              <td class="text-right" style="font-weight:600;color:#67c23a;">{{ formatNumber(item.availableQuantity) }}</td>
-            </tr>
-            <tr v-if="stockItems.length === 0">
-              <td colspan="5" class="empty-row">{{ t('wms.ui.noData', 'データがありません') }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <Card class="table-card">
+        <CardContent class="p-0">
+          <div v-if="stockLoading" class="space-y-3 p-4">
+            <Skeleton class="h-4 w-[250px]" />
+            <Skeleton class="h-10 w-full" />
+            <Skeleton class="h-10 w-full" />
+          </div>
+          <Table v-else>
+            <TableHeader>
+              <TableRow>
+                <TableHead>SKU</TableHead>
+                <TableHead>{{ t('wms.clientPortal.productName', '商品名') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.clientPortal.totalStock', '在庫数') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.clientPortal.reserved', '引当済') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.clientPortal.available', '利用可能') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="item in stockItems" :key="item.productSku">
+                <TableCell class="mono">{{ item.productSku }}</TableCell>
+                <TableCell>{{ item.productName }}</TableCell>
+                <TableCell class="text-right">{{ formatNumber(item.quantity) }}</TableCell>
+                <TableCell class="text-right">{{ formatNumber(item.reservedQuantity) }}</TableCell>
+                <TableCell class="text-right" style="font-weight:600;color:#67c23a;">{{ formatNumber(item.availableQuantity) }}</TableCell>
+              </TableRow>
+              <TableRow v-if="stockItems.length === 0">
+                <TableCell colspan="5" class="empty-row">{{ t('wms.ui.noData', 'データがありません') }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </template>
   </div>
 </template>
@@ -228,6 +250,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { fetchClientDashboard, fetchClientStock, searchTracking, type ClientPortalDashboard, type ClientStockItem, type TrackingResult } from '@/api/clientPortal'
 
 const { t } = useI18n()

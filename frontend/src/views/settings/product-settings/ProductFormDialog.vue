@@ -1,14 +1,8 @@
 <template>
-  <ODialog
-    :open="dialogVisible"
-    size="xl"
-    @close="handleClose"
-  >
-    <template #title>
-      {{ title }}
-    </template>
-
-    <div class="o-sheet-scroll">
+  <Dialog :open="dialogVisible" @update:open="val => { if (!val) { handleClose() } }">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ title }}</DialogTitle></DialogHeader>
+<div class="o-sheet-scroll">
       <div class="o-sheet">
         <!-- Top fields (2-column grid) -->
         <div class="o-top-fields">
@@ -17,55 +11,65 @@
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.skuCode', 'SKU管理番号') }} <span class="required-badge">{{ t('wms.common.required', '必須') }}</span></label>
               <div class="o-field-value">
-                <input class="o-inline-input" :value="formData.sku" @input="(e: Event) => formData.sku = (e.target as HTMLInputElement).value" :placeholder="t('wms.product.skuPlaceholder', '半角英数字')" />
+                <Input :model-value="formData.sku" @update:model-value="val => formData.sku = val" :placeholder="t('wms.product.skuPlaceholder', '半角英数字')" />
               </div>
             </div>
             <!-- 印刷用商品名 -->
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.printName', '印刷用商品名') }} <span class="required-badge">{{ t('wms.common.required', '必須') }}</span></label>
               <div class="o-field-value">
-                <input class="o-inline-input" :value="formData.name" @input="(e: Event) => formData.name = (e.target as HTMLInputElement).value" :placeholder="t('wms.product.printNamePlaceholder', '印刷に使用する商品名')" />
+                <Input :model-value="formData.name" @update:model-value="val => formData.name = val" :placeholder="t('wms.product.printNamePlaceholder', '印刷に使用する商品名')" />
               </div>
             </div>
             <!-- 商品名 -->
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.productName', '商品名') }}</label>
               <div class="o-field-value">
-                <input class="o-inline-input" :value="formData.nameFull" @input="(e: Event) => formData.nameFull = (e.target as HTMLInputElement).value" :placeholder="t('wms.product.productNamePlaceholder', '正式商品名')" />
+                <Input :model-value="formData.nameFull" @update:model-value="val => formData.nameFull = val" :placeholder="t('wms.product.productNamePlaceholder', '正式商品名')" />
               </div>
             </div>
             <!-- クール区分 -->
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.coolType', 'クール区分') }}</label>
               <div class="o-field-value">
-                <select class="o-inline-input" :value="formData.coolType" @change="(e: Event) => formData.coolType = (e.target as HTMLSelectElement).value">
-                  <option value="">{{ t('wms.common.pleaseSelect', '選択してください') }}</option>
-                  <option v-for="opt in COOL_TYPE_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                </select>
+                <Select :model-value="formData.coolType || '__none__'" @update:model-value="val => formData.coolType = val === '__none__' ? '' : val">
+                  <SelectTrigger class="w-full">
+                    <SelectValue :placeholder="t('wms.common.pleaseSelect', '選択してください')" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">{{ t('wms.common.pleaseSelect', '選択してください') }}</SelectItem>
+                    <SelectItem v-for="opt in COOL_TYPE_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <!-- カテゴリー -->
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.category', 'カテゴリー') }}</label>
               <div class="o-field-value">
-                <select class="o-inline-input" :value="formData.category" @change="(e: Event) => formData.category = (e.target as HTMLSelectElement).value">
-                  <option value="">{{ t('wms.common.pleaseSelect', '選択してください') }}</option>
-                  <option v-for="opt in CATEGORY_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                </select>
+                <Select :model-value="formData.category || '__none__'" @update:model-value="val => formData.category = val === '__none__' ? '' : val">
+                  <SelectTrigger class="w-full">
+                    <SelectValue :placeholder="t('wms.common.pleaseSelect', '選択してください')" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">{{ t('wms.common.pleaseSelect', '選択してください') }}</SelectItem>
+                    <SelectItem v-for="opt in CATEGORY_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <!-- JANコード / JAN码 -->
             <div class="o-field-row">
               <label class="o-field-label">JANコード</label>
               <div class="o-field-value">
-                <input class="o-inline-input" :value="formData.janCode" @input="(e: Event) => formData.janCode = (e.target as HTMLInputElement).value" placeholder="4901234567890" />
+                <Input :model-value="formData.janCode" @update:model-value="val => formData.janCode = val" placeholder="4901234567890" />
               </div>
             </div>
             <!-- 仕入先コード / 仕入先代码 -->
             <div class="o-field-row">
               <label class="o-field-label">仕入先コード</label>
               <div class="o-field-value">
-                <input class="o-inline-input" :value="formData.supplierCode" @input="(e: Event) => formData.supplierCode = (e.target as HTMLInputElement).value" placeholder="仕入先コード" />
+                <Input :model-value="formData.supplierCode" @update:model-value="val => formData.supplierCode = val" placeholder="仕入先コード" />
               </div>
             </div>
           </div>
@@ -74,21 +78,25 @@
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.mailCalc', 'メール便計算') }} <span class="required-badge">{{ t('wms.common.required', '必須') }}</span></label>
               <div class="o-field-value">
-                <select class="o-inline-input" :value="String(formData.mailCalcEnabled)" @change="(e: Event) => formData.mailCalcEnabled = (e.target as HTMLSelectElement).value === 'true'">
-                  <option value="false">{{ t('wms.common.disabled', 'しない') }}</option>
-                  <option value="true">{{ t('wms.common.enabled', 'する') }}</option>
-                </select>
+                <Select :model-value="String(formData.mailCalcEnabled)" @update:model-value="val => formData.mailCalcEnabled = val === 'true'">
+                  <SelectTrigger class="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="false">{{ t('wms.common.disabled', 'しない') }}</SelectItem>
+                    <SelectItem value="true">{{ t('wms.common.enabled', 'する') }}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <!-- メール便最大数量 -->
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.mailCalcMaxQty', 'メール便最大数量') }}</label>
               <div class="o-field-value">
-                <input
-                  class="o-inline-input"
+                <Input
                   type="number"
-                  :value="formData.mailCalcMaxQuantity"
-                  @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.mailCalcMaxQuantity = v === '' ? undefined : Number(v) }"
+                  :model-value="formData.mailCalcMaxQuantity"
+                  @update:model-value="v => formData.mailCalcMaxQuantity = v === '' ? undefined : Number(v)"
                   :disabled="!formData.mailCalcEnabled"
                   :placeholder="formData.mailCalcEnabled ? t('wms.product.mailCalcMaxQtyPlaceholder', '最大数量を入力') : '-'"
                   :min="1"
@@ -99,11 +107,10 @@
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.price', '商品金額') }}</label>
               <div class="o-field-value">
-                <input
-                  class="o-inline-input"
+                <Input
                   type="number"
-                  :value="formData.price"
-                  @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.price = v === '' ? undefined : Number(v) }"
+                  :model-value="formData.price"
+                  @update:model-value="v => formData.price = v === '' ? undefined : Number(v)"
                   :placeholder="t('wms.product.pricePlaceholder', '金額')"
                 />
               </div>
@@ -112,11 +119,10 @@
             <div class="o-field-row">
               <label class="o-field-label">原価（仕入単価）</label>
               <div class="o-field-value">
-                <input
-                  class="o-inline-input"
+                <Input
                   type="number"
-                  :value="formData.costPrice"
-                  @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.costPrice = v === '' ? undefined : Number(v) }"
+                  :model-value="formData.costPrice"
+                  @update:model-value="v => formData.costPrice = v === '' ? undefined : Number(v)"
                   placeholder="仕入原価"
                   min="0"
                 />
@@ -126,54 +132,74 @@
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.memo', 'メモ') }}</label>
               <div class="o-field-value">
-                <input class="o-inline-input" :value="formData.memo" @input="(e: Event) => formData.memo = (e.target as HTMLInputElement).value" :placeholder="t('wms.product.memo', 'メモ')" />
+                <Input :model-value="formData.memo" @update:model-value="val => formData.memo = val" :placeholder="t('wms.product.memo', 'メモ')" />
               </div>
             </div>
             <!-- 在庫管理 -->
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.inventoryManagement', '在庫管理') }}</label>
               <div class="o-field-value">
-                <select class="o-inline-input" :value="String(formData.inventoryEnabled)" @change="(e: Event) => formData.inventoryEnabled = (e.target as HTMLSelectElement).value === 'true'">
-                  <option value="false">{{ t('wms.common.disabled', 'しない') }}</option>
-                  <option value="true">{{ t('wms.common.enabled', 'する') }}</option>
-                </select>
+                <Select :model-value="String(formData.inventoryEnabled)" @update:model-value="val => formData.inventoryEnabled = val === 'true'">
+                  <SelectTrigger class="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="false">{{ t('wms.common.disabled', 'しない') }}</SelectItem>
+                    <SelectItem value="true">{{ t('wms.common.enabled', 'する') }}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <!-- シリアルNo管理 -->
             <div class="o-field-row">
               <label class="o-field-label">{{ t('wms.product.serialTracking', 'シリアルNo管理') }}</label>
               <div class="o-field-value">
-                <select class="o-inline-input" :value="String(formData.serialTrackingEnabled)" @change="(e: Event) => formData.serialTrackingEnabled = (e.target as HTMLSelectElement).value === 'true'">
-                  <option value="false">{{ t('wms.common.disabled', 'しない') }}</option>
-                  <option value="true">{{ t('wms.common.enabled', 'する') }}</option>
-                </select>
+                <Select :model-value="String(formData.serialTrackingEnabled)" @update:model-value="val => formData.serialTrackingEnabled = val === 'true'">
+                  <SelectTrigger class="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="false">{{ t('wms.common.disabled', 'しない') }}</SelectItem>
+                    <SelectItem value="true">{{ t('wms.common.enabled', 'する') }}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <!-- ロット管理 / 批次管理 -->
             <div class="o-field-row">
               <label class="o-field-label">ロット管理</label>
               <div class="o-field-value">
-                <select class="o-inline-input" :value="String(formData.lotTrackingEnabled)" @change="(e: Event) => formData.lotTrackingEnabled = (e.target as HTMLSelectElement).value === 'true'">
-                  <option value="false">しない</option>
-                  <option value="true">する</option>
-                </select>
+                <Select :model-value="String(formData.lotTrackingEnabled)" @update:model-value="val => formData.lotTrackingEnabled = val === 'true'">
+                  <SelectTrigger class="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="false">しない</SelectItem>
+                    <SelectItem value="true">する</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <!-- 賞味期限管理 / 保质期管理 -->
             <div class="o-field-row">
               <label class="o-field-label">賞味期限管理</label>
               <div class="o-field-value">
-                <select class="o-inline-input" :value="String(formData.expiryTrackingEnabled)" @change="(e: Event) => formData.expiryTrackingEnabled = (e.target as HTMLSelectElement).value === 'true'">
-                  <option value="false">しない</option>
-                  <option value="true">する</option>
-                </select>
+                <Select :model-value="String(formData.expiryTrackingEnabled)" @update:model-value="val => formData.expiryTrackingEnabled = val === 'true'">
+                  <SelectTrigger class="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="false">しない</SelectItem>
+                    <SelectItem value="true">する</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <!-- 安全在庫数 / 安全库存 -->
             <div class="o-field-row">
               <label class="o-field-label">安全在庫数</label>
               <div class="o-field-value">
-                <input class="o-inline-input" type="number" :value="formData.safetyStock" @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.safetyStock = v === '' ? undefined : Number(v) }" placeholder="最小在庫数" min="0" />
+                <Input type="number" :model-value="formData.safetyStock" @update:model-value="v => formData.safetyStock = v === '' ? undefined : Number(v)" placeholder="最小在庫数" min="0" />
               </div>
             </div>
           </div>
@@ -182,85 +208,85 @@
         <!-- Notebook tabs -->
         <div class="o-notebook">
           <div class="o-notebook-tabs">
-            <button :class="{ active: activeTab === 'barcode' }" @click="activeTab = 'barcode'">{{ t('wms.product.tabBarcode', '検品コード') }}</button>
-            <button :class="{ active: activeTab === 'handling' }" @click="activeTab = 'handling'">{{ t('wms.product.tabHandling', '荷扱い') }}</button>
-            <button :class="{ active: activeTab === 'image' }" @click="activeTab = 'image'">{{ t('wms.product.tabImage', '商品画像') }}</button>
-            <button :class="{ active: activeTab === 'subsku' }" @click="activeTab = 'subsku'">
+            <Button :class="{ active: activeTab === 'barcode' }" @click="activeTab = 'barcode'">{{ t('wms.product.tabBarcode', '検品コード') }}</Button>
+            <Button :class="{ active: activeTab === 'handling' }" @click="activeTab = 'handling'">{{ t('wms.product.tabHandling', '荷扱い') }}</Button>
+            <Button :class="{ active: activeTab === 'image' }" @click="activeTab = 'image'">{{ t('wms.product.tabImage', '商品画像') }}</Button>
+            <Button :class="{ active: activeTab === 'subsku' }" @click="activeTab = 'subsku'">
               {{ t('wms.product.tabSubSku', '子SKU') }}
               <span v-if="editDialogSubSkus.length > 0" class="o-tab-count-badge">{{ editDialogSubSkus.length }}</span>
-            </button>
-            <button :class="{ active: activeTab === 'dimensions' }" @click="activeTab = 'dimensions'">{{ t('wms.product.tabDimensions', '物流情報') }}</button>
-            <button :class="{ active: activeTab === 'custom' }" @click="activeTab = 'custom'">{{ t('wms.product.tabCustomFields', '独自フィールド') }}</button>
-            <button :class="{ active: activeTab === 'advanced' }" @click="activeTab = 'advanced'">{{ t('wms.product.tabAdvanced', '詳細設定') }}</button>
+            </Button>
+            <Button :class="{ active: activeTab === 'dimensions' }" @click="activeTab = 'dimensions'">{{ t('wms.product.tabDimensions', '物流情報') }}</Button>
+            <Button :class="{ active: activeTab === 'custom' }" @click="activeTab = 'custom'">{{ t('wms.product.tabCustomFields', '独自フィールド') }}</Button>
+            <Button :class="{ active: activeTab === 'advanced' }" @click="activeTab = 'advanced'">{{ t('wms.product.tabAdvanced', '詳細設定') }}</Button>
           </div>
 
           <div class="o-notebook-page">
             <!-- 検品コード tab -->
             <template v-if="activeTab === 'barcode'">
-              <table class="o-lines-table">
-                <thead>
-                  <tr>
-                    <th>{{ t('wms.product.barcode', 'バーコード') }}</th>
-                    <th style="width:50px;"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(item, index) in barcodeArray" :key="index">
-                    <td>
-                      <input class="o-inline-input" :value="item" @input="(e: Event) => updateBarcode(index, (e.target as HTMLInputElement).value)" :placeholder="t('wms.product.barcodePlaceholder', 'バーコードを入力')" />
-                    </td>
-                    <td style="text-align:center;">
-                      <OButton variant="icon-danger" @click="removeBarcode(index)" :title="t('wms.common.delete', '削除')">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{{ t('wms.product.barcode', 'バーコード') }}</TableHead>
+                    <TableHead style="width:50px;"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="(item, index) in barcodeArray" :key="index">
+                    <TableCell>
+                      <Input :model-value="item" @update:model-value="val => updateBarcode(index, val)" :placeholder="t('wms.product.barcodePlaceholder', 'バーコードを入力')" />
+                    </TableCell>
+                    <TableCell style="text-align:center;">
+                      <Button variant="destructive" size="sm" @click="removeBarcode(index)" :title="t('wms.common.delete', '削除')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                      </OButton>
-                    </td>
-                  </tr>
-                </tbody>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
                 <tfoot>
-                  <tr>
-                    <td colspan="2">
-                      <button class="o-add-line-btn" @click="addBarcode">
+                  <TableRow>
+                    <TableCell colspan="2">
+                      <Button class="o-add-line-btn" @click="addBarcode">
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
                         {{ t('wms.product.addBarcode', 'バーコードを追加') }}
-                      </button>
-                    </td>
-                  </tr>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 </tfoot>
-              </table>
+              </Table>
             </template>
 
             <!-- 荷扱い tab -->
             <template v-if="activeTab === 'handling'">
-              <table class="o-lines-table">
-                <thead>
-                  <tr>
-                    <th>{{ t('wms.product.handlingType', '荷扱い区分') }}</th>
-                    <th style="width:50px;"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(item, index) in handlingTypesArray" :key="index">
-                    <td>
-                      <input class="o-inline-input" :value="item" @input="(e: Event) => updateHandlingType(index, (e.target as HTMLInputElement).value)" :placeholder="t('wms.product.handlingTypePlaceholder', '荷扱い区分を入力')" />
-                    </td>
-                    <td style="text-align:center;">
-                      <OButton variant="icon-danger" @click="removeHandlingType(index)" :title="t('wms.common.delete', '削除')">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{{ t('wms.product.handlingType', '荷扱い区分') }}</TableHead>
+                    <TableHead style="width:50px;"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="(item, index) in handlingTypesArray" :key="index">
+                    <TableCell>
+                      <Input :model-value="item" @update:model-value="val => updateHandlingType(index, val)" :placeholder="t('wms.product.handlingTypePlaceholder', '荷扱い区分を入力')" />
+                    </TableCell>
+                    <TableCell style="text-align:center;">
+                      <Button variant="destructive" size="sm" @click="removeHandlingType(index)" :title="t('wms.common.delete', '削除')">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                      </OButton>
-                    </td>
-                  </tr>
-                </tbody>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
                 <tfoot>
-                  <tr>
-                    <td colspan="2">
-                      <button class="o-add-line-btn" @click="addHandlingType">
+                  <TableRow>
+                    <TableCell colspan="2">
+                      <Button class="o-add-line-btn" @click="addHandlingType">
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
                         {{ t('wms.product.addHandling', '荷扱いを追加') }}
-                      </button>
-                    </td>
-                  </tr>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
                 </tfoot>
-              </table>
+              </Table>
             </template>
 
             <!-- 商品画像 tab -->
@@ -289,38 +315,38 @@
                 <div class="o-field-row">
                   <label class="o-field-label">{{ t('wms.product.width', '幅') }} (mm)</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" type="number" :value="formData.width" @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.width = v === '' ? undefined : Number(v) }" :placeholder="t('wms.product.width', '幅')" min="0" step="0.1" />
+                    <Input type="number" :model-value="formData.width" @update:model-value="v => formData.width = v === '' ? undefined : Number(v)" :placeholder="t('wms.product.width', '幅')" min="0" step="0.1" />
                   </div>
                 </div>
                 <div class="o-field-row">
                   <label class="o-field-label">{{ t('wms.product.depth', '奥行') }} (mm)</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" type="number" :value="formData.depth" @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.depth = v === '' ? undefined : Number(v) }" :placeholder="t('wms.product.depth', '奥行')" min="0" step="0.1" />
+                    <Input type="number" :model-value="formData.depth" @update:model-value="v => formData.depth = v === '' ? undefined : Number(v)" :placeholder="t('wms.product.depth', '奥行')" min="0" step="0.1" />
                   </div>
                 </div>
                 <div class="o-field-row">
                   <label class="o-field-label">{{ t('wms.product.height', '高さ') }} (mm)</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" type="number" :value="formData.height" @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.height = v === '' ? undefined : Number(v) }" :placeholder="t('wms.product.height', '高さ')" min="0" step="0.1" />
+                    <Input type="number" :model-value="formData.height" @update:model-value="v => formData.height = v === '' ? undefined : Number(v)" :placeholder="t('wms.product.height', '高さ')" min="0" step="0.1" />
                   </div>
                 </div>
                 <div class="o-field-row">
                   <label class="o-field-label">{{ t('wms.product.weight', '重量') }} (g)</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" type="number" :value="formData.weight" @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.weight = v === '' ? undefined : Number(v) }" :placeholder="t('wms.product.weight', '重量')" min="0" step="0.1" />
+                    <Input type="number" :model-value="formData.weight" @update:model-value="v => formData.weight = v === '' ? undefined : Number(v)" :placeholder="t('wms.product.weight', '重量')" min="0" step="0.1" />
                   </div>
                 </div>
                 <div class="o-field-row">
                   <label class="o-field-label">箱入数 (ケース)</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" type="number" :value="formData.caseQuantity" @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.caseQuantity = v === '' ? undefined : Number(v) }" placeholder="1ケースあたりの個数" min="1" />
+                    <Input type="number" :model-value="formData.caseQuantity" @update:model-value="v => formData.caseQuantity = v === '' ? undefined : Number(v)" placeholder="1ケースあたりの個数" min="1" />
                   </div>
                 </div>
                 <!-- デフォルト荷扱い / 默认荷扱い -->
                 <div class="o-field-row">
                   <label class="o-field-label">デフォルト荷扱い</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" :value="(formData.defaultHandlingTags || []).join(', ')" @input="(e: Event) => formData.defaultHandlingTags = (e.target as HTMLInputElement).value.split(',').map((s: string) => s.trim()).filter(Boolean)" placeholder="ワレモノ, 天地無用" />
+                    <Input :model-value="(formData.defaultHandlingTags || []).join(', ')" @update:model-value="val => formData.defaultHandlingTags = val.split(',').map((s: string) => s.trim()).filter(Boolean)" placeholder="ワレモノ, 天地無用" />
                     <div style="font-size:11px;color:#909399;margin-top:2px;">カンマ区切りで入力</div>
                   </div>
                 </div>
@@ -328,36 +354,41 @@
                 <div class="o-field-row" v-if="formData.expiryTrackingEnabled">
                   <label class="o-field-label">期限アラート日数</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" type="number" :value="formData.alertDaysBeforeExpiry" @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.alertDaysBeforeExpiry = v === '' ? undefined : Number(v) }" placeholder="期限切れの何日前に警告" min="1" />
+                    <Input type="number" :model-value="formData.alertDaysBeforeExpiry" @update:model-value="v => formData.alertDaysBeforeExpiry = v === '' ? undefined : Number(v)" placeholder="期限切れの何日前に警告" min="1" />
                   </div>
                 </div>
                 <!-- FBA設定 / FBA设置 -->
                 <div class="o-field-row">
                   <label class="o-field-label">FBA対応</label>
                   <div class="o-field-value">
-                    <select class="o-inline-input" :value="String(formData.fbaEnabled)" @change="(e: Event) => formData.fbaEnabled = (e.target as HTMLSelectElement).value === 'true'">
-                      <option value="false">しない</option>
-                      <option value="true">する</option>
-                    </select>
+                    <Select :model-value="String(formData.fbaEnabled)" @update:model-value="val => formData.fbaEnabled = val === 'true'">
+                      <SelectTrigger class="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="false">しない</SelectItem>
+                        <SelectItem value="true">する</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <template v-if="formData.fbaEnabled">
                   <div class="o-field-row">
                     <label class="o-field-label">FNSKU</label>
                     <div class="o-field-value">
-                      <input class="o-inline-input" :value="formData.fnsku" @input="(e: Event) => formData.fnsku = (e.target as HTMLInputElement).value" placeholder="X00XXXXXXX" />
+                      <Input :model-value="formData.fnsku" @update:model-value="val => formData.fnsku = val" placeholder="X00XXXXXXX" />
                     </div>
                   </div>
                   <div class="o-field-row">
                     <label class="o-field-label">ASIN</label>
                     <div class="o-field-value">
-                      <input class="o-inline-input" :value="formData.asin" @input="(e: Event) => formData.asin = (e.target as HTMLInputElement).value" placeholder="B0XXXXXXXX" />
+                      <Input :model-value="formData.asin" @update:model-value="val => formData.asin = val" placeholder="B0XXXXXXXX" />
                     </div>
                   </div>
                   <div class="o-field-row">
                     <label class="o-field-label">Amazon出品者SKU</label>
                     <div class="o-field-value">
-                      <input class="o-inline-input" :value="formData.amazonSku" @input="(e: Event) => formData.amazonSku = (e.target as HTMLInputElement).value" />
+                      <Input :model-value="formData.amazonSku" @update:model-value="val => formData.amazonSku = val" />
                     </div>
                   </div>
                 </template>
@@ -365,17 +396,22 @@
                 <div class="o-field-row">
                   <label class="o-field-label">RSL対応</label>
                   <div class="o-field-value">
-                    <select class="o-inline-input" :value="String(formData.rslEnabled)" @change="(e: Event) => formData.rslEnabled = (e.target as HTMLSelectElement).value === 'true'">
-                      <option value="false">しない</option>
-                      <option value="true">する</option>
-                    </select>
+                    <Select :model-value="String(formData.rslEnabled)" @update:model-value="val => formData.rslEnabled = val === 'true'">
+                      <SelectTrigger class="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="false">しない</SelectItem>
+                        <SelectItem value="true">する</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <template v-if="formData.rslEnabled">
                   <div class="o-field-row">
                     <label class="o-field-label">楽天SKU</label>
                     <div class="o-field-value">
-                      <input class="o-inline-input" :value="formData.rakutenSku" @input="(e: Event) => formData.rakutenSku = (e.target as HTMLInputElement).value" placeholder="楽天SKUコード" />
+                      <Input :model-value="formData.rakutenSku" @update:model-value="val => formData.rakutenSku = val" placeholder="楽天SKUコード" />
                     </div>
                   </div>
                 </template>
@@ -388,25 +424,25 @@
                 <div class="o-field-row">
                   <label class="o-field-label">{{ t('wms.product.customField1', '独自フィールド1') }}</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" :value="formData.customField1" @input="(e: Event) => formData.customField1 = (e.target as HTMLInputElement).value" :placeholder="t('wms.product.customField1', '独自フィールド1')" />
+                    <Input :model-value="formData.customField1" @update:model-value="val => formData.customField1 = val" :placeholder="t('wms.product.customField1', '独自フィールド1')" />
                   </div>
                 </div>
                 <div class="o-field-row">
                   <label class="o-field-label">{{ t('wms.product.customField2', '独自フィールド2') }}</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" :value="formData.customField2" @input="(e: Event) => formData.customField2 = (e.target as HTMLInputElement).value" :placeholder="t('wms.product.customField2', '独自フィールド2')" />
+                    <Input :model-value="formData.customField2" @update:model-value="val => formData.customField2 = val" :placeholder="t('wms.product.customField2', '独自フィールド2')" />
                   </div>
                 </div>
                 <div class="o-field-row">
                   <label class="o-field-label">{{ t('wms.product.customField3', '独自フィールド3') }}</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" :value="formData.customField3" @input="(e: Event) => formData.customField3 = (e.target as HTMLInputElement).value" :placeholder="t('wms.product.customField3', '独自フィールド3')" />
+                    <Input :model-value="formData.customField3" @update:model-value="val => formData.customField3 = val" :placeholder="t('wms.product.customField3', '独自フィールド3')" />
                   </div>
                 </div>
                 <div class="o-field-row">
                   <label class="o-field-label">{{ t('wms.product.customField4', '独自フィールド4') }}</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" :value="formData.customField4" @input="(e: Event) => formData.customField4 = (e.target as HTMLInputElement).value" :placeholder="t('wms.product.customField4', '独自フィールド4')" />
+                    <Input :model-value="formData.customField4" @update:model-value="val => formData.customField4 = val" :placeholder="t('wms.product.customField4', '独自フィールド4')" />
                   </div>
                 </div>
               </div>
@@ -424,31 +460,35 @@
                 <div class="o-field-row">
                   <label class="o-field-label">{{ t('wms.product.nameEn', '英語商品名') }}</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" :value="formData.nameEn" @input="(e: Event) => formData.nameEn = (e.target as HTMLInputElement).value" :placeholder="t('wms.product.nameEnPlaceholder', 'English product name')" />
+                    <Input :model-value="formData.nameEn" @update:model-value="val => formData.nameEn = val" :placeholder="t('wms.product.nameEnPlaceholder', 'English product name')" />
                   </div>
                 </div>
                 <div class="o-field-row">
                   <label class="o-field-label">{{ t('wms.product.countryOfOrigin', '原産国') }}</label>
                   <div class="o-field-value">
-                    <input class="o-inline-input" :value="formData.countryOfOrigin" @input="(e: Event) => formData.countryOfOrigin = (e.target as HTMLInputElement).value" :placeholder="t('wms.product.countryOfOriginPlaceholder', '例: 日本、中国、アメリカ')" />
+                    <Input :model-value="formData.countryOfOrigin" @update:model-value="val => formData.countryOfOrigin = val" :placeholder="t('wms.product.countryOfOriginPlaceholder', '例: 日本、中国、アメリカ')" />
                   </div>
                 </div>
                 <div class="o-field-row">
                   <label class="o-field-label">{{ t('wms.product.allocationRule', '引当規則') }}</label>
                   <div class="o-field-value">
-                    <select class="o-inline-input" :value="formData.allocationRule" @change="(e: Event) => formData.allocationRule = (e.target as HTMLSelectElement).value">
-                      <option v-for="opt in ALLOCATION_RULE_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                    </select>
+                    <Select :model-value="formData.allocationRule" @update:model-value="val => formData.allocationRule = val">
+                      <SelectTrigger class="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem v-for="opt in ALLOCATION_RULE_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div class="o-field-row">
                   <label class="o-field-label">{{ t('wms.product.inboundExpiryDays', '入庫期限日数') }}</label>
                   <div class="o-field-value">
-                    <input
-                      class="o-inline-input"
+                    <Input
                       type="number"
-                      :value="formData.inboundExpiryDays"
-                      @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; formData.inboundExpiryDays = v === '' ? undefined : Number(v) }"
+                      :model-value="formData.inboundExpiryDays"
+                      @update:model-value="v => formData.inboundExpiryDays = v === '' ? undefined : Number(v)"
                       :placeholder="t('wms.product.inboundExpiryDaysPlaceholder', '残り日数がこの値未満なら警告')"
                       min="1"
                     />
@@ -461,33 +501,37 @@
       </div>
     </div>
 
-    <template #footer>
+    <DialogFooter>
       <div class="o-form-footer">
-        <OButton type="button" variant="secondary" @click="handleClose">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-        <OButton
+        <Button type="button" variant="secondary" @click="handleClose">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+        <Button
           type="button"
-          variant="primary"
+          variant="default"
           @click="handleSubmit"
           :disabled="submitting"
         >
           <span v-if="submitting" class="spinner"></span>
           {{ isEditing ? t('wms.common.update', '更新') : t('wms.product.register', '登録') }}
-        </OButton>
+        </Button>
       </div>
-    </template>
-  </ODialog>
+    </DialogFooter>
+  </DialogContent>
+    </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import ProductImageUpload from './ProductImageUpload.vue'
 import SubSkuInlineEditor from './SubSkuInlineEditor.vue'
-import OCustomFields from '@/components/odoo/OCustomFields.vue'
 import type { SubSku } from '@/types/product'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import OCustomFields from '@/components/odoo/OCustomFields.vue'
 
 const COOL_TYPE_OPTIONS = computed(() => [
   { label: t('wms.product.coolTypeNormal', '通常'), value: '0' },

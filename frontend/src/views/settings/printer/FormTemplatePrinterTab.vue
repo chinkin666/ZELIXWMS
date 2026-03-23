@@ -1,125 +1,112 @@
 <template>
   <div class="template-printer-tab">
-    <div v-if="loading" v-loading="true" style="min-height: 200px" />
+    <div v-if="loading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
-    <el-empty v-else-if="templates.length === 0" :description="t('wms.printer.noFormTemplates', '帳票テンプレートがありません')" />
+    <div v-else-if="templates.length === 0" class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+      <p>{{ t('wms.printer.noFormTemplates', '帳票テンプレートがありません') }}</p>
+    </div>
 
     <template v-else>
       <div v-if="printers.length === 0" style="margin-bottom: 12px">
-        <el-alert type="warning" :closable="false" show-icon>
+        <div class="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
           {{ t('wms.printer.noPrintersConnectHint', 'プリンター情報がありません。「接続」タブでサービスに接続してプリンター情報を取得してください。') }}
-        </el-alert>
+        </div>
       </div>
 
-      <el-table :data="templates" stripe size="small" style="width: 100%">
-        <el-table-column :label="t('wms.printer.templateName', 'テンプレート名')" min-width="180">
-          <template #default="{ row }">
-            <div>
-              <strong>{{ row.name }}</strong>
-              <div class="template-meta">
-                {{ row.targetType }} ・ {{ row.pageSize }} {{ row.pageOrientation === 'landscape' ? t('wms.printer.landscape', '横') : t('wms.printer.portrait', '縦') }}
-              </div>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column :label="t('wms.printer.printer', 'プリンター')" width="220">
-          <template #default="{ row }">
-            <el-select
-              :model-value="getParams(row._id).printer || ''"
-              :placeholder="t('wms.printer.default', 'デフォルト')"
-              clearable
-              filterable
-              size="small"
-              style="width: 100%"
-              @change="(val: string) => updateParam(row._id, 'printer', val)"
-            >
-              <el-option
-                v-for="p in printers"
-                :key="p.name"
-                :label="p.name"
-                :value="p.name"
-              />
-            </el-select>
-          </template>
-        </el-table-column>
-
-        <el-table-column :label="t('wms.printer.paper', '用紙')" width="160">
-          <template #default="{ row }">
-            <el-select
-              :model-value="getParams(row._id).paper || 'AUTO'"
-              size="small"
-              style="width: 100%"
-              @change="(val: string) => updateParam(row._id, 'paper', val)"
-            >
-              <el-option :label="t('wms.printer.autoDefault', 'AUTO（デフォルト）')" value="AUTO" />
-              <el-option
-                v-for="ps in getPaperSizes(getParams(row._id).printer)"
-                :key="ps.name"
-                :label="`${ps.name} (${ps.width_mm}×${ps.height_mm})`"
-                :value="ps.name"
-              />
-            </el-select>
-          </template>
-        </el-table-column>
-
-        <el-table-column :label="t('wms.printer.orientation', '方向')" width="120">
-          <template #default="{ row }">
-            <el-select
-              :model-value="getParams(row._id).orientation || 'portrait'"
-              size="small"
-              style="width: 100%"
-              @change="(val: string) => updateParam(row._id, 'orientation', val)"
-            >
-              <el-option :label="t('wms.printer.portrait', '縦')" value="portrait" />
-              <el-option :label="t('wms.printer.landscape', '横')" value="landscape" />
-            </el-select>
-          </template>
-        </el-table-column>
-
-        <el-table-column :label="t('wms.printer.scale', '縮尺')" width="110">
-          <template #default="{ row }">
-            <el-select
-              :model-value="getParams(row._id).scale || 'fit'"
-              size="small"
-              style="width: 100%"
-              @change="(val: string) => updateParam(row._id, 'scale', val)"
-            >
-              <el-option label="Fit" value="fit" />
-              <el-option label="Fill" value="fill" />
-              <el-option :label="t('wms.printer.actualSize', '実寸')" value="actual" />
-            </el-select>
-          </template>
-        </el-table-column>
-
-        <el-table-column :label="t('wms.printer.marginMm', '余白(mm)')" width="100">
-          <template #default="{ row }">
-            <el-input-number
-              :model-value="getParams(row._id).margin_mm ?? 6"
-              :min="0"
-              :max="50"
-              size="small"
-              controls-position="right"
-              style="width: 100%"
-              @change="(val: number | undefined) => updateParam(row._id, 'margin_mm', val ?? 6)"
-            />
-          </template>
-        </el-table-column>
-
-        <el-table-column :label="t('wms.printer.copies', '部数')" width="90">
-          <template #default="{ row }">
-            <el-input-number
-              :model-value="getParams(row._id).copies ?? 1"
-              :min="1"
-              :max="50"
-              size="small"
-              controls-position="right"
-              style="width: 100%"
-              @change="(val: number | undefined) => updateParam(row._id, 'copies', val ?? 1)"
-            />
-          </template>
-        </el-table-column>
-      </el-table>
+      <div class="rounded-md border overflow-auto">
+        <Table class="w-full text-sm">
+          <TableHeader>
+            <TableRow class="border-b bg-muted/50">
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="min-width: 180px">{{ t('wms.printer.templateName', 'テンプレート名') }}</TableHead>
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="width: 220px">{{ t('wms.printer.printer', 'プリンター') }}</TableHead>
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="width: 160px">{{ t('wms.printer.paper', '用紙') }}</TableHead>
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="width: 120px">{{ t('wms.printer.orientation', '方向') }}</TableHead>
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="width: 110px">{{ t('wms.printer.scale', '縮尺') }}</TableHead>
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="width: 100px">{{ t('wms.printer.marginMm', '余白(mm)') }}</TableHead>
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="width: 90px">{{ t('wms.printer.copies', '部数') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="row in templates" :key="row._id" class="border-b hover:bg-muted/50">
+              <TableCell class="p-2">
+                <div>
+                  <strong>{{ row.name }}</strong>
+                  <div class="template-meta">
+                    {{ row.targetType }} ・ {{ row.pageSize }} {{ row.pageOrientation === 'landscape' ? t('wms.printer.landscape', '横') : t('wms.printer.portrait', '縦') }}
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell class="p-2">
+                <select
+                  :value="getParams(row._id).printer || ''"
+                  class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
+                  @change="(e: any) => updateParam(row._id, 'printer', e.target.value)"
+                >
+                  <option value="">{{ t('wms.printer.default', 'デフォルト') }}</option>
+                  <option v-for="p in printers" :key="p.name" :value="p.name">{{ p.name }}</option>
+                </select>
+              </TableCell>
+              <TableCell class="p-2">
+                <select
+                  :value="getParams(row._id).paper || 'AUTO'"
+                  class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
+                  @change="(e: any) => updateParam(row._id, 'paper', e.target.value)"
+                >
+                  <option value="AUTO">{{ t('wms.printer.autoDefault', 'AUTO（デフォルト）') }}</option>
+                  <option v-for="ps in getPaperSizes(getParams(row._id).printer)" :key="ps.name" :value="ps.name">{{ ps.name }} ({{ ps.width_mm }}×{{ ps.height_mm }})</option>
+                </select>
+              </TableCell>
+              <TableCell class="p-2">
+                <select
+                  :value="getParams(row._id).orientation || 'portrait'"
+                  class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
+                  @change="(e: any) => updateParam(row._id, 'orientation', e.target.value)"
+                >
+                  <option value="portrait">{{ t('wms.printer.portrait', '縦') }}</option>
+                  <option value="landscape">{{ t('wms.printer.landscape', '横') }}</option>
+                </select>
+              </TableCell>
+              <TableCell class="p-2">
+                <select
+                  :value="getParams(row._id).scale || 'fit'"
+                  class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
+                  @change="(e: any) => updateParam(row._id, 'scale', e.target.value)"
+                >
+                  <option value="fit">Fit</option>
+                  <option value="fill">Fill</option>
+                  <option value="actual">{{ t('wms.printer.actualSize', '実寸') }}</option>
+                </select>
+              </TableCell>
+              <TableCell class="p-2">
+                <input
+                  type="number"
+                  :value="getParams(row._id).margin_mm ?? 6"
+                  min="0"
+                  max="50"
+                  class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
+                  @change="(e: any) => updateParam(row._id, 'margin_mm', Number(e.target.value) || 6)"
+                />
+              </TableCell>
+              <TableCell class="p-2">
+                <input
+                  type="number"
+                  :value="getParams(row._id).copies ?? 1"
+                  min="1"
+                  max="50"
+                  class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
+                  @change="(e: any) => updateParam(row._id, 'copies', Number(e.target.value) || 1)"
+                />
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
     </template>
   </div>
 </template>
@@ -130,6 +117,7 @@ import { useI18n } from '@/composables/useI18n'
 import { fetchFormTemplates } from '@/api/formTemplate'
 import type { FormTemplate } from '@/types/formTemplate'
 import type { PrinterInfo, TemplatePrintParams } from '@/utils/print/printConfig'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   getPrintParamsForFormTemplate,
   saveFormTemplateParams,

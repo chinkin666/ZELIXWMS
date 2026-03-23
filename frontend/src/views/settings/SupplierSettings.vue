@@ -1,26 +1,18 @@
 <template>
   <div class="supplier-settings">
-    <ControlPanel title="仕入先一覧" :show-search="false">
+    <PageHeader title="仕入先一覧" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate"><span class="o-icon">+</span> 新規追加</OButton>
-        <OButton variant="success" @click="showCsvImport = true">CSV取込</OButton>
-        <OButton variant="secondary" @click="handleCsvExport">CSV出力</OButton>
+        <Button variant="default" @click="openCreate"><span>+</span> 新規追加</Button>
+        <Button variant="default" @click="showCsvImport = true">CSV取込</Button>
+        <Button variant="secondary" @click="handleCsvExport">CSV出力</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="supplierSettingsSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <!-- CSV Import Panel -->
     <div v-if="showCsvImport" class="import-panel">
       <div class="import-header">
         <h4>CSV取込</h4>
-        <button class="import-close-btn" @click="closeCsvImport">&times;</button>
+        <Button class="import-close-btn" @click="closeCsvImport">&times;</Button>
       </div>
 
       <div v-if="!csvPreviewData.length" class="import-upload">
@@ -31,26 +23,26 @@
 
       <div v-else class="import-preview">
         <p>{{ csvPreviewData.length }}件のデータを確認してください。</p>
-        <div class="o-table-wrapper" style="max-height: 300px; overflow-y: auto">
-          <table class="o-table">
+        <div class="rounded-md border overflow-auto" style="max-height: 300px; overflow-y: auto">
+          <table>
             <thead>
               <tr>
-                <th class="o-table-th">仕入先コード</th>
-                <th class="o-table-th">仕入先名</th>
-                <th class="o-table-th">仕入先名2</th>
-                <th class="o-table-th">郵便番号</th>
-                <th class="o-table-th">住所1</th>
-                <th class="o-table-th">電話番号</th>
+                <th>仕入先コード</th>
+                <th>仕入先名</th>
+                <th>仕入先名2</th>
+                <th>郵便番号</th>
+                <th>住所1</th>
+                <th>電話番号</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(row, idx) in csvPreviewData.slice(0, 10)" :key="idx" class="o-table-row">
-                <td class="o-table-td">{{ row.supplierCode }}</td>
-                <td class="o-table-td">{{ row.name }}</td>
-                <td class="o-table-td">{{ row.name2 || '-' }}</td>
-                <td class="o-table-td">{{ row.postalCode || '-' }}</td>
-                <td class="o-table-td">{{ row.address1 || '-' }}</td>
-                <td class="o-table-td">{{ row.phone || '-' }}</td>
+              <tr v-for="(row, idx) in csvPreviewData.slice(0, 10)" :key="idx">
+                <td>{{ row.supplierCode }}</td>
+                <td>{{ row.name }}</td>
+                <td>{{ row.name2 || '-' }}</td>
+                <td>{{ row.postalCode || '-' }}</td>
+                <td>{{ row.address1 || '-' }}</td>
+                <td>{{ row.phone || '-' }}</td>
               </tr>
             </tbody>
           </table>
@@ -59,94 +51,95 @@
           ...他 {{ csvPreviewData.length - 10 }}件
         </div>
         <div class="import-actions">
-          <OButton variant="secondary" @click="resetCsvImport">やり直す</OButton>
-          <OButton variant="primary" :disabled="importing" @click="handleCsvImportConfirm">
+          <Button variant="secondary" @click="resetCsvImport">やり直す</Button>
+          <Button variant="default" :disabled="importing" @click="handleCsvImportConfirm">
             {{ importing ? '取込中...' : '取込実行' }}
-          </OButton>
+          </Button>
         </div>
       </div>
     </div>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="list"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         pagination-enabled
         pagination-mode="server"
         :page-size="pageSize"
         :page-sizes="[10, 20, 50]"
         :total="total"
         :current-page="currentPage"
-        :global-search-text="globalSearchText"
         @page-change="handlePageChangeEvent"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogVisible" :title="isEditing ? '仕入先を編集' : '仕入先を追加'" size="lg" @close="closeDialog">
-      <template #default>
+    <Dialog :open="dialogVisible" @update:open="dialogVisible = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? '仕入先を編集' : '仕入先を追加' }}</DialogTitle></DialogHeader>
+      
         <form class="supplier-form" @submit.prevent="handleSubmit">
           <div class="form-row">
-            <label class="form-label">仕入先コード <span class="required-badge">必須</span></label>
-            <input class="o-input" v-model="form.supplierCode" required :disabled="isEditing" />
+            <label>仕入先コード <span class="text-destructive text-xs">*</span></label>
+            <Input v-model="form.supplierCode" required :disabled="isEditing" />
           </div>
           <div class="form-row">
-            <label class="form-label">仕入先名 <span class="required-badge">必須</span></label>
-            <input class="o-input" v-model="form.name" required />
+            <label>仕入先名 <span class="text-destructive text-xs">*</span></label>
+            <Input v-model="form.name" required />
           </div>
           <div class="form-row">
-            <label class="form-label">仕入先名2</label>
-            <input class="o-input" v-model="form.name2" />
+            <label>仕入先名2</label>
+            <Input v-model="form.name2" />
           </div>
           <div class="form-row">
-            <label class="form-label">郵便番号</label>
+            <label>郵便番号</label>
             <PostalCodeInput v-model="form.postalCode" @resolved="onPostalResolved" />
           </div>
           <div class="form-row">
-            <label class="form-label">住所1</label>
-            <input class="o-input" v-model="form.address1" placeholder="都道府県 市区町村" />
+            <label>住所1</label>
+            <Input v-model="form.address1" placeholder="都道府県 市区町村" />
           </div>
           <div class="form-row">
-            <label class="form-label">住所2</label>
-            <input class="o-input" v-model="form.address2" />
+            <label>住所2</label>
+            <Input v-model="form.address2" />
           </div>
           <div class="form-row">
-            <label class="form-label">住所3</label>
-            <input class="o-input" v-model="form.address3" />
+            <label>住所3</label>
+            <Input v-model="form.address3" />
           </div>
           <div class="form-row">
-            <label class="form-label">電話番号</label>
-            <input class="o-input" v-model="form.phone" />
+            <label>電話番号</label>
+            <Input v-model="form.phone" />
           </div>
           <div class="form-row">
-            <label class="form-label">メモ</label>
-            <textarea class="o-input" v-model="form.memo" rows="3" />
+            <label>メモ</label>
+            <textarea v-model="form.memo" rows="3" />
           </div>
           <div class="form-actions">
-            <OButton variant="secondary" type="button" @click="closeDialog">キャンセル</OButton>
-            <OButton variant="primary" type="submit" :disabled="saving">
+            <Button variant="secondary" type="button" @click="closeDialog">キャンセル</Button>
+            <Button variant="default" type="submit" :disabled="saving">
               {{ saving ? '保存中...' : '保存' }}
-            </OButton>
+            </Button>
           </div>
         </form>
-      </template>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import PostalCodeInput from '@/components/form/PostalCodeInput.vue'
 import type { PostalResult } from '@/utils/postalCode'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchSuppliers,
@@ -157,7 +150,10 @@ import {
   exportSuppliers,
 } from '@/api/supplier'
 import type { SupplierData } from '@/api/supplier'
-
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 const { t } = useI18n()
 
@@ -294,8 +290,8 @@ const tableColumns: TableColumn[] = [
     width: 160,
     cellRenderer: ({ rowData }: { rowData: SupplierData }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ]),
   },
 ]
@@ -435,13 +431,7 @@ const handleSubmit = async () => {
 // Delete
 // ---------------------------------------------------------------------------
 const confirmDelete = async (item: SupplierData) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${item.name}」を無効にしてもよろしいですか？ / 确定要禁用「${item.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '無効化 / 禁用', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteSupplier(item._id)
     showToast('無効にしました', 'success')

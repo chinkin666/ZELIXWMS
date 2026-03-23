@@ -1,5 +1,9 @@
 <template>
-  <ODialog :open="visible" title="印刷テンプレートを選択" @close="visible = false" width="980px">
+  <Dialog :open="visible" @update:open="visible = $event">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>印刷テンプレートを選択</DialogTitle>
+      </DialogHeader>
     <div class="dialog-content">
       <div class="template-selector">
         <div class="o-form-group">
@@ -31,10 +35,10 @@
           </div>
           <div class="preview-actions">
             <div v-if="orders.length > 1" class="btn-group">
-              <OButton variant="secondary" size="sm" :disabled="currentIndex === 0" @click="goToPrevious">前へ</OButton>
-              <OButton variant="secondary" size="sm" :disabled="currentIndex >= orders.length - 1" @click="goToNext">次へ</OButton>
+              <Button variant="secondary" size="sm" :disabled="currentIndex === 0" @click="goToPrevious">前へ</Button>
+              <Button variant="secondary" size="sm" :disabled="currentIndex >= orders.length - 1" @click="goToNext">次へ</Button>
             </div>
-            <OButton v-if="imageUrl" variant="secondary" size="sm" style="margin-left: 8px" @click="downloadPreviewPng">プレビューをダウンロード</OButton>
+            <Button v-if="imageUrl" variant="secondary" size="sm" style="margin-left: 8px" @click="downloadPreviewPng">プレビューをダウンロード</Button>
           </div>
         </div>
         <div class="preview">
@@ -54,17 +58,18 @@
       </div>
     </div>
 
-    <template #footer>
-      <OButton variant="secondary" @click="visible = false">キャンセル</OButton>
-      <OButton variant="primary" :disabled="!selectedTemplateId" @click="handleConfirm">確定</OButton>
-    </template>
-  </ODialog>
+    <DialogFooter>
+      <Button variant="secondary" @click="visible = false">キャンセル</Button>
+      <Button variant="default" :disabled="!selectedTemplateId" @click="handleConfirm">確定</Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { fetchPrintTemplates, fetchPrintTemplate } from '@/api/printTemplates'
 import type { PrintTemplate } from '@/types/printTemplate'
 import type { OrderDocument } from '@/types/order'

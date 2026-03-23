@@ -5,15 +5,15 @@
     <div v-else class="props">
       <div class="o-form-group">
         <label>要素名</label>
-        <input :value="selectedEl.name" class="o-input" @input="updateProp('name', ($event.target as HTMLInputElement).value)" />
+        <Input :model-value="selectedEl.name" @update:model-value="updateProp('name', $event)" />
       </div>
       <div class="o-form-group">
         <label>X座標 (mm)</label>
-        <input :value="selectedEl.xMm" type="number" step="1" class="o-input" @input="updateProp('xMm', Number(($event.target as HTMLInputElement).value))" />
+        <Input :model-value="selectedEl.xMm" type="number" step="1" @update:model-value="updateProp('xMm', Number($event))" />
       </div>
       <div class="o-form-group">
         <label>Y座標 (mm)</label>
-        <input :value="selectedEl.yMm" type="number" step="1" class="o-input" @input="updateProp('yMm', Number(($event.target as HTMLInputElement).value))" />
+        <Input :model-value="selectedEl.yMm" type="number" step="1" @update:model-value="updateProp('yMm', Number($event))" />
       </div>
       <div class="o-form-group">
         <label>表示</label>
@@ -33,92 +33,112 @@
       <template v-if="selectedEl.type === 'text'">
         <div class="o-form-group">
           <label>フォント</label>
-          <input :value="(selectedEl as any).fontFamily" class="o-input" placeholder="例: sans-serif / NotoSansJP" @input="updateProp('fontFamily', ($event.target as HTMLInputElement).value)" />
+          <Input :model-value="(selectedEl as any).fontFamily" placeholder="例: sans-serif / NotoSansJP" @update:model-value="updateProp('fontFamily', $event)" />
         </div>
         <div class="o-form-group">
           <label>文字サイズ (pt)</label>
-          <input :value="(selectedEl as any).fontSizePt" type="number" step="1" class="o-input" @input="updateProp('fontSizePt', Number(($event.target as HTMLInputElement).value))" />
+          <Input :model-value="(selectedEl as any).fontSizePt" type="number" step="1" @update:model-value="updateProp('fontSizePt', Number($event))" />
         </div>
         <div class="o-form-group">
           <label>字間 (px)</label>
-          <input :value="(selectedEl as any).letterSpacingPx" type="number" step="0.5" class="o-input" @input="updateProp('letterSpacingPx', Number(($event.target as HTMLInputElement).value))" />
+          <Input :model-value="(selectedEl as any).letterSpacingPx" type="number" step="0.5" @update:model-value="updateProp('letterSpacingPx', Number($event))" />
         </div>
         <div class="o-form-group">
           <label>揃え</label>
-          <select :value="(selectedEl as any).align" class="o-input" style="width: 100%" @change="updateProp('align', ($event.target as HTMLSelectElement).value)">
-            <option value="left">左揃え</option>
-            <option value="right">右揃え</option>
-          </select>
+          <Select :model-value="(selectedEl as any).align" @update:model-value="updateProp('align', $event)">
+            <SelectTrigger class="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="left">左揃え</SelectItem>
+              <SelectItem value="right">右揃え</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div class="o-form-group">
           <label>{{ t('wms.printTemplate.contentTransform') }}</label>
-          <OButton variant="primary" @click="$emit('open-transform-mapping', 'text')">
+          <Button variant="default" @click="$emit('open-transform-mapping', 'text')">
             {{ (selectedEl as any).transformMapping ? t('wms.printTemplate.editTransform') : t('wms.printTemplate.configTransform') }}
-          </OButton>
+          </Button>
         </div>
         <div class="o-form-group">
           <label>{{ t('wms.printTemplate.preview') }}</label>
-          <textarea :value="textPreviewValue" readonly rows="2" class="o-input" style="width: 100%; resize: vertical"></textarea>
+          <textarea :value="textPreviewValue" readonly rows="2" style="width: 100%; resize: vertical"></textarea>
         </div>
       </template>
 
       <template v-else-if="selectedEl.type === 'barcode'">
         <div class="o-form-group">
           <label>format</label>
-          <select :value="(selectedEl as any).format" class="o-input" style="width: 100%" @change="updateProp('format', ($event.target as HTMLSelectElement).value)">
-            <option value="code128">Code 128</option>
-            <option value="qrcode">QR Code</option>
-            <option value="codabar">Codabar (NW-7)</option>
-            <option value="ean13">EAN-13</option>
-            <option value="ean8">EAN-8</option>
-            <option value="code39">Code 39</option>
-            <option value="code93">Code 93</option>
-            <option value="interleaved2of5">Interleaved 2 of 5 (ITF)</option>
-            <option value="datamatrix">Data Matrix</option>
-            <option value="pdf417">PDF417</option>
-          </select>
+          <Select :model-value="(selectedEl as any).format" @update:model-value="updateProp('format', $event)">
+            <SelectTrigger class="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="code128">Code 128</SelectItem>
+              <SelectItem value="qrcode">QR Code</SelectItem>
+              <SelectItem value="codabar">Codabar (NW-7)</SelectItem>
+              <SelectItem value="ean13">EAN-13</SelectItem>
+              <SelectItem value="ean8">EAN-8</SelectItem>
+              <SelectItem value="code39">Code 39</SelectItem>
+              <SelectItem value="code93">Code 93</SelectItem>
+              <SelectItem value="interleaved2of5">Interleaved 2 of 5 (ITF)</SelectItem>
+              <SelectItem value="datamatrix">Data Matrix</SelectItem>
+              <SelectItem value="pdf417">PDF417</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div class="o-form-group">
           <label>width(mm)</label>
-          <input :value="(selectedEl as any).widthMm" type="number" step="1" class="o-input" @input="updateProp('widthMm', Number(($event.target as HTMLInputElement).value))" />
+          <Input :model-value="(selectedEl as any).widthMm" type="number" step="1" @update:model-value="updateProp('widthMm', Number($event))" />
         </div>
         <div class="o-form-group">
           <label>height(mm)</label>
-          <input :value="(selectedEl as any).heightMm" type="number" step="1" class="o-input" @input="updateProp('heightMm', Number(($event.target as HTMLInputElement).value))" />
+          <Input :model-value="(selectedEl as any).heightMm" type="number" step="1" @update:model-value="updateProp('heightMm', Number($event))" />
         </div>
         <div class="o-form-group">
           <label>{{ t('wms.printTemplate.contentTransform') }}</label>
-          <OButton variant="primary" @click="$emit('open-transform-mapping', 'barcode')">
+          <Button variant="default" @click="$emit('open-transform-mapping', 'barcode')">
             {{ (selectedEl as any).transformMapping ? t('wms.printTemplate.editTransform') : t('wms.printTemplate.configTransform') }}
-          </OButton>
+          </Button>
         </div>
         <div class="o-form-group">
           <label>{{ t('wms.printTemplate.preview') }}</label>
-          <textarea :value="barcodePreviewValue" readonly rows="2" class="o-input" style="width: 100%; resize: vertical"></textarea>
+          <textarea :value="barcodePreviewValue" readonly rows="2" style="width: 100%; resize: vertical"></textarea>
         </div>
         <template v-if="(selectedEl as any).format === 'codabar'">
           <div class="o-form-group">
             <label>{{ t('wms.printTemplate.startChar') }}</label>
-            <select :value="codabarStartChar" class="o-input" style="width: 100%" @change="$emit('update:codabarStartChar', ($event.target as HTMLSelectElement).value)">
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-            </select>
+            <Select :model-value="codabarStartChar" @update:model-value="$emit('update:codabarStartChar', $event)">
+              <SelectTrigger class="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="A">A</SelectItem>
+                <SelectItem value="B">B</SelectItem>
+                <SelectItem value="C">C</SelectItem>
+                <SelectItem value="D">D</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div class="o-form-group">
             <label>{{ t('wms.printTemplate.stopChar') }}</label>
-            <select :value="codabarStopChar" class="o-input" style="width: 100%" @change="$emit('update:codabarStopChar', ($event.target as HTMLSelectElement).value)">
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-            </select>
+            <Select :model-value="codabarStopChar" @update:model-value="$emit('update:codabarStopChar', $event)">
+              <SelectTrigger class="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="A">A</SelectItem>
+                <SelectItem value="B">B</SelectItem>
+                <SelectItem value="C">C</SelectItem>
+                <SelectItem value="D">D</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </template>
         <div class="o-form-group">
           <label>options(JSON)</label>
-          <textarea :value="barcodeOptionsJson" rows="4" class="o-input" style="width: 100%; resize: vertical" @input="$emit('update:barcodeOptionsJson', ($event.target as HTMLTextAreaElement).value)"></textarea>
+          <textarea :value="barcodeOptionsJson" rows="4" style="width: 100%; resize: vertical" @input="$emit('update:barcodeOptionsJson', ($event.target as HTMLTextAreaElement).value)"></textarea>
         </div>
       </template>
 
@@ -127,8 +147,8 @@
           <label>{{ t('wms.printTemplate.image') }}</label>
           <div style="display: flex; gap: 8px">
             <input ref="imageFileInput" type="file" accept="image/*" class="hidden-input" @change="onImageFileChange" />
-            <OButton variant="secondary" @click="triggerImageUpload">{{ t('wms.printTemplate.uploadImage') }}</OButton>
-            <OButton variant="secondary" :disabled="!((selectedEl as any).imageData)" @click="$emit('clear-image')">{{ t('wms.printTemplate.clearImage') }}</OButton>
+            <Button variant="secondary" @click="triggerImageUpload">{{ t('wms.printTemplate.uploadImage') }}</Button>
+            <Button variant="secondary" :disabled="!((selectedEl as any).imageData)" @click="$emit('clear-image')">{{ t('wms.printTemplate.clearImage') }}</Button>
           </div>
         </div>
         <div class="o-form-group" v-if="(selectedEl as any).imageData">
@@ -137,16 +157,16 @@
         </div>
         <div class="o-form-group">
           <label>width(mm)</label>
-          <input :value="(selectedEl as any).widthMm" type="number" step="1" class="o-input" @input="updateProp('widthMm', Number(($event.target as HTMLInputElement).value))" />
+          <Input :model-value="(selectedEl as any).widthMm" type="number" step="1" @update:model-value="updateProp('widthMm', Number($event))" />
         </div>
         <div class="o-form-group">
           <label>height(mm)</label>
-          <input :value="(selectedEl as any).heightMm" type="number" step="1" class="o-input" @input="updateProp('heightMm', Number(($event.target as HTMLInputElement).value))" />
+          <Input :model-value="(selectedEl as any).heightMm" type="number" step="1" @update:model-value="updateProp('heightMm', Number($event))" />
         </div>
       </template>
 
       <div class="row">
-        <OButton variant="danger" @click="$emit('remove-selected')">{{ t('wms.common.delete') }}</OButton>
+        <Button variant="destructive" @click="$emit('remove-selected')">{{ t('wms.common.delete') }}</Button>
       </div>
     </div>
   </div>
@@ -154,7 +174,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useI18n } from '@/composables/useI18n'
 import type { PrintElement } from '@/types/printTemplate'
 
@@ -241,7 +263,7 @@ function onImageFileChange(e: Event) {
   flex: 1;
   min-width: 0;
 }
-.o-input {
+.{
   padding: 6px 10px;
   border: 1px solid var(--o-border-color, #dee2e6);
   border-radius: 4px;

@@ -73,6 +73,14 @@ vi.mock('@/utils/scanBeep', () => ({
   beepComplete: vi.fn(),
 }))
 
+// useConfirmDialog モック / useConfirmDialog mock
+const mockConfirm = vi.fn().mockResolvedValue(true)
+vi.mock('@/composables/useConfirmDialog', () => ({
+  useConfirmDialog: () => ({
+    confirm: mockConfirm,
+  }),
+}))
+
 // ──────────────────────────────────────────────────────
 // テストフィクスチャ / Test fixtures
 // ──────────────────────────────────────────────────────
@@ -164,9 +172,9 @@ describe('InboundReceive.vue — 入庫検品ページ / Receiving Inspection Pa
       order: makeOrder({ status: 'received' }),
     })
     mockFetchInboundVariance.mockResolvedValue(null)
-    // window.confirm をモックして自動的に true を返す
-    // Mock window.confirm to return true automatically
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    // useConfirmDialog の confirm を自動的に true を返すようにリセット
+    // Reset useConfirmDialog confirm mock to return true automatically
+    mockConfirm.mockResolvedValue(true)
   })
 
   afterEach(() => {

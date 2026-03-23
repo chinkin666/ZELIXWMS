@@ -1,15 +1,15 @@
 <template>
   <div class="order-item-scan">
-    <ControlPanel :title="t('wms.inspection.productScanInspection', '商品スキャン検品')" :show-search="false">
+    <PageHeader :title="t('wms.inspection.productScanInspection', '商品スキャン検品')" :show-search="false">
       <template #actions>
         <label class="o-toggle">
           <input type="checkbox" v-model="autoPrintEnabled" @change="saveAutoPrintSetting" />
           <span class="o-toggle__slider"></span>
           <span class="toggle-label">{{ autoPrintEnabled ? t('wms.inspection.autoPrint', '自動印刷') : t('wms.inspection.manualPrint', '手動印刷') }}</span>
         </label>
-        <OButton variant="secondary" @click="handleBack">{{ t('wms.inspection.goBack', '戻る') }}</OButton>
+        <Button variant="secondary" @click="handleBack">{{ t('wms.inspection.goBack', '戻る') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- 订单信息区域 -->
     <div class="order-info-section">
@@ -35,7 +35,7 @@
     <!-- 中间输入区域 -->
     <div class="input-section" :class="{ 'scan-success-flash': lastScanSuccess }">
       <input
-        class="o-input main-input"
+        class="main-input"
         v-model="inputValue"
         :placeholder="t('wms.inspection.scanOrEnter', 'スキャンまたは入力してください')"
         @keyup.enter="handleInput"
@@ -49,7 +49,7 @@
       <div class="table-header">
         <span class="table-title">{{ t('wms.inspection.pendingItems', 'スキャン待ち商品') }} ({{ pendingItems.length }})</span>
       </div>
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="pendingItems"
         :height="200"
@@ -66,7 +66,7 @@
       <div class="table-header">
         <span class="table-title">{{ t('wms.inspection.scannedItems', 'スキャン済み商品') }} ({{ scannedItems.length }})</span>
       </div>
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="scannedItems"
         :height="200"
@@ -120,18 +120,19 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { useRouter, useRoute } from 'vue-router'
-import Table from '@/components/table/Table.vue'
+import { DataTable } from '@/components/data-table'
 import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vue'
 import ChangeInvoiceTypeDialog from '@/components/dialogs/ChangeInvoiceTypeDialog.vue'
 import ScanCompletionDialog from './order-item-scan/ScanCompletionDialog.vue'
 import ScanBottomBar from './order-item-scan/ScanBottomBar.vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { useAutoPrint } from '@/composables/useAutoPrint'
 import { useInspectionPrint } from '@/composables/useInspectionPrint'
 import { useOrderItemScanLogic } from './composables/useOrderItemScanLogic'
@@ -157,6 +158,7 @@ const toast = {
 }
 
 const { t } = useI18n()
+const { confirm } = useConfirmDialog()
 
 // Composables
 const { autoPrintEnabled, saveAutoPrintSetting } = useAutoPrint('orderItemScan_autoPrintEnabled')
@@ -235,14 +237,9 @@ const handleUnconfirmConfirm = async (reason: string, skipCarrierDelete = false)
   } catch (e: any) {
     if (isCarrierDeleteError(e)) {
       isUnconfirming.value = false
-      try {
-        await ElMessageBox.confirm(
-          t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteManual', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください） / 跳过B2 Cloud删除，仅更新本地吗？\n（请手动删除B2 Cloud端）')}`,
-          '確認 / 确认',
-          { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-        )
+      if (await confirm(`この操作を実行しますか？\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteManual', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？')}`)) {
         await handleUnconfirmConfirm(reason, true)
-      } catch { /* cancelled */ }
+      }
       return
     }
     toast.error(e?.message || t('wms.inspection.unconfirmFailed', '確認取消に失敗しました'))
@@ -327,14 +324,9 @@ const handleChangeInvoiceTypeConfirm = async (newInvoiceType: string, skipCarrie
   } catch (e: any) {
     if (isCarrierDeleteError(e)) {
       isChangingInvoiceType.value = false
-      try {
-        await ElMessageBox.confirm(
-          t('wms.inspection.b2CloudDeleteFailed', 'B2 Cloudからの履歴削除に失敗しました。') + `\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteManual', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？\n（B2 Cloud側は手動で削除してください） / 跳过B2 Cloud删除，仅更新本地吗？\n（请手动删除B2 Cloud端）')}`,
-          '確認 / 确认',
-          { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-        )
+      if (await confirm(`この操作を実行しますか？\n\n${t('wms.inspection.error', 'エラー')}: ${e.error}\n\n${t('wms.inspection.skipB2CloudDeleteManual', 'B2 Cloud削除をスキップして、ローカルのみ更新しますか？')}`)) {
         await handleChangeInvoiceTypeConfirm(newInvoiceType, true)
-      } catch { /* cancelled */ }
+      }
       return
     }
     toast.error(e?.message || t('wms.inspection.invoiceTypeChangeFailed', '送り状種類変更に失敗しました'))

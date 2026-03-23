@@ -1,23 +1,29 @@
 <template>
   <div class="shipment-statistics">
-    <ControlPanel :title="t('wms.daily.shipmentStats', '出荷統計')" :show-search="false" />
+    <PageHeader :title="t('wms.daily.shipmentStats', '出荷統計')" :show-search="false" />
 
     <!-- 日期范围 / 日付範囲 -->
     <div class="stats-date-range">
       <label class="stats-label">{{ t('wms.daily.period', '期間') }}:</label>
-      <input v-model="statsFrom" type="date" class="o-input o-input-sm" />
+      <Input v-model="statsFrom" type="date" class="h-8 text-sm" />
       <span class="stats-separator">〜</span>
-      <input v-model="statsTo" type="date" class="o-input o-input-sm" />
-      <OButton variant="primary" size="sm" @click="loadStats">{{ t('wms.daily.aggregate', '集計') }}</OButton>
+      <Input v-model="statsTo" type="date" class="h-8 text-sm" />
+      <Button variant="default" size="sm" @click="loadStats">{{ t('wms.daily.aggregate', '集計') }}</Button>
       <div class="stats-presets">
-        <button class="stats-preset-btn" @click="setRange(7)">7日</button>
-        <button class="stats-preset-btn" @click="setRange(14)">14日</button>
-        <button class="stats-preset-btn" @click="setRange(30)">30日</button>
-        <button class="stats-preset-btn" @click="setRange(90)">90日</button>
+        <Button variant="outline" size="sm" class="stats-preset-btn" @click="setRange(7)">7日</Button>
+        <Button variant="outline" size="sm" class="stats-preset-btn" @click="setRange(14)">14日</Button>
+        <Button variant="outline" size="sm" class="stats-preset-btn" @click="setRange(30)">30日</Button>
+        <Button variant="outline" size="sm" class="stats-preset-btn" @click="setRange(90)">90日</Button>
       </div>
     </div>
 
-    <div v-if="loading" class="stats-loading">{{ t('wms.daily.aggregating', '集計中...') }}</div>
+    <div v-if="loading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else-if="stats">
       <!-- KPI 卡片 / KPI カード -->
@@ -123,11 +129,12 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { fetchShipmentStats, type ShipmentStatsResult } from '@/api/dashboard'
 import { fetchCarriers } from '@/api/carrier'
 import type { Carrier } from '@/types/carrier'

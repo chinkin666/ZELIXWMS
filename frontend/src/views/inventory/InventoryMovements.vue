@@ -1,26 +1,25 @@
 <template>
   <div class="inventory-movements">
-    <ControlPanel :title="t('wms.inventory.movementHistory', '入出庫履歴')" :show-search="false">
+    <PageHeader :title="t('wms.inventory.movementHistory', '入出庫履歴')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</OButton>
+        <Button variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="inventoryMovementsSearch"
-      @search="handleSearch"
-    />
-
-    <OLoadingState :loading="isLoading" :empty="!isLoading && rows.length === 0" :empty-text="t('wms.inventory.noMovements', '在庫移動データがありません')">
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
+    <div v-else-if="!isLoading && rows.length === 0" class="empty-state">{{ t('wms.inventory.noMovements', '在庫移動データがありません') }}</div>
+    <template v-else>
       <div class="table-section">
-        <Table
+        <DataTable
           :columns="tableColumns"
           :data="rows"
           row-key="_id"
-          highlight-columns-on-hover
           pagination-enabled
           pagination-mode="server"
           :page-size="pageSize"
@@ -28,26 +27,26 @@
           :total="total"
           :current-page="currentPage"
           :global-search-text="globalSearchText"
+          :search-columns="searchColumns"
+          @search="handleSearch"
           @page-change="onPageChange"
         />
       </div>
-    </OLoadingState>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import OLoadingState from '@/components/odoo/OLoadingState.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import { fetchMovements } from '@/api/inventory'
 import type { StockMove } from '@/types/inventory'
 import type { TableColumn, Operator } from '@/types/table'
-
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const toast = useToast()
 const { t } = useI18n()
 const isLoading = ref(false)

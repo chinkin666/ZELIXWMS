@@ -1,14 +1,14 @@
 <template>
   <div class="task-dashboard">
-    <ControlPanel :title="t('wms.warehouse.taskDashboard', 'タスクダッシュボード')" :show-search="false">
+    <PageHeader :title="t('wms.warehouse.taskDashboard', 'タスクダッシュボード')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreateDialog">{{ t('wms.warehouse.newTask', '新規タスク') }}</OButton>
+        <Button variant="default" @click="openCreateDialog">{{ t('wms.warehouse.newTask', '新規タスク') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- Filter bar -->
     <div class="filter-bar">
-      <select v-model="filterType" class="o-input o-input-sm" style="width: 140px;">
+      <select v-model="filterType" class="h-8 text-sm" style="width: 140px;">
         <option value="">{{ t('wms.warehouse.allTypes', '全タイプ') }}</option>
         <option value="picking">{{ t('wms.warehouse.typePicking', 'ピッキング') }}</option>
         <option value="putaway">{{ t('wms.warehouse.typePutaway', '棚入れ') }}</option>
@@ -19,7 +19,7 @@
         <option value="receiving">{{ t('wms.warehouse.typeReceiving', '入荷') }}</option>
         <option value="shipping">{{ t('wms.warehouse.typeShipping', '出荷') }}</option>
       </select>
-      <select v-model="filterStatus" class="o-input o-input-sm" style="width: 140px;">
+      <select v-model="filterStatus" class="h-8 text-sm" style="width: 140px;">
         <option value="">{{ t('wms.warehouse.allStatuses', '全ステータス') }}</option>
         <option value="pending">{{ t('wms.warehouse.statusPending', '未着手') }}</option>
         <option value="assigned">{{ t('wms.warehouse.statusAssigned', '割当済') }}</option>
@@ -28,14 +28,14 @@
         <option value="cancelled">{{ t('wms.warehouse.statusCancelled', 'キャンセル') }}</option>
         <option value="on_hold">{{ t('wms.warehouse.statusOnHold', '保留') }}</option>
       </select>
-      <select v-model="filterPriority" class="o-input o-input-sm" style="width: 130px;">
+      <select v-model="filterPriority" class="h-8 text-sm" style="width: 130px;">
         <option value="">{{ t('wms.warehouse.allPriorities', '全優先度') }}</option>
         <option value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</option>
         <option value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</option>
         <option value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</option>
         <option value="low">{{ t('wms.warehouse.priorityLow', '低') }}</option>
       </select>
-      <OButton variant="primary" @click="handleSearch">{{ t('wms.common.search', '検索') }}</OButton>
+      <Button variant="default" @click="handleSearch">{{ t('wms.common.search', '検索') }}</Button>
     </div>
 
     <!-- Summary cards -->
@@ -59,161 +59,195 @@
     </div>
 
     <!-- Task table -->
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width: 130px">{{ t('wms.warehouse.taskNumber', 'タスク番号') }}</th>
-            <th class="o-table-th" style="width: 110px">{{ t('wms.warehouse.type', 'タイプ') }}</th>
-            <th class="o-table-th" style="width: 80px">{{ t('wms.warehouse.priority', '優先度') }}</th>
-            <th class="o-table-th" style="width: 100px">{{ t('wms.warehouse.status', 'ステータス') }}</th>
-            <th class="o-table-th" style="width: 120px">{{ t('wms.warehouse.assignee', '担当者') }}</th>
-            <th class="o-table-th" style="width: 100px">{{ t('wms.warehouse.quantity', '数量') }}</th>
-            <th class="o-table-th" style="width: 150px">{{ t('wms.warehouse.startDateTime', '開始日時') }}</th>
-            <th class="o-table-th" style="width: 200px">{{ t('wms.common.actions', '操作') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td class="o-table-td o-table-empty" colspan="8">{{ t('wms.common.loading', '読み込み中...') }}</td>
-          </tr>
-          <tr v-else-if="tasks.length === 0">
-            <td class="o-table-td o-table-empty" colspan="8">{{ t('wms.common.noData', 'データがありません') }}</td>
-          </tr>
-          <tr v-for="task in tasks" :key="task._id" class="o-table-row">
-            <td class="o-table-td">{{ task.taskNumber }}</td>
-            <td class="o-table-td">{{ typeLabels[task.type] || task.type }}</td>
-            <td class="o-table-td">
+    <div class="rounded-md border overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width: 130px">{{ t('wms.warehouse.taskNumber', 'タスク番号') }}</TableHead>
+            <TableHead style="width: 110px">{{ t('wms.warehouse.type', 'タイプ') }}</TableHead>
+            <TableHead style="width: 80px">{{ t('wms.warehouse.priority', '優先度') }}</TableHead>
+            <TableHead style="width: 100px">{{ t('wms.warehouse.status', 'ステータス') }}</TableHead>
+            <TableHead style="width: 120px">{{ t('wms.warehouse.assignee', '担当者') }}</TableHead>
+            <TableHead style="width: 100px">{{ t('wms.warehouse.quantity', '数量') }}</TableHead>
+            <TableHead style="width: 100px">倉庫</TableHead>
+            <TableHead style="width: 150px">{{ t('wms.warehouse.startDateTime', '開始日時') }}</TableHead>
+            <TableHead style="width: 130px">完了日時</TableHead>
+            <TableHead style="width: 200px">{{ t('wms.common.actions', '操作') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="loading">
+            <TableCell colspan="10">
+              <div class="space-y-3 p-4">
+                <Skeleton class="h-4 w-[250px] mx-auto" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+              </div>
+            </TableCell>
+          </TableRow>
+          <TableRow v-else-if="tasks.length === 0">
+            <TableCell class="text-center py-8 text-muted-foreground" colspan="10">{{ t('wms.common.noData', 'データがありません') }}</TableCell>
+          </TableRow>
+          <TableRow v-for="task in tasks" :key="task._id">
+            <TableCell>{{ task.taskNumber }}</TableCell>
+            <TableCell>{{ typeLabels[task.type] || task.type }}</TableCell>
+            <TableCell>
               <span :class="['priority-tag', `priority-tag--${task.priority}`]">
                 {{ priorityLabels[task.priority] || task.priority }}
               </span>
-            </td>
-            <td class="o-table-td">
+            </TableCell>
+            <TableCell>
               <span :class="['status-tag', `status-tag--${task.status}`]">
                 {{ statusLabels[task.status] || task.status }}
               </span>
-            </td>
-            <td class="o-table-td">{{ task.assignedName || task.assignedTo || '-' }}</td>
-            <td class="o-table-td">
+            </TableCell>
+            <TableCell>{{ task.assignedName || task.assignedTo || '-' }}</TableCell>
+            <TableCell>
               <template v-if="task.quantity != null">
                 {{ task.completedQuantity != null ? task.completedQuantity : 0 }} / {{ task.quantity }}
               </template>
               <template v-else>-</template>
-            </td>
-            <td class="o-table-td">{{ task.startedAt ? formatDate(task.startedAt) : '-' }}</td>
-            <td class="o-table-td o-table-td--actions">
-              <OButton v-if="task.status === 'pending'" variant="primary" size="sm" @click="openAssignDialog(task)">{{ t('wms.warehouse.assign', '割当') }}</OButton>
-              <OButton v-if="task.status === 'assigned'" variant="primary" size="sm" @click="handleStart(task)">{{ t('wms.warehouse.start', '開始') }}</OButton>
-              <OButton v-if="task.status === 'in_progress'" variant="success" size="sm" @click="openCompleteDialog(task)">{{ t('wms.warehouse.complete', '完了') }}</OButton>
-              <OButton v-if="task.status === 'in_progress'" variant="secondary" size="sm" @click="handleHold(task)">{{ t('wms.warehouse.hold', '保留') }}</OButton>
-              <OButton v-if="task.status === 'on_hold'" variant="primary" size="sm" @click="handleStart(task)">{{ t('wms.warehouse.resume', '再開') }}</OButton>
-              <OButton
+            </TableCell>
+            <TableCell>{{ task.warehouseName ?? '-' }}</TableCell>
+            <TableCell>{{ task.startedAt ? formatDate(task.startedAt) : '-' }}</TableCell>
+            <TableCell>{{ task.completedAt ? formatDate(task.completedAt) : '-' }}</TableCell>
+            <TableCell class="text-right">
+              <Button v-if="task.status === 'pending'" variant="default" size="sm" @click="openAssignDialog(task)">{{ t('wms.warehouse.assign', '割当') }}</Button>
+              <Button v-if="task.status === 'assigned'" variant="default" size="sm" @click="handleStart(task)">{{ t('wms.warehouse.start', '開始') }}</Button>
+              <Button v-if="task.status === 'in_progress'" variant="default" size="sm" @click="openCompleteDialog(task)">{{ t('wms.warehouse.complete', '完了') }}</Button>
+              <Button v-if="task.status === 'in_progress'" variant="secondary" size="sm" @click="handleHold(task)">{{ t('wms.warehouse.hold', '保留') }}</Button>
+              <Button v-if="task.status === 'on_hold'" variant="default" size="sm" @click="handleStart(task)">{{ t('wms.warehouse.resume', '再開') }}</Button>
+              <Button
                 v-if="task.status !== 'completed' && task.status !== 'cancelled'"
-                variant="icon-danger"
+                variant="destructive"
                 size="sm"
                 @click="handleCancel(task)"
-              >{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              >{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <!-- Pagination -->
     <div class="o-table-pagination">
       <span class="o-table-pagination__info">{{ t('wms.common.totalOf', '全') }}{{ total }}{{ t('wms.common.items', '件') }}{{ t('wms.common.of', '中') }} {{ paginationStart }}-{{ paginationEnd }}{{ t('wms.common.items', '件') }}</span>
       <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
+        <select class="h-8 text-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
           <option :value="10">10</option>
           <option :value="20">20</option>
           <option :value="50">50</option>
           <option :value="100">100</option>
         </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">&lsaquo;</OButton>
+        <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">&lsaquo;</Button>
         <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">&rsaquo;</OButton>
+        <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">&rsaquo;</Button>
       </div>
     </div>
 
     <!-- Create Task Dialog -->
-    <ODialog v-model="createDialogOpen" :title="t('wms.warehouse.newTask', '新規タスク')" size="lg" @confirm="handleCreate">
-      <div class="form-grid">
-        <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.type', 'タイプ') }} <span class="required-badge">必須</span></label>
-          <select v-model="createForm.type" class="o-input">
-            <option value="">{{ t('wms.common.pleaseSelect', '選択してください') }}</option>
-            <option value="picking">{{ t('wms.warehouse.typePicking', 'ピッキング') }}</option>
-            <option value="putaway">{{ t('wms.warehouse.typePutaway', '棚入れ') }}</option>
-            <option value="replenishment">{{ t('wms.warehouse.typeReplenishment', '補充') }}</option>
-            <option value="counting">{{ t('wms.warehouse.typeCounting', '棚卸') }}</option>
-            <option value="sorting">{{ t('wms.warehouse.typeSorting', '仕分け') }}</option>
-            <option value="packing">{{ t('wms.warehouse.typePacking', '梱包') }}</option>
-            <option value="receiving">{{ t('wms.warehouse.typeReceiving', '入荷') }}</option>
-            <option value="shipping">{{ t('wms.warehouse.typeShipping', '出荷') }}</option>
-          </select>
+    <Dialog :open="createDialogOpen" @update:open="createDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ t('wms.warehouse.newTask', '新規タスク') }}</DialogTitle></DialogHeader>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>{{ t('wms.warehouse.type', 'タイプ') }} <span class="text-destructive text-xs">*</span></label>
+            <select v-model="createForm.type">
+              <option value="">{{ t('wms.common.pleaseSelect', '選択してください') }}</option>
+              <option value="picking">{{ t('wms.warehouse.typePicking', 'ピッキング') }}</option>
+              <option value="putaway">{{ t('wms.warehouse.typePutaway', '棚入れ') }}</option>
+              <option value="replenishment">{{ t('wms.warehouse.typeReplenishment', '補充') }}</option>
+              <option value="counting">{{ t('wms.warehouse.typeCounting', '棚卸') }}</option>
+              <option value="sorting">{{ t('wms.warehouse.typeSorting', '仕分け') }}</option>
+              <option value="packing">{{ t('wms.warehouse.typePacking', '梱包') }}</option>
+              <option value="receiving">{{ t('wms.warehouse.typeReceiving', '入荷') }}</option>
+              <option value="shipping">{{ t('wms.warehouse.typeShipping', '出荷') }}</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>{{ t('wms.warehouse.priority', '優先度') }} <span class="text-destructive text-xs">*</span></label>
+            <select v-model="createForm.priority">
+              <option value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</option>
+              <option value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</option>
+              <option value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</option>
+              <option value="low">{{ t('wms.warehouse.priorityLow', '低') }}</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
+            <input v-model="createForm.warehouseId" type="text" />
+          </div>
+          <div class="form-field">
+            <label>{{ t('wms.warehouse.quantity', '数量') }}</label>
+            <input v-model.number="createForm.quantity" type="number" min="0" />
+          </div>
+          <div class="form-field form-field--full">
+            <label>{{ t('wms.warehouse.memo', '備考') }}</label>
+            <textarea v-model="createForm.memo" class="form-textarea" rows="3" />
+          </div>
         </div>
-        <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.priority', '優先度') }} <span class="required-badge">必須</span></label>
-          <select v-model="createForm.priority" class="o-input">
-            <option value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</option>
-            <option value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</option>
-            <option value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</option>
-            <option value="low">{{ t('wms.warehouse.priorityLow', '低') }}</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
-          <input v-model="createForm.warehouseId" type="text" class="o-input" />
-        </div>
-        <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.quantity', '数量') }}</label>
-          <input v-model.number="createForm.quantity" type="number" class="o-input" min="0" />
-        </div>
-        <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.memo', '備考') }}</label>
-          <textarea v-model="createForm.memo" class="o-input form-textarea" rows="3" />
-        </div>
-      </div>
-    </ODialog>
+        <DialogFooter>
+          <Button variant="secondary" @click="createDialogOpen = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+          <Button variant="default" @click="handleCreate">{{ t('wms.common.confirm', '確定') }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Assign Dialog -->
-    <ODialog v-model="assignDialogOpen" :title="t('wms.warehouse.taskAssign', 'タスク割当')" size="sm" @confirm="handleAssign">
-      <div class="form-grid">
-        <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.assigneeId', '担当者ID') }} <span class="required-badge">必須</span></label>
-          <input v-model="assignForm.assignedTo" type="text" class="o-input" />
+    <Dialog :open="assignDialogOpen" @update:open="assignDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ t('wms.warehouse.taskAssign', 'タスク割当') }}</DialogTitle></DialogHeader>
+        <div class="form-grid">
+          <div class="form-field form-field--full">
+            <label>{{ t('wms.warehouse.assigneeId', '担当者ID') }} <span class="text-destructive text-xs">*</span></label>
+            <input v-model="assignForm.assignedTo" type="text" />
+          </div>
+          <div class="form-field form-field--full">
+            <label>{{ t('wms.warehouse.assigneeName', '担当者名') }}</label>
+            <input v-model="assignForm.assignedName" type="text" />
+          </div>
         </div>
-        <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.assigneeName', '担当者名') }}</label>
-          <input v-model="assignForm.assignedName" type="text" class="o-input" />
-        </div>
-      </div>
-    </ODialog>
+        <DialogFooter>
+          <Button variant="secondary" @click="assignDialogOpen = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+          <Button variant="default" @click="handleAssign">{{ t('wms.common.confirm', '確定') }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Complete Dialog -->
-    <ODialog v-model="completeDialogOpen" :title="t('wms.warehouse.taskComplete', 'タスク完了')" size="sm" @confirm="handleComplete">
-      <div class="form-grid">
-        <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.completedQuantity', '完了数量') }} <span class="required-badge">必須</span></label>
-          <input v-model.number="completeForm.completedQuantity" type="number" class="o-input" min="0" />
+    <Dialog :open="completeDialogOpen" @update:open="completeDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ t('wms.warehouse.taskComplete', 'タスク完了') }}</DialogTitle></DialogHeader>
+        <div class="form-grid">
+          <div class="form-field form-field--full">
+            <label>{{ t('wms.warehouse.completedQuantity', '完了数量') }} <span class="text-destructive text-xs">*</span></label>
+            <input v-model.number="completeForm.completedQuantity" type="number" min="0" />
+          </div>
+          <div class="form-field form-field--full">
+            <label>{{ t('wms.warehouse.executor', '実行者') }}</label>
+            <input v-model="completeForm.executedBy" type="text" />
+          </div>
         </div>
-        <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.executor', '実行者') }}</label>
-          <input v-model="completeForm.executedBy" type="text" class="o-input" />
-        </div>
-      </div>
-    </ODialog>
+        <DialogFooter>
+          <Button variant="secondary" @click="completeDialogOpen = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+          <Button variant="default" @click="handleComplete">{{ t('wms.common.confirm', '確定') }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { ref, computed, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   fetchTasks,
   createTask,
@@ -224,6 +258,8 @@ import {
   holdTask,
   type WarehouseTask,
 } from '@/api/task'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
@@ -442,13 +478,7 @@ const handleHold = async (task: WarehouseTask) => {
 
 // Cancel
 const handleCancel = async (task: WarehouseTask) => {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.warehouse.cancelTaskConfirm', 'タスクをキャンセルしますか？ / 确定要取消任务吗？') + `（${task.taskNumber}）`,
-      '確認 / 确认',
-      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await cancelTask(task._id, {})
     showToast(t('wms.warehouse.taskCancelled', 'タスクをキャンセルしました'), 'success')

@@ -40,17 +40,18 @@
 
     <!-- F-key 操作バー / Fキー操作バー -->
     <div class="fkey-bar">
-      <button
+      <Button
         v-for="fk in fKeyDefs"
         :key="fk.key"
         v-show="!!fk.label"
+        :variant="fk.key === 'F9' ? 'destructive' : 'outline'"
         class="fkey-btn"
         :class="{ 'fkey-btn--danger': fk.key === 'F9' }"
         @click="fk.action?.()"
       >
         <span class="fkey-key">{{ fk.key }}</span>
         <span class="fkey-label">{{ fk.label }}</span>
-      </button>
+      </Button>
     </div>
 
     <!-- Unconfirm dialog -->
@@ -63,12 +64,9 @@
     />
 
     <!-- Completion dialog -->
-    <ODialog
-      :open="completionDialogVisible"
-      :title="t('wms.inspection.completionTitle', '検品完了')"
-      size="lg"
-      @close="handleCompletionClose"
-    >
+    <Dialog :open="completionDialogVisible" @update:open="(v) => { if (!v) handleCompletionClose() }">
+      <DialogContent class="sm:max-w-[800px]">
+        <DialogHeader><DialogTitle>{{ t('wms.inspection.completionTitle', '検品完了') }}</DialogTitle></DialogHeader>
       <div class="completion-message">
         <p>{{ t('wms.inspection.completionMessage', '検品が完了しました。') }}</p>
         <p>{{ t('wms.inspection.orderNo', '出荷管理No') }}: {{ currentMatchedOrder?.orderNumber }}</p>
@@ -88,24 +86,22 @@
         </div>
       </div>
 
-      <template #footer>
-        <OButton variant="secondary" @click="handleCompletionConfirmNoPrint">{{ t('wms.inspection.confirmNoPrint', '確認（印刷なし）') }}</OButton>
-        <OButton
-          variant="primary"
+      <DialogFooter>
+        <Button variant="secondary" @click="handleCompletionConfirmNoPrint">{{ t('wms.inspection.confirmNoPrint', '確認（印刷なし）') }}</Button>
+        <Button
+          variant="default"
           :disabled="(inspPrint.currentPdfSource.value === 'local' && (!inspPrint.printImageUrl.value || inspPrint.printRendering.value)) || (inspPrint.currentPdfSource.value === 'b2-webapi' && !currentMatchedOrder?.trackingId)"
           @click="handlePrint"
         >
           {{ t('wms.inspection.print', '印刷') }}
-        </OButton>
-      </template>
-    </ODialog>
+        </Button>
+      </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Wrong scan warning dialog -->
-    <ODialog
-      :open="wrongScanDialogVisible"
-      size="sm"
-      @close="closeWrongScanDialog"
-    >
+    <Dialog :open="wrongScanDialogVisible" @update:open="(v) => { if (!v) closeWrongScanDialog() }">
+      <DialogContent class="sm:max-w-[400px]">
       <div class="wrong-scan-content">
         <div class="wrong-scan-icon">!</div>
         <div class="wrong-scan-title">{{ t('wms.inspection.noMatchingOrder', '該当する注文が見つかりません') }}</div>
@@ -122,27 +118,27 @@
             <span v-if="expectedSkus.length > 5" class="expected-sku-more">...他{{ expectedSkus.length - 5 }}件</span>
           </div>
         </div>
-        <OButton
-          variant="danger"
+        <Button
+          variant="destructive"
           class="wrong-scan-close-btn"
           @click="closeWrongScanDialog"
         >
           {{ t('wms.inspection.confirmAndClose', '確認して閉じる（F1）') }}
-        </OButton>
+        </Button>
       </div>
-      <template #footer><span></span></template>
-    </ODialog>
+      <DialogFooter><span></span></DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
 import { useRouter, useRoute } from 'vue-router'
 import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useI18n } from '@/composables/useI18n'
 import ProductInspectionLeftPanel from './one-product/ProductInspectionLeftPanel.vue'
 import ProductInspectionRightPanel from './one-product/ProductInspectionRightPanel.vue'
@@ -164,6 +160,8 @@ import { useInspectionPrint } from '@/composables/useInspectionPrint'
 import { useToast } from '@/composables/useToast'
 import { useInspectionScanHistory } from './composables/useInspectionScanHistory'
 import { beepSuccess, beepError, beepComplete } from '@/utils/scanBeep'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
@@ -399,14 +397,8 @@ async function handleOrderCompletion(order: OrderDocument) {
 
   if (alreadyPrinted) {
     let reprintConfirmed = false
-    try {
-      await ElMessageBox.confirm(
-        'この注文は既に印刷済みです。もう一度印刷しますか？ / 此订单已打印，确定要再次打印吗？',
-        '確認 / 确认',
-        { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-      )
-      reprintConfirmed = true
-    } catch { /* cancelled */ }
+    if (!(await confirm('この操作を実行しますか？'))) return
+    reprintConfirmed = true
     if (reprintConfirmed) {
       if (autoPrintEnabled.value) {
         await triggerAutoPrint(order)
@@ -553,15 +545,10 @@ async function handleUnconfirmConfirm(reason: string, skipCarrierDelete = false)
   } catch (e: any) {
     if (builtIn && isCarrierDeleteError(e)) {
       isUnconfirming.value = false
-      try {
-        await ElMessageBox.confirm(
-          `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？ / B2 Cloud历史删除失败。\n\n错误: ${e.error}\n\n跳过B2 Cloud删除，仅更新本地吗？`,
-          '確認 / 确认',
-          { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-        )
+      if (await confirm('この操作を実行しますか？')) {
         await handleUnconfirmConfirm(reason, true)
         return
-      } catch { return }
+      }
     }
     showToast(e?.message || '確認取消に失敗しました', 'danger')
     unconfirmDialogVisible.value = false

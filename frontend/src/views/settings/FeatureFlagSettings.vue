@@ -1,75 +1,75 @@
 <template>
   <div class="feature-flag-settings">
-    <ControlPanel title="フィーチャーフラグ管理" :show-search="false">
+    <PageHeader title="フィーチャーフラグ管理" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">新規追加</OButton>
+        <Button variant="default" @click="openCreate">新規追加</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="featureFlagSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="flags"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         pagination-enabled
         pagination-mode="client"
         :page-size="20"
-        :global-search-text="globalSearchText"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogOpen" :title="isEditing ? 'フラグを編集' : 'フラグを追加'" size="lg" @confirm="handleSave">
+    <Dialog :open="dialogOpen" @update:open="dialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? 'フラグを編集' : 'フラグを追加' }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">キー <span class="required-badge">必須</span></label>
-          <input v-model="form.key" type="text" class="o-input" placeholder="例: extensions.scripts" :disabled="isEditing" />
+          <label>キー <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.key" type="text" placeholder="例: extensions.scripts" :disabled="isEditing" />
           <span class="form-hint">英数字、ドット、アンダースコア（先頭は英字）</span>
         </div>
         <div class="form-field">
-          <label class="form-label">名称 <span class="required-badge">必須</span></label>
-          <input v-model="form.name" type="text" class="o-input" placeholder="例: スクリプト自動化" />
+          <label>名称 <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.name" type="text" placeholder="例: スクリプト自動化" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">説明</label>
-          <input v-model="form.description" type="text" class="o-input" placeholder="省略可" />
+          <label>説明</label>
+          <Input v-model="form.description" type="text" placeholder="省略可" />
         </div>
         <div class="form-field">
-          <label class="form-label">グループ</label>
-          <input v-model="form.group" type="text" class="o-input" placeholder="例: extensions" />
+          <label>グループ</label>
+          <Input v-model="form.group" type="text" placeholder="例: extensions" />
         </div>
         <div class="form-field" style="display: flex; align-items: center; gap: 8px; padding-top: 24px">
-          <input v-model="form.defaultEnabled" type="checkbox" id="ff-enabled" />
+          <Checkbox :checked="form.defaultEnabled" @update:checked="val => form.defaultEnabled = val" />
           <label for="ff-enabled">デフォルト有効</label>
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
 
     <!-- Delete Confirm -->
-    <ODialog v-model="deleteDialogOpen" title="削除確認" size="sm" @confirm="handleDelete">
+    <Dialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>削除確認</DialogTitle></DialogHeader>
       <p>「{{ deleteTarget?.name }}」を削除しますか？この操作は元に戻せません。</p>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   fetchFeatureFlags,
   createFeatureFlag,
@@ -211,8 +211,8 @@ const tableColumns: TableColumn[] = [
     width: 180,
     cellRenderer: ({ rowData }: { rowData: FeatureFlag }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ]),
   },
 ]

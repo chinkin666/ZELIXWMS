@@ -5,29 +5,29 @@
       <div class="toolbar-form">
         <div class="form-group-inline">
           <label>{{ t('wms.printTemplate.width') }}(mm)</label>
-          <input :value="canvas.widthMm" type="number" min="1" class="o-input" style="width: 110px" @input="$emit('update-canvas', 'widthMm', Number(($event.target as HTMLInputElement).value))" />
+          <Input :model-value="canvas.widthMm" type="number" min="1" style="width: 110px" @update:model-value="$emit('update-canvas', 'widthMm', Number($event))" />
         </div>
         <div class="form-group-inline">
           <label>{{ t('wms.printTemplate.height') }}(mm)</label>
-          <input :value="canvas.heightMm" type="number" min="1" class="o-input" style="width: 110px" @input="$emit('update-canvas', 'heightMm', Number(($event.target as HTMLInputElement).value))" />
+          <Input :model-value="canvas.heightMm" type="number" min="1" style="width: 110px" @update:model-value="$emit('update-canvas', 'heightMm', Number($event))" />
         </div>
         <div class="form-group-inline">
           <label>解像度 (px/mm)</label>
-          <input :value="canvas.pxPerMm" type="number" min="1" step="0.5" class="o-input" style="width: 110px" @input="$emit('update-canvas', 'pxPerMm', Number(($event.target as HTMLInputElement).value))" />
+          <Input :model-value="canvas.pxPerMm" type="number" min="1" step="0.5" style="width: 110px" @update:model-value="$emit('update-canvas', 'pxPerMm', Number($event))" />
         </div>
       </div>
       <div class="row">
-        <OButton variant="secondary" @click="$emit('add-text')">+ テキスト</OButton>
-        <OButton variant="secondary" @click="$emit('add-barcode')">+ バーコード</OButton>
-        <OButton variant="secondary" @click="$emit('add-image')">+ 画像</OButton>
+        <Button variant="secondary" @click="$emit('add-text')">+ テキスト</Button>
+        <Button variant="secondary" @click="$emit('add-barcode')">+ バーコード</Button>
+        <Button variant="secondary" @click="$emit('add-image')">+ 画像</Button>
       </div>
     </div>
 
     <div class="canvas-toolbar" style="margin-top: 8px">
       <div class="row">
         <input ref="bgFileInput" type="file" accept="image/*" class="hidden-input" @change="onBgFileChange" />
-        <OButton variant="secondary" @click="triggerBgUpload">{{ t('wms.printTemplate.uploadRefImage') }}</OButton>
-        <OButton variant="secondary" :disabled="!bgImageUrl" @click="$emit('clear-bg-image')">{{ t('wms.printTemplate.clearRefImage') }}</OButton>
+        <Button variant="secondary" @click="triggerBgUpload">{{ t('wms.printTemplate.uploadRefImage') }}</Button>
+        <Button variant="secondary" :disabled="!bgImageUrl" @click="$emit('clear-bg-image')">{{ t('wms.printTemplate.clearRefImage') }}</Button>
       </div>
       <div class="row" style="align-items: center">
         <div class="opacity-label">{{ t('wms.printTemplate.opacity') }}</div>
@@ -44,7 +44,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useI18n } from '@/composables/useI18n'
 
 const { t } = useI18n()
@@ -142,7 +143,7 @@ defineExpose({ stageEl })
   gap: 8px;
   margin-top: 8px;
 }
-.o-input {
+.{
   padding: 6px 10px;
   border: 1px solid var(--o-border-color, #dee2e6);
   border-radius: 4px;

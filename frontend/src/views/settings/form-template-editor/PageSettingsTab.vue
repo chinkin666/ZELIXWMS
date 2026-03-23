@@ -23,19 +23,19 @@
         <div class="margin-inputs">
           <div class="margin-input">
             <span>{{ t('wms.formEditor.marginLeft', '左') }}</span>
-            <input type="number" :value="template.pageMargins[0]" min="0" max="200" class="o-input" style="width: 80px" @input="$emit('update-margin', 0, parseInt(($event.target as HTMLInputElement).value))" />
+            <Input type="number" :model-value="template.pageMargins[0]" min="0" max="200" style="width: 80px" @update:model-value="$emit('update-margin', 0, parseInt($event))" />
           </div>
           <div class="margin-input">
             <span>{{ t('wms.formEditor.marginTop', '上') }}</span>
-            <input type="number" :value="template.pageMargins[1]" min="0" max="200" class="o-input" style="width: 80px" @input="$emit('update-margin', 1, parseInt(($event.target as HTMLInputElement).value))" />
+            <Input type="number" :model-value="template.pageMargins[1]" min="0" max="200" style="width: 80px" @update:model-value="$emit('update-margin', 1, parseInt($event))" />
           </div>
           <div class="margin-input">
             <span>{{ t('wms.formEditor.marginRight', '右') }}</span>
-            <input type="number" :value="template.pageMargins[2]" min="0" max="200" class="o-input" style="width: 80px" @input="$emit('update-margin', 2, parseInt(($event.target as HTMLInputElement).value))" />
+            <Input type="number" :model-value="template.pageMargins[2]" min="0" max="200" style="width: 80px" @update:model-value="$emit('update-margin', 2, parseInt($event))" />
           </div>
           <div class="margin-input">
             <span>{{ t('wms.formEditor.marginBottom', '下') }}</span>
-            <input type="number" :value="template.pageMargins[3]" min="0" max="200" class="o-input" style="width: 80px" @input="$emit('update-margin', 3, parseInt(($event.target as HTMLInputElement).value))" />
+            <Input type="number" :model-value="template.pageMargins[3]" min="0" max="200" style="width: 80px" @update:model-value="$emit('update-margin', 3, parseInt($event))" />
           </div>
         </div>
       </div>
@@ -44,6 +44,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import type { FormTemplate } from '@/types/formTemplate'
 import { useI18n } from '@/composables/useI18n'
 
@@ -70,6 +71,6 @@ defineEmits<{
 .margin-inputs { display: flex; gap: 16px; flex-wrap: wrap; }
 .margin-input { display: flex; align-items: center; gap: 8px; }
 .margin-input span { font-size: 12px; color: #606266; width: 20px; }
-.o-input { padding: 6px 10px; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px; font-size: 13px; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
+.{ padding: 6px 10px; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px; font-size: 13px; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
 .o-input:focus { border-color: var(--o-primary, #0052A3); }
 </style>

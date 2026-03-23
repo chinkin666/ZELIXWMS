@@ -1,12 +1,12 @@
 <template>
   <div class="low-stock-alerts">
-    <ControlPanel :title="'補充管理（定点割れリスト）'" :show-search="false">
+    <PageHeader :title="'補充管理（定点割れリスト）'" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" :disabled="isLoading" @click="loadData">
+        <Button variant="secondary" size="sm" :disabled="isLoading" @click="loadData">
           {{ isLoading ? '読込中...' : '再読込' }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- サマリーカード / 摘要卡片 -->
     <div class="summary-cards">
@@ -28,22 +28,16 @@
       </div>
     </div>
 
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="lowStockAlertsSearch"
-      @search="handleSearch"
-    />
-
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="alerts"
         row-key="productId"
         pagination-enabled
         pagination-mode="client"
         :global-search-text="globalSearchText"
+        :search-columns="searchColumns"
+        @search="handleSearch"
       />
     </div>
   </div>
@@ -57,16 +51,15 @@
  * 补充推奨数 = max(safetyStock * 2 - currentStock, 0)
  * 显示低于安全库存的商品列表，包含补充推荐数。
  */
-import { ref, computed, h, onMounted } from 'vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import { fetchLowStockAlerts } from '@/api/inventory'
 import type { LowStockAlert } from '@/types/inventory'
 import { useToast } from '@/composables/useToast'
-
+import { ref, computed, h, onMounted } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const { show: showToast } = useToast()
 
 const alerts = ref<LowStockAlert[]>([])

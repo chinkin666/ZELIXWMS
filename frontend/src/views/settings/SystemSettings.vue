@@ -1,16 +1,20 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
+import { Input } from '@/components/ui/input'
 import {
   fetchSystemSettings,
   updateSystemSettings,
   resetSystemSettings,
   type SystemSettings,
 } from '@/api/systemSettings'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const { showSuccess, showError, showWarning } = useToast()
 const { t } = useI18n()
@@ -76,14 +80,7 @@ async function handleSave(): Promise<void> {
 }
 
 async function handleReset(): Promise<void> {
-  try {
-    await ElMessageBox.confirm(
-      'すべての設定をデフォルト値にリセットしてもよろしいですか？ / 确定要将所有设置重置为默认值吗？',
-      '確認 / 确认',
-      { confirmButtonText: 'リセット / 重置', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
-
+  if (!(await confirm('この操作を実行しますか？'))) return
   saving.value = true
   try {
     const data = await resetSystemSettings()
@@ -102,18 +99,24 @@ onMounted(loadSettings)
 
 <template>
   <div class="system-settings">
-    <ControlPanel :title="t('wms.settings.advancedSettings', '応用設定')" :show-search="false">
+    <PageHeader :title="t('wms.settings.advancedSettings', '応用設定')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" :disabled="saving" @click="handleReset">
+        <Button variant="secondary" :disabled="saving" @click="handleReset">
           {{ t('wms.settings.reset', 'リセット') }}
-        </OButton>
-        <OButton variant="primary" :disabled="saving" @click="handleSave">
+        </Button>
+        <Button variant="default" :disabled="saving" @click="handleSave">
           {{ t('wms.common.save', '保存') }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div v-if="loading" class="settings-loading">{{ t('wms.settings.loading', '読み込み中...') }}</div>
+    <div v-if="loading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <div v-else class="settings-body">
       <p class="settings-hint">
@@ -121,81 +124,81 @@ onMounted(loadSettings)
       </p>
 
       <!-- 入荷设定 / 入荷設定 -->
-      <div class="o-card settings-card">
-        <div class="card-header">
-          <span class="card-title">{{ t('wms.settings.inboundSettings', '入荷設定') }}</span>
-          <span class="card-description">{{ t('wms.settings.inboundSettingsDesc', '入荷時の検品やロット自動作成に関する設定') }}</span>
-        </div>
-        <div class="card-body">
+      <Card class="settings-card">
+        <CardHeader>
+          <CardTitle>{{ t('wms.settings.inboundSettings', '入荷設定') }}</CardTitle>
+          <CardDescription>{{ t('wms.settings.inboundSettingsDesc', '入荷時の検品やロット自動作成に関する設定') }}</CardDescription>
+        </CardHeader>
+        <CardContent>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.inboundRequireInspection', '入荷時に検品を必須にする') }}</label>
+            <Label>{{ t('wms.settings.inboundRequireInspection', '入荷時に検品を必須にする') }}</Label>
             <label class="toggle-switch">
               <input v-model="form.inboundRequireInspection" type="checkbox" />
               <span class="toggle-slider" />
             </label>
           </div>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.inboundAutoCreateLot', '入荷時にロットを自動作成') }}</label>
+            <Label>{{ t('wms.settings.inboundAutoCreateLot', '入荷時にロットを自動作成') }}</Label>
             <label class="toggle-switch">
               <input v-model="form.inboundAutoCreateLot" type="checkbox" />
               <span class="toggle-slider" />
             </label>
           </div>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.defaultInboundLocation', 'デフォルト入荷ロケーション') }}</label>
-            <input v-model="form.inboundDefaultLocationCode" type="text" class="o-input" placeholder="例: WH-IN-01" />
+            <Label>{{ t('wms.settings.defaultInboundLocation', 'デフォルト入荷ロケーション') }}</Label>
+            <Input v-model="form.inboundDefaultLocationCode" type="text" placeholder="例: WH-IN-01" />
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <!-- 在库设定 / 在庫設定 -->
-      <div class="o-card settings-card">
-        <div class="card-header">
-          <span class="card-title">{{ t('wms.settings.inventorySettings', '在庫設定') }}</span>
-          <span class="card-description">{{ t('wms.settings.inventorySettingsDesc', '在庫管理・ロット追跡・賞味期限に関する設定') }}</span>
-        </div>
-        <div class="card-body">
+      <Card class="settings-card">
+        <CardHeader>
+          <CardTitle>{{ t('wms.settings.inventorySettings', '在庫設定') }}</CardTitle>
+          <CardDescription>{{ t('wms.settings.inventorySettingsDesc', '在庫管理・ロット追跡・賞味期限に関する設定') }}</CardDescription>
+        </CardHeader>
+        <CardContent>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.allowNegativeStock', 'マイナス在庫を許可') }}</label>
+            <Label>{{ t('wms.settings.allowNegativeStock', 'マイナス在庫を許可') }}</Label>
             <label class="toggle-switch">
               <input v-model="form.inventoryAllowNegativeStock" type="checkbox" />
               <span class="toggle-slider" />
             </label>
           </div>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.defaultSafetyStock', 'デフォルト安全在庫数') }}</label>
-            <input v-model.number="form.inventoryDefaultSafetyStock" type="number" class="o-input" min="0" />
+            <Label>{{ t('wms.settings.defaultSafetyStock', 'デフォルト安全在庫数') }}</Label>
+            <Input v-model.number="form.inventoryDefaultSafetyStock" type="number" min="0" />
           </div>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.enableLotTracking', 'ロット追跡を有効化') }}</label>
+            <Label>{{ t('wms.settings.enableLotTracking', 'ロット追跡を有効化') }}</Label>
             <label class="toggle-switch">
               <input v-model="form.inventoryLotTrackingEnabled" type="checkbox" />
               <span class="toggle-slider" />
             </label>
           </div>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.expiryAlertDays', '賞味期限アラート日数') }}</label>
-            <input v-model.number="form.inventoryExpiryAlertDays" type="number" class="o-input" min="0" />
+            <Label>{{ t('wms.settings.expiryAlertDays', '賞味期限アラート日数') }}</Label>
+            <Input v-model.number="form.inventoryExpiryAlertDays" type="number" min="0" />
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <!-- 出荷高级设定 / 出荷詳細設定 -->
-      <div class="o-card settings-card">
-        <div class="card-header">
-          <span class="card-title">{{ t('wms.settings.outboundAdvanced', '出荷詳細設定') }}</span>
-          <span class="card-description">出荷時の自動引当に関する詳細設定（検品・引当ルールは基本設定で変更可能）</span>
-        </div>
-        <div class="card-body">
+      <Card class="settings-card">
+        <CardHeader>
+          <CardTitle>{{ t('wms.settings.outboundAdvanced', '出荷詳細設定') }}</CardTitle>
+          <CardDescription>出荷時の自動引当に関する詳細設定（検品・引当ルールは基本設定で変更可能）</CardDescription>
+        </CardHeader>
+        <CardContent>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.outboundAutoAllocate', '出荷時に自動引当') }}</label>
+            <Label>{{ t('wms.settings.outboundAutoAllocate', '出荷時に自動引当') }}</Label>
             <label class="toggle-switch">
               <input v-model="form.outboundAutoAllocate" type="checkbox" />
               <span class="toggle-slider" />
             </label>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   </div>
 </template>
@@ -287,7 +290,7 @@ onMounted(loadSettings)
   min-width: 200px;
 }
 
-.o-input {
+.{
   flex: 1;
   max-width: 300px;
   height: 34px;
@@ -306,7 +309,7 @@ onMounted(loadSettings)
   box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.15);
 }
 
-select.o-input { cursor: pointer; }
+select.{ cursor: pointer; }
 
 /* Toggle switch */
 .toggle-switch {
@@ -347,7 +350,7 @@ select.o-input { cursor: pointer; }
     align-items: flex-start;
     gap: 0.5rem;
   }
-  .o-input { max-width: 100%; width: 100%; }
+  .{ max-width: 100%; width: 100%; }
   .form-label { min-width: auto; }
 }
 </style>

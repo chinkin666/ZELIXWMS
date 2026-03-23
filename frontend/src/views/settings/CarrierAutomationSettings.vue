@@ -1,11 +1,11 @@
 <template>
   <div class="carrier-automation-settings">
-    <ControlPanel :title="'配送業者自動化設定'" :show-search="false" />
+    <PageHeader :title="'配送業者自動化設定'" :show-search="false" />
 
     <!-- 动态 tab（根据已安装配送業者生成）/ 動的タブ（インストール済み配送業者から生成） -->
-    <div class="o-card automation-tabs-card">
+    <Card class="automation-tabs-card">
       <div class="o-tabs">
-        <button
+        <Button
           v-for="carrier in availableCarriers"
           :key="carrier.type"
           class="o-tab"
@@ -15,12 +15,18 @@
           {{ carrier.name }}
           <span v-if="carrier.connected" class="tab-status tab-status--ok" title="接続済み" />
           <span v-else-if="carrier.configured" class="tab-status tab-status--warn" title="未接続" />
-        </button>
+        </Button>
       </div>
 
       <!-- ヤマト B2 Cloud -->
       <div class="tab-content" v-if="activeTab === 'yamato-b2'">
-        <div v-if="loading" class="loading-state">読み込み中...</div>
+        <div v-if="loading" class="space-y-3 p-4">
+          <Skeleton class="h-4 w-[250px]" />
+          <Skeleton class="h-4 w-[200px]" />
+          <Skeleton class="h-10 w-full" />
+          <Skeleton class="h-10 w-full" />
+          <Skeleton class="h-10 w-full" />
+        </div>
         <template v-else>
           <div class="config-form">
             <!-- 接続ステータス / 接続状態 -->
@@ -33,7 +39,7 @@
             </div>
 
             <div class="o-form-group">
-              <label class="form-label">有効</label>
+              <label>有効</label>
               <div style="display:flex;align-items:center;gap:12px">
                 <label class="o-toggle">
                   <input type="checkbox" v-model="yamatoB2Form.enabled" />
@@ -43,58 +49,58 @@
               </div>
             </div>
 
-            <hr class="o-divider" />
+            <hr />
             <h4 class="section-label">API接続設定</h4>
 
             <div class="form-grid">
               <div class="o-form-group">
-                <label class="form-label">APIエンドポイント <span class="required-badge">必須</span></label>
-                <input class="o-input" v-model="yamatoB2Form.apiEndpoint" placeholder="https://yamato-b2-webapi.nexand.org" />
+                <label>APIエンドポイント <span class="text-destructive text-xs">*</span></label>
+                <Input v-model="yamatoB2Form.apiEndpoint" placeholder="https://yamato-b2-webapi.nexand.org" />
               </div>
               <div class="o-form-group">
-                <label class="form-label">API Key <span class="required-badge">必須</span></label>
+                <label>API Key <span class="text-destructive text-xs">*</span></label>
                 <div class="password-wrap">
-                  <input class="o-input" v-model="yamatoB2Form.apiKey" :type="showApiKey ? 'text' : 'password'" placeholder="公開API用のアクセスキー" />
-                  <button class="password-toggle" type="button" @click="showApiKey = !showApiKey" :title="showApiKey ? '隠す' : '表示'">
+                  <Input v-model="yamatoB2Form.apiKey" :type="showApiKey ? 'text' : 'password'" placeholder="公開API用のアクセスキー" />
+                  <Button class="password-toggle" type="button" @click="showApiKey = !showApiKey" :title="showApiKey ? '隠す' : '表示'">
                     {{ showApiKey ? '🙈' : '👁' }}
-                  </button>
+                  </Button>
                 </div>
               </div>
               <div class="o-form-group">
-                <label class="form-label">お客様コード <span class="required-badge">必須</span></label>
-                <input class="o-input" v-model="yamatoB2Form.customerCode" placeholder="ヤマトビジネスメンバーズID" />
+                <label>お客様コード <span class="text-destructive text-xs">*</span></label>
+                <Input v-model="yamatoB2Form.customerCode" placeholder="ヤマトビジネスメンバーズID" />
               </div>
               <div class="o-form-group">
-                <label class="form-label">パスワード <span class="required-badge">必須</span></label>
+                <label>パスワード <span class="text-destructive text-xs">*</span></label>
                 <div class="password-wrap">
-                  <input class="o-input" v-model="yamatoB2Form.customerPassword" :type="showPassword ? 'text' : 'password'" placeholder="パスワード" />
-                  <button class="password-toggle" type="button" @click="showPassword = !showPassword">
+                  <Input v-model="yamatoB2Form.customerPassword" :type="showPassword ? 'text' : 'password'" placeholder="パスワード" />
+                  <Button class="password-toggle" type="button" @click="showPassword = !showPassword">
                     {{ showPassword ? '🙈' : '👁' }}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
 
-            <hr class="o-divider" />
+            <hr />
             <h4 class="section-label">請求先</h4>
             <div class="form-grid">
               <div class="o-form-group">
-                <label class="form-label">請求先顧客コード</label>
-                <input class="o-input" v-model="yamatoB2Form.invoiceCode" placeholder="10〜12桁" maxlength="12" />
+                <label>請求先顧客コード</label>
+                <Input v-model="yamatoB2Form.invoiceCode" placeholder="10〜12桁" maxlength="12" />
                 <div class="field-hint">B2 Cloudで設定された請求先の顧客コード</div>
               </div>
               <div class="o-form-group">
-                <label class="form-label">運賃管理番号</label>
-                <input class="o-input" v-model="yamatoB2Form.invoiceFreightNo" placeholder="2桁" maxlength="2" style="width:100px" />
+                <label>運賃管理番号</label>
+                <Input v-model="yamatoB2Form.invoiceFreightNo" placeholder="2桁" maxlength="2" style="width:100px" />
               </div>
             </div>
 
-            <hr class="o-divider" />
+            <hr />
             <h4 class="section-label">自動検証設定</h4>
             <p class="field-hint" style="margin-bottom:12px">出荷確認時にB2 Cloudへの自動検証を定期的にリトライする設定です</p>
 
             <div class="o-form-group">
-              <label class="form-label">自動検証</label>
+              <label>自動検証</label>
               <div style="display:flex;align-items:center;gap:12px">
                 <label class="o-toggle">
                   <input type="checkbox" v-model="autoValidationForm.enabled" />
@@ -105,77 +111,97 @@
             </div>
             <div class="form-grid" v-if="autoValidationForm.enabled">
               <div class="o-form-group">
-                <label class="form-label">検証間隔</label>
-                <select class="o-input" v-model.number="autoValidationForm.intervalMinutes" style="width:160px">
-                  <option :value="1">1分</option>
-                  <option :value="5">5分</option>
-                  <option :value="10">10分</option>
-                  <option :value="30">30分</option>
-                  <option :value="60">60分</option>
-                </select>
+                <label>検証間隔</label>
+                <Select v-model="autoValidationForm.intervalMinutes">
+                  <SelectTrigger class="w-[160px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem :value="1">1分</SelectItem>
+                    <SelectItem :value="5">5分</SelectItem>
+                    <SelectItem :value="10">10分</SelectItem>
+                    <SelectItem :value="30">30分</SelectItem>
+                    <SelectItem :value="60">60分</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div class="o-form-group">
-                <label class="form-label">最大リトライ回数</label>
-                <input class="o-input" type="number" v-model.number="autoValidationForm.maxRetries" min="1" max="20" style="width:100px" />
+                <label>最大リトライ回数</label>
+                <Input type="number" v-model.number="autoValidationForm.maxRetries" min="1" max="20" style="width:100px" />
               </div>
             </div>
           </div>
 
-            <hr class="o-divider" />
+            <hr />
             <h4 class="section-label">送り状種類マッピング</h4>
             <p class="field-hint" style="margin-bottom:12px">各送り状種類のB2送り状種類と印刷テンプレートを設定します</p>
 
             <div class="service-mapping-wrapper">
-              <table class="o-list-table service-mapping-table">
-                <thead>
-                  <tr>
-                    <th style="width:40px;text-align:center">有効</th>
-                    <th style="width:130px">種類</th>
-                    <th style="width:130px">B2種類</th>
-                    <th style="width:90px">PDF元</th>
-                    <th>テンプレート</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="row in serviceTypeMappingList" :key="row.invoiceType" :class="{ 'row-disabled': !row.enabled }">
-                    <td style="text-align:center">
+              <Table class="service-mapping-table">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead style="width:40px;text-align:center">有効</TableHead>
+                    <TableHead style="width:130px">種類</TableHead>
+                    <TableHead style="width:130px">B2種類</TableHead>
+                    <TableHead style="width:90px">PDF元</TableHead>
+                    <TableHead>テンプレート</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="row in serviceTypeMappingList" :key="row.invoiceType" :class="{ 'row-disabled': !row.enabled }">
+                    <TableCell style="text-align:center">
                       <input type="checkbox" :checked="row.enabled" @change="updateMappingRow(row.invoiceType, 'enabled', ($event.target as HTMLInputElement).checked ? 'true' : '')" />
-                    </td>
-                    <td>{{ row.label }}</td>
-                    <td>
-                      <select class="o-input" :value="row.b2ServiceType" @change="updateMappingRow(row.invoiceType, 'b2ServiceType', ($event.target as HTMLSelectElement).value)" :disabled="!row.enabled">
-                        <option v-for="opt in b2ServiceTypeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                      </select>
-                    </td>
-                    <td>
-                      <select class="o-input" :value="row.pdfSource" @change="updateMappingRow(row.invoiceType, 'pdfSource', ($event.target as HTMLSelectElement).value)" :disabled="!row.enabled">
-                        <option v-for="opt in pdfSourceOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                      </select>
-                    </td>
-                    <td>
-                      <select class="o-input" :value="row.printTemplateId || ''" @change="updateMappingRow(row.invoiceType, 'printTemplateId', ($event.target as HTMLSelectElement).value || undefined)" :disabled="!row.enabled || row.pdfSource === 'b2-webapi'">
-                        <option value="">テンプレートを選択</option>
-                        <option v-for="tpl in printTemplates" :key="tpl.id" :value="tpl.id">{{ tpl.name }}</option>
-                      </select>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                    </TableCell>
+                    <TableCell>{{ row.label }}</TableCell>
+                    <TableCell>
+                      <Select :model-value="row.b2ServiceType" @update:model-value="updateMappingRow(row.invoiceType, 'b2ServiceType', $event)" :disabled="!row.enabled">
+                        <SelectTrigger class="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem v-for="opt in b2ServiceTypeOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Select :model-value="row.pdfSource" @update:model-value="updateMappingRow(row.invoiceType, 'pdfSource', $event)" :disabled="!row.enabled">
+                        <SelectTrigger class="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem v-for="opt in pdfSourceOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Select :model-value="row.printTemplateId || '__none__'" @update:model-value="updateMappingRow(row.invoiceType, 'printTemplateId', $event === '__none__' ? undefined : $event)" :disabled="!row.enabled || row.pdfSource === 'b2-webapi'">
+                        <SelectTrigger class="w-full">
+                          <SelectValue placeholder="テンプレートを選択" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">テンプレートを選択</SelectItem>
+                          <SelectItem v-for="tpl in printTemplates" :key="tpl.id" :value="tpl.id">{{ tpl.name }}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </div>
 
           <div class="form-actions">
-            <OButton variant="secondary" @click="testConnection" :disabled="testing || !canTest">
+            <Button variant="secondary" @click="testConnection" :disabled="testing || !canTest">
               {{ testing ? 'テスト中...' : '接続テスト' }}
-            </OButton>
-            <OButton variant="primary" @click="saveConfig" :disabled="saving">
+            </Button>
+            <Button variant="default" @click="saveConfig" :disabled="saving">
               {{ saving ? '保存中...' : '保存' }}
-            </OButton>
+            </Button>
           </div>
 
           <div v-if="testResult" class="test-result" :class="testResult.success ? 'test-success' : 'test-error'">
             <strong>{{ testResult.success ? '接続成功' : '接続失敗' }}</strong>
             <p>{{ testResult.message }}</p>
-            <button class="dismiss-btn" @click="testResult = null">&times;</button>
+            <Button class="dismiss-btn" @click="testResult = null">&times;</Button>
           </div>
         </template>
       </div>
@@ -191,8 +217,8 @@
           </div>
           <p class="field-hint">佐川急便の連携は<strong>プラグイン方式</strong>で動作しています。CSV出力・追跡番号取込は佐川急便設定ページで行えます。</p>
           <div class="plugin-actions">
-            <OButton variant="secondary" @click="$router.push('/settings/sagawa')">佐川急便設定を開く</OButton>
-            <OButton variant="secondary" @click="$router.push('/settings/plugins')">プラグイン管理</OButton>
+            <Button variant="secondary" @click="$router.push('/settings/sagawa')">佐川急便設定を開く</Button>
+            <Button variant="secondary" @click="$router.push('/settings/plugins')">プラグイン管理</Button>
           </div>
         </div>
       </div>
@@ -205,15 +231,17 @@
           <p>開発予定 — プラグインとして実装される予定です</p>
         </div>
       </div>
-    </div>
+    </Card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import type { YamatoB2Config, ConnectionTestResult, ServiceTypeConfig, PdfSource, AutoValidationConfig } from '@/types/carrierAutomation'
 import {
   fetchCarrierAutomationConfig,
@@ -222,6 +250,9 @@ import {
 } from '@/api/carrierAutomation'
 import { useEnabledInvoiceTypes } from '@/composables/useEnabledInvoiceTypes'
 import { fetchPrintTemplates, type PrintTemplateApiModel } from '@/api/printTemplates'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 const { show: showToast } = useToast()
 const { reload: reloadEnabledInvoiceTypes } = useEnabledInvoiceTypes()
@@ -520,13 +551,13 @@ onMounted(() => {
 
 /* 密码显示/隐藏 */
 .password-wrap { position: relative; }
-.password-wrap .o-input { padding-right: 36px; }
+.password-wrap .{ padding-right: 36px; }
 .password-toggle {
   position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
   border: none; background: none; cursor: pointer; font-size: 14px; padding: 4px;
 }
 
-.o-input {
+.{
   width: 100%; padding: 6px 10px;
   border: 1px solid var(--o-border-color, #dcdfe6);
   font-size: var(--o-font-size-base, 14px);
@@ -553,7 +584,7 @@ onMounted(() => {
 .field-hint { margin-top: 4px; font-size: 12px; color: var(--o-gray-500, #909399); }
 
 .service-mapping-wrapper { overflow-x: auto; margin-bottom: 16px; max-width: 700px; }
-.service-mapping-table .o-input { padding: 4px 6px; font-size: 12px; height: 28px; }
+.service-mapping-table .{ padding: 4px 6px; font-size: 12px; height: 28px; }
 .service-mapping-table td { font-size: 12px; }
 .service-mapping-table .row-disabled td { opacity: 0.4; }
 .service-mapping-table .row-disabled td:first-child { opacity: 1; }

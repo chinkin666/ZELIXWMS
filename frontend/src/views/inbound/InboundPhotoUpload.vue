@@ -1,28 +1,30 @@
 <template>
   <div class="inbound-photo-upload">
-    <ControlPanel :title="t('wms.inbound.photoUpload', '入庫写真登録')" :show-search="false" />
+    <PageHeader :title="t('wms.inbound.photoUpload', '入庫写真登録')" :show-search="false" />
 
     <!-- 写真アップロードフォーム / 照片上传表单 -->
-    <div class="upload-form o-card">
+    <div class="upload-form rounded-lg border bg-card p-4">
       <h3 class="form-title">{{ t('wms.inbound.photoRegistration', '入庫写真の登録') }}</h3>
       <p class="form-desc">{{ t('wms.inbound.photoDesc', '入庫検品時の写真を登録します。ドラッグ＆ドロップまたはファイル選択で画像をアップロードできます。') }}</p>
 
       <div class="form-grid">
         <!-- 入庫指示番号選択 / 入库指示编号选择 -->
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.orderNumber', '入庫指示番号') }} <span class="required-badge">必須</span></label>
-          <select v-model="selectedOrderId" class="o-input">
-            <option value="">{{ t('wms.inbound.selectOrder', '入庫指示を選択...') }}</option>
-            <option v-for="order in orders" :key="order._id" :value="order._id">
-              {{ order.orderNumber }} - {{ order.customerName || order.status }}
-            </option>
-          </select>
+          <label>{{ t('wms.inbound.orderNumber', '入庫指示番号') }} <span class="text-destructive text-xs">*</span></label>
+          <Select :model-value="selectedOrderId || '__none__'" @update:model-value="(v: string) => { selectedOrderId = v === '__none__' ? '' : v }">
+            <SelectTrigger><SelectValue placeholder="{{ t('wms.inbound.selectOrder', '入庫指示を選択...') }}" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="order in orders" :key="order._id" :value="order._id">
+                {{ order.orderNumber }} - {{ order.customerName || order.status }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <!-- メモ入力 / 备注输入 -->
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.memo', 'メモ') }}</label>
-          <input v-model="memo" type="text" class="o-input" :placeholder="t('wms.inbound.photoMemoPlaceholder', '写真に関するメモ...')" />
+          <label>{{ t('wms.inbound.memo', 'メモ') }}</label>
+          <Input v-model="memo" type="text" :placeholder="t('wms.inbound.photoMemoPlaceholder', '写真に関するメモ...')" />
         </div>
       </div>
 
@@ -55,19 +57,19 @@
         <div v-for="(preview, idx) in previews" :key="idx" class="preview-item">
           <img :src="preview.url" :alt="preview.file.name" class="preview-img" />
           <div class="preview-name">{{ preview.file.name }}</div>
-          <button class="preview-remove" @click="removePreview(idx)">&times;</button>
+          <Button variant="ghost" class="preview-remove" @click="removePreview(idx)">&times;</Button>
         </div>
       </div>
 
       <!-- アップロードボタン / 上传按钮 -->
       <div class="form-actions">
-        <OButton
-          variant="primary"
+        <Button
+          variant="default"
           :disabled="!canUpload || isUploading"
           @click="handleUpload"
         >
           {{ isUploading ? t('wms.inbound.uploading', 'アップロード中...') : t('wms.inbound.upload', 'アップロード') }}
-        </OButton>
+        </Button>
       </div>
     </div>
   </div>
@@ -83,8 +85,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { apiFetch, getApiBaseUrl } from '@/api/base'
 
 interface InboundOrder {
@@ -251,7 +256,7 @@ onMounted(async () => {
 
 .required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
 
-.o-input {
+.{
   padding: 8px 12px;
   border: 1px solid var(--o-border-color, #dcdfe6);
   border-radius: var(--o-border-radius, 4px);

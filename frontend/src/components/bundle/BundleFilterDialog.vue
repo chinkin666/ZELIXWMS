@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="dialogVisible"
-    title="同梱設定"
-    @close="dialogVisible = false"
-    width="560px"
-  >
+  <Dialog :open="dialogVisible" @update:open="dialogVisible = $event">
+    <DialogContent class="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>同梱設定</DialogTitle>
+      </DialogHeader>
     <div class="bundle-filter">
       <div class="bundle-filter__actions">
         <label class="o-checkbox">
@@ -20,7 +19,7 @@
           <span class="bundle-filter__count">
             選択中 {{ innerSelected.length }} / {{ fields.length }}
           </span>
-          <OButton variant="secondary" size="sm" @click="handleClear">クリア</OButton>
+          <Button variant="secondary" size="sm" @click="handleClear">クリア</Button>
         </div>
       </div>
 
@@ -49,17 +48,18 @@
       </div>
     </div>
 
-    <template #footer>
-      <OButton variant="secondary" @click="handleCancel">キャンセル</OButton>
-      <OButton variant="primary" @click="handleSave">保存</OButton>
-    </template>
-  </ODialog>
+    <DialogFooter>
+      <Button variant="secondary" @click="handleCancel">キャンセル</Button>
+      <Button variant="default" @click="handleSave">保存</Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 export interface BundleFieldOption {
   key: string

@@ -1,5 +1,4 @@
 import { ref } from 'vue'
-import type { TableInstance } from 'element-plus'
 import type { Carrier } from '@/types/carrier'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
 import type { Product } from '@/types/product'
@@ -13,7 +12,7 @@ export function useV2State() {
   const globalSearchText = ref('')
   const activeTab = ref<TabName>('pending_confirm')
   const loading = ref(false)
-  const tableRef = ref<TableInstance>()
+  const tableRef = ref<any>()
   const selectedRows = ref<any[]>([])
   const currentPage = ref(1)
   const pageSize = ref(100)

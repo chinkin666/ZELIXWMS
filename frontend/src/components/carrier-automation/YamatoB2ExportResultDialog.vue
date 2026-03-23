@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="modelValue"
-    title="B2 Cloud 送信結果"
-    @close="$emit('update:modelValue', false)"
-    width="600px"
-  >
+  <Dialog :open="modelValue" @update:open="$emit('update:modelValue', $event)">
+    <DialogContent class="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>B2 Cloud 送信結果</DialogTitle>
+      </DialogHeader>
     <div v-if="result">
       <div class="descriptions-grid">
         <div class="desc-item"><span class="desc-label">送信件数</span><span>{{ result.total }}</span></div>
@@ -66,16 +65,17 @@
         </table>
       </div>
     </div>
-    <template #footer>
-      <OButton variant="secondary" @click="$emit('update:modelValue', false)">閉じる</OButton>
-      <OButton variant="primary" @click="$emit('confirm')">OK（一覧を更新）</OButton>
-    </template>
-  </ODialog>
+    <DialogFooter>
+      <Button variant="secondary" @click="$emit('update:modelValue', false)">閉じる</Button>
+      <Button variant="default" @click="$emit('confirm')">OK（一覧を更新）</Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { YamatoB2ExportResult } from '@/types/carrierAutomation'
 
 defineProps<{

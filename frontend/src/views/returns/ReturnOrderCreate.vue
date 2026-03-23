@@ -1,16 +1,16 @@
 <template>
   <div class="return-create">
-    <ControlPanel :title="t('wms.returns.createTitle', '返品作成')" :show-search="false">
+    <PageHeader :title="t('wms.returns.createTitle', '返品作成')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="$router.back()">{{ t('wms.returns.back', '戻る') }}</OButton>
+        <Button variant="secondary" size="sm" @click="$router.back()">{{ t('wms.returns.back', '戻る') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div class="form-card o-card">
+    <div class="rounded-lg border bg-card p-4">
       <div class="form-grid">
         <div class="form-row">
-          <label class="form-label">{{ t('wms.returns.returnReason', '返品理由') }} <span class="required-badge">必須</span></label>
-          <select v-model="form.returnReason" class="o-input" style="width:200px;">
+          <label>{{ t('wms.returns.returnReason', '返品理由') }} <span class="text-destructive text-xs">*</span></label>
+          <select v-model="form.returnReason" style="width:200px;">
             <option value="customer_request">{{ t('wms.returns.reasonCustomerRequest', 'お客様都合') }}</option>
             <option value="defective">{{ t('wms.returns.reasonDefective', '不良品') }}</option>
             <option value="wrong_item">{{ t('wms.returns.reasonWrongItem', '誤配送') }}</option>
@@ -20,82 +20,86 @@
         </div>
 
         <div class="form-row">
-          <label class="form-label">{{ t('wms.returns.customerName', '顧客名') }}</label>
-          <input v-model="form.customerName" class="o-input" style="width:200px;" :placeholder="t('wms.returns.customerName', '顧客名')" />
+          <label>{{ t('wms.returns.customerName', '顧客名') }}</label>
+          <input v-model="form.customerName" style="width:200px;" :placeholder="t('wms.returns.customerName', '顧客名')" />
         </div>
 
         <div class="form-row">
-          <label class="form-label">{{ t('wms.returns.receivedDate', '受付日') }}</label>
-          <input v-model="form.receivedDate" type="date" class="o-input" style="width:200px;" />
+          <label>{{ t('wms.returns.receivedDate', '受付日') }}</label>
+          <input v-model="form.receivedDate" type="date" style="width:200px;" />
         </div>
 
         <div class="form-row">
-          <label class="form-label">{{ t('wms.returns.originalShipmentNumber', '元出荷番号') }}</label>
-          <input v-model="form.shipmentOrderNumber" class="o-input" style="width:200px;" placeholder="SH..." />
+          <label>{{ t('wms.returns.originalShipmentNumber', '元出荷番号') }}</label>
+          <input v-model="form.shipmentOrderNumber" style="width:200px;" placeholder="SH..." />
         </div>
 
         <div class="form-row" style="grid-column:1/-1;">
-          <label class="form-label">{{ t('wms.returns.reasonDetail', '理由詳細') }}</label>
-          <textarea v-model="form.reasonDetail" class="o-input" rows="2" style="width:100%;max-width:500px;" />
+          <label>{{ t('wms.returns.reasonDetail', '理由詳細') }}</label>
+          <textarea v-model="form.reasonDetail" rows="2" style="width:100%;max-width:500px;" />
         </div>
       </div>
 
       <!-- 返品明細 -->
       <div class="lines-section">
         <h3 class="lines-title">{{ t('wms.returns.returnLines', '返品明細') }}</h3>
-        <table class="o-table" style="margin-bottom:0.5rem;">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width:200px;">{{ t('wms.returns.productSkuSearch', '商品 (SKU検索)') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:80px;">{{ t('wms.returns.quantity', '数量') }}</th>
-              <th class="o-table-th" style="width:120px;">{{ t('wms.returns.memo', 'メモ') }}</th>
-              <th class="o-table-th" style="width:50px;"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(line, idx) in form.lines" :key="idx">
-              <td class="o-table-td">
-                <select v-model="line.productId" class="o-input o-input-sm" style="width:100%;" @change="onProductSelect(idx)">
+        <Table style="margin-bottom:0.5rem;">
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width:200px;">{{ t('wms.returns.productSkuSearch', '商品 (SKU検索)') }}</TableHead>
+              <TableHead class="text-right" style="width:80px;">{{ t('wms.returns.quantity', '数量') }}</TableHead>
+              <TableHead style="width:120px;">{{ t('wms.returns.memo', 'メモ') }}</TableHead>
+              <TableHead style="width:50px;"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="(line, idx) in form.lines" :key="idx">
+              <TableCell>
+                <select v-model="line.productId" class="h-8 text-sm" style="width:100%;" @change="onProductSelect(idx)">
                   <option value="">{{ t('wms.returns.selectProduct', '商品を選択...') }}</option>
                   <option v-for="p in products" :key="p._id" :value="p._id">
                     {{ p.sku }} - {{ p.name }}
                   </option>
                 </select>
-              </td>
-              <td class="o-table-td o-table-td--right">
-                <input v-model.number="line.quantity" type="number" min="1" class="o-input o-input-sm" style="width:70px;text-align:right;" />
-              </td>
-              <td class="o-table-td">
-                <input v-model="line.memo" class="o-input o-input-sm" style="width:100%;" />
-              </td>
-              <td class="o-table-td">
-                <button class="remove-btn" @click="form.lines.splice(idx, 1)">&times;</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <OButton variant="secondary" size="sm" @click="addLine">{{ t('wms.returns.addLine', '+ 行追加') }}</OButton>
+              </TableCell>
+              <TableCell class="text-right">
+                <input v-model.number="line.quantity" type="number" min="1" class="h-8 text-sm" style="width:70px;text-align:right;" />
+              </TableCell>
+              <TableCell>
+                <input v-model="line.memo" class="h-8 text-sm" style="width:100%;" />
+              </TableCell>
+              <TableCell>
+                <Button class="remove-btn" @click="form.lines.splice(idx, 1)">&times;</Button>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+        <Button variant="secondary" size="sm" @click="addLine">{{ t('wms.returns.addLine', '+ 行追加') }}</Button>
       </div>
 
       <div class="form-actions">
-        <OButton variant="primary" :disabled="isSubmitting" @click="handleCreate">
+        <Button variant="default" :disabled="isSubmitting" @click="handleCreate">
           {{ isSubmitting ? t('wms.returns.creating', '作成中...') : t('wms.common.create', '作成') }}
-        </OButton>
+        </Button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { onMounted, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { createReturnOrder } from '@/api/returnOrder'
 import { fetchProducts } from '@/api/product'
 import type { Product } from '@/types/product'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 const router = useRouter()
 const toast = useToast()

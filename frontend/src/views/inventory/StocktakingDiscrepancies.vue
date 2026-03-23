@@ -1,56 +1,87 @@
 <template>
   <div class="stocktaking-discrepancies">
-    <ControlPanel :title="t('wms.inventory.discrepancy.title', '棚卸差異')" :show-search="false">
+    <PageHeader :title="t('wms.inventory.discrepancy.title', '棚卸差異')" :show-search="false">
       <template #actions>
-        <el-select v-model="statusFilter" :placeholder="t('wms.common.status', 'ステータス')" clearable style="width: 160px" @change="load">
-          <el-option label="未処理 / 待处理" value="pending" />
-          <el-option label="承認済 / 已批准" value="approved" />
-          <el-option label="却下 / 已拒绝" value="rejected" />
-        </el-select>
+        <Select :model-value="statusFilter || '__all__'" @update:model-value="(v: string) => { statusFilter = v === '__all__' ? '' : v; load() }">
+          <SelectTrigger class="flex h-9 w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">{{ t('wms.common.status', 'ステータス') }}</SelectItem>
+            <SelectItem value="pending">未処理 / 待处理</SelectItem>
+            <SelectItem value="approved">承認済 / 已批准</SelectItem>
+            <SelectItem value="rejected">却下 / 已拒绝</SelectItem>
+          </SelectContent>
+        </Select>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <div class="table-section">
-      <el-table :data="items" v-loading="loading" stripe border style="width: 100%">
-        <el-table-column prop="stocktakingNumber" :label="t('wms.inventory.discrepancy.stocktakingNumber', '棚卸番号')" width="160" />
-        <el-table-column prop="productName" :label="t('wms.inventory.discrepancy.product', '商品')" min-width="180" />
-        <el-table-column prop="locationName" :label="t('wms.inventory.discrepancy.location', 'ロケーション')" width="140" />
-        <el-table-column prop="systemQty" :label="t('wms.inventory.discrepancy.systemQty', 'システム数')" width="110" align="right" />
-        <el-table-column prop="countedQty" :label="t('wms.inventory.discrepancy.countedQty', '実棚数')" width="110" align="right" />
-        <el-table-column :label="t('wms.inventory.discrepancy.discrepancy', '差異')" width="110" align="right">
-          <template #default="{ row }">
-            <span :style="{ color: discrepancyColor(row), fontWeight: 600 }">
-              {{ discrepancyValue(row) > 0 ? '+' : '' }}{{ discrepancyValue(row) }}
-            </span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" :label="t('wms.common.status', 'ステータス')" width="120">
-          <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('wms.common.actions', '操作')" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button v-if="row.status === 'pending'" size="small" type="success" @click="handleAction(row, 'approve')">
-              承認 / 批准
-            </el-button>
-            <el-button v-if="row.status === 'pending'" size="small" type="danger" @click="handleAction(row, 'reject')">
-              却下 / 拒绝
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div class="rounded-md border overflow-auto">
+        <Table class="w-full text-sm">
+          <TableHeader>
+            <TableRow class="border-b bg-muted/50">
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="width: 160px">{{ t('wms.inventory.discrepancy.stocktakingNumber', '棚卸番号') }}</TableHead>
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="min-width: 180px">{{ t('wms.inventory.discrepancy.product', '商品') }}</TableHead>
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="width: 140px">{{ t('wms.inventory.discrepancy.location', 'ロケーション') }}</TableHead>
+              <TableHead class="h-10 px-2 text-right font-medium text-muted-foreground" style="width: 110px">{{ t('wms.inventory.discrepancy.systemQty', 'システム数') }}</TableHead>
+              <TableHead class="h-10 px-2 text-right font-medium text-muted-foreground" style="width: 110px">{{ t('wms.inventory.discrepancy.countedQty', '実棚数') }}</TableHead>
+              <TableHead class="h-10 px-2 text-right font-medium text-muted-foreground" style="width: 110px">{{ t('wms.inventory.discrepancy.discrepancy', '差異') }}</TableHead>
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="width: 120px">{{ t('wms.common.status', 'ステータス') }}</TableHead>
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="width: 200px">{{ t('wms.common.actions', '操作') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-if="loading">
+              <TableCell colspan="8">
+                <div class="space-y-3 p-4">
+                  <Skeleton class="h-4 w-[250px] mx-auto" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                </div>
+              </TableCell>
+            </TableRow>
+            <TableRow v-for="row in items" :key="row._id" class="border-b hover:bg-muted/50">
+              <TableCell class="p-2">{{ row.stocktakingNumber }}</TableCell>
+              <TableCell class="p-2">{{ row.productName }}</TableCell>
+              <TableCell class="p-2">{{ row.locationName }}</TableCell>
+              <TableCell class="p-2 text-right">{{ row.systemQty }}</TableCell>
+              <TableCell class="p-2 text-right">{{ row.countedQty }}</TableCell>
+              <TableCell class="p-2 text-right">
+                <span :style="{ color: discrepancyColor(row), fontWeight: 600 }">
+                  {{ discrepancyValue(row) > 0 ? '+' : '' }}{{ discrepancyValue(row) }}
+                </span>
+              </TableCell>
+              <TableCell class="p-2">
+                <span :class="statusTagClass(row.status)" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium">{{ statusLabel(row.status) }}</span>
+              </TableCell>
+              <TableCell class="p-2">
+                <div class="flex gap-1">
+                  <Button v-if="row.status === 'pending'" class="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 bg-green-600 text-white hover:bg-green-700" @click="handleAction(row, 'approve')">
+                    承認 / 批准
+                  </Button>
+                  <Button v-if="row.status === 'pending'" class="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 bg-destructive text-destructive-foreground hover:bg-destructive/90" @click="handleAction(row, 'reject')">
+                    却下 / 拒绝
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 // 棚卸差異ページ / 盘点差异页面
 import { ref, onMounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import { http } from '@/api/http'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 const { t } = useI18n()
 const { show: showToast } = useToast()
@@ -66,19 +97,19 @@ const discrepancyValue = (row: any): number => {
 // 差異色分け / 差异颜色
 const discrepancyColor = (row: any): string => {
   const diff = discrepancyValue(row)
-  if (diff > 0) return 'var(--el-color-success)'
-  if (diff < 0) return 'var(--el-color-danger)'
+  if (diff > 0) return '#22c55e'
+  if (diff < 0) return '#ef4444'
   return 'inherit'
 }
 
 // ステータス表示 / 状态显示
-const statusTagType = (status: string): '' | 'success' | 'warning' | 'danger' | 'info' => {
-  const map: Record<string, '' | 'success' | 'warning' | 'danger' | 'info'> = {
-    pending: 'warning',
-    approved: 'success',
-    rejected: 'danger',
+const statusTagClass = (status: string): string => {
+  const map: Record<string, string> = {
+    pending: 'bg-yellow-100 text-yellow-800',
+    approved: 'bg-green-100 text-green-800',
+    rejected: 'bg-red-100 text-red-800',
   }
-  return map[status] ?? 'info'
+  return map[status] ?? 'bg-muted text-muted-foreground'
 }
 
 const statusLabel = (status: string): string => {
@@ -89,9 +120,6 @@ const statusLabel = (status: string): string => {
   }
   return map[status] ?? status
 }
-
-// 日付フォーマット（未使用だが将来用 / 预留）
-// const formatDate = ...
 
 // データ読み込み / 数据加载
 async function load() {

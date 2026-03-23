@@ -1,610 +1,409 @@
 <template>
-  <div class="inbound-import">
-    <ControlPanel :title="t('wms.inbound.csvImportTitle', '入庫予定CSV取込')" :show-search="false">
+  <div class="inbound-history">
+    <PageHeader :title="t('wms.inbound.history', '入庫履歴')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="$router.push('/inbound/orders')">{{ t('wms.inbound.back', '戻る') }}</OButton>
+        <div style="display:flex;gap:6px;">
+          <Button variant="secondary" size="sm" @click="showExportSettings = !showExportSettings">
+            {{ t('wms.inbound.csvSettings', 'CSV設定') }}
+          </Button>
+          <Button variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inbound.csvExport', 'CSV出力') }}</Button>
+        </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <!-- ステップ1: ファイル選択 -->
-    <div class="o-card">
-      <h3 class="card-title">1. {{ t('wms.inbound.csvFileSelect', 'CSVファイル選択') }}</h3>
-      <div class="upload-area" @dragover.prevent @drop.prevent="handleDrop">
-        <input ref="fileInput" type="file" accept=".csv" style="display:none;" @change="handleFileSelect" />
-        <div v-if="!csvFile" class="upload-placeholder" @click="fileInput?.click()">
-          <span style="font-size:32px;color:var(--o-gray-400);">+</span>
-          <p>{{ t('wms.inbound.csvDropHint', 'クリックまたはドラッグ＆ドロップでCSVファイルを選択') }}</p>
-          <p class="upload-hint">{{ t('wms.inbound.csvFormatHint', '対応形式: CSV (UTF-8, Shift_JIS)') }}</p>
-        </div>
-        <div v-else class="upload-selected">
-          <span>{{ csvFile.name }} ({{ (csvFile.size / 1024).toFixed(1) }} KB)</span>
-          <OButton variant="secondary" size="sm" @click="resetFile">{{ t('wms.inbound.change', '変更') }}</OButton>
-        </div>
-      </div>
-      <div style="margin-top:12px;display:flex;gap:8px;align-items:center;">
-        <OButton variant="secondary" size="sm" @click="downloadTemplate">{{ t('wms.inbound.downloadTemplate', 'テンプレートダウンロード') }}</OButton>
-      </div>
-    </div>
+    <!-- 検索パネル -->
+      :columns="searchColumns"
+      :show-save="false"
+      :initial-values="searchInitialValues"
+      storage-key="inboundHistorySearch"
+      @search="handleSearch"
+    />
 
-    <!-- ステップ2: 列マッピング -->
-    <div v-if="csvHeaders.length > 0 && !mappingConfirmed" class="o-card">
-      <h3 class="card-title">2. {{ t('wms.inbound.columnMapping', '列マッピング設定') }}</h3>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
-        <label class="filter-label">{{ t('wms.inbound.preset', 'プリセット') }}:</label>
-        <select v-model="selectedPreset" class="o-input o-input-sm" style="width:200px;" @change="loadPreset">
-          <option value="">{{ t('wms.inbound.autoDetect', '自動検出') }}</option>
-          <option v-for="p in savedPresets" :key="p.name" :value="p.name">{{ p.name }}</option>
-        </select>
-        <OButton variant="secondary" size="sm" @click="savePreset">{{ t('wms.inbound.saveCurrentSettings', '現在の設定を保存') }}</OButton>
-        <OButton
-          v-if="selectedPreset"
-          variant="secondary" size="sm"
-          style="border-color:#f56c6c;color:#f56c6c;"
-          @click="deletePreset"
-        >{{ t('wms.common.delete', '削除') }}</OButton>
-      </div>
-
-      <div class="mapping-grid">
-        <div v-for="field in systemFields" :key="field.key" class="mapping-row">
-          <div class="mapping-field">
-            <span class="mapping-field-label">{{ field.label }}</span>
-            <span v-if="field.required" class="required-badge">必須</span>
-          </div>
-          <select v-model="columnMapping[field.key]" class="o-input o-input-sm mapping-select">
-            <option value="">-- {{ t('wms.inbound.notSet', '未設定') }} --</option>
-            <option v-for="(h, idx) in csvHeaders" :key="idx" :value="idx">
-              {{ h }} ({{ csvSampleValues[idx] || '' }})
-            </option>
-          </select>
-        </div>
-      </div>
-
-      <div style="margin-top:12px;display:flex;gap:8px;">
-        <OButton variant="primary" size="sm" @click="applyMapping">{{ t('wms.inbound.applyMapping', 'マッピングを適用') }}</OButton>
-      </div>
-    </div>
-
-    <!-- ステップ3: プレビュー -->
-    <div v-if="parsedRows.length > 0 && mappingConfirmed" class="o-card">
+    <!-- CSV導出設定パネル -->
+    <div v-if="showExportSettings" class="rounded-lg border bg-card p-4">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h3 class="card-title" style="margin:0;">3. {{ t('wms.inbound.dataConfirmation', 'データ確認') }} ({{ parsedRows.length }} {{ t('wms.inbound.rows', '行') }})</h3>
-        <OButton variant="secondary" size="sm" @click="mappingConfirmed = false">{{ t('wms.inbound.changeMapping', 'マッピング変更') }}</OButton>
+        <h3 class="card-title" style="margin:0;">{{ t('wms.inbound.csvExportSettings', 'CSV導出設定') }}</h3>
+        <div style="display:flex;gap:6px;">
+          <Select :model-value="selectedExportPreset || '__all__'" @update:model-value="(v: string) => { selectedExportPreset = v === '__all__' ? '' : v; loadExportPreset() }">
+            <SelectTrigger class="h-8 text-sm" style="width:160px;"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">{{ t('wms.common.default', 'デフォルト') }}</SelectItem>
+              <SelectItem v-for="p in exportPresets" :key="p.name" :value="p.name">{{ p.name }}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="secondary" size="sm" @click="saveExportPreset">{{ t('wms.common.save', '保存') }}</Button>
+          <Button
+            v-if="selectedExportPreset"
+            variant="secondary" size="sm"
+            style="border-color:var(--o-danger);color:var(--o-danger);"
+            @click="deleteExportPreset"
+          >{{ t('wms.common.delete', '削除') }}</Button>
+        </div>
       </div>
-      <div class="o-table-wrapper" style="max-height:400px;overflow:auto;">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width:40px;">#</th>
-              <th class="o-table-th">{{ t('wms.inbound.productCode', '商品コード') }}</th>
-              <th class="o-table-th">{{ t('wms.inbound.productName', '商品名') }}</th>
-              <th class="o-table-th o-table-th--right">{{ t('wms.inbound.quantity', '数量') }}</th>
-              <th class="o-table-th">{{ t('wms.inbound.stockCategory', '在庫区分') }}</th>
-              <th class="o-table-th">{{ t('wms.inbound.lotNumber', 'ロット番号') }}</th>
-              <th class="o-table-th">{{ t('wms.inbound.expiryDate', '賞味期限') }}</th>
-              <th class="o-table-th">{{ t('wms.inbound.supplier', '仕入先') }}</th>
-              <th class="o-table-th">{{ t('wms.inbound.orderReferenceNumber', '注文番号') }}</th>
-              <th class="o-table-th">{{ t('wms.inbound.memo', 'メモ') }}</th>
-              <th class="o-table-th">{{ t('wms.common.status', '状態') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, idx) in parsedRows" :key="idx" class="o-table-row" :class="{ 'row-error': row.error }">
-              <td class="o-table-td" style="text-align:center;">{{ idx + 1 }}</td>
-              <td class="o-table-td"><span class="sku-text">{{ row.sku }}</span></td>
-              <td class="o-table-td">{{ row.productName || '-' }}</td>
-              <td class="o-table-td o-table-td--right">{{ row.quantity }}</td>
-              <td class="o-table-td">{{ row.stockCategory === 'damaged' ? t('wms.inbound.damaged', '仕損') : t('wms.inbound.new', '新品') }}</td>
-              <td class="o-table-td">{{ row.lotNumber || '-' }}</td>
-              <td class="o-table-td">{{ row.expiryDate || '-' }}</td>
-              <td class="o-table-td">{{ row.supplier || '-' }}</td>
-              <td class="o-table-td">{{ row.orderReferenceNumber || '-' }}</td>
-              <td class="o-table-td">{{ row.memo || '-' }}</td>
-              <td class="o-table-td">
-                <span v-if="row.error" class="text-danger">{{ row.error }}</span>
-                <span v-else-if="row.matched" class="text-success">OK</span>
-                <span v-else class="text-warning">{{ t('wms.inbound.validating', '検証中...') }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="export-col-grid">
+        <label
+          v-for="col in allExportColumns"
+          :key="col.key"
+          class="export-col-item"
+          :class="{ 'export-col-item--active': exportColumns.includes(col.key) }"
+        >
+          <input type="checkbox" :value="col.key" v-model="exportColumns" style="margin-right:4px;" />
+          {{ col.label }}
+        </label>
       </div>
-
-      <div style="display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap;">
-        <label style="font-size:13px;color:var(--o-gray-600);">{{ t('wms.inbound.supplier', '仕入先') }}:</label>
-        <select v-model="selectedSupplierId" class="o-input o-input-sm" style="width:240px;" @change="onSupplierChange">
-          <option value="__csv__">{{ t('wms.inbound.useCSVSupplier', 'CSVの仕入先を使用') }}</option>
-          <option v-for="s in suppliers" :key="s._id" :value="s._id">
-            {{ s.supplierCode ? `[${s.supplierCode}] ` : '' }}{{ s.name }}
-          </option>
-          <option value="__manual__">{{ t('wms.inbound.manualInput', '手動入力...') }}</option>
-        </select>
-        <input
-          v-if="selectedSupplierId === '__manual__'"
-          v-model="manualSupplierName"
-          type="text"
-          class="o-input o-input-sm"
-          style="width:200px;"
-          :placeholder="t('wms.inbound.supplierNamePlaceholder', '仕入先名を入力...')"
-        />
-        <label style="font-size:13px;color:var(--o-gray-600);">{{ t('wms.inbound.destination', '入庫先') }}:</label>
-        <select v-model="selectedLocationId" class="o-input o-input-sm" style="width:200px;">
-          <option value="">{{ t('wms.inbound.selectLocation', 'ロケーション選択') }}</option>
-          <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
-            {{ loc.code }} ({{ loc.name }})
-          </option>
-        </select>
-        <label style="font-size:13px;color:var(--o-gray-600);">{{ t('wms.inbound.expectedDate', '入庫予定日') }}:</label>
-        <input v-model="expectedDate" type="date" class="o-input o-input-sm" style="width:140px;" />
+      <div style="margin-top:8px;display:flex;gap:6px;">
+        <Button variant="secondary" size="sm" @click="selectAllExportCols">{{ t('wms.inbound.selectAll', '全選択') }}</Button>
+        <Button variant="secondary" size="sm" @click="exportColumns = []">{{ t('wms.inbound.deselectAll', '全解除') }}</Button>
       </div>
     </div>
 
-    <!-- ステップ4: 実行 -->
-    <div v-if="parsedRows.length > 0 && mappingConfirmed" class="o-card">
-      <h3 class="card-title">4. {{ t('wms.inbound.createInboundOrder', '入庫指示作成') }}</h3>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span style="font-size:13px;color:var(--o-gray-600);">
-          {{ t('wms.inbound.validRows', '有効行') }}: {{ validRows.length }} / {{ parsedRows.length }}
-        </span>
-        <OButton
-          variant="primary"
-          :disabled="validRows.length === 0 || !selectedLocationId || isCreating"
-          @click="handleCreate"
-        >{{ t('wms.inbound.createOrder', '入庫指示を作成') }} ({{ groupCount }}{{ t('wms.inbound.items', '件') }})</OButton>
+    <!-- 結果テーブル -->
+    <div class="rounded-md border overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width:140px;">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</TableHead>
+            <TableHead style="width:110px;">{{ t('wms.inbound.productSku', '品番') }}</TableHead>
+            <TableHead style="width:150px;">{{ t('wms.product.productName', '商品名') }}</TableHead>
+            <TableHead style="width:90px;">{{ t('wms.inbound.location', 'ロケーション') }}</TableHead>
+            <TableHead style="width:60px;">{{ t('wms.inbound.stockCategory', '区分') }}</TableHead>
+            <TableHead class="text-right" style="width:70px;">{{ t('wms.inbound.expectedQty', '予定数') }}</TableHead>
+            <TableHead class="text-right" style="width:70px;">{{ t('wms.inbound.receivedQty', '実績数') }}</TableHead>
+            <TableHead style="width:100px;">{{ t('wms.inbound.supplier', '仕入先') }}</TableHead>
+            <TableHead style="width:100px;">{{ t('wms.inbound.orderReferenceNumber', '注文番号') }}</TableHead>
+            <TableHead style="width:80px;">{{ t('wms.inbound.lot', 'ロット') }}</TableHead>
+            <TableHead style="width:100px;">{{ t('wms.inbound.completedAt', '完了日時') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="isLoading">
+            <TableCell colspan="11">
+              <div class="space-y-3 p-4">
+                <Skeleton class="h-4 w-[250px] mx-auto" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+              </div>
+            </TableCell>
+          </TableRow>
+          <TableRow v-else-if="rows.length === 0">
+            <TableCell colspan="11" class="text-center py-8 text-muted-foreground">{{ t('wms.common.noData', 'データがありません') }}</TableCell>
+          </TableRow>
+          <TableRow v-for="(row, idx) in rows" :key="idx">
+            <TableCell><span class="order-number">{{ row.orderNumber }}</span></TableCell>
+            <TableCell><span class="sku-text">{{ row.productSku }}</span></TableCell>
+            <TableCell>{{ row.productName || '-' }}</TableCell>
+            <TableCell>
+              <span v-if="row.putawayLocationCode" class="location-badge">{{ row.putawayLocationCode }}</span>
+              <span v-else-if="row.locationCode" class="location-badge">{{ row.locationCode }}</span>
+              <span v-else>-</span>
+            </TableCell>
+            <TableCell>
+              <span class="o-status-tag" :class="row.stockCategory === 'damaged' ? 'o-status-tag--held' : 'o-status-tag--confirmed'">
+                {{ row.stockCategory === 'damaged' ? t('wms.inbound.stockDamaged', '仕損') : t('wms.inbound.stockNew', '新品') }}
+              </span>
+            </TableCell>
+            <TableCell class="text-right">{{ row.expectedQuantity }}</TableCell>
+            <TableCell class="text-right">
+              <strong>{{ row.receivedQuantity }}</strong>
+            </TableCell>
+            <TableCell>{{ row.supplierName || '-' }}</TableCell>
+            <TableCell>{{ row.orderReferenceNumber || '-' }}</TableCell>
+            <TableCell>{{ row.lotNumber || '-' }}</TableCell>
+            <TableCell>{{ row.completedAt ? formatDateTime(row.completedAt) : '-' }}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="o-table-pagination">
+      <span class="o-table-pagination__info">{{ total }} {{ t('wms.common.items', '件') }}</span>
+      <div class="o-table-pagination__controls">
+        <Select :model-value="String(pageSize)" @update:model-value="(v: string) => { pageSize = Number(v); currentPage = 1; loadData() }">
+          <SelectTrigger class="h-8 text-sm" style="width:80px;"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+            <SelectItem value="200">200</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--; loadData()">&lsaquo;</Button>
+        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
+        <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++; loadData()">&rsaquo;</Button>
       </div>
-      <p v-if="createResult" class="create-result" :class="{ 'text-success': !createError, 'text-danger': createError }">
-        {{ createResult }}
-      </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import { useRouter } from 'vue-router'
-import { useI18n } from '@/composables/useI18n'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import { createInboundOrder } from '@/api/inboundOrder'
-import { fetchLocations } from '@/api/location'
-import { fetchSuppliers, type SupplierData } from '@/api/supplier'
-import type { Location } from '@/types/inventory'
+import { useI18n } from '@/composables/useI18n'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { searchInboundHistory } from '@/api/inboundOrder'
+import type { InboundHistoryLine } from '@/types/inventory'
+import type { TableColumn, Operator } from '@/types/table'
+import { computed, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
+const EXPORT_STORAGE_KEY = 'zelix_inbound_export_presets'
 
-interface ParsedRow {
-  sku: string
-  productName: string
-  quantity: number
-  stockCategory: 'new' | 'damaged'
-  lotNumber: string
-  expiryDate: string
-  supplier: string
-  orderReferenceNumber: string
-  memo: string
-  matched: boolean
-  productId?: string
-  error?: string
+interface ExportColumn {
+  key: string
+  label: string
+  getValue: (r: InboundHistoryLine) => string | number
 }
 
-interface ColumnPreset {
+interface ExportPreset {
   name: string
-  mapping: Record<string, number | ''>
+  columns: string[]
 }
 
-const STORAGE_KEY = 'zelix_inbound_import_presets'
-
-const { t } = useI18n()
-const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
 
-const systemFields = computed(() => [
-  { key: 'sku', label: t('wms.inbound.productCodeSku', '商品コード (SKU)'), required: true },
-  { key: 'productName', label: t('wms.inbound.productName', '商品名'), required: false },
-  { key: 'quantity', label: t('wms.inbound.quantity', '数量'), required: true },
-  { key: 'stockCategory', label: t('wms.inbound.stockCategoryLabel', '在庫区分 (new/damaged)'), required: false },
-  { key: 'lotNumber', label: t('wms.inbound.lotNumber', 'ロット番号'), required: false },
-  { key: 'expiryDate', label: t('wms.inbound.expiryDate', '賞味期限'), required: false },
-  { key: 'supplier', label: t('wms.inbound.supplier', '仕入先'), required: false },
-  { key: 'orderReferenceNumber', label: t('wms.inbound.orderReferenceNumber', '注文番号'), required: false },
-  { key: 'memo', label: t('wms.inbound.memo', 'メモ'), required: false },
+const allExportColumns = computed<ExportColumn[]>(() => [
+  { key: 'orderNumber', label: t('wms.inbound.orderNumber', '入庫指示番号'), getValue: r => r.orderNumber },
+  { key: 'productSku', label: t('wms.inbound.productSku', '品番'), getValue: r => r.productSku },
+  { key: 'productName', label: t('wms.product.productName', '商品名'), getValue: r => r.productName || '' },
+  { key: 'locationCode', label: t('wms.inbound.location', 'ロケーション'), getValue: r => r.locationCode || '' },
+  { key: 'putawayLocationCode', label: t('wms.inbound.putawayLocation', '棚入れ先'), getValue: r => r.putawayLocationCode || '' },
+  { key: 'stockCategory', label: t('wms.inbound.stockCategory', '在庫区分'), getValue: r => r.stockCategory === 'damaged' ? t('wms.inbound.stockDamaged', '仕損') : t('wms.inbound.stockNew', '新品') },
+  { key: 'expectedQuantity', label: t('wms.inbound.expectedQtyFull', '入荷予定数'), getValue: r => r.expectedQuantity },
+  { key: 'receivedQuantity', label: t('wms.inbound.receivedQtyFull', '入庫実績数'), getValue: r => r.receivedQuantity },
+  { key: 'supplierName', label: t('wms.inbound.supplier', '仕入先'), getValue: r => r.supplierName || '' },
+  { key: 'orderReferenceNumber', label: t('wms.inbound.orderReferenceNumber', '注文番号'), getValue: r => r.orderReferenceNumber || '' },
+  { key: 'lotNumber', label: t('wms.inbound.lot', 'ロット'), getValue: r => r.lotNumber || '' },
+  { key: 'expiryDate', label: t('wms.inbound.expiryDate', '賞味期限'), getValue: r => r.expiryDate ? new Date(r.expiryDate).toLocaleDateString('ja-JP') : '' },
+  { key: 'completedAt', label: t('wms.inbound.completedAt', '完了日時'), getValue: r => r.completedAt ? new Date(r.completedAt).toLocaleString('ja-JP') : '' },
+  { key: 'expectedDate', label: t('wms.inbound.expectedDate', '入庫予定日'), getValue: r => r.expectedDate ? new Date(r.expectedDate).toLocaleDateString('ja-JP') : '' },
+  { key: 'memo', label: t('wms.product.memo', 'メモ'), getValue: r => r.memo || '' },
 ])
-const fileInput = ref<HTMLInputElement | null>(null)
-const csvFile = ref<File | null>(null)
-const csvHeaders = ref<string[]>([])
-const csvDataLines = ref<string[][]>([])
-const csvSampleValues = ref<string[]>([])
-const parsedRows = ref<ParsedRow[]>([])
-const physicalLocations = ref<Location[]>([])
-const suppliers = ref<SupplierData[]>([])
-const selectedSupplierId = ref('')
-const manualSupplierName = ref('')
-const selectedLocationId = ref('')
-const expectedDate = ref(new Date().toISOString().slice(0, 10))
-const isCreating = ref(false)
-const createResult = ref('')
-const createError = ref(false)
-const mappingConfirmed = ref(false)
-const selectedPreset = ref('')
-const savedPresets = ref<ColumnPreset[]>([])
 
-const columnMapping = reactive<Record<string, number | ''>>({
-  sku: '',
-  productName: '',
-  quantity: '',
-  stockCategory: '',
-  lotNumber: '',
-  expiryDate: '',
-  supplier: '',
-  orderReferenceNumber: '',
-  memo: '',
-})
+const defaultExportKeys = ['orderNumber', 'productSku', 'productName', 'locationCode', 'putawayLocationCode', 'stockCategory', 'expectedQuantity', 'receivedQuantity', 'supplierName', 'orderReferenceNumber', 'lotNumber', 'expiryDate', 'completedAt', 'expectedDate', 'memo']
+const isLoading = ref(false)
+const showExportSettings = ref(false)
+const rows = ref<InboundHistoryLine[]>([])
+const total = ref(0)
+const currentPage = ref(1)
+const pageSize = ref(50)
+const exportColumns = ref<string[]>([...defaultExportKeys])
+const exportPresets = ref<ExportPreset[]>([])
+const selectedExportPreset = ref('')
 
-const validRows = computed(() => parsedRows.value.filter(r => r.matched && !r.error))
+const now = new Date()
+const defaultDateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+const defaultDateTo = now.toISOString().slice(0, 10)
 
-// 仕入先選択の変更ハンドラ / 供应商选择变更处理
-const onSupplierChange = () => {
-  if (selectedSupplierId.value && selectedSupplierId.value !== '__manual__' && selectedSupplierId.value !== '__csv__') {
-    const s = suppliers.value.find(s => s._id === selectedSupplierId.value)
-    manualSupplierName.value = s?.name || ''
-  } else if (selectedSupplierId.value !== '__manual__') {
-    manualSupplierName.value = ''
-  }
+const searchColumns = computed<TableColumn[]>(() => ([
+  {
+    key: 'completedAt',
+    title: t('wms.inbound.completedDate', '完了日'),
+    searchable: true,
+    searchType: 'daterange',
+  },
+  {
+    key: 'productSku',
+    title: t('wms.inbound.productSku', '品番'),
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'productName',
+    title: t('wms.product.productName', '商品名'),
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'supplierName',
+    title: t('wms.inbound.supplier', '仕入先'),
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'locationCode',
+    title: t('wms.inbound.location', 'ロケーション'),
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'stockCategory',
+    title: t('wms.inbound.stockCategory', '在庫区分'),
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inbound.stockNew', '新品'), value: 'new' },
+      { label: t('wms.inbound.stockDamaged', '仕損'), value: 'damaged' },
+    ],
+  },
+  {
+    key: 'orderReferenceNumber',
+    title: t('wms.inbound.orderReferenceNumber', '注文番号'),
+    searchable: true,
+    searchType: 'string',
+  },
+] as TableColumn[]))
+
+const searchInitialValues: Record<string, any> = {
+  completedAt__from: defaultDateFrom,
+  completedAt__to: defaultDateTo,
 }
 
-// 実際に使用する仕入先名を決定 / 実際に使用するサプライヤー名を決定
-const resolvedSupplierName = computed(() => {
-  if (!selectedSupplierId.value || selectedSupplierId.value === '__csv__') return null
-  if (selectedSupplierId.value === '__manual__') return manualSupplierName.value || null
-  const s = suppliers.value.find(s => s._id === selectedSupplierId.value)
-  return s?.name || null
+const filters = ref<Record<string, any>>({
+  dateFrom: defaultDateFrom,
+  dateTo: defaultDateTo,
 })
 
-const groupCount = computed(() => {
-  const suppliers = new Set(validRows.value.map(r => r.supplier || '__none__'))
-  return suppliers.size
-})
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
 
-// --- Preset management ---
-const loadSavedPresets = () => {
+const formatDateTime = (d: string) =>
+  new Date(d).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+
+const selectAllExportCols = () => {
+  exportColumns.value = [...defaultExportKeys]
+}
+
+// --- Export preset management ---
+const loadSavedExportPresets = () => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    savedPresets.value = raw ? JSON.parse(raw) : []
+    const raw = localStorage.getItem(EXPORT_STORAGE_KEY)
+    exportPresets.value = raw ? JSON.parse(raw) : []
   } catch {
-    savedPresets.value = []
+    exportPresets.value = []
   }
 }
 
-const persistPresets = () => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedPresets.value))
+const persistExportPresets = () => {
+  localStorage.setItem(EXPORT_STORAGE_KEY, JSON.stringify(exportPresets.value))
 }
 
-const loadPreset = () => {
-  if (!selectedPreset.value) {
-    autoDetectMapping()
+const loadExportPreset = () => {
+  if (!selectedExportPreset.value) {
+    exportColumns.value = [...defaultExportKeys]
     return
   }
-  const preset = savedPresets.value.find(p => p.name === selectedPreset.value)
+  const preset = exportPresets.value.find(p => p.name === selectedExportPreset.value)
   if (preset) {
-    for (const key of Object.keys(columnMapping)) {
-      columnMapping[key] = preset.mapping[key] ?? ''
-    }
+    exportColumns.value = [...preset.columns]
   }
 }
 
-const savePreset = async () => {
-  const { value: name } = await ElMessageBox.prompt(
-    t('wms.inbound.enterPresetName', 'プリセット名を入力してください / 请输入预设名称:'),
-    '入力 / 输入',
-    { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消' },
-  ).catch(() => ({ value: null }))
+const saveExportPreset = async () => {
+  const name = window.prompt('入力してください')
   if (!name) return
-  const existing = savedPresets.value.findIndex(p => p.name === name)
-  const preset: ColumnPreset = { name, mapping: { ...columnMapping } }
+  const existing = exportPresets.value.findIndex(p => p.name === name)
+  const preset: ExportPreset = { name, columns: [...exportColumns.value] }
   if (existing >= 0) {
-    savedPresets.value = savedPresets.value.map((p, i) => i === existing ? preset : p)
+    exportPresets.value = exportPresets.value.map((p, i) => i === existing ? preset : p)
   } else {
-    savedPresets.value = [...savedPresets.value, preset]
+    exportPresets.value = [...exportPresets.value, preset]
   }
-  persistPresets()
-  selectedPreset.value = name
-  toast.showSuccess(t('wms.inbound.presetSaved', `プリセット「${name}」を保存しました`))
+  persistExportPresets()
+  selectedExportPreset.value = name
+  toast.showSuccess(t('wms.inbound.presetSaved', 'プリセットを保存しました'))
 }
 
-const deletePreset = async () => {
-  if (!selectedPreset.value) return
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inbound.confirmDeletePreset', `プリセット「${selectedPreset.value}」を削除しますか？ / 确定要删除预设「${selectedPreset.value}」吗？`),
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
-  savedPresets.value = savedPresets.value.filter(p => p.name !== selectedPreset.value)
-  persistPresets()
-  selectedPreset.value = ''
-  autoDetectMapping()
+const deleteExportPreset = async () => {
+  if (!selectedExportPreset.value) return
+  if (!(await confirm('この操作を実行しますか？'))) return
+  exportPresets.value = exportPresets.value.filter(p => p.name !== selectedExportPreset.value)
+  persistExportPresets()
+  selectedExportPreset.value = ''
+  exportColumns.value = [...defaultExportKeys]
 }
 
-// --- Auto detect column mapping ---
-const autoDetectMapping = () => {
-  const patterns: Record<string, RegExp> = {
-    sku: /sku|商品コード|品番/i,
-    productName: /商品名|name/i,
-    quantity: /数量|quantity|qty/i,
-    stockCategory: /在庫区分|区分|stock.?category/i,
-    lotNumber: /ロット|lot/i,
-    expiryDate: /賞味期限|expiry|有効期限/i,
-    supplier: /仕入先|supplier|サプライヤー/i,
-    orderReferenceNumber: /注文番号|order.?ref|reference/i,
-    memo: /メモ|memo|備考|note/i,
+const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
+  const nextFilters: Record<string, any> = {}
+
+  // 完了日 (daterange)
+  if (payload.completedAt) {
+    const [from, to] = payload.completedAt.value as [string, string]
+    if (from) nextFilters.dateFrom = from
+    if (to) nextFilters.dateTo = to
   }
-  for (const [key, regex] of Object.entries(patterns)) {
-    const idx = csvHeaders.value.findIndex(h => regex.test(h))
-    columnMapping[key] = idx >= 0 ? idx : ''
-  }
-}
 
-// --- File handling ---
-const handleFileSelect = (e: Event) => {
-  const files = (e.target as HTMLInputElement).files
-  if (files?.[0]) processFile(files[0])
-}
-
-const handleDrop = (e: DragEvent) => {
-  const files = e.dataTransfer?.files
-  if (files?.[0]) processFile(files[0])
-}
-
-const resetFile = () => {
-  csvFile.value = null
-  csvHeaders.value = []
-  csvDataLines.value = []
-  csvSampleValues.value = []
-  parsedRows.value = []
-  createResult.value = ''
-  mappingConfirmed.value = false
-  selectedPreset.value = ''
-  if (fileInput.value) fileInput.value.value = ''
-}
-
-const processFile = async (file: File) => {
-  csvFile.value = file
-  createResult.value = ''
-  mappingConfirmed.value = false
-
-  try {
-    const text = await readFileAsText(file)
-    const lines = text.split(/\r?\n/).filter(l => l.trim())
-    if (lines.length < 2) {
-      toast.showError(t('wms.inbound.csvNoDataRows', 'CSVにデータ行がありません'))
-      return
+  // String fields (contains)
+  const stringFields = ['productSku', 'productName', 'supplierName', 'locationCode', 'orderReferenceNumber']
+  for (const key of stringFields) {
+    if (payload[key]?.value) {
+      nextFilters[key] = String(payload[key].value).trim()
     }
+  }
 
-    const headers = parseCsvLine(lines[0] ?? '')
-    csvHeaders.value = headers
+  // Select field
+  if (payload.stockCategory?.value) {
+    nextFilters.stockCategory = payload.stockCategory.value
+  }
 
-    const dataRows: string[][] = []
-    for (let i = 1; i < lines.length; i++) {
-      dataRows.push(parseCsvLine(lines[i] ?? ''))
-    }
-    csvDataLines.value = dataRows
+  filters.value = nextFilters
+  currentPage.value = 1
+  loadData()
+}
 
-    // Sample values for mapping UI
-    csvSampleValues.value = headers.map((_, idx) => {
-      const sample = dataRows[0]?.[idx] || ''
-      return sample.length > 20 ? sample.slice(0, 20) + '...' : sample
+const loadData = async () => {
+  isLoading.value = true
+  try {
+    const res = await searchInboundHistory({
+      ...filters.value,
+      page: currentPage.value,
+      limit: pageSize.value,
     })
-
-    autoDetectMapping()
+    rows.value = res.items
+    total.value = res.total
   } catch (e: any) {
-    toast.showError(t('wms.inbound.csvParseFailed', 'CSVの解析に失敗しました') + ': ' + (e?.message || ''))
+    toast.showError(e?.message || t('wms.common.fetchError', 'データの取得に失敗しました'))
+  } finally {
+    isLoading.value = false
   }
 }
 
-const readFileAsText = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(new Error(t('wms.inbound.fileReadError', 'ファイル読み込みエラー')))
-    reader.readAsText(file, 'UTF-8')
-  })
-}
-
-/**
- * CSV行パーサー — ダブルクォート囲みフィールド対応 / CSV行解析器 — 支持双引号包围的字段
- */
-const parseCsvLine = (line: string): string[] => {
-  const fields: string[] = []
-  let current = ''
-  let inQuotes = false
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i]
-    if (inQuotes) {
-      if (ch === '"') {
-        if (i + 1 < line.length && line[i + 1] === '"') {
-          current += '"'
-          i++ // エスケープされたダブルクォート / 转义双引号
-        } else {
-          inQuotes = false
-        }
-      } else {
-        current += ch
-      }
-    } else {
-      if (ch === '"') {
-        inQuotes = true
-      } else if (ch === ',') {
-        fields.push(current.trim())
-        current = ''
-      } else {
-        current += ch
-      }
-    }
-  }
-  fields.push(current.trim())
-  return fields
-}
-
-// --- Apply mapping and build rows ---
-const applyMapping = async () => {
-  const skuCol = columnMapping.sku
-  const qtyCol = columnMapping.quantity
-  if (skuCol === '' || qtyCol === '') {
-    toast.showError(t('wms.inbound.skuAndQtyRequired', '「商品コード」と「数量」は必須です'))
+const exportCsv = () => {
+  if (rows.value.length === 0) {
+    toast.showError(t('wms.inbound.noExportData', 'エクスポートするデータがありません'))
     return
   }
 
-  const getVal = (cols: string[], key: string): string => {
-    const idx = columnMapping[key]
-    return idx !== '' && idx !== undefined ? cols[idx] || '' : ''
+  const activeCols = allExportColumns.value.filter(c => exportColumns.value.includes(c.key))
+  if (activeCols.length === 0) {
+    toast.showError(t('wms.inbound.selectAtLeastOneColumn', '出力する列を1つ以上選択してください'))
+    return
   }
 
-  const rows: ParsedRow[] = []
-  for (const cols of csvDataLines.value) {
-    const sku = cols[skuCol as number] || ''
-    const quantity = parseInt(cols[qtyCol as number] || '0', 10)
-    if (!sku || quantity < 1) continue
+  const headers = activeCols.map(c => c.label)
+  const csvRows = rows.value.map(r => activeCols.map(c => c.getValue(r)))
 
-    const catRaw = getVal(cols, 'stockCategory').toLowerCase()
-    const stockCategory: 'new' | 'damaged' =
-      catRaw === 'damaged' || catRaw === '仕損' ? 'damaged' : 'new'
-
-    rows.push({
-      sku,
-      productName: getVal(cols, 'productName'),
-      quantity,
-      stockCategory,
-      lotNumber: getVal(cols, 'lotNumber'),
-      expiryDate: getVal(cols, 'expiryDate'),
-      supplier: getVal(cols, 'supplier'),
-      orderReferenceNumber: getVal(cols, 'orderReferenceNumber'),
-      memo: getVal(cols, 'memo'),
-      matched: false,
-    })
-  }
-
-  parsedRows.value = rows
-  mappingConfirmed.value = true
-  await validateProducts()
-}
-
-const validateProducts = async () => {
-  try {
-    const { http } = await import('@/api/http')
-    const data = await http.get<any>('/products', { limit: '10000' })
-    const products = (data.products || data.items || data) as Array<{ _id: string; sku: string; name: string }>
-    const skuMap = new Map(products.map(p => [p.sku, p]))
-
-    for (const row of parsedRows.value) {
-      const product = skuMap.get(row.sku)
-      if (product) {
-        row.matched = true
-        row.productId = product._id
-        if (!row.productName) row.productName = product.name
-      } else {
-        row.error = t('wms.inbound.productNotFound', '商品が見つかりません')
-      }
-    }
-  } catch (e: any) {
-    toast.showError(e?.message || t('wms.inbound.productValidationFailed', '商品検証に失敗しました'))
-  }
-}
-
-const handleCreate = async () => {
-  if (validRows.value.length === 0 || !selectedLocationId.value) return
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inbound.confirmCreateOrders', `${groupCount.value}件の入庫指示を作成しますか？ / 确定要创建 ${groupCount.value} 条入库指示吗？`),
-      '確認 / 确认',
-      { confirmButtonText: '作成 / 创建', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
-
-  isCreating.value = true
-  createResult.value = ''
-  createError.value = false
-
-  try {
-    // 仕入先マスタから選択された場合は全行に適用 / サプライヤーマスタから選択時は全行に適用
-    const overrideSupplier = resolvedSupplierName.value
-    const overrideSupplierCode = (selectedSupplierId.value && selectedSupplierId.value !== '__manual__' && selectedSupplierId.value !== '__csv__')
-      ? suppliers.value.find(s => s._id === selectedSupplierId.value)?.supplierCode
-      : undefined
-
-    const groups = new Map<string, ParsedRow[]>()
-    for (const row of validRows.value) {
-      const key = overrideSupplier || row.supplier || '__none__'
-      const list = groups.get(key) || []
-      list.push(row)
-      groups.set(key, list)
-    }
-
-    let createdCount = 0
-    for (const [supplier, groupRows] of groups) {
-      await createInboundOrder({
-        destinationLocationId: selectedLocationId.value,
-        supplier: supplier !== '__none__'
-          ? { name: supplier, ...(overrideSupplierCode ? { code: overrideSupplierCode } : {}) }
-          : undefined,
-        expectedDate: expectedDate.value,
-        lines: groupRows.map(r => ({
-          productId: r.productId!,
-          expectedQuantity: r.quantity,
-          stockCategory: r.stockCategory,
-          lotNumber: r.lotNumber || undefined,
-          expiryDate: r.expiryDate || undefined,
-          orderReferenceNumber: r.orderReferenceNumber || undefined,
-          memo: r.memo || undefined,
-        })),
-      })
-      createdCount++
-    }
-
-    createResult.value = t('wms.inbound.ordersCreated', `${createdCount}件の入庫指示を作成しました`)
-    toast.showSuccess(createResult.value)
-    setTimeout(() => router.push('/inbound/orders'), 1500)
-  } catch (e: any) {
-    createResult.value = e?.message || t('wms.inbound.createFailed', '作成に失敗しました')
-    createError.value = true
-    toast.showError(createResult.value)
-  } finally {
-    isCreating.value = false
-  }
-}
-
-const downloadTemplate = () => {
   const bom = '\uFEFF'
-  const csv = bom + '商品コード,商品名,数量,在庫区分,ロット番号,賞味期限,仕入先,注文番号,メモ\nSKU-001,サンプル商品,100,new,LOT-001,2027-01-01,サンプル仕入先,ORD-001,テスト\n'
+  const csv = bom + [headers.join(','), ...csvRows.map(r => r.map(c => `"${c}"`).join(','))].join('\n')
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = '入庫予定テンプレート.csv'
+  a.download = `入庫履歴_${filters.value.dateFrom || ''}_${filters.value.dateTo || ''}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }
 
-onMounted(async () => {
-  loadSavedPresets()
-  try {
-    const [all, supplierRes] = await Promise.all([
-      fetchLocations({ isActive: true }),
-      fetchSuppliers({ isActive: 'true', limit: 500 }),
-    ])
-    physicalLocations.value = all.filter(l => !l.type.startsWith('virtual/'))
-    suppliers.value = supplierRes.data || []
-  } catch {
-    // ignore
-  }
+onMounted(() => {
+  loadSavedExportPresets()
+  loadData()
 })
 </script>
 
 <style>
 @import '@/styles/order-table.css';
+
+.o-table-td--right { text-align: right; }
+.o-table-th--right { text-align: right; }
 </style>
 
 <style scoped>
-.inbound-import {
+.inbound-history {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -631,101 +430,48 @@ onMounted(async () => {
   margin: 0 0 12px 0;
 }
 
-.upload-area {
-  border: 2px dashed var(--o-border-color, #dcdfe6);
-  border-radius: 8px;
-  overflow: hidden;
+
+.export-col-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.upload-placeholder {
-  padding: 2rem;
-  text-align: center;
+.export-col-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: 4px;
+  font-size: 12px;
   cursor: pointer;
-  transition: background 0.2s;
+  user-select: none;
+  transition: all 0.15s;
 }
 
-.upload-placeholder:hover {
-  background: var(--o-gray-50, #fafafa);
+.export-col-item--active {
+  background: var(--o-success-bg);
+  border-color: var(--o-success);
+  color: var(--o-success);
 }
 
-.upload-placeholder p {
-  margin: 4px 0;
-  font-size: 14px;
-  color: var(--o-gray-500, #909399);
-}
-
-.upload-hint {
-  font-size: 12px !important;
-  color: var(--o-gray-400, #c0c4cc) !important;
-}
-
-.upload-selected {
-  padding: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-  color: var(--o-gray-700, #303133);
-}
-
-.mapping-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 8px;
-}
-
-.mapping-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.mapping-field {
-  min-width: 160px;
-  font-size: 13px;
+.order-number {
+  font-family: monospace;
   font-weight: 600;
-  color: var(--o-gray-700, #303133);
+  color: var(--o-brand-primary, #0052A3);
 }
-
-.mapping-field-label {
-  white-space: nowrap;
-}
-
-.mapping-select {
-  flex: 1;
-  min-width: 160px;
-}
-
-.required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
-.filter-label { font-size: 13px; font-weight: 600; color: var(--o-gray-600, #606266); }
 
 .sku-text {
   font-family: monospace;
   font-weight: 600;
 }
 
-.row-error {
-  background: #fef0f0 !important;
+.location-badge {
+  font-family: monospace;
+  font-size: 12px;
+  background: var(--o-gray-100, #f5f7fa);
+  padding: 2px 6px;
+  border-radius: 3px;
 }
 
-.text-success { color: #67c23a; font-weight: 600; }
-.text-danger { color: #f56c6c; font-weight: 600; }
-.text-warning { color: #e6a23c; font-weight: 600; }
-
-.create-result {
-  margin-top: 8px;
-  font-size: 14px;
-}
-
-.o-input {
-  padding: 6px 10px;
-  border: 1px solid var(--o-border-color, #dcdfe6);
-  border-radius: var(--o-border-radius, 4px);
-  font-size: 13px;
-  color: var(--o-gray-700, #303133);
-  background: var(--o-view-background, #fff);
-}
-
-.o-table-td--right { text-align: right; }
-.o-table-th--right { text-align: right; }
 </style>

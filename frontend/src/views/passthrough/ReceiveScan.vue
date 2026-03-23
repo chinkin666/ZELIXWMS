@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 /**
  * 通過型受付スキャン / 通过型受付扫码
  *
@@ -6,12 +7,16 @@
  * 倉庫員が入庫箱ラベルをスキャン → 予約マッチ → 逐箱スキャン → 差異提出 → 一時保管
  */
 import { ref, computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { Card, CardContent } from '@/components/ui/card'
+import { useToast } from '@/composables/useToast'
 import { getApiBaseUrl } from '@/api/base'
 import { useWmsUserStore } from '@/stores/wms/useWmsUserStore'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 const userStore = useWmsUserStore()
 const baseUrl = getApiBaseUrl()
+const { showSuccess, showError, showWarning } = useToast()
 
 // 扫码输入 / スキャン入力
 const scanInput = ref('')
@@ -43,10 +48,10 @@ async function fetchOrder(orderNumber: string) {
         variance: 0,
       }))
     } else {
-      ElMessage.warning('未找到匹配的入库预定 / 入庫予約が見つかりません')
+      showWarning('未找到匹配的入库预定 / 入庫予約が見つかりません')
     }
   } catch (e: any) {
-    ElMessage.error(e.message)
+    showError(e.message)
   } finally {
     loading.value = false
   }
@@ -64,11 +69,11 @@ function handleScan() {
     const boxCode = scanInput.value.trim()
     // 重複チェック / 去重检查
     if (scannedBoxNumbers.value.includes(boxCode)) {
-      ElMessage.warning(`この箱は既にスキャン済みです: ${boxCode}`)
+      showWarning(`この箱は既にスキャン済みです: ${boxCode}`)
     } else {
       scannedBoxNumbers.value = [...scannedBoxNumbers.value, boxCode]
       scannedBoxes.value++
-      ElMessage.success(`箱 #${scannedBoxes.value} スキャン完了: ${boxCode}`)
+      showSuccess(`箱 #${scannedBoxes.value} スキャン完了: ${boxCode}`)
     }
   }
   scanInput.value = ''
@@ -100,13 +105,13 @@ async function submitArrive() {
     })
     const data = await res.json()
     if (res.ok) {
-      ElMessage.success('受付完了！暂存区へ移動 / 受付完了！一時保管エリアへ')
+      showSuccess('受付完了！暂存区へ移動 / 受付完了！一時保管エリアへ')
       order.value = data
     } else {
-      ElMessage.error(data.message || '受付に失敗')
+      showError(data.message || '受付に失敗')
     }
   } catch (e: any) {
-    ElMessage.error(e.message)
+    showError(e.message)
   } finally {
     submitting.value = false
   }
@@ -126,78 +131,103 @@ function reset() {
     <h2>通過型受付 / 通过型受付</h2>
 
     <!-- 扫码输入 / スキャン入力 -->
-    <el-card style="margin-bottom: 16px">
-      <el-input
-        ref="scanRef"
-        v-model="scanInput"
-        :placeholder="order ? '箱ラベルをスキャン / 扫箱标' : '入庫予約番号をスキャン / 扫入库预定号'"
-        size="large"
-        autofocus
-        @keyup.enter="handleScan"
-      >
-        <template #prefix>📦</template>
-      </el-input>
-    </el-card>
+    <div class="rounded-lg border bg-card shadow-sm p-4" style="margin-bottom: 16px">
+      <div class="flex items-center gap-2">
+        <span>📦</span>
+        <input
+          v-model="scanInput"
+          :placeholder="order ? '箱ラベルをスキャン / 扫箱标' : '入庫予約番号をスキャン / 扫入库预定号'"
+          class="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base"
+          autofocus
+          @keyup.enter="handleScan"
+        />
+      </div>
+    </div>
 
     <template v-if="order">
       <!-- 预定信息 / 予約情報 -->
-      <el-card style="margin-bottom: 16px">
-        <template #header>
+      <div class="rounded-lg border bg-card shadow-sm" style="margin-bottom: 16px">
+        <div class="border-b px-4 py-3">
           <div style="display: flex; justify-content: space-between; align-items: center">
             <span>{{ order.orderNumber }} — {{ (order.destinationType || '').toUpperCase() }}</span>
-            <el-tag :type="order.status === 'confirmed' ? 'info' : 'success'">{{ order.status }}</el-tag>
+            <span :class="order.status === 'confirmed' ? 'bg-muted text-muted-foreground' : 'bg-green-100 text-green-800'" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium">{{ order.status }}</span>
           </div>
-        </template>
-        <el-descriptions :column="3" size="small" border>
-          <el-descriptions-item label="予定箱数">{{ order.totalBoxCount || '--' }}</el-descriptions-item>
-          <el-descriptions-item label="スキャン済箱数">
-            <span :style="{ color: scannedBoxes !== order.totalBoxCount ? '#e6a23c' : '#67c23a', fontWeight: 'bold' }">
-              {{ scannedBoxes }}
-            </span>
-          </el-descriptions-item>
-          <el-descriptions-item label="商品行数">{{ order.lines?.length || 0 }}</el-descriptions-item>
-        </el-descriptions>
-      </el-card>
+        </div>
+        <div class="p-4">
+          <div class="grid grid-cols-3 gap-4 text-sm">
+            <div>
+              <span class="text-muted-foreground">予定箱数</span>
+              <div class="font-medium">{{ order.totalBoxCount || '--' }}</div>
+            </div>
+            <div>
+              <span class="text-muted-foreground">スキャン済箱数</span>
+              <div class="font-medium" :style="{ color: scannedBoxes !== order.totalBoxCount ? '#e6a23c' : '#67c23a' }">
+                {{ scannedBoxes }}
+              </div>
+            </div>
+            <div>
+              <span class="text-muted-foreground">商品行数</span>
+              <div class="font-medium">{{ order.lines?.length || 0 }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- 差异核对 / 差異確認 -->
-      <el-card v-if="order.status === 'confirmed'" style="margin-bottom: 16px">
-        <template #header>数量照合（差異がある場合は実数を修正） / 数量核对（如有差异请修改实收数量）</template>
-        <el-table :data="varianceDetails" size="small">
-          <el-table-column prop="sku" label="SKU" width="150" />
-          <el-table-column prop="productName" label="商品名" />
-          <el-table-column prop="expectedQuantity" label="予定数" width="80" />
-          <el-table-column label="実数" width="120">
-            <template #default="{ row, $index }">
-              <el-input-number v-model="row.actualQuantity" :min="0" size="small" @change="updateVariance($index)" />
-            </template>
-          </el-table-column>
-          <el-table-column label="差異" width="80">
-            <template #default="{ row }">
-              <span :style="{ color: row.variance !== 0 ? '#f56c6c' : '#67c23a' }">
-                {{ row.variance > 0 ? '+' : '' }}{{ row.variance }}
-              </span>
-            </template>
-          </el-table-column>
-        </el-table>
+      <div v-if="order.status === 'confirmed'" class="rounded-lg border bg-card shadow-sm" style="margin-bottom: 16px">
+        <div class="border-b px-4 py-3">数量照合（差異がある場合は実数を修正） / 数量核对（如有差异请修改实收数量）</div>
+        <div class="p-4">
+          <div class="rounded-md border overflow-auto">
+            <Table class="w-full text-sm">
+              <TableHeader>
+                <TableRow class="border-b bg-muted/50">
+                  <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground" style="width: 150px">SKU</TableHead>
+                  <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground">商品名</TableHead>
+                  <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground" style="width: 80px">予定数</TableHead>
+                  <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground" style="width: 120px">実数</TableHead>
+                  <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground" style="width: 80px">差異</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="(row, $index) in varianceDetails" :key="row.sku" class="border-b hover:bg-muted/50">
+                  <TableCell class="p-2">{{ row.sku }}</TableCell>
+                  <TableCell class="p-2">{{ row.productName }}</TableCell>
+                  <TableCell class="p-2">{{ row.expectedQuantity }}</TableCell>
+                  <TableCell class="p-2">
+                    <input v-model.number="row.actualQuantity" type="number" min="0" class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm" @change="updateVariance($index)" />
+                  </TableCell>
+                  <TableCell class="p-2">
+                    <span :style="{ color: row.variance !== 0 ? '#f56c6c' : '#67c23a' }">
+                      {{ row.variance > 0 ? '+' : '' }}{{ row.variance }}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px">
-          <el-button @click="reset">リセット</el-button>
-          <el-button type="primary" :loading="submitting" @click="submitArrive">
-            受付完了 → 一時保管エリア
-          </el-button>
+          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px">
+            <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-input bg-background hover:bg-accent" @click="reset">リセット</Button>
+            <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90" :disabled="submitting" @click="submitArrive">
+              {{ submitting ? '処理中...' : '受付完了 → 一時保管エリア' }}
+            </Button>
+          </div>
         </div>
-      </el-card>
+      </div>
 
       <!-- 受付完了 / 受付完了 -->
-      <el-card v-else>
-        <el-result icon="success" title="受付完了" :sub-title="`ステータス: ${order.status}`">
-          <template #extra>
-            <el-button type="primary" @click="reset">次の受付へ</el-button>
-          </template>
-        </el-result>
-      </el-card>
+      <div v-else class="rounded-lg border bg-card shadow-sm p-8 text-center">
+        <div class="text-green-600 text-4xl mb-4">✓</div>
+        <h3 class="text-lg font-semibold">受付完了</h3>
+        <p class="text-muted-foreground mt-1">ステータス: {{ order.status }}</p>
+        <div class="mt-4">
+          <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90" @click="reset">次の受付へ</Button>
+        </div>
+      </div>
     </template>
 
-    <el-empty v-else-if="!loading" description="入庫予約番号をスキャンしてください" />
+    <div v-else-if="!loading" class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+      <p>入庫予約番号をスキャンしてください</p>
+    </div>
   </div>
 </template>

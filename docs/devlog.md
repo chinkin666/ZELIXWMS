@@ -3,6 +3,46 @@
 > ZELIX WMS Development Log
 > 所有开发活动按时间倒序记录 / すべての開発活動を時系列逆順で記録
 
+## [2026-03-23] shadcn-vue 全面リビルド + DB列補完 + API修正
+
+**変更種別 / 变更类型**: refactor + feat + fix
+**影響範囲 / 影响范围**: frontend 162 files, backend-nest 20+ files, seed data
+**関連ドキュメント / 关联文档**: TODOS.md, docs/feature-gap-analysis.md
+
+### 内容 / 内容
+
+**shadcn-vue UIリビルド（推倒重来）**
+- Tailwind CSS v4 + shadcn-vue 導入（23 UI コンポーネント）
+- 新共有コンポーネント: PageHeader（ControlPanel互換）、WmsDataTable（列開閉切替付き）
+- Navbar: 白背景 + border-b + ghost buttons（shadcnデフォルトスタイル）
+- SubNav, SettingsSidebar, Login 完全リビルド
+- 162 Vue ファイルの一括マイグレーション:
+  - ControlPanel → PageHeader (111 files)
+  - OButton → shadcn Button (126 files)
+  - ODialog → shadcn Dialog (43 files)
+- 旧 Odoo CSS 全削除（--o-* 変数、.o-* クラス、data-theme dark）
+- Element Plus CSS は暫定維持（一部ページがまだ参照）
+
+**DB列補完（16ページ +70列追加）**
+- 商品一覧: 15→30列（英語名、JANコード、重量、サイズ、原価、ロット管理、安全在庫、仕入先等）
+- 在庫一覧: 10→14列（JANコード、カテゴリ、最終入出庫日、倉庫名）
+- 出荷一覧: +日付列、送料（配送情報内）
+- 入庫指示: 13→20列（入庫区分、荷主、配送会社、CBM、パレット、備考）
+- 倉庫/荷主/得意先/仕入先/耗材/ロケーション/配送業者/伝票管理/運賃/庫内タスク/ウェーブ
+
+**API修正（20+ 箇所）**
+- items/data レスポンス正規化: user, warehouse, client, customer, supplier, packingRule, emailTemplate, rule, task, tenant, wave, webhook, customField, featureFlag, shippingRate, inventoryCategory, plugin, script, apiLog, operationLog, wmsSchedule, serviceRate, workCharge
+- 欠落端点追加: work-charges/summary, workflows/replenishment/status, set-products/orders/list, passthrough/staging, exceptions/sla-status
+- 路径修正: client-portal, auto-processing, shipping-rates, service-rates, tenants, oms, erp, marketplace
+
+**最終テスト結果**
+- Playwright 91ページ: 91/91 通過、0 fail
+- バックエンド: 591/591 テスト通過
+- コンソールエラー: 0（致命的）
+- DB バックアップ: zelixwms-20260323-final.sql
+
+---
+
 ## [2026-03-23] Playwright全105画面テスト + 一括修正 + メニュー整理
 
 **変更種別 / 变更类型**: fix + chore

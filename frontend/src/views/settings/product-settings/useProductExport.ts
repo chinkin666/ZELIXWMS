@@ -7,10 +7,10 @@
  * 负责导出列定义、预设管理、CSV生成。
  */
 import { ref, type Ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import type { Product } from '@/types/product'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 
 /** エクスポート列定義 / 导出列定义 */
 export interface ExportColumn {
@@ -39,6 +39,7 @@ export function useProductExport(
   stockMap: Ref<Map<string, number>>,
   filteredList: Ref<Product[]>,
 ) {
+  const { confirm } = useConfirmDialog()
   const toast = useToast()
   const { t } = useI18n()
 
@@ -143,11 +144,7 @@ export function useProductExport(
   const deleteExportPreset = async () => {
     if (!selectedExportPreset.value) return
     try {
-      await ElMessageBox.confirm(
-        `プリセット「${selectedExportPreset.value}」を削除してもよろしいですか？ / 确定要删除预设「${selectedExportPreset.value}」吗？`,
-        '確認 / 确认',
-        { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-      )
+      if (!(await confirm('この操作を実行しますか？'))) return
     } catch { return }
     exportPresets.value = exportPresets.value.filter(p => p.name !== selectedExportPreset.value)
     persistExportPresets()

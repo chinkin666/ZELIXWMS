@@ -1,22 +1,22 @@
 <template>
   <div class="order-correction">
-    <ControlPanel :title="t('wms.shipment.orderCorrection', '受注データ訂正')" :show-search="false" />
+    <PageHeader :title="t('wms.shipment.orderCorrection', '受注データ訂正')" :show-search="false" />
 
     <!-- 検索 / 搜索 -->
-    <div class="o-card search-bar">
+    <div class="rounded-lg border bg-card p-4 search-bar">
       <div class="form-field">
-        <label class="form-label">{{ t('wms.shipment.searchOrder', '注文番号 / 顧客管理番号') }}</label>
+        <label>{{ t('wms.shipment.searchOrder', '注文番号 / 顧客管理番号') }}</label>
         <div class="search-row">
-          <input v-model="searchQuery" type="text" class="o-input" :placeholder="t('wms.shipment.searchPlaceholder', '注文番号または管理番号を入力...')" @keyup.enter="handleSearch" />
-          <OButton variant="primary" :disabled="!searchQuery || isSearching" @click="handleSearch">
+          <input v-model="searchQuery" type="text" :placeholder="t('wms.shipment.searchPlaceholder', '注文番号または管理番号を入力...')" @keyup.enter="handleSearch" />
+          <Button variant="default" :disabled="!searchQuery || isSearching" @click="handleSearch">
             {{ t('wms.common.search', '検索') }}
-          </OButton>
+          </Button>
         </div>
       </div>
     </div>
 
     <!-- 注文詳細編集フォーム / 订单详情编辑表单 -->
-    <div v-if="order" class="o-card">
+    <div v-if="order" class="rounded-lg border bg-card p-4">
       <h3 class="form-title">{{ t('wms.shipment.orderDetail', '注文詳細') }}: {{ order.orderNumber }}</h3>
 
       <div class="form-grid">
@@ -25,24 +25,24 @@
           <label class="form-label section-label">{{ t('wms.shipment.recipientInfo', '届け先情報') }}</label>
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.shipment.recipientName', '届け先氏名') }}</label>
-          <input v-model="order.recipientName" type="text" class="o-input" />
+          <label>{{ t('wms.shipment.recipientName', '届け先氏名') }}</label>
+          <input v-model="order.recipientName" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.shipment.recipientPhone', '電話番号') }}</label>
-          <input v-model="order.recipientPhone" type="text" class="o-input" />
+          <label>{{ t('wms.shipment.recipientPhone', '電話番号') }}</label>
+          <input v-model="order.recipientPhone" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.shipment.postalCode', '郵便番号') }}</label>
-          <input v-model="order.postalCode" type="text" class="o-input" />
+          <label>{{ t('wms.shipment.postalCode', '郵便番号') }}</label>
+          <input v-model="order.postalCode" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.shipment.prefecture', '都道府県') }}</label>
-          <input v-model="order.prefecture" type="text" class="o-input" />
+          <label>{{ t('wms.shipment.prefecture', '都道府県') }}</label>
+          <input v-model="order.prefecture" type="text" />
         </div>
         <div class="form-field" style="grid-column: 1 / -1">
-          <label class="form-label">{{ t('wms.shipment.address', '住所') }}</label>
-          <input v-model="order.address" type="text" class="o-input" />
+          <label>{{ t('wms.shipment.address', '住所') }}</label>
+          <input v-model="order.address" type="text" />
         </div>
 
         <!-- 商品明細 / 商品明细 -->
@@ -60,36 +60,38 @@
           <span class="col-action"></span>
         </div>
         <div v-for="(item, idx) in order.items" :key="idx" class="items-row">
-          <input v-model="item.sku" type="text" class="o-input col-sku" />
-          <input v-model="item.productName" type="text" class="o-input col-name" />
-          <input v-model.number="item.quantity" type="number" min="1" class="o-input col-qty" />
-          <OButton variant="secondary" size="sm" @click="removeItem(idx)">{{ t('wms.common.delete', '削除') }}</OButton>
+          <input v-model="item.sku" type="text" class="col-sku" />
+          <input v-model="item.productName" type="text" class="col-name" />
+          <input v-model.number="item.quantity" type="number" min="1" class="col-qty" />
+          <Button variant="secondary" size="sm" @click="removeItem(idx)">{{ t('wms.common.delete', '削除') }}</Button>
         </div>
-        <OButton variant="secondary" size="sm" style="margin-top: 8px" @click="addItem">
+        <Button variant="secondary" size="sm" style="margin-top: 8px" @click="addItem">
           {{ t('wms.shipment.addItem', '+ 商品追加') }}
-        </OButton>
+        </Button>
       </div>
 
       <div class="form-actions">
-        <OButton variant="primary" :disabled="isSaving" @click="handleSave">
+        <Button variant="default" :disabled="isSaving" @click="handleSave">
           {{ isSaving ? t('wms.common.processing', '処理中...') : t('wms.common.save', '保存') }}
-        </OButton>
+        </Button>
       </div>
     </div>
 
     <!-- 検索結果なし / 无搜索结果 -->
-    <div v-else-if="searchDone" class="o-card empty-state">
+    <div v-else-if="searchDone" class="rounded-lg border bg-card p-4 empty-state">
       {{ t('wms.shipment.noOrderFound', '該当する注文が見つかりませんでした。') }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { apiFetch } from '@/api/http'
 import { getApiBaseUrl } from '@/api/base'
 
@@ -211,7 +213,7 @@ const handleSave = async () => {
 .form-label { font-size: 13px; font-weight: 600; color: var(--o-gray-700, #303133); }
 .form-title { font-size: 18px; font-weight: 600; color: var(--o-gray-700, #303133); margin: 0 0 1rem 0; }
 .section-label { font-size: 14px; font-weight: 700; color: var(--o-brand-primary, #714b67); border-bottom: 1px solid var(--o-border-color, #e4e7ed); padding-bottom: 4px; margin-top: 0.5rem; }
-.o-input { padding: 8px 12px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: var(--o-border-radius, 4px); font-size: 14px; color: var(--o-gray-700, #303133); background: var(--o-view-background, #fff); width: 100%; }
+.{ padding: 8px 12px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: var(--o-border-radius, 4px); font-size: 14px; color: var(--o-gray-700, #303133); background: var(--o-view-background, #fff); width: 100%; }
 .items-table { margin-top: 0.5rem; }
 .items-header, .items-row { display: flex; gap: 8px; align-items: center; padding: 4px 0; }
 .items-header { font-size: 12px; font-weight: 600; color: var(--o-gray-500, #909399); border-bottom: 1px solid var(--o-border-color, #e4e7ed); }

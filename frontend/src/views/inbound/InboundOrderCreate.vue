@@ -1,71 +1,77 @@
 <template>
   <div class="inbound-order-create">
-    <ControlPanel :title="t('wms.inbound.createOrder', '入庫指示作成')" :show-search="false">
+    <PageHeader :title="t('wms.inbound.createOrder', '入庫指示作成')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="$router.push('/inbound/orders')">{{ t('wms.common.back', '戻る') }}</OButton>
+        <Button variant="secondary" size="sm" @click="$router.push('/inbound/orders')">{{ t('wms.common.back', '戻る') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div class="o-card">
+    <div class="rounded-lg border bg-card p-4">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.destinationLocation', '入庫先ロケーション') }} <span class="required-badge">必須</span></label>
-          <select v-model="form.destinationLocationId" class="o-input">
-            <option value="">{{ t('wms.common.pleaseSelect', '選択してください...') }}</option>
-            <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
-              {{ loc.code }} ({{ loc.name }})
-            </option>
-          </select>
+          <label>{{ t('wms.inbound.destinationLocation', '入庫先ロケーション') }} <span class="text-destructive text-xs">*</span></label>
+          <Select :model-value="form.destinationLocationId || '__none__'" @update:model-value="(v: string) => { form.destinationLocationId = v === '__none__' ? '' : v }">
+            <SelectTrigger><SelectValue :placeholder="t('wms.common.pleaseSelect', '選択してください...')" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
+                {{ loc.code }} ({{ loc.name }})
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.expectedDate', '入庫予定日') }}</label>
-          <input v-model="form.expectedDate" type="date" class="o-input" />
+          <label>{{ t('wms.inbound.expectedDate', '入庫予定日') }}</label>
+          <Input v-model="form.expectedDate" type="date" />
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.supplierName', '仕入先') }}</label>
-          <select v-model="form.supplierId" class="o-input" @change="onSupplierChange">
-            <option value="">{{ t('wms.common.pleaseSelect', '選択してください...') }}</option>
-            <option v-for="s in suppliers" :key="s._id" :value="s._id">
-              {{ s.supplierCode ? `[${s.supplierCode}] ` : '' }}{{ s.name }}
-            </option>
-            <option value="__manual__">{{ t('wms.inbound.manualInput', '手動入力...') }}</option>
-          </select>
-          <input
+          <label>{{ t('wms.inbound.supplierName', '仕入先') }}</label>
+          <Select :model-value="form.supplierId || '__none__'" @update:model-value="(v: string) => { form.supplierId = v === '__none__' ? '' : v; onSupplierChange() }">
+            <SelectTrigger><SelectValue :placeholder="t('wms.common.pleaseSelect', '選択してください...')" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="s in suppliers" :key="s._id" :value="s._id">
+                {{ s.supplierCode ? `[${s.supplierCode}] ` : '' }}{{ s.name }}
+              </SelectItem>
+              <SelectItem value="__manual__">{{ t('wms.inbound.manualInput', '手動入力...') }}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
             v-if="form.supplierId === '__manual__'"
             v-model="form.supplierName"
             type="text"
-            class="o-input"
             style="margin-top:4px;"
             :placeholder="t('wms.inbound.supplierNamePlaceholder', '仕入先名を入力...')"
           />
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.product.memo', 'メモ') }}</label>
-          <input v-model="form.memo" type="text" class="o-input" :placeholder="t('wms.inbound.memoPlaceholder', '入庫メモ...')" />
+          <label>{{ t('wms.product.memo', 'メモ') }}</label>
+          <Input v-model="form.memo" type="text" :placeholder="t('wms.inbound.memoPlaceholder', '入庫メモ...')" />
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.flowType', '入庫タイプ') }}</label>
-          <select v-model="form.flowType" class="o-input">
-            <option value="standard">{{ t('wms.inbound.flowTypeStandard', '在庫型（通常）') }}</option>
-            <option value="crossdock">{{ t('wms.inbound.flowTypeCrossdock', '通過型（クロスドック）') }}</option>
-          </select>
+          <label>{{ t('wms.inbound.flowType', '入庫タイプ') }}</label>
+          <Select v-model="form.flowType">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="standard">{{ t('wms.inbound.flowTypeStandard', '在庫型（通常）') }}</SelectItem>
+              <SelectItem value="crossdock">{{ t('wms.inbound.flowTypeCrossdock', '通過型（クロスドック）') }}</SelectItem>
+            </SelectContent>
+          </Select>
           <p v-if="form.flowType === 'crossdock'" class="crossdock-hint">
             {{ t('wms.inbound.crossdockHint', '通過型: 検品後に棚入れをスキップし、直接出荷ステージングに移動します') }}
           </p>
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.requestedDate', '入庫希望日') }}</label>
-          <input v-model="form.requestedDate" type="date" class="o-input" />
+          <label>{{ t('wms.inbound.requestedDate', '入庫希望日') }}</label>
+          <Input v-model="form.requestedDate" type="date" />
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.purchaseOrderNumber', '発注番号') }}</label>
-          <input v-model="form.purchaseOrderNumber" type="text" class="o-input" :placeholder="t('wms.inbound.poPlaceholder', '顧客側管理番号...')" />
+          <label>{{ t('wms.inbound.purchaseOrderNumber', '発注番号') }}</label>
+          <Input v-model="form.purchaseOrderNumber" type="text" :placeholder="t('wms.inbound.poPlaceholder', '顧客側管理番号...')" />
         </div>
       </div>
 
@@ -74,37 +80,40 @@
         <summary class="details-summary">{{ t('wms.inbound.advancedInfo', '物流・納品元詳細') }}</summary>
         <div class="form-grid" style="margin-top:8px;">
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inbound.supplierPhone', '納品元電話番号') }}</label>
-            <input v-model="form.supplierPhone" type="text" class="o-input" placeholder="03-1234-5678" />
+            <label>{{ t('wms.inbound.supplierPhone', '納品元電話番号') }}</label>
+            <Input v-model="form.supplierPhone" type="text" placeholder="03-1234-5678" />
           </div>
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inbound.supplierPostalCode', '納品元郵便番号') }}</label>
-            <input v-model="form.supplierPostalCode" type="text" class="o-input" placeholder="123-4567" />
+            <label>{{ t('wms.inbound.supplierPostalCode', '納品元郵便番号') }}</label>
+            <Input v-model="form.supplierPostalCode" type="text" placeholder="123-4567" />
           </div>
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inbound.supplierAddress', '納品元住所') }}</label>
-            <input v-model="form.supplierAddress" type="text" class="o-input" />
+            <label>{{ t('wms.inbound.supplierAddress', '納品元住所') }}</label>
+            <Input v-model="form.supplierAddress" type="text" />
           </div>
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inbound.containerType', 'コンテナ') }}</label>
-            <select v-model="form.containerType" class="o-input">
-              <option value="">{{ t('wms.common.none', 'なし') }}</option>
-              <option value="20ft">20ft</option>
-              <option value="40ft">40ft</option>
-              <option value="40ftH">40ft HC</option>
-            </select>
+            <label>{{ t('wms.inbound.containerType', 'コンテナ') }}</label>
+            <Select :model-value="form.containerType || '__none__'" @update:model-value="(v: string) => { form.containerType = v === '__none__' ? '' : v }">
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">{{ t('wms.common.none', 'なし') }}</SelectItem>
+                <SelectItem value="20ft">20ft</SelectItem>
+                <SelectItem value="40ft">40ft</SelectItem>
+                <SelectItem value="40ftH">40ft HC</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inbound.cubicMeters', '立方数 (M³)') }}</label>
-            <input v-model.number="form.cubicMeters" type="number" step="0.1" min="0" class="o-input" />
+            <label>{{ t('wms.inbound.cubicMeters', '立方数 (M³)') }}</label>
+            <Input v-model.number="form.cubicMeters" type="number" step="0.1" min="0" />
           </div>
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inbound.palletCount', 'パレット数') }}</label>
-            <input v-model.number="form.palletCount" type="number" min="0" class="o-input" />
+            <label>{{ t('wms.inbound.palletCount', 'パレット数') }}</label>
+            <Input v-model.number="form.palletCount" type="number" min="0" />
           </div>
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inbound.innerBoxCount', 'インナー箱数') }}</label>
-            <input v-model.number="form.innerBoxCount" type="number" min="0" class="o-input" />
+            <label>{{ t('wms.inbound.innerBoxCount', 'インナー箱数') }}</label>
+            <Input v-model.number="form.innerBoxCount" type="number" min="0" />
           </div>
         </div>
       </details>
@@ -113,34 +122,34 @@
     <!-- 入庫明細 -->
     <div class="section-header">
       <h3 class="section-title">{{ t('wms.inbound.orderDetails', '入庫明細') }}</h3>
-      <OButton variant="secondary" size="sm" @click="addLine">{{ t('wms.inbound.addLine', '行を追加') }}</OButton>
+      <Button variant="secondary" size="sm" @click="addLine">{{ t('wms.inbound.addLine', '行を追加') }}</Button>
     </div>
 
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width:40px;">#</th>
-            <th class="o-table-th" style="width:250px;">{{ t('wms.inbound.product', '商品') }} <span class="required-badge">必須</span></th>
-            <th class="o-table-th o-table-th--right" style="width:120px;">{{ t('wms.inbound.expectedQuantity', '予定数量') }} <span class="required-badge">必須</span></th>
-            <th class="o-table-th" style="width:100px;">{{ t('wms.inbound.stockCategory', '在庫区分') }}</th>
-            <th class="o-table-th" style="width:130px;">{{ t('wms.inbound.orderReferenceNumber', '注文番号') }}</th>
-            <th class="o-table-th" style="width:130px;">{{ t('wms.inbound.lotNumber', 'ロット番号') }}</th>
-            <th class="o-table-th" style="width:120px;">{{ t('wms.inbound.expiryDate', '賞味期限') }}</th>
-            <th class="o-table-th" style="width:150px;">{{ t('wms.product.memo', 'メモ') }}</th>
-            <th class="o-table-th" style="width:60px;"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="form.lines.length === 0">
-            <td colspan="9" class="o-table-empty">{{ t('wms.inbound.pleaseAddLine', '行を追加してください') }}</td>
-          </tr>
-          <tr v-for="(line, i) in form.lines" :key="i" class="o-table-row">
-            <td class="o-table-td" style="text-align:center;">{{ i + 1 }}</td>
-            <td class="o-table-td">
-              <input
+    <div class="rounded-md border overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width:40px;">#</TableHead>
+            <TableHead style="width:250px;">{{ t('wms.inbound.product', '商品') }} <span class="text-destructive text-xs">*</span></TableHead>
+            <TableHead class="text-right" style="width:120px;">{{ t('wms.inbound.expectedQuantity', '予定数量') }} <span class="text-destructive text-xs">*</span></TableHead>
+            <TableHead style="width:100px;">{{ t('wms.inbound.stockCategory', '在庫区分') }}</TableHead>
+            <TableHead style="width:130px;">{{ t('wms.inbound.orderReferenceNumber', '注文番号') }}</TableHead>
+            <TableHead style="width:130px;">{{ t('wms.inbound.lotNumber', 'ロット番号') }}</TableHead>
+            <TableHead style="width:120px;">{{ t('wms.inbound.expiryDate', '賞味期限') }}</TableHead>
+            <TableHead style="width:150px;">{{ t('wms.product.memo', 'メモ') }}</TableHead>
+            <TableHead style="width:60px;"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="form.lines.length === 0">
+            <TableCell colspan="9" class="text-center py-8 text-muted-foreground">{{ t('wms.inbound.pleaseAddLine', '行を追加してください') }}</TableCell>
+          </TableRow>
+          <TableRow v-for="(line, i) in form.lines" :key="i">
+            <TableCell style="text-align:center;">{{ i + 1 }}</TableCell>
+            <TableCell>
+              <Input
                 type="text"
-                class="o-input o-input-sm"
+                class="h-8 text-sm"
                 :placeholder="t('wms.inbound.searchProduct', 'SKU / 商品名で検索...')"
                 :value="getProductLabel(line.productId)"
                 :list="'product-datalist-' + i"
@@ -150,44 +159,47 @@
               <datalist :id="'product-datalist-' + i">
                 <option v-for="p in products" :key="p._id" :value="p.sku + ' - ' + p.name" />
               </datalist>
-            </td>
-            <td class="o-table-td">
-              <input v-model.number="line.expectedQuantity" type="number" min="1" class="o-input o-input-sm" style="text-align:right;" />
-            </td>
-            <td class="o-table-td">
-              <select v-model="line.stockCategory" class="o-input o-input-sm">
-                <option value="new">{{ t('wms.inbound.stockNew', '新品') }}</option>
-                <option value="damaged">{{ t('wms.inbound.stockDamaged', '仕損') }}</option>
-              </select>
-            </td>
-            <td class="o-table-td">
-              <input v-model="line.orderReferenceNumber" type="text" class="o-input o-input-sm" :placeholder="t('wms.inbound.orderReferenceNumberPlaceholder', '注文番号...')" />
-            </td>
-            <td class="o-table-td">
-              <input v-model="line.lotNumber" type="text" class="o-input o-input-sm" placeholder="LOT-..." />
-            </td>
-            <td class="o-table-td">
-              <input v-model="line.expiryDate" type="date" class="o-input o-input-sm" />
-            </td>
-            <td class="o-table-td">
-              <input v-model="line.memo" type="text" class="o-input o-input-sm" />
-            </td>
-            <td class="o-table-td" style="text-align:center;">
-              <button class="btn-remove" @click="removeLine(i)">&times;</button>
-            </td>
-          </tr>
+            </TableCell>
+            <TableCell>
+              <Input v-model.number="line.expectedQuantity" type="number" min="1" class="h-8 text-sm" style="text-align:right;" />
+            </TableCell>
+            <TableCell>
+              <Select v-model="line.stockCategory">
+                <SelectTrigger class="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">{{ t('wms.inbound.stockNew', '新品') }}</SelectItem>
+                  <SelectItem value="damaged">{{ t('wms.inbound.stockDamaged', '仕損') }}</SelectItem>
+                </SelectContent>
+              </Select>
+            </TableCell>
+            <TableCell>
+              <Input v-model="line.orderReferenceNumber" type="text" class="h-8 text-sm" :placeholder="t('wms.inbound.orderReferenceNumberPlaceholder', '注文番号...')" />
+            </TableCell>
+            <TableCell>
+              <Input v-model="line.lotNumber" type="text" class="h-8 text-sm" placeholder="LOT-..." />
+            </TableCell>
+            <TableCell>
+              <Input v-model="line.expiryDate" type="date" class="h-8 text-sm" />
+            </TableCell>
+            <TableCell>
+              <Input v-model="line.memo" type="text" class="h-8 text-sm" />
+            </TableCell>
+            <TableCell style="text-align:center;">
+              <Button variant="ghost" class="btn-remove" @click="removeLine(i)">&times;</Button>
+            </TableCell>
+          </TableRow>
           <!-- 合計行 / 合计行 -->
-          <tr v-if="form.lines.length > 0" class="o-table-row total-row">
-            <td class="o-table-td" colspan="2" style="text-align:right;font-weight:600;">
+          <TableRow v-if="form.lines.length > 0" class="total-row">
+            <TableCell colspan="2" style="text-align:right;font-weight:600;">
               {{ t('wms.common.total', '合計') }}: {{ form.lines.length }} {{ t('wms.inbound.lines', '行') }}
-            </td>
-            <td class="o-table-td" style="text-align:right;font-weight:600;">
+            </TableCell>
+            <TableCell style="text-align:right;font-weight:600;">
               {{ form.lines.reduce((s, l) => s + (l.expectedQuantity || 0), 0) }}
-            </td>
-            <td class="o-table-td" colspan="6"></td>
-          </tr>
-        </tbody>
-      </table>
+            </TableCell>
+            <TableCell colspan="6"></TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <div class="form-actions">
@@ -201,13 +213,13 @@
           ⚠️ {{ t('wms.inbound.quantityRequired', '行{n}: 数量を1以上入力してください').replace('{n}', String(form.lines.indexOf(line) + 1)) }}
         </p>
       </div>
-      <OButton
-        variant="primary"
+      <Button
+        variant="default"
         :disabled="!canSubmit || isSubmitting"
         @click="handleSubmit"
       >
         {{ isSubmitting ? t('wms.inbound.creating', '作成中...') : t('wms.inbound.createOrderButton', '入庫指示を作成') }}
-      </OButton>
+      </Button>
     </div>
   </div>
 </template>
@@ -217,14 +229,18 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { createInboundOrder } from '@/api/inboundOrder'
 import { fetchLocations } from '@/api/location'
 import { fetchProducts } from '@/api/product'
 import { fetchSuppliers, type SupplierData } from '@/api/supplier'
 import type { Product } from '@/types/product'
 import type { Location } from '@/types/inventory'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 const router = useRouter()
 const toast = useToast()
@@ -458,7 +474,7 @@ onMounted(async () => {
   margin: 0;
 }
 
-.o-input {
+.{
   padding: 8px 12px;
   border: 1px solid var(--o-border-color, #dcdfe6);
   border-radius: var(--o-border-radius, 4px);

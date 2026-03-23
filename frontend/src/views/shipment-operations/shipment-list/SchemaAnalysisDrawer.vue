@@ -3,7 +3,7 @@
     <div class="drawer-panel">
       <div class="drawer-header">
         <h3 class="drawer-title">{{ t('wms.shipment.schemaAnalysis', 'スキーマ分析') }}</h3>
-        <button class="drawer-close" @click="$emit('update:visible', false)">&times;</button>
+        <Button class="drawer-close" @click="$emit('update:visible', false)">&times;</Button>
       </div>
       <div class="drawer-body">
         <OrderSchemaAnalysis
@@ -21,6 +21,7 @@ import { useI18n } from '@/composables/useI18n'
 import OrderSchemaAnalysis from '@/components/schema-analysis/OrderSchemaAnalysis.vue'
 import type { OrderDocument } from '@/types/order'
 import type { Carrier } from '@/types/carrier'
+import { Button } from '@/components/ui/button'
 
 const { t } = useI18n()
 

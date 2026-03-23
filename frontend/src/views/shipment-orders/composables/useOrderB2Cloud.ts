@@ -5,6 +5,9 @@ import type { Carrier } from '@/types/carrier'
 import type { YamatoB2ValidateResult, YamatoB2ExportResult, AutoValidationConfig } from '@/types/carrierAutomation'
 import { yamatoB2Validate, yamatoB2Export, fetchCarrierAutomationConfig } from '@/api/carrierAutomation'
 import { updateShipmentOrderStatusBulk } from '@/api/shipmentOrders'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+
+const { confirm: _defaultConfirm } = useConfirmDialog()
 
 export function useOrderB2Cloud(
   pendingWaybillRows: Ref<UserOrderRow[]>,
@@ -13,7 +16,7 @@ export function useOrderB2Cloud(
   sortedRows: ComputedRef<UserOrderRow[]>,
   loadPendingWaybillOrders: () => Promise<void>,
   toast: { showSuccess: (msg: string) => void; showWarning: (msg: string) => void; showError: (msg: string) => void },
-  confirmFn: (message: string) => Promise<boolean> = (msg) => Promise.resolve(window.confirm(msg)),
+  confirmFn: (message: string) => Promise<boolean> = (msg) => _defaultConfirm(msg),
 ) {
   // --- B2 Cloud バリデーション ---
   const b2Validating = ref(false)

@@ -1,5 +1,9 @@
 <template>
-  <ODialog :open="visible" title="印刷プレビュー" @close="visible = false" width="980px">
+  <Dialog :open="visible" @update:open="visible = $event">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>印刷プレビュー</DialogTitle>
+      </DialogHeader>
     <div class="toolbar">
       <div class="toolbar-row">
         <div class="toolbar-item">
@@ -26,8 +30,8 @@
           </label>
         </div>
 
-        <OButton variant="secondary" size="sm" :disabled="!imageUrl || matching" @click="downloadPng">下载PNG</OButton>
-        <OButton variant="primary" size="sm" :disabled="!imageUrl || !selectedTemplate || matching" @click="handlePrint">打印</OButton>
+        <Button variant="secondary" size="sm" :disabled="!imageUrl || matching" @click="downloadPng">下载PNG</Button>
+        <Button variant="default" size="sm" :disabled="!imageUrl || !selectedTemplate || matching" @click="handlePrint">打印</Button>
       </div>
     </div>
 
@@ -39,16 +43,17 @@
       <img v-else :src="imageUrl" class="img" />
     </div>
 
-    <template #footer>
-      <OButton variant="secondary" @click="visible = false">关闭</OButton>
-    </template>
-  </ODialog>
+    <DialogFooter>
+      <Button variant="secondary" @click="visible = false">关闭</Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { OrderDocument } from '@/types/order'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
 import type { PrintTemplate } from '@/types/printTemplate'

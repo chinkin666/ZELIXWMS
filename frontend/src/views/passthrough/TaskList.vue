@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 /**
  * 通過型作業タスク一覧 / 通过型作业任务列表
  *
@@ -6,14 +7,19 @@
  * 显示已受付的入库预定的作业选项，记录作业完成。
  */
 import { ref, onMounted } from 'vue'
+import { Card, CardContent } from '@/components/ui/card'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { useToast } from '@/composables/useToast'
 import { getApiBaseUrl } from '@/api/base'
 import { useWmsUserStore } from '@/stores/wms/useWmsUserStore'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 const router = useRouter()
 const userStore = useWmsUserStore()
 const baseUrl = getApiBaseUrl()
+const { showSuccess, showError } = useToast()
 
 const orders = ref<any[]>([])
 const loading = ref(false)
@@ -75,20 +81,25 @@ async function submitComplete() {
       }),
     })
     if (res.ok) {
-      ElMessage.success('作業完了 / 作业完成')
+      showSuccess('作業完了 / 作业完成')
       completingDialogVisible.value = false
       completingOrder.value = null
       await loadOrders()
     } else {
       const data = await res.json()
-      ElMessage.error(data.message || '失敗')
+      showError(data.message || '失敗')
     }
   } catch (e: any) {
-    ElMessage.error(e.message)
+    showError(e.message)
   } finally {
     submitting.value = false
   }
 }
+
+// ページネーション / 分页
+const totalPages = () => Math.ceil(total.value / limit.value)
+function prevPage() { if (page.value > 1) { page.value--; loadOrders() } }
+function nextPage() { if (page.value < totalPages()) { page.value++; loadOrders() } }
 
 onMounted(loadOrders)
 </script>
@@ -98,88 +109,105 @@ onMounted(loadOrders)
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
       <h2 style="margin: 0">通過型作業タスク / 通过型作业任务</h2>
       <div style="display: flex; gap: 8px; align-items: center">
-        <el-input
+        <input
           v-model="searchQuery"
           placeholder="注文番号検索 / 搜索订单号"
-          clearable
-          style="width: 220px"
+          class="flex h-9 w-56 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
           @keyup.enter="() => { page = 1; loadOrders() }"
-          @clear="() => { page = 1; loadOrders() }"
         />
-        <el-button @click="loadOrders" :loading="loading">更新</el-button>
+        <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-input bg-background hover:bg-accent" @click="loadOrders">
+          {{ loading ? '読み込み中...' : '更新' }}
+        </Button>
       </div>
     </div>
 
     <div v-for="order in orders" :key="order._id" style="margin-bottom: 16px">
-      <el-card>
-        <template #header>
+      <div class="rounded-lg border bg-card shadow-sm">
+        <div class="border-b px-4 py-3">
           <div style="display: flex; justify-content: space-between; align-items: center">
             <span>{{ order.orderNumber }} — {{ (order.destinationType || '').toUpperCase() }}</span>
             <div style="display: flex; gap: 4px; align-items: center">
-              <el-button text size="small" @click.stop="router.push(`/passthrough/inspection/${order._id}`)">検品</el-button>
-              <el-button text size="small" @click.stop="router.push(`/passthrough/boxes/${order._id}`)">FBA箱</el-button>
-              <el-tag size="small">{{ order.status }}</el-tag>
+              <Button class="text-sm text-primary hover:underline" @click.stop="router.push(`/passthrough/inspection/${order._id}`)">検品</Button>
+              <Button class="text-sm text-primary hover:underline" @click.stop="router.push(`/passthrough/boxes/${order._id}`)">FBA箱</Button>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">{{ order.status }}</span>
             </div>
           </div>
-        </template>
-
-        <el-table :data="order.serviceOptions || []" size="small">
-          <el-table-column prop="optionName" label="作業" />
-          <el-table-column label="状態" width="100">
-            <template #default="{ row }">
-              <el-tag
-                :type="row.status === 'completed' ? 'success' : row.status === 'in_progress' ? 'warning' : 'info'"
-                size="small"
-              >
-                {{ row.status === 'completed' ? '完了' : row.status === 'in_progress' ? '進行中' : '待機' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="数量" width="100">
-            <template #default="{ row }">{{ row.actualQuantity ?? '--' }} / {{ row.quantity }}</template>
-          </el-table-column>
-          <el-table-column label="操作" width="120">
-            <template #default="{ row }">
-              <el-button
-                v-if="row.status !== 'completed'"
-                type="primary"
-                size="small"
-                @click="startComplete(order._id, row.optionCode, row.quantity)"
-              >
-                完了
-              </el-button>
-              <el-tag v-else type="success" size="small">済</el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-card>
+        </div>
+        <div class="p-4">
+          <div class="rounded-md border overflow-auto">
+            <Table class="w-full text-sm">
+              <TableHeader>
+                <TableRow class="border-b bg-muted/50">
+                  <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground">作業</TableHead>
+                  <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground" style="width: 100px">状態</TableHead>
+                  <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground" style="width: 100px">数量</TableHead>
+                  <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground" style="width: 120px">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow v-for="row in (order.serviceOptions || [])" :key="row.optionCode" class="border-b hover:bg-muted/50">
+                  <TableCell class="p-2">{{ row.optionName }}</TableCell>
+                  <TableCell class="p-2">
+                    <span
+                      :class="row.status === 'completed' ? 'bg-green-100 text-green-800' : row.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' : 'bg-muted text-muted-foreground'"
+                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                    >
+                      {{ row.status === 'completed' ? '完了' : row.status === 'in_progress' ? '進行中' : '待機' }}
+                    </span>
+                  </TableCell>
+                  <TableCell class="p-2">{{ row.actualQuantity ?? '--' }} / {{ row.quantity }}</TableCell>
+                  <TableCell class="p-2">
+                    <Button
+                      v-if="row.status !== 'completed'"
+                      class="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 bg-primary text-primary-foreground hover:bg-primary/90"
+                      @click="startComplete(order._id, row.optionCode, row.quantity)"
+                    >
+                      完了
+                    </Button>
+                    <span v-else class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">済</span>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <el-empty v-if="!loading && orders.length === 0" description="作業中の予約はありません / 没有作业中的预定" />
+    <div v-if="!loading && orders.length === 0" class="flex flex-col items-center justify-center py-12 text-muted-foreground">
+      <p>作業中の予約はありません / 没有作业中的预定</p>
+    </div>
 
     <!-- ページネーション / 分页 -->
-    <div v-if="total > limit" style="display: flex; justify-content: center; margin-top: 16px">
-      <el-pagination
-        v-model:current-page="page"
-        :page-size="limit"
-        :total="total"
-        layout="prev, pager, next"
-        @current-change="loadOrders"
-      />
+    <div v-if="total > limit" style="display: flex; justify-content: center; gap: 8px; margin-top: 16px">
+      <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 border border-input bg-background hover:bg-accent" :disabled="page <= 1" @click="prevPage">前へ</Button>
+      <span class="flex items-center text-sm text-muted-foreground">{{ page }} / {{ totalPages() }}</span>
+      <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 border border-input bg-background hover:bg-accent" :disabled="page >= totalPages()" @click="nextPage">次へ</Button>
     </div>
 
     <!-- 完了ダイアログ / 完成对话框 -->
-    <el-dialog v-model="completingDialogVisible" title="作業完了 / 作业完成" width="400px" :close-on-click-modal="false" @close="completingOrder = null">
-      <el-form label-width="100px">
-        <el-form-item label="作業">{{ completingOption }}</el-form-item>
-        <el-form-item label="実数量">
-          <el-input-number v-model="actualQuantity" :min="0" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="completingDialogVisible = false">キャンセル</el-button>
-        <el-button type="primary" :loading="submitting" @click="submitComplete">完了</el-button>
-      </template>
-    </el-dialog>
+    <Dialog :open="completingDialogVisible" @update:open="(v: boolean) => { completingDialogVisible = v; if (!v) completingOrder = null }">
+      <DialogContent class="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>作業完了 / 作业完成</DialogTitle>
+        </DialogHeader>
+        <div class="grid gap-4 py-4">
+          <div class="grid grid-cols-4 items-center gap-4">
+            <label class="text-right text-sm">作業</label>
+            <span class="col-span-3 text-sm">{{ completingOption }}</span>
+          </div>
+          <div class="grid grid-cols-4 items-center gap-4">
+            <label class="text-right text-sm">実数量</label>
+            <input v-model.number="actualQuantity" type="number" min="0" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 border border-input bg-background hover:bg-accent" @click="completingDialogVisible = false">キャンセル</Button>
+          <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-primary text-primary-foreground hover:bg-primary/90" :disabled="submitting" @click="submitComplete">
+            {{ submitting ? '処理中...' : '完了' }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

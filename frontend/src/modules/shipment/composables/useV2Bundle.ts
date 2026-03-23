@@ -1,5 +1,6 @@
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { toast } from 'vue-sonner'
 import { computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { getNestedValue } from '@/utils/nestedObject'
 import { determineCoolType, determineInvoiceType } from '@/utils/productMapUtils'
 import { setCookie, getCookie, BUNDLE_FILTER_COOKIE_KEY, BUNDLE_MODE_COOKIE_KEY } from '@/views/shipment-orders/composables/useOrderStorage'
@@ -57,7 +58,7 @@ export function useV2Bundle({ state, allRows, draftNonHeldRows }: BundleDeps) {
     setCookie(BUNDLE_FILTER_COOKIE_KEY, JSON.stringify(keys ?? []), 30)
     state.bundleModeEnabled.value = true
     setCookie(BUNDLE_MODE_COOKIE_KEY, '1', 30)
-    ElMessage.success('同梱設定を保存しました')
+    toast.success('同梱設定を保存しました')
   }
 
   const handleBundleFilterUpdate = (keys: string[]) => {
@@ -99,11 +100,11 @@ export function useV2Bundle({ state, allRows, draftNonHeldRows }: BundleDeps) {
 
   const handleBundleMerge = async () => {
     if (!state.bundleModeEnabled.value || state.bundleFilterKeys.value.length === 0) {
-      ElMessage.warning('同梱モードとフィルターを有効にしてください')
+      toast.warning('同梱モードとフィルターを有効にしてください')
       return
     }
     if (state.selectedRows.value.length === 0) {
-      ElMessage.warning('同梱したい行を選択してください')
+      toast.warning('同梱したい行を選択してください')
       return
     }
 
@@ -127,16 +128,12 @@ export function useV2Bundle({ state, allRows, draftNonHeldRows }: BundleDeps) {
     }
 
     if (groupKeysToMerge.length === 0) {
-      ElMessage.warning('選択した行に同梱可能なグループがありません')
+      toast.warning('選択した行に同梱可能なグループがありません')
       return
     }
 
     try {
-      await ElMessageBox.confirm(
-        `選択行を含む${groupKeysToMerge.length}グループ（合計${totalRowsToMerge}件）を同梱しますか？`,
-        '同梱確認',
-        { confirmButtonText: '同梱する', cancelButtonText: 'キャンセル', type: 'info' }
-      )
+      if (!confirm('この操作を実行しますか？')) return
     } catch { return }
 
     const mergedByFirstId = new Map<string, any>()
@@ -159,12 +156,12 @@ export function useV2Bundle({ state, allRows, draftNonHeldRows }: BundleDeps) {
       .map((row: any) => mergedByFirstId.get(row.id) ?? row)
 
     state.selectedRows.value = []
-    ElMessage.success(`全て同梱完了：${mergedGroupCount}グループを同梱しました`)
+    toast.success(`全て同梱完了：${mergedGroupCount}グループを同梱しました`)
   }
 
   const handleUnbundle = async () => {
     if (state.selectedRows.value.length === 0) {
-      ElMessage.warning('解除する行を選択してください')
+      toast.warning('解除する行を選択してください')
       return
     }
 
@@ -175,18 +172,14 @@ export function useV2Bundle({ state, allRows, draftNonHeldRows }: BundleDeps) {
     })
 
     if (bundledRows.length === 0) {
-      ElMessage.warning('選択された行に同梱済みの行がありません')
+      toast.warning('選択された行に同梱済みの行がありません')
       return
     }
 
     const totalOriginalRows = bundledRows.reduce((sum: number, row: any) => sum + (row._bundleOriginalRows?.length || 0), 0)
 
     try {
-      await ElMessageBox.confirm(
-        `選択した${bundledRows.length}件の同梱を解除し、${totalOriginalRows}件の元の行に戻しますか？`,
-        '同梱解除',
-        { confirmButtonText: '解除する', cancelButtonText: 'キャンセル', type: 'warning' }
-      )
+      if (!confirm('この操作を実行しますか？')) return
     } catch { return }
 
     const bundledIds = new Set(bundledRows.map((r: any) => r.id))
@@ -211,7 +204,7 @@ export function useV2Bundle({ state, allRows, draftNonHeldRows }: BundleDeps) {
 
     allRows.value = nextAll
     state.selectedRows.value = []
-    ElMessage.success(`同梱解除完了：${restoredCount}件の行を復元しました`)
+    toast.success(`同梱解除完了：${restoredCount}件の行を復元しました`)
   }
 
   const restoreBundleFromCookies = () => {

@@ -2,35 +2,29 @@
   <div class="connection-tab">
     <!-- Service URL -->
     <div class="form-group">
-      <label class="form-label">{{ t('wms.printer.serviceUrl', 'サービスURL') }}</label>
-      <input
-        class="o-input"
-        v-model="serviceUrl"
-        placeholder="http://127.0.0.1:8765"
-        style="width: 360px"
-        @change="handleUrlChange"
-      />
+      <label>{{ t('wms.printer.serviceUrl', 'サービスURL') }}</label>
+      <Input v-model="serviceUrl" placeholder="http://127.0.0.1:8765" style="width: 360px" @change="handleUrlChange" />
     </div>
 
     <!-- Connection Actions -->
     <div class="form-actions">
-      <OButton variant="primary" :disabled="connecting" @click="handleConnect">
+      <Button variant="default" :disabled="connecting" @click="handleConnect">
         {{ connecting ? t('wms.printer.connecting', '接続中...') : t('wms.printer.connectionTest', '接続テスト') }}
-      </OButton>
-      <OButton variant="secondary" :disabled="!isConnected || refreshing" @click="handleRefreshPrinters">
+      </Button>
+      <Button variant="secondary" :disabled="!isConnected || refreshing" @click="handleRefreshPrinters">
         {{ refreshing ? t('wms.printer.refreshing', '更新中...') : t('wms.printer.refreshPrinters', 'プリンター情報を更新') }}
-      </OButton>
+      </Button>
     </div>
 
     <!-- Status Card -->
-    <div class="o-card status-card">
-      <div class="o-card__header">
+    <div class="rounded-lg border bg-card p-4 status-card">
+      <div class="font-semibold mb-2">
         <span>{{ t('wms.printer.connectionStatus', '接続ステータス') }}</span>
         <span class="o-badge" :class="isConnected ? 'o-badge-success' : 'o-badge-info'">
           {{ isConnected ? t('wms.printer.connected', '接続済み') : t('wms.printer.disconnected', '未接続') }}
         </span>
       </div>
-      <div class="o-card__body">
+      <div class="">
         <template v-if="isConnected && healthInfo">
           <div class="kv-list">
             <div class="kv-row">
@@ -81,10 +75,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import { healthCheck, getPrinters } from '@/utils/print/printBridgeApi'
+import { Input } from '@/components/ui/input'
 import {
   getPrintConfig,
   savePrintConfig,

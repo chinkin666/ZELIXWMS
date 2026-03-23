@@ -1,32 +1,35 @@
 <template>
   <div class="inventory-transfer">
-    <ControlPanel :title="t('wms.inventory.transfer', '在庫移動')" :show-search="false" />
+    <PageHeader :title="t('wms.inventory.transfer', '在庫移動')" :show-search="false" />
 
     <!-- 移動モード切替タブ / 移动模式切换标签 -->
-    <div class="transfer-form o-card">
+    <div class="transfer-form rounded-lg border bg-card p-4">
       <div class="mode-tabs">
-        <button
+        <Button
+          :variant="mode === 'intra' ? 'default' : 'outline'"
           class="mode-tab"
           :class="{ active: mode === 'intra' }"
           @click="mode = 'intra'"
         >
           {{ t('wms.inventory.intraWarehouseTransfer', '倉庫内移動') }}
-        </button>
-        <button
+        </Button>
+        <Button
+          :variant="mode === 'cross' ? 'default' : 'outline'"
           class="mode-tab"
           :class="{ active: mode === 'cross' }"
           @click="mode = 'cross'"
         >
           {{ t('wms.inventory.interWarehouseTransfer', '拠点間移動') }}
-        </button>
-        <button
+        </Button>
+        <Button
+          :variant="mode === 'transfers' ? 'default' : 'outline'"
           class="mode-tab"
           :class="{ active: mode === 'transfers' }"
           @click="mode = 'transfers'; loadTransfers()"
         >
           {{ t('wms.inventory.transferWorkflow', '移動管理') }}
           <span v-if="pendingTransferCount > 0" class="tab-badge">{{ pendingTransferCount }}</span>
-        </button>
+        </Button>
       </div>
 
       <!-- 倉庫内移動 / 仓库内移动 -->
@@ -36,59 +39,59 @@
         <div class="form-grid">
           <!-- 商品選択 / 商品选择 -->
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inventory.product', '商品') }} <span class="required-badge">必須</span></label>
-            <select v-model="intraForm.productId" class="o-input">
-              <option value="">{{ t('wms.inventory.selectProduct', '商品を選択...') }}</option>
-              <option v-for="p in products" :key="p._id" :value="p._id">
-                {{ p.sku }} - {{ p.name }}
-              </option>
-            </select>
+            <label>{{ t('wms.inventory.product', '商品') }} <span class="text-destructive text-xs">*</span></label>
+            <Select :model-value="intraForm.productId || '__none__'" @update:model-value="(v: string) => { intraForm.productId = v === '__none__' ? '' : v }">
+              <SelectTrigger><SelectValue :placeholder="t('wms.inventory.selectProduct', '商品を選択...')" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="p in products" :key="p._id" :value="p._id">{{ p.sku }} - {{ p.name }}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <!-- 移動数量 / 移动数量 -->
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inventory.transferQuantity', '移動数量') }} <span class="required-badge">必須</span></label>
-            <input v-model.number="intraForm.quantity" type="number" min="1" class="o-input" :placeholder="t('wms.inventory.transferQuantityPlaceholder', '例: 10')" />
+            <label>{{ t('wms.inventory.transferQuantity', '移動数量') }} <span class="text-destructive text-xs">*</span></label>
+            <Input v-model.number="intraForm.quantity" type="number" min="1" :placeholder="t('wms.inventory.transferQuantityPlaceholder', '例: 10')" />
             <span class="form-hint">{{ t('wms.inventory.transferQuantityHint', '1以上の整数を入力してください') }}</span>
           </div>
 
           <!-- 移動元ロケーション / 移动源库位 -->
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inventory.fromLocation', '移動元') }} <span class="required-badge">必須</span></label>
-            <select v-model="intraForm.fromLocationId" class="o-input">
-              <option value="">{{ t('wms.inventory.selectFromLocation', '移動元を選択...') }}</option>
-              <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
-                {{ loc.code }} ({{ loc.name }})
-              </option>
-            </select>
+            <label>{{ t('wms.inventory.fromLocation', '移動元') }} <span class="text-destructive text-xs">*</span></label>
+            <Select :model-value="intraForm.fromLocationId || '__none__'" @update:model-value="(v: string) => { intraForm.fromLocationId = v === '__none__' ? '' : v }">
+              <SelectTrigger><SelectValue :placeholder="t('wms.inventory.selectFromLocation', '移動元を選択...')" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">{{ loc.code }} ({{ loc.name }})</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <!-- 移動先ロケーション / 移动目标库位 -->
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inventory.toLocation', '移動先') }} <span class="required-badge">必須</span></label>
-            <select v-model="intraForm.toLocationId" class="o-input">
-              <option value="">{{ t('wms.inventory.selectToLocation', '移動先を選択...') }}</option>
-              <option v-for="loc in availableIntraToLocations" :key="loc._id" :value="loc._id">
-                {{ loc.code }} ({{ loc.name }})
-              </option>
-            </select>
+            <label>{{ t('wms.inventory.toLocation', '移動先') }} <span class="text-destructive text-xs">*</span></label>
+            <Select :model-value="intraForm.toLocationId || '__none__'" @update:model-value="(v: string) => { intraForm.toLocationId = v === '__none__' ? '' : v }">
+              <SelectTrigger><SelectValue :placeholder="t('wms.inventory.selectToLocation', '移動先を選択...')" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="loc in availableIntraToLocations" :key="loc._id" :value="loc._id">{{ loc.code }} ({{ loc.name }})</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <!-- メモ / 备注 -->
           <div class="form-field form-field-full">
-            <label class="form-label">{{ t('wms.inventory.memo', 'メモ') }}</label>
-            <input v-model="intraForm.memo" type="text" class="o-input" :placeholder="t('wms.inventory.transferReasonPlaceholder', '移動理由...')" />
+            <label>{{ t('wms.inventory.memo', 'メモ') }}</label>
+            <Input v-model="intraForm.memo" type="text" :placeholder="t('wms.inventory.transferReasonPlaceholder', '移動理由...')" />
           </div>
         </div>
 
         <div class="form-actions">
-          <OButton
-            variant="primary"
+          <Button
+            variant="default"
             :disabled="!canSubmitIntra || isSubmitting"
             @click="handleIntraSubmit"
           >
             {{ isSubmitting ? t('wms.inventory.processing', '処理中...') : t('wms.inventory.executeTransfer', '在庫を移動') }}
-          </OButton>
+          </Button>
         </div>
       </template>
 
@@ -99,81 +102,81 @@
         <div class="form-grid">
           <!-- 商品選択 / 商品选择 -->
           <div class="form-field form-field-full">
-            <label class="form-label">{{ t('wms.inventory.product', '商品') }} <span class="required-badge">必須</span></label>
-            <select v-model="crossForm.productId" class="o-input">
-              <option value="">{{ t('wms.inventory.selectProduct', '商品を選択...') }}</option>
-              <option v-for="p in products" :key="p._id" :value="p._id">
-                {{ p.sku }} - {{ p.name }}
-              </option>
-            </select>
+            <label>{{ t('wms.inventory.product', '商品') }} <span class="text-destructive text-xs">*</span></label>
+            <Select :model-value="crossForm.productId || '__none__'" @update:model-value="(v: string) => { crossForm.productId = v === '__none__' ? '' : v }">
+              <SelectTrigger><SelectValue :placeholder="t('wms.inventory.selectProduct', '商品を選択...')" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="p in products" :key="p._id" :value="p._id">{{ p.sku }} - {{ p.name }}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <!-- 移動元倉庫 / 移动源仓库 -->
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inventory.fromWarehouse', '移動元倉庫') }} <span class="required-badge">必須</span></label>
-            <select v-model="crossForm.fromWarehouseId" class="o-input" @change="onFromWarehouseChange">
-              <option value="">{{ t('wms.inventory.selectWarehouse', '倉庫を選択...') }}</option>
-              <option v-for="w in warehouses" :key="w._id" :value="w._id">
-                {{ w.code }} - {{ w.name }}
-              </option>
-            </select>
+            <label>{{ t('wms.inventory.fromWarehouse', '移動元倉庫') }} <span class="text-destructive text-xs">*</span></label>
+            <Select :model-value="crossForm.fromWarehouseId || '__none__'" @update:model-value="(v: string) => { crossForm.fromWarehouseId = v === '__none__' ? '' : v; onFromWarehouseChange() }">
+              <SelectTrigger><SelectValue :placeholder="t('wms.inventory.selectWarehouse', '倉庫を選択...')" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="w in warehouses" :key="w._id" :value="w._id">{{ w.code }} - {{ w.name }}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <!-- 移動先倉庫 / 移动目标仓库 -->
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inventory.toWarehouse', '移動先倉庫') }} <span class="required-badge">必須</span></label>
-            <select v-model="crossForm.toWarehouseId" class="o-input" @change="onToWarehouseChange">
-              <option value="">{{ t('wms.inventory.selectWarehouse', '倉庫を選択...') }}</option>
-              <option v-for="w in availableToWarehouses" :key="w._id" :value="w._id">
-                {{ w.code }} - {{ w.name }}
-              </option>
-            </select>
+            <label>{{ t('wms.inventory.toWarehouse', '移動先倉庫') }} <span class="text-destructive text-xs">*</span></label>
+            <Select :model-value="crossForm.toWarehouseId || '__none__'" @update:model-value="(v: string) => { crossForm.toWarehouseId = v === '__none__' ? '' : v; onToWarehouseChange() }">
+              <SelectTrigger><SelectValue :placeholder="t('wms.inventory.selectWarehouse', '倉庫を選択...')" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="w in availableToWarehouses" :key="w._id" :value="w._id">{{ w.code }} - {{ w.name }}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <!-- 移動元ロケーション / 移动源库位 -->
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inventory.fromLocation', '移動元ロケーション') }} <span class="required-badge">必須</span></label>
-            <select v-model="crossForm.fromLocationId" class="o-input" :disabled="!crossForm.fromWarehouseId">
-              <option value="">{{ t('wms.inventory.selectFromLocation', 'ロケーションを選択...') }}</option>
-              <option v-for="loc in fromWarehouseLocations" :key="loc._id" :value="loc._id">
-                {{ loc.code }} ({{ loc.name }})
-              </option>
-            </select>
+            <label>{{ t('wms.inventory.fromLocation', '移動元ロケーション') }} <span class="text-destructive text-xs">*</span></label>
+            <Select :model-value="crossForm.fromLocationId || '__none__'" @update:model-value="(v: string) => { crossForm.fromLocationId = v === '__none__' ? '' : v }" :disabled="!crossForm.fromWarehouseId">
+              <SelectTrigger><SelectValue :placeholder="t('wms.inventory.selectFromLocation', 'ロケーションを選択...')" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="loc in fromWarehouseLocations" :key="loc._id" :value="loc._id">{{ loc.code }} ({{ loc.name }})</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <!-- 移動先ロケーション / 移动目标库位 -->
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inventory.toLocation', '移動先ロケーション') }} <span class="required-badge">必須</span></label>
-            <select v-model="crossForm.toLocationId" class="o-input" :disabled="!crossForm.toWarehouseId">
-              <option value="">{{ t('wms.inventory.selectToLocation', 'ロケーションを選択...') }}</option>
-              <option v-for="loc in toWarehouseLocations" :key="loc._id" :value="loc._id">
-                {{ loc.code }} ({{ loc.name }})
-              </option>
-            </select>
+            <label>{{ t('wms.inventory.toLocation', '移動先ロケーション') }} <span class="text-destructive text-xs">*</span></label>
+            <Select :model-value="crossForm.toLocationId || '__none__'" @update:model-value="(v: string) => { crossForm.toLocationId = v === '__none__' ? '' : v }" :disabled="!crossForm.toWarehouseId">
+              <SelectTrigger><SelectValue :placeholder="t('wms.inventory.selectToLocation', 'ロケーションを選択...')" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="loc in toWarehouseLocations" :key="loc._id" :value="loc._id">{{ loc.code }} ({{ loc.name }})</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <!-- 移動数量 / 移动数量 -->
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inventory.transferQuantity', '移動数量') }} <span class="required-badge">必須</span></label>
-            <input v-model.number="crossForm.quantity" type="number" min="1" class="o-input" :placeholder="t('wms.inventory.transferQuantityPlaceholder', '例: 10')" />
+            <label>{{ t('wms.inventory.transferQuantity', '移動数量') }} <span class="text-destructive text-xs">*</span></label>
+            <Input v-model.number="crossForm.quantity" type="number" min="1" :placeholder="t('wms.inventory.transferQuantityPlaceholder', '例: 10')" />
             <span class="form-hint">{{ t('wms.inventory.transferQuantityHint', '1以上の整数を入力してください') }}</span>
           </div>
 
           <!-- 理由 / 理由 -->
           <div class="form-field">
-            <label class="form-label">{{ t('wms.inventory.reason', '理由') }}</label>
-            <input v-model="crossForm.reason" type="text" class="o-input" :placeholder="t('wms.inventory.crossSiteReasonPlaceholder', '拠点間移動の理由...')" />
+            <label>{{ t('wms.inventory.reason', '理由') }}</label>
+            <Input v-model="crossForm.reason" type="text" :placeholder="t('wms.inventory.crossSiteReasonPlaceholder', '拠点間移動の理由...')" />
           </div>
         </div>
 
         <div class="form-actions">
-          <OButton
-            variant="primary"
+          <Button
+            variant="default"
             :disabled="!canSubmitCross || isSubmitting"
             @click="handleCrossSubmit"
           >
             {{ isSubmitting ? t('wms.inventory.processing', '処理中...') : t('wms.inventory.executeCrossSiteTransfer', '拠点間移動を実行') }}
-          </OButton>
+          </Button>
         </div>
       </template>
 
@@ -183,20 +186,26 @@
 
         <!-- ステータスフィルタ / 状态筛选 -->
         <div class="transfer-filters">
-          <button
+          <Button
             v-for="sf in statusFilters"
             :key="sf.value"
+            :variant="transferStatusFilter === sf.value ? 'default' : 'outline'"
+            size="sm"
             class="filter-btn"
             :class="{ active: transferStatusFilter === sf.value }"
             @click="transferStatusFilter = sf.value; loadTransfers()"
           >
             {{ sf.label }}
-          </button>
+          </Button>
         </div>
 
         <!-- 移動管理テーブル / 转移管理表 -->
-        <div v-if="isLoadingTransfers" class="loading-state">
-          {{ t('wms.inventory.loading', '読み込み中...') }}
+        <div v-if="isLoadingTransfers" class="space-y-3 p-4">
+          <Skeleton class="h-4 w-[250px]" />
+          <Skeleton class="h-4 w-[200px]" />
+          <Skeleton class="h-10 w-full" />
+          <Skeleton class="h-10 w-full" />
+          <Skeleton class="h-10 w-full" />
         </div>
         <div v-else-if="transferRows.length === 0" class="empty-state">
           {{ t('wms.inventory.noTransfers', '拠点間移動レコードがありません') }}
@@ -253,18 +262,18 @@
             <div class="transfer-card-actions">
               <!-- draft → 確認 or キャンセル / draft → 确认 or 取消 -->
               <template v-if="tr.status === 'draft'">
-                <OButton variant="primary" size="sm" :disabled="isProcessingTransfer" @click="handleConfirmTransfer(tr.id)">
+                <Button variant="default" size="sm" :disabled="isProcessingTransfer" @click="handleConfirmTransfer(tr.id)">
                   {{ t('wms.inventory.confirmShipment', '出荷確認') }}
-                </OButton>
-                <OButton variant="secondary" size="sm" :disabled="isProcessingTransfer" @click="handleCancelTransfer(tr.id)">
+                </Button>
+                <Button variant="secondary" size="sm" :disabled="isProcessingTransfer" @click="handleCancelTransfer(tr.id)">
                   {{ t('wms.inventory.cancelTransfer', 'キャンセル') }}
-                </OButton>
+                </Button>
               </template>
               <!-- confirmed → 受入 / confirmed → 接收 -->
               <template v-if="tr.status === 'confirmed'">
-                <OButton variant="primary" size="sm" :disabled="isProcessingTransfer" @click="handleReceiveTransfer(tr.id)">
+                <Button variant="default" size="sm" :disabled="isProcessingTransfer" @click="handleReceiveTransfer(tr.id)">
                   {{ t('wms.inventory.receiveTransfer', '受入確認') }}
-                </OButton>
+                </Button>
               </template>
               <!-- done / cancelled → 表示のみ / done / cancelled → 仅显示 -->
               <template v-if="tr.status === 'done'">
@@ -282,11 +291,11 @@
     <!-- 移動履歴 / 移动履历 -->
     <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
       {{ t('wms.inventory.recentTransferHistory', '最近の移動履歴') }}
-      <OButton variant="secondary" size="sm" @click="exportTransferCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</OButton>
+      <Button variant="secondary" size="sm" @click="exportTransferCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</Button>
     </div>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="historyTableColumns"
         :data="historyRows"
         row-key="_id"
@@ -301,15 +310,18 @@
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 // 拠点間移動ビュー / 拠点间移动视图
 // 3PL向け: ロケーション間・倉庫間で在庫を移動する機能
 // 面向3PL: 在库位间・仓库间移动库存的功能
 import { computed, h, onMounted, ref } from 'vue'
+import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import { transferStock, crossSiteTransfer, fetchMovements, fetchTransfers, confirmTransfer, receiveTransfer, cancelTransfer } from '@/api/inventory'
 import { fetchLocations } from '@/api/location'
 import { fetchProducts } from '@/api/product'
@@ -792,7 +804,7 @@ onMounted(async () => {
   border-bottom: 1px solid var(--o-border-color, #e4e7ed);
 }
 
-.o-input {
+.{
   padding: 8px 12px;
   border: 1px solid var(--o-border-color, #dcdfe6);
   border-radius: var(--o-border-radius, 4px);

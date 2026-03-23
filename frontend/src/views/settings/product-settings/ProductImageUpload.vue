@@ -1,6 +1,6 @@
 <template>
   <div class="image-upload-section">
-    <div class="o-divider">
+    <div>
       <span class="o-divider-text">{{ t('wms.product.productImage', '商品画像') }}</span>
     </div>
     <div class="image-upload-content">
@@ -10,13 +10,13 @@
       <div class="image-inputs">
         <!-- No image or has image: show action buttons -->
         <div v-if="!showUrlInput" class="image-input-row">
-          <label class="o-btn o-btn-secondary o-btn-sm">
+          <label >
             <span v-if="uploading">...</span>
             <span v-else>&#128247; {{ t('wms.product.uploadFile', 'ファイルをアップロード') }}</span>
             <input type="file" accept="image/*" class="hidden-input" @change="handleImageFileChange" />
           </label>
-          <OButton variant="secondary" size="sm" @click="showUrlInput = true">{{ t('wms.product.specifyExternalUrl', '外部URLを指定') }}</OButton>
-          <OButton v-if="imageUrl" variant="danger" size="sm" @click="$emit('update:imageUrl', '')">{{ t('wms.common.delete', '削除') }}</OButton>
+          <Button variant="secondary" size="sm" @click="showUrlInput = true">{{ t('wms.product.specifyExternalUrl', '外部URLを指定') }}</Button>
+          <Button v-if="imageUrl" variant="destructive" size="sm" @click="$emit('update:imageUrl', '')">{{ t('wms.common.delete', '削除') }}</Button>
         </div>
         <!-- URL input mode -->
         <div v-else class="image-input-row">
@@ -24,10 +24,10 @@
             :value="imageUrl"
             @input="$emit('update:imageUrl', ($event.target as HTMLInputElement).value)"
             type="text"
-            class="o-input o-input-sm"
+            class="h-8 text-sm"
             :placeholder="t('wms.product.enterImageUrl', '画像URLを入力 (https://...)')"
           />
-          <OButton variant="secondary" size="sm" @click="showUrlInput = false">{{ t('wms.product.back', '戻る') }}</OButton>
+          <Button variant="secondary" size="sm" @click="showUrlInput = false">{{ t('wms.product.back', '戻る') }}</Button>
         </div>
       </div>
     </div>
@@ -35,8 +35,9 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { computed, ref } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
 import { useI18n } from '@/composables/useI18n'
 import { uploadProductImage } from '@/api/product'
 import { resolveImageUrl } from '@/utils/imageUrl'

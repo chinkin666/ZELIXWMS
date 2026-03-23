@@ -1,6 +1,5 @@
 /**
  * テーブル列設定の型定義 / 表格列配置类型定义
- * 検索設定をサポートし、SearchFormコンポーネントと共有可能 / 支持搜索配置，可以与 SearchForm 组件复用
  */
 
 export type SearchType = 'string' | 'number' | 'date' | 'daterange' | 'select' | 'boolean'

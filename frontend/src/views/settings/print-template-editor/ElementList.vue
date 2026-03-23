@@ -11,13 +11,13 @@
       >
         <div class="name">{{ idx + 1 }}. {{ e.name }} <span class="type">({{ e.type }})</span></div>
         <div class="ops">
-          <button class="o-btn-text" @click.stop="$emit('toggle-visible', e)">{{ e.visible === false ? t('wms.printTemplate.show') : t('wms.printTemplate.hide') }}</button>
-          <button class="o-btn-text" @click.stop="$emit('toggle-locked', e)">{{ e.locked ? t('wms.printTemplate.unlock') : t('wms.printTemplate.lock') }}</button>
-          <button class="o-btn-text" @click.stop="$emit('duplicate-layer', idx)">{{ t('wms.printTemplate.duplicate') }}</button>
-          <button class="o-btn-text" :disabled="idx === 0" @click.stop="$emit('move-layer', idx, -1)">{{ t('wms.printTemplate.moveUp') }}</button>
-          <button class="o-btn-text" :disabled="idx === elements.length - 1" @click.stop="$emit('move-layer', idx, 1)">
+          <Button class="" @click.stop="$emit('toggle-visible', e)">{{ e.visible === false ? t('wms.printTemplate.show') : t('wms.printTemplate.hide') }}</Button>
+          <Button class="" @click.stop="$emit('toggle-locked', e)">{{ e.locked ? t('wms.printTemplate.unlock') : t('wms.printTemplate.lock') }}</Button>
+          <Button class="" @click.stop="$emit('duplicate-layer', idx)">{{ t('wms.printTemplate.duplicate') }}</Button>
+          <Button class="" :disabled="idx === 0" @click.stop="$emit('move-layer', idx, -1)">{{ t('wms.printTemplate.moveUp') }}</Button>
+          <Button class="" :disabled="idx === elements.length - 1" @click.stop="$emit('move-layer', idx, 1)">
             {{ t('wms.printTemplate.moveDown') }}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import { useI18n } from '@/composables/useI18n'
 import type { PrintElement } from '@/types/printTemplate'
+import { Button } from '@/components/ui/button'
 
 const { t } = useI18n()
 

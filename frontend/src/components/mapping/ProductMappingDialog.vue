@@ -1,5 +1,9 @@
 <template>
-  <ODialog :open="visibleProxy" title="商品マスタ設定" @close="visibleProxy = false" width="600px">
+  <Dialog :open="visibleProxy" @update:open="visibleProxy = $event">
+    <DialogContent class="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>商品マスタ設定</DialogTitle>
+      </DialogHeader>
     <div class="o-form-group">
       <label class="o-form-label">SKU列</label>
       <select class="o-input" v-model="form.skuColumn" style="width: 100%">
@@ -34,17 +38,18 @@
       </div>
     </div>
 
-    <template #footer>
-      <OButton variant="secondary" @click="visibleProxy = false">キャンセル</OButton>
-      <OButton variant="primary" @click="handleSubmit">適用</OButton>
-    </template>
-  </ODialog>
+    <DialogFooter>
+      <Button variant="secondary" @click="visibleProxy = false">キャンセル</Button>
+      <Button variant="default" @click="handleSubmit">適用</Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { TransformMapping } from '@/api/mappingConfig'
 import { runTransformMapping } from '@/utils/transformRunner'
 

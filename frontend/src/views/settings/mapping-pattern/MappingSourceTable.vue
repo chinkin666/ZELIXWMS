@@ -2,35 +2,35 @@
   <div class="table-card">
     <div class="table-title">{{ t('wms.mapping.source', '入力元') }}</div>
     <div class="source-table-wrap" style="height: 520px; overflow-y: auto;">
-      <table class="o-list-table source-table">
-        <thead>
-          <tr>
-            <th style="min-width: 240px">{{ t('wms.mapping.fieldName', '項目名') }}</th>
-            <th style="min-width: 200px">{{ t('wms.mapping.linkedTarget', 'マッピング先') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="sourceRows.length === 0">
-            <td colspan="2" style="text-align: center; color: #999; padding: 20px">
+      <Table class="source-table">
+        <TableHeader>
+          <TableRow>
+            <TableHead style="min-width: 240px">{{ t('wms.mapping.fieldName', '項目名') }}</TableHead>
+            <TableHead style="min-width: 200px">{{ t('wms.mapping.linkedTarget', 'マッピング先') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="sourceRows.length === 0">
+            <TableCell colspan="2" style="text-align: center; color: #999; padding: 20px">
               {{ emptyText }}
-            </td>
-          </tr>
-          <tr
+            </TableCell>
+          </TableRow>
+          <TableRow
             v-for="row in sourceRows"
             :key="row.name"
             @click="$emit('select-source', row)"
             :class="{ 'row-selected': isSelected(row) }"
             style="cursor: pointer"
           >
-            <td>
+            <TableCell>
               <input
                 type="checkbox"
                 :checked="isSelected(row)"
                 style="margin-right: 8px; pointer-events: none"
               />
               {{ row.label || row.name }}
-            </td>
-            <td>
+            </TableCell>
+            <TableCell>
               <div class="used-by-targets">
                 <span
                   v-for="targetField in getUsedByTargets(row.name)"
@@ -44,16 +44,17 @@
                   {{ t('wms.mapping.unused', '未使用') }}
                 </span>
               </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from '@/composables/useI18n'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 const { t } = useI18n()
 

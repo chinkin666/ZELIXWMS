@@ -1,4 +1,4 @@
-import { ElMessage } from 'element-plus'
+import { toast } from 'vue-sonner'
 import { fetchShipmentOrders } from '@/api/shipmentOrders'
 import { fetchCarriers } from '@/api/carrier'
 import { fetchOrderSourceCompanies } from '@/api/orderSourceCompany'
@@ -17,8 +17,8 @@ export function useV2DataLoading(state: V2State) {
       state.backendRows.value = (orders || []).map((o: any) => ({ ...o, id: o._id }))
     } catch (err: any) {
       if (version !== loadVersion) return
-      // 注文取得失敗はElMessageで通知済み / Order fetch failure notified via ElMessage
-      ElMessage.error('注文の取得に失敗しました')
+      // 注文取得失敗はtoastで通知済み / Order fetch failure notified via toast
+      toast.error('注文の取得に失敗しました')
     } finally {
       if (version === loadVersion) {
         state.loading.value = false

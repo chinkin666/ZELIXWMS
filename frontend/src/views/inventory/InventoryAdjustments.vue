@@ -1,63 +1,63 @@
 <template>
   <div class="inventory-adjustments">
-    <ControlPanel :title="t('wms.inventory.adjustments', '在庫調整')" :show-search="false" />
+    <PageHeader :title="t('wms.inventory.adjustments', '在庫調整')" :show-search="false" />
 
-    <div class="adjust-form o-card">
+    <div class="adjust-form rounded-lg border bg-card p-4">
       <h3 class="form-title">{{ t('wms.inventory.adjustmentStocktaking', '在庫調整（棚卸し）') }}</h3>
       <p class="form-desc">{{ t('wms.inventory.adjustmentDesc', '商品の在庫数量を手動で調整します。正の値で増加、負の値で減少します。') }}</p>
 
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.product', '商品') }} <span class="required-badge">必須</span></label>
-          <select v-model="form.productId" class="o-input" @change="handleProductChange">
-            <option value="">{{ t('wms.inventory.selectProduct', '商品を選択...') }}</option>
-            <option v-for="p in products" :key="p._id" :value="p._id">
-              {{ p.sku }} - {{ p.name }}
-            </option>
-          </select>
+          <label>{{ t('wms.inventory.product', '商品') }} <span class="text-destructive text-xs">*</span></label>
+          <Select :model-value="form.productId || '__none__'" @update:model-value="(v: string) => { form.productId = v === '__none__' ? '' : v; handleProductChange() }">
+            <SelectTrigger><SelectValue :placeholder="t('wms.inventory.selectProduct', '商品を選択...')" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="p in products" :key="p._id" :value="p._id">{{ p.sku }} - {{ p.name }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.location', 'ロケーション') }} <span class="required-badge">必須</span></label>
-          <select v-model="form.locationId" class="o-input">
-            <option value="">{{ t('wms.inventory.selectLocation', 'ロケーションを選択...') }}</option>
-            <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
-              {{ loc.code }} ({{ loc.name }})
-            </option>
-          </select>
+          <label>{{ t('wms.inventory.location', 'ロケーション') }} <span class="text-destructive text-xs">*</span></label>
+          <Select :model-value="form.locationId || '__none__'" @update:model-value="(v: string) => { form.locationId = v === '__none__' ? '' : v }">
+            <SelectTrigger><SelectValue :placeholder="t('wms.inventory.selectLocation', 'ロケーションを選択...')" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">{{ loc.code }} ({{ loc.name }})</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.adjustQuantity', '調整数量') }} <span class="required-badge">必須</span></label>
-          <input v-model.number="form.adjustQuantity" type="number" class="o-input" :placeholder="t('wms.inventory.adjustQuantityPlaceholder', '例: +10 or -5')" />
+          <label>{{ t('wms.inventory.adjustQuantity', '調整数量') }} <span class="text-destructive text-xs">*</span></label>
+          <Input v-model.number="form.adjustQuantity" type="number" :placeholder="t('wms.inventory.adjustQuantityPlaceholder', '例: +10 or -5')" />
           <span class="form-hint">{{ t('wms.inventory.adjustQuantityHint', '正: 在庫増加 / 負: 在庫減少') }}</span>
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.memo', 'メモ') }}</label>
-          <input v-model="form.memo" type="text" class="o-input" :placeholder="t('wms.inventory.adjustReasonPlaceholder', '調整理由...')" />
+          <label>{{ t('wms.inventory.memo', 'メモ') }}</label>
+          <Input v-model="form.memo" type="text" :placeholder="t('wms.inventory.adjustReasonPlaceholder', '調整理由...')" />
         </div>
       </div>
 
       <div class="form-actions">
-        <OButton
-          variant="primary"
+        <Button
+          variant="default"
           :disabled="!canSubmit || isSubmitting"
           @click="handleSubmit"
         >
           {{ isSubmitting ? t('wms.inventory.processing', '処理中...') : t('wms.inventory.adjustStock', '在庫を調整') }}
-        </OButton>
+        </Button>
       </div>
     </div>
 
     <!-- 調整履歴 -->
     <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
       {{ t('wms.inventory.recentAdjustmentHistory', '最近の調整履歴') }}
-      <OButton variant="secondary" size="sm" @click="exportAdjustmentCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</OButton>
+      <Button variant="secondary" size="sm" @click="exportAdjustmentCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</Button>
     </div>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="historyTableColumns"
         :data="historyRows"
         row-key="_id"
@@ -72,12 +72,15 @@
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { computed, h, onMounted, ref } from 'vue'
+import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import { adjustStock, fetchMovements } from '@/api/inventory'
 import { fetchLocations } from '@/api/location'
 import { fetchProducts } from '@/api/product'
@@ -315,7 +318,7 @@ onMounted(async () => {
   border-bottom: 1px solid var(--o-border-color, #e4e7ed);
 }
 
-.o-input {
+.{
   padding: 8px 12px;
   border: 1px solid var(--o-border-color, #dcdfe6);
   border-radius: var(--o-border-radius, 4px);

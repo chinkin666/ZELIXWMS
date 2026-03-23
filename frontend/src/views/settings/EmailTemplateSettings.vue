@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, h, onMounted, computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import { useToast } from '@/composables/useToast'
 import {
@@ -17,6 +16,9 @@ import {
   type EmailTemplate,
 } from '@/api/emailTemplate'
 import { fetchCarriers } from '@/api/carrier'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const { t } = useI18n()
 const { showSuccess, showError } = useToast()
@@ -198,8 +200,8 @@ const tableColumns: TableColumn[] = [
     width: 200,
     cellRenderer: ({ rowData }: { rowData: EmailTemplate }) =>
       h('div', { style: 'display:flex;gap:6px;' }, [
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => handlePreview(rowData) }, () => 'プレビュー'),
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'secondary', size: 'sm', onClick: () => handlePreview(rowData) }, () => 'プレビュー'),
+        h(Button, { variant: 'secondary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
         h('button', {
           class: 'delete-icon-btn',
           onClick: () => confirmDelete(rowData),
@@ -387,79 +389,73 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
 
 <template>
   <div class="email-template-settings">
-    <ControlPanel :title="t('wms.settings.email.title', '出荷メール設定')" :show-search="false">
+    <PageHeader :title="t('wms.settings.email.title', '出荷メール設定')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">テンプレートを作成</OButton>
+        <Button variant="default" @click="openCreate">テンプレートを作成</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="emailTemplateSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="templates"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         pagination-enabled
         pagination-mode="client"
         :page-size="20"
         :page-sizes="[10, 20, 50]"
-        :global-search-text="globalSearchText"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog
-      v-model="showFormDialog"
-      :title="formTitle"
-      size="xl"
-      @close="showFormDialog = false"
-      @confirm="handleSave"
-    >
+    <Dialog :open="showFormDialog" @update:open="showFormDialog = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ formTitle }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label">{{ t('wms.settings.email.templateName', 'テンプレート名') }} <span class="required-badge">必須</span></label>
-          <input v-model="form.name" type="text" class="form-input" :placeholder="t('wms.settings.email.templateNamePlaceholder', '例: ヤマト運輸 出荷完了メール')" />
+          <label>{{ t('wms.settings.email.templateName', 'テンプレート名') }} <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.name" type="text" :placeholder="t('wms.settings.email.templateNamePlaceholder', '例: ヤマト運輸 出荷完了メール')" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">{{ t('wms.settings.email.carrier', '配送業者') }}</label>
-          <select v-model="form.carrierId" class="form-input" @change="onCarrierChange">
-            <option value="">{{ t('wms.settings.email.allCarriersCommon', '全配送業者（共通）') }}</option>
-            <option v-for="c in carriers" :key="c._id" :value="c._id">{{ c.name }}</option>
-          </select>
+          <label>{{ t('wms.settings.email.carrier', '配送業者') }}</label>
+          <Select v-model="form.carrierId" @update:model-value="onCarrierChange">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="__all__">{{ t('wms.settings.email.allCarriersCommon', '全配送業者（共通）') }}</SelectItem>
+        <SelectItem v-for="c in carriers" :key="c._id" :value="c._id">{{ c.name }}</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
 
         <div class="form-group">
-          <label class="form-label">{{ t('wms.settings.email.senderName', '発送元名') }} <span class="required-badge">必須</span></label>
-          <input v-model="form.senderName" type="text" class="form-input" placeholder="例: ZELIX倉庫" />
+          <label>{{ t('wms.settings.email.senderName', '発送元名') }} <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.senderName" type="text" placeholder="例: ZELIX倉庫" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">{{ t('wms.settings.email.senderEmailAddress', '送信元メールアドレス') }} <span class="required-badge">必須</span></label>
-          <input v-model="form.senderEmail" type="email" class="form-input" placeholder="例: noreply@example.com" />
+          <label>{{ t('wms.settings.email.senderEmailAddress', '送信元メールアドレス') }} <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.senderEmail" type="email" placeholder="例: noreply@example.com" />
         </div>
 
         <div class="form-group">
-          <label class="form-label">{{ t('wms.settings.email.replyToEmail', '返信先メールアドレス') }}</label>
-          <input v-model="form.replyToEmail" type="email" class="form-input" placeholder="例: support@example.com" />
+          <label>{{ t('wms.settings.email.replyToEmail', '返信先メールアドレス') }}</label>
+          <Input v-model="form.replyToEmail" type="email" placeholder="例: support@example.com" />
         </div>
 
         <div class="form-group full-width">
-          <label class="form-label">{{ t('wms.settings.email.subject', 'メールタイトル') }} <span class="required-badge">必須</span></label>
-          <input v-model="form.subject" type="text" class="form-input" placeholder="例: 【{{senderName}}】ご注文 {{orderNumber}} を発送いたしました" />
+          <label>{{ t('wms.settings.email.subject', 'メールタイトル') }} <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.subject" type="text" placeholder="例: 【{{senderName}}】ご注文 {{orderNumber}} を発送いたしました" />
         </div>
 
         <div class="form-group full-width body-section">
           <div class="body-layout">
             <div class="body-editor">
-              <label class="form-label">{{ t('wms.settings.email.bodyTemplate', 'メール本文テンプレート') }} <span class="required-badge">必須</span></label>
+              <label>{{ t('wms.settings.email.bodyTemplate', 'メール本文テンプレート') }} <span class="text-destructive text-xs">*</span></label>
               <textarea
                 v-model="form.bodyTemplate"
                 class="form-input form-textarea"
@@ -468,7 +464,7 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
               ></textarea>
             </div>
             <div class="placeholder-list">
-              <label class="form-label">{{ t('wms.settings.email.availablePlaceholders', '利用可能なプレースホルダー') }}</label>
+              <label>{{ t('wms.settings.email.availablePlaceholders', '利用可能なプレースホルダー') }}</label>
               <ul class="placeholder-items">
                 <li v-for="ph in placeholders" :key="ph" class="placeholder-item">
                   <code>{{ ph }}</code>
@@ -479,7 +475,7 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
         </div>
 
         <div class="form-group full-width">
-          <label class="form-label">{{ t('wms.settings.email.footer', 'フッター') }}</label>
+          <label>{{ t('wms.settings.email.footer', 'フッター') }}</label>
           <textarea
             v-model="form.footerText"
             class="form-input form-textarea-sm"
@@ -490,54 +486,49 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
 
         <div class="form-group checkbox-group">
           <label class="o-checkbox-label">
-            <input v-model="form.isDefault" type="checkbox" />
+            <Checkbox :checked="form.isDefault" @update:checked="val => form.isDefault = val" />
             {{ t('wms.settings.email.setAsDefault', 'デフォルトテンプレートに設定') }}
           </label>
         </div>
 
         <div class="form-group checkbox-group">
           <label class="o-checkbox-label">
-            <input v-model="form.isActive" type="checkbox" />
+            <Checkbox :checked="form.isActive" @update:checked="val => form.isActive = val" />
             {{ t('wms.settings.email.active', '有効') }}
           </label>
         </div>
       </div>
 
-      <template #footer>
-        <OButton variant="secondary" @click="showFormDialog = false">{{ t('wms.common.cancel') }}</OButton>
-        <OButton variant="primary" :disabled="isSaving" @click="handleSave">
+      <DialogFooter>
+        <Button variant="secondary" @click="showFormDialog = false">{{ t('wms.common.cancel') }}</Button>
+        <Button variant="default" :disabled="isSaving" @click="handleSave">
           {{ isSaving ? t('wms.settings.email.saving', '保存中...') : t('wms.common.save') }}
-        </OButton>
-      </template>
-    </ODialog>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+    </Dialog>
 
     <!-- Preview Dialog -->
-    <ODialog
-      v-model="showPreviewDialog"
-      :title="t('wms.settings.email.previewTitle', 'メールプレビュー')"
-      size="lg"
-      @close="showPreviewDialog = false"
-    >
+    <Dialog :open="showPreviewDialog" @update:open="showPreviewDialog = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ t('wms.settings.email.previewTitle', 'メールプレビュー') }}</DialogTitle></DialogHeader>
       <div v-if="isPreviewLoading" class="loading-state">{{ t('wms.settings.email.generatingPreview', 'プレビュー生成中...') }}</div>
       <iframe v-else-if="previewHtml" :srcdoc="previewHtml" sandbox="" style="width:100%;height:400px;border:1px solid #eee;border-radius:4px;" />
 
-      <template #footer>
-        <OButton variant="secondary" @click="showPreviewDialog = false">{{ t('wms.settings.email.close', '閉じる') }}</OButton>
-      </template>
-    </ODialog>
+      <DialogFooter>
+        <Button variant="secondary" @click="showPreviewDialog = false">{{ t('wms.settings.email.close', '閉じる') }}</Button>
+      </DialogFooter>
+    </DialogContent>
+    </Dialog>
 
     <!-- Delete Confirmation Dialog -->
-    <ODialog
-      v-model="showDeleteDialog"
-      :title="t('wms.settings.email.deleteTemplate', 'テンプレート削除')"
-      size="sm"
-      danger
-      @close="showDeleteDialog = false"
-      @confirm="handleDelete"
-    >
+    <Dialog :open="showDeleteDialog" @update:open="showDeleteDialog = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ t('wms.settings.email.deleteTemplate', 'テンプレート削除') }}</DialogTitle></DialogHeader>
       <p>{{ t('wms.settings.email.deleteConfirm', `テンプレート「${deletingTemplate?.name}」を削除しますか？`) }}</p>
       <p style="color: var(--o-gray-500); font-size: 0.85em;">{{ t('wms.settings.email.deleteWarning', 'この操作は元に戻せません。') }}</p>
-    </ODialog>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 

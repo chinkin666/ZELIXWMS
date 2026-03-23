@@ -1,4 +1,4 @@
-import { ElMessage } from 'element-plus'
+import { toast } from 'vue-sonner'
 import {
   ShipmentOrderBulkApiError,
   createShipmentOrdersBulk,
@@ -56,14 +56,14 @@ export function useV2Submit({ state, draftStore, allRows, hasFrontendRowErrors, 
     if (state.isSubmitting.value) return
 
     if (state.selectedRows.value.length === 0) {
-      ElMessage.warning('登録する行を選択してください')
+      toast.warning('登録する行を選択してください')
       return
     }
 
     const targetRows = state.selectedRows.value
     const invalidRows = targetRows.filter((r) => hasFrontendRowErrors(r))
     if (invalidRows.length > 0) {
-      ElMessage.error(`入力に誤りがある行が${invalidRows.length}件あります。修正してください。`)
+      toast.error(`入力に誤りがある行が${invalidRows.length}件あります。修正してください。`)
       return
     }
 
@@ -71,7 +71,7 @@ export function useV2Submit({ state, draftStore, allRows, hasFrontendRowErrors, 
       state.isSubmitting.value = true
       const payload = buildBulkUploadPayload(targetRows)
       const res = await createShipmentOrdersBulk(payload)
-      ElMessage.success(res?.message || '登録しました')
+      toast.success(res?.message || '登録しました')
 
       const successes = Array.isArray((res as any)?.data?.successes) ? ((res as any).data.successes as any[]) : []
       const failures = Array.isArray((res as any)?.data?.failures) ? ((res as any).data.failures as any[]) : []
@@ -100,13 +100,13 @@ export function useV2Submit({ state, draftStore, allRows, hasFrontendRowErrors, 
         if (Array.isArray(err.errors) && err.errors.length > 0) {
           state.submitErrors.value = err.errors
           state.submitErrorDialogVisible.value = true
-          ElMessage.error('サーバー側のバリデーションエラーがあります。')
+          toast.error('サーバー側のバリデーションエラーがあります。')
           return
         }
-        ElMessage.error(err.message || 'アップロードに失敗しました')
+        toast.error(err.message || 'アップロードに失敗しました')
         return
       }
-      ElMessage.error(err?.message || 'アップロードに失敗しました')
+      toast.error(err?.message || 'アップロードに失敗しました')
     } finally {
       state.isSubmitting.value = false
     }

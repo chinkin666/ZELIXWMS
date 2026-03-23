@@ -2,7 +2,8 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import OFileUploader from './OFileUploader.vue'
-import ODialog from './ODialog.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import OButton from './OButton.vue'
 import { useI18n } from '../../composables/useI18n'
 
@@ -159,20 +160,24 @@ function navigateBreadcrumb(route?: string) {
     </div>
 
     <!-- Upload Dialog -->
-    <ODialog
-      :open="showUploadDialog"
-      :title="t('common.upload')"
-      @close="showUploadDialog = false"
-      @confirm="confirmUpload"
-    >
-      <OFileUploader
-        multiple
-        :max-size="50"
-        :max-files="10"
-        @upload="handleUpload"
-        @remove="handleRemoveFile"
-      />
-    </ODialog>
+    <Dialog :open="showUploadDialog" @update:open="showUploadDialog = $event">
+      <DialogContent class="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{{ t('common.upload') }}</DialogTitle>
+        </DialogHeader>
+        <OFileUploader
+          multiple
+          :max-size="50"
+          :max-files="10"
+          @upload="handleUpload"
+          @remove="handleRemoveFile"
+        />
+        <DialogFooter>
+          <Button variant="secondary" @click="showUploadDialog = false">{{ t('dialog.cancel') }}</Button>
+          <Button variant="default" @click="confirmUpload">{{ t('dialog.confirm') }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 

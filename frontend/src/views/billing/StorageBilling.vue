@@ -1,22 +1,22 @@
 <template>
   <div class="storage-billing">
-    <ControlPanel :title="t('wms.billing.storageBilling', '在庫保管請求')" :show-search="false">
+    <PageHeader :title="t('wms.billing.storageBilling', '在庫保管請求')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.billing.csvExport', 'CSV出力') }}</OButton>
+        <Button variant="secondary" size="sm" @click="exportCsv">{{ t('wms.billing.csvExport', 'CSV出力') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- 期間選択 / 期间选择 -->
-    <div class="search-form o-card">
+    <div class="search-form rounded-lg border bg-card p-4">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.billing.period', '対象月') }}</label>
-          <input v-model="period" type="month" class="o-input" />
+          <label>{{ t('wms.billing.period', '対象月') }}</label>
+          <Input v-model="period" type="month" />
         </div>
         <div class="form-field form-field--action">
-          <OButton variant="primary" :disabled="isLoading" @click="handleSearch">
+          <Button variant="default" :disabled="isLoading" @click="handleSearch">
             {{ isLoading ? t('wms.billing.searching', '検索中...') : t('wms.billing.search', '検索') }}
-          </OButton>
+          </Button>
         </div>
       </div>
     </div>
@@ -39,7 +39,7 @@
 
     <!-- 明細テーブル / 明细表格 -->
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="rows"
         row-key="sku"
@@ -60,12 +60,14 @@
  * 月次の在庫保管料金を表示する。
  * 显示月度库存保管费用。
  */
+import { Input } from '@/components/ui/input'
 import { computed, h, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn } from '@/types/table'
 import { apiFetch, getApiBaseUrl } from '@/api/base'
 
@@ -213,7 +215,7 @@ const exportCsv = () => {
   color: var(--o-gray-700, #303133);
 }
 
-.o-input {
+.{
   padding: 8px 12px;
   border: 1px solid var(--o-border-color, #dcdfe6);
   border-radius: var(--o-border-radius, 4px);

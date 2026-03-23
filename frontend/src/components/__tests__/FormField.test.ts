@@ -24,11 +24,11 @@ vi.mock('@/utils/yamatoDeliveryDays', () => ({
   getMinDeliveryDate: () => null,
 }))
 
-vi.mock('@/components/odoo/OButton.vue', () => ({
+vi.mock('@/components/ui/button', () => ({
   default: { name: 'OButton', template: '<button><slot /></button>' },
 }))
 
-vi.mock('@/components/odoo/ODatePicker.vue', () => ({
+vi.mock('vue', () => ({
   default: { name: 'ODatePicker', template: '<input type="date" />' },
 }))
 

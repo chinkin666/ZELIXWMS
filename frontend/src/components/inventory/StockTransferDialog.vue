@@ -1,8 +1,12 @@
 <template>
-  <ODialog :open="open" title="在庫移動" size="md" @close="emit('close')">
+  <Dialog :open="open" @update:open="(val: boolean) => { if (!val) emit('close') }">
+    <DialogContent class="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>在庫移動</DialogTitle>
+      </DialogHeader>
     <div class="dialog-form">
       <div class="form-field">
-        <label class="form-label">商品 <span class="req">*</span></label>
+        <Label>商品 <span class="text-destructive text-xs">*</span></Label>
         <select v-model="form.productId" class="o-input" @change="onProductChange">
           <option value="">商品を選択...</option>
           <option v-for="p in products" :key="p._id" :value="p._id">
@@ -13,7 +17,7 @@
 
       <div class="form-row">
         <div class="form-field" style="flex:1;">
-          <label class="form-label">移動元 <span class="req">*</span></label>
+          <Label>移動元 <span class="text-destructive text-xs">*</span></Label>
           <select v-model="form.fromLocationId" class="o-input">
             <option value="">移動元を選択...</option>
             <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
@@ -23,7 +27,7 @@
         </div>
         <div class="arrow-col">→</div>
         <div class="form-field" style="flex:1;">
-          <label class="form-label">移動先 <span class="req">*</span></label>
+          <Label>移動先 <span class="text-destructive text-xs">*</span></Label>
           <select v-model="form.toLocationId" class="o-input">
             <option value="">移動先を選択...</option>
             <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
@@ -35,11 +39,11 @@
 
       <div class="form-row">
         <div class="form-field" style="flex:1;">
-          <label class="form-label">数量 <span class="req">*</span></label>
+          <Label>数量 <span class="text-destructive text-xs">*</span></Label>
           <input v-model.number="form.quantity" type="number" class="o-input" min="1" />
         </div>
         <div class="form-field" style="flex:1;">
-          <label class="form-label">ロット</label>
+          <Label>ロット</Label>
           <select v-model="form.lotId" class="o-input">
             <option value="">指定なし</option>
             <option v-for="lot in lots" :key="lot._id" :value="lot._id">
@@ -50,7 +54,7 @@
       </div>
 
       <div class="form-field">
-        <label class="form-label">メモ</label>
+        <Label>メモ</Label>
         <input v-model="form.memo" type="text" class="o-input" placeholder="移動理由..." />
       </div>
 
@@ -60,19 +64,21 @@
       </div>
     </div>
 
-    <template #footer>
-      <OButton variant="secondary" @click="emit('close')">キャンセル</OButton>
-      <OButton variant="primary" :disabled="!canSubmit || saving" @click="handleSubmit">
+    <DialogFooter>
+      <Button variant="secondary" @click="emit('close')">キャンセル</Button>
+      <Button variant="default" :disabled="!canSubmit || saving" @click="handleSubmit">
         {{ saving ? '移動中...' : '在庫を移動' }}
-      </OButton>
-    </template>
-  </ODialog>
+      </Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import { transferStock, fetchStock } from '@/api/inventory'
 import { fetchLots } from '@/api/lot'
 import type { Product } from '@/types/product'

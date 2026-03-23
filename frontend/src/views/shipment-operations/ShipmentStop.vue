@@ -1,13 +1,13 @@
 <template>
   <div class="shipment-stop">
-    <ControlPanel :title="t('wms.shipment.stopTitle', '出荷停止')" :show-search="false">
+    <PageHeader :title="t('wms.shipment.stopTitle', '出荷停止')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="loadData">{{ t('wms.common.refresh', '更新') }}</OButton>
-        <OButton variant="primary" size="sm" @click="showStopDialog = true">停止</OButton>
-        <OButton variant="secondary" size="sm" @click="showCsvDialog = true">CSV一括停止</OButton>
-        <OButton variant="secondary" size="sm" @click="downloadCsv">CSV出力</OButton>
+        <Button variant="secondary" size="sm" @click="loadData">{{ t('wms.common.refresh', '更新') }}</Button>
+        <Button variant="default" size="sm" @click="showStopDialog = true">停止</Button>
+        <Button variant="secondary" size="sm" @click="showCsvDialog = true">CSV一括停止</Button>
+        <Button variant="secondary" size="sm" @click="downloadCsv">CSV出力</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- 集計カード / 统计卡片 -->
     <div class="summary-cards">
@@ -22,40 +22,40 @@
     </div>
 
     <!-- 停止中一覧 / 停止中列表 -->
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
-            <th class="o-table-th">注文番号</th>
-            <th class="o-table-th">お届け先</th>
-            <th class="o-table-th">停止日時</th>
-            <th class="o-table-th">理由</th>
-            <th class="o-table-th">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="stoppedOrders.length === 0">
-            <td colspan="6" class="o-table-empty">停止中の注文はありません</td>
-          </tr>
-          <tr v-for="order in stoppedOrders" :key="order.id" class="o-table-row">
-            <td class="o-table-td"><input type="checkbox" v-model="selectedIds" :value="order.id" /></td>
-            <td class="o-table-td">{{ order.orderNumber }}</td>
-            <td class="o-table-td">{{ order.recipientName || '-' }}</td>
-            <td class="o-table-td">{{ formatDate(order.statusHeldAt) }}</td>
-            <td class="o-table-td">{{ order.customFields?.holdReason || '-' }}</td>
-            <td class="o-table-td">
-              <button class="btn-action" @click="releaseOrder(order.id)">解除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="rounded-md border overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead><Checkbox :checked="selectAll" @update:checked="(v: boolean) => { selectAll = v; toggleSelectAll() }" /></TableHead>
+            <TableHead>注文番号</TableHead>
+            <TableHead>お届け先</TableHead>
+            <TableHead>停止日時</TableHead>
+            <TableHead>理由</TableHead>
+            <TableHead>操作</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="stoppedOrders.length === 0">
+            <TableCell colspan="6" class="text-center py-8 text-muted-foreground">停止中の注文はありません</TableCell>
+          </TableRow>
+          <TableRow v-for="order in stoppedOrders" :key="order.id">
+            <TableCell><Checkbox :checked="selectedIds.includes(order.id)" @update:checked="(v: boolean) => { if (v) { selectedIds.push(order.id) } else { selectedIds = selectedIds.filter(id => id !== order.id) } }" /></TableCell>
+            <TableCell>{{ order.orderNumber }}</TableCell>
+            <TableCell>{{ order.recipientName || '-' }}</TableCell>
+            <TableCell>{{ formatDate(order.statusHeldAt) }}</TableCell>
+            <TableCell>{{ order.customFields?.holdReason || '-' }}</TableCell>
+            <TableCell>
+              <Button class="btn-action" @click="releaseOrder(order.id)">解除</Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <!-- 一括解除ボタン / 批量解除按钮 -->
     <div v-if="selectedIds.length > 0" class="bulk-actions">
       <span>{{ selectedIds.length }}件選択中</span>
-      <OButton variant="primary" size="sm" @click="releaseBulk">一括解除</OButton>
+      <Button variant="default" size="sm" @click="releaseBulk">一括解除</Button>
     </div>
 
     <!-- 停止ダイアログ / 停止对话框 -->
@@ -66,11 +66,11 @@
           <label class="dialog-label">停止する注文IDを入力（カンマ区切り）</label>
           <textarea v-model="stopIdsInput" class="dialog-textarea" rows="3" placeholder="ID1, ID2, ..."></textarea>
           <label class="dialog-label">停止理由（必須）</label>
-          <input v-model="stopReason" class="dialog-input" placeholder="例: 在庫不足のため停止" />
+          <Input v-model="stopReason" placeholder="例: 在庫不足のため停止" />
         </div>
         <div class="dialog-actions">
-          <OButton variant="secondary" size="sm" @click="showStopDialog = false">キャンセル</OButton>
-          <OButton variant="primary" size="sm" @click="executeStop" :disabled="!stopReason.trim()">停止実行</OButton>
+          <Button variant="secondary" size="sm" @click="showStopDialog = false">キャンセル</Button>
+          <Button variant="default" size="sm" @click="executeStop" :disabled="!stopReason.trim()">停止実行</Button>
         </div>
       </div>
     </div>
@@ -86,11 +86,11 @@
             {{ csvOrderNumbers.length }}件の注文番号を読込みました
           </div>
           <label class="dialog-label">停止理由（必須）</label>
-          <input v-model="csvStopReason" class="dialog-input" placeholder="例: 一括停止指示" />
+          <Input v-model="csvStopReason" placeholder="例: 一括停止指示" />
         </div>
         <div class="dialog-actions">
-          <OButton variant="secondary" size="sm" @click="showCsvDialog = false">キャンセル</OButton>
-          <OButton variant="primary" size="sm" @click="executeCsvStop" :disabled="csvOrderNumbers.length === 0 || !csvStopReason.trim()">停止実行</OButton>
+          <Button variant="secondary" size="sm" @click="showCsvDialog = false">キャンセル</Button>
+          <Button variant="default" size="sm" @click="executeCsvStop" :disabled="csvOrderNumbers.length === 0 || !csvStopReason.trim()">停止実行</Button>
         </div>
       </div>
     </div>
@@ -102,8 +102,11 @@
 import { onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { apiFetch } from '@/api/http'
 import { getApiBaseUrl } from '@/api/base'
 

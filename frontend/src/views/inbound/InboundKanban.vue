@@ -1,11 +1,17 @@
 <template>
   <div class="print-page">
     <div class="no-print toolbar">
-      <button class="toolbar-btn" @click="handlePrint">{{ t('wms.inbound.print', '印刷') }}</button>
-      <button class="toolbar-btn" @click="$router.back()">{{ t('wms.inbound.back', '戻る') }}</button>
+      <Button class="toolbar-btn" @click="handlePrint">{{ t('wms.inbound.print', '印刷') }}</Button>
+      <Button variant="outline" class="toolbar-btn" @click="$router.back()">{{ t('wms.inbound.back', '戻る') }}</Button>
     </div>
 
-    <div v-if="isLoading" class="loading">{{ t('wms.ui.loading', '読み込み中...') }}</div>
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else-if="order">
       <div class="kanban-grid">
@@ -80,6 +86,7 @@ import { useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import { fetchInboundOrder } from '@/api/inboundOrder'
+import { Button } from '@/components/ui/button'
 import type { InboundOrder } from '@/types/inventory'
 
 const { t } = useI18n()

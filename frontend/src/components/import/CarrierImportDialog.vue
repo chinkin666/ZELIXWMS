@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="visible"
-    title="送り状データ取込"
-    size="lg"
-    @close="handleClose"
-  >
+  <Dialog :open="visible" @update:open="(val: boolean) => { if (!val) handleClose() }">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>送り状データ取込</DialogTitle>
+      </DialogHeader>
     <div class="import-dialog-content">
       <!-- レイアウト選択 -->
       <div class="layout-section">
@@ -147,29 +146,30 @@
       </div>
     </div>
 
-    <template #footer>
+    <DialogFooter>
       <div class="dialog-footer">
-        <OButton type="button" variant="secondary" @click="handleClose">キャンセル</OButton>
-        <OButton
+        <Button type="button" variant="secondary" @click="handleClose">キャンセル</Button>
+        <Button
           type="button"
-          variant="primary"
+          variant="default"
           :disabled="!canImport || importing"
           @click="handleImport"
         >
           <span v-if="importing" class="spinner"></span>
           {{ importing ? '取込中...' : '取込' }}
-        </OButton>
+        </Button>
       </div>
-    </template>
-  </ODialog>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 // XLSX动态导入，减少初始包大小 / XLSXを動的インポートし初期バンドルサイズを削減
 const loadXLSX = () => import('xlsx')
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { importCarrierReceiptRows, type ImportCarrierReceiptRowsResult } from '@/api/shipmentOrders'
 import { getAllMappingConfigs, type MappingConfig } from '@/api/mappingConfig'
 import { applyTransformMappings } from '@/utils/transformRunner'

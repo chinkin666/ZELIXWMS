@@ -23,40 +23,40 @@
     <!-- 商品表格 -->
     <div class="product-table-section">
       <template v-if="currentOrder">
-        <table class="o-list-table o-list-table-border" style="width: 100%">
-          <thead>
-            <tr>
-              <th style="min-width: 180px">{{ t('wms.inspection.productName', '商品名') }}</th>
-              <th style="min-width: 140px">SKU</th>
-              <th style="min-width: 160px">{{ t('wms.inspection.inspectionCode', '検品コード（バーコード）') }}</th>
-              <th style="width: 110px; text-align: center">{{ t('wms.inspection.shipmentCount', '出荷指示数') }}</th>
-              <th style="width: 110px; text-align: center" class="col-inspected">{{ t('wms.inspection.inspectedQty', '検品数') }}</th>
-              <th style="width: 110px; text-align: center" class="col-remaining">{{ t('wms.inspection.remainingQty', '残数') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
+        <Table style="width: 100%">
+          <TableHeader>
+            <TableRow>
+              <TableHead style="min-width: 180px">{{ t('wms.inspection.productName', '商品名') }}</TableHead>
+              <TableHead style="min-width: 140px">SKU</TableHead>
+              <TableHead style="min-width: 160px">{{ t('wms.inspection.inspectionCode', '検品コード（バーコード）') }}</TableHead>
+              <TableHead style="width: 110px; text-align: center">{{ t('wms.inspection.shipmentCount', '出荷指示数') }}</TableHead>
+              <TableHead style="width: 110px; text-align: center" class="col-inspected">{{ t('wms.inspection.inspectedQty', '検品数') }}</TableHead>
+              <TableHead style="width: 110px; text-align: center" class="col-remaining">{{ t('wms.inspection.remainingQty', '残数') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow
               v-for="row in inspectionItems"
               :key="row.productIndex"
               :class="getRowClassName(row)"
             >
-              <td>{{ row.name }}</td>
-              <td>{{ row.sku }}</td>
-              <td>{{ row.barcodes.join(', ') || '-' }}</td>
-              <td style="text-align: center">{{ row.totalQuantity }}</td>
-              <td class="col-inspected" style="padding: 0">
+              <TableCell>{{ row.name }}</TableCell>
+              <TableCell>{{ row.sku }}</TableCell>
+              <TableCell>{{ row.barcodes.join(', ') || '-' }}</TableCell>
+              <TableCell style="text-align: center">{{ row.totalQuantity }}</TableCell>
+              <TableCell class="col-inspected" style="padding: 0">
                 <div class="cell-inspected" @click.stop="$emit('cell-click', row)">
                   {{ row.inspectedQuantity }}
                 </div>
-              </td>
-              <td class="col-remaining" style="padding: 0">
+              </TableCell>
+              <TableCell class="col-remaining" style="padding: 0">
                 <div class="cell-remaining" @click.stop="$emit('cell-click', row)">
                   {{ row.remainingQuantity }}
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </template>
       <div v-else class="empty-table-hint">
         {{ t('wms.inspection.scanToShowProducts', '注文をスキャンすると商品一覧が表示されます') }}
@@ -67,6 +67,7 @@
 
 <script setup lang="ts">
 import { useI18n } from '@/composables/useI18n'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import type { OrderDocument } from '@/types/order'
 import type { Product } from '@/types/product'
 

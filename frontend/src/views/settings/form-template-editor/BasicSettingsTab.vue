@@ -4,17 +4,18 @@
     <div class="o-form">
       <div class="o-form-group">
         <label>{{ t('wms.formEditor.templateName', 'テンプレート名') }}</label>
-        <input :value="template.name" class="o-input" :placeholder="t('wms.formEditor.templateNamePlaceholder', '例：ピッキングリスト')" @input="$emit('update-field', 'name', ($event.target as HTMLInputElement).value)" />
+        <Input :model-value="template.name" :placeholder="t('wms.formEditor.templateNamePlaceholder', '例：ピッキングリスト')" @update:model-value="$emit('update-field', 'name', $event)" />
       </div>
       <div class="o-form-group">
         <label>{{ t('wms.formEditor.type', '種類') }}</label>
-        <select :value="template.targetType" class="o-input" disabled style="width: 100%">
-          <option
-            v-for="ft in formTypeRegistry"
-            :key="ft.type"
-            :value="ft.type"
-          >{{ ft.label }}</option>
-        </select>
+        <Select :model-value="template.targetType" disabled>
+          <SelectTrigger class="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="ft in formTypeRegistry" :key="ft.type" :value="ft.type">{{ ft.label }}</SelectItem>
+          </SelectContent>
+        </Select>
         <div class="hint">{{ t('wms.formEditor.typeHint', '種類は作成時に設定され、変更できません') }}</div>
       </div>
       <div class="o-form-group">
@@ -32,6 +33,8 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { FormTemplate } from '@/types/formTemplate'
 import { formTypeRegistry } from '@/utils/form-export/formFieldRegistry'
 import { useI18n } from '@/composables/useI18n'
@@ -55,7 +58,7 @@ defineEmits<{
 .o-form-group { display: flex; gap: 8px; margin-bottom: 12px; align-items: flex-start; }
 .o-form-group > label { width: 140px; flex-shrink: 0; font-size: 13px; color: #606266; padding-top: 6px; }
 .o-form-group > input, .o-form-group > select, .o-form-group > textarea { flex: 1; min-width: 0; }
-.o-input { padding: 6px 10px; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px; font-size: 13px; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
+.{ padding: 6px 10px; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px; font-size: 13px; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
 .o-input:focus { border-color: var(--o-primary, #0052A3); }
 .o-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
 .o-toggle input { display: none; }

@@ -7,11 +7,11 @@
  * 负责批量删除、批量条码生成、批量标签打印。
  */
 import { ref, type Ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import { deleteProduct, updateProduct } from '@/api/product'
 import type { Product } from '@/types/product'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 
 /**
  * 商品一括操作に関するリアクティブ状態と操作を提供する
@@ -28,6 +28,7 @@ export function useProductBulkOps(
 ) {
   const toast = useToast()
   const { t } = useI18n()
+  const { confirm } = useConfirmDialog()
 
   // --- 一括削除 / 批量删除 ---
   /** 一括削除処理中フラグ / 批量删除处理中标志 */
@@ -40,11 +41,7 @@ export function useProductBulkOps(
   const handleBulkDelete = async () => {
     if (selectedKeys.value.length === 0) return
     try {
-      await ElMessageBox.confirm(
-        `${selectedKeys.value.length}件の商品を削除してもよろしいですか？この操作は取り消せません。 / 确定要删除${selectedKeys.value.length}件商品吗？此操作不可撤销。`,
-        '確認 / 确认',
-        { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-      )
+      if (!(await confirm('この操作を実行しますか？'))) return
     } catch { return }
     isBulkDeleting.value = true
     let successCount = 0
@@ -79,11 +76,7 @@ export function useProductBulkOps(
       return
     }
     try {
-      await ElMessageBox.confirm(
-        `${targets.length}件の商品にバーコードを自動生成しますか？（SKUコードをバーコードとして設定します） / 确定要为${targets.length}件商品自动生成条码吗？（将SKU代码设为条码）`,
-        '確認 / 确认',
-        { confirmButtonText: '生成 / 生成', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-      )
+      if (!(await confirm('この操作を実行しますか？'))) return
     } catch { return }
     isBulkBarcode.value = true
     let successCount = 0

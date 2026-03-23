@@ -388,8 +388,8 @@
                 :row-data="row"
               />
               <div v-else class="action-buttons">
-                <OButton variant="primary" size="sm" @click="handleEdit(row)">編集</OButton>
-                <OButton variant="danger" size="sm" @click="handleDelete(row)">削除</OButton>
+                <Button variant="default" size="sm" @click="handleEdit(row)">編集</Button>
+                <Button variant="destructive" size="sm" @click="handleDelete(row)">削除</Button>
               </div>
             </td>
           </tr>
@@ -414,7 +414,6 @@
       v-if="paginationEnabled"
       class="nex-table__pagination"
     >
-      <OPager
         :total="totalItems"
         :offset="pagerOffset"
         :limit="innerPageSize"
@@ -439,8 +438,7 @@ import { getNestedValue, setNestedValue } from '@/utils/nestedObject'
 import { naturalSort } from '@/utils/naturalSort'
 import { mergeBarcodesWithSku } from '@/utils/barcode'
 import BulkEditDialog from './BulkEditDialog.vue'
-import OPager from '@/components/odoo/OPager.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
 import { LINK_COLOR } from '@/theme/config'
 import { useI18n } from '@/composables/useI18n'
 import type { Product } from '@/types/product'
@@ -564,7 +562,6 @@ const props = withDefaults(
     bundleFilterKeys?: string[]
     // 页面标识（用于缓存排序配置，如 'shipment-orders-create'）
     pageKey?: string
-    // SearchForm quick global search text (client-side, matches visible text)
     globalSearchText?: string
     // 自定义行类名函数（用于行级别的样式控制）
     rowClassName?: (row: RowData) => string
@@ -1191,7 +1188,6 @@ const totalItems = computed(() => {
   return filteredData.value.length
 })
 
-// OPager offset (0-based)
 const pagerOffset = computed(() => (innerCurrentPage.value - 1) * innerPageSize.value)
 
 const handlePagerOffsetChange = (newOffset: number) => {

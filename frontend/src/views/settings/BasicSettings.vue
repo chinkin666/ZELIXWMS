@@ -1,135 +1,180 @@
 <template>
   <div class="basic-settings">
-    <ControlPanel :title="t('wms.settings.basicSettings', '基本設定')" :show-search="false">
+    <PageHeader :title="t('wms.settings.basicSettings', '基本設定')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" :disabled="saving" @click="handleSave">
+        <Button variant="default" :disabled="saving" @click="handleSave">
           {{ saving ? t('wms.common.saving', '保存中...') : t('wms.common.save', '保存') }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div v-if="loading" class="settings-loading">{{ t('wms.settings.loading', '読み込み中...') }}</div>
+    <div v-if="loading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <div v-else class="settings-body">
       <!-- 一般设定 / 一般設定 -->
-      <div class="o-card settings-card">
-        <div class="card-header">
-          <span class="card-title">{{ t('wms.settings.generalSettings', '一般設定') }}</span>
-          <span class="card-description">{{ t('wms.settings.generalSettingsDesc', '言語・タイムゾーン・表示形式の設定') }}</span>
-        </div>
-        <div class="card-body">
+      <Card class="settings-card">
+        <CardHeader>
+          <CardTitle>{{ t('wms.settings.generalSettings', '一般設定') }}</CardTitle>
+          <CardDescription>{{ t('wms.settings.generalSettingsDesc', '言語・タイムゾーン・表示形式の設定') }}</CardDescription>
+        </CardHeader>
+        <CardContent>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.systemLanguage', 'システム言語') }}</label>
-            <select v-model="form.systemLanguage" class="o-input">
-              <option value="ja">日本語</option>
-              <option value="en">English</option>
-              <option value="zh">中文</option>
-            </select>
+            <Label>{{ t('wms.settings.systemLanguage', 'システム言語') }}</Label>
+            <Select v-model="form.systemLanguage">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="ja">日本語</SelectItem>
+        <SelectItem value="en">English</SelectItem>
+        <SelectItem value="zh">中文</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.timezone', 'タイムゾーン') }}</label>
-            <select v-model="form.timezone" class="o-input">
-              <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
-              <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
-              <option value="UTC">UTC</option>
-              <option value="America/New_York">America/New_York (EST)</option>
-              <option value="Europe/London">Europe/London (GMT)</option>
-            </select>
+            <Label>{{ t('wms.settings.timezone', 'タイムゾーン') }}</Label>
+            <Select v-model="form.timezone">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="Asia/Tokyo">Asia/Tokyo (JST)</SelectItem>
+        <SelectItem value="Asia/Shanghai">Asia/Shanghai (CST)</SelectItem>
+        <SelectItem value="UTC">UTC</SelectItem>
+        <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
+        <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.dateFormat', '日付フォーマット') }}</label>
-            <select v-model="form.dateFormat" class="o-input">
-              <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-              <option value="YYYY/MM/DD">YYYY/MM/DD</option>
-              <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-              <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-            </select>
+            <Label>{{ t('wms.settings.dateFormat', '日付フォーマット') }}</Label>
+            <Select v-model="form.dateFormat">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+        <SelectItem value="YYYY/MM/DD">YYYY/MM/DD</SelectItem>
+        <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+        <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.defaultPageSize', 'デフォルトページサイズ') }}</label>
-            <input v-model.number="form.pageSize" type="number" class="o-input" min="10" max="200" />
+            <Label>{{ t('wms.settings.defaultPageSize', 'デフォルトページサイズ') }}</Label>
+            <Input v-model.number="form.pageSize" type="number" min="10" max="200" />
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <!-- 出荷设定 / 出荷設定 -->
-      <div class="o-card settings-card">
-        <div class="card-header">
-          <span class="card-title">{{ t('wms.settings.outboundSettings', '出荷設定') }}</span>
-          <span class="card-description">{{ t('wms.settings.outboundSettingsBasicDesc', '出荷検品・引当ルールの基本設定') }}</span>
-        </div>
-        <div class="card-body">
+      <Card class="settings-card">
+        <CardHeader>
+          <CardTitle>{{ t('wms.settings.outboundSettings', '出荷設定') }}</CardTitle>
+          <CardDescription>{{ t('wms.settings.outboundSettingsBasicDesc', '出荷検品・引当ルールの基本設定') }}</CardDescription>
+        </CardHeader>
+        <CardContent>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.outboundRequireInspection', '出荷検品必須') }}</label>
+            <Label>{{ t('wms.settings.outboundRequireInspection', '出荷検品必須') }}</Label>
             <label class="toggle-switch">
               <input v-model="form.outboundRequireInspection" type="checkbox" />
               <span class="toggle-slider" />
             </label>
           </div>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.allocationRule', '引当ルール') }}</label>
-            <select v-model="form.outboundAllocationRule" class="o-input">
-              <option value="FIFO">FIFO（先入先出）</option>
-              <option value="FEFO">FEFO（先期限先出）</option>
-              <option value="LIFO">LIFO（後入先出）</option>
-            </select>
+            <Label>{{ t('wms.settings.allocationRule', '引当ルール') }}</Label>
+            <Select v-model="form.outboundAllocationRule">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="FIFO">FIFO（先入先出）</SelectItem>
+        <SelectItem value="FEFO">FEFO（先期限先出）</SelectItem>
+        <SelectItem value="LIFO">LIFO（後入先出）</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <!-- 条码设定 / バーコード設定 -->
-      <div class="o-card settings-card">
-        <div class="card-header">
-          <span class="card-title">{{ t('wms.settings.barcodeSettings', 'バーコード設定') }}</span>
-          <span class="card-description">{{ t('wms.settings.barcodeSettingsDesc', 'バーコードフォーマットとスキャンモードの設定') }}</span>
-        </div>
-        <div class="card-body">
+      <Card class="settings-card">
+        <CardHeader>
+          <CardTitle>{{ t('wms.settings.barcodeSettings', 'バーコード設定') }}</CardTitle>
+          <CardDescription>{{ t('wms.settings.barcodeSettingsDesc', 'バーコードフォーマットとスキャンモードの設定') }}</CardDescription>
+        </CardHeader>
+        <CardContent>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.defaultBarcodeFormat', 'デフォルトバーコード形式') }}</label>
-            <select v-model="form.barcodeDefaultFormat" class="o-input">
-              <option value="code128">Code 128</option>
-              <option value="ean13">EAN-13</option>
-              <option value="code39">Code 39</option>
-              <option value="qrcode">QR コード</option>
-            </select>
+            <Label>{{ t('wms.settings.defaultBarcodeFormat', 'デフォルトバーコード形式') }}</Label>
+            <Select v-model="form.barcodeDefaultFormat">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="code128">Code 128</SelectItem>
+        <SelectItem value="ean13">EAN-13</SelectItem>
+        <SelectItem value="code39">Code 39</SelectItem>
+        <SelectItem value="qrcode">QR コード</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.scanMode', 'スキャンモード') }}</label>
-            <select v-model="form.barcodeScanMode" class="o-input">
-              <option value="single">シングル（1件ずつ）</option>
-              <option value="continuous">連続スキャン</option>
-            </select>
+            <Label>{{ t('wms.settings.scanMode', 'スキャンモード') }}</Label>
+            <Select v-model="form.barcodeScanMode">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="single">シングル（1件ずつ）</SelectItem>
+        <SelectItem value="continuous">連続スキャン</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       <!-- 表示设定 / 表示設定 -->
-      <div class="o-card settings-card">
-        <div class="card-header">
-          <span class="card-title">{{ t('wms.settings.displaySettings', '表示設定') }}</span>
-          <span class="card-description">UI 表示スタイルの設定</span>
-        </div>
-        <div class="card-body">
+      <Card class="settings-card">
+        <CardHeader>
+          <CardTitle>{{ t('wms.settings.displaySettings', '表示設定') }}</CardTitle>
+          <CardDescription>UI 表示スタイルの設定</CardDescription>
+        </CardHeader>
+        <CardContent>
           <div class="o-form-group">
-            <label class="form-label">{{ t('wms.settings.orderSearchPanel', '受注一覧の検索パネル') }}</label>
-            <select v-model="orderSearchStyle" class="o-input" @change="handleSearchStyleChange">
-              <option value="classic">伝統スタイル（フィールド固定）</option>
-              <option value="modern">新式スタイル（フィルター選択式）</option>
-            </select>
+            <Label>{{ t('wms.settings.orderSearchPanel', '受注一覧の検索パネル') }}</Label>
+            <Select v-model="orderSearchStyle" @update:model-value="handleSearchStyleChange">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="classic">伝統スタイル（フィールド固定）</SelectItem>
+        <SelectItem value="modern">新式スタイル（フィルター選択式）</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
 import { useSettingsStore, type OrderSearchStyle } from '@/stores/settings'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   fetchSystemSettings,
   updateSystemSettings,
@@ -271,7 +316,7 @@ onMounted(loadSettings)
   min-width: 200px;
 }
 
-.o-input {
+.{
   flex: 1;
   max-width: 300px;
   height: 34px;
@@ -290,7 +335,7 @@ onMounted(loadSettings)
   box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.15);
 }
 
-select.o-input {
+select.{
   cursor: pointer;
 }
 
@@ -342,7 +387,7 @@ select.o-input {
     align-items: flex-start;
     gap: 0.5rem;
   }
-  .o-input {
+  .{
     max-width: 100%;
     width: 100%;
   }

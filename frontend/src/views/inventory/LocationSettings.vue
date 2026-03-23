@@ -1,109 +1,114 @@
 <template>
   <div class="location-settings">
-    <ControlPanel :title="t('wms.inventory.locationManagement', 'ロケーション管理')" :show-search="false">
+    <PageHeader :title="t('wms.inventory.locationManagement', 'ロケーション管理')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" :disabled="isSeeding" @click="handleSeed">
+          <Button variant="secondary" size="sm" :disabled="isSeeding" @click="handleSeed">
             {{ isSeeding ? t('wms.inventory.creating', '作成中...') : t('wms.inventory.seedData', '初期データ作成') }}
-          </OButton>
-          <OButton variant="primary" size="sm" @click="openCreateDialog">
+          </Button>
+          <Button variant="default" size="sm" @click="openCreateDialog">
             {{ t('wms.common.create', '新規作成') }}
-          </OButton>
+          </Button>
         </div>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="locationSettingsSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="locations"
         row-key="_id"
-        highlight-columns-on-hover
         pagination-enabled
         pagination-mode="client"
         :page-size="20"
         :page-sizes="[20, 50, 100]"
         :global-search-text="globalSearchText"
+        :search-columns="searchColumns"
+        @search="handleSearch"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogVisible" :title="editingId ? t('wms.inventory.editLocation', 'ロケーション編集') : t('wms.inventory.createLocation', 'ロケーション新規作成')" size="md">
+    <Dialog :open="dialogVisible" @update:open="dialogVisible = $event">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{{ editingId ? t('wms.inventory.editLocation', 'ロケーション編集') : t('wms.inventory.createLocation', 'ロケーション新規作成') }}</DialogTitle>
+        </DialogHeader>
       <div class="dialog-form">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.code', 'コード') }} <span class="required-badge">必須</span></label>
-          <input v-model="dialogForm.code" type="text" class="o-input" :placeholder="t('wms.inventory.codePlaceholder', '例: WH-MAIN/A-01')" />
+          <label>{{ t('wms.inventory.code', 'コード') }} <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="dialogForm.code" type="text" :placeholder="t('wms.inventory.codePlaceholder', '例: WH-MAIN/A-01')" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.locationName', '名称') }} <span class="required-badge">必須</span></label>
-          <input v-model="dialogForm.name" type="text" class="o-input" :placeholder="t('wms.inventory.locationNamePlaceholder', '例: A棟 1列')" />
+          <label>{{ t('wms.inventory.locationName', '名称') }} <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="dialogForm.name" type="text" :placeholder="t('wms.inventory.locationNamePlaceholder', '例: A棟 1列')" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.locationType', 'タイプ') }} <span class="required-badge">必須</span></label>
-          <select v-model="dialogForm.type" class="o-input">
-            <option value="warehouse">{{ t('wms.inventory.typeWarehouse', '倉庫') }}</option>
-            <option value="zone">{{ t('wms.inventory.typeZone', 'ゾーン') }}</option>
-            <option value="shelf">{{ t('wms.inventory.typeShelf', '棚') }}</option>
-            <option value="bin">{{ t('wms.inventory.typeBin', '区画') }}</option>
-            <option value="staging">{{ t('wms.inventory.typeStaging', '出荷準備') }}</option>
-            <option value="receiving">{{ t('wms.inventory.typeReceiving', '入庫検品') }}</option>
-          </select>
+          <label>{{ t('wms.inventory.locationType', 'タイプ') }} <span class="text-destructive text-xs">*</span></label>
+          <Select v-model="dialogForm.type">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="warehouse">{{ t('wms.inventory.typeWarehouse', '倉庫') }}</SelectItem>
+              <SelectItem value="zone">{{ t('wms.inventory.typeZone', 'ゾーン') }}</SelectItem>
+              <SelectItem value="shelf">{{ t('wms.inventory.typeShelf', '棚') }}</SelectItem>
+              <SelectItem value="bin">{{ t('wms.inventory.typeBin', '区画') }}</SelectItem>
+              <SelectItem value="staging">{{ t('wms.inventory.typeStaging', '出荷準備') }}</SelectItem>
+              <SelectItem value="receiving">{{ t('wms.inventory.typeReceiving', '入庫検品') }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.parentLocation', '親ロケーション') }}</label>
-          <select v-model="dialogForm.parentId" class="o-input">
-            <option value="">{{ t('wms.inventory.noParent', 'なし（最上位）') }}</option>
-            <option v-for="loc in parentCandidates" :key="loc._id" :value="loc._id">
-              {{ loc.code }} ({{ loc.name }})
-            </option>
-          </select>
+          <label>{{ t('wms.inventory.parentLocation', '親ロケーション') }}</label>
+          <Select :model-value="dialogForm.parentId || '__none__'" @update:model-value="(v: string) => { dialogForm.parentId = v === '__none__' ? '' : v }">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">{{ t('wms.inventory.noParent', 'なし（最上位）') }}</SelectItem>
+              <SelectItem v-for="loc in parentCandidates" :key="loc._id" :value="loc._id">{{ loc.code }} ({{ loc.name }})</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.temperatureZone', '温度帯') }}</label>
-          <select v-model="dialogForm.coolType" class="o-input">
-            <option value="">{{ t('wms.inventory.notSpecified', '指定なし') }}</option>
-            <option value="0">{{ t('wms.inventory.tempNormal', '常温') }}</option>
-            <option value="1">{{ t('wms.inventory.tempFrozen', '冷凍') }}</option>
-            <option value="2">{{ t('wms.inventory.tempChilled', '冷蔵') }}</option>
-          </select>
+          <label>{{ t('wms.inventory.temperatureZone', '温度帯') }}</label>
+          <Select :model-value="dialogForm.coolType || '__none__'" @update:model-value="(v: string) => { dialogForm.coolType = v === '__none__' ? '' : v }">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">{{ t('wms.inventory.notSpecified', '指定なし') }}</SelectItem>
+              <SelectItem value="0">{{ t('wms.inventory.tempNormal', '常温') }}</SelectItem>
+              <SelectItem value="1">{{ t('wms.inventory.tempFrozen', '冷凍') }}</SelectItem>
+              <SelectItem value="2">{{ t('wms.inventory.tempChilled', '冷蔵') }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.sortOrder', '表示順') }}</label>
-          <input v-model.number="dialogForm.sortOrder" type="number" class="o-input" />
+          <label>{{ t('wms.inventory.sortOrder', '表示順') }}</label>
+          <Input v-model.number="dialogForm.sortOrder" type="number" />
         </div>
         <div class="form-field" style="grid-column:1/-1;">
-          <label class="form-label">{{ t('wms.inventory.memo', 'メモ') }}</label>
-          <input v-model="dialogForm.memo" type="text" class="o-input" />
+          <label>{{ t('wms.inventory.memo', 'メモ') }}</label>
+          <Input v-model="dialogForm.memo" type="text" />
         </div>
       </div>
-      <template #footer>
-        <OButton variant="secondary" @click="dialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-        <OButton variant="primary" :disabled="!canSaveDialog || isSaving" @click="handleSaveDialog">
-          {{ isSaving ? t('wms.inventory.saving', '保存中...') : t('wms.common.save', '保存') }}
-        </OButton>
-      </template>
-    </ODialog>
+        <DialogFooter>
+          <Button variant="secondary" @click="dialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+          <Button variant="default" :disabled="!canSaveDialog || isSaving" @click="handleSaveDialog">
+            {{ isSaving ? t('wms.inventory.saving', '保存中...') : t('wms.common.save', '保存') }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import {
   fetchLocations,
   createLocation,
@@ -115,6 +120,8 @@ import {
 import type { LocationUsage } from '@/api/location'
 import type { Location } from '@/types/inventory'
 import type { TableColumn, Operator } from '@/types/table'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const toast = useToast()
 const { t } = useI18n()
@@ -205,6 +212,10 @@ const tableColumns = computed<TableColumn[]>(() => [
       h('span', { class: `type-badge type--${rowData.type.replace('/', '-')}` }, typeLabel(rowData.type)),
   },
   {
+    key: 'stockType', dataKey: 'stockType', title: t('wms.inventory.stockType', '在庫区分'), width: 100, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Location }) => (rowData as any).stockType ?? '-',
+  },
+  {
     key: 'fullPath', dataKey: 'fullPath', title: t('wms.inventory.fullPath', 'フルパス'), width: 250, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: Location }) => h('span', { class: 'text-muted' }, rowData.fullPath),
   },
@@ -214,6 +225,13 @@ const tableColumns = computed<TableColumn[]>(() => [
       if (rowData.coolType === '1') return h('span', { style: 'color:#409eff;' }, t('wms.inventory.tempFrozen', '冷凍'))
       if (rowData.coolType === '2') return h('span', { style: 'color:#67c23a;' }, t('wms.inventory.tempChilled', '冷蔵'))
       return '-'
+    },
+  },
+  {
+    key: 'warehouseName', title: t('wms.inventory.warehouseName', '倉庫'), width: 120, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: Location }) => {
+      const wh = (rowData as any).warehouseName ?? (rowData as any).warehouse?.name
+      return wh ?? '-'
     },
   },
   {
@@ -255,9 +273,9 @@ const tableColumns = computed<TableColumn[]>(() => [
     key: 'actions', title: t('wms.common.actions', '操作'), width: 120, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: Location }) =>
       h('div', { style: 'display:inline-flex;gap:4px;' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEditDialog(rowData) }, () => t('wms.common.edit', '編集')),
-        h(OButton, {
-          variant: 'danger', size: 'sm',
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEditDialog(rowData) }, () => t('wms.common.edit', '編集')),
+        h(Button, {
+          variant: 'destructive', size: 'sm',
           disabled: rowData.type.startsWith('virtual/'),
           onClick: () => handleDelete(rowData),
         }, () => t('wms.common.delete', '削除')),
@@ -361,13 +379,7 @@ const handleSaveDialog = async () => {
 }
 
 const handleDelete = async (loc: Location) => {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inventory.confirmDeleteLocation', `ロケーション "${loc.code}" を削除しますか？ / 确定要删除库位 "${loc.code}" 吗？`),
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await apiDeleteLocation(loc._id)
     toast.showSuccess(t('wms.inventory.locationDeleted', 'ロケーションを削除しました'))
@@ -445,7 +457,7 @@ onMounted(() => loadLocations())
 
 .required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
 
-.o-input {
+.{
   padding: 8px 12px;
   border: 1px solid var(--o-border-color, #dcdfe6);
   border-radius: var(--o-border-radius, 4px);

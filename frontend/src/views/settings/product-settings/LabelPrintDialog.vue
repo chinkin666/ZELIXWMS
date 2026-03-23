@@ -1,33 +1,42 @@
 <template>
-  <ODialog :open="visible" :title="t('wms.product.labelPrint', 'ラベル印刷')" @close="visible = false" width="720px">
+  <Dialog :open="visible" @update:open="val => { if (!val) { visible = false } }">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ t('wms.product.labelPrint', 'ラベル印刷') }}</DialogTitle></DialogHeader>
     <div class="toolbar">
       <div class="toolbar-row">
         <div class="toolbar-item">
           <label class="toolbar-label">{{ t('wms.product.labelTemplate', 'テンプレート') }}</label>
-          <select class="o-input" v-model="selectedTemplateId" style="width: 320px">
-            <option value="" disabled>{{ t('wms.product.selectTemplate', 'テンプレートを選択') }}</option>
-            <option v-for="tpl in labelTemplates" :key="tpl.id" :value="tpl.id">
-              {{ tpl.name }} ({{ tpl.canvas.widthMm }}x{{ tpl.canvas.heightMm }}mm)
-            </option>
-          </select>
+          <Select v-model="selectedTemplateId">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="{{ t('wms.product.selectTemplate', 'テンプレートを選択') }}" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="tpl in labelTemplates" :key="tpl.id" :value="tpl.id">{{ tpl.name }} ({{ tpl.canvas.widthMm }}x{{ tpl.canvas.heightMm }}mm)</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
 
         <div class="toolbar-item">
           <label class="toolbar-label">DPI</label>
-          <select class="o-input" v-model.number="exportDpi" style="width: 100px">
-            <option :value="203">203</option>
-            <option :value="300">300</option>
-          </select>
+          <Select v-model="exportDpi">
+            <SelectTrigger class="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem :value="203">203</SelectItem>
+              <SelectItem :value="300">300</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <OButton
-          variant="primary"
+        <Button
+          variant="default"
           size="sm"
           :disabled="!selectedTemplate || rendering || effectiveProducts.length === 0"
           @click="handlePrint"
         >
           {{ isBulkMode ? t('wms.product.bulkPrint', '一括印刷') : t('wms.product.print', '印刷') }}
-        </OButton>
+        </Button>
       </div>
     </div>
 
@@ -35,9 +44,9 @@
     <div v-if="isBulkMode" class="bulk-info">
       <span class="bulk-info-count">{{ effectiveProducts.length }}{{ t('wms.product.itemsLabel', '件') }}</span>
       <div class="bulk-nav">
-        <OButton variant="secondary" size="sm" :disabled="currentPreviewIndex <= 0" @click="currentPreviewIndex--">&lt;</OButton>
+        <Button variant="secondary" size="sm" :disabled="currentPreviewIndex <= 0" @click="currentPreviewIndex--">&lt;</Button>
         <span class="bulk-nav-pos">{{ currentPreviewIndex + 1 }} / {{ effectiveProducts.length }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPreviewIndex >= effectiveProducts.length - 1" @click="currentPreviewIndex++">&gt;</OButton>
+        <Button variant="secondary" size="sm" :disabled="currentPreviewIndex >= effectiveProducts.length - 1" @click="currentPreviewIndex++">&gt;</Button>
       </div>
     </div>
 
@@ -50,7 +59,10 @@
     </div>
 
     <div class="preview">
-      <div v-if="loadingTemplates" class="status-text">{{ t('wms.product.loadingTemplates', 'テンプレートを読み込み中...') }}</div>
+      <div v-if="loadingTemplates" class="space-y-2 p-4">
+        <Skeleton class="h-4 w-[200px]" />
+        <Skeleton class="h-8 w-full" />
+      </div>
       <div v-else-if="labelTemplates.length === 0" class="status-text error-text">{{ t('wms.product.noLabelTemplates', 'ラベル用テンプレートが見つかりません（キャンバス幅 110mm 以下のテンプレートが必要です）') }}</div>
       <div v-else-if="rendering" class="status-text">{{ t('wms.product.rendering', 'レンダリング中...') }}</div>
       <div v-else-if="error" class="status-text error-text">{{ error }}</div>
@@ -58,16 +70,17 @@
       <img v-else :src="imageUrl" class="preview-img" />
     </div>
 
-    <template #footer>
-      <OButton variant="secondary" @click="visible = false">{{ t('wms.common.close', '閉じる') }}</OButton>
-    </template>
-  </ODialog>
+    <DialogFooter>
+      <Button variant="secondary" @click="visible = false">{{ t('wms.common.close', '閉じる') }}</Button>
+    </DialogFooter>
+  </DialogContent>
+    </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import type { Product } from '@/types/product'
@@ -75,6 +88,7 @@ import type { PrintTemplate } from '@/types/printTemplate'
 import { fetchPrintTemplates, type PrintTemplateApiModel } from '@/api/printTemplates'
 import { renderTemplateWithContextToPngBlob } from '@/utils/print/renderTemplateToPng'
 import { printImage } from '@/utils/print/printImage'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const { t } = useI18n()
 const toast = useToast()

@@ -1,20 +1,20 @@
 <template>
   <div class="picking-list-print">
-    <ControlPanel :title="t('wms.shipment.pickingList', 'ピッキングリスト / 前伝票出力')" :show-search="false" />
+    <PageHeader :title="t('wms.shipment.pickingList', 'ピッキングリスト / 前伝票出力')" :show-search="false" />
 
     <!-- 検索・フィルター / 搜索/筛选 -->
-    <div class="o-card filter-bar">
+    <div class="rounded-lg border bg-card p-4 filter-bar">
       <div class="form-field">
-        <label class="form-label">{{ t('wms.shipment.searchOrder', '注文検索') }}</label>
-        <input v-model="searchQuery" type="text" class="o-input" :placeholder="t('wms.shipment.searchPlaceholder', '注文番号...')" @keyup.enter="loadOrders" />
+        <label>{{ t('wms.shipment.searchOrder', '注文検索') }}</label>
+        <Input v-model="searchQuery" type="text" :placeholder="t('wms.shipment.searchPlaceholder', '注文番号...')" @keyup.enter="loadOrders" />
       </div>
-      <OButton variant="primary" :disabled="isLoading" @click="loadOrders">
+      <Button variant="default" :disabled="isLoading" @click="loadOrders">
         {{ t('wms.common.search', '検索') }}
-      </OButton>
+      </Button>
     </div>
 
     <!-- 注文リスト（チェックボックス） / 订单列表（复选框） -->
-    <div class="o-card">
+    <div class="rounded-lg border bg-card p-4">
       <h3 class="form-title">{{ t('wms.shipment.selectOrders', '対象注文を選択') }}</h3>
       <div v-if="orders.length === 0" class="empty-state">
         {{ t('wms.shipment.noOrders', '注文が見つかりません。検索してください。') }}
@@ -34,10 +34,10 @@
     </div>
 
     <!-- ピッキングリストプレビュー / 拣货单预览 -->
-    <div v-if="pickingItems.length > 0" class="o-card">
+    <div v-if="pickingItems.length > 0" class="rounded-lg border bg-card p-4">
       <h3 class="form-title">{{ t('wms.shipment.pickingPreview', 'ピッキングリスト プレビュー') }}</h3>
       <div class="table-section">
-        <Table
+        <DataTable
           :columns="tableColumns"
           :data="pickingItems"
           row-key="rowKey"
@@ -52,23 +52,25 @@
 
     <!-- アクションボタン / 操作按钮 -->
     <div v-if="selectedIds.length > 0" class="action-bar">
-      <OButton variant="primary" @click="handlePrint">
+      <Button variant="default" @click="handlePrint">
         {{ t('wms.shipment.print', '印刷') }}
-      </OButton>
-      <OButton variant="secondary" @click="handleDownloadPdf">
+      </Button>
+      <Button variant="secondary" @click="handleDownloadPdf">
         {{ t('wms.shipment.downloadPdf', 'PDF ダウンロード') }}
-      </OButton>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { computed, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import { apiFetch } from '@/api/http'
 import { getApiBaseUrl } from '@/api/base'
 import type { TableColumn } from '@/types/table'
@@ -207,7 +209,7 @@ const handleDownloadPdf = async () => {
 .form-field { display: flex; flex-direction: column; gap: 4px; flex: 1; }
 .form-label { font-size: 13px; font-weight: 600; color: var(--o-gray-700, #303133); }
 .form-title { font-size: 18px; font-weight: 600; color: var(--o-gray-700, #303133); margin: 0 0 1rem 0; }
-.o-input { padding: 8px 12px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: var(--o-border-radius, 4px); font-size: 14px; color: var(--o-gray-700, #303133); background: var(--o-view-background, #fff); width: 100%; }
+.{ padding: 8px 12px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: var(--o-border-radius, 4px); font-size: 14px; color: var(--o-gray-700, #303133); background: var(--o-view-background, #fff); width: 100%; }
 .order-list { display: flex; flex-direction: column; gap: 4px; }
 .check-all { font-size: 13px; font-weight: 600; color: var(--o-gray-500, #909399); padding: 8px 0; border-bottom: 1px solid var(--o-border-color, #e4e7ed); cursor: pointer; display: flex; align-items: center; gap: 8px; }
 .order-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; font-size: 14px; border-bottom: 1px solid var(--o-border-color-light, #f0f0f0); }

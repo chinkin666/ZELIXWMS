@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import OToast from './OToast.vue'
 
 interface Toast {
   id: number

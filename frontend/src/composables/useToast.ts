@@ -1,45 +1,35 @@
-import { ref } from 'vue'
-
-interface Toast {
-  id: number
-  message: string
-  type: 'success' | 'warning' | 'danger' | 'info'
-  duration?: number
-}
-
-const toasts = ref<Toast[]>([])
-let nextId = 0
+/**
+ * Toast 通知コンポーザブル / Toast 通知组合式函数
+ *
+ * vue-sonner ベースに移行。API は維持。
+ * 已迁移到 vue-sonner 基础。API 保持不变。
+ */
+import { toast } from 'vue-sonner'
 
 export function useToast() {
-  function show(message: string, type: Toast['type'] = 'success', duration = 3000) {
-    const id = nextId++
-    toasts.value = [...toasts.value, { id, message, type, duration }]
-    if (duration > 0) {
-      setTimeout(() => {
-        toasts.value = toasts.value.filter(t => t.id !== id)
-      }, duration)
-    }
-  }
-
-  function remove(id: number) {
-    toasts.value = toasts.value.filter(t => t.id !== id)
+  function show(message: string, type: 'success' | 'warning' | 'danger' | 'info' = 'success', duration = 3000) {
+    const opts = { duration }
+    if (type === 'success') toast.success(message, opts)
+    else if (type === 'danger') toast.error(message, opts)
+    else if (type === 'warning') toast.warning(message, opts)
+    else toast.info(message, opts)
   }
 
   function showSuccess(message: string, duration = 3000) {
-    show(message, 'success', duration)
+    toast.success(message, { duration })
   }
 
   function showError(message: string, duration = 5000) {
-    show(message, 'danger', duration)
+    toast.error(message, { duration })
   }
 
   function showWarning(message: string, duration = 4000) {
-    show(message, 'warning', duration)
+    toast.warning(message, { duration })
   }
 
   function showInfo(message: string, duration = 3000) {
-    show(message, 'info', duration)
+    toast.info(message, { duration })
   }
 
-  return { toasts, show, remove, showSuccess, showError, showWarning, showInfo }
+  return { show, showSuccess, showError, showWarning, showInfo }
 }

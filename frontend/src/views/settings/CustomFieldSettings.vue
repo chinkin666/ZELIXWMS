@@ -1,104 +1,114 @@
 <template>
   <div class="custom-field-settings">
-    <ControlPanel title="カスタムフィールド管理" :show-search="false">
+    <PageHeader title="カスタムフィールド管理" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">新規追加</OButton>
+        <Button variant="default" @click="openCreate">新規追加</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="customFieldSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="definitions"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         pagination-enabled
         pagination-mode="client"
         :page-size="20"
-        :global-search-text="globalSearchText"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogOpen" :title="isEditing ? 'フィールド定義を編集' : 'フィールド定義を追加'" size="lg" @confirm="handleSave">
+    <Dialog :open="dialogOpen" @update:open="dialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? 'フィールド定義を編集' : 'フィールド定義を追加' }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">エンティティ <span class="required-badge">必須</span></label>
-          <select v-model="form.entityType" class="o-input" :disabled="isEditing">
-            <option value="" disabled>選択してください</option>
-            <option v-for="et in entityTypes" :key="et.value" :value="et.value">{{ et.label }}</option>
-          </select>
+          <label>エンティティ <span class="text-destructive text-xs">*</span></label>
+          <Select v-model="form.entityType">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="選択してください" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="et in entityTypes" :key="et.value" :value="et.value">{{ et.label }}</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div class="form-field">
-          <label class="form-label">フィールドキー <span class="required-badge">必須</span></label>
-          <input v-model="form.fieldKey" type="text" class="o-input" placeholder="例: priority" :disabled="isEditing" />
+          <label>フィールドキー <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.fieldKey" type="text" placeholder="例: priority" :disabled="isEditing" />
           <span class="form-hint">英数字と _ のみ（先頭は英字または_）</span>
         </div>
         <div class="form-field">
-          <label class="form-label">ラベル（中文） <span class="required-badge">必須</span></label>
-          <input v-model="form.label" type="text" class="o-input" placeholder="例: 优先级" />
+          <label>ラベル（中文） <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.label" type="text" placeholder="例: 优先级" />
         </div>
         <div class="form-field">
-          <label class="form-label">ラベル（日本語）</label>
-          <input v-model="form.labelJa" type="text" class="o-input" placeholder="例: 優先度" />
+          <label>ラベル（日本語）</label>
+          <Input v-model="form.labelJa" type="text" placeholder="例: 優先度" />
         </div>
         <div class="form-field">
-          <label class="form-label">フィールドタイプ <span class="required-badge">必須</span></label>
-          <select v-model="form.fieldType" class="o-input">
-            <option value="text">text（テキスト）</option>
-            <option value="number">number（数値）</option>
-            <option value="boolean">boolean（真偽値）</option>
-            <option value="date">date（日付）</option>
-            <option value="select">select（選択肢）</option>
-          </select>
+          <label>フィールドタイプ <span class="text-destructive text-xs">*</span></label>
+          <Select v-model="form.fieldType">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="text">text（テキスト）</SelectItem>
+        <SelectItem value="number">number（数値）</SelectItem>
+        <SelectItem value="boolean">boolean（真偽値）</SelectItem>
+        <SelectItem value="date">date（日付）</SelectItem>
+        <SelectItem value="select">select（選択肢）</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div class="form-field">
-          <label class="form-label">デフォルト値</label>
-          <input v-model="form.defaultValue" type="text" class="o-input" placeholder="省略可" />
+          <label>デフォルト値</label>
+          <Input v-model="form.defaultValue" type="text" placeholder="省略可" />
         </div>
         <div v-if="form.fieldType === 'select'" class="form-field form-field--full">
-          <label class="form-label">選択肢（カンマ区切り） <span class="required-badge">必須</span></label>
-          <input v-model="optionsStr" type="text" class="o-input" placeholder="例: 高,中,低" />
+          <label>選択肢（カンマ区切り） <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="optionsStr" type="text" placeholder="例: 高,中,低" />
         </div>
         <div class="form-field">
-          <label class="form-label">表示順序</label>
-          <input v-model.number="form.sortOrder" type="number" class="o-input" min="0" />
+          <label>表示順序</label>
+          <Input v-model.number="form.sortOrder" type="number" min="0" />
         </div>
         <div class="form-field" style="display: flex; align-items: center; gap: 8px; padding-top: 24px">
-          <input v-model="form.required" type="checkbox" id="cf-required" />
+          <Checkbox :checked="form.required" @update:checked="val => form.required = val" />
           <label for="cf-required">必須フィールド</label>
         </div>
         <div class="form-field" style="display: flex; align-items: center; gap: 8px; padding-top: 24px">
-          <input v-model="form.enabled" type="checkbox" id="cf-enabled" />
+          <Checkbox :checked="form.enabled" @update:checked="val => form.enabled = val" />
           <label for="cf-enabled">有効</label>
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
 
     <!-- Delete Confirm -->
-    <ODialog v-model="deleteDialogOpen" title="削除確認" size="sm" @confirm="handleDelete">
+    <Dialog :open="deleteDialogOpen" @update:open="deleteDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>削除確認</DialogTitle></DialogHeader>
       <p>「{{ deleteTarget?.label }}」を削除しますか？この操作は元に戻せません。</p>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   fetchCustomFieldDefinitions,
   createCustomFieldDefinition,
@@ -267,8 +277,8 @@ const tableColumns: TableColumn[] = [
     width: 180,
     cellRenderer: ({ rowData }: { rowData: CustomFieldDefinition }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ]),
   },
 ]

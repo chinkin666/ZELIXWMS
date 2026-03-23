@@ -1,63 +1,77 @@
 <template>
   <div class="billing-dashboard">
-    <ControlPanel title="請求ダッシュボード" :show-search="false">
+    <PageHeader title="請求ダッシュボード" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="loadData">更新</OButton>
+        <Button variant="secondary" size="sm" @click="loadData">更新</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div v-if="isLoading" class="loading-state">読み込み中...</div>
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else-if="kpi">
       <!-- KPIカード / KPIカード -->
       <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-value">{{ (kpi.monthlyOrderCount || 0).toLocaleString() }}</div>
-          <div class="kpi-label">当月出荷件数</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-value">&yen;{{ (kpi.monthlyShippingCost || 0).toLocaleString() }}</div>
-          <div class="kpi-label">当月配送料金</div>
-        </div>
-        <div class="kpi-card kpi-card--warning">
-          <div class="kpi-value">&yen;{{ (kpi.unbilledAmount || 0).toLocaleString() }}</div>
-          <div class="kpi-label">未請求額</div>
-        </div>
-        <div class="kpi-card kpi-card--danger">
-          <div class="kpi-value">&yen;{{ (kpi.unpaidAmount || 0).toLocaleString() }}</div>
-          <div class="kpi-label">未入金額</div>
-        </div>
+        <Card class="kpi-card text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ (kpi.monthlyOrderCount || 0).toLocaleString() }}</div>
+            <div class="kpi-label">当月出荷件数</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">&yen;{{ (kpi.monthlyShippingCost || 0).toLocaleString() }}</div>
+            <div class="kpi-label">当月配送料金</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card kpi-card--warning text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">&yen;{{ (kpi.unbilledAmount || 0).toLocaleString() }}</div>
+            <div class="kpi-label">未請求額</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card kpi-card--danger text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">&yen;{{ (kpi.unpaidAmount || 0).toLocaleString() }}</div>
+            <div class="kpi-label">未入金額</div>
+          </CardContent>
+        </Card>
       </div>
 
       <!-- 最近の請求レコード / 最近の請求レコード -->
       <div class="section">
         <h2 class="section-title">最近の請求データ</h2>
         <div v-if="kpi.recentRecords.length === 0" class="empty-state">請求データがありません</div>
-        <div class="o-table-wrapper" v-else>
-          <table class="o-table">
-            <thead>
-              <tr>
-                <th class="o-table-th">期間</th>
-                <th class="o-table-th">荷主</th>
-                <th class="o-table-th">配送業者</th>
-                <th class="o-table-th o-table-th--right">出荷件数</th>
-                <th class="o-table-th o-table-th--right">合計</th>
-                <th class="o-table-th">ステータス</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in kpi.recentRecords" :key="row._id" class="o-table-row">
-                <td class="o-table-td">{{ row.period }}</td>
-                <td class="o-table-td">{{ row.clientName }}</td>
-                <td class="o-table-td">{{ row.carrierName }}</td>
-                <td class="o-table-td o-table-td--right">{{ (row.orderCount || 0).toLocaleString() }}</td>
-                <td class="o-table-td o-table-td--right">&yen;{{ (row.totalAmount || 0).toLocaleString() }}</td>
-                <td class="o-table-td">
+        <div class="rounded-md border overflow-auto" v-else>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>期間</TableHead>
+                <TableHead>荷主</TableHead>
+                <TableHead>配送業者</TableHead>
+                <TableHead class="text-right">出荷件数</TableHead>
+                <TableHead class="text-right">合計</TableHead>
+                <TableHead>ステータス</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="row in kpi.recentRecords" :key="row._id">
+                <TableCell>{{ row.period }}</TableCell>
+                <TableCell>{{ row.clientName }}</TableCell>
+                <TableCell>{{ row.carrierName }}</TableCell>
+                <TableCell class="text-right">{{ (row.orderCount || 0).toLocaleString() }}</TableCell>
+                <TableCell class="text-right">&yen;{{ (row.totalAmount || 0).toLocaleString() }}</TableCell>
+                <TableCell>
                   <span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </template>
@@ -65,13 +79,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { fetchBillingDashboard } from '@/api/billing'
 import type { BillingDashboardKpi, BillingStatus } from '@/api/billing'
-
+import { onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const toast = useToast()
 const isLoading = ref(false)
 const kpi = ref<BillingDashboardKpi | null>(null)
@@ -144,10 +160,6 @@ onMounted(() => loadData())
 }
 
 .kpi-card {
-  background: var(--o-view-background, #fff);
-  border: 1px solid var(--o-border-color, #e4e7ed);
-  border-radius: 8px;
-  padding: 16px;
   text-align: center;
 }
 

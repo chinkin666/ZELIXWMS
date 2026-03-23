@@ -1,71 +1,73 @@
 <template>
   <div class="inbound-size-register">
-    <ControlPanel :title="t('wms.inbound.sizeRegister', '入庫サイズ登録')" :show-search="false" />
+    <PageHeader :title="t('wms.inbound.sizeRegister', '入庫サイズ登録')" :show-search="false" />
 
     <!-- サイズ登録フォーム / 尺寸登录表单 -->
-    <div class="o-card">
+    <div class="rounded-lg border bg-card p-4">
       <h3 class="form-title">{{ t('wms.inbound.registerDimensions', '商品サイズ登録') }}</h3>
       <p class="form-desc">{{ t('wms.inbound.sizeRegisterDesc', '入庫時に商品の寸法・重量を登録します。') }}</p>
 
       <div class="form-grid">
         <div class="form-field" style="grid-column: 1 / -1">
-          <label class="form-label">{{ t('wms.inbound.product', '商品') }} <span class="required-badge">必須</span></label>
-          <select v-model="form.productId" class="o-input">
-            <option value="">{{ t('wms.inbound.selectProduct', '商品を選択...') }}</option>
-            <option v-for="p in products" :key="p._id" :value="p._id">
-              {{ p.sku }} - {{ p.name }}
-            </option>
-          </select>
+          <label>{{ t('wms.inbound.product', '商品') }} <span class="text-destructive text-xs">*</span></label>
+          <Select :model-value="form.productId || '__none__'" @update:model-value="(v: string) => { form.productId = v === '__none__' ? '' : v }">
+            <SelectTrigger><SelectValue :placeholder="t('wms.inbound.selectProduct', '商品を選択...')" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="p in products" :key="p._id" :value="p._id">
+                {{ p.sku }} - {{ p.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <!-- 商品サイズ / 商品尺寸 -->
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.width', '幅 (cm)') }}</label>
-          <input v-model.number="form.width" type="number" step="0.1" min="0" class="o-input" placeholder="cm" />
+          <label>{{ t('wms.inbound.width', '幅 (cm)') }}</label>
+          <Input v-model.number="form.width" type="number" step="0.1" min="0" placeholder="cm" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.depth', '奥行 (cm)') }}</label>
-          <input v-model.number="form.depth" type="number" step="0.1" min="0" class="o-input" placeholder="cm" />
+          <label>{{ t('wms.inbound.depth', '奥行 (cm)') }}</label>
+          <Input v-model.number="form.depth" type="number" step="0.1" min="0" placeholder="cm" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.height', '高さ (cm)') }}</label>
-          <input v-model.number="form.height" type="number" step="0.1" min="0" class="o-input" placeholder="cm" />
+          <label>{{ t('wms.inbound.height', '高さ (cm)') }}</label>
+          <Input v-model.number="form.height" type="number" step="0.1" min="0" placeholder="cm" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.weight', '重量 (kg)') }}</label>
-          <input v-model.number="form.weight" type="number" step="0.01" min="0" class="o-input" placeholder="kg" />
+          <label>{{ t('wms.inbound.weight', '重量 (kg)') }}</label>
+          <Input v-model.number="form.weight" type="number" step="0.01" min="0" placeholder="kg" />
         </div>
 
         <!-- 外箱サイズ / 外箱尺寸 -->
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.outerWidth', '外箱 幅 (cm)') }}</label>
-          <input v-model.number="form.outerWidth" type="number" step="0.1" min="0" class="o-input" placeholder="cm" />
+          <label>{{ t('wms.inbound.outerWidth', '外箱 幅 (cm)') }}</label>
+          <Input v-model.number="form.outerWidth" type="number" step="0.1" min="0" placeholder="cm" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.outerDepth', '外箱 奥行 (cm)') }}</label>
-          <input v-model.number="form.outerDepth" type="number" step="0.1" min="0" class="o-input" placeholder="cm" />
+          <label>{{ t('wms.inbound.outerDepth', '外箱 奥行 (cm)') }}</label>
+          <Input v-model.number="form.outerDepth" type="number" step="0.1" min="0" placeholder="cm" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.outerHeight', '外箱 高さ (cm)') }}</label>
-          <input v-model.number="form.outerHeight" type="number" step="0.1" min="0" class="o-input" placeholder="cm" />
+          <label>{{ t('wms.inbound.outerHeight', '外箱 高さ (cm)') }}</label>
+          <Input v-model.number="form.outerHeight" type="number" step="0.1" min="0" placeholder="cm" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inbound.outerWeight', '外箱 重量 (kg)') }}</label>
-          <input v-model.number="form.outerWeight" type="number" step="0.01" min="0" class="o-input" placeholder="kg" />
+          <label>{{ t('wms.inbound.outerWeight', '外箱 重量 (kg)') }}</label>
+          <Input v-model.number="form.outerWeight" type="number" step="0.01" min="0" placeholder="kg" />
         </div>
       </div>
 
       <div class="form-actions">
-        <OButton variant="primary" :disabled="!canSubmit || isSubmitting" @click="handleSubmit">
+        <Button variant="default" :disabled="!canSubmit || isSubmitting" @click="handleSubmit">
           {{ isSubmitting ? t('wms.common.processing', '処理中...') : t('wms.inbound.saveSizes', 'サイズを保存') }}
-        </OButton>
+        </Button>
       </div>
     </div>
 
     <!-- 最近の登録 / 最近登录记录 -->
     <div class="section-title">{{ t('wms.inbound.recentEntries', '最近の登録') }}</div>
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="recentEntries"
         row-key="_id"
@@ -83,9 +85,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import Table from '@/components/table/Table.vue'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import { apiFetch } from '@/api/http'
 import { getApiBaseUrl } from '@/api/base'
 import { fetchProducts } from '@/api/product'
@@ -189,6 +194,6 @@ onMounted(async () => {
 .required-badge { display:inline-block;background:#dc3545;color:#fff;font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:3px;white-space:nowrap;vertical-align:middle;margin-left:4px; }
 .form-actions { margin-top: 1.5rem; text-align: right; }
 .section-title { font-size: 16px; font-weight: 600; color: var(--o-gray-700, #303133); padding-bottom: 8px; border-bottom: 1px solid var(--o-border-color, #e4e7ed); }
-.o-input { padding: 8px 12px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: var(--o-border-radius, 4px); font-size: 14px; color: var(--o-gray-700, #303133); background: var(--o-view-background, #fff); width: 100%; }
+.{ padding: 8px 12px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: var(--o-border-radius, 4px); font-size: 14px; color: var(--o-gray-700, #303133); background: var(--o-view-background, #fff); width: 100%; }
 @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr 1fr; } }
 </style>

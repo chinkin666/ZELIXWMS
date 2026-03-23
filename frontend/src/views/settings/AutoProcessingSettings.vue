@@ -1,13 +1,19 @@
 <template>
   <div class="auto-processing-settings">
-    <ControlPanel :title="t('wms.settings.autoProcessing', '自動処理設定')" :show-search="false">
+    <PageHeader :title="t('wms.settings.autoProcessing', '自動処理設定')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">自動処理の新規登録</OButton>
+        <Button variant="default" @click="openCreate">自動処理の新規登録</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <div class="rules-list">
-      <div v-if="isLoading" class="loading-state">{{ t('wms.settings.loading', '読み込み中...') }}</div>
+      <div v-if="isLoading" class="space-y-3 p-4">
+        <Skeleton class="h-4 w-[250px]" />
+        <Skeleton class="h-4 w-[200px]" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+      </div>
 
       <div v-else-if="rules.length === 0" class="empty-state">
         <svg width="48" height="48" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.2">
@@ -16,7 +22,7 @@
         </svg>
         <p>自動処理ルールがまだありません</p>
         <p class="empty-hint">注文取込時に自動でグループ分け・送り状種類設定などを行えます</p>
-        <OButton variant="primary" @click="openCreate" style="margin-top:12px">最初のルールを作成</OButton>
+        <Button variant="default" @click="openCreate" style="margin-top:12px">最初のルールを作成</Button>
       </div>
 
       <draggable
@@ -79,19 +85,19 @@
                 />
                 <span class="o-toggle-slider"></span>
               </label>
-              <OButton variant="secondary" size="sm" @click="openEdit(rule)">編集</OButton>
-              <OButton
-                variant="primary"
+              <Button variant="secondary" size="sm" @click="openEdit(rule)">編集</Button>
+              <Button
+                variant="default"
                 size="sm"
                 @click="handleManualRun(rule)"
                 :disabled="runningRuleId === rule._id"
               >
                 {{ runningRuleId === rule._id ? '実行中...' : '実行' }}
-              </OButton>
-              <OButton variant="secondary" size="sm" @click="duplicateRule(rule)">複製</OButton>
-              <button class="delete-icon-btn" @click="confirmDelete(rule)" title="削除">
+              </Button>
+              <Button variant="secondary" size="sm" @click="duplicateRule(rule)">複製</Button>
+              <Button class="delete-icon-btn" @click="confirmDelete(rule)" title="削除">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H5.5l1-1h3l1 1H14a1 1 0 0 1 1 1v1z"/></svg>
-              </button>
+              </Button>
             </div>
           </div>
         </template>
@@ -109,11 +115,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import draggable from 'vuedraggable'
 import {
   fetchAutoProcessingRules,
@@ -126,6 +131,8 @@ import {
 import type { AutoProcessingRule, AutoProcessingRuleFormData } from '@/types/autoProcessingRule'
 import { TRIGGER_EVENT_LABELS, type TriggerEvent } from '@/types/autoProcessingRule'
 import AutoProcessingRuleFormDialog from '@/components/auto-processing/AutoProcessingRuleFormDialog.vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
@@ -187,13 +194,7 @@ const handleEnableChange = async (rule: AutoProcessingRule, enabled: boolean) =>
 }
 
 const confirmDelete = async (rule: AutoProcessingRule) => {
-  try {
-    await ElMessageBox.confirm(
-      `ルール「${rule.name}」を削除してもよろしいですか？ / 确定要删除规则「${rule.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteAutoProcessingRule(rule._id)
     showToast(t('wms.settings.ruleDeleted', 'ルールを削除しました'), 'success')
@@ -204,13 +205,7 @@ const confirmDelete = async (rule: AutoProcessingRule) => {
 }
 
 const handleManualRun = async (rule: AutoProcessingRule) => {
-  try {
-    await ElMessageBox.confirm(
-      `ルール「${rule.name}」を手動で実行しますか？条件に合致するすべての注文に対して動作が実行されます。 / 确定要手动执行规则「${rule.name}」吗？将对所有符合条件的订单执行操作。`,
-      '確認 / 确认',
-      { confirmButtonText: '実行 / 执行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     runningRuleId.value = rule._id
     const result = await runAutoProcessingRule(rule._id)

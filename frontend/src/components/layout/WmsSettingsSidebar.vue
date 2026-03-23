@@ -1,7 +1,15 @@
 <script setup lang="ts">
+/**
+ * 設定サイドバー / 设置侧边栏
+ *
+ * 設定ページ用の左サイドバー。shadcn ScrollArea + Tailwind CSS でリビルド。
+ * 设置页面的左侧边栏。用 shadcn ScrollArea + Tailwind CSS 重建。
+ */
 import { computed } from 'vue'
+import { cn } from '@/lib/utils'
 import type { SubMenuGroup } from './menuData'
 import { useAuth } from '@/stores/auth'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 const props = defineProps<{
   groups: SubMenuGroup[]
@@ -30,106 +38,34 @@ function isSubActive(to: string) {
 </script>
 
 <template>
-  <aside class="o-settings-sidebar">
-    <div class="o-settings-sidebar-inner">
-      <template v-for="group in visibleGroups" :key="group.groupLabel">
-        <div class="o-settings-group-label">{{ group.groupLabel }}</div>
-        <button
-          v-for="item in group.items"
-          :key="item.to"
-          class="o-settings-sidebar-item"
-          :class="{ active: isSubActive(item.to) }"
-          @click="emit('navigate', item.to)"
-        >
-          {{ item.label }}
-        </button>
-      </template>
-    </div>
+  <aside
+    class="fixed top-[var(--topbar-height)] left-0 bottom-0 w-[200px] bg-background border-r border-border z-[998] max-md:w-[220px] max-[480px]:w-full max-[480px]:h-auto max-[480px]:max-h-[50vh] max-[480px]:bottom-auto max-[480px]:border-r-0 max-[480px]:border-b max-[480px]:border-border dark:bg-background"
+  >
+    <ScrollArea class="h-full">
+      <div class="py-2">
+        <template v-for="group in visibleGroups" :key="group.groupLabel">
+          <!-- グループラベル / 分组标签 -->
+          <div
+            class="px-4 pt-3 pb-1 text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider select-none first:pt-1.5"
+          >
+            {{ group.groupLabel }}
+          </div>
+
+          <!-- メニュー項目 / 菜单项 -->
+          <button
+            v-for="item in group.items"
+            :key="item.to"
+            :class="cn(
+              'block w-full py-[7px] px-5 text-[13px] text-muted-foreground text-left whitespace-nowrap overflow-hidden text-ellipsis border-0 bg-transparent cursor-pointer transition-colors',
+              'hover:bg-muted hover:text-foreground',
+              isSubActive(item.to) && 'bg-primary/5 text-primary font-semibold border-l-[3px] border-primary pl-[17px]',
+            )"
+            @click="emit('navigate', item.to)"
+          >
+            {{ item.label }}
+          </button>
+        </template>
+      </div>
+    </ScrollArea>
   </aside>
 </template>
-
-<style scoped>
-.o-settings-sidebar {
-  position: fixed;
-  top: var(--o-navbar-height);
-  left: 0;
-  bottom: 0;
-  width: var(--o-settings-sidebar-width, 200px);
-  background: var(--o-view-background);
-  border-right: 1px solid var(--o-border-color);
-  z-index: 998;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-.o-settings-sidebar::-webkit-scrollbar {
-  width: 4px;
-}
-.o-settings-sidebar::-webkit-scrollbar-thumb {
-  background: var(--o-gray-300, #d4d4d4);
-  border-radius: 2px;
-}
-
-.o-settings-sidebar-inner {
-  padding: 8px 0;
-}
-
-.o-settings-group-label {
-  padding: 12px 16px 4px 16px;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  color: var(--o-gray-400, #c0c4cc);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  user-select: none;
-}
-.o-settings-sidebar-inner > .o-settings-group-label:first-child {
-  padding-top: 6px;
-}
-
-.o-settings-sidebar-item {
-  display: block;
-  width: 100%;
-  padding: 7px 16px 7px 20px;
-  font-size: var(--o-font-size-small, 13px);
-  color: var(--o-gray-600, #606266);
-  text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border: none;
-  background: none;
-  cursor: pointer;
-  transition: background 0.1s, color 0.1s;
-}
-.o-settings-sidebar-item:hover {
-  background: var(--o-gray-100, #f5f7fa);
-  color: var(--o-gray-900, #1d1d1d);
-}
-.o-settings-sidebar-item.active {
-  background: var(--o-brand-lighter, #FAF0EA);
-  color: var(--o-brand-primary, #0052A3);
-  font-weight: 600;
-  border-left: 3px solid var(--o-brand-primary, #0052A3);
-  padding-left: 17px;
-}
-
-@media (max-width: 768px) {
-  .o-settings-sidebar {
-    width: 220px;
-  }
-}
-
-@media (max-width: 480px) {
-  .o-settings-sidebar {
-    position: fixed;
-    width: 100%;
-    height: auto;
-    max-height: 50vh;
-    top: var(--o-navbar-height);
-    bottom: auto;
-    border-right: none;
-    border-bottom: 1px solid var(--o-border-color);
-    z-index: 998;
-  }
-}
-</style>

@@ -2,6 +2,7 @@
 // 404ページ / 404 Not Found page
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
+import { Button } from '@/components/ui/button'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -19,9 +20,9 @@ function goHome() {
       <p class="not-found__description">
         {{ t('wms.ui.pageNotFoundDescription', 'お探しのページは存在しないか、移動した可能性があります。') }}
       </p>
-      <button class="not-found__button" @click="goHome">
+      <Button class="not-found__button" @click="goHome">
         {{ t('wms.ui.goHome', 'ホームに戻る') }}
-      </button>
+      </Button>
     </div>
   </div>
 </template>

@@ -1,24 +1,27 @@
 <template>
   <div class="expiry-alerts">
-    <ControlPanel :title="t('wms.inventory.expiryAlerts', '賞味期限アラート')" :show-search="false">
+    <PageHeader :title="t('wms.inventory.expiryAlerts', '賞味期限アラート')" :show-search="false">
       <template #center>
         <div style="display:flex;align-items:center;gap:8px;">
           <span style="font-size:13px;color:#606266;">{{ t('wms.inventory.displayPeriod', '表示期間') }}</span>
-          <select v-model="daysAhead" class="o-input" style="width:120px;" @change="loadData">
-            <option :value="7">{{ t('wms.inventory.withinDays', { n: '7' }) }}</option>
-            <option :value="14">{{ t('wms.inventory.withinDays', { n: '14' }) }}</option>
-            <option :value="30">{{ t('wms.inventory.withinDays', { n: '30' }) }}</option>
-            <option :value="60">{{ t('wms.inventory.withinDays', { n: '60' }) }}</option>
-            <option :value="90">{{ t('wms.inventory.withinDays', { n: '90' }) }}</option>
-          </select>
+          <Select :model-value="String(daysAhead)" @update:model-value="(v: string) => { daysAhead = Number(v); loadData() }">
+            <SelectTrigger style="width:120px;"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">{{ t('wms.inventory.withinDays', { n: '7' }) }}</SelectItem>
+              <SelectItem value="14">{{ t('wms.inventory.withinDays', { n: '14' }) }}</SelectItem>
+              <SelectItem value="30">{{ t('wms.inventory.withinDays', { n: '30' }) }}</SelectItem>
+              <SelectItem value="60">{{ t('wms.inventory.withinDays', { n: '60' }) }}</SelectItem>
+              <SelectItem value="90">{{ t('wms.inventory.withinDays', { n: '90' }) }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </template>
       <template #actions>
-        <OButton variant="secondary" size="sm" :disabled="isUpdating" @click="handleUpdateExpired">
+        <Button variant="secondary" size="sm" :disabled="isUpdating" @click="handleUpdateExpired">
           {{ isUpdating ? t('wms.inventory.updating', '更新中...') : t('wms.inventory.batchUpdateExpired', '期限切れ一括更新') }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- サマリーカード / 摘要卡片 -->
     <div class="summary-cards">
@@ -40,40 +43,35 @@
       </div>
     </div>
 
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="expiryAlertsSearch"
-      @search="handleSearch"
-    />
-
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="alerts"
         row-key="lotId"
         pagination-enabled
         pagination-mode="client"
         :global-search-text="globalSearchText"
+        :search-columns="searchColumns"
+        @search="handleSearch"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import { fetchExpiryAlerts, updateExpiredLots } from '@/api/lot'
 import type { ExpiryAlert } from '@/types/inventory'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-
+import { ref, computed, h, onMounted } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 const { t } = useI18n()
 
@@ -295,13 +293,7 @@ async function loadData() {
 }
 
 async function handleUpdateExpired() {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inventory.confirmBatchUpdate', '期限切れのロットステータスを一括更新しますか？ / 确定要批量更新过期批次状态吗？'),
-      '確認 / 确认',
-      { confirmButtonText: '更新 / 更新', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   isUpdating.value = true
   try {
     const res = await updateExpiredLots()

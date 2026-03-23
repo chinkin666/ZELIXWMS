@@ -11,13 +11,11 @@
   />
 
   <!-- 表示モード -->
-  <ODialog
-    v-else
-    :open="visible"
-    :title="title"
-    @close="visible = false"
-    width="860px"
-  >
+  <Dialog v-else :open="visible" @update:open="visible = $event">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>{{ title }}</DialogTitle>
+      </DialogHeader>
     <div style="max-height: 560px; overflow: auto">
       <div class="content">
         <div class="descriptions-grid">
@@ -129,18 +127,19 @@
       </div>
     </div>
 
-    <template #footer>
+    <DialogFooter>
       <div class="footer">
-        <OButton variant="secondary" @click="visible = false">閉じる</OButton>
+        <Button variant="secondary" @click="visible = false">閉じる</Button>
       </div>
-    </template>
-  </ODialog>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import FormDialog from '@/components/form/FormDialog.vue'
 import { getOrderFieldDefinitions } from '@/types/order'
 import type { OrderDocument } from '@/types/order'

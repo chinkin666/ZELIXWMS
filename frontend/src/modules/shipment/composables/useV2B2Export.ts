@@ -1,4 +1,4 @@
-import { ElMessage } from 'element-plus'
+import { toast } from 'vue-sonner'
 import { yamatoB2Export } from '@/api/carrierAutomation'
 import type { V2State } from './useV2State'
 
@@ -13,13 +13,13 @@ export function useV2B2Export({ state, loadBackendOrders }: B2ExportDeps) {
 
     const carrierIdSet = new Set(state.selectedRows.value.map((r) => String(r.carrierId || '')).filter(Boolean))
     if (carrierIdSet.size !== 1) {
-      ElMessage.warning('選択した行の配送業者が一致しません。配送業者ごとに出力してください。')
+      toast.warning('選択した行の配送業者が一致しません。配送業者ごとに出力してください。')
       return
     }
     const carrierId = Array.from(carrierIdSet)[0]!
     const carrier = state.carriers.value.find((c) => c._id === carrierId)
     if (!carrier || carrier.automationType !== 'yamato-b2') {
-      ElMessage.warning('選択した配送業者はB2 Cloud自動連携に対応していません')
+      toast.warning('選択した配送業者はB2 Cloud自動連携に対応していません')
       return
     }
 
@@ -31,8 +31,8 @@ export function useV2B2Export({ state, loadBackendOrders }: B2ExportDeps) {
       const result = await yamatoB2Export(orderIds)
       state.b2ExportResult.value = result
       state.b2ExportResultDialogVisible.value = true
-      if (result.success_count > 0) ElMessage.success(`${result.success_count}件の送信に成功しました`)
-      if (result.error_count > 0) ElMessage.error(`${result.error_count}件の送信に失敗しました`)
+      if (result.success_count > 0) toast.success(`${result.success_count}件の送信に成功しました`)
+      if (result.error_count > 0) toast.error(`${result.error_count}件の送信に失敗しました`)
     } catch (e: any) {
       state.b2ApiErrorMessage.value = e?.message || 'B2 Cloudへの送信に失敗しました'
       state.b2ApiErrorDialogVisible.value = true

@@ -1,23 +1,15 @@
 <template>
   <div class="lot-management">
-    <ControlPanel :title="t('wms.inventory.lotManagement', 'ロット管理')" :show-search="false">
+    <PageHeader :title="t('wms.inventory.lotManagement', 'ロット管理')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" size="sm" @click="openCreateDialog">
+        <Button variant="default" size="sm" @click="openCreateDialog">
           {{ t('wms.common.create', '新規作成') }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="lotManagementSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="lots"
         row-key="_id"
@@ -28,71 +20,85 @@
         :page-size="pageSize"
         :page-sizes="[25, 50, 100]"
         :global-search-text="globalSearchText"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         @page-change="handlePageChange"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogVisible" :title="editingId ? t('wms.inventory.editLot', 'ロット編集') : t('wms.inventory.createLot', 'ロット新規作成')" size="md">
-      <div class="dialog-form">
-        <div v-if="!editingId" class="form-field">
-          <label class="form-label">{{ t('wms.inventory.product', '商品') }}</label>
-          <select v-model="form.productId" class="o-input">
-            <option value="">{{ t('wms.inventory.selectProduct', '商品を選択...') }}</option>
-            <option v-for="p in productOptions" :key="p._id" :value="p._id">{{ p.sku }} - {{ p.name }}</option>
-          </select>
+    <Dialog :open="dialogVisible" @update:open="dialogVisible = $event">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{{ editingId ? t('wms.inventory.editLot', 'ロット編集') : t('wms.inventory.createLot', 'ロット新規作成') }}</DialogTitle>
+        </DialogHeader>
+        <div class="dialog-form">
+          <div v-if="!editingId" class="form-field">
+            <label>{{ t('wms.inventory.product', '商品') }}</label>
+            <Select :model-value="form.productId || '__none__'" @update:model-value="(v: string) => { form.productId = v === '__none__' ? '' : v }">
+              <SelectTrigger><SelectValue :placeholder="t('wms.inventory.selectProduct', '商品を選択...')" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="p in productOptions" :key="p._id" :value="p._id">{{ p.sku }} - {{ p.name }}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div v-if="!editingId" class="form-field">
+            <label>{{ t('wms.inventory.lotNumber', 'ロット番号') }}</label>
+            <Input v-model="form.lotNumber" type="text" :placeholder="t('wms.inventory.lotNumberPlaceholder', '例: LOT-2026-001')" />
+          </div>
+          <div class="form-field">
+            <label>{{ t('wms.inventory.expiryDate', '賞味期限') }}</label>
+            <Input v-model="form.expiryDate" type="date" />
+          </div>
+          <div class="form-field">
+            <label>{{ t('wms.inventory.manufactureDate', '製造日') }}</label>
+            <Input v-model="form.manufactureDate" type="date" />
+          </div>
+          <div v-if="editingId" class="form-field">
+            <label>{{ t('wms.inventory.lotStatus', 'ステータス') }}</label>
+            <Select v-model="form.status">
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">{{ t('wms.inventory.statusActive', '有効') }}</SelectItem>
+                <SelectItem value="expired">{{ t('wms.inventory.expired', '期限切れ') }}</SelectItem>
+                <SelectItem value="recalled">{{ t('wms.inventory.statusRecalled', 'リコール') }}</SelectItem>
+                <SelectItem value="quarantine">{{ t('wms.inventory.statusQuarantine', '隔離') }}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div class="form-field">
+            <label>{{ t('wms.inventory.memo', 'メモ') }}</label>
+            <textarea v-model="form.memo" rows="2" />
+          </div>
         </div>
-        <div v-if="!editingId" class="form-field">
-          <label class="form-label">{{ t('wms.inventory.lotNumber', 'ロット番号') }}</label>
-          <input v-model="form.lotNumber" type="text" class="o-input" :placeholder="t('wms.inventory.lotNumberPlaceholder', '例: LOT-2026-001')" />
-        </div>
-        <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.expiryDate', '賞味期限') }}</label>
-          <input v-model="form.expiryDate" type="date" class="o-input" />
-        </div>
-        <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.manufactureDate', '製造日') }}</label>
-          <input v-model="form.manufactureDate" type="date" class="o-input" />
-        </div>
-        <div v-if="editingId" class="form-field">
-          <label class="form-label">{{ t('wms.inventory.lotStatus', 'ステータス') }}</label>
-          <select v-model="form.status" class="o-input">
-            <option value="active">{{ t('wms.inventory.statusActive', '有効') }}</option>
-            <option value="expired">{{ t('wms.inventory.expired', '期限切れ') }}</option>
-            <option value="recalled">{{ t('wms.inventory.statusRecalled', 'リコール') }}</option>
-            <option value="quarantine">{{ t('wms.inventory.statusQuarantine', '隔離') }}</option>
-          </select>
-        </div>
-        <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.memo', 'メモ') }}</label>
-          <textarea v-model="form.memo" class="o-input" rows="2" />
-        </div>
-      </div>
-      <template #footer>
-        <OButton variant="secondary" @click="dialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-        <OButton variant="primary" :disabled="isSaving" @click="handleSave">
-          {{ isSaving ? t('wms.inventory.saving', '保存中...') : t('wms.common.save', '保存') }}
-        </OButton>
-      </template>
-    </ODialog>
+        <DialogFooter>
+          <Button variant="secondary" @click="dialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+          <Button variant="default" :disabled="isSaving" @click="handleSave">
+            {{ isSaving ? t('wms.inventory.saving', '保存中...') : t('wms.common.save', '保存') }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import { fetchLots, createLot, updateLot, deleteLot } from '@/api/lot'
 import type { Lot, LotStatus } from '@/types/inventory'
 import { http } from '@/api/http'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-
+import { ref, computed, h, onMounted } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 const { t } = useI18n()
 
@@ -274,8 +280,8 @@ const tableColumns = computed<TableColumn[]>(() => [
     width: 140,
     cellRenderer: ({ rowData }: { rowData: Lot }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEditDialog(rowData) }, () => t('wms.common.edit', '編集')),
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEditDialog(rowData) }, () => t('wms.common.edit', '編集')),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')),
       ]),
   },
 ])
@@ -392,13 +398,7 @@ async function handleSave() {
 }
 
 async function handleDelete(lot: Lot) {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inventory.confirmDeleteLot', `ロット「${lot.lotNumber}」を削除しますか？ / 确定要删除批次「${lot.lotNumber}」吗？`),
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteLot(lot._id)
     await loadData()

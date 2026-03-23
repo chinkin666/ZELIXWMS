@@ -2,7 +2,7 @@
   <div class="panel left">
     <div class="panel-title">データフィールド</div>
 
-    <input v-model="localFieldFilter" class="o-input" :placeholder="t('wms.printTemplate.searchKey')" style="width: 100%" />
+    <Input v-model="localFieldFilter" :placeholder="t('wms.printTemplate.searchKey')" style="width: 100%" />
     <div class="fields">
       <div
         v-for="k in filteredFieldKeys"
@@ -19,19 +19,20 @@
     <div class="panel-title" style="margin-top: 12px">{{ t('wms.printTemplate.uploadTable') }}</div>
     <input ref="tableFileInput" type="file" accept=".csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" class="hidden-input" @change="onTableFileChange" />
     <div class="row">
-      <OButton variant="secondary" @click="triggerTableUpload">{{ t('wms.printTemplate.selectFile') }}</OButton>
-      <OButton variant="secondary" :disabled="!uploadedTableData.length" @click="$emit('clear-table-data')">{{ t('wms.search.clear') }}</OButton>
+      <Button variant="secondary" @click="triggerTableUpload">{{ t('wms.printTemplate.selectFile') }}</Button>
+      <Button variant="secondary" :disabled="!uploadedTableData.length" @click="$emit('clear-table-data')">{{ t('wms.search.clear') }}</Button>
     </div>
     <div v-if="uploadedTableData && uploadedTableData.length > 0" class="meta" style="margin-top: 8px">
       <div>{{ t('wms.printTemplate.rowsLoaded', { count: uploadedTableData.length }) }}</div>
       <div style="margin-top: 8px">
-        <select :value="selectedRowIndex" class="o-input" style="width: 100%" @change="$emit('update:selectedRowIndex', Number(($event.target as HTMLSelectElement).value))">
-          <option
-            v-for="(row, idx) in uploadedTableData"
-            :key="idx"
-            :value="idx"
-          >{{ t('wms.printTemplate.rowN', { n: idx + 2 }) }}</option>
-        </select>
+        <Select :model-value="String(selectedRowIndex)" @update:model-value="$emit('update:selectedRowIndex', Number($event))">
+          <SelectTrigger class="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="(row, idx) in uploadedTableData" :key="idx" :value="String(idx)">{{ t('wms.printTemplate.rowN', { n: idx + 2 }) }}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
     <div style="margin-bottom: 8px">
@@ -46,8 +47,10 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useI18n } from '@/composables/useI18n'
+import { Input } from '@/components/ui/input'
 
 const { t } = useI18n()
 
@@ -158,7 +161,7 @@ function onTableFileChange(e: Event) {
 .hidden-input {
   display: none;
 }
-.o-input {
+.{
   padding: 6px 10px;
   border: 1px solid var(--o-border-color, #dee2e6);
   border-radius: 4px;

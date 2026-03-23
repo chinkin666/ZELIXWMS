@@ -1,15 +1,15 @@
 <template>
   <div class="printer-settings">
-    <ControlPanel :title="t('wms.settings.printerSettings', 'プリンター設定')" :show-search="false">
+    <PageHeader :title="t('wms.settings.printerSettings', 'プリンター設定')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="handleReset">{{ t('wms.settings.reset', 'リセット') }}</OButton>
+        <Button variant="secondary" size="sm" @click="handleReset">{{ t('wms.settings.reset', 'リセット') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- Print Method Selection -->
-    <div class="o-card method-card">
+    <Card class="method-card">
       <div class="o-form-group" style="margin-bottom:0">
-        <label class="form-label">{{ t('wms.settings.printMethod', '印刷方法') }}</label>
+        <label>{{ t('wms.settings.printMethod', '印刷方法') }}</label>
         <div class="radio-group">
           <label class="radio-option">
             <input
@@ -33,11 +33,11 @@
           </label>
         </div>
       </div>
-    </div>
+    </Card>
 
     <!-- Browser Mode: Simple Info -->
     <template v-if="config.method === 'browser'">
-      <div class="o-card browser-info">
+      <Card class="browser-info">
         <div class="browser-info-content">
           <svg width="32" height="32" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.3">
             <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
@@ -47,72 +47,78 @@
           <p class="browser-info-desc">ブラウザの標準印刷機能を使用します。印刷時にブラウザのダイアログが表示されます。</p>
           <p class="browser-info-hint">追加設定は不要です。プリンターはブラウザ側で選択してください。</p>
         </div>
-      </div>
+      </Card>
     </template>
 
     <!-- 共通印刷パラメータ / 共通印刷参数 -->
-    <div class="o-card params-card">
+    <Card class="params-card">
       <div class="params-title">印刷パラメータ</div>
       <div class="params-grid">
         <div class="params-group">
           <label class="params-label">左余白 (mm)</label>
-          <input class="o-input" type="number" v-model.number="printParams.marginLeftMm" min="0" max="50" step="0.5" style="width:100px" />
+          <Input type="number" v-model.number="printParams.marginLeftMm" min="0" max="50" step="0.5" style="width:100px" />
         </div>
         <div class="params-group">
           <label class="params-label">上余白 (mm)</label>
-          <input class="o-input" type="number" v-model.number="printParams.marginTopMm" min="0" max="50" step="0.5" style="width:100px" />
+          <Input type="number" v-model.number="printParams.marginTopMm" min="0" max="50" step="0.5" style="width:100px" />
         </div>
         <div class="params-group">
           <label class="params-label">印刷比率</label>
           <div class="scale-buttons">
-            <button
+            <Button
               v-for="pct in SCALE_PRESETS"
               :key="pct"
+              :variant="printParams.scalePercent === pct ? 'default' : 'outline'"
+              size="sm"
               class="scale-btn"
               :class="{ active: printParams.scalePercent === pct }"
               @click="setScale(pct)"
-            >{{ pct }}%</button>
+            >{{ pct }}%</Button>
           </div>
         </div>
         <div class="params-group">
           <label class="params-label">カスタム比率 (%)</label>
-          <input class="o-input" type="number" v-model.number="printParams.scalePercent" min="10" max="400" step="1" style="width:100px" />
+          <Input type="number" v-model.number="printParams.scalePercent" min="10" max="400" step="1" style="width:100px" />
         </div>
         <div class="params-group">
           <label class="params-label">印刷部数</label>
-          <input class="o-input" type="number" v-model.number="printParams.copies" min="1" max="50" style="width:80px" />
+          <Input type="number" v-model.number="printParams.copies" min="1" max="50" style="width:80px" />
         </div>
       </div>
       <div class="params-actions">
-        <OButton variant="primary" size="sm" @click="saveParams">設定を保存</OButton>
+        <Button variant="default" size="sm" @click="saveParams">設定を保存</Button>
         <span v-if="paramsSaved" class="params-saved">保存しました</span>
       </div>
-    </div>
+    </Card>
 
     <!-- Local Bridge Mode: 4 Tabs -->
     <template v-if="config.method === 'local-bridge'">
-      <div class="o-card tabs-card">
+      <Card class="tabs-card">
         <div class="o-tabs">
-          <button
+          <Button
+            :variant="activeTab === 'connection' ? 'default' : 'ghost'"
             class="o-tab"
             :class="{ active: activeTab === 'connection' }"
             @click="activeTab = 'connection'"
-          >{{ t('wms.settings.connection', '接続') }}</button>
-          <button
+          >{{ t('wms.settings.connection', '接続') }}</Button>
+          <Button
+            :variant="activeTab === 'printers' ? 'default' : 'ghost'"
             class="o-tab"
             :class="{ active: activeTab === 'printers' }"
             @click="activeTab = 'printers'"
-          >{{ t('wms.settings.printerList', 'プリンター一覧') }}</button>
-          <button
+          >{{ t('wms.settings.printerList', 'プリンター一覧') }}</Button>
+          <Button
+            :variant="activeTab === 'print-templates' ? 'default' : 'ghost'"
             class="o-tab"
             :class="{ active: activeTab === 'print-templates' }"
             @click="activeTab = 'print-templates'"
-          >{{ t('wms.settings.printTemplates', '印刷テンプレート') }}</button>
-          <button
+          >{{ t('wms.settings.printTemplates', '印刷テンプレート') }}</Button>
+          <Button
+            :variant="activeTab === 'form-templates' ? 'default' : 'ghost'"
             class="o-tab"
             :class="{ active: activeTab === 'form-templates' }"
             @click="activeTab = 'form-templates'"
-          >{{ t('wms.settings.formTemplates', '帳票テンプレート') }}</button>
+          >{{ t('wms.settings.formTemplates', '帳票テンプレート') }}</Button>
         </div>
 
         <div class="tab-content">
@@ -126,16 +132,17 @@
           <PrintTemplatePrinterTab v-if="activeTab === 'print-templates'" :printers="cachedPrinters" />
           <FormTemplatePrinterTab v-if="activeTab === 'form-templates'" :printers="cachedPrinters" />
         </div>
-      </div>
+      </Card>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import {
@@ -149,6 +156,9 @@ import ConnectionTab from './printer/ConnectionTab.vue'
 import PrinterListTab from './printer/PrinterListTab.vue'
 import PrintTemplatePrinterTab from './printer/PrintTemplatePrinterTab.vue'
 import FormTemplatePrinterTab from './printer/FormTemplatePrinterTab.vue'
+import { Input } from '@/components/ui/input'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
@@ -214,13 +224,7 @@ function handleMethodChange(method: string) {
 }
 
 async function handleReset() {
-  try {
-    await ElMessageBox.confirm(
-      'すべてのプリンター設定をリセットしますか？テンプレートごとの設定もすべて削除されます。 / 确定要重置所有打印机设置吗？每个模板的设置也将全部删除。',
-      '確認 / 确认',
-      { confirmButtonText: 'リセット / 重置', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   resetPrintConfig()
   const fresh = getPrintConfig()
   Object.assign(config, fresh)

@@ -1,10 +1,10 @@
 <template>
   <div class="delivery-completion">
-    <ControlPanel :title="t('wms.shipment.deliveryTitle', '配完管理')" :show-search="false">
+    <PageHeader :title="t('wms.shipment.deliveryTitle', '配完管理')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="loadData">{{ t('wms.common.refresh', '更新') }}</OButton>
+        <Button variant="secondary" size="sm" @click="loadData">{{ t('wms.common.refresh', '更新') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- 集計カード / 统计卡片 -->
     <div class="summary-cards">
@@ -26,55 +26,55 @@
     <div class="section-header">
       <h3 class="section-title">出荷済みオーダー</h3>
       <div class="filter-tabs">
-        <button :class="['tab-btn', filter === 'all' && 'active']" @click="filter = 'all'; loadData()">全て</button>
-        <button :class="['tab-btn', filter === 'shipped' && 'active']" @click="filter = 'shipped'; loadData()">出荷済</button>
-        <button :class="['tab-btn', filter === 'delivered' && 'active']" @click="filter = 'delivered'; loadData()">配完済</button>
+        <Button :class="['tab-btn', filter === 'all' && 'active']" @click="filter = 'all'; loadData()">全て</Button>
+        <Button :class="['tab-btn', filter === 'shipped' && 'active']" @click="filter = 'shipped'; loadData()">出荷済</Button>
+        <Button :class="['tab-btn', filter === 'delivered' && 'active']" @click="filter = 'delivered'; loadData()">配完済</Button>
       </div>
     </div>
 
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll" /></th>
-            <th class="o-table-th">出荷管理No</th>
-            <th class="o-table-th">お客様管理番号</th>
-            <th class="o-table-th">伝票番号</th>
-            <th class="o-table-th">配送業者</th>
-            <th class="o-table-th">お届け先</th>
-            <th class="o-table-th">出荷日時</th>
-            <th class="o-table-th">配完ステータス</th>
-            <th class="o-table-th">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="orders.length === 0">
-            <td colspan="9" class="o-table-empty">データがありません</td>
-          </tr>
-          <tr v-for="order in orders" :key="order._id" class="o-table-row">
-            <td class="o-table-td"><input type="checkbox" v-model="selectedIds" :value="order._id" /></td>
-            <td class="o-table-td">{{ order.orderNumber }}</td>
-            <td class="o-table-td">{{ order.customerManagementNumber || '-' }}</td>
-            <td class="o-table-td">{{ order.trackingId || '未発行' }}</td>
-            <td class="o-table-td">{{ getCarrierName(order.carrierId) }}</td>
-            <td class="o-table-td">{{ order.recipient?.name || '-' }}</td>
-            <td class="o-table-td">{{ formatDate(order.statusShippedAt) }}</td>
-            <td class="o-table-td">
+    <div class="rounded-md border overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead><Checkbox :checked="selectAll" @update:checked="(v: boolean) => { selectAll = v; toggleSelectAll() }" /></TableHead>
+            <TableHead>出荷管理No</TableHead>
+            <TableHead>お客様管理番号</TableHead>
+            <TableHead>伝票番号</TableHead>
+            <TableHead>配送業者</TableHead>
+            <TableHead>お届け先</TableHead>
+            <TableHead>出荷日時</TableHead>
+            <TableHead>配完ステータス</TableHead>
+            <TableHead>操作</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="orders.length === 0">
+            <TableCell colspan="9" class="text-center py-8 text-muted-foreground">データがありません</TableCell>
+          </TableRow>
+          <TableRow v-for="order in orders" :key="order._id">
+            <TableCell><Checkbox :checked="selectedIds.includes(order._id)" @update:checked="(v: boolean) => { if (v) { selectedIds.push(order._id) } else { selectedIds = selectedIds.filter(id => id !== order._id) } }" /></TableCell>
+            <TableCell>{{ order.orderNumber }}</TableCell>
+            <TableCell>{{ order.customerManagementNumber || '-' }}</TableCell>
+            <TableCell>{{ order.trackingId || '未発行' }}</TableCell>
+            <TableCell>{{ getCarrierName(order.carrierId) }}</TableCell>
+            <TableCell>{{ order.recipient?.name || '-' }}</TableCell>
+            <TableCell>{{ formatDate(order.statusShippedAt) }}</TableCell>
+            <TableCell>
               <span v-if="order.statusCarrierReceived" class="badge badge-success">配完</span>
               <span v-else class="badge badge-warning">未配完</span>
-            </td>
-            <td class="o-table-td">
-              <button v-if="!order.statusCarrierReceived" class="btn-action" @click="markDelivered(order._id)">配完</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </TableCell>
+            <TableCell>
+              <Button v-if="!order.statusCarrierReceived" class="btn-action" @click="markDelivered(order._id)">配完</Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <!-- 一括配完ボタン / 批量配完按钮 -->
     <div v-if="selectedIds.length > 0" class="bulk-actions">
       <span>{{ selectedIds.length }}件選択中</span>
-      <OButton variant="primary" size="sm" @click="markDeliveredBulk">一括配完</OButton>
+      <Button variant="default" size="sm" @click="markDeliveredBulk">一括配完</Button>
     </div>
   </div>
 </template>
@@ -83,8 +83,10 @@
 import { onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { apiFetch } from '@/api/http'
 import { getApiBaseUrl } from '@/api/base'
 

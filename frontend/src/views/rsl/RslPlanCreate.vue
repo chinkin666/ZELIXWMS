@@ -1,12 +1,12 @@
 <template>
   <div class="rsl-plan-create">
-    <ControlPanel :title="isEditMode ? 'RSLプラン編集' : 'RSLプラン作成'" :show-search="false">
+    <PageHeader :title="isEditMode ? 'RSLプラン編集' : 'RSLプラン作成'" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;align-items:center;">
-          <OButton variant="secondary" size="sm" @click="$router.push('/rsl/plans')">戻る</OButton>
+          <Button variant="outline" size="sm" @click="$router.push('/rsl/plans')">戻る</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <div class="form-container">
       <!-- 基本情報 / 基本信息 -->
@@ -14,38 +14,40 @@
         <h3 class="section-title">基本情報</h3>
         <div class="form-fields">
           <div class="o-field-row">
-            <label class="o-field-label">配送先倉庫 <span class="required-badge">必須</span></label>
+            <label class="o-field-label">配送先倉庫 <span class="text-destructive text-xs">*</span></label>
             <div class="o-field-value">
-              <select class="o-inline-input" :value="form.destinationWarehouse" @change="handleWarehouseChange" :disabled="isViewOnly">
-                <option value="">選択してください</option>
-                <option v-for="wh in rslWarehouseList" :key="wh" :value="wh">
-                  {{ wh }}
-                </option>
-              </select>
+              <Select :model-value="form.destinationWarehouse || '__none__'" @update:model-value="(v: string) => { form.destinationWarehouse = v === '__none__' ? '' : v }" :disabled="isViewOnly">
+                <SelectTrigger class="o-inline-input"><SelectValue placeholder="選択してください" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem v-for="wh in rslWarehouseList" :key="wh" :value="wh">
+                    {{ wh }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div class="o-field-row">
             <label class="o-field-label">出荷予定日</label>
             <div class="o-field-value">
-              <input class="o-inline-input" type="date" :value="form.shipDate" @input="handleShipDateChange" :disabled="isViewOnly" />
+              <Input class="o-inline-input" type="date" :value="form.shipDate" @input="handleShipDateChange" :disabled="isViewOnly" />
             </div>
           </div>
           <div class="o-field-row">
             <label class="o-field-label">追跡番号</label>
             <div class="o-field-value">
-              <input class="o-inline-input" :value="form.trackingNumber" @input="handleTrackingChange" placeholder="追跡番号" :disabled="isViewOnly" />
+              <Input class="o-inline-input" :value="form.trackingNumber" @input="handleTrackingChange" placeholder="追跡番号" :disabled="isViewOnly" />
             </div>
           </div>
           <div class="o-field-row">
             <label class="o-field-label">箱数</label>
             <div class="o-field-value">
-              <input class="o-inline-input" type="number" :value="form.boxCount" @input="handleBoxCountChange" placeholder="箱数" min="1" :disabled="isViewOnly" />
+              <Input class="o-inline-input" type="number" :value="form.boxCount" @input="handleBoxCountChange" placeholder="箱数" min="1" :disabled="isViewOnly" />
             </div>
           </div>
           <div class="o-field-row">
             <label class="o-field-label">メモ</label>
             <div class="o-field-value">
-              <input class="o-inline-input" :value="form.memo" @input="handleMemoChange" placeholder="メモ" :disabled="isViewOnly" />
+              <Input class="o-inline-input" :value="form.memo" @input="handleMemoChange" placeholder="メモ" :disabled="isViewOnly" />
             </div>
           </div>
         </div>
@@ -55,7 +57,7 @@
       <div class="form-section">
         <h3 class="section-title">商品一覧</h3>
         <div v-if="!isViewOnly" class="product-search">
-          <input
+          <Input
             class="o-inline-input"
             :value="productSearchText"
             @input="(e: Event) => productSearchText = (e.target as HTMLInputElement).value"
@@ -76,21 +78,21 @@
           </div>
         </div>
 
-        <table v-if="form.items.length > 0" class="o-lines-table">
-          <thead>
-            <tr>
-              <th>SKU</th>
-              <th>楽天SKU</th>
-              <th>商品名</th>
-              <th style="width:120px;">数量</th>
-              <th v-if="!isViewOnly" style="width:50px;"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(item, index) in form.items" :key="item.productId">
-              <td>{{ item.sku }}</td>
-              <td>
-                <input
+        <Table v-if="form.items.length > 0">
+          <TableHeader>
+            <TableRow>
+              <TableHead>SKU</TableHead>
+              <TableHead>楽天SKU</TableHead>
+              <TableHead>商品名</TableHead>
+              <TableHead style="width:120px;">数量</TableHead>
+              <TableHead v-if="!isViewOnly" style="width:50px;"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="(item, index) in form.items" :key="item.productId">
+              <TableCell>{{ item.sku }}</TableCell>
+              <TableCell>
+                <Input
                   v-if="!isViewOnly"
                   class="o-inline-input"
                   :value="item.rakutenSku"
@@ -98,10 +100,10 @@
                   placeholder="楽天SKU"
                 />
                 <span v-else>{{ item.rakutenSku || '-' }}</span>
-              </td>
-              <td>{{ item.productName }}</td>
-              <td>
-                <input
+              </TableCell>
+              <TableCell>{{ item.productName }}</TableCell>
+              <TableCell>
+                <Input
                   v-if="!isViewOnly"
                   class="o-inline-input"
                   type="number"
@@ -110,15 +112,15 @@
                   min="1"
                 />
                 <span v-else>{{ item.quantity }}</span>
-              </td>
-              <td v-if="!isViewOnly" style="text-align:center;">
-                <OButton variant="icon-danger" @click="removeItem(index)" title="削除">
+              </TableCell>
+              <TableCell v-if="!isViewOnly" style="text-align:center;">
+                <Button variant="destructive" @click="removeItem(index)" title="削除">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                </OButton>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                </Button>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
         <div v-else class="empty-items">
           商品が追加されていません。上の検索欄からRSL対応商品を追加してください。
         </div>
@@ -126,10 +128,10 @@
 
       <!-- フッターアクション / 页脚操作 -->
       <div v-if="!isViewOnly" class="form-actions">
-        <OButton variant="secondary" @click="$router.push('/rsl/plans')">キャンセル</OButton>
+        <Button variant="outline" @click="$router.push('/rsl/plans')">キャンセル</Button>
         <div style="display:flex;gap:8px;">
-          <OButton variant="secondary" :disabled="submitting" @click="handleSaveDraft">下書き保存</OButton>
-          <OButton variant="primary" :disabled="submitting" @click="handleSaveAndConfirm">保存して確定</OButton>
+          <Button variant="outline" :disabled="submitting" @click="handleSaveDraft">下書き保存</Button>
+          <Button variant="default" :disabled="submitting" @click="handleSaveAndConfirm">保存して確定</Button>
         </div>
       </div>
     </div>
@@ -140,11 +142,14 @@
 import { computed, onMounted, ref, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { createRslPlan, updateRslPlan, getRslPlan, confirmRslPlan } from '@/api/rsl'
 import type { UpsertRslPlanDto } from '@/api/rsl'
 import { fetchProducts } from '@/api/product'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import type { Product } from '@/types/product'
 
 const route = useRoute()

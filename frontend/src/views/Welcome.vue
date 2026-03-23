@@ -29,9 +29,9 @@
           {{ t('wms.ui.lastUpdate', '最終更新') }}: {{ formatTime(data.generatedAt) }}
         </span>
         <span v-if="loading && data" class="refresh-spinner" />
-        <OButton v-else variant="secondary" size="sm" @click="loadData" :disabled="loading">
+        <Button v-else variant="outline" size="sm" @click="loadData" :disabled="loading">
           {{ loading ? t('wms.ui.loadingShort', '読込中...') : t('wms.ui.refresh', '更新') }}
-        </OButton>
+        </Button>
       </div>
     </div>
 
@@ -62,51 +62,61 @@
     </div>
 
     <!-- エラー / 错误 -->
-    <div v-else-if="error" class="error-state o-card">
-      <p>{{ t('wms.ui.fetchError', 'データの取得に失敗しました') }}: {{ error }}</p>
-      <OButton variant="primary" @click="loadData">{{ t('wms.ui.retry', '再試行') }}</OButton>
-    </div>
+    <Card v-else-if="error" class="error-state">
+      <CardContent class="pt-6">
+        <p>{{ t('wms.ui.fetchError', 'データの取得に失敗しました') }}: {{ error }}</p>
+        <Button variant="default" @click="loadData">{{ t('wms.ui.retry', '再試行') }}</Button>
+      </CardContent>
+    </Card>
 
     <template v-else-if="data">
       <!-- KPIカード / KPI卡片 -->
       <h2 class="section-title">{{ t('wms.ui.todayKpi', '本日のKPI') }}</h2>
       <div class="kpi-grid">
-        <div class="kpi-card o-card" @click="navigateTo('/shipment/operations/tasks')">
-          <div class="kpi-icon-wrap kpi-icon--blue">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path :d="icons.shipmentOps" /></svg>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-value">{{ data.shipments.todayShipped }} <span class="kpi-of">/ {{ data.shipments.todayScheduled }}</span></div>
-            <div class="kpi-label">{{ t('wms.ui.todayShipments', '今日の出荷件数') }}</div>
-          </div>
-        </div>
-        <div class="kpi-card o-card" @click="navigateTo('/inbound/dashboard')">
-          <div class="kpi-icon-wrap kpi-icon--green">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path :d="icons.inbound" /></svg>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-value">{{ data.inbound.todayReceived }}</div>
-            <div class="kpi-label">{{ t('wms.ui.todayInbound', '入庫件数') }}</div>
-          </div>
-        </div>
-        <div class="kpi-card o-card" @click="navigateTo('/inventory/stock')">
-          <div class="kpi-icon-wrap kpi-icon--purple">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path :d="icons.inventory" /></svg>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-value">{{ formatNumber(data.inventory.totalSkus) }}</div>
-            <div class="kpi-label">{{ t('wms.ui.skuCount', '在庫SKU数') }}</div>
-          </div>
-        </div>
-        <div class="kpi-card o-card" @click="navigateTo('/billing')">
-          <div class="kpi-icon-wrap kpi-icon--orange">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path :d="icons.billing" /></svg>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-value">{{ billingKpi ? formatCurrency(billingKpi.unbilledAmount) : '-' }}</div>
-            <div class="kpi-label">{{ t('wms.ui.unbilledAmount', '未請求額') }}</div>
-          </div>
-        </div>
+        <Card class="kpi-card" @click="navigateTo('/shipment/operations/tasks')">
+          <CardContent class="kpi-card-inner">
+            <div class="kpi-icon-wrap kpi-icon--blue">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path :d="icons.shipmentOps" /></svg>
+            </div>
+            <div class="kpi-content">
+              <div class="kpi-value">{{ data.shipments.todayShipped }} <span class="kpi-of">/ {{ data.shipments.todayScheduled }}</span></div>
+              <div class="kpi-label">{{ t('wms.ui.todayShipments', '今日の出荷件数') }}</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card" @click="navigateTo('/inbound/dashboard')">
+          <CardContent class="kpi-card-inner">
+            <div class="kpi-icon-wrap kpi-icon--green">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path :d="icons.inbound" /></svg>
+            </div>
+            <div class="kpi-content">
+              <div class="kpi-value">{{ data.inbound.todayReceived }}</div>
+              <div class="kpi-label">{{ t('wms.ui.todayInbound', '入庫件数') }}</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card" @click="navigateTo('/inventory/stock')">
+          <CardContent class="kpi-card-inner">
+            <div class="kpi-icon-wrap kpi-icon--purple">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path :d="icons.inventory" /></svg>
+            </div>
+            <div class="kpi-content">
+              <div class="kpi-value">{{ formatNumber(data.inventory.totalSkus) }}</div>
+              <div class="kpi-label">{{ t('wms.ui.skuCount', '在庫SKU数') }}</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card" @click="navigateTo('/billing')">
+          <CardContent class="kpi-card-inner">
+            <div class="kpi-icon-wrap kpi-icon--orange">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path :d="icons.billing" /></svg>
+            </div>
+            <div class="kpi-content">
+              <div class="kpi-value">{{ billingKpi ? formatCurrency(billingKpi.unbilledAmount) : '-' }}</div>
+              <div class="kpi-label">{{ t('wms.ui.unbilledAmount', '未請求額') }}</div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <!-- 出荷進捗 / 出荷進捗 -->
@@ -121,30 +131,42 @@
         <div class="progress-bar" :style="{ width: Math.min(100, Math.round((data.shipments.todayShipped / data.shipments.todayScheduled) * 100)) + '%' }" />
       </div>
       <div class="metrics-grid">
-        <div class="metric-card o-card" @click="navigateTo('/shipment/orders/create')">
-          <div class="metric-value">{{ data.shipments.todayCreated }}</div>
-          <div class="metric-label">{{ t('wms.ui.todayCreated', '本日作成') }}</div>
-        </div>
-        <div class="metric-card o-card" @click="navigateTo('/shipment/operations/tasks')">
-          <div class="metric-value highlight-green">{{ data.shipments.todayShipped }}</div>
-          <div class="metric-label">{{ t('wms.ui.todayShipped', '本日出荷済') }}</div>
-        </div>
-        <div class="metric-card o-card">
-          <div class="metric-value highlight-blue">{{ data.shipments.todayScheduled }}</div>
-          <div class="metric-label">{{ t('wms.ui.todayScheduled', '本日予定') }}</div>
-        </div>
-        <div class="metric-card o-card">
-          <div class="metric-value highlight-orange">{{ data.shipments.totalPending }}</div>
-          <div class="metric-label">{{ t('wms.ui.unshipped', '未出荷') }}</div>
-        </div>
-        <div class="metric-card o-card metric-card--warn" v-if="data.shipments.totalHeld > 0">
-          <div class="metric-value highlight-red">{{ data.shipments.totalHeld }}</div>
-          <div class="metric-label">{{ t('wms.ui.onHold', '保留中') }}</div>
-        </div>
-        <div class="metric-card o-card metric-card--danger" v-if="data.overdueOrders > 0" @click="navigateTo('/shipment/operations/tasks')">
-          <div class="metric-value highlight-red">{{ data.overdueOrders }}</div>
-          <div class="metric-label">{{ t('wms.ui.overdueShipments', '出荷遅延') }}</div>
-        </div>
+        <Card class="metric-card" @click="navigateTo('/shipment/orders/create')">
+          <CardContent class="metric-card-inner">
+            <div class="metric-value">{{ data.shipments.todayCreated }}</div>
+            <div class="metric-label">{{ t('wms.ui.todayCreated', '本日作成') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="metric-card" @click="navigateTo('/shipment/operations/tasks')">
+          <CardContent class="metric-card-inner">
+            <div class="metric-value highlight-green">{{ data.shipments.todayShipped }}</div>
+            <div class="metric-label">{{ t('wms.ui.todayShipped', '本日出荷済') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="metric-card">
+          <CardContent class="metric-card-inner">
+            <div class="metric-value highlight-blue">{{ data.shipments.todayScheduled }}</div>
+            <div class="metric-label">{{ t('wms.ui.todayScheduled', '本日予定') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="metric-card">
+          <CardContent class="metric-card-inner">
+            <div class="metric-value highlight-orange">{{ data.shipments.totalPending }}</div>
+            <div class="metric-label">{{ t('wms.ui.unshipped', '未出荷') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="metric-card metric-card--warn" v-if="data.shipments.totalHeld > 0">
+          <CardContent class="metric-card-inner">
+            <div class="metric-value highlight-red">{{ data.shipments.totalHeld }}</div>
+            <div class="metric-label">{{ t('wms.ui.onHold', '保留中') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="metric-card metric-card--danger" v-if="data.overdueOrders > 0" @click="navigateTo('/shipment/operations/tasks')">
+          <CardContent class="metric-card-inner">
+            <div class="metric-value highlight-red">{{ data.overdueOrders }}</div>
+            <div class="metric-label">{{ t('wms.ui.overdueShipments', '出荷遅延') }}</div>
+          </CardContent>
+        </Card>
       </div>
 
       <!-- 入庫・返品 / 入库・退货 -->
@@ -152,31 +174,41 @@
         <div>
           <h2 class="section-title">{{ t('wms.ui.inboundStatus', '入庫状況') }}</h2>
           <div class="metrics-grid metrics-small">
-            <div class="metric-card o-card" @click="navigateTo('/inbound/dashboard')">
-              <div class="metric-value">{{ data.inbound.todayReceived }}</div>
-              <div class="metric-label">{{ t('wms.ui.todayInbound', '本日入庫') }}</div>
-            </div>
-            <div class="metric-card o-card">
-              <div class="metric-value highlight-blue">{{ data.inbound.active }}</div>
-              <div class="metric-label">{{ t('wms.ui.processing', '処理中') }}</div>
-            </div>
-            <div class="metric-card o-card">
-              <div class="metric-value highlight-orange">{{ data.inbound.pendingPutaway }}</div>
-              <div class="metric-label">{{ t('wms.ui.pendingPutaway', '棚入れ待ち') }}</div>
-            </div>
+            <Card class="metric-card" @click="navigateTo('/inbound/dashboard')">
+              <CardContent class="metric-card-inner">
+                <div class="metric-value">{{ data.inbound.todayReceived }}</div>
+                <div class="metric-label">{{ t('wms.ui.todayInbound', '本日入庫') }}</div>
+              </CardContent>
+            </Card>
+            <Card class="metric-card">
+              <CardContent class="metric-card-inner">
+                <div class="metric-value highlight-blue">{{ data.inbound.active }}</div>
+                <div class="metric-label">{{ t('wms.ui.processing', '処理中') }}</div>
+              </CardContent>
+            </Card>
+            <Card class="metric-card">
+              <CardContent class="metric-card-inner">
+                <div class="metric-value highlight-orange">{{ data.inbound.pendingPutaway }}</div>
+                <div class="metric-label">{{ t('wms.ui.pendingPutaway', '棚入れ待ち') }}</div>
+              </CardContent>
+            </Card>
           </div>
         </div>
         <div>
           <h2 class="section-title">{{ t('wms.ui.returnStatus', '返品状況') }}</h2>
           <div class="metrics-grid metrics-small">
-            <div class="metric-card o-card" @click="navigateTo('/returns/list')">
-              <div class="metric-value highlight-orange">{{ data.returns.inspecting }}</div>
-              <div class="metric-label">{{ t('wms.ui.inspecting', '検品中') }}</div>
-            </div>
-            <div class="metric-card o-card">
-              <div class="metric-value highlight-green">{{ data.returns.completed }}</div>
-              <div class="metric-label">{{ t('wms.ui.completed', '完了') }}</div>
-            </div>
+            <Card class="metric-card" @click="navigateTo('/returns/list')">
+              <CardContent class="metric-card-inner">
+                <div class="metric-value highlight-orange">{{ data.returns.inspecting }}</div>
+                <div class="metric-label">{{ t('wms.ui.inspecting', '検品中') }}</div>
+              </CardContent>
+            </Card>
+            <Card class="metric-card">
+              <CardContent class="metric-card-inner">
+                <div class="metric-value highlight-green">{{ data.returns.completed }}</div>
+                <div class="metric-label">{{ t('wms.ui.completed', '完了') }}</div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -184,27 +216,35 @@
       <!-- 在庫概要 / 库存概要 -->
       <h2 class="section-title">{{ t('wms.ui.inventorySummary', '在庫概要') }}</h2>
       <div class="metrics-grid">
-        <div class="metric-card o-card" @click="navigateTo('/inventory/stock')">
-          <div class="metric-value">{{ data.inventory.totalSkus }}</div>
-          <div class="metric-label">{{ t('wms.ui.skuCount', 'SKU 数') }}</div>
-        </div>
-        <div class="metric-card o-card">
-          <div class="metric-value">{{ formatNumber(data.inventory.totalQuantity) }}</div>
-          <div class="metric-label">{{ t('wms.ui.totalStock', '総在庫数') }}</div>
-        </div>
-        <div class="metric-card o-card">
-          <div class="metric-value highlight-green">{{ formatNumber(data.inventory.availableQuantity) }}</div>
-          <div class="metric-label">{{ t('wms.ui.available', '利用可能') }}</div>
-        </div>
-        <div class="metric-card o-card">
-          <div class="metric-value highlight-orange">{{ formatNumber(data.inventory.reservedQuantity) }}</div>
-          <div class="metric-label">{{ t('wms.ui.reserved', '引当済み') }}</div>
-        </div>
+        <Card class="metric-card" @click="navigateTo('/inventory/stock')">
+          <CardContent class="metric-card-inner">
+            <div class="metric-value">{{ data.inventory.totalSkus }}</div>
+            <div class="metric-label">{{ t('wms.ui.skuCount', 'SKU 数') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="metric-card">
+          <CardContent class="metric-card-inner">
+            <div class="metric-value">{{ formatNumber(data.inventory.totalQuantity) }}</div>
+            <div class="metric-label">{{ t('wms.ui.totalStock', '総在庫数') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="metric-card">
+          <CardContent class="metric-card-inner">
+            <div class="metric-value highlight-green">{{ formatNumber(data.inventory.availableQuantity) }}</div>
+            <div class="metric-label">{{ t('wms.ui.available', '利用可能') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="metric-card">
+          <CardContent class="metric-card-inner">
+            <div class="metric-value highlight-orange">{{ formatNumber(data.inventory.reservedQuantity) }}</div>
+            <div class="metric-label">{{ t('wms.ui.reserved', '引当済み') }}</div>
+          </CardContent>
+        </Card>
       </div>
 
       <!-- 7日間トレンド / 7日趋势 -->
       <h2 class="section-title">{{ t('wms.ui.weeklyTrend', '7日間出荷トレンド') }}</h2>
-      <div class="o-card trend-card" v-if="trendData.length > 0">
+      <Card class="trend-card" v-if="trendData.length > 0">
         <div class="trend-chart">
           <div v-for="item in trendData" :key="item.date" class="trend-col">
             <div class="trend-bars">
@@ -218,59 +258,61 @@
           <span class="trend-legend-item"><span class="trend-dot trend-dot--created" /> {{ t('wms.ui.created', '作成') }}</span>
           <span class="trend-legend-item"><span class="trend-dot trend-dot--shipped" /> {{ t('wms.ui.shipped', '出荷') }}</span>
         </div>
-      </div>
+      </Card>
 
       <!-- 最近の出荷指示 / 最近的出荷指示 -->
       <h2 class="section-title">{{ t('wms.ui.recentShipments', '最近の出荷指示') }}</h2>
-      <div class="o-card recent-table-card">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th>{{ t('wms.ui.orderNumber', '注文番号') }}</th>
-              <th>{{ t('wms.ui.status', 'ステータス') }}</th>
-              <th>{{ t('wms.ui.itemCount', '商品数') }}</th>
-              <th>{{ t('wms.ui.shipPlanDate', '出荷予定日') }}</th>
-              <th>{{ t('wms.ui.createdDate', '作成日') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
+      <Card class="recent-table-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{{ t('wms.ui.orderNumber', '注文番号') }}</TableHead>
+              <TableHead>{{ t('wms.ui.status', 'ステータス') }}</TableHead>
+              <TableHead>{{ t('wms.ui.itemCount', '商品数') }}</TableHead>
+              <TableHead>{{ t('wms.ui.shipPlanDate', '出荷予定日') }}</TableHead>
+              <TableHead>{{ t('wms.ui.createdDate', '作成日') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow
               v-for="order in data.recentShipments"
               :key="order._id"
               class="clickable-row"
               @click="navigateTo('/shipment/operations/tasks')"
             >
-              <td>{{ order.orderNumber }}</td>
-              <td>
+              <TableCell>{{ order.orderNumber }}</TableCell>
+              <TableCell>
                 <span :class="['status-badge', getStatusClass(order)]">
                   {{ getStatusText(order) }}
                 </span>
-              </td>
-              <td>{{ order._productsMeta?.totalQuantity || '-' }}</td>
-              <td>{{ order.shipPlanDate || '-' }}</td>
-              <td>{{ formatDate(order.createdAt) }}</td>
-            </tr>
-            <tr v-if="data.recentShipments.length === 0">
-              <td colspan="5" class="empty-row">{{ t('wms.ui.noData', 'データがありません') }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              </TableCell>
+              <TableCell>{{ order._productsMeta?.totalQuantity || '-' }}</TableCell>
+              <TableCell>{{ order.shipPlanDate || '-' }}</TableCell>
+              <TableCell>{{ formatDate(order.createdAt) }}</TableCell>
+            </TableRow>
+            <TableRow v-if="data.recentShipments.length === 0">
+              <TableCell colspan="5" class="empty-row">{{ t('wms.ui.noData', 'データがありません') }}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </Card>
 
       <!-- クイックアクセス / 快速访问 -->
       <h2 class="section-title">{{ t('wms.ui.quickAccess', 'クイックアクセス') }}</h2>
       <div class="quick-nav-grid">
-        <div
+        <Card
           v-for="card in quickNavCards"
           :key="card.path"
-          class="o-card quick-nav-card"
+          class="quick-nav-card"
           @click="navigateTo(card.path)"
         >
-          <span class="nav-icon">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path :d="card.icon" /></svg>
-          </span>
-          <span class="nav-label">{{ card.title }}</span>
-        </div>
+          <CardContent class="quick-nav-card-inner">
+            <span class="nav-icon">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path :d="card.icon" /></svg>
+            </span>
+            <span class="nav-label">{{ card.title }}</span>
+          </CardContent>
+        </Card>
       </div>
     </template>
   </div>
@@ -281,7 +323,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useWmsUserStore } from '@/stores/wms/useWmsUserStore'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { fetchDashboardOverview, fetchShipmentTrend, type DashboardOverview, type TrendItem } from '@/api/dashboard'
 import { fetchBillingDashboard, type BillingDashboardKpi } from '@/api/billing'
 
@@ -459,8 +503,8 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 20px;
-  background: var(--o-view-background, #fff);
-  border: 1px solid var(--o-border-color, #e4e7ed);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
   margin-bottom: 16px;
 }
@@ -494,7 +538,7 @@ onUnmounted(() => {
 .user-name {
   font-size: 15px;
   font-weight: 600;
-  color: var(--o-gray-700, #303133);
+  color: hsl(var(--foreground));
 }
 
 .user-role-badge {
@@ -531,11 +575,11 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: var(--o-gray-500, #909399);
+  color: hsl(var(--muted-foreground));
 }
 
 .user-meta-separator {
-  color: var(--o-border-color, #e4e7ed);
+  color: hsl(var(--border));
 }
 
 /* バナー / 横幅 */
@@ -598,15 +642,15 @@ onUnmounted(() => {
   align-items: center;
   gap: 12px;
   padding: 16px 20px;
-  background: var(--o-view-background, #fff);
-  border: 2px solid var(--o-brand-primary, #0052A3);
+  background: hsl(var(--card));
+  border: 2px solid hsl(var(--primary));
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .quick-action-btn:hover {
-  background: var(--o-brand-primary, #0052A3);
+  background: hsl(var(--primary));
   color: #fff;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 82, 163, 0.25);
@@ -620,7 +664,7 @@ onUnmounted(() => {
   justify-content: center;
   background: rgba(0, 82, 163, 0.08);
   border-radius: 8px;
-  color: var(--o-brand-primary, #0052A3);
+  color: hsl(var(--primary));
   flex-shrink: 0;
   transition: all 0.2s;
 }
@@ -633,7 +677,7 @@ onUnmounted(() => {
 .quick-action-label {
   font-size: 14px;
   font-weight: 600;
-  color: var(--o-brand-primary, #0052A3);
+  color: hsl(var(--primary));
   transition: color 0.2s;
 }
 
@@ -650,12 +694,15 @@ onUnmounted(() => {
 }
 
 .kpi-card {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.kpi-card-inner {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px;
-  cursor: pointer;
-  transition: all 0.2s;
+  padding: 20px !important;
 }
 
 .kpi-card:hover {
@@ -700,7 +747,7 @@ onUnmounted(() => {
 .kpi-value {
   font-size: 28px;
   font-weight: 700;
-  color: var(--o-gray-700, #303133);
+  color: hsl(var(--foreground));
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -708,12 +755,12 @@ onUnmounted(() => {
 .kpi-of {
   font-size: 16px;
   font-weight: 400;
-  color: var(--o-gray-400, #c0c4cc);
+  color: hsl(var(--muted-foreground));
 }
 
 .kpi-label {
   font-size: 13px;
-  color: var(--o-gray-500, #909399);
+  color: hsl(var(--muted-foreground));
   margin-top: 4px;
 }
 
@@ -727,13 +774,13 @@ onUnmounted(() => {
 .progress-label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--o-gray-600, #606266);
+  color: hsl(var(--muted-foreground));
 }
 
 .progress-bar-wrap {
   width: 100%;
   height: 6px;
-  background: var(--o-gray-200, #f0f0f0);
+  background: hsl(var(--muted));
   border-radius: 3px;
   overflow: hidden;
   margin-bottom: 4px;
@@ -748,7 +795,7 @@ onUnmounted(() => {
 .section-title {
   font-size: 18px;
   font-weight: 600;
-  color: var(--o-gray-700, #303133);
+  color: hsl(var(--foreground));
   margin: 24px 0 12px 0;
 }
 
@@ -765,9 +812,12 @@ onUnmounted(() => {
 
 .metric-card {
   text-align: center;
-  padding: 20px 12px;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.metric-card-inner {
+  padding: 20px 12px !important;
 }
 
 .metric-card:hover {
@@ -778,13 +828,13 @@ onUnmounted(() => {
 .metric-value {
   font-size: 32px;
   font-weight: 700;
-  color: var(--o-gray-700, #303133);
+  color: hsl(var(--foreground));
   line-height: 1.2;
 }
 
 .metric-label {
   font-size: 13px;
-  color: var(--o-gray-500, #909399);
+  color: hsl(var(--muted-foreground));
   margin-top: 6px;
 }
 
@@ -807,13 +857,6 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
-}
-
-.o-card {
-  background: var(--o-view-background, #fff);
-  border: 1px solid var(--o-border-color, #e4e7ed);
-  border-radius: var(--o-border-radius, 8px);
-  padding: 1.25rem;
 }
 
 /* トレンドチャート / 趋势图 */
@@ -848,15 +891,15 @@ onUnmounted(() => {
   transition: height 0.5s ease;
 }
 .trend-bar--created {
-  background: var(--o-brand-primary, #0052A3);
+  background: hsl(var(--primary));
   opacity: 0.6;
 }
 .trend-bar--shipped {
-  background: var(--o-success, #3D8B37);
+  background: #3D8B37;
 }
 .trend-label {
   font-size: 11px;
-  color: var(--o-gray-500, #909399);
+  color: hsl(var(--muted-foreground));
   margin-top: 6px;
   white-space: nowrap;
 }
@@ -866,7 +909,7 @@ onUnmounted(() => {
   gap: 16px;
   margin-top: 10px;
   font-size: 12px;
-  color: var(--o-gray-500, #909399);
+  color: hsl(var(--muted-foreground));
 }
 .trend-legend-item {
   display: flex;
@@ -879,11 +922,11 @@ onUnmounted(() => {
   display: inline-block;
 }
 .trend-dot--created {
-  background: var(--o-brand-primary, #0052A3);
+  background: hsl(var(--primary));
   opacity: 0.6;
 }
 .trend-dot--shipped {
-  background: var(--o-success, #3D8B37);
+  background: #3D8B37;
 }
 
 .recent-table-card {
@@ -892,26 +935,26 @@ onUnmounted(() => {
   margin-bottom: 8px;
 }
 
-.o-table {
+.wms-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.o-table th {
-  background: var(--o-gray-50, #f5f7fa);
+.wms-table th {
+  background: hsl(var(--muted));
   padding: 10px 16px;
   text-align: left;
   font-size: 13px;
   font-weight: 600;
-  color: var(--o-gray-600, #606266);
-  border-bottom: 1px solid var(--o-border-color, #e4e7ed);
+  color: hsl(var(--muted-foreground));
+  border-bottom: 1px solid hsl(var(--border));
 }
 
-.o-table td {
+.wms-table td {
   padding: 10px 16px;
   font-size: 14px;
-  color: var(--o-gray-700, #303133);
-  border-bottom: 1px solid var(--o-border-color-light, #ebeef5);
+  color: hsl(var(--foreground));
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .clickable-row {
@@ -919,12 +962,12 @@ onUnmounted(() => {
 }
 
 .clickable-row:hover {
-  background: var(--o-gray-50, #f5f7fa);
+  background: hsl(var(--muted));
 }
 
 .empty-row {
   text-align: center;
-  color: var(--o-gray-400, #c0c4cc);
+  color: hsl(var(--muted-foreground));
   padding: 24px 16px !important;
 }
 
@@ -949,12 +992,15 @@ onUnmounted(() => {
 }
 
 .quick-nav-card {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-nav-card-inner {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: all 0.2s;
+  padding: 14px 16px !important;
 }
 
 .quick-nav-card:hover {
@@ -963,13 +1009,13 @@ onUnmounted(() => {
 }
 
 .nav-icon {
-  color: var(--o-brand-primary, #714b67);
+  color: hsl(var(--primary));
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--o-gray-50, #f5f7fa);
+  background: hsl(var(--muted));
   border-radius: 6px;
   flex-shrink: 0;
 }
@@ -977,7 +1023,7 @@ onUnmounted(() => {
 .nav-label {
   font-size: 13px;
   font-weight: 500;
-  color: var(--o-gray-700, #303133);
+  color: hsl(var(--foreground));
 }
 
 /* スケルトンスクリーン / 骨架屏 */
@@ -985,8 +1031,8 @@ onUnmounted(() => {
 .skeleton-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .skeleton-grid.half { grid-template-columns: repeat(3, 1fr); }
 .skeleton-card {
-  background: var(--o-view-background, #fff);
-  border: 1px solid var(--o-border-color, #e4e7ed);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
   padding: 20px;
   display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -1000,8 +1046,8 @@ onUnmounted(() => {
 .skeleton-line.lg { width: 60px; height: 28px; }
 .skeleton-line.sm { width: 80px; height: 14px; }
 .skeleton-table {
-  background: var(--o-view-background, #fff);
-  border: 1px solid var(--o-border-color, #e4e7ed);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
   padding: 12px;
   display: flex; flex-direction: column; gap: 10px;
@@ -1018,7 +1064,7 @@ onUnmounted(() => {
 .error-state {
   text-align: center;
   padding: 40px 20px;
-  color: var(--o-gray-500, #909399);
+  color: hsl(var(--muted-foreground));
 }
 
 @media (max-width: 768px) {
@@ -1062,25 +1108,4 @@ onUnmounted(() => {
   }
 }
 
-/* ダークモード / 暗色模式 */
-:global([data-theme="dark"]) .user-info-bar {
-  background: var(--o-view-background, #1a1a1a);
-}
-:global([data-theme="dark"]) .dashboard-banner {
-  background: linear-gradient(135deg, #8B4A30 0%, #6B3A22 100%);
-}
-:global([data-theme="dark"]) .quick-action-btn {
-  border-color: rgba(0, 82, 163, 0.5);
-}
-:global([data-theme="dark"]) .metric-card--warn {
-  background: rgba(230, 162, 60, 0.1);
-}
-:global([data-theme="dark"]) .metric-card--danger {
-  background: rgba(245, 108, 108, 0.1);
-}
-:global([data-theme="dark"]) .skeleton-line,
-:global([data-theme="dark"]) .skeleton-row {
-  background: linear-gradient(90deg, #2a2622 25%, #3a3530 50%, #2a2622 75%);
-  background-size: 200% 100%;
-}
 </style>

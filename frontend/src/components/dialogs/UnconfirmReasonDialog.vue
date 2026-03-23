@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="visible"
-    title="確認取消"
-    @close="handleCancel"
-    width="500px"
-  >
+  <Dialog :open="visible" @update:open="(val: boolean) => { if (!val) handleCancel() }">
+    <DialogContent class="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>確認取消</DialogTitle>
+      </DialogHeader>
     <div class="dialog-content">
       <div class="order-info">
         <p>注文番号: <strong>{{ orderNumber }}</strong></p>
@@ -40,7 +39,7 @@
             @keyup.enter="confirmAddTemplate"
             @blur="confirmAddTemplate"
           />
-          <OButton
+          <Button
             v-else
             variant="secondary"
             size="sm"
@@ -48,7 +47,7 @@
             @click="showAddInput = true"
           >
             +
-          </OButton>
+          </Button>
         </div>
       </div>
 
@@ -62,19 +61,20 @@
       </div>
     </div>
 
-    <template #footer>
-      <OButton variant="secondary" @click="handleCancel">キャンセル</OButton>
-      <OButton variant="primary" :disabled="loading" @click="handleConfirm">
+    <DialogFooter>
+      <Button variant="secondary" @click="handleCancel">キャンセル</Button>
+      <Button variant="default" :disabled="loading" @click="handleConfirm">
         {{ loading ? '処理中...' : '確認取消' }}
-      </OButton>
-    </template>
-  </ODialog>
+      </Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 const STORAGE_KEY = 'unconfirmReasonTemplates'
 const DEFAULT_TEMPLATES = ['送り状種類修正必要']

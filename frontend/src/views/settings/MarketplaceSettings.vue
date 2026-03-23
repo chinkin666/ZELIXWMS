@@ -1,20 +1,26 @@
 <template>
   <div class="marketplace-settings">
-    <ControlPanel title="マーケットプレイス連携 / 电商平台集成" :show-search="false">
+    <PageHeader title="マーケットプレイス連携 / 电商平台集成" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" :disabled="syncing" @click="syncAll">
+        <Button variant="secondary" :disabled="syncing" @click="syncAll">
           {{ syncing ? '同期中... / 同步中...' : '全体同期 / 全部同步' }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- プロバイダ一覧 / 平台列表 -->
     <div class="provider-grid">
-      <div v-if="loading" class="loading-state">読み込み中... / 加载中...</div>
+      <div v-if="loading" class="space-y-3 p-4">
+        <Skeleton class="h-4 w-[250px]" />
+        <Skeleton class="h-4 w-[200px]" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+      </div>
       <div v-else-if="providers.length === 0" class="empty-state">
         プロバイダが見つかりません / 未找到平台
       </div>
-      <div v-for="provider in providers" :key="provider.id" class="provider-card o-card">
+      <Card v-for="provider in providers" :key="provider.id" class="provider-card">
         <div class="provider-header">
           <div class="provider-info">
             <span class="provider-name">{{ provider.name }}</span>
@@ -35,23 +41,22 @@
           <div v-else class="last-sync">未同期 / 未同步</div>
         </div>
         <div class="provider-actions">
-          <OButton
+          <Button
             v-if="provider.status === 'disconnected'"
-            variant="primary"
+            variant="default"
             size="sm"
             @click="handleConnect(provider)"
           >
             接続 / 连接
-          </OButton>
-          <OButton
+          </Button>
+          <Button
             v-if="provider.status === 'connected'"
-            variant="icon-danger"
-            size="sm"
+            variant="destructive" size="sm"
             @click="handleDisconnect(provider)"
           >
             切断 / 断开
-          </OButton>
-          <OButton
+          </Button>
+          <Button
             v-if="provider.status === 'connected'"
             variant="secondary"
             size="sm"
@@ -59,42 +64,46 @@
             @click="handleSync(provider)"
           >
             同期 / 同步
-          </OButton>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
 
     <!-- 接続ダイアログ / 连接对话框 -->
-    <ODialog v-model="connectDialogOpen" title="プラットフォーム接続 / 平台连接" size="md" @confirm="submitConnect">
+    <Dialog :open="connectDialogOpen" @update:open="connectDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>プラットフォーム接続 / 平台连接</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field form-field--full">
-          <label class="form-label">プラットフォーム / 平台</label>
-          <input :value="connectTarget?.name" class="o-input" disabled />
+          <label>プラットフォーム / 平台</label>
+          <Input :model-value="connectTarget?.name" disabled />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">API キー / API 密钥 <span class="required-badge">必須</span></label>
-          <input v-model="connectForm.apiKey" type="text" class="o-input" placeholder="API Key" />
+          <label>API キー / API 密钥 <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="connectForm.apiKey" type="text" placeholder="API Key" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">API シークレット / API 密钥 <span class="required-badge">必須</span></label>
-          <input v-model="connectForm.apiSecret" type="password" class="o-input" placeholder="API Secret" />
+          <label>API シークレット / API 密钥 <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="connectForm.apiSecret" type="password" placeholder="API Secret" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">ショップ URL / 店铺 URL</label>
-          <input v-model="connectForm.shopUrl" type="url" class="o-input" placeholder="https://your-shop.example.com" />
+          <label>ショップ URL / 店铺 URL</label>
+          <Input v-model="connectForm.shopUrl" type="url" placeholder="https://your-shop.example.com" />
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import {
   getMarketplaceProviders,
   syncMarketplace,
@@ -102,7 +111,10 @@ import {
   disconnectMarketplace,
   type MarketplaceProvider,
 } from '@/api/marketplace'
-
+import { onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 
 // === State / 状態 ===
@@ -194,13 +206,7 @@ const submitConnect = async () => {
 }
 
 const handleDisconnect = async (provider: MarketplaceProvider) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${provider.name}」の接続を切断しますか？ / 确定要断开「${provider.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '切断 / 断开', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await disconnectMarketplace(provider.id)
     showToast(`${provider.name} を切断しました / 已断开 ${provider.name}`, 'success')

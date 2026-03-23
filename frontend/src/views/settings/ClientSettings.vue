@@ -1,120 +1,125 @@
 <template>
   <div class="client-settings">
-    <ControlPanel title="顧客一覧（3PL荷主）" :show-search="false">
+    <PageHeader title="顧客一覧（3PL荷主）" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" @click="handleExportCsv">CSV出力</OButton>
-        <OButton variant="primary" @click="openCreate">新規追加</OButton>
+        <Button variant="secondary" @click="handleExportCsv">CSV出力</Button>
+        <Button variant="default" @click="openCreate">新規追加</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="clientSettingsSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="clients"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         pagination-enabled
         pagination-mode="server"
         :total="total"
         :current-page="currentPage"
         :page-size="pageSize"
         :page-sizes="[10, 20, 50, 100]"
-        :global-search-text="globalSearchText"
         @page-change="handlePageChange"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogOpen" :title="isEditing ? '顧客を編集' : '顧客を追加'" size="lg" @confirm="handleSave">
+    <Dialog :open="dialogOpen" @update:open="dialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? '顧客を編集' : '顧客を追加' }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">顧客コード <span class="required-badge">必須</span></label>
-          <input v-model="form.clientCode" type="text" class="o-input" />
+          <label>顧客コード <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.clientCode" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">顧客名 <span class="required-badge">必須</span></label>
-          <input v-model="form.name" type="text" class="o-input" />
+          <label>顧客名 <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.name" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">顧客名2</label>
-          <input v-model="form.name2" type="text" class="o-input" />
+          <label>顧客名2</label>
+          <Input v-model="form.name2" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">担当者名</label>
-          <input v-model="form.contactName" type="text" class="o-input" />
+          <label>担当者名</label>
+          <Input v-model="form.contactName" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">郵便番号</label>
+          <label>郵便番号</label>
           <PostalCodeInput v-model="form.postalCode" @resolved="onPostalResolved" />
         </div>
         <div class="form-field">
-          <label class="form-label">都道府県</label>
-          <select class="o-input" v-model="form.prefecture">
-            <option value="">選択してください</option>
-            <option v-for="p in PREFECTURES" :key="p" :value="p">{{ p }}</option>
-          </select>
+          <label>都道府県</label>
+          <Select v-model="form.prefecture">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="選択してください" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="p in PREFECTURES" :key="p" :value="p">{{ p }}</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div class="form-field">
-          <label class="form-label">市区町村</label>
-          <input v-model="form.city" type="text" class="o-input" />
+          <label>市区町村</label>
+          <Input v-model="form.city" type="text" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">住所</label>
-          <input v-model="form.address" type="text" class="o-input" />
+          <label>住所</label>
+          <Input v-model="form.address" type="text" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">住所2</label>
-          <input v-model="form.address2" type="text" class="o-input" />
+          <label>住所2</label>
+          <Input v-model="form.address2" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">電話番号</label>
-          <input v-model="form.phone" type="text" class="o-input" />
+          <label>電話番号</label>
+          <Input v-model="form.phone" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">メールアドレス</label>
-          <input v-model="form.email" type="text" class="o-input" />
+          <label>メールアドレス</label>
+          <Input v-model="form.email" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">契約プラン</label>
-          <select v-model="form.plan" class="o-input">
-            <option value="free">フリー</option>
-            <option value="standard">スタンダード</option>
-            <option value="pro">プロ</option>
-            <option value="enterprise">エンタープライズ</option>
-          </select>
+          <label>契約プラン</label>
+          <Select v-model="form.plan">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="free">フリー</SelectItem>
+        <SelectItem value="standard">スタンダード</SelectItem>
+        <SelectItem value="pro">プロ</SelectItem>
+        <SelectItem value="enterprise">エンタープライズ</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div class="form-field">
-          <label class="form-label">課金有効</label>
+          <label>課金有効</label>
           <label style="display:flex;align-items:center;gap:6px;">
-            <input type="checkbox" v-model="form.billingEnabled" />
+            <Checkbox :checked="form.billingEnabled" @update:checked="val => form.billingEnabled = val" />
             課金を有効にする
           </label>
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">備考</label>
-          <textarea v-model="form.memo" class="o-input form-textarea" rows="3" />
+          <label>備考</label>
+          <textarea v-model="form.memo" class="form-textarea" rows="3" />
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import PostalCodeInput from '@/components/form/PostalCodeInput.vue'
 import type { PostalResult } from '@/utils/postalCode'
-
+import { ref, computed, h, onMounted } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const PREFECTURES = [
   '北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県',
   '茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県',
@@ -125,11 +130,11 @@ const PREFECTURES = [
   '徳島県','香川県','愛媛県','高知県',
   '福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県',
 ] as const
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   fetchClients,
   createClient,
@@ -138,7 +143,9 @@ import {
   exportClients,
   type Client,
 } from '@/api/client'
-
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 const { t } = useI18n()
 
@@ -310,8 +317,8 @@ const tableColumns: TableColumn[] = [
     width: 140,
     cellRenderer: ({ rowData }: { rowData: Client }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ]),
   },
 ]
@@ -428,13 +435,7 @@ const handleSave = async () => {
 }
 
 const confirmDelete = async (c: Client) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${c.name}」(${c.clientCode}) を削除してもよろしいですか？ / 确定要删除「${c.name}」(${c.clientCode}) 吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   deleteClient(c._id)
     .then(async () => {
       showToast('削除しました', 'success')

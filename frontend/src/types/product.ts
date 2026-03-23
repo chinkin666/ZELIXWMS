@@ -35,6 +35,14 @@ export interface Product {
   height?: number
   weight?: number
   nameEn?: string
+  // 追加ビジネスフィールド / 追加业务字段
+  abbreviation?: string
+  janCode?: string
+  brandName?: string
+  shippingSizeCode?: string
+  costPrice?: number
+  taxRate?: number
+  supplierName?: string
   countryOfOrigin?: string
   allocationRule?: AllocationRule
   serialTrackingEnabled: boolean

@@ -1,13 +1,13 @@
 <template>
   <div class="editor-root">
-    <ControlPanel :title="$t('wms.printTemplate.editTitle', '印刷テンプレート編集')" :show-search="false">
+    <PageHeader :title="$t('wms.printTemplate.editTitle', '印刷テンプレート編集')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" @click="goBack">{{ $t('wms.settings.back', '戻る') }}</OButton>
-        <OButton variant="primary" :disabled="saving" @click="save">
+        <Button variant="secondary" @click="goBack">{{ $t('wms.settings.back', '戻る') }}</Button>
+        <Button variant="default" :disabled="saving" @click="save">
           {{ saving ? $t('wms.settings.saving', '保存中...') : $t('wms.common.save', '保存') }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <div class="layout">
       <!-- Left: carrierRawRow fields -->
@@ -86,8 +86,8 @@
 // Konva は動的インポートでバンドルサイズ削減 / Konva 动态导入以减少包体积
 import type KonvaType from 'konva'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'

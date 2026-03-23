@@ -1,26 +1,30 @@
 <!-- 一括設定ダイアログ共通コンポーネント / 批量设置对话框共用组件 -->
 <!-- 繰り返しのバルクダイアログパターンを共通化 / 提取重复的批量对话框模式 -->
 <template>
-  <ODialog :open="open" :size="size" @close="emit('close')">
-    <template #title>{{ title }}</template>
+  <Dialog :open="open" @update:open="(val: boolean) => { if (!val) emit('close') }">
+    <DialogContent class="sm:max-w-sm">
+      <DialogHeader>
+        <DialogTitle>{{ title }}</DialogTitle>
+      </DialogHeader>
     <div class="bulk-dialog">
       <div class="bulk-dialog__badge">
         対象 <strong>{{ selectedCount }}</strong> 件
       </div>
       <slot />
     </div>
-    <template #footer>
-      <OButton variant="secondary" @click="emit('close')">キャンセル</OButton>
-      <OButton variant="primary" :disabled="applyDisabled" @click="emit('apply')">
+    <DialogFooter>
+      <Button variant="secondary" @click="emit('close')">キャンセル</Button>
+      <Button variant="default" :disabled="applyDisabled" @click="emit('apply')">
         {{ applyLabel || '適用' }}
-      </OButton>
-    </template>
-  </ODialog>
+      </Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   open: boolean

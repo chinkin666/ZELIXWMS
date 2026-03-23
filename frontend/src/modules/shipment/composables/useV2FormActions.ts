@@ -1,4 +1,4 @@
-import { ElMessage } from 'element-plus'
+import { toast } from 'vue-sonner'
 import { updateShipmentOrder } from '@/api/shipmentOrders'
 import type { OrderProduct } from '@/types/order'
 import { generateTempId } from '@/types/orderRow'
@@ -94,14 +94,14 @@ export function useV2FormActions({ state, draftStore, applyProductDefaults, norm
           }
           await updateShipmentOrder(String(backendId), payload)
           await loadBackendOrders()
-          ElMessage.success('出荷指示を更新しました')
+          toast.success('出荷指示を更新しました')
         } catch (e: any) {
-          ElMessage.error(e?.message || '更新に失敗しました')
+          toast.error(e?.message || '更新に失敗しました')
           return
         }
       } else {
         draftStore.updateRow(state.editingRow.value.id, updatedRow)
-        ElMessage.success('出荷指示を更新しました')
+        toast.success('出荷指示を更新しました')
       }
     } else {
       const tempId = generateTempId()
@@ -145,7 +145,7 @@ export function useV2FormActions({ state, draftStore, applyProductDefaults, norm
         updatedAt: now,
       })
       draftStore.addRows([newRow])
-      ElMessage.success('個別登録しました')
+      toast.success('個別登録しました')
     }
 
     state.editingRow.value = null
@@ -172,7 +172,7 @@ export function useV2FormActions({ state, draftStore, applyProductDefaults, norm
       return applyProductDefaults(updatedRow)
     })
     draftStore.addRows(rowsWithDefaults)
-    ElMessage.success(`${importedRows.length}件のデータを取り込みしました`)
+    toast.success(`${importedRows.length}件のデータを取り込みしました`)
   }
 
   return { handleAdd, handleImportClick, handleEdit, handleFormSubmit, handleImport }

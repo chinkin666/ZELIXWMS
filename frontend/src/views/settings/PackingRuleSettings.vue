@@ -1,13 +1,13 @@
 <template>
   <div class="packing-rule-settings">
-    <ControlPanel title="梱包ルール" :show-search="false">
+    <PageHeader title="梱包ルール" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate"><span class="o-icon">+</span> 新規追加</OButton>
+        <Button variant="default" @click="openCreate"><span>+</span> 新規追加</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="list"
         row-key="_id"
@@ -19,54 +19,66 @@
     </div>
 
     <!-- 作成/編集ダイアログ / 创建/编辑对话框 -->
-    <ODialog :open="dialogVisible" :title="isEditing ? '梱包ルールを編集' : '梱包ルールを追加'" size="lg" @close="closeDialog">
+    <Dialog :open="dialogVisible" @update:open="val => { if (!val) { closeDialog } }">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? '梱包ルールを編集' : '梱包ルールを追加' }}</DialogTitle></DialogHeader>
         <form class="rule-form" @submit.prevent="handleSubmit">
           <div class="form-row-inline">
             <div class="form-row">
-              <label class="form-label">ルール名 <span class="required-badge">必須</span></label>
-              <input class="o-input" v-model="form.name" required placeholder="例: 標準梱包ルール" />
+              <label>ルール名 <span class="text-destructive text-xs">*</span></label>
+              <Input v-model="form.name" required placeholder="例: 標準梱包ルール" />
             </div>
             <div class="form-row" style="max-width: 120px;">
-              <label class="form-label">優先度</label>
-              <input class="o-input" type="number" v-model.number="form.priority" min="0" placeholder="0" />
+              <label>優先度</label>
+              <Input type="number" v-model.number="form.priority" min="0" placeholder="0" />
             </div>
             <div class="form-row" style="max-width: 100px;">
-              <label class="form-label">有効</label>
-              <select class="o-input" v-model="form.isActive">
-                <option :value="true">有効</option>
-                <option :value="false">無効</option>
-              </select>
+              <label>有効</label>
+              <Select v-model="form.isActive">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="true">有効</SelectItem>
+        <SelectItem value="false">無効</SelectItem>
+        </SelectContent>
+      </Select>
             </div>
           </div>
 
           <div class="form-section-title">条件 / 条件</div>
           <div class="form-row-inline">
             <div class="form-row">
-              <label class="form-label">最大重量 (g)</label>
-              <input class="o-input" type="number" v-model.number="form.conditions.maxWeight" min="0" placeholder="制限なし" />
+              <label>最大重量 (g)</label>
+              <Input type="number" v-model.number="form.conditions.maxWeight" min="0" placeholder="制限なし" />
             </div>
             <div class="form-row">
-              <label class="form-label">最大サイズ (mm)</label>
-              <input class="o-input" type="number" v-model.number="form.conditions.maxDimension" min="0" placeholder="制限なし" />
+              <label>最大サイズ (mm)</label>
+              <Input type="number" v-model.number="form.conditions.maxDimension" min="0" placeholder="制限なし" />
             </div>
           </div>
           <div class="form-row-inline">
             <div class="form-row">
-              <label class="form-label">クール区分</label>
-              <select class="o-input" v-model="form.conditions.coolType">
-                <option value="">指定なし</option>
-                <option value="0">通常</option>
-                <option value="1">クール冷凍</option>
-                <option value="2">クール冷蔵</option>
-              </select>
+              <label>クール区分</label>
+              <Select v-model="form.conditions.coolType">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="__all__">指定なし</SelectItem>
+        <SelectItem value="0">通常</SelectItem>
+        <SelectItem value="1">クール冷凍</SelectItem>
+        <SelectItem value="2">クール冷蔵</SelectItem>
+        </SelectContent>
+      </Select>
             </div>
             <div class="form-row">
-              <label class="form-label">送り状種類</label>
-              <input class="o-input" v-model="form.conditions.invoiceType" placeholder="指定なし" />
+              <label>送り状種類</label>
+              <Input v-model="form.conditions.invoiceType" placeholder="指定なし" />
             </div>
             <div class="form-row">
-              <label class="form-label">最大商品点数</label>
-              <input class="o-input" type="number" v-model.number="form.conditions.maxProductCount" min="0" placeholder="制限なし" />
+              <label>最大商品点数</label>
+              <Input type="number" v-model.number="form.conditions.maxProductCount" min="0" placeholder="制限なし" />
             </div>
           </div>
 
@@ -83,53 +95,52 @@
             </thead>
             <tbody>
               <tr v-for="(mat, index) in form.materials" :key="index">
-                <td><input class="o-input" v-model="mat.materialSku" placeholder="SKU" /></td>
-                <td><input class="o-input" v-model="mat.materialName" placeholder="耗材名" /></td>
-                <td><input class="o-input" type="number" v-model.number="mat.quantity" min="1" /></td>
-                <td><input class="o-input" type="number" v-model.number="mat.unitCost" min="0" step="0.01" placeholder="0" /></td>
+                <td><Input v-model="mat.materialSku" placeholder="SKU" /></td>
+                <td><Input v-model="mat.materialName" placeholder="耗材名" /></td>
+                <td><Input type="number" v-model.number="mat.quantity" min="1" /></td>
+                <td><Input type="number" v-model.number="mat.unitCost" min="0" step="0.01" placeholder="0" /></td>
                 <td style="text-align:center;">
-                  <OButton variant="icon-danger" @click="removeMaterial(index)" title="削除">
+                  <Button variant="destructive" size="sm" @click="removeMaterial(index)" title="削除">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                  </OButton>
+                  </Button>
                 </td>
               </tr>
             </tbody>
             <tfoot>
               <tr>
                 <td colspan="5">
-                  <button type="button" class="add-material-btn" @click="addMaterial">
+                  <Button type="button" class="add-material-btn" @click="addMaterial">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
                     耗材を追加
-                  </button>
+                  </Button>
                 </td>
               </tr>
             </tfoot>
           </table>
 
           <div class="form-row">
-            <label class="form-label">備考</label>
-            <textarea class="o-input" v-model="form.memo" rows="2" />
+            <label>備考</label>
+            <textarea v-model="form.memo" rows="2" />
           </div>
 
           <div class="form-actions">
-            <OButton variant="secondary" type="button" @click="closeDialog">キャンセル</OButton>
-            <OButton variant="primary" type="submit" :disabled="saving">
+            <Button variant="secondary" type="button" @click="closeDialog">キャンセル</Button>
+            <Button variant="default" type="submit" :disabled="saving">
               {{ saving ? '保存中...' : '保存' }}
-            </OButton>
+            </Button>
           </div>
         </form>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn } from '@/types/table'
 import {
   fetchPackingRules,
@@ -138,7 +149,12 @@ import {
   deletePackingRule,
 } from '@/api/packingRule'
 import type { PackingRule, PackingRuleMaterial } from '@/api/packingRule'
-
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 
 // ---------------------------------------------------------------------------
@@ -258,8 +274,8 @@ const tableColumns: TableColumn[] = [
     width: 160,
     cellRenderer: ({ rowData }: { rowData: PackingRule }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ]),
   },
 ]
@@ -385,13 +401,7 @@ const handleSubmit = async () => {
 // Delete / 删除
 // ---------------------------------------------------------------------------
 const confirmDelete = async (item: PackingRule) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${item.name}」を削除してもよろしいですか？ / 确定要删除「${item.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deletePackingRule(item._id)
     showToast('削除しました', 'success')
@@ -504,7 +514,7 @@ onMounted(() => {
   background: var(--o-gray-50, #f8f9fa);
 }
 
-.materials-table .o-input {
+.materials-table .{
   width: 100%;
   padding: 4px 6px;
   font-size: 13px;

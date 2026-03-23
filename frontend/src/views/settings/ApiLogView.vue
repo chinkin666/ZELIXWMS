@@ -1,10 +1,10 @@
 <template>
   <div class="api-log-view">
-    <ControlPanel :title="t('wms.settings.apiLog', 'API連携ログ')" :show-search="false">
+    <PageHeader :title="t('wms.settings.apiLog', 'API連携ログ')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.settings.exportCsv', 'CSV出力') }}</OButton>
+        <Button variant="secondary" size="sm" @click="exportCsv">{{ t('wms.settings.exportCsv', 'CSV出力') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- Stats Cards -->
     <div class="stats-row">
@@ -26,19 +26,13 @@
       </div>
     </div>
 
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="apiLogSearch"
-      @search="handleSearch"
-    />
-
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="rows"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         highlight-columns-on-hover
         pagination-enabled
         pagination-mode="server"
@@ -46,7 +40,6 @@
         :page-sizes="[25, 50, 100]"
         :total="total"
         :current-page="currentPage"
-        :global-search-text="globalSearchText"
         @page-change="onPageChange"
       />
     </div>
@@ -57,10 +50,9 @@
 import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import { fetchApiLogs, fetchApiStats, exportApiLogs } from '@/api/apiLog'
 import type { ApiLogItem, ApiLogStats } from '@/api/apiLog'
 import type { TableColumn, Operator } from '@/types/table'

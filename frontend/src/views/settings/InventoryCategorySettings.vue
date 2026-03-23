@@ -1,83 +1,51 @@
 <template>
   <div class="inventory-category-settings">
-    <ControlPanel title="在庫区分一覧" :show-search="false">
+    <PageHeader title="在庫区分一覧" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" @click="handleSeedDefaults">デフォルト作成</OButton>
-        <OButton variant="primary" @click="openCreate">在庫区分を追加</OButton>
+        <Button variant="secondary" @click="handleSeedDefaults">デフォルト作成</Button>
+        <Button variant="default" @click="openCreate">在庫区分を追加</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="inventoryCategorySearch"
-      @search="handleSearchEvent"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="categories"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearchEvent"
         pagination-enabled
         pagination-mode="client"
         :page-size="20"
         :page-sizes="[10, 20, 50, 100]"
-        :global-search-text="globalSearchText"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog
-      v-model="dialogVisible"
-      :title="isEditing ? '在庫区分を編集' : '在庫区分を追加'"
-      size="md"
-      @confirm="handleSubmit"
-      @close="dialogVisible = false"
-    >
+    <Dialog :open="dialogVisible" @update:open="dialogVisible = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? '在庫区分を編集' : '在庫区分を追加' }}</DialogTitle></DialogHeader>
       <div class="form-group">
-        <label class="form-label">コード <span class="required-badge">必須</span></label>
-        <input
-          v-model="formData.code"
-          type="text"
-          class="form-input"
-          placeholder="例: normal, returned"
-          :disabled="isEditing && editingCategory?.isDefault"
-        />
+        <label>コード <span class="text-destructive text-xs">*</span></label>
+        <Input v-model="formData.code" type="text" placeholder="例: normal, returned" :disabled="isEditing && editingCategory?.isDefault" />
       </div>
       <div class="form-group">
-        <label class="form-label">名称 <span class="required-badge">必須</span></label>
-        <input
-          v-model="formData.name"
-          type="text"
-          class="form-input"
-          placeholder="例: 通常、返品"
-        />
+        <label>名称 <span class="text-destructive text-xs">*</span></label>
+        <Input v-model="formData.name" type="text" placeholder="例: 通常、返品" />
       </div>
       <div class="form-group">
-        <label class="form-label">説明</label>
-        <input
-          v-model="formData.description"
-          type="text"
-          class="form-input"
-          placeholder="在庫区分の説明"
-        />
+        <label>説明</label>
+        <Input v-model="formData.description" type="text" placeholder="在庫区分の説明" />
       </div>
       <div class="form-group">
-        <label class="form-label">色ラベル</label>
+        <label>色ラベル</label>
         <div class="color-input-row">
           <input
             v-model="formData.colorLabel"
             type="color"
             class="form-color"
           />
-          <input
-            v-model="formData.colorLabel"
-            type="text"
-            class="form-input"
-            placeholder="#67c23a"
-          />
+          <Input v-model="formData.colorLabel" type="text" placeholder="#67c23a" />
           <span
             v-if="formData.colorLabel"
             class="color-badge color-preview"
@@ -86,37 +54,28 @@
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">表示順</label>
-        <input
-          v-model.number="formData.sortOrder"
-          type="number"
-          class="form-input"
-          min="0"
-        />
+        <label>表示順</label>
+        <Input v-model.number="formData.sortOrder" type="number" min="0" />
       </div>
       <div class="form-group">
-        <label class="form-label">
-          <input
-            v-model="formData.isActive"
-            type="checkbox"
-          />
+        <label>
+          <Checkbox :checked="formData.isActive" @update:checked="val => formData.isActive = val" />
           有効
         </label>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, h, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchInventoryCategories,
@@ -126,6 +85,10 @@ import {
   seedInventoryCategories,
 } from '@/api/inventoryCategory'
 import type { InventoryCategory, InventoryCategoryFormData } from '@/api/inventoryCategory'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
@@ -273,11 +236,11 @@ const tableColumns: TableColumn[] = [
     width: 140,
     cellRenderer: ({ rowData }: { rowData: InventoryCategory }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
         h(
-          OButton,
+          Button,
           {
-            variant: 'danger',
+            variant: 'destructive',
             size: 'sm',
             disabled: rowData.isDefault,
             title: rowData.isDefault ? 'デフォルト在庫区分は削除できません' : '',
@@ -366,13 +329,7 @@ const handleSubmit = async () => {
 
 const confirmDelete = async (cat: InventoryCategory) => {
   if (cat.isDefault) return
-  try {
-    await ElMessageBox.confirm(
-      `在庫区分「${cat.name}」を削除してもよろしいですか？ / 确定要删除库存区分「${cat.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteInventoryCategory(cat._id)
     showToast('在庫区分を削除しました', 'success')

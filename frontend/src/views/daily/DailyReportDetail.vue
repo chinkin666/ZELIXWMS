@@ -1,17 +1,23 @@
 <template>
   <div class="daily-detail">
-    <ControlPanel :title="`${t('wms.daily.reportDetail', '日次レポート')} - ${date}`" :show-search="false">
+    <PageHeader :title="`${t('wms.daily.reportDetail', '日次レポート')} - ${date}`" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" @click="$router.push('/daily/list')">{{ t('wms.daily.toList', '一覧へ') }}</OButton>
-          <OButton v-if="report?.status === 'open'" variant="primary" size="sm" @click="handleRefresh">{{ t('wms.daily.refreshData', 'データ更新') }}</OButton>
-          <OButton v-if="report?.status === 'open'" variant="success" size="sm" @click="handleClose">{{ t('wms.daily.closeDay', '日次締め') }}</OButton>
-          <OButton v-if="report?.status === 'closed'" variant="secondary" size="sm" @click="handleLock">{{ t('wms.daily.lock', 'ロック') }}</OButton>
+          <Button variant="secondary" size="sm" @click="$router.push('/daily/list')">{{ t('wms.daily.toList', '一覧へ') }}</Button>
+          <Button v-if="report?.status === 'open'" variant="default" size="sm" @click="handleRefresh">{{ t('wms.daily.refreshData', 'データ更新') }}</Button>
+          <Button v-if="report?.status === 'open'" variant="default" size="sm" @click="handleClose">{{ t('wms.daily.closeDay', '日次締め') }}</Button>
+          <Button v-if="report?.status === 'closed'" variant="secondary" size="sm" @click="handleLock">{{ t('wms.daily.lock', 'ロック') }}</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div v-if="isLoading" style="padding:2rem;text-align:center;color:var(--o-gray-500);">{{ t('wms.common.loading', '読み込み中...') }}</div>
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else-if="report">
       <div class="info-bar">
@@ -92,19 +98,20 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useRoute } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { fetchDailyReport, generateDailyReport, closeDailyReport, lockDailyReport } from '@/api/dailyReport'
 import type { DailyReport } from '@/api/dailyReport'
-
+import { onMounted, ref, computed } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const { t } = useI18n()
 const route = useRoute()
 const toast = useToast()
+const { confirm } = useConfirmDialog()
 const isLoading = ref(true)
 const report = ref<DailyReport | null>(null)
 const date = computed(() => route.params.date as string)
@@ -129,24 +136,12 @@ const handleRefresh = async () => {
   catch (e: any) { toast.showError(e?.message) }
 }
 const handleClose = async () => {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.daily.closeConfirm', `${date.value} の日次を締めますか？ / 确定要结算 ${date.value} 的日报吗？`),
-      '確認 / 确认',
-      { confirmButtonText: '締め / 结算', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try { report.value = await closeDailyReport(date.value); toast.showSuccess(t('wms.daily.dayClosed', '日次を締めました')) }
   catch (e: any) { toast.showError(e?.message) }
 }
 const handleLock = async () => {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.daily.lockConfirm', 'ロックすると更新できなくなります。 / 锁定后将无法更新。'),
-      '確認 / 确认',
-      { confirmButtonText: 'ロック / 锁定', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try { report.value = await lockDailyReport(date.value); toast.showSuccess(t('wms.daily.locked', 'ロックしました')) }
   catch (e: any) { toast.showError(e?.message) }
 }

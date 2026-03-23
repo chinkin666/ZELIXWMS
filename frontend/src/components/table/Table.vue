@@ -1,35 +1,61 @@
 <template>
-  <div ref="tableContainerRef" class="nex-table">
-    <div class="nex-table__wrapper" :style="tableHeight ? { maxHeight: tableHeight + 'px', overflow: 'auto' } : {}">
-      <table class="o-list-table">
-        <thead>
+  <div ref="tableContainerRef" class="w-full flex flex-col">
+    <!-- ツールバー: カラム表示切替 / 工具栏: 列显示切换 -->
+    <div class="flex items-center justify-end px-2 py-1.5">
+      <DropdownMenu>
+        <DropdownMenuTrigger as-child>
+          <Button variant="outline" size="icon-sm">
+            <Settings2 class="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" class="w-56 max-h-80 overflow-y-auto">
+          <DropdownMenuLabel>表示カラム / 显示列</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuCheckboxItem
+            v-for="col in regularColumns"
+            :key="String(col.key || col.dataKey)"
+            :checked="!hiddenColumnKeys.has(String(col.key || col.dataKey))"
+            @update:checked="toggleColumnVisibility(String(col.key || col.dataKey), $event)"
+          >
+            {{ col.title || col.key || col.dataKey }}
+          </DropdownMenuCheckboxItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+
+    <div class="rounded-md border overflow-auto" :style="tableHeight ? { maxHeight: tableHeight + 'px' } : {}">
+      <table class="w-full caption-bottom text-sm">
+        <thead class="[&_tr]:border-b">
           <tr>
-            <!-- Selection column header -->
+            <!-- Selection column header / 選択列ヘッダー -->
             <th
               v-if="rowSelectionEnabled && paginationMode !== 'server'"
-              class="selection-column"
-              style="width: 50px; text-align: center;"
+              class="h-10 px-2 text-center align-middle font-medium text-muted-foreground"
+              style="width: 50px;"
             >
               <input
                 type="checkbox"
                 :checked="isAllCurrentPageSelected"
                 :indeterminate="isIndeterminate"
                 @change="handleSelectAllToggle"
+                class="cursor-pointer"
               />
             </th>
 
-            <!-- Bundle column header -->
+            <!-- Bundle column header / 同梱列ヘッダー -->
             <th
               v-if="hasBundleColumn"
-              :style="{ width: (bundleColumn?.width || 110) + 'px', textAlign: 'center' }"
+              class="h-10 px-2 text-center align-middle font-medium text-muted-foreground"
+              :style="{ width: (bundleColumn?.width || 110) + 'px' }"
             >
               {{ bundleColumn?.title || '同梱' }}
             </th>
 
-            <!-- Regular column headers -->
+            <!-- Regular column headers / 通常列ヘッダー -->
             <th
-              v-for="col in regularColumns"
+              v-for="col in visibleRegularColumns"
               :key="String(col.key || col.dataKey)"
+              class="h-10 px-2 align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
               :style="{
                 width: col.fixed ? (col.width ? col.width + 'px' : undefined) : undefined,
                 minWidth: (col.width || col.minWidth || 100) + 'px',
@@ -40,38 +66,40 @@
               {{ col.title }}
             </th>
 
-            <!-- Action column header -->
+            <!-- Action column header / 操作列ヘッダー -->
             <th
               v-if="hasActionColumn"
+              class="h-10 px-2 align-middle font-medium text-muted-foreground"
               :style="{ width: (actionColumn?.width || 110) + 'px', textAlign: actionColumn?.align || 'center' }"
             >
               {{ actionColumn?.title || t('wms.common.actions', '操作') }}
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="[&_tr:last-child]:border-0">
           <tr
             v-for="(row, rowIndex) in displayData"
             :key="String((row as any)[rowKey as string] ?? (row as any).id ?? rowIndex)"
+            class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
             :class="getRowClassName({ row })"
           >
-            <!-- Selection column -->
+            <!-- Selection column / 選択列 -->
             <td
               v-if="rowSelectionEnabled && paginationMode !== 'server'"
-              class="selection-column"
-              style="text-align: center; vertical-align: top;"
+              class="p-2 align-middle text-center"
             >
               <input
                 type="checkbox"
                 :checked="isRowSelected(row)"
                 @change="handleRowCheckboxChange(row, $event)"
+                class="cursor-pointer"
               />
             </td>
 
-            <!-- Bundle column -->
+            <!-- Bundle column / 同梱列 -->
             <td
               v-if="hasBundleColumn"
-              style="text-align: center; vertical-align: top;"
+              class="p-2 align-middle text-center"
             >
               <BundleCell
                 v-if="bundleColumn?.cellRenderer"
@@ -81,11 +109,12 @@
               <span v-else>-</span>
             </td>
 
-            <!-- Regular columns -->
+            <!-- Regular columns / 通常列 -->
             <td
-              v-for="col in regularColumns"
+              v-for="col in visibleRegularColumns"
               :key="String(col.key || col.dataKey)"
-              :style="{ textAlign: col.align || 'left', verticalAlign: 'top' }"
+              class="p-2 align-middle [&:has([role=checkbox])]:pr-0"
+              :style="{ textAlign: col.align || 'left' }"
               :class="[col.className, getCellClassName({ row, column: col })]"
             >
               <TableCell
@@ -96,28 +125,29 @@
               <span v-else>{{ formatColumnValue(row, col) }}</span>
             </td>
 
-            <!-- Action column -->
+            <!-- Action column / 操作列 -->
             <td
               v-if="hasActionColumn"
-              :style="{ textAlign: actionColumn?.align || 'center', verticalAlign: 'top' }"
+              class="p-2 align-middle"
+              :style="{ textAlign: actionColumn?.align || 'center' }"
             >
               <ActionCell
                 v-if="actionColumn?.cellRenderer"
                 :renderer="actionColumn.cellRenderer"
                 :row-data="row"
               />
-              <div v-else class="action-buttons">
-                <OButton variant="primary" size="sm">編集</OButton>
-                <OButton variant="danger" size="sm">削除</OButton>
+              <div v-else class="flex items-center gap-1.5">
+                <Button variant="default" size="sm">編集</Button>
+                <Button variant="destructive" size="sm">削除</Button>
               </div>
             </td>
           </tr>
           <tr v-if="displayData.length === 0">
             <td
               :colspan="totalColumnCount"
-              class="empty-state-cell"
+              class="text-center text-muted-foreground py-8"
             >
-              <div class="empty-state">
+              <div class="flex flex-col items-center gap-2 text-sm">
                 <svg width="40" height="40" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.3">
                   <path d="M2.5 0A2.5 2.5 0 0 0 0 2.5v11A2.5 2.5 0 0 0 2.5 16h11a2.5 2.5 0 0 0 2.5-2.5v-11A2.5 2.5 0 0 0 13.5 0h-11zM1 2.5A1.5 1.5 0 0 1 2.5 1H7v5H1V2.5zM1 7h6v5H2.5A1.5 1.5 0 0 1 1 10.5V7zm7-6h5.5A1.5 1.5 0 0 1 15 2.5V6H8V1zm0 6h7v3.5a1.5 1.5 0 0 1-1.5 1.5H8V7z"/>
                 </svg>
@@ -129,37 +159,56 @@
       </table>
     </div>
 
+    <!-- ページネーション / 分页 -->
     <div
       v-if="paginationEnabled"
-      class="nex-table__pagination"
-      :class="{ 'nex-table__pagination--with-left': showBulkEditButton || batchDeleteEnabled }"
+      class="flex items-center justify-between px-2 py-3 text-sm text-muted-foreground"
     >
-      <div v-if="showBulkEditButton || batchDeleteEnabled" class="nex-table__pagination-left">
-        <OButton
+      <div v-if="showBulkEditButton || batchDeleteEnabled" class="flex items-center gap-2">
+        <Button
           v-if="showBulkEditButton"
-          variant="primary"
+          variant="default"
           size="sm"
           @click="bulkEditVisible = true"
-        >一括修正</OButton>
-        <OButton
+        >一括修正</Button>
+        <Button
           v-if="batchDeleteEnabled"
-          variant="danger"
+          variant="destructive"
           size="sm"
           :disabled="!innerSelectedKeys.length"
           @click="handleBatchDeleteClick"
-        >一括削除 ({{ innerSelectedKeys.length }})</OButton>
+        >一括削除 ({{ innerSelectedKeys.length }})</Button>
       </div>
-      <div class="nex-table__pagination-right">
-        <span class="pagination-total">合計 {{ totalItems }} 件</span>
-        <select class="o-input pagination-size-select" :value="innerPageSize" @change="handlePageSizeSelectChange">
+      <div v-else />
+      <div class="flex items-center gap-3">
+        <span class="text-sm whitespace-nowrap">
+          合計 {{ totalItems }} 件 | ページ {{ innerCurrentPage }} / {{ totalPages }}
+        </span>
+        <select
+          class="h-8 rounded-md border bg-background px-2 text-sm"
+          :value="innerPageSize"
+          @change="handlePageSizeSelectChange"
+        >
           <option v-for="size in pageSizes" :key="size" :value="size">{{ size }} 件/ページ</option>
         </select>
-        <OPager
-          :total="totalItems"
-          :offset="pagerOffset"
-          :limit="innerPageSize"
-          @update:offset="handlePagerOffsetChange"
-        />
+        <div class="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon-sm"
+            :disabled="innerCurrentPage <= 1"
+            @click="handlePageChange(innerCurrentPage - 1)"
+          >
+            <ChevronLeft class="size-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon-sm"
+            :disabled="innerCurrentPage >= totalPages"
+            @click="handlePageChange(innerCurrentPage + 1)"
+          >
+            <ChevronRight class="size-4" />
+          </Button>
+        </div>
       </div>
     </div>
 
@@ -179,14 +228,22 @@ import type { HeaderGroupingConfig } from './tableHeaderGroup'
 import { getNestedValue, setNestedValue } from '@/utils/nestedObject'
 import { naturalSort } from '@/utils/naturalSort'
 import BulkEditDialog from './BulkEditDialog.vue'
-import OPager from '@/components/odoo/OPager.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Settings2, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { LINK_COLOR } from '@/theme/config'
 import { useI18n } from '@/composables/useI18n'
 
 const { t } = useI18n()
 
-// 普通单元格渲染组件
+// 普通单元格渲染组件 / 通常セルレンダリングコンポーネント
 const TableCell = defineComponent({
   name: 'TableCell',
   props: {
@@ -205,7 +262,7 @@ const TableCell = defineComponent({
   },
 })
 
-// 操作列渲染组件（保证按钮垂直排列）
+// 操作列渲染组件（保证按钮垂直排列） / アクション列レンダリング
 const ActionCell = defineComponent({
   name: 'ActionCell',
   props: {
@@ -216,7 +273,7 @@ const ActionCell = defineComponent({
     return () => {
       try {
         const result = props.renderer({ rowData: props.rowData })
-        return h('div', { class: 'action-cell-wrapper' }, [result])
+        return h('div', { class: 'flex items-center gap-1.5' }, [result])
       } catch (e) {
         // アクションセルレンダリングエラー / Action cell render error
         return null
@@ -225,7 +282,7 @@ const ActionCell = defineComponent({
   },
 })
 
-// 同梱列渲染组件
+// 同梱列渲染组件 / 同梱列レンダリング
 const BundleCell = defineComponent({
   name: 'BundleCell',
   props: {
@@ -278,7 +335,6 @@ const props = withDefaults(
     bulkEditEnabled?: boolean
     // 批量削除
     batchDeleteEnabled?: boolean
-    // SearchForm quick global search text (client-side, matches visible text)
     globalSearchText?: string
   }>(),
   {
@@ -339,8 +395,21 @@ const {
 const innerPageSize = ref(props.pageSize)
 const innerCurrentPage = ref(props.currentPage)
 
-// 行選択内部状態
+// 行選択内部状態 / 行选择内部状态
 const innerSelectedKeys = ref<Array<RowKey>>([...(props.selectedKeys ?? [])])
+
+// カラム表示/非表示管理 / 列显示/隐藏管理
+const hiddenColumnKeys = ref<Set<string>>(new Set())
+
+const toggleColumnVisibility = (key: string, checked: boolean) => {
+  const next = new Set(hiddenColumnKeys.value)
+  if (checked) {
+    next.delete(key)
+  } else {
+    next.add(key)
+  }
+  hiddenColumnKeys.value = next
+}
 
 watch(
   () => props.selectedKeys,
@@ -363,7 +432,7 @@ watch(
   },
 )
 
-// 检查是否有操作列
+// 检查是否有操作列 / 操作列の有無チェック
 const hasActionColumn = computed(() => {
   return columns.value?.some((col) => col.key === 'actions' || col.dataKey === 'actions')
 })
@@ -371,7 +440,7 @@ const actionColumn = computed(() => {
   return columns.value?.find((col) => col.key === 'actions' || col.dataKey === 'actions')
 })
 
-// 检查是否有同梱列
+// 检查是否有同梱列 / 同梱列の有無チェック
 const hasBundleColumn = computed(() => {
   return columns.value?.some((col) => col.key === '__bundle__' || col.dataKey === '__bundle__')
 })
@@ -379,7 +448,7 @@ const bundleColumn = computed(() => {
   return columns.value?.find((col) => col.key === '__bundle__' || col.dataKey === '__bundle__')
 })
 
-// 普通列（排除選択/操作/同梱）
+// 普通列（排除選択/操作/同梱） / 通常列（選択・操作・同梱を除外）
 const regularColumns = computed(() => {
   return (columns.value || []).filter((col: any) => {
     const key = col.key || col.dataKey
@@ -391,9 +460,17 @@ const regularColumns = computed(() => {
   })
 })
 
+// 表示中の通常列（非表示除外） / 显示中的通常列（排除隐藏列）
+const visibleRegularColumns = computed(() => {
+  return regularColumns.value.filter((col: any) => {
+    const key = String(col.key || col.dataKey)
+    return !hiddenColumnKeys.value.has(key)
+  })
+})
+
 // Total column count for empty-row colspan
 const totalColumnCount = computed(() => {
-  let count = regularColumns.value.length
+  let count = visibleRegularColumns.value.length
   if (rowSelectionEnabled.value && paginationMode.value !== 'server') count++
   if (hasBundleColumn.value) count++
   if (hasActionColumn.value) count++
@@ -443,7 +520,7 @@ const formatColumnValue = (row: RowData, col: any): string => {
   return String(value)
 }
 
-// 获取单元格类名（用于 error-cell 等）
+// 获取单元格类名（用于 error-cell 等） / セルクラス名取得
 const getCellClassName = ({ row, column }: { row: RowData; column: any }) => {
   const cellProps = (rawTableProps.value as any)?.cellProps
   if (typeof cellProps === 'function') {
@@ -461,7 +538,7 @@ const getRowClassName = ({ row: _row }: { row: RowData }) => {
   return ''
 }
 
-// Row selection helpers
+// Row selection helpers / 行選択ヘルパー
 const isRowSelected = (row: RowData): boolean => {
   const keyField = rowKey.value as string
   const key = (row as any)?.[keyField]
@@ -564,7 +641,7 @@ const handleRowCheckboxChange = (row: RowData, event: Event) => {
   emits('selection-change', { selectedKeys: finalKeys, selectedRows: allSelectedRows })
 }
 
-// 批量編集相関
+// 批量編集相関 / 一括編集関連
 const bulkEditVisible = ref(false)
 
 const isEmptyForBulkEdit = (val: any): boolean => {
@@ -666,7 +743,7 @@ const handleBatchDeleteClick = () => {
   emits('batch-delete', { selectedKeys: [...innerSelectedKeys.value], selectedRows })
 }
 
-// 分頁相関
+// 分頁相関 / ページネーション関連
 const totalItems = computed(() => {
   if (!paginationEnabled.value) {
     return filteredData.value.length
@@ -677,7 +754,10 @@ const totalItems = computed(() => {
   return filteredData.value.length
 })
 
-// OPager offset (0-based)
+const totalPages = computed(() => {
+  return Math.max(1, Math.ceil(totalItems.value / innerPageSize.value))
+})
+
 const pagerOffset = computed(() => (innerCurrentPage.value - 1) * innerPageSize.value)
 
 const handlePagerOffsetChange = (newOffset: number) => {
@@ -690,7 +770,7 @@ const handlePageSizeSelectChange = (event: Event) => {
   handlePageSizeChange(size)
 }
 
-// 前端排序関数
+// 前端排序関数 / フロントエンドソート関数
 const sortData = (dataToSort: RowData[]): RowData[] => {
   if (!sortEnabled.value || !sortBy.value || !sortOrder.value) return dataToSort
   if (sortMode.value === 'server') return dataToSort
@@ -737,7 +817,7 @@ const sortData = (dataToSort: RowData[]): RowData[] => {
   return sorted
 }
 
-// 全局搜索过滤
+// 全局搜索过滤 / グローバル検索フィルター
 const normalizedGlobalSearchText = computed(() => String(props.globalSearchText || '').trim().toLowerCase())
 
 const rowMatchesGlobalSearch = (row: RowData, queryLower: string): boolean => {
@@ -813,95 +893,7 @@ watch(
 </script>
 
 <style scoped>
-.nex-table {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.nex-table__wrapper {
-  overflow: auto;
-  border: 1px solid var(--o-border-color, #d6d6d6);
-  background: var(--o-view-background, #fff);
-}
-
-/* .o-list-table base styles are defined globally in style.css */
-
-.nex-table__pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem 0.25rem;
-  font-size: var(--o-font-size-small, 13px);
-}
-
-.nex-table__pagination--with-left {
-  justify-content: space-between;
-}
-
-.nex-table__pagination-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.nex-table__pagination-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.pagination-total {
-  font-size: 13px;
-  color: var(--o-gray-600, #606266);
-  white-space: nowrap;
-}
-
-.pagination-size-select {
-  width: auto;
-  min-width: 120px;
-  font-size: 13px;
-  padding: 4px 8px;
-}
-
-/* Selection column */
-.selection-column {
-  width: 40px;
-}
-
-.selection-column input[type="checkbox"] {
-  cursor: pointer;
-}
-
-/* Action cell */
-.action-cell-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.action-buttons {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Error cell */
 .error-cell {
-  background-color: #fff0f0 !important;
-}
-
-/* 空状態 / 空状態 */
-.empty-state-cell {
-  text-align: center;
-  padding: 2rem;
-  color: var(--o-gray-400, #c0c4cc);
-}
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
+  background-color: #fef2f2;
 }
 </style>

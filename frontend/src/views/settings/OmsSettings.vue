@@ -1,15 +1,15 @@
 <template>
   <div class="oms-settings">
-    <ControlPanel title="OMS 連携設定 / OMS 集成设置" :show-search="false">
+    <PageHeader title="OMS 連携設定 / OMS 集成设置" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" :disabled="syncing" @click="handleSync">
+        <Button variant="secondary" :disabled="syncing" @click="handleSync">
           {{ syncing ? '同期中... / 同步中...' : '今すぐ同期 / 立即同步' }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- ステータスカード / 状态卡片 -->
-    <div class="status-card o-card">
+    <Card class="status-card">
       <div class="status-header">
         <h3 class="section-title">接続ステータス / 连接状态</h3>
         <span
@@ -26,80 +26,83 @@
       <div v-if="status.syncStatus === 'error'" class="status-error">
         エラー / 错误: {{ status.errorMessage }}
       </div>
-    </div>
+    </Card>
 
     <!-- 設定フォーム / 配置表单 -->
-    <div class="config-card o-card">
+    <Card class="config-card">
       <h3 class="section-title">設定 / 配置</h3>
       <div class="form-grid">
         <div class="form-field form-field--full">
-          <label class="form-label">API エンドポイント URL <span class="required-badge">必須</span></label>
-          <input v-model="config.endpointUrl" type="url" class="o-input" placeholder="https://oms.example.com/api" />
+          <label>API エンドポイント URL <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="config.endpointUrl" type="url" placeholder="https://oms.example.com/api" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">API キー / API 密钥 <span class="required-badge">必須</span></label>
+          <label>API キー / API 密钥 <span class="text-destructive text-xs">*</span></label>
           <div class="secret-field">
             <input
               v-model="config.apiKey"
               :type="showApiKey ? 'text' : 'password'"
-              class="o-input"
+             
               placeholder="OMS API Key"
             />
-            <button type="button" class="secret-toggle" @click="showApiKey = !showApiKey">
+            <Button type="button" class="secret-toggle" @click="showApiKey = !showApiKey">
               {{ showApiKey ? '隠す / 隐藏' : '表示 / 显示' }}
-            </button>
+            </Button>
           </div>
         </div>
         <div class="form-field">
-          <label class="form-label">同期間隔（分）/ 同步间隔（分钟）</label>
-          <input v-model.number="config.syncInterval" type="number" class="o-input" min="1" max="1440" />
+          <label>同期間隔（分）/ 同步间隔（分钟）</label>
+          <Input v-model.number="config.syncInterval" type="number" min="1" max="1440" />
         </div>
         <div class="form-field">
-          <label class="form-label">自動同期 / 自动同步</label>
+          <label>自動同期 / 自动同步</label>
           <label class="toggle-wrapper">
-            <input v-model="config.autoSync" type="checkbox" class="toggle-input" />
+            <Checkbox :checked="config.autoSync" @update:checked="val => config.autoSync = val" />
             <span class="toggle-label">{{ config.autoSync ? 'ON' : 'OFF' }}</span>
           </label>
         </div>
         <div class="form-field">
-          <label class="form-label">注文同期 / 订单同步</label>
+          <label>注文同期 / 订单同步</label>
           <label class="toggle-wrapper">
-            <input v-model="config.syncOrders" type="checkbox" class="toggle-input" />
+            <Checkbox :checked="config.syncOrders" @update:checked="val => config.syncOrders = val" />
             <span class="toggle-label">{{ config.syncOrders ? 'ON' : 'OFF' }}</span>
           </label>
         </div>
         <div class="form-field">
-          <label class="form-label">在庫同期 / 库存同步</label>
+          <label>在庫同期 / 库存同步</label>
           <label class="toggle-wrapper">
-            <input v-model="config.syncInventory" type="checkbox" class="toggle-input" />
+            <Checkbox :checked="config.syncInventory" @update:checked="val => config.syncInventory = val" />
             <span class="toggle-label">{{ config.syncInventory ? 'ON' : 'OFF' }}</span>
           </label>
         </div>
         <div class="form-field">
-          <label class="form-label">出荷同期 / 出货同步</label>
+          <label>出荷同期 / 出货同步</label>
           <label class="toggle-wrapper">
-            <input v-model="config.syncShipments" type="checkbox" class="toggle-input" />
+            <Checkbox :checked="config.syncShipments" @update:checked="val => config.syncShipments = val" />
             <span class="toggle-label">{{ config.syncShipments ? 'ON' : 'OFF' }}</span>
           </label>
         </div>
       </div>
       <div class="form-actions">
-        <OButton variant="secondary" :disabled="testing" @click="handleTest">
+        <Button variant="secondary" :disabled="testing" @click="handleTest">
           {{ testing ? 'テスト中... / 测试中...' : '接続テスト / 测试连接' }}
-        </OButton>
-        <OButton variant="primary" :disabled="saving" @click="handleSave">
+        </Button>
+        <Button variant="default" :disabled="saving" @click="handleSave">
           {{ saving ? '保存中... / 保存中...' : '保存 / 保存' }}
-        </OButton>
+        </Button>
       </div>
-    </div>
+    </Card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   getOmsStatus,
   getOmsConfig,
@@ -109,7 +112,8 @@ import {
   type OmsStatus,
   type OmsConfig,
 } from '@/api/oms'
-
+import { onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const { show: showToast } = useToast()
 
 // === State / 状態 ===
@@ -291,7 +295,7 @@ onMounted(() => {
   gap: 4px;
 }
 
-.secret-field .o-input {
+.secret-field .{
   flex: 1;
 }
 

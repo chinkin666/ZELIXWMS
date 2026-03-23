@@ -7,7 +7,7 @@
 import { describe, it, expect, vi } from 'vitest'
 
 // ODialog をモック / mock ODialog
-vi.mock('@/components/odoo/ODialog.vue', () => ({
+vi.mock('@/components/ui/dialog', () => ({
   default: { name: 'ODialog', template: '<div />' },
 }))
 

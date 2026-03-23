@@ -1,16 +1,22 @@
 <template>
   <div class="inbound-receive">
-    <ControlPanel :title="`${t('wms.inbound.receiveInspection', '入庫検品')} - ${order?.orderNumber || ''}`" :show-search="false">
+    <PageHeader :title="`${t('wms.inbound.receiveInspection', '入庫検品')} - ${order?.orderNumber || ''}`" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="$router.push('/inbound/orders')">{{ t('wms.inbound.back', '戻る') }}</OButton>
+        <Button variant="secondary" size="sm" @click="$router.push('/inbound/orders')">{{ t('wms.inbound.back', '戻る') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div v-if="isLoading" class="loading-state">{{ t('wms.ui.loading', '読み込み中...') }}</div>
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else-if="order">
       <!-- 入庫指示ヘッダー -->
-      <div class="o-card info-card">
+      <Card class=" info-card">
         <div class="info-grid">
           <div class="info-item">
             <span class="info-label">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</span>
@@ -37,10 +43,10 @@
             </span>
           </div>
         </div>
-      </div>
+      </Card>
 
       <!-- 差異サマリー（検品完了後に表示）/ 差异摘要（检品完成后显示） -->
-      <div class="o-card variance-card" v-if="varianceReport && varianceReport.hasVariance && (order.status === 'received' || order.status === 'done')">
+      <Card class=" variance-card" v-if="varianceReport && varianceReport.hasVariance && (order.status === 'received' || order.status === 'done')">
         <div class="variance-header">
           <span class="variance-icon">&#x26A0;</span>
           <h4 class="variance-title">{{ t('wms.inbound.varianceDetected', '差異が検出されました') }}</h4>
@@ -50,159 +56,163 @@
           <span>{{ t('wms.inbound.totalReceived', '検品数') }}: <strong>{{ varianceReport.totalReceived }}</strong></span>
           <span class="variance-diff">{{ t('wms.inbound.variance', '差異') }}: <strong>{{ varianceReport.totalVariance }}</strong></span>
         </div>
-        <table class="o-table variance-table">
-          <thead><tr>
-            <th>SKU</th>
-            <th>{{ t('wms.inbound.productName', '商品名') }}</th>
-            <th style="text-align:right">{{ t('wms.inbound.expected', '予定') }}</th>
-            <th style="text-align:right">{{ t('wms.inbound.received', '実績') }}</th>
-            <th style="text-align:right">{{ t('wms.inbound.variance', '差異') }}</th>
-            <th>{{ t('wms.common.status', '状態') }}</th>
-          </tr></thead>
-          <tbody>
-            <tr v-for="vl in varianceReport.lines.filter(l => l.status !== 'ok')" :key="vl.lineNumber" :class="{ 'variance-row--shortage': vl.status === 'shortage', 'variance-row--pending': vl.status === 'pending' }">
-              <td class="mono">{{ vl.productSku }}</td>
-              <td>{{ vl.productName }}</td>
-              <td style="text-align:right">{{ vl.expectedQuantity }}</td>
-              <td style="text-align:right">{{ vl.receivedQuantity }}</td>
-              <td style="text-align:right;font-weight:600" :class="{ 'text-danger': vl.variance < 0 }">{{ vl.variance }}</td>
-              <td>
+        <Table class="variance-table">
+          <TableHeader><TableRow>
+            <TableHead>SKU</TableHead>
+            <TableHead>{{ t('wms.inbound.productName', '商品名') }}</TableHead>
+            <TableHead style="text-align:right">{{ t('wms.inbound.expected', '予定') }}</TableHead>
+            <TableHead style="text-align:right">{{ t('wms.inbound.received', '実績') }}</TableHead>
+            <TableHead style="text-align:right">{{ t('wms.inbound.variance', '差異') }}</TableHead>
+            <TableHead>{{ t('wms.common.status', '状態') }}</TableHead>
+          </TableRow></TableHeader>
+          <TableBody>
+            <TableRow v-for="vl in varianceReport.lines.filter(l => l.status !== 'ok')" :key="vl.lineNumber" :class="{ 'variance-row--shortage': vl.status === 'shortage', 'variance-row--pending': vl.status === 'pending' }">
+              <TableCell class="mono">{{ vl.productSku }}</TableCell>
+              <TableCell>{{ vl.productName }}</TableCell>
+              <TableCell style="text-align:right">{{ vl.expectedQuantity }}</TableCell>
+              <TableCell style="text-align:right">{{ vl.receivedQuantity }}</TableCell>
+              <TableCell style="text-align:right;font-weight:600" :class="{ 'text-danger': vl.variance < 0 }">{{ vl.variance }}</TableCell>
+              <TableCell>
                 <span v-if="vl.status === 'shortage'" class="o-status-tag o-status-tag--cancelled">{{ t('wms.inbound.shortage', '不足') }}</span>
                 <span v-else-if="vl.status === 'pending'" class="o-status-tag o-status-tag--draft">{{ t('wms.inbound.pending', '未検品') }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </Card>
 
       <!-- 検品モード切替 -->
-      <div class="o-card mode-card" v-if="order.status === 'confirmed' || order.status === 'receiving'">
+      <Card class=" mode-card" v-if="order.status === 'confirmed' || order.status === 'receiving'">
         <div class="mode-row">
           <span class="mode-label">{{ t('wms.inbound.inspectionMode', '検品方式') }}:</span>
           <div class="mode-tabs">
-            <button
+            <Button
               v-for="m in inspectionModes" :key="m.key"
+              :variant="inspectionMode === m.key ? 'default' : 'outline'"
               class="mode-tab" :class="{ 'mode-tab--active': inspectionMode === m.key }"
               @click="inspectionMode = m.key; scanMessage = ''; scanIsError = false; scanQuantity = 1"
-            >{{ m.label }}</button>
+            >{{ m.label }}</Button>
           </div>
         </div>
-      </div>
+      </Card>
 
       <!-- スキャン検品 -->
-      <div class="o-card scan-card" v-if="(order.status === 'confirmed' || order.status === 'receiving') && inspectionMode === 'scan'">
+      <Card class=" scan-card" v-if="(order.status === 'confirmed' || order.status === 'receiving') && inspectionMode === 'scan'">
         <div class="scan-row">
-          <input
+          <Input
             ref="scanInputRef"
             v-model="scanInput"
             type="text"
-            class="o-input scan-input"
+            class="scan-input"
             :placeholder="t('wms.inbound.scanPlaceholder', 'バーコード or SKUをスキャン / 入力...')"
             @keydown.enter="handleScan"
             autofocus
           />
-          <input
+          <Input
             v-model.number="scanQuantity"
             type="number"
             min="1"
-            class="o-input"
             style="width:80px;text-align:right;"
           />
-          <OButton variant="primary" @click="handleScan" :disabled="isReceiving">{{ t('wms.inbound.receive', '入庫') }}</OButton>
+          <Button variant="default" @click="handleScan" :disabled="isReceiving">{{ t('wms.inbound.receive', '入庫') }}</Button>
         </div>
         <p v-if="scanMessage" class="scan-message" :class="{ 'scan-error': scanIsError }">{{ scanMessage }}</p>
-      </div>
+      </Card>
 
       <!-- 一括確認 -->
-      <div class="o-card scan-card" v-if="(order.status === 'confirmed' || order.status === 'receiving') && inspectionMode === 'bulk'">
+      <Card class=" scan-card" v-if="(order.status === 'confirmed' || order.status === 'receiving') && inspectionMode === 'bulk'">
         <div style="display:flex;align-items:center;gap:12px;">
           <span style="font-size:14px;color:var(--o-gray-600);">{{ t('wms.inbound.bulkReceiveDesc', '全行を予定数量で入庫します（信頼できる仕入先向け）') }}</span>
-          <OButton variant="success" @click="handleBulkReceive" :disabled="isReceiving">{{ t('wms.inbound.bulkConfirm', '一括確認') }}</OButton>
+          <Button variant="default" @click="handleBulkReceive" :disabled="isReceiving">{{ t('wms.inbound.bulkConfirm', '一括確認') }}</Button>
         </div>
         <p v-if="scanMessage" class="scan-message" :class="{ 'scan-error': scanIsError }">{{ scanMessage }}</p>
-      </div>
+      </Card>
 
       <!-- 入庫明細テーブル -->
-      <div class="o-table-wrapper">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width:40px;">#</th>
-              <th class="o-table-th" style="width:140px;">SKU</th>
-              <th class="o-table-th" style="width:200px;">{{ t('wms.inbound.productName', '商品名') }}</th>
-              <th class="o-table-th" style="width:140px;">{{ t('wms.inbound.lot', 'ロット') }}</th>
-              <th class="o-table-th" style="width:70px;">{{ t('wms.inbound.category', '区分') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:100px;">{{ t('wms.inbound.expectedQuantity', '予定数量') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:100px;">{{ t('wms.inbound.received', '入庫済') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:100px;">{{ t('wms.inbound.remaining', '残り') }}</th>
-              <th class="o-table-th" style="width:100px;">{{ t('wms.inbound.progress', '進捗') }}</th>
-              <th class="o-table-th" style="width:100px;">{{ t('wms.common.actions', '操作') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="line in order.lines" :key="line.lineNumber" class="o-table-row" :class="{ 'row-done': line.receivedQuantity >= line.expectedQuantity }">
-              <td class="o-table-td" style="text-align:center;">{{ line.lineNumber }}</td>
-              <td class="o-table-td"><span class="sku-text">{{ line.productSku }}</span></td>
-              <td class="o-table-td">{{ line.productName || '-' }}</td>
-              <td class="o-table-td">{{ line.lotNumber || '-' }}</td>
-              <td class="o-table-td">
+      <div class="rounded-md border overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width:40px;">#</TableHead>
+              <TableHead style="width:140px;">SKU</TableHead>
+              <TableHead style="width:200px;">{{ t('wms.inbound.productName', '商品名') }}</TableHead>
+              <TableHead style="width:140px;">{{ t('wms.inbound.lot', 'ロット') }}</TableHead>
+              <TableHead style="width:70px;">{{ t('wms.inbound.category', '区分') }}</TableHead>
+              <TableHead class="text-right" style="width:100px;">{{ t('wms.inbound.expectedQuantity', '予定数量') }}</TableHead>
+              <TableHead class="text-right" style="width:100px;">{{ t('wms.inbound.received', '入庫済') }}</TableHead>
+              <TableHead class="text-right" style="width:100px;">{{ t('wms.inbound.remaining', '残り') }}</TableHead>
+              <TableHead style="width:100px;">{{ t('wms.inbound.progress', '進捗') }}</TableHead>
+              <TableHead style="width:100px;">{{ t('wms.common.actions', '操作') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="line in order.lines" :key="line.lineNumber" :class="{ 'row-done': line.receivedQuantity >= line.expectedQuantity }">
+              <TableCell style="text-align:center;">{{ line.lineNumber }}</TableCell>
+              <TableCell><span class="sku-text">{{ line.productSku }}</span></TableCell>
+              <TableCell>{{ line.productName || '-' }}</TableCell>
+              <TableCell>{{ line.lotNumber || '-' }}</TableCell>
+              <TableCell>
                 <span class="category-tag" :class="line.stockCategory === 'damaged' ? 'category-tag--damaged' : ''">
                   {{ line.stockCategory === 'damaged' ? t('wms.inbound.damaged', '仕損') : t('wms.inbound.new', '新品') }}
                 </span>
-              </td>
-              <td class="o-table-td o-table-td--right">{{ line.expectedQuantity }}</td>
-              <td class="o-table-td o-table-td--right">
+              </TableCell>
+              <TableCell class="text-right">{{ line.expectedQuantity }}</TableCell>
+              <TableCell class="text-right">
                 <span :class="{ 'text-success': line.receivedQuantity >= line.expectedQuantity }">
                   {{ line.receivedQuantity }}
                 </span>
-              </td>
-              <td class="o-table-td o-table-td--right">
+              </TableCell>
+              <TableCell class="text-right">
                 {{ Math.max(0, line.expectedQuantity - line.receivedQuantity) }}
-              </td>
-              <td class="o-table-td">
+              </TableCell>
+              <TableCell>
                 <div class="progress-bar">
                   <div class="progress-bar__fill" :style="{ width: progressPercent(line) + '%' }"></div>
                 </div>
-              </td>
-              <td class="o-table-td">
+              </TableCell>
+              <TableCell>
                 <template v-if="line.receivedQuantity < line.expectedQuantity && (order.status === 'confirmed' || order.status === 'receiving')">
                   <div v-if="inspectionMode === 'manual'" style="display:flex;gap:4px;align-items:center;">
-                    <input
+                    <Input
                       v-model.number="manualQuantities[line.lineNumber]"
                       type="number" min="1" :max="line.expectedQuantity - line.receivedQuantity"
-                      class="o-input" style="width:60px;text-align:right;padding:4px 6px;font-size:13px;"
+                      style="width:60px;text-align:right;padding:4px 6px;font-size:13px;"
                     />
-                    <OButton variant="success" size="sm" :disabled="isReceiving || !manualQuantities[line.lineNumber]"
+                    <Button variant="default" size="sm" :disabled="isReceiving || !manualQuantities[line.lineNumber]"
                       @click="handleReceiveLine(line.lineNumber, manualQuantities[line.lineNumber] || 1)"
-                    >{{ t('wms.inbound.receive', '入庫') }}</OButton>
+                    >{{ t('wms.inbound.receive', '入庫') }}</Button>
                   </div>
-                  <OButton v-else variant="success" size="sm" :disabled="isReceiving"
+                  <Button v-else variant="default" size="sm" :disabled="isReceiving"
                     @click="handleReceiveLine(line.lineNumber, 1)"
-                  >+1</OButton>
+                  >+1</Button>
                 </template>
                 <span v-else-if="line.receivedQuantity >= line.expectedQuantity" class="text-success">{{ t('wms.inbound.complete', '完了') }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { fetchInboundOrder, receiveInboundLine, bulkReceiveInbound, fetchInboundVariance } from '@/api/inboundOrder'
 import type { InboundOrder, InboundOrderLine } from '@/types/inventory'
 import type { InboundVarianceReport } from '@/api/inboundOrder'
 import { beepSuccess, beepError, beepComplete } from '@/utils/scanBeep'
-
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -331,13 +341,7 @@ const handleReceiveLine = async (lineNumber: number, qty: number) => {
 
 const handleBulkReceive = async () => {
   if (!order.value || isReceiving.value) return
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inbound.confirmBulkReceive', '全行を予定数量で一括入庫します。よろしいですか？ / 将按预定数量批量入库所有行，确定吗？'),
-      '確認 / 确认',
-      { confirmButtonText: '実行 / 执行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   isReceiving.value = true
   scanMessage.value = ''
   try {
@@ -533,7 +537,7 @@ onMounted(() => loadOrder())
   color: #f56c6c;
 }
 
-.o-input {
+.{
   padding: 8px 12px;
   border: 1px solid var(--o-border-color, #dcdfe6);
   border-radius: var(--o-border-radius, 4px);
@@ -617,7 +621,7 @@ onMounted(() => loadOrder())
   .o-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
   /* 入力フィールド全幅 / 输入框全宽 */
-  .o-input, select.o-input { width: 100% !important; }
+  .o-input, select.{ width: 100% !important; }
 
   /* スキャン行縦積み・全幅化 / 扫描行纵向排列・全宽化 */
   .scan-row { flex-direction: column; }

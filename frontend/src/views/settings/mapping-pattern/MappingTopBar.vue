@@ -3,27 +3,30 @@
     <div class="top-left">
       <div class="field">
         <div class="label">{{ t('wms.mapping.layoutType', 'レイアウトタイプ') }}</div>
-        <select :value="configType" class="o-input" style="width: 260px" @change="$emit('update:configType', ($event.target as HTMLSelectElement).value)" :disabled="isLocked">
-          <option value="ec-company-to-order">{{ t('wms.mapping.typeEcToOrder', '受注データ取込') }}</option>
-          <option value="order-to-carrier">{{ t('wms.mapping.typeOrderToCarrier', '送り状データ出力') }}</option>
-          <option value="order-to-sheet">{{ t('wms.mapping.typeOrderToSheet', '出荷明細リスト出力') }}</option>
-          <option value="carrier-receipt-to-order">{{ t('wms.mapping.typeCarrierReceiptToOrder', '送り状データ取込') }}</option>
-          <option value="product">{{ t('wms.mapping.typeProduct', '商品マスタ取込') }}</option>
-          <option value="order-source-company">{{ t('wms.mapping.typeOrderSourceCompany', '依頼主マスタ取込') }}</option>
-        </select>
+        <Select :model-value="configType" @update:model-value="$emit('update:configType', $event)" :disabled="isLocked">
+          <SelectTrigger class="w-[260px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ec-company-to-order">{{ t('wms.mapping.typeEcToOrder', '受注データ取込') }}</SelectItem>
+            <SelectItem value="order-to-carrier">{{ t('wms.mapping.typeOrderToCarrier', '送り状データ出力') }}</SelectItem>
+            <SelectItem value="order-to-sheet">{{ t('wms.mapping.typeOrderToSheet', '出荷明細リスト出力') }}</SelectItem>
+            <SelectItem value="carrier-receipt-to-order">{{ t('wms.mapping.typeCarrierReceiptToOrder', '送り状データ取込') }}</SelectItem>
+            <SelectItem value="product">{{ t('wms.mapping.typeProduct', '商品マスタ取込') }}</SelectItem>
+            <SelectItem value="order-source-company">{{ t('wms.mapping.typeOrderSourceCompany', '依頼主マスタ取込') }}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div class="field" v-if="configType === 'order-to-carrier' || configType === 'carrier-receipt-to-order'">
         <div class="label">{{ t('wms.mapping.carrier', '配送業者') }}</div>
-        <select
-          :value="carrierId"
-          class="o-input"
-          style="width: 260px"
-          @change="$emit('update:carrierId', ($event.target as HTMLSelectElement).value)"
-          :disabled="isLocked"
-        >
-          <option value="" disabled>{{ t('wms.mapping.selectCarrier', '配送業者を選択') }}</option>
-          <option v-for="c in carrierOptions" :key="c._id" :value="c._id">{{ c.name }}</option>
-        </select>
+        <Select :model-value="carrierId" @update:model-value="$emit('update:carrierId', $event)" :disabled="isLocked">
+          <SelectTrigger class="w-[260px]">
+            <SelectValue :placeholder="t('wms.mapping.selectCarrier', '配送業者を選択')" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="c in carrierOptions" :key="c._id" :value="c._id">{{ c.name }}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div
         class="field"
@@ -43,13 +46,18 @@
             class="hidden-input"
             @change="onNativeFileSelect"
           />
-          <OButton variant="primary" @click="fileInputRef?.click()">{{ t('wms.mapping.selectFile', 'ファイルを選択') }}</OButton>
-          <select :value="encoding" class="o-input" style="width: 160px" @change="$emit('update:encoding', ($event.target as HTMLSelectElement).value)">
-            <option value="shift_jis">Shift_JIS ({{ t('wms.mapping.default', '既定') }})</option>
-            <option value="utf-8">UTF-8</option>
-            <option value="utf-8-sig">UTF-8 (BOM)</option>
-            <option value="gbk">GBK/GB18030</option>
-          </select>
+          <Button variant="default" @click="fileInputRef?.click()">{{ t('wms.mapping.selectFile', 'ファイルを選択') }}</Button>
+          <Select :model-value="encoding" @update:model-value="$emit('update:encoding', $event)">
+            <SelectTrigger class="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="shift_jis">Shift_JIS ({{ t('wms.mapping.default', '既定') }})</SelectItem>
+              <SelectItem value="utf-8">UTF-8</SelectItem>
+              <SelectItem value="utf-8-sig">UTF-8 (BOM)</SelectItem>
+              <SelectItem value="gbk">GBK/GB18030</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div class="hint">{{ t('wms.mapping.fileUploadHint', 'CSV/Excel をアップロードすると、入力元に列が表示されます') }}</div>
       </div>
@@ -57,21 +65,21 @@
     <div class="top-right">
       <div class="field">
         <div class="label">{{ t('wms.mapping.sampleData', 'サンプルデータ') }}</div>
-        <OButton variant="secondary" @click="$emit('load-sample-orders')">{{ t('wms.mapping.loadSampleOrders', '出荷指示サンプル読込') }}</OButton>
+        <Button variant="secondary" @click="$emit('load-sample-orders')">{{ t('wms.mapping.loadSampleOrders', '出荷指示サンプル読込') }}</Button>
       </div>
       <div class="field">
         <div class="label">{{ t('wms.mapping.layoutName', 'レイアウト名') }}</div>
-        <input :value="configName" class="o-input" style="width: 200px" :placeholder="t('wms.mapping.layoutNamePlaceholder', 'レイアウト名を入力')" @input="$emit('update:configName', ($event.target as HTMLInputElement).value)" />
+        <Input :model-value="configName" style="width: 200px" :placeholder="t('wms.mapping.layoutNamePlaceholder', 'レイアウト名を入力')" @update:model-value="$emit('update:configName', $event)" />
       </div>
       <div class="field">
         <div class="label">{{ t('wms.mapping.description', '説明') }}</div>
-        <input :value="configDescription" class="o-input" style="width: 200px" :placeholder="t('wms.mapping.descriptionPlaceholder', '説明（任意）')" @input="$emit('update:configDescription', ($event.target as HTMLInputElement).value)" />
+        <Input :model-value="configDescription" style="width: 200px" :placeholder="t('wms.mapping.descriptionPlaceholder', '説明（任意）')" @update:model-value="$emit('update:configDescription', $event)" />
       </div>
       <div class="field">
-        <OButton variant="primary" @click="$emit('save')" :disabled="!canSave">
+        <Button variant="default" @click="$emit('save')" :disabled="!canSave">
           {{ t('wms.common.save', '保存') }}
-        </OButton>
-        <OButton variant="secondary" @click="$emit('load')" style="margin-left: 8px">{{ t('wms.mapping.load', '読み込み') }}</OButton>
+        </Button>
+        <Button variant="secondary" @click="$emit('load')" style="margin-left: 8px">{{ t('wms.mapping.load', '読み込み') }}</Button>
       </div>
     </div>
   </div>
@@ -79,7 +87,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useI18n } from '@/composables/useI18n'
 
 const { t } = useI18n()
@@ -154,7 +164,7 @@ function onNativeFileSelect(event: Event) {
 .hidden-input {
   display: none;
 }
-.o-input {
+.{
   padding: 6px 10px;
   border: 1px solid var(--o-border-color, #dee2e6);
   border-radius: 4px;

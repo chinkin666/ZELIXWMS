@@ -1,10 +1,7 @@
 <template>
-  <ODialog
-    :open="open"
-    :title="t('wms.product.subSkuManagement', '子SKU管理')"
-    size="lg"
-    @close="$emit('update:open', false)"
-  >
+  <Dialog :open="open" @update:open="val => { if (!val) { $emit('update:open', false) } }">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ t('wms.product.subSkuManagement', '子SKU管理') }}</DialogTitle></DialogHeader>
     <div v-if="editingProduct" class="sub-sku-header">
       <p><strong>{{ t('wms.product.parentProduct', '親商品') }}:</strong> {{ editingProduct.sku }} - {{ editingProduct.name }}</p>
       <p v-if="editingProduct.price"><strong>{{ t('wms.product.parentProductPrice', '親商品価格') }}:</strong> &yen;{{ editingProduct.price.toLocaleString() }}</p>
@@ -20,19 +17,20 @@
       @validate="(index) => $emit('validate', index)"
     />
 
-    <template #footer>
-      <OButton variant="secondary" @click="$emit('update:open', false)">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-      <OButton variant="primary" :disabled="saving" @click="$emit('save')">
+    <DialogFooter>
+      <Button variant="secondary" @click="$emit('update:open', false)">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+      <Button variant="default" :disabled="saving" @click="$emit('save')">
         <span v-if="saving">...</span>
         <span v-else>{{ t('wms.common.save', '保存') }}</span>
-      </OButton>
-    </template>
-  </ODialog>
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+    </Dialog>
 </template>
 
 <script setup lang="ts">
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { useI18n } from '@/composables/useI18n'
 import SubSkuInlineEditor from './SubSkuInlineEditor.vue'
 import type { Product, SubSku } from '@/types/product'

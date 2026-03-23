@@ -1,12 +1,12 @@
 <template>
   <div class="sagawa-settings">
-    <ControlPanel title="佐川急便 e飛伝Ⅲ 設定" :show-search="false">
+    <PageHeader title="佐川急便 e飛伝Ⅲ 設定" :show-search="false">
       <template #actions>
-        <OButton variant="primary" :disabled="saving" @click="handleSave">
+        <Button variant="default" :disabled="saving" @click="handleSave">
           {{ saving ? '保存中...' : '保存' }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- プラグイン状態 / 插件状态 -->
     <div class="plugin-status" :class="pluginRunning ? 'plugin-status--ok' : 'plugin-status--off'">
@@ -15,40 +15,56 @@
       <span v-if="pluginVersion" class="plugin-status__ver">v{{ pluginVersion }}</span>
     </div>
 
-    <div v-if="loading" class="loading-state">読み込み中...</div>
+    <div v-if="loading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else>
       <!-- 基本設定 / 基本设定 -->
-      <div class="o-card settings-card">
+      <Card class="settings-card">
         <div class="card-header">
           <span class="card-title">基本設定</span>
           <span class="card-description">e飛伝Ⅲ CSV 出力時のデフォルト値を設定します</span>
         </div>
         <div class="card-body">
           <div class="o-form-group">
-            <label class="form-label">請求先コード</label>
-            <input class="o-input" v-model="form.billingCode" placeholder="半角英数字12文字" maxlength="12" style="max-width:250px" />
+            <label>請求先コード</label>
+            <Input v-model="form.billingCode" placeholder="半角英数字12文字" maxlength="12" style="max-width:250px" />
             <div class="field-hint">佐川急便と契約している請求先コード</div>
           </div>
           <div class="o-form-group">
-            <label class="form-label">デフォルト送り状種類</label>
-            <select class="o-input" v-model="form.defaultInvoiceType" style="max-width:250px">
-              <option value="0">0: 元払い</option>
-              <option value="1">1: 着払い</option>
-              <option value="2">2: e-コレクト（代引き）</option>
-            </select>
+            <label>デフォルト送り状種類</label>
+            <Select v-model="form.defaultInvoiceType">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="0">0: 元払い</SelectItem>
+        <SelectItem value="1">1: 着払い</SelectItem>
+        <SelectItem value="2">2: e-コレクト（代引き）</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
           <div class="o-form-group">
-            <label class="form-label">デフォルト荷物サイズ</label>
-            <select class="o-input" v-model="form.defaultSize" style="max-width:250px">
-              <option v-for="s in PACKAGE_SIZES" :key="s" :value="s">{{ s }}</option>
-            </select>
+            <label>デフォルト荷物サイズ</label>
+            <Select v-model="form.defaultSize">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="s in PACKAGE_SIZES" :key="s" :value="s">{{ s }}</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
         </div>
-      </div>
+      </Card>
 
       <!-- 使い方ガイド / 使用说明 -->
-      <div class="o-card settings-card guide-card">
+      <Card class="settings-card guide-card">
         <div class="card-header">
           <span class="card-title">使い方</span>
         </div>
@@ -77,7 +93,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </Card>
     </template>
   </div>
 </template>
@@ -85,10 +101,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { fetchSagawaConfig } from '@/api/sagawa'
 import { getApiBaseUrl } from '@/api/base'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const toast = useToast()
 const loading = ref(false)

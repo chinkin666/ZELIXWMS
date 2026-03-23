@@ -1,4 +1,4 @@
-import { ElMessage } from 'element-plus'
+import { toast } from 'vue-sonner'
 import type { V2State } from './useV2State'
 
 interface BulkSettingsDeps {
@@ -9,7 +9,7 @@ interface BulkSettingsDeps {
 export function useV2BulkSettings({ state, allRows }: BulkSettingsDeps) {
   const applyShipPlanDate = () => {
     if (!state.shipPlanDateSelected.value) {
-      ElMessage.warning('出荷予定日を選択してください')
+      toast.warning('出荷予定日を選択してください')
       return
     }
     if (state.selectedRows.value.length === 0) return
@@ -21,19 +21,19 @@ export function useV2BulkSettings({ state, allRows }: BulkSettingsDeps) {
       changed++
       return { ...row, shipPlanDate: state.shipPlanDateSelected.value, updatedAt: nowIso }
     })
-    ElMessage.success(`出荷予定日を${state.shipPlanDateSelected.value}に設定しました（${changed}件）`)
+    toast.success(`出荷予定日を${state.shipPlanDateSelected.value}に設定しました（${changed}件）`)
     state.shipPlanDateDialogVisible.value = false
   }
 
   const applySenderBulk = () => {
     if (!state.senderBulkCompanyId.value) {
-      ElMessage.warning('ご依頼主を選択してください')
+      toast.warning('ご依頼主を選択してください')
       return
     }
     if (state.selectedRows.value.length === 0) return
     const company = state.orderSourceCompanies.value.find(c => c._id === state.senderBulkCompanyId.value)
     if (!company) {
-      ElMessage.error('ご依頼主が見つかりません')
+      toast.error('ご依頼主が見つかりません')
       return
     }
     const selectedIds = new Set(state.selectedRows.value.map(r => r.id || r._id))
@@ -62,14 +62,14 @@ export function useV2BulkSettings({ state, allRows }: BulkSettingsDeps) {
         updatedAt: nowIso,
       }
     })
-    ElMessage.success(`ご依頼主一括設定しました（${changed}件）`)
+    toast.success(`ご依頼主一括設定しました（${changed}件）`)
     state.senderBulkDialogVisible.value = false
     state.senderBulkOverwrite.value = false
   }
 
   const applyCarrierBulk = () => {
     if (!state.carrierBulkId.value) {
-      ElMessage.warning('配送業者を選択してください')
+      toast.warning('配送業者を選択してください')
       return
     }
     if (state.selectedRows.value.length === 0) return
@@ -81,7 +81,7 @@ export function useV2BulkSettings({ state, allRows }: BulkSettingsDeps) {
       changed++
       return { ...row, carrierId: state.carrierBulkId.value, updatedAt: nowIso }
     })
-    ElMessage.success(`配送業者一括設定しました（${changed}件）`)
+    toast.success(`配送業者一括設定しました（${changed}件）`)
     state.carrierBulkDialogVisible.value = false
   }
 

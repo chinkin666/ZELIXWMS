@@ -173,7 +173,6 @@
 </template>
 
 <script setup lang="ts">
-import { WarningFilled } from '@element-plus/icons-vue'
 import ShipmentOrderEditDialog from '@/components/form/ShipmentOrderEditDialog.vue'
 import ShipmentOrderImportDialog from '@/components/import/ShipmentOrderImportDialog.vue'
 import CarrierImportDialog from '@/components/import/CarrierImportDialog.vue'

@@ -1,27 +1,27 @@
 <template>
   <div class="set-assembly">
-    <ControlPanel :title="pageTitle" :show-search="false">
+    <PageHeader :title="pageTitle" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton
+          <Button
             :variant="mode === 'assembly' ? 'primary' : 'secondary'"
             size="sm"
             @click="mode = 'assembly'"
-          >{{ t('wms.setProduct.assembly', 'セット組制作') }}</OButton>
-          <OButton
+          >{{ t('wms.setProduct.assembly', 'セット組制作') }}</Button>
+          <Button
             :variant="mode === 'disassembly' ? 'primary' : 'secondary'"
             size="sm"
             @click="mode = 'disassembly'"
-          >{{ t('wms.setProduct.disassembly', 'バラシ') }}</OButton>
+          >{{ t('wms.setProduct.disassembly', 'バラシ') }}</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <div class="assembly-content">
       <!-- Step 1: Select set product -->
       <div class="section">
         <h3 class="section-title">{{ t('wms.setProduct.step1SelectSet', '1. セット組を選択') }}</h3>
-        <select v-model="selectedSetProductId" class="o-input" style="width:400px;" @change="onSetProductChange">
+        <select v-model="selectedSetProductId" style="width:400px;" @change="onSetProductChange">
           <option value="">{{ t('wms.setProduct.selectSetPlaceholder', 'セット組を選択...') }}</option>
           <option v-for="sp in setProducts" :key="sp._id" :value="sp._id">
             {{ sp.sku }} - {{ sp.name }}
@@ -32,24 +32,24 @@
       <!-- Components preview -->
       <div v-if="selectedSetProduct" class="section">
         <h3 class="section-title">{{ t('wms.setProduct.step2Components', '2. 構成品明細') }}</h3>
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th">SKU</th>
-              <th class="o-table-th">{{ t('wms.setProduct.productName', '商品名') }}</th>
-              <th class="o-table-th" style="width:100px;">{{ t('wms.setProduct.perSet', '1セットあたり') }}</th>
-              <th class="o-table-th" style="width:100px;">{{ t('wms.setProduct.totalRequired', '合計必要数') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(c, i) in selectedSetProduct.components" :key="i" class="o-table-row">
-              <td class="o-table-td"><strong>{{ c.sku }}</strong></td>
-              <td class="o-table-td">{{ c.name }}</td>
-              <td class="o-table-td">{{ c.quantity }}</td>
-              <td class="o-table-td"><strong>{{ c.quantity * orderQuantity }}</strong></td>
-            </tr>
-          </tbody>
-        </table>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>SKU</TableHead>
+              <TableHead>{{ t('wms.setProduct.productName', '商品名') }}</TableHead>
+              <TableHead style="width:100px;">{{ t('wms.setProduct.perSet', '1セットあたり') }}</TableHead>
+              <TableHead style="width:100px;">{{ t('wms.setProduct.totalRequired', '合計必要数') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="(c, i) in selectedSetProduct.components" :key="i">
+              <TableCell><strong>{{ c.sku }}</strong></TableCell>
+              <TableCell>{{ c.name }}</TableCell>
+              <TableCell>{{ c.quantity }}</TableCell>
+              <TableCell><strong>{{ c.quantity * orderQuantity }}</strong></TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
 
       <!-- Step 3: Order details -->
@@ -57,121 +57,135 @@
         <h3 class="section-title">{{ t('wms.setProduct.step3OrderDetails', '3. 指示内容') }}</h3>
         <div class="order-form">
           <div class="form-row">
-            <label class="form-label">{{ t('wms.setProduct.quantity', '数量') }} <span class="req">{{ t('wms.setProduct.required', '必須') }}</span></label>
-            <input v-model.number="orderQuantity" type="number" class="o-input" min="1" style="width:120px;" />
+            <label>{{ t('wms.setProduct.quantity', '数量') }} <span class="req">{{ t('wms.setProduct.required', '必須') }}</span></label>
+            <input v-model.number="orderQuantity" type="number" min="1" style="width:120px;" />
           </div>
           <div class="form-row">
-            <label class="form-label">{{ t('wms.setProduct.stockCategory', '在庫区分') }}</label>
-            <input v-model="orderStockCategory" type="text" class="o-input" :placeholder="t('wms.setProduct.stockCategoryPlaceholder', '例: 良品、不良品')" style="width:200px;" />
+            <label>{{ t('wms.setProduct.stockCategory', '在庫区分') }}</label>
+            <input v-model="orderStockCategory" type="text" :placeholder="t('wms.setProduct.stockCategoryPlaceholder', '例: 良品、不良品')" style="width:200px;" />
           </div>
           <div class="form-row">
-            <label class="form-label">{{ t('wms.setProduct.desiredDate', '完成希望日') }}</label>
-            <input v-model="orderDesiredDate" type="date" class="o-input" style="width:180px;" />
+            <label>{{ t('wms.setProduct.desiredDate', '完成希望日') }}</label>
+            <input v-model="orderDesiredDate" type="date" style="width:180px;" />
           </div>
           <div class="form-row">
-            <label class="form-label">{{ t('wms.setProduct.lot', 'ロット') }}</label>
-            <input v-model="orderLotNumber" type="text" class="o-input" :placeholder="t('wms.setProduct.optional', '任意')" style="width:200px;" />
+            <label>{{ t('wms.setProduct.lot', 'ロット') }}</label>
+            <input v-model="orderLotNumber" type="text" :placeholder="t('wms.setProduct.optional', '任意')" style="width:200px;" />
           </div>
           <div class="form-row">
-            <label class="form-label">{{ t('wms.setProduct.expiryDate', '消費期限') }}</label>
-            <input v-model="orderExpiryDate" type="date" class="o-input" style="width:180px;" />
+            <label>{{ t('wms.setProduct.expiryDate', '消費期限') }}</label>
+            <input v-model="orderExpiryDate" type="date" style="width:180px;" />
           </div>
           <div class="form-row">
-            <label class="form-label">{{ t('wms.setProduct.memo', 'メモ') }}</label>
-            <input v-model="orderMemo" type="text" class="o-input" :placeholder="t('wms.setProduct.optional', '任意')" style="width:300px;" />
+            <label>{{ t('wms.setProduct.memo', 'メモ') }}</label>
+            <input v-model="orderMemo" type="text" :placeholder="t('wms.setProduct.optional', '任意')" style="width:300px;" />
           </div>
         </div>
         <div style="margin-top:16px;">
-          <OButton variant="primary" :disabled="isSubmitting || orderQuantity < 1" @click="handleSubmit">
+          <Button variant="default" :disabled="isSubmitting || orderQuantity < 1" @click="handleSubmit">
             {{ isSubmitting ? t('wms.setProduct.creating', '作成中...') : (mode === 'assembly' ? t('wms.setProduct.createAssemblyOrder', 'セット組制作指示を作成') : t('wms.setProduct.createDisassemblyOrder', 'バラシ指示を作成')) }}
-          </OButton>
+          </Button>
         </div>
       </div>
 
       <!-- Recent orders -->
       <div class="section" style="margin-top:32px;">
         <h3 class="section-title">{{ t('wms.setProduct.recentOrders', '最近の指示') }}</h3>
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width:160px;">{{ t('wms.setProduct.orderNumber', '指示番号') }}</th>
-              <th class="o-table-th" style="width:80px;">{{ t('wms.setProduct.type', '種別') }}</th>
-              <th class="o-table-th" style="width:120px;">{{ t('wms.setProduct.sku', '品番') }}</th>
-              <th class="o-table-th" style="width:150px;">{{ t('wms.setProduct.name', '名称') }}</th>
-              <th class="o-table-th" style="width:80px;">{{ t('wms.setProduct.orderQuantity', '指示数') }}</th>
-              <th class="o-table-th" style="width:80px;">{{ t('wms.setProduct.completedQuantity', '完成数') }}</th>
-              <th class="o-table-th" style="width:90px;">{{ t('wms.setProduct.status', 'ステータス') }}</th>
-              <th class="o-table-th" style="width:120px;">{{ t('wms.common.actions', '操作') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="ordersLoading">
-              <td colspan="8" class="o-table-empty">{{ t('wms.common.loading', '読み込み中...') }}</td>
-            </tr>
-            <tr v-else-if="recentOrders.length === 0">
-              <td colspan="8" class="o-table-empty">{{ t('wms.setProduct.noOrders', '指示がありません') }}</td>
-            </tr>
-            <tr v-for="order in recentOrders" :key="order._id" class="o-table-row">
-              <td class="o-table-td"><strong>{{ order.orderNumber }}</strong></td>
-              <td class="o-table-td">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width:160px;">{{ t('wms.setProduct.orderNumber', '指示番号') }}</TableHead>
+              <TableHead style="width:80px;">{{ t('wms.setProduct.type', '種別') }}</TableHead>
+              <TableHead style="width:120px;">{{ t('wms.setProduct.sku', '品番') }}</TableHead>
+              <TableHead style="width:150px;">{{ t('wms.setProduct.name', '名称') }}</TableHead>
+              <TableHead style="width:80px;">{{ t('wms.setProduct.orderQuantity', '指示数') }}</TableHead>
+              <TableHead style="width:80px;">{{ t('wms.setProduct.completedQuantity', '完成数') }}</TableHead>
+              <TableHead style="width:90px;">{{ t('wms.setProduct.status', 'ステータス') }}</TableHead>
+              <TableHead style="width:120px;">{{ t('wms.common.actions', '操作') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-if="ordersLoading">
+              <TableCell colspan="8">
+                <div class="space-y-3 p-4">
+                  <Skeleton class="h-4 w-[250px] mx-auto" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                </div>
+              </TableCell>
+            </TableRow>
+            <TableRow v-else-if="recentOrders.length === 0">
+              <TableCell colspan="8" class="text-center py-8 text-muted-foreground">{{ t('wms.setProduct.noOrders', '指示がありません') }}</TableCell>
+            </TableRow>
+            <TableRow v-for="order in recentOrders" :key="order._id">
+              <TableCell><strong>{{ order.orderNumber }}</strong></TableCell>
+              <TableCell>
                 <span class="type-tag" :class="'type--' + order.type">
                   {{ order.type === 'assembly' ? t('wms.setProduct.assemblyType', '組立') : t('wms.setProduct.disassemblyType', 'バラシ') }}
                 </span>
-              </td>
-              <td class="o-table-td">{{ order.setSku }}</td>
-              <td class="o-table-td">{{ order.setName }}</td>
-              <td class="o-table-td">{{ order.quantity }}</td>
-              <td class="o-table-td">{{ order.completedQuantity }}</td>
-              <td class="o-table-td">
+              </TableCell>
+              <TableCell>{{ order.setSku }}</TableCell>
+              <TableCell>{{ order.setName }}</TableCell>
+              <TableCell>{{ order.quantity }}</TableCell>
+              <TableCell>{{ order.completedQuantity }}</TableCell>
+              <TableCell>
                 <span class="status-tag" :class="'status--' + order.status">{{ statusLabel(order.status) }}</span>
-              </td>
-              <td class="o-table-td">
+              </TableCell>
+              <TableCell>
                 <div style="display:inline-flex;gap:4px;">
-                  <OButton
+                  <Button
                     v-if="order.status === 'pending' || order.status === 'in_progress'"
-                    variant="primary" size="sm"
+                    variant="default" size="sm"
                     @click="openCompleteDialog(order)"
-                  >{{ t('wms.setProduct.complete', '完了') }}</OButton>
-                  <OButton
+                  >{{ t('wms.setProduct.complete', '完了') }}</Button>
+                  <Button
                     v-if="order.status !== 'completed' && order.status !== 'cancelled'"
-                    variant="secondary" size="sm"
+                    variant="outline" size="sm"
                     style="border-color:var(--o-danger, #C0392B);color:var(--o-danger, #C0392B);"
                     @click="handleCancel(order)"
-                  >{{ t('wms.setProduct.cancelOrder', '取消') }}</OButton>
+                  >{{ t('wms.setProduct.cancelOrder', '取消') }}</Button>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
     </div>
 
     <!-- Complete Dialog -->
-    <ODialog v-model="completeDialogVisible" :title="t('wms.setProduct.completeOrderTitle', 'セット組指示完了')" size="sm">
-      <div class="dialog-form">
-        <p>{{ t('wms.setProduct.orderNumber', '指示番号') }}: <strong>{{ completingOrder?.orderNumber }}</strong></p>
-        <p>{{ t('wms.setProduct.orderQuantity', '指示数') }}: {{ completingOrder?.quantity }}</p>
-        <div class="form-field">
-          <label class="form-label">{{ t('wms.setProduct.completedQuantity', '完成数') }}</label>
-          <input v-model.number="completeQuantity" type="number" class="o-input" min="1" />
+    <Dialog :open="completeDialogVisible" @update:open="completeDialogVisible = $event">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ t('wms.setProduct.completeOrderTitle', 'セット組指示完了') }}</DialogTitle>
+        </DialogHeader>
+        <div class="dialog-form">
+          <p>{{ t('wms.setProduct.orderNumber', '指示番号') }}: <strong>{{ completingOrder?.orderNumber }}</strong></p>
+          <p>{{ t('wms.setProduct.orderQuantity', '指示数') }}: {{ completingOrder?.quantity }}</p>
+          <div class="form-field">
+            <label>{{ t('wms.setProduct.completedQuantity', '完成数') }}</label>
+            <input v-model.number="completeQuantity" type="number" min="1" />
+          </div>
         </div>
-      </div>
-      <template #footer>
-        <OButton variant="secondary" @click="completeDialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-        <OButton variant="primary" :disabled="completingSaving" @click="handleComplete">
-          {{ completingSaving ? t('wms.setProduct.processing', '処理中...') : t('wms.setProduct.complete', '完了') }}
-        </OButton>
-      </template>
-    </ODialog>
+        <DialogFooter>
+          <Button variant="outline" @click="completeDialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+          <Button variant="default" :disabled="completingSaving" @click="handleComplete">
+            {{ completingSaving ? t('wms.setProduct.processing', '処理中...') : t('wms.setProduct.complete', '完了') }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { ref, computed, onMounted, watch } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   fetchSetProducts,
   fetchSetOrders,
@@ -182,6 +196,8 @@ import {
 import type { SetProduct, SetOrder, SetOrderStatus } from '@/types/setProduct'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const { t } = useI18n()
 const toast = useToast()
@@ -295,13 +311,7 @@ async function handleComplete() {
 }
 
 async function handleCancel(order: SetOrder) {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.setProduct.cancelConfirm', `指示「${order.orderNumber}」をキャンセルしますか？ / 确定要取消指示「${order.orderNumber}」吗？`),
-      '確認 / 确认',
-      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await cancelSetOrder(order._id)
     toast.showSuccess(t('wms.setProduct.orderCancelled', '指示をキャンセルしました'))
@@ -361,7 +371,7 @@ onMounted(async () => {
 .form-label { font-size: 13px; font-weight: 500; color: var(--o-gray-600, #606266); width: 100px; min-width: 100px; }
 .req { color: var(--o-danger, #C0392B); font-size: 11px; }
 
-.o-input { padding: 6px 10px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: 4px; font-size: 14px; outline: none; }
+.{ padding: 6px 10px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: 4px; font-size: 14px; outline: none; }
 .o-input:focus { border-color: var(--o-brand-primary, #714b67); }
 
 .type-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }

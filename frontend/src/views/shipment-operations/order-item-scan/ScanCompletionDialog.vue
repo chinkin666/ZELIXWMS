@@ -1,9 +1,7 @@
 <template>
-  <ODialog
-    :open="open"
-    :title="t('wms.inspection.scanComplete', 'スキャン完了')"
-    size="lg"
-  >
+  <Dialog :open="open">
+    <DialogContent class="sm:max-w-[800px]">
+      <DialogHeader><DialogTitle>{{ t('wms.inspection.scanComplete', 'スキャン完了') }}</DialogTitle></DialogHeader>
     <div class="completion-message">
       <p>{{ t('wms.inspection.allScanned', 'すべての商品のスキャンが完了しました。') }}</p>
       <p>{{ t('wms.inspection.orderNo', '出荷管理No') }}: {{ orderNumber }}</p>
@@ -18,23 +16,24 @@
       </div>
     </div>
 
-    <template #footer>
-      <OButton variant="secondary" @click="$emit('confirm-no-print')">{{ t('wms.inspection.confirmNoPrint', '確認（印刷なし）') }}</OButton>
-      <OButton
-        variant="primary"
+    <DialogFooter>
+      <Button variant="secondary" @click="$emit('confirm-no-print')">{{ t('wms.inspection.confirmNoPrint', '確認（印刷なし）') }}</Button>
+      <Button
+        variant="default"
         :disabled="!printImageUrl || printRendering"
         @click="$emit('print')"
       >
         {{ t('wms.inspection.print', '印刷') }}
-      </OButton>
-    </template>
-  </ODialog>
+      </Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 
 const { t } = useI18n()
 

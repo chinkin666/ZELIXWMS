@@ -1,24 +1,24 @@
 <template>
   <div class="replenishment-approval">
-    <ControlPanel :title="t('wms.inventory.replenishmentApproval', '補充承認')" :show-search="false">
+    <PageHeader :title="t('wms.inventory.replenishmentApproval', '補充承認')" :show-search="false">
       <template #actions>
-        <OButton
-          variant="primary"
+        <Button
+          variant="default"
           size="sm"
           :disabled="selectedIds.length === 0 || isProcessing"
           @click="bulkApprove"
         >
           {{ t('wms.inventory.bulkApprove', '一括承認') }} ({{ selectedIds.length }})
-        </OButton>
-        <OButton variant="secondary" size="sm" :disabled="isLoading" @click="loadData">
+        </Button>
+        <Button variant="secondary" size="sm" :disabled="isLoading" @click="loadData">
           {{ isLoading ? '読込中...' : '再読込' }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- 補充承認テーブル / 补充审批表格 -->
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="rows"
         row-key="productId"
@@ -39,16 +39,16 @@
  * 低在庫アラートから補充リクエストの承認・却下を行う。
  * 从低库存警报中审批或拒绝补充请求。
  */
-import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn } from '@/types/table'
 import { fetchLowStockAlerts } from '@/api/inventory'
 import type { LowStockAlert } from '@/types/inventory'
-
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
 interface ApprovalRow extends LowStockAlert {
   approvalStatus: 'pending' | 'approved' | 'rejected'
 }

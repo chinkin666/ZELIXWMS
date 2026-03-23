@@ -1,17 +1,23 @@
 <template>
   <div class="return-detail">
-    <ControlPanel :title="`${t('wms.returns.detailTitle', '返品詳細')} - ${order?.orderNumber || ''}`" :show-search="false">
+    <PageHeader :title="`${t('wms.returns.detailTitle', '返品詳細')} - ${order?.orderNumber || ''}`" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" @click="$router.push('/returns/list')">{{ t('wms.returns.toList', '一覧へ') }}</OButton>
-          <OButton v-if="order?.status === 'draft'" variant="primary" size="sm" @click="handleStartInspection">{{ t('wms.returns.startInspection', '検品開始') }}</OButton>
-          <OButton v-if="order?.status === 'inspecting'" variant="success" size="sm" :disabled="hasValidationErrors" @click="handleSaveInspection">{{ t('wms.returns.saveInspection', '検品保存') }}</OButton>
-          <OButton v-if="order?.status === 'inspecting'" variant="primary" size="sm" :disabled="hasValidationErrors" @click="handleComplete">{{ t('wms.returns.complete', '完了（在庫反映）') }}</OButton>
+          <Button variant="secondary" size="sm" @click="$router.push('/returns/list')">{{ t('wms.returns.toList', '一覧へ') }}</Button>
+          <Button v-if="order?.status === 'draft'" variant="default" size="sm" @click="handleStartInspection">{{ t('wms.returns.startInspection', '検品開始') }}</Button>
+          <Button v-if="order?.status === 'inspecting'" variant="default" size="sm" :disabled="hasValidationErrors" @click="handleSaveInspection">{{ t('wms.returns.saveInspection', '検品保存') }}</Button>
+          <Button v-if="order?.status === 'inspecting'" variant="default" size="sm" :disabled="hasValidationErrors" @click="handleComplete">{{ t('wms.returns.complete', '完了（在庫反映）') }}</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div v-if="isLoading" style="padding:2rem;text-align:center;color:var(--o-gray-500);">{{ t('wms.returns.loading', '読み込み中...') }}</div>
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else-if="order">
       <div class="info-bar">
@@ -25,55 +31,55 @@
         <span><strong>{{ t('wms.returns.reasonDetail', '理由詳細') }}:</strong> {{ order.reasonDetail }}</span>
       </div>
 
-      <div class="o-table-wrapper">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width:40px;">#</th>
-              <th class="o-table-th" style="width:120px;">{{ t('wms.returns.sku', 'SKU') }}</th>
-              <th class="o-table-th">{{ t('wms.returns.productName', '商品名') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:70px;">{{ t('wms.returns.quantity', '数量') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:80px;">{{ t('wms.returns.inspected', '検品済') }}</th>
-              <th class="o-table-th" style="width:110px;">{{ t('wms.returns.disposition', '判定') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:80px;">{{ t('wms.returns.restock', '再入庫') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:80px;">{{ t('wms.returns.dispose', '廃棄') }}</th>
-              <th v-if="hasRestockLine" class="o-table-th" style="width:150px;">{{ t('wms.returns.restockLocation', '再入庫先') }}</th>
-              <th class="o-table-th" style="width:100px;">{{ t('wms.returns.memo', 'メモ') }}</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div class="rounded-md border overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width:40px;">#</TableHead>
+              <TableHead style="width:120px;">{{ t('wms.returns.sku', 'SKU') }}</TableHead>
+              <TableHead>{{ t('wms.returns.productName', '商品名') }}</TableHead>
+              <TableHead class="text-right" style="width:70px;">{{ t('wms.returns.quantity', '数量') }}</TableHead>
+              <TableHead class="text-right" style="width:80px;">{{ t('wms.returns.inspected', '検品済') }}</TableHead>
+              <TableHead style="width:110px;">{{ t('wms.returns.disposition', '判定') }}</TableHead>
+              <TableHead class="text-right" style="width:80px;">{{ t('wms.returns.restock', '再入庫') }}</TableHead>
+              <TableHead class="text-right" style="width:80px;">{{ t('wms.returns.dispose', '廃棄') }}</TableHead>
+              <TableHead v-if="hasRestockLine" style="width:150px;">{{ t('wms.returns.restockLocation', '再入庫先') }}</TableHead>
+              <TableHead style="width:100px;">{{ t('wms.returns.memo', 'メモ') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             <template v-for="(line, idx) in order.lines" :key="idx">
-            <tr class="o-table-row" :class="{ 'row-error': lineErrors[idx]?.length }">
-              <td class="o-table-td">{{ line.lineNumber }}</td>
-              <td class="o-table-td" style="font-family:monospace;">{{ line.productSku }}</td>
-              <td class="o-table-td">{{ line.productName || '-' }}</td>
-              <td class="o-table-td o-table-td--right">{{ line.quantity }}</td>
-              <td class="o-table-td o-table-td--right">
-                <input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.inspectedQuantity" type="number" min="0" class="o-input o-input-sm" :class="{ 'input-error': lineErrors[idx]?.includes('inspected') }" style="width:60px;text-align:right;" />
+            <TableRow :class="{ 'row-error': lineErrors[idx]?.length }">
+              <TableCell>{{ line.lineNumber }}</TableCell>
+              <TableCell style="font-family:monospace;">{{ line.productSku }}</TableCell>
+              <TableCell>{{ line.productName || '-' }}</TableCell>
+              <TableCell class="text-right">{{ line.quantity }}</TableCell>
+              <TableCell class="text-right">
+                <input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.inspectedQuantity" type="number" min="0" class="h-8 text-sm" :class="{ 'input-error': lineErrors[idx]?.includes('inspected') }" style="width:60px;text-align:right;" />
                 <span v-else>{{ line.inspectedQuantity }}</span>
-              </td>
-              <td class="o-table-td">
-                <select v-if="order?.status === 'inspecting'" v-model="inspInputs[idx]!.disposition" class="o-input o-input-sm" style="width:90px;">
+              </TableCell>
+              <TableCell>
+                <select v-if="order?.status === 'inspecting'" v-model="inspInputs[idx]!.disposition" class="h-8 text-sm" style="width:90px;">
                   <option value="pending">{{ t('wms.returns.dispPending', '未判定') }}</option>
                   <option value="restock">{{ t('wms.returns.dispRestock', '再入庫') }}</option>
                   <option value="dispose">{{ t('wms.returns.dispDispose', '廃棄') }}</option>
                   <option value="repair">{{ t('wms.returns.dispRepair', '修理') }}</option>
                 </select>
                 <span v-else :class="`disp-${line.disposition}`">{{ dispLabel(line.disposition) }}</span>
-              </td>
-              <td class="o-table-td o-table-td--right">
-                <input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.restockedQuantity" type="number" min="0" class="o-input o-input-sm" style="width:60px;text-align:right;" />
+              </TableCell>
+              <TableCell class="text-right">
+                <input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.restockedQuantity" type="number" min="0" class="h-8 text-sm" style="width:60px;text-align:right;" />
                 <span v-else>{{ line.restockedQuantity }}</span>
-              </td>
-              <td class="o-table-td o-table-td--right">
-                <input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.disposedQuantity" type="number" min="0" class="o-input o-input-sm" style="width:60px;text-align:right;" />
+              </TableCell>
+              <TableCell class="text-right">
+                <input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.disposedQuantity" type="number" min="0" class="h-8 text-sm" style="width:60px;text-align:right;" />
                 <span v-else>{{ line.disposedQuantity }}</span>
-              </td>
-              <td v-if="hasRestockLine" class="o-table-td">
+              </TableCell>
+              <TableCell v-if="hasRestockLine">
                 <select
                   v-if="order?.status === 'inspecting' && inspInputs[idx]!.disposition === 'restock'"
                   v-model="inspInputs[idx]!.locationId"
-                  class="o-input o-input-sm"
+                  class="h-8 text-sm"
                   style="width:130px;"
                 >
                   <option value="">{{ t('wms.common.pleaseSelect', '選択...') }}</option>
@@ -85,30 +91,30 @@
                   {{ locationName(line.locationId) }}
                 </span>
                 <span v-else>-</span>
-              </td>
-              <td class="o-table-td">{{ line.memo || '-' }}</td>
-            </tr>
-            <tr v-if="order?.status === 'inspecting' && lineErrorMessages[idx]?.length" class="error-row">
-              <td :colspan="hasRestockLine ? 10 : 9" class="o-table-td error-messages">
+              </TableCell>
+              <TableCell>{{ line.memo || '-' }}</TableCell>
+            </TableRow>
+            <TableRow v-if="order?.status === 'inspecting' && lineErrorMessages[idx]?.length" class="error-row">
+              <TableCell :colspan="hasRestockLine ? 10 : 9" class="error-messages">
                 <span v-for="(msg, mi) in lineErrorMessages[idx]" :key="mi" class="error-msg">{{ msg }}</span>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
             </template>
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { useRoute } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import {
   fetchReturnOrder,
   startReturnInspection,
@@ -118,7 +124,11 @@ import {
 import type { ReturnOrder } from '@/api/returnOrder'
 import { fetchLocations } from '@/api/location'
 import type { Location } from '@/types/inventory'
-
+import { computed, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const route = useRoute()
 const toast = useToast()
 const { t } = useI18n()
@@ -238,13 +248,7 @@ const handleSaveInspection = async () => {
 }
 
 const handleComplete = async () => {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.returns.confirmComplete', '返品を完了し在庫に反映しますか？ / 确定要完成退货并反映到库存吗？'),
-      '確認 / 确认',
-      { confirmButtonText: '完了 / 完成', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     const res = await completeReturnOrder(route.params.id as string)
     toast.showSuccess(t('wms.returns.completeSuccess', `完了: 再入庫${res.restockedTotal}点 / 廃棄${res.disposedTotal}点`))

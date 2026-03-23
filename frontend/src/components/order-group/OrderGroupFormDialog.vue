@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="modelValue"
-    :title="isEditing ? '出荷グループを編集' : '出荷グループを追加'"
-    size="md"
-    @close="$emit('update:modelValue', false)"
-  >
+  <Dialog :open="modelValue" @update:open="$emit('update:modelValue', $event)">
+    <DialogContent class="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>{{ isEditing ? '出荷グループを編集' : '出荷グループを追加' }}</DialogTitle>
+      </DialogHeader>
     <!-- 编辑时显示 ID / 編集時にID表示 -->
     <div v-if="isEditing && initialData" class="group-id-display">
       <span class="group-id-label">グループID</span>
@@ -128,17 +127,18 @@
       </div>
     </div>
 
-    <template #footer>
-      <OButton variant="secondary" @click="$emit('update:modelValue', false)">キャンセル</OButton>
-      <OButton variant="primary" @click="handleSubmit">{{ isEditing ? '更新' : '作成' }}</OButton>
-    </template>
-  </ODialog>
+    <DialogFooter>
+      <Button variant="secondary" @click="$emit('update:modelValue', false)">キャンセル</Button>
+      <Button variant="default" @click="handleSubmit">{{ isEditing ? '更新' : '作成' }}</Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { OrderGroup, SortCriteria, SortCriteriaType } from '@/types/orderGroup'
 import { SORT_CRITERIA_TYPE_LABELS, BUSINESS_TYPE_LABELS } from '@/types/orderGroup'
 

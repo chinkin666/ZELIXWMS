@@ -63,7 +63,6 @@ type ShipmentOrdersListResponse<T = any> = T[] | { items: T[]; total?: number; p
 
 export async function fetchShipmentOrders(params?: { limit?: number }): Promise<any[]> {
   // NOTE: This endpoint supports server-side pagination/filtering/sorting.
-  // - use q(JSON) to send SearchForm payload.
   const url = new URL(`${API_BASE_URL}/shipment-orders`)
   if (params?.limit) url.searchParams.set('limit', String(params.limit))
   // デフォルトはorderNumberでソート / 默认使用 orderNumber 排序

@@ -1,11 +1,17 @@
 <template>
   <div class="print-page">
     <div class="no-print toolbar">
-      <button class="toolbar-btn" @click="handlePrint">{{ t('wms.inbound.print', '印刷') }}</button>
-      <button class="toolbar-btn" @click="$router.back()">{{ t('wms.inbound.back', '戻る') }}</button>
+      <Button class="toolbar-btn" @click="handlePrint">{{ t('wms.inbound.print', '印刷') }}</Button>
+      <Button variant="outline" class="toolbar-btn" @click="$router.back()">{{ t('wms.inbound.back', '戻る') }}</Button>
     </div>
 
-    <div v-if="isLoading" class="loading">{{ t('wms.ui.loading', '読み込み中...') }}</div>
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else-if="order">
       <div class="sheet">
@@ -20,43 +26,43 @@
         </div>
 
         <!-- 検品テーブル -->
-        <table class="sheet-table">
-          <thead>
-            <tr>
-              <th style="width:40px;">No</th>
-              <th style="width:110px;">{{ t('wms.inbound.productCode', '品番') }}</th>
-              <th style="width:60px;">{{ t('wms.inbound.stockCategory', '在庫区分') }}</th>
-              <th style="width:70px;">{{ t('wms.inbound.expectedQty', '入荷予定数') }}</th>
-              <th style="width:70px;">{{ t('wms.inbound.confirmedQty', '確認数') }}</th>
-              <th style="width:80px;">{{ t('wms.inbound.supplier', '仕入先') }}</th>
-              <th>{{ t('wms.inbound.productName', '商品名') }}</th>
-              <th style="width:80px;">{{ t('wms.inbound.lot', 'ロット') }}</th>
-              <th style="width:80px;">{{ t('wms.inbound.expiryDate', '賞味期限') }}</th>
-              <th style="width:100px;">{{ t('wms.inbound.memo', 'メモ') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="line in order.lines" :key="line.lineNumber">
-              <td style="text-align:center;">{{ line.lineNumber }}</td>
-              <td class="mono">{{ line.productSku }}</td>
-              <td style="text-align:center;">{{ line.stockCategory === 'damaged' ? t('wms.inbound.damaged', '仕損') : t('wms.inbound.new', '新品') }}</td>
-              <td style="text-align:right;">{{ line.expectedQuantity }}</td>
-              <td class="confirm-cell"></td>
-              <td>{{ order.supplier?.name || '' }}</td>
-              <td>{{ line.productName || '' }}</td>
-              <td>{{ line.lotNumber || '' }}</td>
-              <td>{{ line.expiryDate ? formatDate(line.expiryDate) : '' }}</td>
-              <td>{{ line.memo || '' }}</td>
-            </tr>
+        <Table class="sheet-table">
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width:40px;">No</TableHead>
+              <TableHead style="width:110px;">{{ t('wms.inbound.productCode', '品番') }}</TableHead>
+              <TableHead style="width:60px;">{{ t('wms.inbound.stockCategory', '在庫区分') }}</TableHead>
+              <TableHead style="width:70px;">{{ t('wms.inbound.expectedQty', '入荷予定数') }}</TableHead>
+              <TableHead style="width:70px;">{{ t('wms.inbound.confirmedQty', '確認数') }}</TableHead>
+              <TableHead style="width:80px;">{{ t('wms.inbound.supplier', '仕入先') }}</TableHead>
+              <TableHead>{{ t('wms.inbound.productName', '商品名') }}</TableHead>
+              <TableHead style="width:80px;">{{ t('wms.inbound.lot', 'ロット') }}</TableHead>
+              <TableHead style="width:80px;">{{ t('wms.inbound.expiryDate', '賞味期限') }}</TableHead>
+              <TableHead style="width:100px;">{{ t('wms.inbound.memo', 'メモ') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="line in order.lines" :key="line.lineNumber">
+              <TableCell style="text-align:center;">{{ line.lineNumber }}</TableCell>
+              <TableCell class="mono">{{ line.productSku }}</TableCell>
+              <TableCell style="text-align:center;">{{ line.stockCategory === 'damaged' ? t('wms.inbound.damaged', '仕損') : t('wms.inbound.new', '新品') }}</TableCell>
+              <TableCell style="text-align:right;">{{ line.expectedQuantity }}</TableCell>
+              <TableCell class="confirm-cell"></TableCell>
+              <TableCell>{{ order.supplier?.name || '' }}</TableCell>
+              <TableCell>{{ line.productName || '' }}</TableCell>
+              <TableCell>{{ line.lotNumber || '' }}</TableCell>
+              <TableCell>{{ line.expiryDate ? formatDate(line.expiryDate) : '' }}</TableCell>
+              <TableCell>{{ line.memo || '' }}</TableCell>
+            </TableRow>
             <!-- 合計行 -->
-            <tr class="total-row">
-              <td colspan="3" style="text-align:right;font-weight:700;">{{ t('wms.inbound.total', '合計') }}</td>
-              <td style="text-align:right;font-weight:700;">{{ totalExpected }}</td>
-              <td class="confirm-cell"></td>
-              <td colspan="5"></td>
-            </tr>
-          </tbody>
-        </table>
+            <TableRow class="total-row">
+              <TableCell colspan="3" style="text-align:right;font-weight:700;">{{ t('wms.inbound.total', '合計') }}</TableCell>
+              <TableCell style="text-align:right;font-weight:700;">{{ totalExpected }}</TableCell>
+              <TableCell class="confirm-cell"></TableCell>
+              <TableCell colspan="5"></TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
 
         <!-- フッター（署名欄） -->
         <div class="sheet-footer">
@@ -85,6 +91,8 @@ import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import { fetchInboundOrder } from '@/api/inboundOrder'
 import type { InboundOrder } from '@/types/inventory'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 
 const { t } = useI18n()
 const route = useRoute()

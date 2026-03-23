@@ -1,8 +1,8 @@
 <template>
   <div class="print-page">
     <div class="no-print toolbar">
-      <button class="toolbar-btn" @click="handlePrint">{{ t('wms.inbound.print', '印刷') }}</button>
-      <button class="toolbar-btn" @click="$router.back()">{{ t('wms.inbound.back', '戻る') }}</button>
+      <Button class="toolbar-btn" @click="handlePrint">{{ t('wms.inbound.print', '印刷') }}</Button>
+      <Button variant="outline" class="toolbar-btn" @click="$router.back()">{{ t('wms.inbound.back', '戻る') }}</Button>
       <div class="toolbar-options">
         <label class="toolbar-label">
           <input type="checkbox" v-model="showOrderBarcode" /> {{ t('wms.inbound.orderNumberBarcode', '指示番号バーコード') }}
@@ -12,16 +12,25 @@
         </label>
         <label class="toolbar-label">
           {{ t('wms.inbound.labelSize', 'サイズ') }}:
-          <select v-model="labelSize" class="toolbar-select">
-            <option value="small">{{ t('wms.inbound.sizeSmall', '小') }}</option>
-            <option value="medium">{{ t('wms.inbound.sizeMedium', '中') }}</option>
-            <option value="large">{{ t('wms.inbound.sizeLarge', '大') }}</option>
-          </select>
+          <Select v-model="labelSize">
+            <SelectTrigger class="toolbar-select"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="small">{{ t('wms.inbound.sizeSmall', '小') }}</SelectItem>
+              <SelectItem value="medium">{{ t('wms.inbound.sizeMedium', '中') }}</SelectItem>
+              <SelectItem value="large">{{ t('wms.inbound.sizeLarge', '大') }}</SelectItem>
+            </SelectContent>
+          </Select>
         </label>
       </div>
     </div>
 
-    <div v-if="isLoading" class="loading">{{ t('wms.ui.loading', '読み込み中...') }}</div>
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else-if="order">
       <div class="barcode-grid" :class="`barcode-grid--${labelSize}`">
@@ -55,9 +64,12 @@
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
+import { Button } from '@/components/ui/button'
 import { useToast } from '@/composables/useToast'
 import { fetchInboundOrder } from '@/api/inboundOrder'
 import type { InboundOrder } from '@/types/inventory'

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import OToastManager from '@/components/odoo/OToastManager.vue'
-import OConfirmOverlay from '@/components/odoo/OConfirmOverlay.vue'
+import { Toaster } from '@/components/ui/sonner'
+import ConfirmDialog from '@/components/shared/ConfirmDialog.vue'
 </script>
 
 <template>
-  <OToastManager />
-  <OConfirmOverlay />
+  <ConfirmDialog />
   <router-view />
+  <Toaster />
 </template>

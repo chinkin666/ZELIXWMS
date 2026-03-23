@@ -1,7 +1,7 @@
 import { h } from 'vue'
 import type { FunctionalComponent } from 'vue'
 
-// Placeholder symbol (was element-plus TableV2Placeholder)
+// Placeholder symbol
 const TableV2Placeholder = Symbol('placeholder')
 
 export interface HeaderGroupCellStyle {

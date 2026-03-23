@@ -1,25 +1,30 @@
 <template>
   <div class="product-settings">
-    <ControlPanel :title="t('wms.product.title', '商品設定')" :show-search="false">
+    <PageHeader :title="t('wms.product.title', '商品設定')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate"><span class="o-icon">+</span> {{ t('wms.product.addProduct', '商品を追加') }}</OButton>
-        <OButton variant="success" @click="showImportDialog = true"><span class="o-icon">&#8593;</span> {{ t('wms.product.selectImportFile', '取り込みファイルを選択') }}</OButton>
-        <OButton variant="secondary" @click="showExportPanel = !showExportPanel">{{ t('wms.product.csvSettings', 'CSV設定') }}</OButton>
-        <OButton variant="secondary" @click="exportCsv">{{ t('wms.product.csvExport', 'CSV出力') }}</OButton>
+        <Button variant="default" @click="openCreate"><span>+</span> {{ t('wms.product.addProduct', '商品を追加') }}</Button>
+        <Button variant="default" @click="showImportDialog = true"><span>&#8593;</span> {{ t('wms.product.selectImportFile', '取り込みファイルを選択') }}</Button>
+        <Button variant="secondary" @click="showExportPanel = !showExportPanel">{{ t('wms.product.csvSettings', 'CSV設定') }}</Button>
+        <Button variant="secondary" @click="exportCsv">{{ t('wms.product.csvExport', 'CSV出力') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- CSV導出設定パネル -->
-    <div v-if="showExportPanel" class="o-card export-panel">
+    <Card v-if="showExportPanel" class="export-panel">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h3 class="panel-title">{{ t('wms.product.csvExportSettings', '商品データCSV出力設定') }}</h3>
         <div style="display:flex;gap:6px;">
-          <select v-model="selectedExportPreset" class="o-input o-input-sm" style="width:160px;" @change="loadExportPreset">
-            <option value="">{{ t('wms.product.defaultAllItems', 'デフォルト（全項目）') }}</option>
-            <option v-for="p in exportPresets" :key="p.name" :value="p.name">{{ p.name }}</option>
-          </select>
-          <OButton variant="secondary" size="sm" @click="saveExportPreset">{{ t('wms.common.save', '保存') }}</OButton>
-          <OButton v-if="selectedExportPreset" variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;" @click="deleteExportPreset">{{ t('wms.common.delete', '削除') }}</OButton>
+          <Select v-model="selectedExportPreset" @update:model-value="loadExportPreset">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="__all__">{{ t('wms.product.defaultAllItems', 'デフォルト（全項目）') }}</SelectItem>
+        <SelectItem v-for="p in exportPresets" :key="p.name" :value="p.name">{{ p.name }}</SelectItem>
+        </SelectContent>
+      </Select>
+          <Button variant="secondary" size="sm" @click="saveExportPreset">{{ t('wms.common.save', '保存') }}</Button>
+          <Button v-if="selectedExportPreset" variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;" @click="deleteExportPreset">{{ t('wms.common.delete', '削除') }}</Button>
         </div>
       </div>
       <div class="export-col-grid">
@@ -34,63 +39,63 @@
         </label>
       </div>
       <div style="margin-top:8px;display:flex;gap:6px;">
-        <OButton variant="secondary" size="sm" @click="exportColumnKeys = allExportColumns.map(c => c.key)">{{ t('wms.product.selectAll', '全選択') }}</OButton>
-        <OButton variant="secondary" size="sm" @click="exportColumnKeys = []">{{ t('wms.product.deselectAll', '全解除') }}</OButton>
+        <Button variant="secondary" size="sm" @click="exportColumnKeys = allExportColumns.map(c => c.key)">{{ t('wms.product.selectAll', '全選択') }}</Button>
+        <Button variant="secondary" size="sm" @click="exportColumnKeys = []">{{ t('wms.product.deselectAll', '全解除') }}</Button>
       </div>
-    </div>
+    </Card>
 
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="productSearch"
-      @search="handleSearch"
-    />
 
     <!-- 在庫クイックフィルター / 库存快速过滤器 -->
     <div class="stock-filter-bar">
       <span class="stock-filter-label">{{ t('wms.product.stockFilter', '在庫:') }}</span>
-      <button
+      <Button
+        :variant="stockFilter === '' ? 'default' : 'outline'"
+        size="sm"
         class="stock-filter-btn"
         :class="{ 'stock-filter-btn--active': stockFilter === '' }"
         @click="stockFilter = ''"
-      >{{ t('wms.product.stockAll', '全て') }}</button>
-      <button
+      >{{ t('wms.product.stockAll', '全て') }}</Button>
+      <Button
+        :variant="stockFilter === 'inStock' ? 'default' : 'outline'"
+        size="sm"
         class="stock-filter-btn stock-filter-btn--in"
         :class="{ 'stock-filter-btn--active': stockFilter === 'inStock' }"
         @click="stockFilter = 'inStock'"
-      >{{ t('wms.product.stockInStock', '在庫あり') }}</button>
-      <button
+      >{{ t('wms.product.stockInStock', '在庫あり') }}</Button>
+      <Button
+        :variant="stockFilter === 'noStock' ? 'default' : 'outline'"
+        size="sm"
         class="stock-filter-btn stock-filter-btn--out"
         :class="{ 'stock-filter-btn--active': stockFilter === 'noStock' }"
         @click="stockFilter = 'noStock'"
-      >{{ t('wms.product.stockNoStock', '在庫なし') }}</button>
+      >{{ t('wms.product.stockNoStock', '在庫なし') }}</Button>
     </div>
 
     <div v-if="selectedKeys.length > 0" class="o-list-toolbar o-toolbar-active">
       <span class="o-selected-count">{{ selectedKeys.length }}{{ t('wms.product.itemsSelected', '件選択中') }}</span>
-      <OButton variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;" :disabled="isBulkDeleting" @click="handleBulkDelete">
+      <Button variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;" :disabled="isBulkDeleting" @click="handleBulkDelete">
         {{ isBulkDeleting ? t('wms.product.deleting', '削除中...') : t('wms.product.bulkDelete', '一括削除') }}
-      </OButton>
-      <OButton variant="secondary" size="sm" :disabled="isBulkBarcode" @click="handleBulkBarcodeGenerate">
+      </Button>
+      <Button variant="secondary" size="sm" :disabled="isBulkBarcode" @click="handleBulkBarcodeGenerate">
         {{ isBulkBarcode ? t('wms.product.generating', '生成中...') : t('wms.product.bulkBarcodeGenerate', 'バーコード一括生成') }}
-      </OButton>
-      <OButton variant="secondary" size="sm" @click="handleBulkLabelPrint">
+      </Button>
+      <Button variant="secondary" size="sm" @click="handleBulkLabelPrint">
         {{ t('wms.product.bulkLabelPrint', '一括ラベル印刷') }}
-      </OButton>
-      <OButton variant="secondary" size="sm" @click="selectedKeys = []">{{ t('wms.product.deselectItems', '選択解除') }}</OButton>
+      </Button>
+      <Button variant="secondary" size="sm" @click="selectedKeys = []">{{ t('wms.product.deselectItems', '選択解除') }}</Button>
     </div>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="filteredList"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         pagination-enabled
         pagination-mode="client"
         :page-size="25"
         :page-sizes="[10, 25, 50, 100]"
-        :global-search-text="globalSearchText"
         row-selection-enabled
         v-model:selected-keys="selectedKeys"
       />
@@ -143,14 +148,14 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { computed, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { DataTable } from '@/components/data-table'
 import ProductFormDialog from './product-settings/ProductFormDialog.vue'
 import ImportDialog from '@/components/import/ImportDialog.vue'
 import type { TableColumn, Operator } from '@/types/table'
@@ -165,6 +170,9 @@ import { useSkuValidation } from './product-settings/useSkuValidation'
 import { useProductColumns } from './product-settings/useProductColumns'
 import { useProductExport } from './product-settings/useProductExport'
 import { useProductBulkOps } from './product-settings/useProductBulkOps'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const toast = useToast()
 const { t } = useI18n()
@@ -842,13 +850,7 @@ const handleImportProducts = async (rows: any[], strategy: ImportStrategy = 'err
 }
 
 const confirmDelete = async (row: Product) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${row.name}」を削除してもよろしいですか？ / 确定要删除「${row.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   deleteProduct(row._id)
     .then(async () => {
       toast.showSuccess(t('wms.product.deleted', '削除しました'))

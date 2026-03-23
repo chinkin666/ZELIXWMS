@@ -1,29 +1,36 @@
 <template>
   <div class="peak-mode-settings">
-    <ControlPanel :title="t('wms.settings.peakMode', 'ピークモード設定')" :show-search="false" />
+    <PageHeader :title="t('wms.settings.peakMode', 'ピークモード設定')" :show-search="false" />
 
-    <OLoadingState :loading="isLoading" :empty="false">
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
+    <template v-else>
       <!-- ステータスカード / 状态卡片 -->
       <div class="status-cards">
-        <StatCard
+        <div class='rounded-lg border p-4 text-center'
           :title="t('wms.peakMode.currentStatus', '現在のステータス')"
           :value="status.enabled ? 'ピークモード ON' : 'ピークモード OFF'"
           :icon="status.enabled ? '\u{1F525}' : '\u{2744}\u{FE0F}'"
           :color="status.enabled ? '#f5222d' : '#1677ff'"
         />
-        <StatCard
+        <div class='rounded-lg border p-4 text-center'
           :title="t('wms.peakMode.capacity', '倉庫キャパシティ')"
           :value="`${capacityPercent}%`"
           :icon="'\u{1F4E6}'"
           :color="capacityColor"
         />
-        <StatCard
+        <div class='rounded-lg border p-4 text-center'
           :title="t('wms.peakMode.inboundFreeze', '入庫凍結')"
           :value="status.inboundFrozen ? '凍結中' : '通常'"
           :icon="status.inboundFrozen ? '\u{26C4}' : '\u{2705}'"
           :color="status.inboundFrozen ? '#fa8c16' : '#52c41a'"
         />
-        <StatCard
+        <div class='rounded-lg border p-4 text-center'
           v-if="status.reason"
           :title="t('wms.peakMode.reason', '有効化理由')"
           :value="status.reason"
@@ -110,23 +117,18 @@
           </label>
         </div>
         <div v-if="selectedReason === 'other'" class="reason-custom">
-          <input
-            v-model="customReason"
-            type="text"
-            class="reason-input"
-            :placeholder="t('wms.peakMode.otherReasonPlaceholder', '理由を入力してください')"
-          />
+          <Input v-model="customReason" type="text" :placeholder="t('wms.peakMode.otherReasonPlaceholder', '理由を入力してください')" />
         </div>
         <div class="reason-actions">
-          <OButton variant="primary" size="sm" @click="confirmEnable" :disabled="enabling">
+          <Button variant="default" size="sm" @click="confirmEnable" :disabled="enabling">
             {{ enabling ? t('wms.common.processing', '処理中...') : t('wms.peakMode.confirmEnable', '有効化を確定') }}
-          </OButton>
-          <OButton variant="secondary" size="sm" @click="cancelEnable">
+          </Button>
+          <Button variant="secondary" size="sm" @click="cancelEnable">
             {{ t('wms.common.cancel', 'キャンセル') }}
-          </OButton>
+          </Button>
         </div>
       </div>
-    </OLoadingState>
+    </template>
   </div>
 </template>
 
@@ -138,15 +140,15 @@
  * 控制峰值模式开关、入库冻结、查看仓库容量
  */
 import { ref, computed, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OLoadingState from '@/components/odoo/OLoadingState.vue'
-import StatCard from '@/components/odoo/StatCard.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { getApiBaseUrl } from '@/api/base'
 import { apiFetch } from '@/api/http'
+import { Input } from '@/components/ui/input'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const API_BASE_URL = getApiBaseUrl()
 const toast = useToast()
@@ -254,16 +256,7 @@ const cancelEnable = () => {
 
 // 無効化 / 禁用
 const disablePeakMode = async () => {
-  try {
-    await ElMessageBox.confirm(
-      'ピークモードを無効にしてもよろしいですか？ / 确定要禁用高峰模式吗？',
-      '確認 / 确认',
-      { confirmButtonText: '無効化 / 禁用', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch {
-    await loadStatus() // チェックボックスをリセット / 重置复选框
-    return
-  }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     const res = await apiFetch(`${API_BASE_URL}/peak-mode/disable`, {
       method: 'POST',

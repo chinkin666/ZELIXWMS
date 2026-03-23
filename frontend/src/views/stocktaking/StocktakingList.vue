@@ -1,22 +1,14 @@
 <template>
   <div class="stocktaking-list">
-    <ControlPanel :title="t('wms.stocktaking.listTitle', '棚卸一覧')" :show-search="false">
+    <PageHeader :title="t('wms.stocktaking.listTitle', '棚卸一覧')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" size="sm" @click="$router.push('/stocktaking/create')">{{ t('wms.common.create', '新規作成') }}</OButton>
+        <Button variant="default" size="sm" @click="$router.push('/stocktaking/create')">{{ t('wms.common.create', '新規作成') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="stocktakingListSearch"
-      @search="handleSearch"
-    />
-
-    <OLoadingState :loading="isLoading" :empty="!isLoading && rows.length === 0">
+    <div v-if="false"><!-- loading handled by DataTable --></div><template v-if="true">
       <div class="table-section">
-        <Table
+        <DataTable
           :columns="tableColumns"
           :data="rows"
           row-key="_id"
@@ -27,24 +19,23 @@
           :page-size="pageSize"
           :page-sizes="[25, 50, 100]"
           :global-search-text="globalSearchText"
+          :search-columns="searchColumns"
+          @search="handleSearch"
           @page-change="handlePageChange"
         />
       </div>
-    </OLoadingState>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
-import OLoadingState from '@/components/odoo/OLoadingState.vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchStocktakingOrders,
@@ -55,10 +46,12 @@ import {
   deleteStocktakingOrder,
 } from '@/api/stocktakingOrder'
 import type { StocktakingOrder } from '@/api/stocktakingOrder'
-
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
+const { confirm } = useConfirmDialog()
 const isLoading = ref(false)
 const rows = ref<StocktakingOrder[]>([])
 const total = ref(0)
@@ -187,21 +180,21 @@ const tableColumns = computed<TableColumn[]>(() => [
     width: 260,
     cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) => {
       const buttons: any[] = []
-      buttons.push(h(OButton, { size: 'sm', variant: 'secondary', onClick: () => router.push(`/stocktaking/${rowData._id}`) }, () => t('wms.stocktaking.detail', '詳細')))
+      buttons.push(h(Button, { size: 'sm', variant: 'secondary', onClick: () => router.push(`/stocktaking/${rowData._id}`) }, () => t('wms.stocktaking.detail', '詳細')))
       if (rowData.status === 'draft') {
-        buttons.push(h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleStart(rowData) }, () => t('wms.stocktaking.start', '開始')))
+        buttons.push(h(Button, { variant: 'default', size: 'sm', onClick: () => handleStart(rowData) }, () => t('wms.stocktaking.start', '開始')))
       }
       if (rowData.status === 'in_progress') {
-        buttons.push(h(OButton, { variant: 'success', size: 'sm', onClick: () => handleComplete(rowData) }, () => t('wms.stocktaking.complete', '完了')))
+        buttons.push(h(Button, { variant: 'default', size: 'sm', onClick: () => handleComplete(rowData) }, () => t('wms.stocktaking.complete', '完了')))
       }
       if (rowData.status === 'completed') {
-        buttons.push(h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleAdjust(rowData) }, () => t('wms.stocktaking.adjust', '調整反映')))
+        buttons.push(h(Button, { variant: 'default', size: 'sm', onClick: () => handleAdjust(rowData) }, () => t('wms.stocktaking.adjust', '調整反映')))
       }
       if (rowData.status !== 'adjusted' && rowData.status !== 'cancelled') {
-        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', style: 'border-color:#f56c6c;color:#f56c6c;', onClick: () => handleCancel(rowData) }, () => t('wms.stocktaking.cancel', '取消')))
+        buttons.push(h(Button, { variant: 'secondary', size: 'sm', style: 'border-color:#f56c6c;color:#f56c6c;', onClick: () => handleCancel(rowData) }, () => t('wms.stocktaking.cancel', '取消')))
       }
       if (rowData.status === 'draft' || rowData.status === 'cancelled') {
-        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', style: 'border-color:#f56c6c;color:#f56c6c;', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')))
+        buttons.push(h(Button, { variant: 'secondary', size: 'sm', style: 'border-color:#f56c6c;color:#f56c6c;', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')))
       }
       return h('div', { class: 'action-cell' }, buttons)
     },
@@ -257,13 +250,7 @@ const loadData = async () => {
 }
 
 const handleStart = async (row: StocktakingOrder) => {
-  try {
-    await ElMessageBox.confirm(
-      `棚卸 ${row.orderNumber} を開始しますか？ / 确定要开始盘点 ${row.orderNumber} 吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '開始 / 开始', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await startStocktakingOrder(row._id)
     toast.showSuccess('棚卸を開始しました')
@@ -280,13 +267,7 @@ const handleComplete = async (row: StocktakingOrder) => {
 }
 
 const handleAdjust = async (row: StocktakingOrder) => {
-  try {
-    await ElMessageBox.confirm(
-      `棚卸 ${row.orderNumber} の差異を在庫に反映しますか？この操作は取り消せません。 / 确定要将盘点 ${row.orderNumber} 的差异反映到库存吗？此操作不可撤销。`,
-      '確認 / 确认',
-      { confirmButtonText: '実行 / 执行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     const res = await adjustStocktakingOrder(row._id)
     toast.showSuccess(`${res.adjustedCount}件の差異を調整しました`)
@@ -298,13 +279,7 @@ const handleAdjust = async (row: StocktakingOrder) => {
 }
 
 const handleCancel = async (row: StocktakingOrder) => {
-  try {
-    await ElMessageBox.confirm(
-      `棚卸 ${row.orderNumber} をキャンセルしますか？ / 确定要取消盘点 ${row.orderNumber} 吗？`,
-      '確認 / 确认',
-      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await cancelStocktakingOrder(row._id)
     toast.showSuccess('棚卸をキャンセルしました')
@@ -313,13 +288,7 @@ const handleCancel = async (row: StocktakingOrder) => {
 }
 
 const handleDelete = async (row: StocktakingOrder) => {
-  try {
-    await ElMessageBox.confirm(
-      `棚卸 ${row.orderNumber} を削除しますか？ / 确定要删除盘点 ${row.orderNumber} 吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteStocktakingOrder(row._id)
     toast.showSuccess('棚卸を削除しました')

@@ -1,649 +1,409 @@
 <template>
-  <div class="shipment-operations-list">
-    <ControlPanel :title="t('wms.shipment.listTitle', '出荷一覧')" :show-search="false" />
-
-    <OrderSearchFormWrapper
-      class="search-section"
-      :columns="searchColumns"
-      :initial-values="searchInitialValues"
-      storage-key="shipment_operations_list"
-      @search="handleSearch"
-      @save="handleSave"
-    />
-
-    <div class="between-controls">
-      <label class="switch-label">{{ t('wms.shipment.showPrinted', '印刷済みも表示') }}
-        <label class="o-toggle">
-          <input type="checkbox" v-model="showPrinted">
-          <span class="o-toggle-slider"></span>
-        </label>
-      </label>
-    </div>
-
-    <!-- Plain table (same style as shipment-orders/create) -->
-    <div class="o-table-wrapper">
-      <div v-if="tableSelectedKeys.length > 0" class="o-list-toolbar o-toolbar-active">
-        <span class="o-selected-count">{{ tableSelectedKeys.length }}{{ t('wms.shipment.selectedSuffix', '件選択中') }}</span>
-      </div>
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th o-table-th--checkbox" style="width:40px;">
-              <input
-                type="checkbox"
-                :checked="isAllCurrentPageSelected"
-                :indeterminate="isSomeCurrentPageSelected && !isAllCurrentPageSelected"
-                @change="toggleSelectAll"
-              />
-            </th>
-            <th class="o-table-th" style="width:90px;">{{ t('wms.shipment.status', '状態') }}</th>
-            <th class="o-table-th o-table-th--sortable" style="width:220px;" @click="handleSortClick('orderNumber')">
-              {{ t('wms.shipment.orderNumber', '出荷管理番号') }}
-              <span v-if="sortBy === 'orderNumber'" class="o-sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-            </th>
-            <th class="o-table-th" style="width:200px;">{{ t('wms.shipment.deliveryInfo', '配送情報') }}</th>
-            <th class="o-table-th" style="width:180px;">{{ t('wms.shipment.deliveryPreference', '配送指定') }}</th>
-            <th class="o-table-th" style="width:200px;">{{ t('wms.shipment.recipient', 'お届け先') }}</th>
-            <th class="o-table-th" style="width:200px;">{{ t('wms.shipment.products', '商品') }}</th>
-            <th class="o-table-th" style="width:170px;">{{ t('wms.shipment.history', '履歴') }}</th>
-            <th class="o-table-th" style="width:140px;">{{ t('wms.common.actions', '操作') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoadingOrders">
-            <td colspan="9" class="o-table-empty">{{ t('wms.common.loading', '読み込み中...') }}</td>
-          </tr>
-          <tr v-else-if="paginatedRows.length === 0">
-            <td colspan="9" class="o-table-empty">{{ t('wms.common.noData', 'データがありません') }}</td>
-          </tr>
-          <tr
-            v-for="row in paginatedRows"
-            :key="row._id"
-            class="o-table-row"
-            :class="{ 'o-table-row--selected': tableSelectedKeys.includes(row._id) }"
-          >
-            <td class="o-table-td o-table-td--checkbox">
-              <input
-                type="checkbox"
-                :checked="tableSelectedKeys.includes(row._id)"
-                @change="toggleRowSelection(row)"
-              />
-            </td>
-            <td class="o-table-td o-table-td--status">
-              <div class="status-cell">
-                <span v-if="row.statusConfirmed" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipment.confirmed', '確定済') }}</span>
-                <span v-if="row.statusCarrierReceived" class="o-status-tag o-status-tag--issued">{{ t('wms.shipment.invoiceIssued', '送り状発行済') }}</span>
-                <span v-if="row.statusPrinted" class="o-status-tag o-status-tag--printed">{{ t('wms.shipment.printed', '印刷済') }}</span>
-                <span v-if="row.statusInspected" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipment.inspected', '検品済') }}</span>
-              </div>
-            </td>
-            <!-- 出荷管理番号 -->
-            <td class="o-table-td o-table-td--mgmt">
-              <div class="mgmt-cell">
-                <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">{{ t('wms.shipment.orderNo', '出荷管理No') }}</span>
-                  <a href="#" class="mgmt-cell__link mgmt-cell__value" @click.prevent="handleView(row)">{{ row.orderNumber || '-' }}</a>
-                </div>
-                <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">{{ t('wms.shipment.customerOrderNo', '注文番号') }}</span>
-                  <span class="mgmt-cell__value">{{ row.customerManagementNumber || '-' }}</span>
-                </div>
-                <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">{{ t('wms.shipment.trackingNumber', '送り状番号') }}</span>
-                  <span class="mgmt-cell__value">{{ row.trackingId || '-' }}</span>
-                </div>
-              </div>
-            </td>
-            <!-- 配送情報 -->
-            <td class="o-table-td o-table-td--mgmt">
-              <div class="mgmt-cell">
-                <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">{{ t('wms.shipment.carrier', '配送会社') }}</span>
-                  <span class="mgmt-cell__value">{{ getCarrierLabel(row) }}</span>
-                </div>
-                <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">{{ t('wms.shipment.deliveryService', '配送サービス') }}</span>
-                  <span class="mgmt-cell__value">{{ getInvoiceTypeLabel(row) }}</span>
-                </div>
-                <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">{{ t('wms.shipment.temperatureZone', '温度帯') }}</span>
-                  <span class="mgmt-cell__value" :style="{ color: getCoolTypeInfo(row).color }">{{ getCoolTypeInfo(row).label }}</span>
-                </div>
-              </div>
-            </td>
-            <!-- 配送指定 -->
-            <td class="o-table-td o-table-td--mgmt">
-              <div class="mgmt-cell">
-                <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">{{ t('wms.shipment.shipPlanDate', '出荷予定日') }}</span>
-                  <span class="mgmt-cell__value">{{ row.shipPlanDate || '-' }}</span>
-                </div>
-                <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">{{ t('wms.shipment.deliveryDate', 'お届け日') }}</span>
-                  <span class="mgmt-cell__value">{{ row.deliveryDatePreference || t('wms.shipment.earliest', '最短') }}</span>
-                </div>
-                <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">{{ t('wms.shipment.timeSlot', '時間帯指定') }}</span>
-                  <span class="mgmt-cell__value">{{ getTimeSlotLabel(row) }}</span>
-                </div>
-              </div>
-            </td>
-            <!-- お届け先 -->
-            <td class="o-table-td">
-              <div class="recipient-cell">
-                <div>〒{{ fmtPostal(row.recipient?.postalCode) }}</div>
-                <div>{{ [row.recipient?.prefecture, row.recipient?.city, row.recipient?.street, row.recipient?.building].filter(Boolean).join(' ') || '-' }}</div>
-                <div>{{ row.recipient?.phone || '-' }}</div>
-                <div class="recipient-cell__name">{{ row.recipient?.name || '-' }} {{ row.honorific || '様' }}</div>
-              </div>
-            </td>
-            <!-- 商品 -->
-            <td class="o-table-td">
-              <div class="product-list">
-                <div v-for="(p, pi) in (row.products || [])" :key="pi" class="product-item">
-                  <div class="product-item__info">
-                    <span class="product-item__name">{{ p.productName || '-' }}</span>
-                    <span class="product-item__meta">SKU: {{ p.inputSku || p.productSku || '-' }} / {{ t('wms.shipment.quantity', '個数') }}: {{ p.quantity ?? 0 }}</span>
-                  </div>
-                </div>
-                <span v-if="!row.products?.length" class="o-cell">-</span>
-              </div>
-            </td>
-            <!-- 履歴 -->
-            <td class="o-table-td o-table-td--mgmt">
-              <div class="mgmt-cell">
-                <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">{{ t('wms.shipment.confirmedAt', '確定日時') }}</span>
-                  <span class="mgmt-cell__value">{{ fmtDateTime(row.statusConfirmedAt) }}</span>
-                </div>
-                <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">{{ t('wms.shipment.invoiceIssuedAt', '送り状発行') }}</span>
-                  <span class="mgmt-cell__value">{{ fmtDateTime(row.statusCarrierReceivedAt) }}</span>
-                </div>
-                <div class="mgmt-cell__row">
-                  <span class="mgmt-cell__label">{{ t('wms.shipment.printedAt', '印刷日時') }}</span>
-                  <span class="mgmt-cell__value">{{ fmtDateTime(row.statusPrintedAt) }}</span>
-                </div>
-              </div>
-            </td>
-            <!-- 操作 -->
-            <td class="o-table-td o-table-td--actions">
-              <OButton variant="primary" size="sm" @click="handleView(row)">{{ t('wms.shipment.details', '詳細') }}</OButton>
-              <OButton variant="secondary" size="sm" :disabled="isUnconfirming" style="border-color:#e6a23c;color:#e6a23c;" @click="handleUnconfirm(row)">{{ t('wms.shipment.unconfirm', '確認取消') }}</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- ページネーション / 分页 -->
-    <div class="o-table-pagination">
-      <span class="o-table-pagination__info">{{ totalRows }} {{ t('wms.common.items', '件') }}</span>
-      <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;">
-          <option :value="10">10</option>
-          <option :value="25">25</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-          <option :value="500">500</option>
-        </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--">&lsaquo;</OButton>
-        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">&rsaquo;</OButton>
-      </div>
-    </div>
-
-    <!-- Bottom bar -->
-    <OrderBottomBar
-      :total-count="totalRows"
-      :selected-count="tableSelectedKeys.length"
-      :total-label="t('wms.shipment.displayCount', '表示件数')"
-    >
-      <template #right>
-        <OButton
-          variant="secondary"
-          :disabled="tableSelectedKeys.length === 0"
-          @click="handleCustomExportClick"
-        >
-          {{ t('wms.shipment.exportCsv', '出荷明細リスト出力(csv)') }}
-        </OButton>
-        <OButton
-          variant="secondary"
-          :disabled="tableSelectedKeys.length === 0"
-          @click="handleFormExportClick"
-        >
-          {{ t('wms.shipment.exportPdf', '出荷明細リスト出力(pdf)') }}
-        </OButton>
-        <OButton
-          variant="primary"
-          :disabled="tableSelectedKeys.length === 0 || isMarkingShipped"
-          @click="handleMarkShipped"
-        >
-          {{ isMarkingShipped ? t('wms.common.processing', '処理中...') : t('wms.shipment.markShipped', '出荷完了') }}
-        </OButton>
+  <div class="inbound-history">
+    <PageHeader :title="t('wms.inbound.history', '入庫履歴')" :show-search="false">
+      <template #actions>
+        <div style="display:flex;gap:6px;">
+          <Button variant="secondary" size="sm" @click="showExportSettings = !showExportSettings">
+            {{ t('wms.inbound.csvSettings', 'CSV設定') }}
+          </Button>
+          <Button variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inbound.csvExport', 'CSV出力') }}</Button>
+        </div>
       </template>
-    </OrderBottomBar>
+    </PageHeader>
 
-    <OrderViewDialog
-      v-model="viewDialogVisible"
-      :order="selectedOrder"
-      :carriers="carriers"
-      :title="t('wms.shipment.orderDetail', '出荷予定明細')"
-      mode="view"
+    <!-- 検索パネル -->
+      :columns="searchColumns"
+      :show-save="false"
+      :initial-values="searchInitialValues"
+      storage-key="inboundHistorySearch"
+      @search="handleSearch"
     />
 
-    <CustomExportDialog
-      v-model="customExportDialogVisible"
-      :orders="selectedOrdersForCustomExport"
-    />
+    <!-- CSV導出設定パネル -->
+    <div v-if="showExportSettings" class="rounded-lg border bg-card p-4">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 class="card-title" style="margin:0;">{{ t('wms.inbound.csvExportSettings', 'CSV導出設定') }}</h3>
+        <div style="display:flex;gap:6px;">
+          <Select :model-value="selectedExportPreset || '__all__'" @update:model-value="(v: string) => { selectedExportPreset = v === '__all__' ? '' : v; loadExportPreset() }">
+            <SelectTrigger class="h-8 text-sm" style="width:160px;"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">{{ t('wms.common.default', 'デフォルト') }}</SelectItem>
+              <SelectItem v-for="p in exportPresets" :key="p.name" :value="p.name">{{ p.name }}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="secondary" size="sm" @click="saveExportPreset">{{ t('wms.common.save', '保存') }}</Button>
+          <Button
+            v-if="selectedExportPreset"
+            variant="secondary" size="sm"
+            style="border-color:var(--o-danger);color:var(--o-danger);"
+            @click="deleteExportPreset"
+          >{{ t('wms.common.delete', '削除') }}</Button>
+        </div>
+      </div>
+      <div class="export-col-grid">
+        <label
+          v-for="col in allExportColumns"
+          :key="col.key"
+          class="export-col-item"
+          :class="{ 'export-col-item--active': exportColumns.includes(col.key) }"
+        >
+          <input type="checkbox" :value="col.key" v-model="exportColumns" style="margin-right:4px;" />
+          {{ col.label }}
+        </label>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:6px;">
+        <Button variant="secondary" size="sm" @click="selectAllExportCols">{{ t('wms.inbound.selectAll', '全選択') }}</Button>
+        <Button variant="secondary" size="sm" @click="exportColumns = []">{{ t('wms.inbound.deselectAll', '全解除') }}</Button>
+      </div>
+    </div>
 
-    <FormExportDialog
-      v-model="formExportDialogVisible"
-      target-type="shipment-detail-list"
-      :selected-orders="selectedOrdersForFormExport"
-      :carriers="carriers"
-      :products="products"
-    />
+    <!-- 結果テーブル -->
+    <div class="rounded-md border overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width:140px;">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</TableHead>
+            <TableHead style="width:110px;">{{ t('wms.inbound.productSku', '品番') }}</TableHead>
+            <TableHead style="width:150px;">{{ t('wms.product.productName', '商品名') }}</TableHead>
+            <TableHead style="width:90px;">{{ t('wms.inbound.location', 'ロケーション') }}</TableHead>
+            <TableHead style="width:60px;">{{ t('wms.inbound.stockCategory', '区分') }}</TableHead>
+            <TableHead class="text-right" style="width:70px;">{{ t('wms.inbound.expectedQty', '予定数') }}</TableHead>
+            <TableHead class="text-right" style="width:70px;">{{ t('wms.inbound.receivedQty', '実績数') }}</TableHead>
+            <TableHead style="width:100px;">{{ t('wms.inbound.supplier', '仕入先') }}</TableHead>
+            <TableHead style="width:100px;">{{ t('wms.inbound.orderReferenceNumber', '注文番号') }}</TableHead>
+            <TableHead style="width:80px;">{{ t('wms.inbound.lot', 'ロット') }}</TableHead>
+            <TableHead style="width:100px;">{{ t('wms.inbound.completedAt', '完了日時') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="isLoading">
+            <TableCell colspan="11">
+              <div class="space-y-3 p-4">
+                <Skeleton class="h-4 w-[250px] mx-auto" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+              </div>
+            </TableCell>
+          </TableRow>
+          <TableRow v-else-if="rows.length === 0">
+            <TableCell colspan="11" class="text-center py-8 text-muted-foreground">{{ t('wms.common.noData', 'データがありません') }}</TableCell>
+          </TableRow>
+          <TableRow v-for="(row, idx) in rows" :key="idx">
+            <TableCell><span class="order-number">{{ row.orderNumber }}</span></TableCell>
+            <TableCell><span class="sku-text">{{ row.productSku }}</span></TableCell>
+            <TableCell>{{ row.productName || '-' }}</TableCell>
+            <TableCell>
+              <span v-if="row.putawayLocationCode" class="location-badge">{{ row.putawayLocationCode }}</span>
+              <span v-else-if="row.locationCode" class="location-badge">{{ row.locationCode }}</span>
+              <span v-else>-</span>
+            </TableCell>
+            <TableCell>
+              <span class="o-status-tag" :class="row.stockCategory === 'damaged' ? 'o-status-tag--held' : 'o-status-tag--confirmed'">
+                {{ row.stockCategory === 'damaged' ? t('wms.inbound.stockDamaged', '仕損') : t('wms.inbound.stockNew', '新品') }}
+              </span>
+            </TableCell>
+            <TableCell class="text-right">{{ row.expectedQuantity }}</TableCell>
+            <TableCell class="text-right">
+              <strong>{{ row.receivedQuantity }}</strong>
+            </TableCell>
+            <TableCell>{{ row.supplierName || '-' }}</TableCell>
+            <TableCell>{{ row.orderReferenceNumber || '-' }}</TableCell>
+            <TableCell>{{ row.lotNumber || '-' }}</TableCell>
+            <TableCell>{{ row.completedAt ? formatDateTime(row.completedAt) : '-' }}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="o-table-pagination">
+      <span class="o-table-pagination__info">{{ total }} {{ t('wms.common.items', '件') }}</span>
+      <div class="o-table-pagination__controls">
+        <Select :model-value="String(pageSize)" @update:model-value="(v: string) => { pageSize = Number(v); currentPage = 1; loadData() }">
+          <SelectTrigger class="h-8 text-sm" style="width:80px;"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+            <SelectItem value="200">200</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--; loadData()">&lsaquo;</Button>
+        <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
+        <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++; loadData()">&rsaquo;</Button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
-import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
-import OrderViewDialog from '@/components/shipment-orders/OrderViewDialog.vue'
-import CustomExportDialog from '@/components/export/CustomExportDialog.vue'
-import FormExportDialog from '@/components/form-export/FormExportDialog.vue'
-import type { Operator } from '@/types/table'
-import { getOrderFieldDefinitions } from '@/types/order'
-import { fetchShipmentOrder, fetchShipmentOrdersPage, fetchShipmentOrdersByIds, updateShipmentOrderStatusBulk } from '@/api/shipmentOrders'
-import { fetchCarriers } from '@/api/carrier'
-import type { Carrier } from '@/types/carrier'
-import { fetchProducts } from '@/api/product'
-import type { Product } from '@/types/product'
-import type { OrderDocument } from '@/types/order'
-import { yamatoB2Unconfirm, isCarrierDeleteError } from '@/api/carrierAutomation'
-import { useOrderCellHelpers } from '@/composables/useOrderCellHelpers'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { searchInboundHistory } from '@/api/inboundOrder'
+import type { InboundHistoryLine } from '@/types/inventory'
+import type { TableColumn, Operator } from '@/types/table'
+import { computed, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+const EXPORT_STORAGE_KEY = 'zelix_inbound_export_presets'
 
-type SortOrder = 'asc' | 'desc' | null
-type OrderRow = Record<string, any>
+interface ExportColumn {
+  key: string
+  label: string
+  getValue: (r: InboundHistoryLine) => string | number
+}
 
-const { t } = useI18n()
+interface ExportPreset {
+  name: string
+  columns: string[]
+}
+
 const toast = useToast()
-const rows = ref<OrderRow[]>([])
-const tableSelectedKeys = ref<Array<string | number>>([])
-const isLoadingOrders = ref(false)
+const { t } = useI18n()
+const { confirm } = useConfirmDialog()
 
-// サーバーサイドページネーション用 / 服务端分页用
-const totalRows = ref(0)
-const pageSize = ref(25)
+const allExportColumns = computed<ExportColumn[]>(() => [
+  { key: 'orderNumber', label: t('wms.inbound.orderNumber', '入庫指示番号'), getValue: r => r.orderNumber },
+  { key: 'productSku', label: t('wms.inbound.productSku', '品番'), getValue: r => r.productSku },
+  { key: 'productName', label: t('wms.product.productName', '商品名'), getValue: r => r.productName || '' },
+  { key: 'locationCode', label: t('wms.inbound.location', 'ロケーション'), getValue: r => r.locationCode || '' },
+  { key: 'putawayLocationCode', label: t('wms.inbound.putawayLocation', '棚入れ先'), getValue: r => r.putawayLocationCode || '' },
+  { key: 'stockCategory', label: t('wms.inbound.stockCategory', '在庫区分'), getValue: r => r.stockCategory === 'damaged' ? t('wms.inbound.stockDamaged', '仕損') : t('wms.inbound.stockNew', '新品') },
+  { key: 'expectedQuantity', label: t('wms.inbound.expectedQtyFull', '入荷予定数'), getValue: r => r.expectedQuantity },
+  { key: 'receivedQuantity', label: t('wms.inbound.receivedQtyFull', '入庫実績数'), getValue: r => r.receivedQuantity },
+  { key: 'supplierName', label: t('wms.inbound.supplier', '仕入先'), getValue: r => r.supplierName || '' },
+  { key: 'orderReferenceNumber', label: t('wms.inbound.orderReferenceNumber', '注文番号'), getValue: r => r.orderReferenceNumber || '' },
+  { key: 'lotNumber', label: t('wms.inbound.lot', 'ロット'), getValue: r => r.lotNumber || '' },
+  { key: 'expiryDate', label: t('wms.inbound.expiryDate', '賞味期限'), getValue: r => r.expiryDate ? new Date(r.expiryDate).toLocaleDateString('ja-JP') : '' },
+  { key: 'completedAt', label: t('wms.inbound.completedAt', '完了日時'), getValue: r => r.completedAt ? new Date(r.completedAt).toLocaleString('ja-JP') : '' },
+  { key: 'expectedDate', label: t('wms.inbound.expectedDate', '入庫予定日'), getValue: r => r.expectedDate ? new Date(r.expectedDate).toLocaleDateString('ja-JP') : '' },
+  { key: 'memo', label: t('wms.product.memo', 'メモ'), getValue: r => r.memo || '' },
+])
+
+const defaultExportKeys = ['orderNumber', 'productSku', 'productName', 'locationCode', 'putawayLocationCode', 'stockCategory', 'expectedQuantity', 'receivedQuantity', 'supplierName', 'orderReferenceNumber', 'lotNumber', 'expiryDate', 'completedAt', 'expectedDate', 'memo']
+const isLoading = ref(false)
+const showExportSettings = ref(false)
+const rows = ref<InboundHistoryLine[]>([])
+const total = ref(0)
 const currentPage = ref(1)
-const sortBy = ref<string | null>('orderNumber')
-const sortOrder = ref<SortOrder>('asc')
-const isMarkingShipped = ref(false)
-const isUnconfirming = ref(false)
-const showPrinted = ref(true)
+const pageSize = ref(50)
+const exportColumns = ref<string[]>([...defaultExportKeys])
+const exportPresets = ref<ExportPreset[]>([])
+const selectedExportPreset = ref('')
 
-// Custom export dialog state
-const customExportDialogVisible = ref(false)
-const selectedOrdersForCustomExport = ref<any[]>([])
+const now = new Date()
+const defaultDateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+const defaultDateTo = now.toISOString().slice(0, 10)
 
-// Form export dialog state (PDF)
-const formExportDialogVisible = ref(false)
-const selectedOrdersForFormExport = ref<OrderDocument[]>([])
+const searchColumns = computed<TableColumn[]>(() => ([
+  {
+    key: 'completedAt',
+    title: t('wms.inbound.completedDate', '完了日'),
+    searchable: true,
+    searchType: 'daterange',
+  },
+  {
+    key: 'productSku',
+    title: t('wms.inbound.productSku', '品番'),
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'productName',
+    title: t('wms.product.productName', '商品名'),
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'supplierName',
+    title: t('wms.inbound.supplier', '仕入先'),
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'locationCode',
+    title: t('wms.inbound.location', 'ロケーション'),
+    searchable: true,
+    searchType: 'string',
+  },
+  {
+    key: 'stockCategory',
+    title: t('wms.inbound.stockCategory', '在庫区分'),
+    searchable: true,
+    searchType: 'select',
+    searchOptions: [
+      { label: t('wms.inbound.stockNew', '新品'), value: 'new' },
+      { label: t('wms.inbound.stockDamaged', '仕損'), value: 'damaged' },
+    ],
+  },
+  {
+    key: 'orderReferenceNumber',
+    title: t('wms.inbound.orderReferenceNumber', '注文番号'),
+    searchable: true,
+    searchType: 'string',
+  },
+] as TableColumn[]))
 
-// Carrier & products
-const carriers = ref<Carrier[]>([])
-const products = ref<Product[]>([])
+const searchInitialValues: Record<string, any> = {
+  completedAt__from: defaultDateFrom,
+  completedAt__to: defaultDateTo,
+}
 
-// Cell helpers (shared with create page)
-const { carrierOptions, allFieldDefinitions, getCarrierLabel, getInvoiceTypeLabel, getTimeSlotLabel, getCoolTypeInfo, fmtDateTime, fmtPostal } = useOrderCellHelpers(carriers)
+const filters = ref<Record<string, any>>({
+  dateFrom: defaultDateFrom,
+  dateTo: defaultDateTo,
+})
 
-const searchInitialValues = computed(() => ({}))
-const searchColumns = computed(() =>
-  allFieldDefinitions.value.filter((col) => col.searchType !== undefined),
-)
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)))
 
-const currentSearchPayload = ref<Record<string, { operator: Operator; value: any }> | null>(null)
-const globalSearchText = ref<string>('')
+const formatDateTime = (d: string) =>
+  new Date(d).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 
-const effectiveSearchPayload = computed(() => {
-  const base = currentSearchPayload.value || searchInitialValues.value
-  const q: Record<string, { operator: Operator; value: any }> = { ...(base || {}) }
-  q['statusConfirmed'] = { operator: 'is', value: true }
-  q['statusCarrierReceived'] = { operator: 'is', value: true }
-  q['statusShipped'] = { operator: 'isNot', value: true }
-  if (!showPrinted.value) {
-    q['statusPrinted'] = { operator: 'isNot', value: true }
+const selectAllExportCols = () => {
+  exportColumns.value = [...defaultExportKeys]
+}
+
+// --- Export preset management ---
+const loadSavedExportPresets = () => {
+  try {
+    const raw = localStorage.getItem(EXPORT_STORAGE_KEY)
+    exportPresets.value = raw ? JSON.parse(raw) : []
+  } catch {
+    exportPresets.value = []
   }
-  return q
-})
+}
 
-// サーバーサイドページネーション: rowsは現在ページのデータのみ保持
-// 服务端分页: rows仅保存当前页数据
-const paginatedRows = computed(() => rows.value)
+const persistExportPresets = () => {
+  localStorage.setItem(EXPORT_STORAGE_KEY, JSON.stringify(exportPresets.value))
+}
 
-// --- ページネーション / 分页 ---
-const totalPages = computed(() => Math.max(1, Math.ceil(totalRows.value / pageSize.value)))
-
-// ページ/ページサイズ変更時にサーバーから再取得するかどうかのフラグ
-// 页码/页大小变更时是否从服务器重新获取的标记
-let skipPageWatch = false
-
-// ページサイズ変更時はページ1にリセット（currentPageのwatcherが再取得する）
-// 切换页大小时重置到第1页（currentPage的watcher会触发重新获取）
-watch(pageSize, () => {
-  // ページサイズ変更時はページ1にリセットして再取得
-  // 切换页大小时重置到第1页并重新获取
-  skipPageWatch = true
-  currentPage.value = 1
-  void loadOrders()
-})
-
-// ページ変更時に再取得 / 切换页码时重新获取
-watch(currentPage, () => {
-  if (skipPageWatch) {
-    skipPageWatch = false
+const loadExportPreset = () => {
+  if (!selectedExportPreset.value) {
+    exportColumns.value = [...defaultExportKeys]
     return
   }
-  void loadOrders()
-})
+  const preset = exportPresets.value.find(p => p.name === selectedExportPreset.value)
+  if (preset) {
+    exportColumns.value = [...preset.columns]
+  }
+}
 
-// --- Selection ---
-const isAllCurrentPageSelected = computed(() =>
-  paginatedRows.value.length > 0 && paginatedRows.value.every(r => tableSelectedKeys.value.includes(r._id)),
-)
-const isSomeCurrentPageSelected = computed(() =>
-  paginatedRows.value.some(r => tableSelectedKeys.value.includes(r._id)),
-)
-
-const toggleSelectAll = () => {
-  if (isAllCurrentPageSelected.value) {
-    const pageIds = new Set(paginatedRows.value.map(r => r._id))
-    tableSelectedKeys.value = tableSelectedKeys.value.filter(k => !pageIds.has(k))
+const saveExportPreset = async () => {
+  const name = window.prompt('入力してください')
+  if (!name) return
+  const existing = exportPresets.value.findIndex(p => p.name === name)
+  const preset: ExportPreset = { name, columns: [...exportColumns.value] }
+  if (existing >= 0) {
+    exportPresets.value = exportPresets.value.map((p, i) => i === existing ? preset : p)
   } else {
-    const existing = new Set(tableSelectedKeys.value)
-    for (const r of paginatedRows.value) {
-      existing.add(r._id)
-    }
-    tableSelectedKeys.value = [...existing]
+    exportPresets.value = [...exportPresets.value, preset]
   }
+  persistExportPresets()
+  selectedExportPreset.value = name
+  toast.showSuccess(t('wms.inbound.presetSaved', 'プリセットを保存しました'))
 }
 
-const toggleRowSelection = (row: any) => {
-  const id = row._id
-  if (tableSelectedKeys.value.includes(id)) {
-    tableSelectedKeys.value = tableSelectedKeys.value.filter(k => k !== id)
-  } else {
-    tableSelectedKeys.value = [...tableSelectedKeys.value, id]
-  }
+const deleteExportPreset = async () => {
+  if (!selectedExportPreset.value) return
+  if (!(await confirm('この操作を実行しますか？'))) return
+  exportPresets.value = exportPresets.value.filter(p => p.name !== selectedExportPreset.value)
+  persistExportPresets()
+  selectedExportPreset.value = ''
+  exportColumns.value = [...defaultExportKeys]
 }
 
-// --- View ---
-const viewDialogVisible = ref(false)
-const selectedOrder = ref<any>(null)
-
-const handleView = async (row: any) => {
-  try {
-    const id = row?._id
-    if (!id) return
-    selectedOrder.value = await fetchShipmentOrder(String(id))
-    viewDialogVisible.value = true
-  } catch (e: any) {
-    toast.showError(e?.message || t('wms.shipment.fetchDetailError', '詳細の取得に失敗しました'))
-  }
-}
-
-const handleUnconfirm = async (row: any, skipCarrierDelete = false) => {
-  try {
-    const id = row?._id
-    if (!id) return
-
-    let reason: string
-
-    if (skipCarrierDelete && row._unconfirmReason) {
-      reason = row._unconfirmReason
-    } else {
-      const { value: inputReason } = await ElMessageBox.prompt(
-        `注文番号: ${row.orderNumber || id}\n確認を取り消し、未確認状態に戻します。\nB2 Cloud連携を使用している場合、B2 Cloudからも削除されます。\n\n取消理由を入力してください（内部データとして記録されます） / 订单号: ${row.orderNumber || id}\n将取消确认，恢复为未确认状态。\n如使用B2 Cloud联动，也将从B2 Cloud中删除。\n\n请输入取消原因（作为内部数据记录）`,
-        '入力 / 输入',
-        { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消' },
-      ).catch(() => ({ value: null }))
-
-      if (inputReason === null) return
-      if (!inputReason.trim()) {
-        toast.showWarning(t('wms.shipment.enterReasonRequired', '理由を入力してください'))
-        return
-      }
-      reason = inputReason.trim()
-      row._unconfirmReason = reason
-    }
-
-    isUnconfirming.value = true
-    try {
-      const result = await yamatoB2Unconfirm([String(id)], reason, { skipCarrierDelete })
-      if (result.success) {
-        let message = t('wms.shipment.unconfirmSuccess', '確認を取り消しました')
-        if (result.carrierDeleteSkipped) {
-          message += '（B2 Cloud削除スキップ）'
-        } else if (result.b2DeleteResult) {
-          if (result.b2DeleteResult.success) {
-            message += `（B2 Cloudから${result.b2DeleteResult.deleted}件削除）`
-          } else {
-            message += `（B2 Cloud削除失敗: ${result.b2DeleteResult.error}）`
-          }
-        }
-        toast.showSuccess(message)
-      }
-      await loadOrders()
-      isUnconfirming.value = false
-    } catch (e: any) {
-      if (isCarrierDeleteError(e)) {
-        isUnconfirming.value = false
-        try {
-          await ElMessageBox.confirm(
-            `B2 Cloudからの履歴削除に失敗しました。\n\nエラー: ${e.error}\n\nB2 Cloud削除をスキップして、ローカルのみ更新しますか？ / B2 Cloud历史删除失败。\n\n错误: ${e.error}\n\n跳过B2 Cloud删除，仅更新本地吗？`,
-            '確認 / 确认',
-            { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-          )
-          await handleUnconfirm(row, true)
-          return
-        } catch { /* cancelled */ }
-        return
-      }
-      isUnconfirming.value = false
-      throw e
-    }
-  } catch (e: any) {
-    if (e === 'cancel') return
-    toast.showError(e?.message || t('wms.shipment.unconfirmError', '確認取消に失敗しました'))
-    isUnconfirming.value = false
-  }
-}
-
-// --- エクスポート / 导出 ---
-// サーバーサイドページネーションのため、選択IDでサーバーから取得
-// 由于使用服务端分页，需通过选中的ID从服务器获取数据
-const handleCustomExportClick = async () => {
-  if (tableSelectedKeys.value.length === 0) return
-  try {
-    const ids = tableSelectedKeys.value.map((k) => String(k))
-    selectedOrdersForCustomExport.value = await fetchShipmentOrdersByIds(ids)
-    customExportDialogVisible.value = true
-  } catch (e: any) {
-    toast.showError(e?.message || t('wms.shipment.fetchOrdersError', '出荷予定の取得に失敗しました'))
-  }
-}
-
-const handleFormExportClick = async () => {
-  if (tableSelectedKeys.value.length === 0) return
-  try {
-    const ids = tableSelectedKeys.value.map((k) => String(k))
-    selectedOrdersForFormExport.value = await fetchShipmentOrdersByIds<OrderDocument>(ids)
-    formExportDialogVisible.value = true
-  } catch (e: any) {
-    toast.showError(e?.message || t('wms.shipment.fetchOrdersError', '出荷予定の取得に失敗しました'))
-  }
-}
-
-// --- Mark Shipped ---
-const handleMarkShipped = async () => {
-  if (tableSelectedKeys.value.length === 0) {
-    toast.showWarning(t('wms.shipment.selectShippedRows', '出荷完了行を選択してください'))
-    return
-  }
-
-  // 現在ページの行からマッチする行を取得（確認表示用）
-  // 从当前页数据中获取匹配的行（用于确认弹窗显示）
-  const selectedRows = rows.value.filter((row: any) => tableSelectedKeys.value.includes(row._id))
-  const orderNumbers = selectedRows.map((row: any) => row.orderNumber || row._id).filter(Boolean).slice(0, 5)
-  const moreText = tableSelectedKeys.value.length > 5 ? `他${tableSelectedKeys.value.length - 5}件` : ''
-
-  try {
-    await ElMessageBox.confirm(
-      `選択した${tableSelectedKeys.value.length}件の出荷を完了にしますか？ / 确定要将选中的 ${tableSelectedKeys.value.length} 件出货标记为完成吗？\n${orderNumbers.join(', ')}${moreText ? `\n${moreText}` : ''}`,
-      '確認 / 确认',
-      { confirmButtonText: '完了 / 完成', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
-
-  isMarkingShipped.value = true
-  const ids = tableSelectedKeys.value.map((key) => String(key)).filter(Boolean)
-
-  try {
-    const result = await updateShipmentOrderStatusBulk(ids, 'mark-shipped')
-    if (result?.modifiedCount !== undefined) {
-      toast.showSuccess(result.modifiedCount > 0
-        ? `${result.modifiedCount}件の出荷を完了にしました`
-        : '更新されたレコードがありません。既に出荷完了になっている可能性があります。')
-    } else {
-      toast.showSuccess(`${ids.length}件の出荷を完了にしました`)
-    }
-    tableSelectedKeys.value = []
-    await loadOrders()
-  } catch (e: any) {
-    toast.showError(e?.message || t('wms.shipment.markShippedError', '出荷完了の更新に失敗しました'))
-  } finally {
-    isMarkingShipped.value = false
-  }
-}
-
-// --- Search ---
 const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {
-  const nextPayload: Record<string, { operator: Operator; value: any }> = { ...(payload || {}) }
-  const keyword = (nextPayload as any)?.__global?.value
-  globalSearchText.value = keyword ? String(keyword) : ''
-  delete (nextPayload as any).__global
-  currentSearchPayload.value = nextPayload
-  // 検索条件変更時はページ1にリセット / 搜索条件变更时重置到第1页
-  skipPageWatch = true
-  currentPage.value = 1
-  void loadOrders()
-}
+  const nextFilters: Record<string, any> = {}
 
-const handleSave = (_payload: Record<string, { operator: Operator; value: any }>) => {
-  toast.showSuccess(t('wms.shipment.searchSaved', '検索条件を保存しました'))
-}
-
-// --- Sort ---
-const handleSortClick = (field: string) => {
-  if (sortBy.value === field) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortBy.value = field
-    sortOrder.value = 'asc'
+  // 完了日 (daterange)
+  if (payload.completedAt) {
+    const [from, to] = payload.completedAt.value as [string, string]
+    if (from) nextFilters.dateFrom = from
+    if (to) nextFilters.dateTo = to
   }
-  // ソート変更時はページ1にリセット / 排序变更时重置到第1页
-  skipPageWatch = true
-  currentPage.value = 1
-  void loadOrders()
-}
 
-// --- Data loading ---
-const loadCarriers = async () => {
-  try {
-    carriers.value = await fetchCarriers()
-  } catch (e: any) {
-    toast.showError(t('wms.shipment.fetchCarrierError', '配送業者マスタの取得に失敗しました'))
+  // String fields (contains)
+  const stringFields = ['productSku', 'productName', 'supplierName', 'locationCode', 'orderReferenceNumber']
+  for (const key of stringFields) {
+    if (payload[key]?.value) {
+      nextFilters[key] = String(payload[key].value).trim()
+    }
   }
+
+  // Select field
+  if (payload.stockCategory?.value) {
+    nextFilters.stockCategory = payload.stockCategory.value
+  }
+
+  filters.value = nextFilters
+  currentPage.value = 1
+  loadData()
 }
 
-// サーバーサイドページネーション: 1ページ分のみ取得
-// 服务端分页: 仅获取单页数据
-let loadOrdersVersion = 0
-
-const loadOrders = async () => {
-  const version = ++loadOrdersVersion
-  isLoadingOrders.value = true
-
+const loadData = async () => {
+  isLoading.value = true
   try {
-    const tzOffsetMinutes = new Date().getTimezoneOffset()
-    const q = effectiveSearchPayload.value || undefined
-    const currentSortBy = sortBy.value
-    const currentSortOrder = sortOrder.value
-
-    const res = await fetchShipmentOrdersPage<OrderRow>({
+    const res = await searchInboundHistory({
+      ...filters.value,
       page: currentPage.value,
       limit: pageSize.value,
-      q,
-      sortBy: currentSortBy,
-      sortOrder: currentSortOrder,
-      tzOffsetMinutes,
     })
-    if (version !== loadOrdersVersion) return
-
-    const items = Array.isArray(res?.items) ? res.items : []
-    const resTotal = typeof res?.total === 'number' ? res.total : 0
-
-    rows.value = items
-    totalRows.value = resTotal
-
-    // 合計件数変更でページ超過した場合はページ1にリセット / 如果总数变化导致超出页范围则重置到第1页
-    if (currentPage.value > totalPages.value && totalPages.value > 0) {
-      currentPage.value = totalPages.value
-    }
+    rows.value = res.items
+    total.value = res.total
   } catch (e: any) {
-    if (version !== loadOrdersVersion) return
-    toast.showError(e?.message || t('wms.shipment.fetchOrdersError', '出荷予定の取得に失敗しました'))
+    toast.showError(e?.message || t('wms.common.fetchError', 'データの取得に失敗しました'))
   } finally {
-    if (version === loadOrdersVersion) {
-      isLoadingOrders.value = false
-    }
+    isLoading.value = false
   }
 }
 
-watch(
-  () => showPrinted.value,
-  () => {
-    // フィルタ変更時はページ1にリセット / 筛选变更时重置到第1页
-    skipPageWatch = true
-    currentPage.value = 1
-    void loadOrders()
-  },
-)
-
-onMounted(async () => {
-  await loadCarriers()
-  await loadOrders()
-  try {
-    products.value = await fetchProducts()
-  } catch (e) {
-    // 商品読み込み失敗 / Failed to load products
+const exportCsv = () => {
+  if (rows.value.length === 0) {
+    toast.showError(t('wms.inbound.noExportData', 'エクスポートするデータがありません'))
+    return
   }
+
+  const activeCols = allExportColumns.value.filter(c => exportColumns.value.includes(c.key))
+  if (activeCols.length === 0) {
+    toast.showError(t('wms.inbound.selectAtLeastOneColumn', '出力する列を1つ以上選択してください'))
+    return
+  }
+
+  const headers = activeCols.map(c => c.label)
+  const csvRows = rows.value.map(r => activeCols.map(c => c.getValue(r)))
+
+  const bom = '\uFEFF'
+  const csv = bom + [headers.join(','), ...csvRows.map(r => r.map(c => `"${c}"`).join(','))].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `入庫履歴_${filters.value.dateFrom || ''}_${filters.value.dateTo || ''}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+onMounted(() => {
+  loadSavedExportPresets()
+  loadData()
 })
 </script>
 
 <style>
 @import '@/styles/order-table.css';
+
+.o-table-td--right { text-align: right; }
+.o-table-th--right { text-align: right; }
 </style>
 
 <style scoped>
-.shipment-operations-list {
+.inbound-history {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -655,28 +415,63 @@ onMounted(async () => {
   margin-right: -20px;
 }
 
-.between-controls {
+.o-card {
+  background: var(--o-view-background, #fff);
+  border: 1px solid var(--o-border-color, #e4e7ed);
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--o-gray-700, #303133);
+  margin: 0 0 12px 0;
+}
+
+
+.export-col-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.export-col-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: -6px;
-  padding-bottom: 6px;
-}
-
-.switch-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #606266;
+  padding: 4px 10px;
+  border: 1px solid var(--o-border-color, #dcdfe6);
+  border-radius: 4px;
+  font-size: 12px;
   cursor: pointer;
-  white-space: nowrap;
+  user-select: none;
+  transition: all 0.15s;
 }
 
-.o-toggle { position:relative; display:inline-flex; align-items:center; cursor:pointer; }
-.o-toggle input { position:absolute; opacity:0; width:0; height:0; }
-.o-toggle-slider { width:40px; height:20px; background:var(--o-toggle-off, #ccc); border-radius:10px; transition:0.2s; position:relative; }
-.o-toggle-slider::after { content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; top:2px; left:2px; transition:0.2s; }
-.o-toggle input:checked + .o-toggle-slider { background:var(--o-brand-primary, #0052A3); }
-.o-toggle input:checked + .o-toggle-slider::after { left:22px; }
+.export-col-item--active {
+  background: var(--o-success-bg);
+  border-color: var(--o-success);
+  color: var(--o-success);
+}
+
+.order-number {
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--o-brand-primary, #0052A3);
+}
+
+.sku-text {
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.location-badge {
+  font-family: monospace;
+  font-size: 12px;
+  background: var(--o-gray-100, #f5f7fa);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
 </style>

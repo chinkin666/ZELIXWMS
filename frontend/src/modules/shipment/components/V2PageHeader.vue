@@ -35,7 +35,6 @@
 </template>
 
 <script setup lang="ts">
-import { Search, Plus, Upload, Download } from '@element-plus/icons-vue'
 
 defineProps<{
   activeTab: string

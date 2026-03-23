@@ -1,18 +1,24 @@
 <template>
   <div class="stocktaking-detail">
-    <ControlPanel :title="`${t('wms.stocktaking.detail', '棚卸詳細')} - ${order?.orderNumber || ''}`" :show-search="false">
+    <PageHeader :title="`${t('wms.stocktaking.detail', '棚卸詳細')} - ${order?.orderNumber || ''}`" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" @click="$router.push('/stocktaking/list')">{{ t('wms.stocktaking.toList', '一覧へ') }}</OButton>
-          <OButton v-if="order?.status === 'draft'" variant="primary" size="sm" @click="handleStart">{{ t('wms.stocktaking.start', '開始') }}</OButton>
-          <OButton v-if="order?.status === 'in_progress'" variant="success" size="sm" @click="handleSaveCount">{{ t('wms.stocktaking.saveCount', 'カウント保存') }}</OButton>
-          <OButton v-if="order?.status === 'in_progress'" variant="primary" size="sm" @click="handleComplete">{{ t('wms.stocktaking.complete', '完了') }}</OButton>
-          <OButton v-if="order?.status === 'completed'" variant="primary" size="sm" @click="handleAdjust">{{ t('wms.stocktaking.adjust', '調整反映') }}</OButton>
+          <Button variant="secondary" size="sm" @click="$router.push('/stocktaking/list')">{{ t('wms.stocktaking.toList', '一覧へ') }}</Button>
+          <Button v-if="order?.status === 'draft'" variant="default" size="sm" @click="handleStart">{{ t('wms.stocktaking.start', '開始') }}</Button>
+          <Button v-if="order?.status === 'in_progress'" variant="default" size="sm" @click="handleSaveCount">{{ t('wms.stocktaking.saveCount', 'カウント保存') }}</Button>
+          <Button v-if="order?.status === 'in_progress'" variant="default" size="sm" @click="handleComplete">{{ t('wms.stocktaking.complete', '完了') }}</Button>
+          <Button v-if="order?.status === 'completed'" variant="default" size="sm" @click="handleAdjust">{{ t('wms.stocktaking.adjust', '調整反映') }}</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div v-if="isLoading" style="padding:2rem;text-align:center;color:var(--o-gray-500);">{{ t('wms.common.loading', '読み込み中...') }}</div>
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else-if="order">
       <div class="info-bar">
@@ -22,65 +28,63 @@
         <span><strong>{{ t('wms.stocktaking.lines', '明細') }}:</strong> {{ order.lines.length }}{{ t('wms.stocktaking.items', '件') }}</span>
       </div>
 
-      <div class="o-table-wrapper">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width:40px;">#</th>
-              <th class="o-table-th" style="width:130px;">{{ t('wms.stocktaking.location', 'ロケーション') }}</th>
-              <th class="o-table-th" style="width:120px;">SKU</th>
-              <th class="o-table-th">{{ t('wms.stocktaking.productName', '商品名') }}</th>
-              <th class="o-table-th" style="width:80px;">{{ t('wms.stocktaking.lot', 'ロット') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:90px;">{{ t('wms.stocktaking.systemQty', 'システム数') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:100px;">{{ t('wms.stocktaking.actualQty', '実数量') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:80px;">{{ t('wms.stocktaking.variance', '差異') }}</th>
-              <th class="o-table-th" style="width:80px;">{{ t('wms.stocktaking.lineStatus', '状態') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(line, idx) in order.lines" :key="idx" class="o-table-row">
-              <td class="o-table-td">{{ idx + 1 }}</td>
-              <td class="o-table-td"><span class="location-badge">{{ line.locationName }}</span></td>
-              <td class="o-table-td" style="font-family:monospace;">{{ line.productSku }}</td>
-              <td class="o-table-td">{{ line.productName || '-' }}</td>
-              <td class="o-table-td">{{ line.lotNumber || '-' }}</td>
-              <td class="o-table-td o-table-td--right">{{ line.systemQuantity }}</td>
-              <td class="o-table-td o-table-td--right">
+      <div class="rounded-md border overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width:40px;">#</TableHead>
+              <TableHead style="width:130px;">{{ t('wms.stocktaking.location', 'ロケーション') }}</TableHead>
+              <TableHead style="width:120px;">SKU</TableHead>
+              <TableHead>{{ t('wms.stocktaking.productName', '商品名') }}</TableHead>
+              <TableHead style="width:80px;">{{ t('wms.stocktaking.lot', 'ロット') }}</TableHead>
+              <TableHead class="text-right" style="width:90px;">{{ t('wms.stocktaking.systemQty', 'システム数') }}</TableHead>
+              <TableHead class="text-right" style="width:100px;">{{ t('wms.stocktaking.actualQty', '実数量') }}</TableHead>
+              <TableHead class="text-right" style="width:80px;">{{ t('wms.stocktaking.variance', '差異') }}</TableHead>
+              <TableHead style="width:80px;">{{ t('wms.stocktaking.lineStatus', '状態') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="(line, idx) in order.lines" :key="idx">
+              <TableCell>{{ idx + 1 }}</TableCell>
+              <TableCell><span class="location-badge">{{ line.locationName }}</span></TableCell>
+              <TableCell style="font-family:monospace;">{{ line.productSku }}</TableCell>
+              <TableCell>{{ line.productName || '-' }}</TableCell>
+              <TableCell>{{ line.lotNumber || '-' }}</TableCell>
+              <TableCell class="text-right">{{ line.systemQuantity }}</TableCell>
+              <TableCell class="text-right">
                 <input
                   v-if="order.status === 'in_progress'"
                   v-model.number="countInputs[idx]"
                   type="number"
                   min="0"
-                  class="o-input o-input-sm"
+                  class="h-8 text-sm"
                   style="width:80px;text-align:right;"
                 />
                 <span v-else>{{ line.countedQuantity ?? '-' }}</span>
-              </td>
-              <td class="o-table-td o-table-td--right">
+              </TableCell>
+              <TableCell class="text-right">
                 <span v-if="line.variance !== undefined && line.variance !== null" :class="{ 'text-danger': line.variance < 0, 'text-success': line.variance > 0 }">
                   {{ line.variance > 0 ? '+' : '' }}{{ line.variance }}
                 </span>
                 <span v-else>-</span>
-              </td>
-              <td class="o-table-td">
+              </TableCell>
+              <TableCell>
                 <span class="line-status" :class="`line-status--${line.status}`">{{ lineStatusLabel(line.status) }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import {
   fetchStocktakingOrder,
   startStocktakingOrder,
@@ -89,7 +93,11 @@ import {
   adjustStocktakingOrder,
 } from '@/api/stocktakingOrder'
 import type { StocktakingOrder } from '@/api/stocktakingOrder'
-
+import { onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -171,13 +179,7 @@ const handleComplete = async () => {
 }
 
 const handleAdjust = async () => {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.stocktaking.adjustConfirm', '差異を在庫に反映しますか？この操作は取り消せません。 / 确定要将差异反映到库存吗？此操作不可撤销。'),
-      '確認 / 确认',
-      { confirmButtonText: '実行 / 执行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     const res = await adjustStocktakingOrder(route.params.id as string)
     toast.showSuccess(t('wms.stocktaking.adjusted', `${res.adjustedCount}件の差異を調整しました`))

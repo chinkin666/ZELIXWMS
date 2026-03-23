@@ -1,7 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 // 全局CSS保留，组件按需自动导入 / グローバルCSS維持、コンポーネントはオンデマンド自動インポート
-import 'element-plus/dist/index.css'
 import './style.css'
 import App from './App.vue'
 import router from './router'

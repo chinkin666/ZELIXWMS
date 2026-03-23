@@ -1,13 +1,13 @@
 <template>
   <div class="form-template-settings">
-    <ControlPanel :title="t('wms.settings.formTemplateTitle', '帳票テンプレート')" :show-search="false">
+    <PageHeader :title="t('wms.settings.formTemplateTitle', '帳票テンプレート')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">{{ t('wms.settings.addNew', '新規追加') }}</OButton>
+        <Button variant="default" @click="openCreate">{{ t('wms.settings.addNew', '新規追加') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="templates"
         row-key="_id"
@@ -20,64 +20,71 @@
     </div>
 
     <!-- 作成ダイアログ / 新建对话框 -->
-    <ODialog :open="createDialogVisible" :title="t('wms.settings.addFormTemplate', '帳票テンプレートを追加')" @close="createDialogVisible = false">
+    <Dialog :open="createDialogVisible" @update:open="val => { if (!val) { createDialogVisible = false } }">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ t('wms.settings.addFormTemplate', '帳票テンプレートを追加') }}</DialogTitle></DialogHeader>
       <!-- 预设模板快速选择 / プリセットテンプレート -->
       <div class="preset-section">
-        <label class="form-label">{{ t('wms.settings.presetTemplates', 'プリセットから作成') }}</label>
+        <label>{{ t('wms.settings.presetTemplates', 'プリセットから作成') }}</label>
         <div class="preset-grid">
-          <button
+          <Button
             v-for="preset in presetTemplates"
             :key="preset.type"
+            variant="outline"
             class="preset-card"
             :class="{ 'preset-card--selected': createForm.targetType === preset.type && createForm.name === preset.name }"
             @click="applyPreset(preset)"
           >
             <span class="preset-name">{{ preset.name }}</span>
             <span class="preset-desc">{{ preset.description }}</span>
-          </button>
+          </Button>
         </div>
       </div>
 
       <div class="preset-divider"><span>{{ t('wms.settings.orCustom', 'またはカスタム設定') }}</span></div>
 
       <div class="o-form-group">
-        <label class="form-label">{{ t('wms.settings.templateName', 'テンプレート名') }} <span class="required-badge">必須</span></label>
-        <input class="o-input" v-model="createForm.name" :placeholder="t('wms.settings.templateNamePlaceholder', '例：ピッキングリスト')" />
+        <label>{{ t('wms.settings.templateName', 'テンプレート名') }} <span class="text-destructive text-xs">*</span></label>
+        <Input v-model="createForm.name" :placeholder="t('wms.settings.templateNamePlaceholder', '例：ピッキングリスト')" />
       </div>
       <div class="o-form-group">
-        <label class="form-label">{{ t('wms.settings.templateType', '種類') }} <span class="required-badge">必須</span></label>
-        <select class="o-input" v-model="createForm.targetType">
-          <option value="">{{ t('wms.settings.selectType', '種類を選択') }}</option>
-          <option
-            v-for="ft in formTypeRegistry"
-            :key="ft.type"
-            :value="ft.type"
-          >{{ ft.label }}</option>
-        </select>
+        <label>{{ t('wms.settings.templateType', '種類') }} <span class="text-destructive text-xs">*</span></label>
+        <Select v-model="createForm.targetType">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="{{ t('wms.settings.selectType', '種類を選択') }}" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="ft in formTypeRegistry" :key="ft.type" :value="ft.type">{{ ft.label }}</SelectItem>
+        </SelectContent>
+      </Select>
       </div>
-      <template #footer>
-        <OButton variant="secondary" @click="createDialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-        <OButton variant="primary" :disabled="saving" @click="handleCreate">{{ t('wms.common.create', '新規作成') }}</OButton>
-      </template>
-    </ODialog>
+      <DialogFooter>
+        <Button variant="secondary" @click="createDialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+        <Button variant="default" :disabled="saving" @click="handleCreate">{{ t('wms.common.create', '新規作成') }}</Button>
+      </DialogFooter>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn } from '@/types/table'
 import type { FormTemplate } from '@/types/formTemplate'
 import { fetchFormTemplates, fetchFormTemplate, createFormTemplate, deleteFormTemplate } from '@/api/formTemplate'
 import { formTypeRegistry, createDefaultColumns } from '@/utils/form-export/formFieldRegistry'
 import { createDefaultFormTemplate } from '@/utils/form-export/pdfGenerator'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const router = useRouter()
 const { t } = useI18n()
@@ -200,14 +207,7 @@ async function duplicateFormTemplate(row: FormTemplate) {
 }
 
 async function handleDelete(row: FormTemplate) {
-  try {
-    await ElMessageBox.confirm(
-      `「${row.name}」を削除してもよろしいですか？ / 确定要删除「${row.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
-
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteFormTemplate(row._id)
     showToast(t('wms.settings.deleted', '削除しました'), 'success')
@@ -268,9 +268,9 @@ const tableColumns = computed((): TableColumn[] => [
     width: 300,
     cellRenderer: ({ rowData }: { rowData: FormTemplate }) =>
       h('div', { style: 'display:flex;gap:6px;' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => t('wms.common.edit', '編集')),
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateFormTemplate(rowData) }, () => t('wms.settings.duplicate', '複製')),
-        h(OButton, { variant: 'danger', size: 'sm', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => t('wms.common.edit', '編集')),
+        h(Button, { variant: 'secondary', size: 'sm', onClick: () => duplicateFormTemplate(rowData) }, () => t('wms.settings.duplicate', '複製')),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')),
       ]),
   },
 ])
@@ -303,7 +303,7 @@ onMounted(() => {
 .o-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
 .o-badge-success { background: #f0f9eb; color: #67c23a; }
 
-.o-input {
+.{
   width: 100%;
   padding: 6px 10px;
   border: 1px solid var(--o-border-color, #dcdfe6);

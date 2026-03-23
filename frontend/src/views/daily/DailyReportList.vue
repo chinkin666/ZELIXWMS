@@ -1,15 +1,15 @@
 <template>
   <div class="daily-report-list">
-    <ControlPanel :title="t('wms.daily.reportList', '日次レポート')" :show-search="false">
+    <PageHeader :title="t('wms.daily.reportList', '日次レポート')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;align-items:center;">
-          <input v-model="generateDate" type="date" class="o-input o-input-sm" style="width:150px;" />
-          <OButton variant="primary" size="sm" :disabled="isGenerating" @click="handleGenerate">
+          <Input v-model="generateDate" type="date" class="h-8 text-sm" style="width:150px;" />
+          <Button variant="default" size="sm" :disabled="isGenerating" @click="handleGenerate">
             {{ isGenerating ? t('wms.daily.generating', '生成中...') : t('wms.daily.generateReport', 'レポート生成') }}
-          </OButton>
+          </Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- KPI概況カード（最新レポート） / KPI概览卡片（最新报表） -->
     <div v-if="latestReport" class="kpi-grid">
@@ -40,17 +40,9 @@
       </div>
     </div>
 
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="dailyReportListSearch"
-      @search="handleSearch"
-    />
-
-    <OLoadingState :loading="isLoading" :empty="!isLoading && rows.length === 0">
+    <div v-if="false"><!-- loading handled by DataTable --></div><template v-if="true">
       <div class="table-section">
-        <Table
+        <DataTable
           :columns="tableColumns"
           :data="rows"
           row-key="_id"
@@ -61,24 +53,24 @@
           :page-size="pageSize"
           :page-sizes="[30, 50, 100]"
           :global-search-text="globalSearchText"
+          :search-columns="searchColumns"
+          @search="handleSearch"
           @page-change="handlePageChange"
         />
       </div>
-    </OLoadingState>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { h, onMounted, ref, computed } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { Input } from '@/components/ui/input'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
-import OLoadingState from '@/components/odoo/OLoadingState.vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchDailyReports,
@@ -87,10 +79,12 @@ import {
   lockDailyReport,
 } from '@/api/dailyReport'
 import type { DailyReport } from '@/api/dailyReport'
-
+import { h, onMounted, ref, computed } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const { t } = useI18n()
 const router = useRouter()
 const toast = useToast()
+const { confirm } = useConfirmDialog()
 const isLoading = ref(false)
 const isGenerating = ref(false)
 const rows = ref<DailyReport[]>([])
@@ -239,15 +233,15 @@ const tableColumns = computed<TableColumn[]>(() => [
     width: 180,
     cellRenderer: ({ rowData }: { rowData: DailyReport }) => {
       const buttons: any[] = []
-      buttons.push(h(OButton, { size: 'sm', variant: 'secondary', onClick: () => router.push(`/daily/${rowData.date}`) }, () => t('wms.daily.detail', '詳細')))
+      buttons.push(h(Button, { size: 'sm', variant: 'secondary', onClick: () => router.push(`/daily/${rowData.date}`) }, () => t('wms.daily.detail', '詳細')))
       if (rowData.status === 'open') {
-        buttons.push(h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleClose(rowData) }, () => t('wms.daily.close', '締め')))
+        buttons.push(h(Button, { variant: 'default', size: 'sm', onClick: () => handleClose(rowData) }, () => t('wms.daily.close', '締め')))
       }
       if (rowData.status === 'closed') {
-        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', onClick: () => handleLock(rowData) }, () => t('wms.daily.lock', 'ロック')))
+        buttons.push(h(Button, { variant: 'secondary', size: 'sm', onClick: () => handleLock(rowData) }, () => t('wms.daily.lock', 'ロック')))
       }
       if (rowData.status === 'open') {
-        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', onClick: () => handleRefresh(rowData) }, () => t('wms.daily.refresh', '更新')))
+        buttons.push(h(Button, { variant: 'secondary', size: 'sm', onClick: () => handleRefresh(rowData) }, () => t('wms.daily.refresh', '更新')))
       }
       return h('div', { class: 'action-cell' }, buttons)
     },
@@ -292,25 +286,13 @@ const handleGenerate = async () => {
 }
 
 const handleClose = async (row: DailyReport) => {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.daily.closeConfirm', `${row.date} の日次を締めますか？ / 确定要结算 ${row.date} 的日报吗？`),
-      '確認 / 确认',
-      { confirmButtonText: '締め / 结算', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try { await closeDailyReport(row.date); toast.showSuccess(t('wms.daily.dayClosed', '日次を締めました')); await loadData() }
   catch (e: any) { toast.showError(e?.message) }
 }
 
 const handleLock = async (row: DailyReport) => {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.daily.lockDayConfirm', `${row.date} の日次をロックしますか？ロック後は更新できません。 / 确定要锁定 ${row.date} 的日报吗？锁定后无法更新。`),
-      '確認 / 确认',
-      { confirmButtonText: 'ロック / 锁定', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try { await lockDailyReport(row.date); toast.showSuccess(t('wms.daily.dayLocked', '日次をロックしました')); await loadData() }
   catch (e: any) { toast.showError(e?.message) }
 }

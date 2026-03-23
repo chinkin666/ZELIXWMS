@@ -1,35 +1,38 @@
 <template>
   <div class="wms-schedule-view">
-    <ControlPanel :title="t('wms.schedule.title', 'WMSスケジュール')" :show-search="false">
+    <PageHeader :title="t('wms.schedule.title', 'WMSスケジュール')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;align-items:center;">
-          <OButton v-if="activeTab === 'schedules'" variant="primary" size="sm" @click="openCreateDialog">
+          <Button v-if="activeTab === 'schedules'" variant="default" size="sm" @click="openCreateDialog">
             {{ t('wms.schedule.newSchedule', '新規スケジュール') }}
-          </OButton>
-          <OButton v-if="activeTab === 'logs'" variant="secondary" size="sm" @click="exportLogsCsv">
+          </Button>
+          <Button v-if="activeTab === 'logs'" variant="secondary" size="sm" @click="exportLogsCsv">
             {{ t('wms.schedule.exportCsv', 'CSV出力') }}
-          </OButton>
+          </Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- Tabs -->
     <div class="tab-bar">
-      <button
+      <Button
+        :variant="activeTab === 'schedules' ? 'default' : 'ghost'"
         class="tab-btn"
         :class="{ active: activeTab === 'schedules' }"
         @click="activeTab = 'schedules'"
-      >{{ t('wms.schedule.schedules', 'スケジュール') }}</button>
-      <button
+      >{{ t('wms.schedule.schedules', 'スケジュール') }}</Button>
+      <Button
+        :variant="activeTab === 'tasks' ? 'default' : 'ghost'"
         class="tab-btn"
         :class="{ active: activeTab === 'tasks' }"
         @click="activeTab = 'tasks'"
-      >{{ t('wms.schedule.tasks', 'タスク') }}</button>
-      <button
+      >{{ t('wms.schedule.tasks', 'タスク') }}</Button>
+      <Button
+        :variant="activeTab === 'logs' ? 'default' : 'ghost'"
         class="tab-btn"
         :class="{ active: activeTab === 'logs' }"
         @click="activeTab = 'logs'"
-      >{{ t('wms.schedule.logs', 'ログ') }}</button>
+      >{{ t('wms.schedule.logs', 'ログ') }}</Button>
     </div>
 
     <!-- ================================================================= -->
@@ -37,7 +40,7 @@
     <!-- ================================================================= -->
     <div v-if="activeTab === 'schedules'">
       <div class="table-section">
-        <Table
+        <DataTable
           :columns="scheduleTableColumns"
           :data="schedules"
           row-key="_id"
@@ -54,19 +57,13 @@
     <!-- Tab 2: タスク -->
     <!-- ================================================================= -->
     <div v-if="activeTab === 'tasks'">
-      <SearchForm
-        class="search-section"
-        :columns="taskSearchColumns"
-        :show-save="false"
-        storage-key="wmsTaskSearch"
-        @search="handleTaskSearch"
-      />
-
       <div class="table-section">
-        <Table
+        <DataTable
           :columns="taskTableColumns"
           :data="tasks"
           row-key="_id"
+          :search-columns="taskSearchColumns"
+          @search="handleTaskSearch"
           highlight-columns-on-hover
           pagination-enabled
           pagination-mode="server"
@@ -83,19 +80,13 @@
     <!-- Tab 3: ログ -->
     <!-- ================================================================= -->
     <div v-if="activeTab === 'logs'">
-      <SearchForm
-        class="search-section"
-        :columns="logSearchColumns"
-        :show-save="false"
-        storage-key="wmsLogSearch"
-        @search="handleLogSearch"
-      />
-
       <div class="table-section">
-        <Table
+        <DataTable
           :columns="logTableColumns"
           :data="logs"
           row-key="_id"
+          :search-columns="logSearchColumns"
+          @search="handleLogSearch"
           highlight-columns-on-hover
           pagination-enabled
           pagination-mode="server"
@@ -111,26 +102,32 @@
     <!-- ================================================================= -->
     <!-- Create / Edit Dialog -->
     <!-- ================================================================= -->
-    <ODialog v-model="showDialog" :title="editingId ? t('wms.schedule.editSchedule', 'スケジュール編集') : t('wms.schedule.newSchedule', '新規スケジュール')" size="lg" @close="closeDialog">
-      <template #default>
+    <Dialog :open="showDialog" @update:open="showDialog = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ editingId ? t('wms.schedule.editSchedule', 'スケジュール編集') : t('wms.schedule.newSchedule', '新規スケジュール') }}</DialogTitle></DialogHeader>
+      
         <div class="form-grid">
           <div class="form-field">
-            <label class="form-label">{{ t('wms.schedule.name', '名前') }} <span class="required-badge">必須</span></label>
-            <input type="text" class="o-input" v-model="form.name" :placeholder="t('wms.schedule.scheduleName', 'スケジュール名')" />
+            <label>{{ t('wms.schedule.name', '名前') }} <span class="text-destructive text-xs">*</span></label>
+            <Input type="text" v-model="form.name" :placeholder="t('wms.schedule.scheduleName', 'スケジュール名')" />
           </div>
           <div class="form-field">
-            <label class="form-label">{{ t('wms.schedule.action', 'アクション') }} <span class="required-badge">必須</span></label>
-            <select class="o-input" v-model="form.action">
-              <option value="">{{ t('wms.schedule.selectPlaceholder', '選択してください') }}</option>
-              <option v-for="(label, key) in ACTION_LABELS" :key="key" :value="key">{{ label }}</option>
-            </select>
+            <label>{{ t('wms.schedule.action', 'アクション') }} <span class="text-destructive text-xs">*</span></label>
+            <Select v-model="form.action">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="{{ t('wms.schedule.selectPlaceholder', '選択してください') }}" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="(label, key) in ACTION_LABELS" :key="key" :value="key">{{ label }}</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
           <div class="form-field form-field--full">
-            <label class="form-label">{{ t('wms.schedule.description', '説明') }}</label>
-            <input type="text" class="o-input" v-model="form.description" :placeholder="t('wms.schedule.descriptionOptional', '説明（任意）')" />
+            <label>{{ t('wms.schedule.description', '説明') }}</label>
+            <Input type="text" v-model="form.description" :placeholder="t('wms.schedule.descriptionOptional', '説明（任意）')" />
           </div>
           <div class="form-field form-field--full">
-            <label class="form-label">{{ t('wms.schedule.executionType', '実行タイプ') }}</label>
+            <label>{{ t('wms.schedule.executionType', '実行タイプ') }}</label>
             <div class="radio-group">
               <label class="radio-label">
                 <input type="radio" value="manual" v-model="form.scheduleType" /> {{ t('wms.schedule.manual', '手動') }}
@@ -142,15 +139,15 @@
           </div>
           <template v-if="form.scheduleType === 'scheduled'">
             <div class="form-field">
-              <label class="form-label">{{ t('wms.schedule.hour', '時 (0-23)') }}</label>
-              <input type="number" class="o-input" v-model.number="form.cronHour" min="0" max="23" />
+              <label>{{ t('wms.schedule.hour', '時 (0-23)') }}</label>
+              <Input type="number" v-model.number="form.cronHour" min="0" max="23" />
             </div>
             <div class="form-field">
-              <label class="form-label">{{ t('wms.schedule.minute', '分 (0-59)') }}</label>
-              <input type="number" class="o-input" v-model.number="form.cronMinute" min="0" max="59" />
+              <label>{{ t('wms.schedule.minute', '分 (0-59)') }}</label>
+              <Input type="number" v-model.number="form.cronMinute" min="0" max="59" />
             </div>
             <div class="form-field form-field--full">
-              <label class="form-label">{{ t('wms.schedule.daysOfWeek', '曜日 (空=毎日)') }}</label>
+              <label>{{ t('wms.schedule.daysOfWeek', '曜日 (空=毎日)') }}</label>
               <div class="checkbox-group">
                 <label v-for="(dayLabel, idx) in DAY_LABELS" :key="idx" class="checkbox-label">
                   <input type="checkbox" :value="idx" v-model="form.cronDaysOfWeek" />
@@ -159,8 +156,8 @@
               </div>
             </div>
             <div class="form-field">
-              <label class="form-label">{{ t('wms.schedule.cronExpression', 'Cron式 (上級)') }}</label>
-              <input type="text" class="o-input" v-model="form.cronExpression" placeholder="0 9 * * *" />
+              <label>{{ t('wms.schedule.cronExpression', 'Cron式 (上級)') }}</label>
+              <Input type="text" v-model="form.cronExpression" placeholder="0 9 * * *" />
             </div>
             <div class="form-field">
               <label class="checkbox-label">
@@ -170,31 +167,29 @@
             </div>
           </template>
           <div class="form-field form-field--full">
-            <label class="form-label">{{ t('wms.schedule.metadataJson', 'メタデータ (JSON)') }}</label>
-            <textarea class="o-input" v-model="form.metadataJson" rows="3" placeholder='{"key": "value"}'></textarea>
+            <label>{{ t('wms.schedule.metadataJson', 'メタデータ (JSON)') }}</label>
+            <textarea v-model="form.metadataJson" rows="3" placeholder='{"key": "value"}'></textarea>
           </div>
         </div>
-      </template>
-      <template #footer>
+      <DialogFooter>
         <div style="display:flex;gap:8px;justify-content:flex-end;">
-          <OButton variant="secondary" size="sm" @click="closeDialog">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-          <OButton variant="primary" size="sm" @click="saveSchedule">{{ t('wms.common.save', '保存') }}</OButton>
+          <Button variant="secondary" size="sm" @click="closeDialog">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+          <Button variant="default" size="sm" @click="saveSchedule">{{ t('wms.common.save', '保存') }}</Button>
         </div>
-      </template>
-    </ODialog>
+      </DialogFooter>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, h, onMounted, reactive, ref, watch } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import {
   fetchWmsSchedules,
   createWmsSchedule,
@@ -208,6 +203,10 @@ import {
 } from '@/api/wmsSchedule'
 import type { WmsSchedule, WmsTask, WmsScheduleLog } from '@/api/wmsSchedule'
 import type { TableColumn, Operator } from '@/types/table'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const toast = useToast()
 const { t } = useI18n()
@@ -335,9 +334,9 @@ const scheduleTableColumns: TableColumn[] = [
     key: 'actions', title: t('wms.common.actions', '操作'), width: 160, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: WmsSchedule }) =>
       h('div', { style: 'display:flex;gap:4px;' }, [
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openEditDialog(rowData) }, () => t('wms.common.edit', '編集')),
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleRun(rowData) }, () => t('wms.schedule.run', '実行')),
-        h(OButton, { variant: 'danger', size: 'sm', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')),
+        h(Button, { variant: 'secondary', size: 'sm', onClick: () => openEditDialog(rowData) }, () => t('wms.common.edit', '編集')),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => handleRun(rowData) }, () => t('wms.schedule.run', '実行')),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')),
       ]),
   },
 ]
@@ -375,13 +374,7 @@ const handleRun = async (s: WmsSchedule) => {
 }
 
 const handleDelete = async (s: WmsSchedule) => {
-  try {
-    await ElMessageBox.confirm(
-      `スケジュール「${s.name}」を削除してもよろしいですか？ / 确定要删除计划「${s.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteWmsSchedule(s._id)
     toast.showSuccess(t('wms.schedule.deleteSuccess', 'スケジュールを削除しました'))

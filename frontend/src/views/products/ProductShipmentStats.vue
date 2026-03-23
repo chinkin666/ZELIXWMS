@@ -1,27 +1,33 @@
 <template>
   <div class="product-shipment-stats">
-    <ControlPanel :title="'商品別出荷統計'" :show-search="false" />
+    <PageHeader :title="'商品別出荷統計'" :show-search="false" />
 
     <!-- 日付範囲選択 / 日期范围选择 -->
     <div class="stats-filter-bar">
       <label class="stats-label">期間:</label>
-      <input v-model="dateFrom" type="date" class="o-input o-input-sm" />
+      <input v-model="dateFrom" type="date" class="h-8 text-sm" />
       <span class="stats-separator">〜</span>
-      <input v-model="dateTo" type="date" class="o-input o-input-sm" />
-      <OButton variant="primary" size="sm" @click="loadStats">集計</OButton>
+      <input v-model="dateTo" type="date" class="h-8 text-sm" />
+      <Button variant="default" size="sm" @click="loadStats">集計</Button>
       <div class="stats-presets">
-        <button class="stats-preset-btn" @click="setRange(7)">7日</button>
-        <button class="stats-preset-btn" @click="setRange(14)">14日</button>
-        <button class="stats-preset-btn" @click="setRange(30)">30日</button>
-        <button class="stats-preset-btn" @click="setRange(90)">90日</button>
+        <Button class="stats-preset-btn" @click="setRange(7)">7日</Button>
+        <Button class="stats-preset-btn" @click="setRange(14)">14日</Button>
+        <Button class="stats-preset-btn" @click="setRange(30)">30日</Button>
+        <Button class="stats-preset-btn" @click="setRange(90)">90日</Button>
       </div>
-      <OButton variant="secondary" size="sm" @click="exportCsv" :disabled="data.length === 0">
+      <Button variant="outline" size="sm" @click="exportCsv" :disabled="data.length === 0">
         CSV出力
-      </OButton>
+      </Button>
     </div>
 
     <!-- ローディング / 加载中 -->
-    <div v-if="loading" class="stats-loading">集計中...</div>
+    <div v-if="loading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <!-- エラー / 错误 -->
     <div v-else-if="error" class="stats-error">{{ error }}</div>
@@ -49,38 +55,40 @@
         </span>
       </div>
 
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="text-center">#</th>
-            <th>SKU</th>
-            <th>入力SKU</th>
-            <th>商品名</th>
-            <th class="text-right">出荷数量</th>
-            <th class="text-right">出荷金額</th>
-            <th class="text-right">注文件数</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(row, idx) in data" :key="row._id ?? idx">
-            <td class="text-center">{{ idx + 1 }}</td>
-            <td>{{ row._id ?? '-' }}</td>
-            <td>{{ row.inputSku ?? '-' }}</td>
-            <td>{{ row.productName ?? '-' }}</td>
-            <td class="text-right">{{ row.totalQuantity.toLocaleString() }}</td>
-            <td class="text-right">¥{{ row.totalAmount.toLocaleString() }}</td>
-            <td class="text-right">{{ row.orderCount.toLocaleString() }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead class="text-center">#</TableHead>
+            <TableHead>SKU</TableHead>
+            <TableHead>入力SKU</TableHead>
+            <TableHead>商品名</TableHead>
+            <TableHead class="text-right">出荷数量</TableHead>
+            <TableHead class="text-right">出荷金額</TableHead>
+            <TableHead class="text-right">注文件数</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-for="(row, idx) in data" :key="row._id ?? idx">
+            <TableCell class="text-center">{{ idx + 1 }}</TableCell>
+            <TableCell>{{ row._id ?? '-' }}</TableCell>
+            <TableCell>{{ row.inputSku ?? '-' }}</TableCell>
+            <TableCell>{{ row.productName ?? '-' }}</TableCell>
+            <TableCell class="text-right">{{ row.totalQuantity.toLocaleString() }}</TableCell>
+            <TableCell class="text-right">¥{{ row.totalAmount.toLocaleString() }}</TableCell>
+            <TableCell class="text-right">{{ row.orderCount.toLocaleString() }}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, computed, onMounted } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { fetchProductShipmentStats, type ProductShipmentStat } from '@/api/product'
 
 // 状態 / 状态

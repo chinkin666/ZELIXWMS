@@ -1,24 +1,30 @@
 <template>
   <div class="inbound-putaway">
-    <ControlPanel :title="`${t('wms.inbound.putaway', '棚入れ')} - ${order?.orderNumber || ''}`" :show-search="false">
+    <PageHeader :title="`${t('wms.inbound.putaway', '棚入れ')} - ${order?.orderNumber || ''}`" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" @click="$router.push('/inbound/orders')">{{ t('wms.inbound.back', '戻る') }}</OButton>
-          <OButton
+          <Button variant="secondary" size="sm" @click="$router.push('/inbound/orders')">{{ t('wms.inbound.back', '戻る') }}</Button>
+          <Button
             v-if="order?.status === 'received'"
-            variant="primary" size="sm"
+            variant="default" size="sm"
             :disabled="!allPutaway"
             @click="handleComplete"
-          >{{ t('wms.inbound.inboundComplete', '入庫完了') }}</OButton>
+          >{{ t('wms.inbound.inboundComplete', '入庫完了') }}</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div v-if="isLoading" class="loading-state">{{ t('wms.ui.loading', '読み込み中...') }}</div>
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else-if="order">
       <!-- ヘッダー情報 -->
-      <div class="o-card info-card">
+      <div class="rounded-lg border bg-card p-4 info-card">
         <div class="info-grid">
           <div class="info-item">
             <span class="info-label">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</span>
@@ -44,84 +50,84 @@
       </div>
 
       <!-- 棚入れテーブル -->
-      <div class="o-table-wrapper">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width:40px;">#</th>
-              <th class="o-table-th" style="width:140px;">SKU</th>
-              <th class="o-table-th" style="width:200px;">{{ t('wms.inbound.productName', '商品名') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:80px;">{{ t('wms.inbound.receivedQty', '入庫数') }}</th>
-              <th class="o-table-th" style="width:200px;">{{ t('wms.inbound.putawayLocation', '棚入れ先') }}</th>
-              <th class="o-table-th o-table-th--right" style="width:100px;">{{ t('wms.inbound.putawayQty', '棚入れ数') }}</th>
-              <th class="o-table-th" style="width:120px;">{{ t('wms.common.status', '状態') }}</th>
-              <th class="o-table-th" style="width:120px;">{{ t('wms.common.actions', '操作') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="line in order.lines" :key="line.lineNumber" class="o-table-row" :class="{ 'row-done': line.putawayQuantity >= line.receivedQuantity }">
-              <td class="o-table-td" style="text-align:center;">{{ line.lineNumber }}</td>
-              <td class="o-table-td"><span class="sku-text">{{ line.productSku }}</span></td>
-              <td class="o-table-td">{{ line.productName || '-' }}</td>
-              <td class="o-table-td o-table-td--right">{{ line.receivedQuantity }}</td>
-              <td class="o-table-td">
+      <div class="rounded-md border overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width:40px;">#</TableHead>
+              <TableHead style="width:140px;">SKU</TableHead>
+              <TableHead style="width:200px;">{{ t('wms.inbound.productName', '商品名') }}</TableHead>
+              <TableHead class="text-right" style="width:80px;">{{ t('wms.inbound.receivedQty', '入庫数') }}</TableHead>
+              <TableHead style="width:200px;">{{ t('wms.inbound.putawayLocation', '棚入れ先') }}</TableHead>
+              <TableHead class="text-right" style="width:100px;">{{ t('wms.inbound.putawayQty', '棚入れ数') }}</TableHead>
+              <TableHead style="width:120px;">{{ t('wms.common.status', '状態') }}</TableHead>
+              <TableHead style="width:120px;">{{ t('wms.common.actions', '操作') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="line in order.lines" :key="line.lineNumber" :class="{ 'row-done': line.putawayQuantity >= line.receivedQuantity }">
+              <TableCell style="text-align:center;">{{ line.lineNumber }}</TableCell>
+              <TableCell><span class="sku-text">{{ line.productSku }}</span></TableCell>
+              <TableCell>{{ line.productName || '-' }}</TableCell>
+              <TableCell class="text-right">{{ line.receivedQuantity }}</TableCell>
+              <TableCell>
                 <template v-if="line.putawayQuantity >= line.receivedQuantity">
                   <span class="location-badge">{{ getPutawayLocCode(line) }}</span>
                 </template>
                 <template v-else>
                   <div style="display:flex;flex-direction:column;gap:2px;">
-                    <select
-                      v-model="putawaySelections[line.lineNumber]"
-                      class="o-input o-input-sm"
-                      style="width:180px;"
-                    >
-                      <option value="">{{ t('wms.inbound.selectLocation', 'ロケーション選択') }}</option>
-                      <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
-                        {{ loc.code }} ({{ loc.name }})
-                      </option>
-                    </select>
+                    <Select :model-value="putawaySelections[line.lineNumber] || '__none__'" @update:model-value="(v: string) => { putawaySelections[line.lineNumber] = v === '__none__' ? '' : v }">
+                      <SelectTrigger class="h-8 text-sm" style="width:180px;"><SelectValue :placeholder="t('wms.inbound.selectLocation', 'ロケーション選択')" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
+                          {{ loc.code }} ({{ loc.name }})
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                     <span v-if="suggestions[line.lineNumber]?.reason" class="suggestion-hint">
                       &#x2728; {{ suggestions[line.lineNumber]?.reason }}
                     </span>
                   </div>
                 </template>
-              </td>
-              <td class="o-table-td o-table-td--right">
+              </TableCell>
+              <TableCell class="text-right">
                 {{ line.putawayQuantity || 0 }} / {{ line.receivedQuantity }}
-              </td>
-              <td class="o-table-td">
+              </TableCell>
+              <TableCell>
                 <span v-if="line.putawayQuantity >= line.receivedQuantity" class="text-success">{{ t('wms.inbound.complete', '完了') }}</span>
                 <span v-else class="text-warning">{{ t('wms.inbound.unprocessed', '未処理') }}</span>
-              </td>
-              <td class="o-table-td">
-                <OButton
+              </TableCell>
+              <TableCell>
+                <Button
                   v-if="line.putawayQuantity < line.receivedQuantity && order.status === 'received'"
-                  variant="primary" size="sm"
+                  variant="default" size="sm"
                   :disabled="!putawaySelections[line.lineNumber] || isPutaway"
                   @click="handlePutaway(line.lineNumber)"
-                >{{ t('wms.inbound.putaway', '棚入れ') }}</OButton>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                >{{ t('wms.inbound.putaway', '棚入れ') }}</Button>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
 
       <!-- 一括棚入れ -->
-      <div v-if="order.status === 'received' && !allPutaway" class="o-card bulk-putaway-card">
+      <div v-if="order.status === 'received' && !allPutaway" class="rounded-lg border bg-card p-4 bulk-putaway-card">
         <h3 style="margin:0 0 12px 0;font-size:15px;font-weight:600;">{{ t('wms.inbound.bulkPutaway', '一括棚入れ') }}</h3>
         <div style="display:flex;gap:8px;align-items:center;">
           <span style="font-size:13px;color:var(--o-gray-600);">{{ t('wms.inbound.bulkPutawayDesc', '全行を同一ロケーションに棚入れ') }}:</span>
-          <select v-model="bulkLocationId" class="o-input o-input-sm" style="width:200px;">
-            <option value="">{{ t('wms.inbound.selectLocation', 'ロケーション選択') }}</option>
-            <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
-              {{ loc.code }} ({{ loc.name }})
-            </option>
-          </select>
-          <OButton
-            variant="primary" size="sm"
+          <Select :model-value="bulkLocationId || '__none__'" @update:model-value="(v: string) => { bulkLocationId = v === '__none__' ? '' : v }">
+            <SelectTrigger class="h-8 text-sm" style="width:200px;"><SelectValue :placeholder="t('wms.inbound.selectLocation', 'ロケーション選択')" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
+                {{ loc.code }} ({{ loc.name }})
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="default" size="sm"
             :disabled="!bulkLocationId || isPutaway"
             @click="handleBulkPutaway"
-          >{{ t('wms.inbound.putawayAll', '全行棚入れ') }}</OButton>
+          >{{ t('wms.inbound.putawayAll', '全行棚入れ') }}</Button>
         </div>
       </div>
     </template>
@@ -129,18 +135,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { fetchInboundOrder, putawayInboundLine, completeInboundOrder, fetchPutawaySuggestions } from '@/api/inboundOrder'
 import type { LocationSuggestion } from '@/api/inboundOrder'
 import { fetchLocations } from '@/api/location'
 import type { InboundOrder, InboundOrderLine, Location } from '@/types/inventory'
-
+import { computed, onMounted, reactive, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -247,13 +257,7 @@ const handleBulkPutaway = async () => {
 
 const handleComplete = async () => {
   if (!order.value) return
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inbound.confirmComplete', '入庫を完了にしますか？ / 确定要完成入库吗？'),
-      '確認 / 确认',
-      { confirmButtonText: '完了 / 完成', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await completeInboundOrder(order.value._id)
     toast.showSuccess(t('wms.inbound.orderCompleted', '入庫指示を完了にしました'))
@@ -389,7 +393,7 @@ onMounted(() => {
 .o-table-td--right { text-align: right; }
 .o-table-th--right { text-align: right; }
 
-.o-input {
+.{
   padding: 6px 10px;
   border: 1px solid var(--o-border-color, #dcdfe6);
   border-radius: var(--o-border-radius, 4px);
@@ -426,7 +430,7 @@ onMounted(() => {
   .o-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
   /* 入力フィールド全幅 / 输入框全宽 */
-  .o-input, select.o-input { width: 100% !important; }
+  .o-input, select.{ width: 100% !important; }
 
   /* 一括棚入れセクション縦積み / 批量上架区域纵向排列 */
   .bulk-putaway-card { padding: 12px; }

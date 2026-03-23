@@ -1,51 +1,49 @@
 <template>
   <div class="set-product-list">
-    <ControlPanel :title="t('wms.setProduct.list', 'セット組一覧')" :show-search="false">
+    <PageHeader :title="t('wms.setProduct.list', 'セット組一覧')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.setProduct.csvExport', 'CSVエクスポート') }}</OButton>
-          <OButton variant="primary" size="sm" @click="openCreateDialog">{{ t('wms.common.create', '新規作成') }}</OButton>
+          <Button variant="outline" size="sm" @click="exportCsv">{{ t('wms.setProduct.csvExport', 'CSVエクスポート') }}</Button>
+          <Button variant="default" size="sm" @click="openCreateDialog">{{ t('wms.common.create', '新規作成') }}</Button>
         </div>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="setProductListSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="filtered"
         row-key="_id"
         pagination-enabled
         pagination-mode="client"
         :global-search-text="globalSearchText"
+        :search-columns="searchColumns"
+        @search="handleSearch"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogVisible" :title="editingId ? t('wms.setProduct.editTitle', 'セット組編集') : t('wms.setProduct.createTitle', 'セット組新規作成')" size="lg">
+    <Dialog :open="dialogVisible" @update:open="dialogVisible = $event">
+      <DialogContent class="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{{ editingId ? t('wms.setProduct.editTitle', 'セット組編集') : t('wms.setProduct.createTitle', 'セット組新規作成') }}</DialogTitle>
+        </DialogHeader>
       <div class="dialog-form">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.setProduct.sku', '品番') }} <span class="req">{{ t('wms.setProduct.required', '必須') }}</span></label>
-          <input v-model="form.sku" type="text" class="o-input" :placeholder="t('wms.setProduct.setSkuPlaceholder', 'セット組品番')" />
+          <label>{{ t('wms.setProduct.sku', '品番') }} <span class="req">{{ t('wms.setProduct.required', '必須') }}</span></label>
+          <input v-model="form.sku" type="text" :placeholder="t('wms.setProduct.setSkuPlaceholder', 'セット組品番')" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.setProduct.name', '名称') }} <span class="req">{{ t('wms.setProduct.required', '必須') }}</span></label>
-          <input v-model="form.name" type="text" class="o-input" :placeholder="t('wms.setProduct.setNamePlaceholder', 'セット組名称')" />
+          <label>{{ t('wms.setProduct.name', '名称') }} <span class="req">{{ t('wms.setProduct.required', '必須') }}</span></label>
+          <input v-model="form.name" type="text" :placeholder="t('wms.setProduct.setNamePlaceholder', 'セット組名称')" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.setProduct.memo', 'メモ') }}</label>
-          <textarea v-model="form.memo" class="o-input" rows="2" />
+          <label>{{ t('wms.setProduct.memo', 'メモ') }}</label>
+          <textarea v-model="form.memo" rows="2" />
         </div>
 
         <div class="form-field">
-          <label class="form-label">{{ t('wms.setProduct.components', '構成品') }} <span class="req">{{ t('wms.setProduct.required', '必須') }}</span></label>
+          <label>{{ t('wms.setProduct.components', '構成品') }} <span class="req">{{ t('wms.setProduct.required', '必須') }}</span></label>
           <table class="comp-table">
             <thead>
               <tr>
@@ -58,7 +56,7 @@
               <tr v-for="(comp, idx) in form.components" :key="idx">
                 <td>
                   <select
-                    class="o-input"
+                   
                     :value="comp.productId"
                     @change="onComponentProductChange(idx, ($event.target as HTMLSelectElement).value)"
                   >
@@ -70,7 +68,7 @@
                 </td>
                 <td>
                   <input
-                    class="o-input"
+                   
                     type="number"
                     :value="comp.quantity"
                     min="1"
@@ -79,39 +77,41 @@
                   />
                 </td>
                 <td style="text-align:center;">
-                  <button class="remove-btn" @click="removeComponent(idx)">&times;</button>
+                  <Button class="remove-btn" @click="removeComponent(idx)">&times;</Button>
                 </td>
               </tr>
             </tbody>
           </table>
-          <button class="add-comp-btn" @click="addComponent">{{ t('wms.setProduct.addComponent', '+ 構成品を追加') }}</button>
+          <Button class="add-comp-btn" @click="addComponent">{{ t('wms.setProduct.addComponent', '+ 構成品を追加') }}</Button>
         </div>
       </div>
-      <template #footer>
-        <OButton variant="secondary" @click="dialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-        <OButton variant="primary" :disabled="isSaving" @click="handleSave">
+      <DialogFooter>
+        <Button variant="outline" @click="dialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+        <Button variant="default" :disabled="isSaving" @click="handleSave">
           {{ isSaving ? t('wms.setProduct.saving', '保存中...') : t('wms.common.save', '保存') }}
-        </OButton>
-      </template>
-    </ODialog>
+        </Button>
+      </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, h, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Input } from '@/components/ui/input'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import { fetchSetProducts, createSetProduct, updateSetProduct, deleteSetProduct } from '@/api/setProduct'
 import { fetchProducts } from '@/api/product'
 import type { SetProduct } from '@/types/setProduct'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-
+import { ref, computed, h, onMounted } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { t } = useI18n()
 const toast = useToast()
 
@@ -207,8 +207,8 @@ const tableColumns = computed<TableColumn[]>(() => [
     width: 160,
     cellRenderer: ({ rowData }: { rowData: SetProduct }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEditDialog(rowData) }, () => t('wms.common.edit', '編集')),
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEditDialog(rowData) }, () => t('wms.common.edit', '編集')),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')),
       ]),
   },
 ])
@@ -305,13 +305,7 @@ async function handleSave() {
 }
 
 async function handleDelete(item: SetProduct) {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.setProduct.deleteConfirm', `セット組「${item.sku}」を削除しますか？ / 确定要删除套装「${item.sku}」吗？`),
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteSetProduct(item._id)
     toast.showSuccess(t('wms.setProduct.deleted', '削除しました'))

@@ -1,34 +1,34 @@
 <template>
   <div class="replenishment-dashboard">
-    <ControlPanel :title="t('wms.warehouse.replenishment', '補充管理')" :show-search="false">
+    <PageHeader :title="t('wms.warehouse.replenishment', '補充管理')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="triggerReplenishment" :disabled="triggering">
+        <Button variant="default" @click="triggerReplenishment" :disabled="triggering">
           {{ triggering ? t('wms.common.processing', '処理中...') : t('wms.warehouse.triggerReplenishment', '補充トリガー') }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- 統計カード / 统计卡片 -->
     <div class="stat-cards">
-      <StatCard
+      <div class='rounded-lg border p-4 text-center'
         :title="t('wms.warehouse.pending', '未処理')"
         :value="String(stats.pending)"
         icon="\u{1F4CB}"
         color="#fa8c16"
       />
-      <StatCard
+      <div class='rounded-lg border p-4 text-center'
         :title="t('wms.warehouse.inProgress', '処理中')"
         :value="String(stats.inProgress)"
         icon="\u{1F3C3}"
         color="#1677ff"
       />
-      <StatCard
+      <div class='rounded-lg border p-4 text-center'
         :title="t('wms.warehouse.completed', '完了')"
         :value="String(stats.completed)"
         icon="\u{2705}"
         color="#52c41a"
       />
-      <StatCard
+      <div class='rounded-lg border p-4 text-center'
         :title="t('wms.warehouse.total', '合計')"
         :value="String(stats.total)"
         icon="\u{1F4E6}"
@@ -60,59 +60,67 @@
     </div>
 
     <!-- タスク一覧テーブル / 任务列表 -->
-    <OLoadingState :loading="isLoading" :empty="!isLoading && tasks.length === 0">
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
+    <div v-else-if="!isLoading && tasks.length === 0" class="empty-state">{{ t('wms.common.noData', 'データがありません') }}</div>
+    <template v-else>
       <div class="table-section">
-        <table class="task-table">
-          <thead>
-            <tr>
-              <th>{{ t('wms.warehouse.taskId', 'タスクID') }}</th>
-              <th>{{ t('wms.warehouse.productSku', '商品SKU') }}</th>
-              <th>{{ t('wms.warehouse.productName', '商品名') }}</th>
-              <th>{{ t('wms.warehouse.fromLocation', '移動元') }}</th>
-              <th>{{ t('wms.warehouse.toLocation', '移動先') }}</th>
-              <th>{{ t('wms.warehouse.requiredQty', '必要数量') }}</th>
-              <th>{{ t('wms.warehouse.status', 'ステータス') }}</th>
-              <th>{{ t('wms.warehouse.createdAt', '作成日') }}</th>
-              <th>{{ t('wms.warehouse.actions', '操作') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="task in tasks" :key="task._id">
-              <td class="task-id">{{ task._id?.slice(-6) || '-' }}</td>
-              <td class="sku-cell">{{ task.productSku || '-' }}</td>
-              <td>{{ task.productName || '-' }}</td>
-              <td><span class="location-badge">{{ task.fromLocation || '-' }}</span></td>
-              <td><span class="location-badge">{{ task.toLocation || '-' }}</span></td>
-              <td class="qty-cell">{{ task.requiredQuantity ?? '-' }}</td>
-              <td>
+        <Table class="task-table">
+          <TableHeader>
+            <TableRow>
+              <TableHead>{{ t('wms.warehouse.taskId', 'タスクID') }}</TableHead>
+              <TableHead>{{ t('wms.warehouse.productSku', '商品SKU') }}</TableHead>
+              <TableHead>{{ t('wms.warehouse.productName', '商品名') }}</TableHead>
+              <TableHead>{{ t('wms.warehouse.fromLocation', '移動元') }}</TableHead>
+              <TableHead>{{ t('wms.warehouse.toLocation', '移動先') }}</TableHead>
+              <TableHead>{{ t('wms.warehouse.requiredQty', '必要数量') }}</TableHead>
+              <TableHead>{{ t('wms.warehouse.status', 'ステータス') }}</TableHead>
+              <TableHead>{{ t('wms.warehouse.createdAt', '作成日') }}</TableHead>
+              <TableHead>{{ t('wms.warehouse.actions', '操作') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="task in tasks" :key="task._id">
+              <TableCell class="task-id">{{ task._id?.slice(-6) || '-' }}</TableCell>
+              <TableCell class="sku-cell">{{ task.productSku || '-' }}</TableCell>
+              <TableCell>{{ task.productName || '-' }}</TableCell>
+              <TableCell><span class="location-badge">{{ task.fromLocation || '-' }}</span></TableCell>
+              <TableCell><span class="location-badge">{{ task.toLocation || '-' }}</span></TableCell>
+              <TableCell class="qty-cell">{{ task.requiredQuantity ?? '-' }}</TableCell>
+              <TableCell>
                 <span class="status-tag" :class="`status-${task.status}`">
                   {{ getStatusLabel(task.status) }}
                 </span>
-              </td>
-              <td class="date-cell">{{ formatDate(task.createdAt) }}</td>
-              <td>
-                <OButton
+              </TableCell>
+              <TableCell class="date-cell">{{ formatDate(task.createdAt) }}</TableCell>
+              <TableCell>
+                <Button
                   v-if="task.status !== 'completed'"
-                  variant="primary"
+                  variant="default"
                   size="sm"
                   @click="openCompleteDialog(task)"
                 >
                   {{ t('wms.warehouse.complete', '完了') }}
-                </OButton>
+                </Button>
                 <span v-else class="completed-mark">{{ t('wms.warehouse.done', '完了済') }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
-    </OLoadingState>
+    </template>
 
     <!-- 完了ダイアログ / 完成对话框 -->
     <div v-if="showCompleteDialog" class="dialog-overlay" @click.self="showCompleteDialog = false">
       <div class="dialog-box">
         <div class="dialog-header">
           <h3>{{ t('wms.warehouse.completeTask', 'タスク完了') }}</h3>
-          <button class="dialog-close" @click="showCompleteDialog = false">&times;</button>
+          <Button class="dialog-close" @click="showCompleteDialog = false">&times;</Button>
         </div>
         <div class="dialog-body">
           <p class="dialog-info">
@@ -131,12 +139,12 @@
           </div>
         </div>
         <div class="dialog-footer">
-          <OButton variant="secondary" size="sm" @click="showCompleteDialog = false">
+          <Button variant="secondary" size="sm" @click="showCompleteDialog = false">
             {{ t('wms.common.cancel', 'キャンセル') }}
-          </OButton>
-          <OButton variant="primary" size="sm" @click="confirmComplete" :disabled="completing">
+          </Button>
+          <Button variant="default" size="sm" @click="confirmComplete" :disabled="completing">
             {{ completing ? t('wms.common.processing', '処理中...') : t('wms.warehouse.confirmComplete', '完了を確定') }}
-          </OButton>
+          </Button>
         </div>
       </div>
     </div>
@@ -144,6 +152,7 @@
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 /**
  * 補充ダッシュボード / 补货仪表盘
  *
@@ -151,15 +160,15 @@
  * 显示补货任务列表、触发补货、完成任务
  */
 import { ref, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OLoadingState from '@/components/odoo/OLoadingState.vue'
-import StatCard from '@/components/odoo/StatCard.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { getApiBaseUrl } from '@/api/base'
 import { apiFetch } from '@/api/http'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const API_BASE_URL = getApiBaseUrl()
 const toast = useToast()
@@ -237,13 +246,7 @@ const handleSkuSearch = () => {
 
 // 補充トリガー / 触发补货
 const triggerReplenishment = async () => {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.warehouse.confirmTrigger', '補充トリガーを実行しますか？在庫不足の商品に対して補充タスクが作成されます。 / 确定要执行补货触发吗？将为库存不足的商品创建补货任务。'),
-      '確認 / 确认',
-      { confirmButtonText: '実行 / 执行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   triggering.value = true
   try {
     const res = await apiFetch(`${API_BASE_URL}/workflows/replenishment/trigger`, {

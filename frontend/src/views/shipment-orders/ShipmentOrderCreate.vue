@@ -1,71 +1,71 @@
 <template>
   <div class="o-view">
-    <!-- ControlPanel Header -->
-    <ControlPanel
+    <!-- PageHeader Header -->
+    <PageHeader
       :title="t('wms.shipmentOrder.createTitle', '出荷指示作成')"
       :show-search="false"
     >
       <template #center>
         <input
-          class="o-input o-cp-search-input"
+          class="o-cp-search-input"
           v-model="globalSearchText"
           :placeholder="t('wms.common.search', '検索') + '...'"
         />
       </template>
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="showColumnSettingsDialog = true" :title="t('wms.shipmentOrder.columnSettings', '列表示設定')">
+        <Button variant="secondary" size="sm" @click="showColumnSettingsDialog = true" :title="t('wms.shipmentOrder.columnSettings', '列表示設定')">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
             <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.421 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115l.094-.319z"/>
           </svg>
-        </OButton>
+        </Button>
         <template v-if="displayFilter === 'pending_confirm'">
-        <OButton
+        <Button
           v-if="!bundleModeEnabled"
           variant="secondary"
           @click="handleOpenBundleList"
         >
           {{ t('wms.shipmentOrder.bundleCandidateList', '同捆候補一覧') }}
-        </OButton>
-        <OButton
+        </Button>
+        <Button
           v-else
           variant="secondary"
           @click="handleExitBundleMode"
         >
           {{ t('wms.shipmentOrder.exitBundleMode', '同梱モード終了') }}
-        </OButton>
+        </Button>
         </template>
         <template v-if="displayFilter === 'pending_confirm'">
-          <OButton variant="success" @click="handleImportClick">
+          <Button variant="default" @click="handleImportClick">
             {{ t('wms.shipmentOrder.bulkRegister', '一括登録') }}
-          </OButton>
-          <OButton variant="primary" @click="handleAdd">
+          </Button>
+          <Button variant="default" @click="handleAdd">
             {{ t('wms.shipmentOrder.individualRegister', '個別登録') }}
-          </OButton>
+          </Button>
         </template>
         <template v-if="displayFilter === 'pending_waybill'">
-          <OButton variant="success" @click="showCarrierImportDialog = true">
+          <Button variant="default" @click="showCarrierImportDialog = true">
             {{ t('wms.shipmentOrder.importWaybillData', '送り状データ取込') }}
-          </OButton>
+          </Button>
         </template>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <div class="o-content">
       <!-- Filter Tabs -->
       <div class="o-filter-tabs">
-        <button class="o-filter-tab" :class="{ active: displayFilter === 'pending_confirm' }" @click="displayFilter = 'pending_confirm'">
+        <Button class="o-filter-tab" :class="{ active: displayFilter === 'pending_confirm' }" @click="displayFilter = 'pending_confirm'">
           {{ t('wms.shipmentOrder.pendingConfirm', '出荷確認待ち') }} <span class="o-tab-count">{{ pendingConfirmCount }}</span>
-        </button>
-        <button class="o-filter-tab" :class="{ active: displayFilter === 'processing' }" @click="displayFilter = 'processing'">
+        </Button>
+        <Button class="o-filter-tab" :class="{ active: displayFilter === 'processing' }" @click="displayFilter = 'processing'">
           {{ t('wms.shipmentOrder.processing', '処理中') }} <span class="o-tab-count">{{ processingNonHeldCount }}</span>
-        </button>
-        <button class="o-filter-tab" :class="{ active: displayFilter === 'pending_waybill' }" @click="displayFilter = 'pending_waybill'">
+        </Button>
+        <Button class="o-filter-tab" :class="{ active: displayFilter === 'pending_waybill' }" @click="displayFilter = 'pending_waybill'">
           {{ t('wms.shipmentOrder.pendingWaybill', '送り状未発行') }} <span class="o-tab-count">{{ pendingWaybillNonHeldCount }}</span>
-        </button>
-        <button class="o-filter-tab" :class="{ active: displayFilter === 'held' }" @click="displayFilter = 'held'">
+        </Button>
+        <Button class="o-filter-tab" :class="{ active: displayFilter === 'held' }" @click="displayFilter = 'held'">
           {{ t('wms.shipmentOrder.held', '保留') }} <span class="o-tab-count">{{ totalHeldCount }}</span>
-        </button>
+        </Button>
       </div>
 
       <!-- Backend error alert -->
@@ -74,7 +74,7 @@
         class="o-alert o-alert-error"
       >
         <span>{{ t('wms.shipmentOrder.serverErrorAlert', 'サーバー側でエラーが発生しました。エラー行のみ表示に切り替えています。') }}</span>
-        <button class="o-alert-close" @click="clearBackendErrors">&times;</button>
+        <Button class="o-alert-close" @click="clearBackendErrors">&times;</Button>
       </div>
 
       <!-- Bundle mode bar -->
@@ -84,56 +84,54 @@
           <span class="bundle-mode-bar__labels">{{ bundleFilterLabels || t('wms.shipmentOrder.notSet', '未設定') }}</span>
         </div>
         <div class="bundle-mode-actions">
-          <OButton
-            variant="primary"
+          <Button
+            variant="default"
             size="sm"
             :disabled="tableSelectedKeys.length === 0 || selectedBundleGroupKeys.length === 0"
             @click="handleBundleMergeAllSelected"
           >
             {{ t('wms.shipmentOrder.bundle', '同梱する') }}
-          </OButton>
-          <OButton
+          </Button>
+          <Button
             variant="warning"
             size="sm"
             :disabled="!hasUnbundleableRows"
             @click="handleUnbundleSelected"
           >
             {{ t('wms.shipmentOrder.unbundle', '同梱を解除する') }}
-          </OButton>
+          </Button>
         </div>
       </div>
 
       <!-- Plain table -->
-      <div class="o-table-wrapper">
+      <div class="rounded-md border overflow-auto">
         <!-- Selection toolbar -->
-        <div v-if="tableSelectedKeys.length > 0" class="o-list-toolbar o-toolbar-active">
-          <span class="o-selected-count">{{ tableSelectedKeys.length }}{{ t('wms.shipmentOrder.itemsSelected', '件選択中') }}</span>
+        <div v-if="tableSelectedKeys.length > 0" class="flex items-center gap-2 px-4 py-2 bg-muted/50 border-b">
+          <span class="text-sm text-muted-foreground">{{ tableSelectedKeys.length }}{{ t('wms.shipmentOrder.itemsSelected', '件選択中') }}</span>
         </div>
-        <table class="o-table" :class="{ 'o-table--resizing': resizingCol }">
-          <thead>
-            <tr>
-              <th class="o-table-th o-table-th--checkbox" style="width:40px;">
-                <input
-                  type="checkbox"
-                  :checked="isAllCurrentPageSelected"
-                  :indeterminate="isSomeCurrentPageSelected && !isAllCurrentPageSelected"
-                  @change="toggleSelectAll"
+        <Table :class="{ 'resizing': resizingCol }">
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width:40px;">
+                <Checkbox
+                  :model-value="isAllCurrentPageSelected"
+                  @update:model-value="toggleSelectAll"
                 />
-              </th>
-              <th class="o-table-th" style="width:90px;">{{ t('wms.common.status', '状態') }}</th>
-              <th class="o-table-th" style="width:220px;">{{ t('wms.shipmentOrder.shipmentNumber', '出荷管理番号') }}</th>
-              <th class="o-table-th" style="width:200px;">{{ t('wms.shipmentOrder.deliveryInfo', '配送情報') }}</th>
-              <th class="o-table-th" style="width:180px;">{{ t('wms.shipmentOrder.deliverySpec', '配送指定') }}</th>
-              <th
+              </TableHead>
+              <TableHead style="width:90px;">{{ t('wms.common.status', '状態') }}</TableHead>
+              <TableHead style="width:220px;">{{ t('wms.shipmentOrder.shipmentNumber', '出荷管理番号') }}</TableHead>
+              <TableHead style="width:200px;">{{ t('wms.shipmentOrder.deliveryInfo', '配送情報') }}</TableHead>
+              <TableHead style="width:180px;">{{ t('wms.shipmentOrder.deliverySpec', '配送指定') }}</TableHead>
+              <TableHead
                 v-for="col in visibleColumns"
                 :key="col.key"
-                class="o-table-th"
-                :class="{ 'o-table-th--sortable': !bundleModeEnabled }"
+                class="relative"
+                :class="{ 'cursor-pointer': !bundleModeEnabled }"
                 :style="{ width: getColWidth(col) }"
                 @click="handleSortClick(col)"
               >
                 {{ col.title }}
-                <span v-if="sortKey === (col.dataKey || col.key) && !bundleModeEnabled" class="o-sort-icon">
+                <span v-if="sortKey === (col.dataKey || col.key) && !bundleModeEnabled" class="ml-1 text-xs">
                   {{ sortOrder === 'asc' ? '▲' : '▼' }}
                 </span>
                 <span
@@ -141,33 +139,39 @@
                   @mousedown="onResizeStart($event, col)"
                   @click.stop
                 />
-              </th>
-              <th class="o-table-th" style="width:170px;">{{ t('wms.shipmentOrder.history', '履歴') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="isLoadingPendingWaybill && displayFilter !== 'pending_confirm'">
-              <td :colspan="visibleColumns.length + 6" class="o-table-empty">{{ t('wms.ui.loading', '読み込み中...') }}</td>
-            </tr>
-            <tr v-else-if="paginatedRows.length === 0">
-              <td :colspan="visibleColumns.length + 6" class="o-table-empty">{{ t('wms.ui.noData', 'データがありません') }}</td>
-            </tr>
+              </TableHead>
+              <TableHead style="width:170px;">{{ t('wms.shipmentOrder.history', '履歴') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-if="isLoadingPendingWaybill && displayFilter !== 'pending_confirm'">
+              <TableCell :colspan="visibleColumns.length + 6">
+                <div class="space-y-3 p-4">
+                  <Skeleton class="h-4 w-[250px] mx-auto" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                </div>
+              </TableCell>
+            </TableRow>
+            <TableRow v-else-if="paginatedRows.length === 0">
+              <TableCell :colspan="visibleColumns.length + 6" class="text-center py-8 text-muted-foreground">{{ t('wms.ui.noData', 'データがありません') }}</TableCell>
+            </TableRow>
             <template
               v-for="row in paginatedRows"
               :key="row.id"
             >
-            <tr
-              class="o-table-row"
-              :class="{ 'o-table-row--selected': tableSelectedKeys.includes(row.id), 'o-table-row--has-error': b2ValidationErrors.has(String(row._id || row.id)) || getRowErrorMessages(row).length > 0 }"
+            <TableRow
+              :data-state="tableSelectedKeys.includes(row.id) ? 'selected' : undefined"
+              :class="{ 'bg-red-50': b2ValidationErrors.has(String(row._id || row.id)) || getRowErrorMessages(row).length > 0 }"
             >
-              <td class="o-table-td o-table-td--checkbox">
-                <input
-                  type="checkbox"
-                  :checked="tableSelectedKeys.includes(row.id)"
-                  @change="toggleRowSelection(row)"
+              <TableCell>
+                <Checkbox
+                  :model-value="tableSelectedKeys.includes(row.id)"
+                  @update:model-value="toggleRowSelection(row)"
                 />
-              </td>
-              <td class="o-table-td o-table-td--status">
+              </TableCell>
+              <TableCell>
                 <div class="status-cell">
                   <span v-if="displayFilter === 'pending_waybill'" class="o-status-tag o-status-tag--processing">{{ t('wms.shipmentOrder.pendingWaybill', '送り状未発行') }}</span>
                   <span v-else-if="b2ValidationErrors.has(String(row._id || row.id))" class="o-status-tag o-status-tag--error" :title="getB2Errors(row).join('\n')">{{ t('wms.shipmentOrder.error', 'エラー') }}</span>
@@ -180,9 +184,9 @@
                   <span v-if="isRemoteIsland(row)" class="o-status-tag o-status-tag--remote">{{ t('wms.shipmentOrder.remoteIslandDelivery', '離島配送') }}</span>
                   <span v-if="isDuplicate(row.id)" class="o-status-tag o-status-tag--duplicate" :title="isDuplicateBackend(row.id) ? t('wms.shipmentOrder.duplicateExisting', '既存注文と重複') : t('wms.shipmentOrder.duplicateInput', '入力データ内で重複')">{{ t('wms.shipmentOrder.duplicate', '重複') }}</span>
                 </div>
-              </td>
+              </TableCell>
               <!-- 出荷管理番号（3行表示） -->
-              <td class="o-table-td o-table-td--mgmt">
+              <TableCell>
                 <div class="mgmt-cell">
                   <div class="mgmt-cell__row">
                     <span class="mgmt-cell__label">{{ t('wms.shipmentOrder.shipmentManagementNo', '出荷管理No') }}</span>
@@ -198,9 +202,9 @@
                     <span class="mgmt-cell__value">{{ (row as any).trackingId || t('wms.shipmentOrder.notIssued', '未発行') }}</span>
                   </div>
                 </div>
-              </td>
+              </TableCell>
               <!-- 配送情報（3行表示） -->
-              <td class="o-table-td o-table-td--mgmt">
+              <TableCell>
                 <div class="mgmt-cell">
                   <div class="mgmt-cell__row">
                     <span class="mgmt-cell__label">{{ t('wms.shipmentOrder.carrierCompany', '配送会社') }}</span>
@@ -215,9 +219,9 @@
                     <span class="mgmt-cell__value" :style="{ color: getCoolTypeInfo(row).color }">{{ getCoolTypeInfo(row).label }}</span>
                   </div>
                 </div>
-              </td>
+              </TableCell>
               <!-- 配送日時（3行表示） -->
-              <td class="o-table-td o-table-td--mgmt">
+              <TableCell>
                 <div class="mgmt-cell">
                   <div class="mgmt-cell__row">
                     <span class="mgmt-cell__label">{{ t('wms.shipmentOrder.shipPlanDate', '出荷予定日') }}</span>
@@ -232,12 +236,11 @@
                     <span class="mgmt-cell__value">{{ getTimeSlotLabel(row) }}</span>
                   </div>
                 </div>
-              </td>
-              <td
+              </TableCell>
+              <TableCell
                 v-for="col in visibleColumns"
                 :key="col.key"
-                class="o-table-td"
-                :class="{ 'o-table-td--error': isCellError(row, col) }"
+                :class="{ 'bg-red-50': isCellError(row, col) }"
               >
                 <template v-if="(col.dataKey || col.key) === '__recipient_addr__'">
                   <div class="recipient-cell">
@@ -278,9 +281,9 @@
                 <template v-else>
                   <span class="o-cell">{{ getCellValue(row, col) }}</span>
                 </template>
-              </td>
+              </TableCell>
               <!-- 履歴（3行表示） -->
-              <td class="o-table-td o-table-td--mgmt">
+              <TableCell>
                 <div class="mgmt-cell">
                   <div class="mgmt-cell__row">
                     <span class="mgmt-cell__label">{{ t('wms.shipmentOrder.createdAt', '作成日時') }}</span>
@@ -295,40 +298,39 @@
                     <span class="mgmt-cell__value">{{ fmtDateTime((row as any).status?.carrierReceipt?.receivedAt) }}</span>
                   </div>
                 </div>
-              </td>
-            </tr>
-            <tr v-if="b2ValidationErrors.has(String(row._id || row.id)) || getRowErrorMessages(row).length > 0" class="o-table-row--error-bar">
-              <td :colspan="visibleColumns.length + 6" class="o-table-td--error-bar">
+              </TableCell>
+            </TableRow>
+            <TableRow v-if="b2ValidationErrors.has(String(row._id || row.id)) || getRowErrorMessages(row).length > 0" class="p-0 border-t-0">
+              <TableCell :colspan="visibleColumns.length + 6" class="p-0">
                 <div class="error-bar">
                   <span v-for="(err, ei) in [...getRowErrorMessages(row), ...getB2Errors(row)]" :key="ei">{{ err }}</span>
                 </div>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
             </template>
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       <!-- Pagination -->
       <div class="o-table-pagination">
         <span class="o-table-pagination__info">{{ sortedRows.length }} {{ t('wms.shipmentOrder.items', '件') }}</span>
         <div class="o-table-pagination__controls">
-          <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;">
+          <select class="h-8 text-sm" v-model.number="pageSize" style="width:80px;">
             <option :value="10">10</option>
             <option :value="25">25</option>
             <option :value="50">50</option>
             <option :value="100">100</option>
             <option :value="500">500</option>
           </select>
-          <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--">&lsaquo;</OButton>
+          <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--">&lsaquo;</Button>
           <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-          <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">&rsaquo;</OButton>
+          <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">&rsaquo;</Button>
         </div>
       </div>
     </div>
 
     <!-- Bottom bar -->
-    <OBatchActionBar
       :selected-count="tableSelectedKeys.length"
       :actions="batchActions"
       @action-click="handleBatchAction"
@@ -368,15 +370,12 @@
     />
 
     <!-- 列表示設定 -->
-    <ODialog
-      :open="showColumnSettingsDialog"
-      :title="t('wms.shipmentOrder.columnSettings', '列表示設定')"
-      size="sm"
-      @close="showColumnSettingsDialog = false"
-    >
+    <Dialog :open="showColumnSettingsDialog" @update:open="(v) => { if (!v) showColumnSettingsDialog = false }">
+      <DialogContent class="sm:max-w-[400px]">
+        <DialogHeader><DialogTitle>{{ t('wms.shipmentOrder.columnSettings', '列表示設定') }}</DialogTitle></DialogHeader>
       <div class="column-settings">
         <div class="column-settings__actions">
-          <OButton variant="secondary" size="sm" @click="showAllColumns">{{ t('wms.shipmentOrder.showAll', 'すべて表示') }}</OButton>
+          <Button variant="secondary" size="sm" @click="showAllColumns">{{ t('wms.shipmentOrder.showAll', 'すべて表示') }}</Button>
         </div>
         <div class="column-settings__list">
           <label v-for="col in displayColumns" :key="col.key" class="column-settings__item">
@@ -389,17 +388,16 @@
           </label>
         </div>
       </div>
-      <template #footer>
-        <OButton variant="secondary" @click="showColumnSettingsDialog = false">{{ t('wms.shipmentOrder.close', '閉じる') }}</OButton>
-      </template>
-    </ODialog>
+      <DialogFooter>
+        <Button variant="secondary" @click="showColumnSettingsDialog = false">{{ t('wms.shipmentOrder.close', '閉じる') }}</Button>
+      </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- エラー詳細ダイアログ -->
-    <ODialog
-      :open="submitErrorDialogVisible"
-      :title="t('wms.shipmentOrder.errorDetail', 'エラー詳細')"
-      @close="submitErrorDialogVisible = false"
-    >
+    <Dialog :open="submitErrorDialogVisible" @update:open="(v) => { if (!v) submitErrorDialogVisible = false }">
+      <DialogContent class="sm:max-w-[560px]">
+        <DialogHeader><DialogTitle>{{ t('wms.shipmentOrder.errorDetail', 'エラー詳細') }}</DialogTitle></DialogHeader>
       <div v-if="backendErrorCount === 0" style="color: #909399;">
         {{ t('wms.shipmentOrder.noErrors', 'エラーはありません。') }}
       </div>
@@ -418,12 +416,13 @@
           </div>
         </div>
       </div>
-      <template #footer>
+      <DialogFooter>
         <div style="display:flex; justify-content:flex-end; gap:10px;">
-          <OButton variant="secondary" @click="submitErrorDialogVisible = false">{{ t('wms.shipmentOrder.close', '閉じる') }}</OButton>
+          <Button variant="secondary" @click="submitErrorDialogVisible = false">{{ t('wms.shipmentOrder.close', '閉じる') }}</Button>
         </div>
-      </template>
-    </ODialog>
+      </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- ご依頼主情報の一括設定 / 发件人批量设置 -->
     <BulkSettingDialog
@@ -483,14 +482,9 @@
     </BulkSettingDialog>
 
     <!-- 削除確認ダイアログ -->
-    <ODialog
-      :open="deleteDialogOpen"
-      :title="t('wms.shipmentOrder.deleteConfirmation', '削除確認')"
-      size="sm"
-      :danger="true"
-      @close="deleteDialogOpen = false"
-      @confirm="confirmDelete"
-    >
+    <Dialog :open="deleteDialogOpen" @update:open="(v) => { if (!v) deleteDialogOpen = false }">
+      <DialogContent class="sm:max-w-[400px]">
+        <DialogHeader><DialogTitle>{{ t('wms.shipmentOrder.deleteConfirmation', '削除確認') }}</DialogTitle></DialogHeader>
       <div class="delete-confirm">
         <div class="delete-confirm__icon">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -498,8 +492,12 @@
         <p class="delete-confirm__message">{{ deleteDialogMessage }}</p>
         <p class="delete-confirm__hint">{{ t('wms.shipmentOrder.cannotUndo', 'この操作は元に戻せません。') }}</p>
       </div>
-      <template #confirm-text>{{ t('wms.shipmentOrder.confirmDelete', '削除する') }}</template>
-    </ODialog>
+      <DialogFooter>
+        <Button variant="secondary" @click="deleteDialogOpen = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+        <Button variant="destructive" @click="confirmDelete">{{ t('wms.shipmentOrder.confirmDelete', '削除する') }}</Button>
+      </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- B2 Cloud validate dialog -->
     <YamatoB2ValidateResultDialog
@@ -541,17 +539,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { storeToRefs } from 'pinia'
 import ShipmentOrderEditDialog from '@/components/form/ShipmentOrderEditDialog.vue'
 import CarrierImportDialog from '@/components/import/CarrierImportDialog.vue'
-import OBatchActionBar from '@/components/odoo/OBatchActionBar.vue'
 import ShipmentOrderImportDialog from '@/components/import/ShipmentOrderImportDialog.vue'
 import BundleFilterDialog from '@/components/bundle/BundleFilterDialog.vue'
 import BulkSettingDialog from '@/components/dialogs/BulkSettingDialog.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
 import YamatoB2ValidateResultDialog from '@/components/carrier-automation/YamatoB2ValidateResultDialog.vue'
 import YamatoB2ExportResultDialog from '@/components/carrier-automation/YamatoB2ExportResultDialog.vue'
 import YamatoB2ApiErrorDialog from '@/components/carrier-automation/YamatoB2ApiErrorDialog.vue'
@@ -573,7 +572,8 @@ import { useShipmentCreateColumns } from './create/useShipmentCreateColumns'
 import { useShipmentCreateBatchActions } from './create/useShipmentCreateBatchActions'
 import { resolveImageUrl } from '@/utils/imageUrl'
 import noImageSrc from '@/assets/images/no_image.png'
-
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { Badge } from '@/components/ui/badge'
 // --- i18n / 国际化 ---
 const { t } = useI18n()
 
@@ -760,8 +760,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-@import '@/styles/order-table.css';
-
 /* Root layout */
 .o-view {
   display: flex;
@@ -865,7 +863,7 @@ onBeforeUnmount(() => {
 .o-alert-error { background: #fef0f0; border: 1px solid #fde2e2; color: #f56c6c; }
 .o-alert-close { background: none; border: none; font-size: 16px; cursor: pointer; color: inherit; padding: 0 0.25rem; }
 
-/* ControlPanel search input */
+/* PageHeader search input */
 .o-cp-search-input { width: 280px; }
 
 /* Bundle mode section */

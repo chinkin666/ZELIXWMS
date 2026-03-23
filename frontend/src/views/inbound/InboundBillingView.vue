@@ -1,12 +1,12 @@
 <template>
   <div class="inbound-billing">
-    <ControlPanel :title="t('wms.inbound.billing', '入庫請求一覧')" :show-search="false" />
+    <PageHeader :title="t('wms.inbound.billing', '入庫請求一覧')" :show-search="false" />
 
     <!-- 期間フィルター / 期间筛选 -->
-    <div class="o-card filter-bar">
+    <div class="rounded-lg border bg-card p-4 filter-bar">
       <div class="form-field">
-        <label class="form-label">{{ t('wms.billing.period', '対象月') }}</label>
-        <input v-model="selectedMonth" type="month" class="o-input" @change="loadBilling" />
+        <label>{{ t('wms.billing.period', '対象月') }}</label>
+        <Input v-model="selectedMonth" type="month" @change="loadBilling" />
       </div>
     </div>
 
@@ -24,7 +24,7 @@
 
     <!-- 請求テーブル / 账单表格 -->
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="billingRows"
         row-key="_id"
@@ -42,8 +42,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import Table from '@/components/table/Table.vue'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import { apiFetch } from '@/api/http'
 import { getApiBaseUrl } from '@/api/base'
 import type { TableColumn } from '@/types/table'
@@ -112,7 +114,7 @@ onMounted(() => {
 .filter-bar { display: flex; gap: 1rem; align-items: flex-end; }
 .form-field { display: flex; flex-direction: column; gap: 4px; }
 .form-label { font-size: 13px; font-weight: 600; color: var(--o-gray-700, #303133); }
-.o-input { padding: 8px 12px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: var(--o-border-radius, 4px); font-size: 14px; color: var(--o-gray-700, #303133); background: var(--o-view-background, #fff); width: 100%; }
+.{ padding: 8px 12px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: var(--o-border-radius, 4px); font-size: 14px; color: var(--o-gray-700, #303133); background: var(--o-view-background, #fff); width: 100%; }
 .summary-cards { display: flex; gap: 1rem; }
 .summary-card { flex: 1; background: var(--o-view-background, #fff); border: 1px solid var(--o-border-color, #e4e7ed); border-radius: var(--o-border-radius, 8px); padding: 1.25rem; text-align: center; }
 .summary-label { font-size: 13px; color: var(--o-gray-500, #909399); margin-bottom: 4px; }

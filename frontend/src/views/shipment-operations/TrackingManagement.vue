@@ -1,39 +1,42 @@
 <template>
   <div class="tracking-management">
-    <ControlPanel :title="t('wms.shipment.trackingManagement', '配送伝票管理')" :show-search="false" />
+    <PageHeader :title="t('wms.shipment.trackingManagement', '配送伝票管理')" :show-search="false" />
 
     <!-- 検索・フィルター / 搜索与过滤 -->
-    <div class="search-form o-card">
+    <div class="search-form rounded-lg border bg-card p-4">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.shipment.searchKeyword', '検索キーワード') }}</label>
+          <label>{{ t('wms.shipment.searchKeyword', '検索キーワード') }}</label>
           <input
             v-model="searchKeyword"
             type="text"
-            class="o-input"
+           
             :placeholder="t('wms.shipment.searchPlaceholder', '伝票番号 or 管理番号...')"
             @keyup.enter="handleSearch"
           />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.shipment.trackingFilter', 'フィルター') }}</label>
-          <select v-model="trackingFilter" class="o-input">
-            <option value="all">{{ t('wms.shipment.filterAll', '全て') }}</option>
-            <option value="with">{{ t('wms.shipment.filterWithTracking', '伝票あり') }}</option>
-            <option value="without">{{ t('wms.shipment.filterWithoutTracking', '伝票なし') }}</option>
-          </select>
+          <label>{{ t('wms.shipment.trackingFilter', 'フィルター') }}</label>
+          <Select v-model="trackingFilter">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{{ t('wms.shipment.filterAll', '全て') }}</SelectItem>
+              <SelectItem value="with">{{ t('wms.shipment.filterWithTracking', '伝票あり') }}</SelectItem>
+              <SelectItem value="without">{{ t('wms.shipment.filterWithoutTracking', '伝票なし') }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div class="form-field form-field--action">
-          <OButton variant="primary" :disabled="isLoading" @click="handleSearch">
+          <Button variant="default" :disabled="isLoading" @click="handleSearch">
             {{ isLoading ? t('wms.shipment.searching', '検索中...') : t('wms.shipment.search', '検索') }}
-          </OButton>
+          </Button>
         </div>
       </div>
     </div>
 
     <!-- 配送伝票テーブル / 配送传票表格 -->
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="filteredRows"
         row-key="_id"
@@ -48,22 +51,24 @@
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 /**
  * 配送伝票管理画面 / 配送传票管理页面
  *
  * 出荷指示の伝票番号（トラッキング番号）を一覧管理する。
  * 管理出货指示的传票号码（追踪号码）列表。
  */
-import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn } from '@/types/table'
 import { apiFetch } from '@/api/http'
 import { getApiBaseUrl } from '@/api/base'
-
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
 interface TrackingRow {
   _id: string
   shipmentNumber: string
@@ -72,6 +77,10 @@ interface TrackingRow {
   carrier: string
   shipDate: string
   deliveryStatus: string
+  recipientName: string
+  recipientPrefecture: string
+  coolType: string
+  invoiceType: string
 }
 
 const toast = useToast()
@@ -156,6 +165,29 @@ const tableColumns = computed<TableColumn[]>(() => [
     cellRenderer: ({ rowData }: { rowData: TrackingRow }) =>
       h('span', { class: getStatusClass(rowData.deliveryStatus) }, getStatusLabel(rowData.deliveryStatus)),
   },
+  {
+    key: 'recipientName', dataKey: 'recipientName',
+    title: t('wms.shipment.recipientName', 'お届け先名'), width: 140, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: TrackingRow }) => rowData.recipientName || '-',
+  },
+  {
+    key: 'recipientPrefecture', dataKey: 'recipientPrefecture',
+    title: t('wms.shipment.recipientPrefecture', '都道府県'), width: 100, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: TrackingRow }) => rowData.recipientPrefecture || '-',
+  },
+  {
+    key: 'coolType', dataKey: 'coolType',
+    title: t('wms.shipment.coolType', 'クール区分'), width: 100, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: TrackingRow }) => {
+      const label: Record<string, string> = { '0': '通常', '1': '冷蔵', '2': '冷凍' }
+      return label[rowData.coolType] ?? rowData.coolType ?? '-'
+    },
+  },
+  {
+    key: 'invoiceType', dataKey: 'invoiceType',
+    title: t('wms.shipment.invoiceTypeCol', '送り状種別'), width: 120, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: TrackingRow }) => rowData.invoiceType || '-',
+  },
 ])
 
 // 検索実行 / 执行搜索
@@ -181,6 +213,10 @@ const handleSearch = async () => {
       carrier: o.carrierId === '__builtin_yamato_b2__' ? 'ヤマト運輸' : o.carrierId?.includes('sagawa') ? '佐川急便' : (o.carrierId || ''),
       shipDate: o.statusShippedAt || o.createdAt || '',
       deliveryStatus: o.statusShipped ? (o.statusCarrierReceived ? 'delivered' : 'shipped') : 'pending',
+      recipientName: o.recipient?.name ?? '',
+      recipientPrefecture: o.recipient?.prefecture ?? '',
+      coolType: o.coolType ?? '',
+      invoiceType: o.invoiceType ?? '',
     }))
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : '出荷データの取得に失敗しました'
@@ -238,7 +274,7 @@ onMounted(handleSearch)
   color: var(--o-gray-700, #303133);
 }
 
-.o-input {
+.{
   padding: 8px 12px;
   border: 1px solid var(--o-border-color, #dcdfe6);
   border-radius: var(--o-border-radius, 4px);

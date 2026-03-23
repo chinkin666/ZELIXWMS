@@ -1,83 +1,90 @@
 <template>
   <div class="set-order-history">
-    <ControlPanel :title="t('wms.setProduct.orderHistory', 'セット組指示履歴')" :show-search="false">
+    <PageHeader :title="t('wms.setProduct.orderHistory', 'セット組指示履歴')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.setProduct.csvDownload', 'CSVダウンロード') }}</OButton>
+        <Button variant="outline" size="sm" @click="exportCsv">{{ t('wms.setProduct.csvDownload', 'CSVダウンロード') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <SearchForm
       :columns="searchColumns"
       :show-save="false"
       storage-key="setOrderHistorySearch"
       @search="handleSearch"
     />
 
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th">{{ t('wms.setProduct.orderNumber', '指示番号') }}</th>
-            <th class="o-table-th" style="width:70px;">{{ t('wms.setProduct.type', '種別') }}</th>
-            <th class="o-table-th" style="width:120px;">{{ t('wms.setProduct.sku', '品番') }}</th>
-            <th class="o-table-th" style="width:150px;">{{ t('wms.setProduct.name', '名称') }}</th>
-            <th class="o-table-th" style="width:80px;">{{ t('wms.setProduct.orderQuantity', '指示数') }}</th>
-            <th class="o-table-th" style="width:80px;">{{ t('wms.setProduct.completedQuantity', '完成数') }}</th>
-            <th class="o-table-th" style="width:100px;">{{ t('wms.setProduct.stockCategory', '在庫区分') }}</th>
-            <th class="o-table-th" style="width:90px;">{{ t('wms.setProduct.lot', 'ロット') }}</th>
-            <th class="o-table-th" style="width:100px;">{{ t('wms.setProduct.expiryDate', '消費期限') }}</th>
-            <th class="o-table-th" style="width:80px;">{{ t('wms.setProduct.status', 'ステータス') }}</th>
-            <th class="o-table-th" style="width:110px;">{{ t('wms.setProduct.completedDate', '完成日') }}</th>
-            <th class="o-table-th" style="width:110px;">{{ t('wms.setProduct.createdDate', '作成日') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoading">
-            <td colspan="12" class="o-table-empty">{{ t('wms.common.loading', '読み込み中...') }}</td>
-          </tr>
-          <tr v-else-if="orders.length === 0">
-            <td colspan="12" class="o-table-empty">{{ t('wms.setProduct.noHistory', '履歴がありません') }}</td>
-          </tr>
-          <tr v-for="order in orders" :key="order._id" class="o-table-row">
-            <td class="o-table-td"><strong>{{ order.orderNumber }}</strong></td>
-            <td class="o-table-td">
+    <div class="rounded-md border overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{{ t('wms.setProduct.orderNumber', '指示番号') }}</TableHead>
+            <TableHead style="width:70px;">{{ t('wms.setProduct.type', '種別') }}</TableHead>
+            <TableHead style="width:120px;">{{ t('wms.setProduct.sku', '品番') }}</TableHead>
+            <TableHead style="width:150px;">{{ t('wms.setProduct.name', '名称') }}</TableHead>
+            <TableHead style="width:80px;">{{ t('wms.setProduct.orderQuantity', '指示数') }}</TableHead>
+            <TableHead style="width:80px;">{{ t('wms.setProduct.completedQuantity', '完成数') }}</TableHead>
+            <TableHead style="width:100px;">{{ t('wms.setProduct.stockCategory', '在庫区分') }}</TableHead>
+            <TableHead style="width:90px;">{{ t('wms.setProduct.lot', 'ロット') }}</TableHead>
+            <TableHead style="width:100px;">{{ t('wms.setProduct.expiryDate', '消費期限') }}</TableHead>
+            <TableHead style="width:80px;">{{ t('wms.setProduct.status', 'ステータス') }}</TableHead>
+            <TableHead style="width:110px;">{{ t('wms.setProduct.completedDate', '完成日') }}</TableHead>
+            <TableHead style="width:110px;">{{ t('wms.setProduct.createdDate', '作成日') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="isLoading">
+            <TableCell colspan="12">
+              <div class="space-y-3 p-4">
+                <Skeleton class="h-4 w-[250px] mx-auto" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+              </div>
+            </TableCell>
+          </TableRow>
+          <TableRow v-else-if="orders.length === 0">
+            <TableCell colspan="12" class="text-center py-8 text-muted-foreground">{{ t('wms.setProduct.noHistory', '履歴がありません') }}</TableCell>
+          </TableRow>
+          <TableRow v-for="order in orders" :key="order._id">
+            <TableCell><strong>{{ order.orderNumber }}</strong></TableCell>
+            <TableCell>
               <span class="type-tag" :class="'type--' + order.type">
                 {{ order.type === 'assembly' ? t('wms.setProduct.assemblyType', '組立') : t('wms.setProduct.disassemblyType', 'バラシ') }}
               </span>
-            </td>
-            <td class="o-table-td">{{ order.setSku }}</td>
-            <td class="o-table-td">{{ order.setName }}</td>
-            <td class="o-table-td">{{ order.quantity }}</td>
-            <td class="o-table-td">{{ order.completedQuantity }}</td>
-            <td class="o-table-td">{{ order.stockCategory || '-' }}</td>
-            <td class="o-table-td">{{ order.lotNumber || '-' }}</td>
-            <td class="o-table-td">{{ order.expiryDate ? formatDate(order.expiryDate) : '-' }}</td>
-            <td class="o-table-td">
+            </TableCell>
+            <TableCell>{{ order.setSku }}</TableCell>
+            <TableCell>{{ order.setName }}</TableCell>
+            <TableCell>{{ order.quantity }}</TableCell>
+            <TableCell>{{ order.completedQuantity }}</TableCell>
+            <TableCell>{{ order.stockCategory || '-' }}</TableCell>
+            <TableCell>{{ order.lotNumber || '-' }}</TableCell>
+            <TableCell>{{ order.expiryDate ? formatDate(order.expiryDate) : '-' }}</TableCell>
+            <TableCell>
               <span class="status-tag" :class="'status--' + order.status">{{ statusLabel(order.status) }}</span>
-            </td>
-            <td class="o-table-td">{{ order.completedAt ? formatDate(order.completedAt) : '-' }}</td>
-            <td class="o-table-td">{{ formatDate(order.createdAt) }}</td>
-          </tr>
-        </tbody>
-      </table>
+            </TableCell>
+            <TableCell>{{ order.completedAt ? formatDate(order.completedAt) : '-' }}</TableCell>
+            <TableCell>{{ formatDate(order.createdAt) }}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <div v-if="totalPages > 1" class="pagination-bar">
-      <OPager :total="total" :offset="(page - 1) * limit" :limit="limit" @update:offset="(o: number) => { page = Math.floor(o / limit) + 1; loadData() }" />
+      <Button variant="outline" size="sm" :disabled="page <= 1" @click="page--; loadData()">前へ</Button>
+      <span style="font-size:13px;color:#606266;">{{ page }} / {{ totalPages }}</span>
+      <Button variant="outline" size="sm" :disabled="page >= totalPages" @click="page++; loadData()">次へ</Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
-import OPager from '@/components/odoo/OPager.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
 import { fetchSetOrders } from '@/api/setProduct'
 import type { SetOrder, SetOrderStatus } from '@/types/setProduct'
 import type { TableColumn, Operator } from '@/types/table'
 import { useI18n } from '@/composables/useI18n'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 const { t } = useI18n()
 

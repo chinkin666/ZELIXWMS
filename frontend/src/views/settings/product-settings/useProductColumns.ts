@@ -7,7 +7,7 @@
  * 提高可维护性和可读性。
  */
 import { h, type Ref } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
 import { resolveImageUrl } from '@/utils/imageUrl'
 import noImageSrc from '@/assets/images/no_image.png'
 import type { TableColumn } from '@/types/table'
@@ -91,6 +91,22 @@ export function useProductColumns(options: UseProductColumnsOptions) {
       cellRenderer: ({ rowData }: { rowData: Product }) => rowData.nameFull || '-',
     },
     {
+      key: 'nameEn',
+      dataKey: 'nameEn',
+      title: t('wms.product.nameEn', '英語名'),
+      width: 180,
+      fieldType: 'string',
+      cellRenderer: ({ rowData }: { rowData: Product }) => rowData.nameEn || '-',
+    },
+    {
+      key: 'abbreviation',
+      dataKey: 'abbreviation',
+      title: t('wms.product.abbreviation', '略称'),
+      width: 140,
+      fieldType: 'string',
+      cellRenderer: ({ rowData }: { rowData: Product }) => rowData.abbreviation || '-',
+    },
+    {
       key: 'barcode',
       dataKey: 'barcode',
       title: t('wms.product.inspectionCode', '検品コード'),
@@ -105,6 +121,22 @@ export function useProductColumns(options: UseProductColumnsOptions) {
       width: 160,
       fieldType: 'string',
       cellRenderer: ({ rowData }: { rowData: Product }) => rowData.customerProductCode || '-',
+    },
+    {
+      key: 'janCode',
+      dataKey: 'janCode',
+      title: t('wms.product.janCode', 'JANコード'),
+      width: 160,
+      fieldType: 'string',
+      cellRenderer: ({ rowData }: { rowData: Product }) => rowData.janCode || '-',
+    },
+    {
+      key: 'brandName',
+      dataKey: 'brandName',
+      title: t('wms.product.brandName', 'ブランド'),
+      width: 140,
+      fieldType: 'string',
+      cellRenderer: ({ rowData }: { rowData: Product }) => rowData.brandName || '-',
     },
     {
       key: 'category',
@@ -123,6 +155,33 @@ export function useProductColumns(options: UseProductColumnsOptions) {
       fieldType: 'string',
       cellRenderer: ({ rowData }: { rowData: Product }) =>
         h('span', { style: { color: getCoolTypeColor(rowData.coolType) } }, getCoolTypeLabel(rowData.coolType)),
+    },
+    {
+      key: 'weight',
+      dataKey: 'weight',
+      title: t('wms.product.weight', '重量(g)'),
+      width: 100,
+      fieldType: 'number',
+      cellRenderer: ({ rowData }: { rowData: Product }) =>
+        rowData.weight != null ? `${rowData.weight}g` : '-',
+    },
+    {
+      key: 'size',
+      title: t('wms.product.size', 'サイズ(mm)'),
+      width: 140,
+      fieldType: 'string',
+      cellRenderer: ({ rowData }: { rowData: Product }) =>
+        rowData.width && rowData.depth && rowData.height
+          ? `${rowData.width}\u00D7${rowData.depth}\u00D7${rowData.height}`
+          : '-',
+    },
+    {
+      key: 'shippingSizeCode',
+      dataKey: 'shippingSizeCode',
+      title: t('wms.product.shippingSize', '配送サイズ'),
+      width: 120,
+      fieldType: 'string',
+      cellRenderer: ({ rowData }: { rowData: Product }) => rowData.shippingSizeCode || '-',
     },
     {
       key: 'mailCalcEnabled',
@@ -148,6 +207,24 @@ export function useProductColumns(options: UseProductColumnsOptions) {
         rowData.price != null ? `\u00A5${rowData.price.toLocaleString()}` : '-',
     },
     {
+      key: 'costPrice',
+      dataKey: 'costPrice',
+      title: t('wms.product.costPrice', '原価'),
+      width: 100,
+      fieldType: 'number',
+      cellRenderer: ({ rowData }: { rowData: Product }) =>
+        rowData.costPrice != null ? `\u00A5${Number(rowData.costPrice).toLocaleString()}` : '-',
+    },
+    {
+      key: 'taxRate',
+      dataKey: 'taxRate',
+      title: t('wms.product.taxRate', '税率'),
+      width: 80,
+      fieldType: 'number',
+      cellRenderer: ({ rowData }: { rowData: Product }) =>
+        rowData.taxRate != null ? `${rowData.taxRate}%` : '-',
+    },
+    {
       key: 'stockQuantity',
       dataKey: '_id',
       title: t('wms.product.stockQuantity', '在庫数'),
@@ -170,14 +247,66 @@ export function useProductColumns(options: UseProductColumnsOptions) {
         h('span', { style: { color: rowData.inventoryEnabled ? '#67c23a' : '#909399' } }, rowData.inventoryEnabled ? t('wms.product.enabled', 'する') : t('wms.product.disabled', 'しない')),
     },
     {
+      key: 'lotTrackingEnabled',
+      dataKey: 'lotTrackingEnabled',
+      title: t('wms.product.lotTracking', 'ロット管理'),
+      width: 100,
+      fieldType: 'boolean',
+      cellRenderer: ({ rowData }: { rowData: Product }) =>
+        h('span', { style: { color: rowData.lotTrackingEnabled ? '#67c23a' : '#909399' } }, rowData.lotTrackingEnabled ? '\u25CB' : '-'),
+    },
+    {
+      key: 'expiryTrackingEnabled',
+      dataKey: 'expiryTrackingEnabled',
+      title: t('wms.product.expiryTracking', '賞味期限管理'),
+      width: 120,
+      fieldType: 'boolean',
+      cellRenderer: ({ rowData }: { rowData: Product }) =>
+        h('span', { style: { color: rowData.expiryTrackingEnabled ? '#67c23a' : '#909399' } }, rowData.expiryTrackingEnabled ? '\u25CB' : '-'),
+    },
+    {
+      key: 'safetyStock',
+      dataKey: 'safetyStock',
+      title: t('wms.product.safetyStock', '安全在庫'),
+      width: 100,
+      fieldType: 'number',
+      cellRenderer: ({ rowData }: { rowData: Product }) =>
+        rowData.safetyStock != null ? String(rowData.safetyStock) : '-',
+    },
+    {
+      key: 'supplierName',
+      dataKey: 'supplierName',
+      title: t('wms.product.supplierName', '仕入先'),
+      width: 140,
+      fieldType: 'string',
+      cellRenderer: ({ rowData }: { rowData: Product }) => rowData.supplierName || '-',
+    },
+    {
       key: 'subSkusCount',
       title: t('wms.product.subSkus', '子SKU'),
       width: 140,
       fieldType: 'string',
       cellRenderer: ({ rowData }: { rowData: Product }) =>
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openSubSkuDialog(rowData) }, () =>
+        h(Button, { variant: 'secondary', size: 'sm', onClick: () => openSubSkuDialog(rowData) }, () =>
           rowData.subSkus?.length ? rowData.subSkus.map((s: SubSku) => s.subSku).join(', ') : '-',
         ),
+    },
+    {
+      key: 'countryOfOrigin',
+      dataKey: 'countryOfOrigin',
+      title: t('wms.product.countryOfOrigin', '原産国'),
+      width: 100,
+      fieldType: 'string',
+      cellRenderer: ({ rowData }: { rowData: Product }) => rowData.countryOfOrigin || '-',
+    },
+    {
+      key: 'memo',
+      dataKey: 'memo',
+      title: t('wms.product.memo', 'メモ'),
+      width: 180,
+      fieldType: 'string',
+      cellRenderer: ({ rowData }: { rowData: Product }) =>
+        (rowData.memo?.length ?? 0) > 20 ? rowData.memo!.substring(0, 20) + '...' : (rowData.memo || '-'),
     },
     {
       key: 'createdAt',
@@ -193,10 +322,10 @@ export function useProductColumns(options: UseProductColumnsOptions) {
       width: 240,
       cellRenderer: ({ rowData }: { rowData: Product }) =>
         h('div', { style: 'display:inline-flex;gap:4px;flex-wrap:wrap;' }, [
-          h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => t('wms.common.edit', '編集')),
-          h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openLabelPrint(rowData) }, () => t('wms.product.labelPrint', 'ラベル')),
-          h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateProduct(rowData) }, () => t('wms.product.duplicate', '複製')),
-          h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => t('wms.common.delete', '削除')),
+          h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => t('wms.common.edit', '編集')),
+          h(Button, { variant: 'secondary', size: 'sm', onClick: () => openLabelPrint(rowData) }, () => t('wms.product.labelPrint', 'ラベル')),
+          h(Button, { variant: 'secondary', size: 'sm', onClick: () => duplicateProduct(rowData) }, () => t('wms.product.duplicate', '複製')),
+          h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => t('wms.common.delete', '削除')),
         ]),
     },
   ]

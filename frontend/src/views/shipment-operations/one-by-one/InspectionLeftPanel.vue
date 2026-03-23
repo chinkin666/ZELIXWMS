@@ -1,9 +1,9 @@
 <template>
   <div class="left-panel">
     <div class="left-panel__header">
-      <OButton variant="secondary" size="sm" @click="$emit('go-back')">&larr; {{ t('wms.inspection.back', '戻る') }}</OButton>
+      <Button variant="secondary" size="sm" @click="$emit('go-back')">&larr; {{ t('wms.inspection.back', '戻る') }}</Button>
       <h2 class="page-title">{{ t('wms.inspection.oneByOneTitle', '1-1検品') }}</h2>
-      <OButton variant="danger" size="sm" @click="$emit('clear')">{{ t('wms.inspection.clear', 'クリア') }}</OButton>
+      <Button variant="destructive" size="sm" @click="$emit('clear')">{{ t('wms.inspection.clear', 'クリア') }}</Button>
     </div>
 
     <!-- ピッキング指示No -->
@@ -96,9 +96,10 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
 import noImageSrc from '@/assets/images/no_image.png'
 import type { OrderDocument } from '@/types/order'
 

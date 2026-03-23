@@ -1,8 +1,7 @@
 <template>
   <div class="shipment-order-history">
-    <ControlPanel :title="t('wms.shipmentOrder.historyTitle', '出荷実績一覧')" :show-search="false" />
+    <PageHeader :title="t('wms.shipmentOrder.historyTitle', '出荷実績一覧')" :show-search="false" />
 
-    <OrderSearchFormWrapper
       class="search-section"
       :columns="searchColumns"
       :initial-values="searchInitialValues"
@@ -53,12 +52,11 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import Table from '@/components/table/OrderTable.vue'
-import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
 import OrderViewDialog from '@/components/shipment-orders/OrderViewDialog.vue'
 import type { Operator } from '@/types/table'
 import { fetchShipmentOrder, fetchShipmentOrdersPage } from '@/api/shipmentOrders'
@@ -146,7 +144,7 @@ const tableColumns = computed(() => {
     fixed: 'right' as const,
     align: 'center' as const,
     cellRenderer: ({ rowData }: { rowData: any }) =>
-      h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleView(rowData) }, () => t('wms.shipmentOrder.detail', '詳細')),
+      h(Button, { variant: 'default', size: 'sm', onClick: () => handleView(rowData) }, () => t('wms.shipmentOrder.detail', '詳細')),
   }
   return [...baseColumns.value, actionColumn]
 })

@@ -1,5 +1,9 @@
 <template>
-  <ODialog :open="visible" title="印刷プレビュー" @close="visible = false" width="1200px">
+  <Dialog :open="visible" @update:open="visible = $event">
+    <DialogContent class="sm:max-w-6xl">
+      <DialogHeader>
+        <DialogTitle>印刷プレビュー</DialogTitle>
+      </DialogHeader>
     <div class="toolbar">
       <div class="toolbar-row">
         <div class="toolbar-item">
@@ -18,9 +22,9 @@
           </label>
         </div>
 
-        <OButton variant="secondary" size="sm" :disabled="loading || previewItems.length === 0" @click="handlePrintAll">
+        <Button variant="secondary" size="sm" :disabled="loading || previewItems.length === 0" @click="handlePrintAll">
           すべて印刷
-        </OButton>
+        </Button>
       </div>
     </div>
 
@@ -71,16 +75,17 @@
       </div>
     </div>
 
-    <template #footer>
-      <OButton variant="secondary" @click="visible = false">キャンセル</OButton>
-    </template>
-  </ODialog>
+    <DialogFooter>
+      <Button variant="secondary" @click="visible = false">キャンセル</Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { OrderDocument } from '@/types/order'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
 import type { PrintTemplate } from '@/types/printTemplate'

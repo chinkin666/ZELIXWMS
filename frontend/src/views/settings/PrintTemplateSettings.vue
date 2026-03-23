@@ -1,10 +1,10 @@
 <template>
   <div class="print-template-settings">
-    <ControlPanel title="印刷テンプレート設定" :show-search="false">
+    <PageHeader title="印刷テンプレート設定" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">テンプレートを作成</OButton>
+        <Button variant="default" @click="openCreate">テンプレートを作成</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- プリセットテンプレート / 预设模板 -->
     <div class="preset-section">
@@ -25,7 +25,7 @@
     </div>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="templates"
         row-key="id"
@@ -37,30 +37,32 @@
       />
     </div>
 
-    <ODialog :open="dialogVisible" :title="isEditing ? 'テンプレート編集' : 'テンプレート作成'" size="lg" @close="dialogVisible = false">
+    <Dialog :open="dialogVisible" @update:open="val => { if (!val) { dialogVisible = false } }">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? 'テンプレート編集' : 'テンプレート作成' }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label">テンプレート名 <span class="required-badge">必須</span></label>
-          <input class="o-input" v-model="editForm.name" placeholder="例: ヤマトB2（メール便）" />
+          <label>テンプレート名 <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="editForm.name" placeholder="例: ヤマトB2（メール便）" />
         </div>
         <div class="form-group">
-          <label class="form-label">解像度 (px/mm)</label>
-          <input class="o-input" v-model.number="editForm.canvas.pxPerMm" type="number" min="1" step="0.5" />
+          <label>解像度 (px/mm)</label>
+          <Input v-model.number="editForm.canvas.pxPerMm" type="number" min="1" step="0.5" />
         </div>
         <div class="form-group">
-          <label class="form-label">幅 (mm) <span class="required-badge">必須</span></label>
-          <input class="o-input" v-model.number="editForm.canvas.widthMm" type="number" min="1" step="1" />
+          <label>幅 (mm) <span class="text-destructive text-xs">*</span></label>
+          <Input v-model.number="editForm.canvas.widthMm" type="number" min="1" step="1" />
         </div>
         <div class="form-group">
-          <label class="form-label">高さ (mm) <span class="required-badge">必須</span></label>
-          <input class="o-input" v-model.number="editForm.canvas.heightMm" type="number" min="1" step="1" />
+          <label>高さ (mm) <span class="text-destructive text-xs">*</span></label>
+          <Input v-model.number="editForm.canvas.heightMm" type="number" min="1" step="1" />
         </div>
       </div>
 
       <div class="form-group" style="margin-top:12px">
-        <label class="form-label">エレメント定義 (JSON) <span class="required-badge">必須</span></label>
+        <label>エレメント定義 (JSON) <span class="text-destructive text-xs">*</span></label>
         <textarea
-          class="o-input code-textarea"
+          class="code-textarea"
           v-model="elementsJson"
           rows="12"
           placeholder='例: [{"id":"t1","type":"text",...}]'
@@ -70,28 +72,31 @@
         </div>
       </div>
 
-      <template #footer>
-        <OButton variant="secondary" @click="dialogVisible = false">キャンセル</OButton>
-        <OButton variant="primary" :disabled="saving" @click="handleSave">{{ isEditing ? '更新' : '作成' }}</OButton>
-      </template>
-    </ODialog>
+      <DialogFooter>
+        <Button variant="secondary" @click="dialogVisible = false">キャンセル</Button>
+        <Button variant="default" :disabled="saving" @click="handleSave">{{ isEditing ? '更新' : '作成' }}</Button>
+      </DialogFooter>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn } from '@/types/table'
 import type { PrintTemplate } from '@/types/printTemplate'
 import { useRouter } from 'vue-router'
 import { fetchPrintTemplates, fetchPrintTemplate, createPrintTemplate, updatePrintTemplate, deletePrintTemplate } from '@/api/printTemplates'
 import { createEmptyPrintTemplate } from '@/utils/print/templateStorage'
+import { Input } from '@/components/ui/input'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const router = useRouter()
 const { show: showToast } = useToast()
@@ -143,13 +148,7 @@ async function duplicatePrintTemplate(row: PrintTemplate) {
 }
 
 async function removeTemplate(row: PrintTemplate) {
-  try {
-    await ElMessageBox.confirm(
-      `「${row.name}」を削除してもよろしいですか？ / 确定要删除「${row.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   await deletePrintTemplate(row.id)
   templates.value = templates.value.filter((t) => t.id !== row.id)
   showToast('削除しました', 'success')
@@ -353,10 +352,10 @@ const tableColumns = computed((): TableColumn[] => [
     width: 360,
     cellRenderer: ({ rowData }: { rowData: PrintTemplate }) =>
       h('div', { style: 'display:flex;gap:6px;' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openVisualEditor(rowData) }, () => 'レイアウト編集'),
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openEdit(rowData) }, () => 'JSON編集'),
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicatePrintTemplate(rowData) }, () => '複製'),
-        h(OButton, { variant: 'danger', size: 'sm', onClick: () => removeTemplate(rowData) }, () => '削除'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openVisualEditor(rowData) }, () => 'レイアウト編集'),
+        h(Button, { variant: 'secondary', size: 'sm', onClick: () => openEdit(rowData) }, () => 'JSON編集'),
+        h(Button, { variant: 'secondary', size: 'sm', onClick: () => duplicatePrintTemplate(rowData) }, () => '複製'),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => removeTemplate(rowData) }, () => '削除'),
       ]),
   },
 ])

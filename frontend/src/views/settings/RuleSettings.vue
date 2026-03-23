@@ -1,25 +1,19 @@
 <template>
   <div class="rule-settings">
-    <ControlPanel title="ルール設定" :show-search="false">
+    <PageHeader title="ルール設定" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" @click="openTestDialog">テスト</OButton>
-        <OButton variant="primary" @click="openCreate">新規ルール</OButton>
+        <Button variant="secondary" @click="openTestDialog">テスト</Button>
+        <Button variant="default" @click="openCreate">新規ルール</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="ruleSettingsSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="rules"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         highlight-columns-on-hover
         pagination-enabled
         pagination-mode="server"
@@ -27,50 +21,55 @@
         :page-sizes="[10, 20, 50, 100]"
         :total="total"
         :current-page="currentPage"
-        :global-search-text="globalSearchText"
         @page-change="handlePageChange"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogOpen" :title="isEditing ? 'ルールを編集' : 'ルールを追加'" size="lg" @confirm="handleSave">
+    <Dialog :open="dialogOpen" @update:open="dialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? 'ルールを編集' : 'ルールを追加' }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">ルール名 <span class="required-badge">必須</span></label>
-          <input v-model="form.name" type="text" class="o-input" />
+          <label>ルール名 <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.name" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">モジュール <span class="required-badge">必須</span></label>
-          <select v-model="form.module" class="o-input">
-            <option value="">選択してください</option>
-            <option v-for="m in moduleOptions" :key="m.value" :value="m.value">{{ m.label }}</option>
-          </select>
+          <label>モジュール <span class="text-destructive text-xs">*</span></label>
+          <Select v-model="form.module">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="選択してください" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="m in moduleOptions" :key="m.value" :value="m.value">{{ m.label }}</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">説明</label>
-          <input v-model="form.description" type="text" class="o-input" />
+          <label>説明</label>
+          <Input v-model="form.description" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">優先度</label>
-          <input v-model.number="form.priority" type="number" class="o-input" />
+          <label>優先度</label>
+          <Input v-model.number="form.priority" type="number" />
         </div>
         <div class="form-field">
-          <label class="form-label">
-            <input v-model="form.stopOnMatch" type="checkbox" />
+          <label>
+            <Checkbox :checked="form.stopOnMatch" @update:checked="val => form.stopOnMatch = val" />
             マッチ時停止
           </label>
         </div>
         <div class="form-field">
-          <label class="form-label">有効開始日</label>
-          <input v-model="form.validFrom" type="date" class="o-input" />
+          <label>有効開始日</label>
+          <Input v-model="form.validFrom" type="date" />
         </div>
         <div class="form-field">
-          <label class="form-label">有効終了日</label>
-          <input v-model="form.validTo" type="date" class="o-input" />
+          <label>有効終了日</label>
+          <Input v-model="form.validTo" type="date" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">備考</label>
-          <textarea v-model="form.memo" class="o-input form-textarea" rows="2" />
+          <label>備考</label>
+          <textarea v-model="form.memo" class="form-textarea" rows="2" />
         </div>
       </div>
 
@@ -78,26 +77,36 @@
       <div class="builder-section">
         <div class="builder-section__header">
           <h4>条件グループ</h4>
-          <OButton variant="secondary" size="sm" @click="addConditionGroup">+ グループ追加</OButton>
+          <Button variant="secondary" size="sm" @click="addConditionGroup">+ グループ追加</Button>
         </div>
         <div v-for="(group, gi) in form.conditionGroups" :key="gi" class="condition-group">
           <div class="condition-group__header">
-            <select v-model="group.logic" class="o-input o-input-sm" style="width: 80px;">
-              <option value="AND">AND</option>
-              <option value="OR">OR</option>
-            </select>
+            <Select v-model="group.logic">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="AND">AND</SelectItem>
+        <SelectItem value="OR">OR</SelectItem>
+        </SelectContent>
+      </Select>
             <span class="condition-group__title">グループ {{ gi + 1 }}</span>
-            <button class="condition-group__remove" @click="removeConditionGroup(gi)">&times;</button>
+            <Button class="condition-group__remove" @click="removeConditionGroup(gi)">&times;</Button>
           </div>
           <div v-for="(cond, ci) in group.conditions" :key="ci" class="condition-row">
-            <input v-model="cond.field" type="text" class="o-input o-input-sm" placeholder="フィールド" style="flex: 1;" />
-            <select v-model="cond.operator" class="o-input o-input-sm" style="width: 140px;">
-              <option v-for="op in operatorOptions" :key="op.value" :value="op.value">{{ op.label }}</option>
-            </select>
-            <input v-model="cond.value" type="text" class="o-input o-input-sm" placeholder="値" style="flex: 1;" />
-            <OButton variant="icon-danger" size="sm" @click="removeCondition(gi, ci)">削除</OButton>
+            <Input v-model="cond.field" type="text" placeholder="フィールド" style="flex: 1;" />
+            <Select v-model="cond.operator">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="op in operatorOptions" :key="op.value" :value="op.value">{{ op.label }}</SelectItem>
+        </SelectContent>
+      </Select>
+            <Input v-model="cond.value" type="text" placeholder="値" style="flex: 1;" />
+            <Button variant="destructive" size="sm" @click="removeCondition(gi, ci)">削除</Button>
           </div>
-          <OButton variant="secondary" size="sm" @click="addCondition(gi)">+ 条件追加</OButton>
+          <Button variant="secondary" size="sm" @click="addCondition(gi)">+ 条件追加</Button>
         </div>
       </div>
 
@@ -105,31 +114,39 @@
       <div class="builder-section">
         <div class="builder-section__header">
           <h4>アクション</h4>
-          <OButton variant="secondary" size="sm" @click="addAction">+ アクション追加</OButton>
+          <Button variant="secondary" size="sm" @click="addAction">+ アクション追加</Button>
         </div>
         <div v-for="(action, ai) in form.actions" :key="ai" class="action-row">
-          <input v-model="action.type" type="text" class="o-input o-input-sm" placeholder="タイプ" style="width: 160px;" />
-          <input v-model="action.paramsJson" type="text" class="o-input o-input-sm" placeholder='パラメータ (JSON: {"key":"value"})' style="flex: 1;" />
-          <OButton variant="icon-danger" size="sm" @click="removeAction(ai)">削除</OButton>
+          <Input v-model="action.type" type="text" placeholder="タイプ" style="width: 160px;" />
+          <Input v-model="action.paramsJson" type="text" placeholder='パラメータ (JSON: {"key":"value"})' style="flex: 1;" />
+          <Button variant="destructive" size="sm" @click="removeAction(ai)">削除</Button>
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
 
     <!-- Test Dialog -->
-    <ODialog v-model="testDialogOpen" title="ルールテスト" size="lg" :show-footer="false">
+    <Dialog :open="testDialogOpen" @update:open="testDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>ルールテスト</DialogTitle></DialogHeader>
       <div class="test-dialog">
         <div class="form-field">
-          <label class="form-label">モジュール</label>
-          <select v-model="testForm.module" class="o-input">
-            <option v-for="m in moduleOptions" :key="m.value" :value="m.value">{{ m.label }}</option>
-          </select>
+          <label>モジュール</label>
+          <Select v-model="testForm.module">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="m in moduleOptions" :key="m.value" :value="m.value">{{ m.label }}</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div class="form-field">
-          <label class="form-label">コンテキスト (JSON)</label>
-          <textarea v-model="testForm.contextJson" class="o-input form-textarea" rows="6" placeholder='{"productCode": "ABC", "quantity": 10}' />
+          <label>コンテキスト (JSON)</label>
+          <textarea v-model="testForm.contextJson" class="form-textarea" rows="6" placeholder='{"productCode": "ABC", "quantity": 10}' />
         </div>
         <div class="test-dialog__actions">
-          <OButton variant="primary" @click="handleTest">テスト実行</OButton>
+          <Button variant="default" @click="handleTest">テスト実行</Button>
         </div>
         <div v-if="testResults.length > 0" class="test-results">
           <h4>マッチしたルール ({{ testResults.length }}件)</h4>
@@ -147,21 +164,23 @@
           マッチするルールがありません
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { h, ref, computed, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   fetchRules,
   createRule,
@@ -173,6 +192,8 @@ import {
   type RuleConditionGroup,
   type RuleTestResult,
 } from '@/api/rule'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
@@ -323,8 +344,8 @@ const tableColumns: TableColumn[] = [
     align: 'center',
     cellRenderer: ({ rowData }: { rowData: RuleDefinition }) =>
       h('div', { class: 'o-table-td--actions' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ]),
   },
 ]
@@ -337,7 +358,7 @@ const currentPage = ref(1)
 const pageSize = ref(20)
 const globalSearchText = ref('')
 
-// Current search filters from SearchForm
+// Current search filters from DataTable search
 const currentFilters = ref<Record<string, { operator: Operator; value: any }>>({})
 
 // Dialog
@@ -541,13 +562,7 @@ const handleSave = async () => {
 }
 
 const confirmDelete = async (r: RuleDefinition) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${r.name}」を削除してもよろしいですか？ / 确定要删除「${r.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   deleteRule(r._id)
     .then(async () => {
       showToast('削除しました', 'success')

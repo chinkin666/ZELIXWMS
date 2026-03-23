@@ -1,16 +1,22 @@
 <template>
   <div class="order-group-settings">
-    <ControlPanel :title="t('wms.settings.orderGroupSettings', '出荷グループ設定')" :show-search="false">
+    <PageHeader :title="t('wms.settings.orderGroupSettings', '出荷グループ設定')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" @click="runAutoAssign" :disabled="isAutoAssigning">
+        <Button variant="secondary" @click="runAutoAssign" :disabled="isAutoAssigning">
           {{ isAutoAssigning ? '振り分け中...' : '自動振り分け実行' }}
-        </OButton>
-        <OButton variant="primary" @click="openCreate">{{ t('wms.settings.addGroup', 'グループを追加') }}</OButton>
+        </Button>
+        <Button variant="default" @click="openCreate">{{ t('wms.settings.addGroup', 'グループを追加') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <div class="groups-list">
-      <div v-if="isLoading" class="loading-state">{{ t('wms.settings.loading', '読み込み中...') }}</div>
+      <div v-if="isLoading" class="space-y-3 p-4">
+        <Skeleton class="h-4 w-[250px]" />
+        <Skeleton class="h-4 w-[200px]" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+      </div>
 
       <div v-else-if="groups.length === 0" class="empty-state">
         <svg width="48" height="48" viewBox="0 0 16 16" fill="currentColor" style="opacity:0.2">
@@ -18,7 +24,7 @@
         </svg>
         <p>出荷グループがまだ作成されていません</p>
         <p class="empty-hint">グループを作成して出荷指示を分類できます（例: VIP、通常、冷凍品）</p>
-        <OButton variant="primary" @click="openCreate" style="margin-top:12px">最初のグループを作成</OButton>
+        <Button variant="default" @click="openCreate" style="margin-top:12px">最初のグループを作成</Button>
       </div>
 
       <draggable
@@ -68,10 +74,10 @@
                 />
                 <span class="o-toggle-slider"></span>
               </label>
-              <OButton variant="secondary" size="sm" @click="openEdit(group)">編集</OButton>
-              <button class="delete-icon-btn" @click="confirmDelete(group)" title="削除">
+              <Button variant="secondary" size="sm" @click="openEdit(group)">編集</Button>
+              <Button class="delete-icon-btn" @click="confirmDelete(group)" title="削除">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H5.5l1-1h3l1 1H14a1 1 0 0 1 1 1v1z"/></svg>
-              </button>
+              </Button>
             </div>
           </div>
         </template>
@@ -79,12 +85,9 @@
     </div>
 
     <!-- 自動振り分け結果ダイアログ / 自动分配结果对话框 -->
-    <ODialog
-      :open="showAssignResult"
-      title="自動振り分け結果 / 自动分配结果"
-      size="sm"
-      @close="showAssignResult = false"
-    >
+    <Dialog :open="showAssignResult" @update:open="val => { if (!val) { showAssignResult = false } }">
+      <DialogContent>
+        <DialogHeader><DialogTitle>自動振り分け結果 / 自动分配结果</DialogTitle></DialogHeader>
       <div v-if="assignResults.length === 0" class="assign-empty">
         振り分け対象の注文がありませんでした / 没有可分配的订单
       </div>
@@ -97,10 +100,11 @@
           合計: {{ assignResults.reduce((sum, r) => sum + r.orderIds.length, 0) }}件の注文を振り分けました
         </div>
       </div>
-      <template #footer>
-        <OButton variant="primary" @click="showAssignResult = false">閉じる</OButton>
-      </template>
-    </ODialog>
+      <DialogFooter>
+        <Button variant="default" @click="showAssignResult = false">閉じる</Button>
+      </DialogFooter>
+    </DialogContent>
+    </Dialog>
 
     <!-- 创建/编辑对话框 -->
     <OrderGroupFormDialog
@@ -114,12 +118,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import draggable from 'vuedraggable'
 import {
   fetchOrderGroups,
@@ -132,6 +135,8 @@ import {
 import type { OrderGroup, OrderGroupFormData, SortCriteria, AutoAssignResult } from '@/types/orderGroup'
 import { SORT_CRITERIA_TYPE_LABELS, BUSINESS_TYPE_LABELS } from '@/types/orderGroup'
 import OrderGroupFormDialog from '@/components/order-group/OrderGroupFormDialog.vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const { show: showToast } = useToast()
 const { t } = useI18n()
@@ -214,13 +219,7 @@ const handleEnableChange = async (group: OrderGroup, enabled: boolean) => {
 }
 
 const confirmDelete = async (group: OrderGroup) => {
-  try {
-    await ElMessageBox.confirm(
-      `出荷グループ「${group.name}」を削除してもよろしいですか？このグループに属する注文のグループ設定もクリアされます。 / 确定要删除出货组「${group.name}」吗？该组的订单组设置也将被清除。`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteOrderGroup(group._id)
     showToast(t('wms.settings.groupDeleted', '出荷グループを削除しました'), 'success')

@@ -1,20 +1,20 @@
 <template>
   <div class="billing-monthly">
-    <ControlPanel title="月次請求" :show-search="false">
+    <PageHeader title="月次請求" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;align-items:center;">
-          <input v-model="selectedPeriod" type="month" class="o-input o-input-sm" style="width:160px;" />
-          <OButton variant="primary" size="sm" :disabled="isGenerating" @click="handleGenerate">
+          <Input v-model="selectedPeriod" type="month" class="h-8 text-sm" style="width:160px;" />
+          <Button variant="default" size="sm" :disabled="isGenerating" @click="handleGenerate">
             {{ isGenerating ? '生成中...' : '集計生成' }}
-          </OButton>
-          <OButton variant="secondary" size="sm" @click="loadData">更新</OButton>
+          </Button>
+          <Button variant="secondary" size="sm" @click="loadData">更新</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <OLoadingState :loading="loading" :empty="!loading && rows.length === 0">
+    <div v-if="false"><!-- loading handled by DataTable --></div><template v-if="true">
       <div class="table-section">
-        <Table
+        <DataTable
           :columns="tableColumns"
           :data="rows"
           row-key="_id"
@@ -27,19 +27,18 @@
           @page-change="handlePageChange"
         />
       </div>
-    </OLoadingState>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import Table from '@/components/table/Table.vue'
-import OLoadingState from '@/components/odoo/OLoadingState.vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn } from '@/types/table'
 import { useRouter } from 'vue-router'
 import {
@@ -50,9 +49,11 @@ import {
   updateInvoiceStatus,
 } from '@/api/billing'
 import type { BillingRecord, BillingStatus } from '@/api/billing'
-
+import { h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const { t } = useI18n()
 const { show: showToast } = useToast()
+const { confirm } = useConfirmDialog()
 const router = useRouter()
 
 // ── 状態管理 / 状態管理 ──
@@ -118,25 +119,25 @@ const tableColumns: TableColumn[] = [
       // 下書き → 確定 / 草稿 → 确认
       if (rowData.status === 'draft') {
         buttons.push(
-          h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleConfirm(rowData) }, () => '確定'),
+          h(Button, { variant: 'default', size: 'sm', onClick: () => handleConfirm(rowData) }, () => '確定'),
         )
       }
       // 確定済 → 請求書発行 / 已确认 → 生成发票
       if (rowData.status === 'confirmed') {
         buttons.push(
-          h(OButton, { variant: 'secondary', size: 'sm', onClick: () => handleCreateInvoice(rowData) }, () => '請求書発行'),
+          h(Button, { variant: 'secondary', size: 'sm', onClick: () => handleCreateInvoice(rowData) }, () => '請求書発行'),
         )
       }
       // 請求済 → 入金確認 / 已开票 → 确认入金
       if (rowData.status === 'invoiced') {
         buttons.push(
-          h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleMarkPaid(rowData) }, () => '入金確認'),
+          h(Button, { variant: 'default', size: 'sm', onClick: () => handleMarkPaid(rowData) }, () => '入金確認'),
         )
       }
       // 請求済・入金済 → 請求書詳細表示 / 已开票/已入金 → 查看发票
       if (rowData.status === 'invoiced' || rowData.status === 'paid') {
         buttons.push(
-          h(OButton, { variant: 'secondary', size: 'sm', onClick: () => handleViewInvoice(rowData) }, () => '請求書'),
+          h(Button, { variant: 'secondary', size: 'sm', onClick: () => handleViewInvoice(rowData) }, () => '請求書'),
         )
       }
       return h('div', { class: 'action-cell' }, buttons)
@@ -191,13 +192,7 @@ const handleGenerate = async () => {
 
 // ── 確定 / 確定 ──
 const handleConfirm = async (record: BillingRecord) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${record.clientName} - ${record.period}」を確定しますか？ / 确定要确认「${record.clientName} - ${record.period}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await confirmBillingRecord(record._id)
     showToast('確定しました', 'success')
@@ -209,13 +204,7 @@ const handleConfirm = async (record: BillingRecord) => {
 
 // ── 請求書発行 / 生成发票 ──
 const handleCreateInvoice = async (record: BillingRecord) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${record.clientName} - ${record.period}」の請求書を発行しますか？ / 确定要发行「${record.clientName} - ${record.period}」的发票吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '発行 / 发行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     const now = new Date()
     const issueDate = now.toISOString().slice(0, 10)
@@ -239,13 +228,7 @@ const handleCreateInvoice = async (record: BillingRecord) => {
 
 // ── 入金確認 / 确认入金 ──
 const handleMarkPaid = async (record: BillingRecord) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${record.clientName} - ${record.period}」の入金を確認しますか？ / 确定要确认「${record.clientName} - ${record.period}」的入金吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '確認 / 确认', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     const invoice = await findInvoiceByBillingRecord(record._id)
     if (invoice) {

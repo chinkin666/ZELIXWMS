@@ -1,6 +1,6 @@
 <template>
   <div class="inventory-stock">
-    <ControlPanel :title="t('wms.inventory.stockList', '在庫一覧')" :show-search="false">
+    <PageHeader :title="t('wms.inventory.stockList', '在庫一覧')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;align-items:center;">
           <label class="switch-label">
@@ -10,15 +10,15 @@
               <span class="o-toggle-slider"></span>
             </label>
           </label>
-          <OButton variant="secondary" size="sm" @click="viewMode = viewMode === 'summary' ? 'detail' : 'summary'">
+          <Button variant="secondary" size="sm" @click="viewMode = viewMode === 'summary' ? 'detail' : 'summary'">
             {{ viewMode === 'summary' ? t('wms.inventory.detailView', '詳細表示') : t('wms.inventory.summaryView', '集計表示') }}
-          </OButton>
-          <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</OButton>
-          <OButton variant="secondary" size="sm" @click="showImportPanel = !showImportPanel">{{ t('wms.inventory.csvImport', 'CSV取込') }}</OButton>
-          <OButton variant="primary" size="sm" @click="openTransferDialog">{{ t('wms.inventory.stockTransfer', '在庫移動') }}</OButton>
+          </Button>
+          <Button variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</Button>
+          <Button variant="secondary" size="sm" @click="showImportPanel = !showImportPanel">{{ t('wms.inventory.csvImport', 'CSV取込') }}</Button>
+          <Button variant="default" size="sm" @click="openTransferDialog">{{ t('wms.inventory.stockTransfer', '在庫移動') }}</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- CSV Import Panel -->
     <div v-if="showImportPanel" class="import-panel">
@@ -30,7 +30,7 @@
         <input ref="fileInputRef" type="file" accept=".csv,.txt" @change="handleFileSelect" />
         <div v-if="importPreview.length > 0" class="import-preview">
           <p>{{ t('wms.inventory.adjustmentDataDetected', '{count}件の調整データを検出').replace('{count}', String(importPreview.length)) }}</p>
-          <Table
+          <DataTable
             :columns="importTableColumns"
             :data="importPreview.slice(0, 10)"
             row-key="productSku"
@@ -42,46 +42,46 @@
             ... {{ t('wms.inventory.moreItems', '他{count}件').replace('{count}', String(importPreview.length - 10)) }}
           </div>
           <div style="margin-top:8px;display:flex;gap:6px;">
-            <OButton variant="primary" size="sm" :disabled="importing" @click="executeImport">
+            <Button variant="default" size="sm" :disabled="importing" @click="executeImport">
               {{ importing ? t('wms.inventory.importing', '取込中...') : t('wms.inventory.executeImport', '取込実行') }}
-            </OButton>
-            <OButton variant="secondary" size="sm" @click="clearImport">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
+            </Button>
+            <Button variant="secondary" size="sm" @click="clearImport">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
           </div>
         </div>
       </div>
     </div>
 
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="inventoryStockSearch"
-      @search="handleSearch"
-    />
-
-    <OLoadingState :loading="isLoading" :empty="!isLoading && (viewMode === 'summary' ? summaryRows.length === 0 : detailRows.length === 0)">
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
+    <div v-else-if="!isLoading && (viewMode === 'summary' ? summaryRows.length === 0 : detailRows.length === 0)" class="empty-state">{{ t('wms.common.noData', 'データがありません') }}</div>
+    <template v-else>
       <!-- 集計表示 -->
       <div v-if="viewMode === 'summary'" class="table-section">
-        <Table
+        <DataTable
           :columns="summaryTableColumns"
           :data="summaryRows"
           row-key="productId"
-          highlight-columns-on-hover
           pagination-enabled
           pagination-mode="client"
           :page-size="20"
           :page-sizes="[20, 50, 100]"
           :global-search-text="globalSearchText"
+          :search-columns="searchColumns"
+          @search="handleSearch"
         />
       </div>
 
       <!-- 詳細表示 -->
       <div v-else class="table-section">
-        <Table
+        <DataTable
           :columns="detailTableColumns"
           :data="detailRows"
           row-key="_id"
-          highlight-columns-on-hover
           pagination-enabled
           pagination-mode="client"
           :page-size="20"
@@ -89,7 +89,7 @@
           :global-search-text="globalSearchText"
         />
       </div>
-    </OLoadingState>
+    </template>
 
     <!-- Transfer Dialog -->
     <StockTransferDialog
@@ -103,14 +103,12 @@
 </template>
 
 <script setup lang="ts">
-import { h, onMounted, ref, watch } from 'vue'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
-import OLoadingState from '@/components/odoo/OLoadingState.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import StockTransferDialog from '@/components/inventory/StockTransferDialog.vue'
 import { fetchStock, fetchStockSummary, bulkAdjustStock } from '@/api/inventory'
 import { fetchProducts } from '@/api/product'
@@ -119,7 +117,8 @@ import { resolveImageUrl } from '@/utils/imageUrl'
 import type { StockQuant, StockSummary, Location } from '@/types/inventory'
 import type { Product } from '@/types/product'
 import type { TableColumn, Operator } from '@/types/table'
-
+import { h, onMounted, ref, watch } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const toast = useToast()
 const { t } = useI18n()
 const isLoading = ref(false)
@@ -202,6 +201,18 @@ const summaryTableColumns: TableColumn[] = [
     cellRenderer: ({ rowData }: { rowData: StockSummary }) => h('span', { class: 'sku-link' }, rowData.productSku) },
   { key: 'productName', title: '商品名', width: 200, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: StockSummary }) => rowData.product?.name || '-' },
+  { key: 'janCode', title: 'JANコード', width: 140, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => rowData.product?.janCode || (rowData.product?.barcode?.[0] ?? '-') },
+  { key: 'category', title: 'カテゴリ', width: 100, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => {
+      const cat = rowData.product?.category
+      if (cat === '0' || !cat) return '商品'
+      if (cat === '1') return '消耗品'
+      if (cat === '2') return '作業'
+      if (cat === '3') return 'おまけ'
+      if (cat === '4') return '部材'
+      return '-'
+    } },
   {
     key: 'coolType', title: '温度帯', width: 100, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: StockSummary }) => {
@@ -221,8 +232,12 @@ const summaryTableColumns: TableColumn[] = [
   },
   { key: 'safetyStock', title: '安全在庫', width: 100, fieldType: 'number',
     cellRenderer: ({ rowData }: { rowData: StockSummary }) => rowData.product?.safetyStock || '-' },
+  { key: 'lastMovedAt', title: '最終入出庫日', width: 140, fieldType: 'date',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => rowData.lastMovedAt ? formatDate(rowData.lastMovedAt) : '-' },
   { key: 'locationCount', dataKey: 'locationCount', title: '保管場所', width: 80, fieldType: 'number',
     cellRenderer: ({ rowData }: { rowData: StockSummary }) => `${rowData.locationCount}箇所` },
+  { key: 'warehouseName', title: '倉庫名', width: 120, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockSummary }) => rowData.warehouseName || '-' },
   {
     key: 'status', title: '状態', width: 80, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: StockSummary }) => {
@@ -237,6 +252,18 @@ const detailTableColumns: TableColumn[] = [
   { key: 'productSku', dataKey: 'productSku', title: 'SKU', width: 140, fieldType: 'string' },
   { key: 'productName', title: '商品名', width: 180, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: StockQuant }) => rowData.product?.name || '-' },
+  { key: 'janCode', title: 'JANコード', width: 140, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockQuant }) => rowData.product?.janCode || (rowData.product?.barcode?.[0] ?? '-') },
+  { key: 'category', title: 'カテゴリ', width: 100, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockQuant }) => {
+      const cat = rowData.product?.category
+      if (cat === '0' || !cat) return '商品'
+      if (cat === '1') return '消耗品'
+      if (cat === '2') return '作業'
+      if (cat === '3') return 'おまけ'
+      if (cat === '4') return '部材'
+      return '-'
+    } },
   {
     key: 'location', title: 'ロケーション', width: 180, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: StockQuant }) => {
@@ -245,6 +272,8 @@ const detailTableColumns: TableColumn[] = [
       return h('span', null, children)
     },
   },
+  { key: 'warehouseName', title: '倉庫名', width: 120, fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: StockQuant }) => rowData.location?.warehouseName || '-' },
   { key: 'lotNumber', title: 'ロット', width: 140, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: StockQuant }) => rowData.lot?.lotNumber || '-' },
   { key: 'expiryDate', title: '賞味期限', width: 120, fieldType: 'date',

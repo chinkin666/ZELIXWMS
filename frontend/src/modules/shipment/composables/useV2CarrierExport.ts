@@ -1,5 +1,5 @@
+import { toast } from 'vue-sonner'
 import { watch } from 'vue'
-import { ElMessage } from 'element-plus'
 import { getAllMappingConfigs } from '@/api/mappingConfig'
 import { applyTransformMappings } from '@/utils/transformRunner'
 import { formatOrderProductsText } from '@/utils/formatOrderProductsText'
@@ -52,13 +52,13 @@ export function useV2CarrierExport(state: V2State) {
 
     const carrierIdSet = new Set(state.selectedRows.value.map((r) => String(r.carrierId || '')).filter(Boolean))
     if (carrierIdSet.size !== 1) {
-      ElMessage.warning('選択した行の配送業者が一致しません。配送業者ごとに出力してください。')
+      toast.warning('選択した行の配送業者が一致しません。配送業者ごとに出力してください。')
       return
     }
 
     const carrierId = Array.from(carrierIdSet)[0]!
     const carrier = state.carriers.value.find((c) => c._id === carrierId)
-    if (!carrier) { ElMessage.error('配送業者情報が見つかりません'); return }
+    if (!carrier) { toast.error('配送業者情報が見つかりません'); return }
 
     const headers = ((carrier as any).formatDefinition?.columns || []).map((c: any) => c.name).filter(Boolean)
     state.carrierExportHeaders.value = headers
@@ -72,7 +72,7 @@ export function useV2CarrierExport(state: V2State) {
       state.carrierExportMappingOptions.value = filtered.map((c) => ({ label: `${c.name}${c.isDefault ? ' (default)' : ''}`, value: c._id }))
 
       if (!state.carrierExportMappingOptions.value.length) {
-        ElMessage.warning('この配送業者に出力レイアウトが未設定です（レイアウト設定で作成してください）。')
+        toast.warning('この配送業者に出力レイアウトが未設定です（レイアウト設定で作成してください）。')
         return
       }
 
@@ -83,14 +83,14 @@ export function useV2CarrierExport(state: V2State) {
       await rebuildCarrierExportRows()
       state.carrierExportDialogVisible.value = true
     } catch (e: any) {
-      ElMessage.error(e?.message || '配送業者データ出力に失敗しました')
+      toast.error(e?.message || '配送業者データ出力に失敗しました')
     }
   }
 
   // Watch mapping selection change
   watch(state.carrierExportSelectedMappingId, async () => {
     if (!state.carrierExportDialogVisible.value) return
-    try { await rebuildCarrierExportRows() } catch (e: any) { ElMessage.error(e?.message || '出力レイアウトの適用に失敗しました') }
+    try { await rebuildCarrierExportRows() } catch (e: any) { toast.error(e?.message || '出力レイアウトの適用に失敗しました') }
   })
 
   return { handleCarrierExport }

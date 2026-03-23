@@ -1,14 +1,14 @@
 <template>
   <div class="user-management">
-    <ControlPanel title="ユーザー管理" :show-search="false">
+    <PageHeader title="ユーザー管理" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate"><span class="o-icon">+</span> 新規追加</OButton>
+        <Button variant="default" @click="openCreate"><span>+</span> 新規追加</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- ロールフィルタータブ / 角色筛选标签 -->
     <div class="role-tabs">
-      <button
+      <Button
         v-for="tab in roleTabs"
         :key="tab.value"
         class="role-tab"
@@ -17,35 +17,30 @@
       >
         {{ tab.label }}
         <span v-if="tab.value !== ''" class="role-dot" :style="{ background: ROLE_COLORS[tab.value as UserRole] }" />
-      </button>
+      </Button>
     </div>
 
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="userManagementSearch"
-      @search="handleSearch"
-    />
-
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="list"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         pagination-enabled
         pagination-mode="server"
         :page-size="pageSize"
         :page-sizes="[10, 20, 50]"
         :total="total"
         :current-page="currentPage"
-        :global-search-text="globalSearchText"
         @page-change="handlePageChangeEvent"
       />
     </div>
 
     <!-- サブユーザーダイアログ / 子用户对话框 -->
-    <ODialog :open="subUserDialogVisible" title="サブユーザー一覧" size="lg" @close="subUserDialogVisible = false">
+    <Dialog :open="subUserDialogVisible" @update:open="val => { if (!val) { subUserDialogVisible = false } }">
+      <DialogContent>
+        <DialogHeader><DialogTitle>サブユーザー一覧</DialogTitle></DialogHeader>
         <div v-if="subUsers.length === 0" class="empty-message">サブユーザーはいません。</div>
         <div v-else class="sub-user-list">
           <div v-for="sub in subUsers" :key="sub._id" class="sub-user-item">
@@ -57,58 +52,60 @@
               </span>
             </div>
             <div class="sub-user-actions">
-              <OButton variant="primary" size="sm" @click="openEditFromSub(sub)">編集</OButton>
+              <Button variant="default" size="sm" @click="openEditFromSub(sub)">編集</Button>
             </div>
           </div>
         </div>
-      <template #footer><span></span></template>
-    </ODialog>
+      <DialogFooter><span></span></DialogFooter>
+    </DialogContent>
+    </Dialog>
 
     <!-- 作成/編集ダイアログ / 创建/编辑对话框 -->
-    <ODialog
-      :open="dialogVisible"
-      :title="isEditing ? 'ユーザーを編集' : 'ユーザーを追加'"
-      size="lg"
-      @close="closeDialog"
-    >
+    <Dialog :open="dialogVisible" @update:open="val => { if (!val) { closeDialog } }">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? 'ユーザーを編集' : 'ユーザーを追加' }}</DialogTitle></DialogHeader>
         <form class="user-form" @submit.prevent="handleSubmit">
           <div class="form-row">
-            <label class="form-label">メールアドレス <span class="required-badge">必須</span></label>
-            <input class="o-input" v-model="form.email" type="email" required placeholder="user@example.com" />
+            <label>メールアドレス <span class="text-destructive text-xs">*</span></label>
+            <Input v-model="form.email" type="email" required placeholder="user@example.com" />
           </div>
 
           <div class="form-row">
-            <label class="form-label">
+            <label>
               パスワード
               <span v-if="!isEditing" class="required-badge">必須</span>
               <span v-else class="optional-hint">（変更する場合のみ入力）</span>
             </label>
             <div class="password-wrapper">
               <input
-                class="o-input password-input"
+                class="password-input"
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 :required="!isEditing"
                 placeholder="••••••••"
                 autocomplete="new-password"
               />
-              <button type="button" class="password-toggle" @click="showPassword = !showPassword">
+              <Button type="button" class="password-toggle" @click="showPassword = !showPassword">
                 {{ showPassword ? '隠す' : '表示' }}
-              </button>
+              </Button>
             </div>
           </div>
 
           <div class="form-row">
-            <label class="form-label">表示名 <span class="required-badge">必須</span></label>
-            <input class="o-input" v-model="form.displayName" required placeholder="山田 太郎" />
+            <label>表示名 <span class="text-destructive text-xs">*</span></label>
+            <Input v-model="form.displayName" required placeholder="山田 太郎" />
           </div>
 
           <div class="form-row">
-            <label class="form-label">ロール <span class="required-badge">必須</span></label>
-            <select class="o-input" v-model="form.role" required>
-              <option value="" disabled>選択してください</option>
-              <option v-for="r in ALL_ROLES" :key="r" :value="r">{{ ROLE_LABELS[r] }}</option>
-            </select>
+            <label>ロール <span class="text-destructive text-xs">*</span></label>
+            <Select v-model="form.role">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="選択してください" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="r in ALL_ROLES" :key="r" :value="r">{{ ROLE_LABELS[r] }}</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
 
           <!-- 権限説明 / 权限说明 -->
@@ -123,7 +120,7 @@
 
           <!-- 倉庫選択 (manager/operator/viewer) / 仓库选择 -->
           <div v-if="showWarehouseSelect" class="form-row">
-            <label class="form-label">倉庫</label>
+            <label>倉庫</label>
             <div class="multi-select-wrapper">
               <label
                 v-for="wh in warehouseOptions"
@@ -139,66 +136,74 @@
 
           <!-- 荷主選択 (client) / 客户选择 -->
           <div v-if="form.role === 'client'" class="form-row">
-            <label class="form-label">荷主</label>
-            <select class="o-input" v-model="form.clientId">
-              <option value="">未選択</option>
-              <option v-for="cl in clientOptions" :key="cl._id" :value="cl._id">
-                {{ cl.name }} ({{ cl.clientCode }})
-              </option>
-            </select>
+            <label>荷主</label>
+            <Select v-model="form.clientId">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="未選択" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="cl in clientOptions" :key="cl._id" :value="cl._id">{{ cl.name }} ({{ cl.clientCode }})</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
 
           <div class="form-row">
-            <label class="form-label">電話番号</label>
-            <input class="o-input" v-model="form.phone" placeholder="03-1234-5678" />
+            <label>電話番号</label>
+            <Input v-model="form.phone" placeholder="03-1234-5678" />
           </div>
 
           <div class="form-row">
-            <label class="form-label">言語</label>
-            <select class="o-input" v-model="form.language">
-              <option value="ja">日本語</option>
-              <option value="zh">中文</option>
-              <option value="en">English</option>
-            </select>
+            <label>言語</label>
+            <Select v-model="form.language">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="ja">日本語</SelectItem>
+        <SelectItem value="zh">中文</SelectItem>
+        <SelectItem value="en">English</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
 
           <div class="form-row">
-            <label class="form-label">親ユーザー（サブユーザー作成用）</label>
-            <select class="o-input" v-model="form.parentUserId">
-              <option value="">なし</option>
-              <option v-for="u in parentUserOptions" :key="u._id" :value="u._id">
-                {{ u.displayName }} ({{ u.email }})
-              </option>
-            </select>
+            <label>親ユーザー（サブユーザー作成用）</label>
+            <Select v-model="form.parentUserId">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="__all__">なし</SelectItem>
+        <SelectItem v-for="u in parentUserOptions" :key="u._id" :value="u._id">{{ u.displayName }} ({{ u.email }})</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
 
           <div class="form-row">
-            <label class="form-label">メモ</label>
-            <textarea class="o-input" v-model="form.memo" rows="3" />
+            <label>メモ</label>
+            <textarea v-model="form.memo" rows="3" />
           </div>
 
           <div class="form-actions">
-            <OButton variant="secondary" type="button" @click="closeDialog">キャンセル</OButton>
-            <OButton variant="primary" type="submit" :disabled="saving">
+            <Button variant="secondary" type="button" @click="closeDialog">キャンセル</Button>
+            <Button variant="default" type="submit" :disabled="saving">
               {{ saving ? '保存中...' : '保存' }}
-            </OButton>
+            </Button>
           </div>
         </form>
-      <template #footer><span></span></template>
-    </ODialog>
+      <DialogFooter><span></span></DialogFooter>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchUsers,
@@ -215,7 +220,12 @@ import { fetchWarehouses } from '@/api/warehouse'
 import type { Warehouse } from '@/api/warehouse'
 import { fetchClients } from '@/api/client'
 import type { Client } from '@/api/client'
-
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 const { t } = useI18n()
 
@@ -413,15 +423,15 @@ const tableColumns: TableColumn[] = [
     width: 220,
     cellRenderer: ({ rowData }: { rowData: User }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
         h(
-          OButton,
+          Button,
           { variant: 'secondary', size: 'sm', onClick: () => showSubUsers(rowData) },
           () => 'サブ',
         ),
         h(
-          OButton,
-          { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) },
+          Button,
+          { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) },
           () => '削除',
         ),
       ]),
@@ -606,13 +616,7 @@ const resolveClientName = (): string | undefined => {
 // 削除 / 删除
 // ---------------------------------------------------------------------------
 const confirmDelete = async (item: User) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${item.displayName}」を無効にしてもよろしいですか？ / 确定要禁用「${item.displayName}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '無効化 / 禁用', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteUser(item._id)
     showToast('無効にしました', 'success')

@@ -1,28 +1,28 @@
 <template>
   <div class="label-reissue">
-    <ControlPanel :title="t('wms.shipment.labelReissue', '送り状再発行')" :show-search="false" />
+    <PageHeader :title="t('wms.shipment.labelReissue', '送り状再発行')" :show-search="false" />
 
     <!-- 検索 / 搜索 -->
-    <div class="o-card search-bar">
+    <div class="rounded-lg border bg-card p-4 search-bar">
       <div class="form-field">
-        <label class="form-label">{{ t('wms.shipment.searchByNumberOrTracking', '注文番号 / 追跡番号') }}</label>
+        <label>{{ t('wms.shipment.searchByNumberOrTracking', '注文番号 / 追跡番号') }}</label>
         <div class="search-row">
           <input
             v-model="searchQuery"
             type="text"
-            class="o-input"
+           
             :placeholder="t('wms.shipment.labelSearchPlaceholder', '注文番号または追跡番号を入力...')"
             @keyup.enter="handleSearch"
           />
-          <OButton variant="primary" :disabled="!searchQuery || isSearching" @click="handleSearch">
+          <Button variant="default" :disabled="!searchQuery || isSearching" @click="handleSearch">
             {{ t('wms.common.search', '検索') }}
-          </OButton>
+          </Button>
         </div>
       </div>
     </div>
 
     <!-- 注文詳細 / 订单详情 -->
-    <div v-if="order" class="o-card">
+    <div v-if="order" class="rounded-lg border bg-card p-4">
       <h3 class="form-title">{{ t('wms.shipment.orderDetail', '注文詳細') }}: {{ order.orderNumber }}</h3>
 
       <div class="detail-grid">
@@ -58,30 +58,30 @@
 
       <!-- アクションボタン / 操作按钮 -->
       <div class="action-buttons">
-        <OButton
-          variant="primary"
+        <Button
+          variant="default"
           :disabled="!order.trackingId || isProcessing"
           @click="showReissueConfirm = true"
         >
           {{ t('wms.shipment.reissueLabel', '再発行') }}
-        </OButton>
-        <OButton
+        </Button>
+        <Button
           variant="secondary"
           :disabled="!order.trackingId || isProcessing"
           @click="showAdditionalDialog = true"
         >
           {{ t('wms.shipment.additionalLabel', '追加発行') }}
-        </OButton>
+        </Button>
       </div>
     </div>
 
     <!-- 検索結果なし / 无搜索结果 -->
-    <div v-else-if="searchDone" class="o-card empty-state">
+    <div v-else-if="searchDone" class="rounded-lg border bg-card p-4 empty-state">
       {{ t('wms.shipment.noOrderFound', '該当する注文が見つかりませんでした。') }}
     </div>
 
     <!-- 再発行履歴 / 重新发行历史 -->
-    <div v-if="reissueHistory.length > 0" class="o-card">
+    <div v-if="reissueHistory.length > 0" class="rounded-lg border bg-card p-4">
       <h3 class="form-title">{{ t('wms.shipment.reissueHistory', '再発行・追加発行履歴') }}</h3>
       <div class="history-table">
         <div class="history-header">
@@ -116,12 +116,12 @@
           {{ t('wms.shipment.trackingId', '追跡番号') }}: <strong>{{ order?.trackingId }}</strong>
         </p>
         <div class="modal-actions">
-          <OButton variant="secondary" @click="showReissueConfirm = false">
+          <Button variant="secondary" @click="showReissueConfirm = false">
             {{ t('wms.common.cancel', 'キャンセル') }}
-          </OButton>
-          <OButton variant="primary" :disabled="isProcessing" @click="handleReissue">
+          </Button>
+          <Button variant="default" :disabled="isProcessing" @click="handleReissue">
             {{ isProcessing ? t('wms.common.processing', '処理中...') : t('wms.shipment.reissueLabel', '再発行') }}
-          </OButton>
+          </Button>
         </div>
       </div>
     </div>
@@ -134,16 +134,16 @@
           {{ t('wms.shipment.additionalLabelMessage', '追加の個口数を指定してください。') }}
         </p>
         <div class="form-field" style="margin: 1rem 0">
-          <label class="form-label">{{ t('wms.shipment.parcelCount', '個口数') }}</label>
-          <input v-model.number="additionalParcelCount" type="number" min="1" class="o-input" />
+          <label>{{ t('wms.shipment.parcelCount', '個口数') }}</label>
+          <Input v-model.number="additionalParcelCount" type="number" min="1" />
         </div>
         <div class="modal-actions">
-          <OButton variant="secondary" @click="showAdditionalDialog = false">
+          <Button variant="secondary" @click="showAdditionalDialog = false">
             {{ t('wms.common.cancel', 'キャンセル') }}
-          </OButton>
-          <OButton variant="primary" :disabled="isProcessing || additionalParcelCount < 1" @click="handleAdditionalLabel">
+          </Button>
+          <Button variant="default" :disabled="isProcessing || additionalParcelCount < 1" @click="handleAdditionalLabel">
             {{ isProcessing ? t('wms.common.processing', '処理中...') : t('wms.shipment.additionalLabel', '追加発行') }}
-          </OButton>
+          </Button>
         </div>
       </div>
     </div>
@@ -151,11 +151,13 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, computed } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { apiFetch } from '@/api/http'
 import { getApiBaseUrl } from '@/api/base'
 
@@ -356,7 +358,7 @@ const handleAdditionalLabel = async () => {
 .form-field { display: flex; flex-direction: column; gap: 4px; }
 .form-label { font-size: 13px; font-weight: 600; color: var(--o-gray-700, #303133); }
 .form-title { font-size: 18px; font-weight: 600; color: var(--o-gray-700, #303133); margin: 0 0 1rem 0; }
-.o-input { padding: 8px 12px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: var(--o-border-radius, 4px); font-size: 14px; color: var(--o-gray-700, #303133); background: var(--o-view-background, #fff); width: 100%; }
+.{ padding: 8px 12px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: var(--o-border-radius, 4px); font-size: 14px; color: var(--o-gray-700, #303133); background: var(--o-view-background, #fff); width: 100%; }
 
 /* 注文詳細グリッド / 订单详情网格 */
 .detail-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }

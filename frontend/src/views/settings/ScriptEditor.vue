@@ -1,45 +1,57 @@
 <template>
   <div class="script-editor">
-    <ControlPanel :title="t('wms.settings.automationScripts', '自動化スクリプト')" :show-search="false">
+    <PageHeader :title="t('wms.settings.automationScripts', '自動化スクリプト')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">{{ t('wms.settings.addNew', '新規追加') }}</OButton>
+        <Button variant="default" @click="openCreate">{{ t('wms.settings.addNew', '新規追加') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- Filter -->
     <div class="search-section">
-      <select v-model="filterEvent" class="o-input" style="width: 220px" @change="loadList">
-        <option value="">{{ t('wms.settings.allEvents', 'すべてのイベント') }}</option>
-        <option v-for="ev in availableEvents" :key="ev" :value="ev">{{ ev }}</option>
-      </select>
+      <Select v-model="filterEvent" @update:model-value="loadList">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="__all__">{{ t('wms.settings.allEvents', 'すべてのイベント') }}</SelectItem>
+        <SelectItem v-for="ev in availableEvents" :key="ev" :value="ev">{{ ev }}</SelectItem>
+        </SelectContent>
+      </Select>
       <label class="search-section__filter">
-        <input v-model="showEnabledOnly" type="checkbox" @change="loadList" />
+        <Checkbox :checked="showEnabledOnly" @update:checked="val => showEnabledOnly = val" />
         {{ t('wms.settings.enabledOnly', '有効のみ') }}
       </label>
     </div>
 
     <!-- Table -->
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width: 60px">{{ t('wms.settings.state', '状態') }}</th>
-            <th class="o-table-th" style="width: 200px">{{ t('wms.settings.name', '名称') }}</th>
-            <th class="o-table-th" style="width: 180px">{{ t('wms.settings.event', 'イベント') }}</th>
-            <th class="o-table-th">{{ t('wms.settings.description', '説明') }}</th>
-            <th class="o-table-th" style="width: 80px">{{ t('wms.settings.timeout', 'タイムアウト') }}</th>
-            <th class="o-table-th" style="width: 260px">{{ t('wms.common.actions', '操作') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td class="o-table-td o-table-empty" colspan="6">{{ t('wms.settings.loading', '読み込み中...') }}</td>
-          </tr>
-          <tr v-else-if="scripts.length === 0">
-            <td class="o-table-td o-table-empty" colspan="6">{{ t('wms.settings.noScripts', 'スクリプトがありません') }}</td>
-          </tr>
-          <tr v-for="s in scripts" :key="s._id" class="o-table-row">
-            <td class="o-table-td" style="text-align: center">
+    <div class="rounded-md border overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width: 60px">{{ t('wms.settings.state', '状態') }}</TableHead>
+            <TableHead style="width: 200px">{{ t('wms.settings.name', '名称') }}</TableHead>
+            <TableHead style="width: 180px">{{ t('wms.settings.event', 'イベント') }}</TableHead>
+            <TableHead>{{ t('wms.settings.description', '説明') }}</TableHead>
+            <TableHead style="width: 80px">{{ t('wms.settings.timeout', 'タイムアウト') }}</TableHead>
+            <TableHead style="width: 260px">{{ t('wms.common.actions', '操作') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="loading">
+            <TableCell colspan="6">
+              <div class="space-y-3 p-4">
+                <Skeleton class="h-4 w-[250px] mx-auto" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+              </div>
+            </TableCell>
+          </TableRow>
+          <TableRow v-else-if="scripts.length === 0">
+            <TableCell class="text-center py-8 text-muted-foreground" colspan="6">{{ t('wms.settings.noScripts', 'スクリプトがありません') }}</TableCell>
+          </TableRow>
+          <TableRow v-for="s in scripts" :key="s._id">
+            <TableCell style="text-align: center">
               <span
                 :class="s.enabled ? 'o-status-tag o-status-tag--confirmed' : 'o-status-tag o-status-tag--cancelled'"
                 style="cursor: pointer"
@@ -47,51 +59,57 @@
               >
                 {{ s.enabled ? 'ON' : 'OFF' }}
               </span>
-            </td>
-            <td class="o-table-td"><strong>{{ s.name }}</strong></td>
-            <td class="o-table-td"><code class="event-code">{{ s.event }}</code></td>
-            <td class="o-table-td">{{ s.description || '-' }}</td>
-            <td class="o-table-td" style="text-align: center">{{ s.timeout }}ms</td>
-            <td class="o-table-td o-table-td--actions">
-              <OButton variant="secondary" size="sm" :disabled="testingId === s._id" @click="handleTest(s)">
+            </TableCell>
+            <TableCell><strong>{{ s.name }}</strong></TableCell>
+            <TableCell><code class="event-code">{{ s.event }}</code></TableCell>
+            <TableCell>{{ s.description || '-' }}</TableCell>
+            <TableCell style="text-align: center">{{ s.timeout }}ms</TableCell>
+            <TableCell class="text-right">
+              <Button variant="secondary" size="sm" :disabled="testingId === s._id" @click="handleTest(s)">
                 {{ testingId === s._id ? t('wms.settings.testing', 'テスト中...') : t('wms.settings.test', 'テスト') }}
-              </OButton>
-              <OButton variant="secondary" size="sm" @click="openLogs(s)">{{ t('wms.settings.logs', 'ログ') }}</OButton>
-              <OButton variant="primary" size="sm" @click="openEdit(s)">{{ t('wms.common.edit', '編集') }}</OButton>
-              <OButton variant="icon-danger" size="sm" @click="confirmDelete(s)">{{ t('wms.common.delete', '削除') }}</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              </Button>
+              <Button variant="secondary" size="sm" @click="openLogs(s)">{{ t('wms.settings.logs', 'ログ') }}</Button>
+              <Button variant="default" size="sm" @click="openEdit(s)">{{ t('wms.common.edit', '編集') }}</Button>
+              <Button variant="destructive" size="sm" @click="confirmDelete(s)">{{ t('wms.common.delete', '削除') }}</Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogOpen" :title="isEditing ? t('wms.settings.editScript', 'スクリプトを編集') : t('wms.settings.addScript', 'スクリプトを追加')" size="xl" @confirm="handleSave">
+    <Dialog :open="dialogOpen" @update:open="dialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? t('wms.settings.editScript', 'スクリプトを編集') : t('wms.settings.addScript', 'スクリプトを追加') }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.settings.name', '名称') }} <span class="required-badge">必須</span></label>
-          <input v-model="form.name" type="text" class="o-input" />
+          <label>{{ t('wms.settings.name', '名称') }} <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.name" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.settings.event', 'イベント') }} <span class="required-badge">必須</span></label>
-          <select v-model="form.event" class="o-input">
-            <option value="" disabled>{{ t('wms.settings.selectPlease', '選択してください') }}</option>
-            <option v-for="ev in availableEvents" :key="ev" :value="ev">{{ ev }}</option>
-          </select>
+          <label>{{ t('wms.settings.event', 'イベント') }} <span class="text-destructive text-xs">*</span></label>
+          <Select v-model="form.event">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="{{ t('wms.settings.selectPlease', '選択してください') }}" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="ev in availableEvents" :key="ev" :value="ev">{{ ev }}</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.settings.timeoutMs', 'タイムアウト(ms)') }}</label>
-          <input v-model.number="form.timeout" type="number" class="o-input" min="100" max="30000" />
+          <label>{{ t('wms.settings.timeoutMs', 'タイムアウト(ms)') }}</label>
+          <Input v-model.number="form.timeout" type="number" min="100" max="30000" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.settings.description', '説明') }}</label>
-          <input v-model="form.description" type="text" class="o-input" />
+          <label>{{ t('wms.settings.description', '説明') }}</label>
+          <Input v-model="form.description" type="text" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.settings.code', 'コード') }} <span class="required-badge">必須</span></label>
+          <label>{{ t('wms.settings.code', 'コード') }} <span class="text-destructive text-xs">*</span></label>
           <textarea
             v-model="form.code"
-            class="o-input code-textarea"
+            class="code-textarea"
             rows="14"
             spellcheck="false"
             placeholder="// 利用可能な変数: order, product, inventory, event
@@ -105,75 +123,91 @@ if (order.coolType === 'frozen') {
           />
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
 
     <!-- Logs Dialog -->
-    <ODialog v-model="logsDialogOpen" :title="`${t('wms.settings.executionLog', '実行ログ')} — ${logsScriptName}`" size="xl">
+    <Dialog :open="logsDialogOpen" @update:open="logsDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ `${t('wms.settings.executionLog', '実行ログ')} — ${logsScriptName}` }}</DialogTitle></DialogHeader>
       <div class="logs-filter">
-        <select v-model="logsFilterStatus" class="o-input" style="width: 160px" @change="loadLogs">
-          <option value="">{{ t('wms.settings.all', 'すべて') }}</option>
-          <option value="success">{{ t('wms.settings.statusSuccess', '成功') }}</option>
-          <option value="error">{{ t('wms.settings.statusError', 'エラー') }}</option>
-          <option value="timeout">{{ t('wms.settings.statusTimeout', 'タイムアウト') }}</option>
-        </select>
+        <Select v-model="logsFilterStatus" @update:model-value="loadLogs">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="__all__">{{ t('wms.settings.all', 'すべて') }}</SelectItem>
+        <SelectItem value="success">{{ t('wms.settings.statusSuccess', '成功') }}</SelectItem>
+        <SelectItem value="error">{{ t('wms.settings.statusError', 'エラー') }}</SelectItem>
+        <SelectItem value="timeout">{{ t('wms.settings.statusTimeout', 'タイムアウト') }}</SelectItem>
+        </SelectContent>
+      </Select>
       </div>
-      <div class="o-table-wrapper" style="max-height: 400px; overflow-y: auto">
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width: 160px">{{ t('wms.settings.dateTime', '日時') }}</th>
-              <th class="o-table-th" style="width: 80px">{{ t('wms.settings.state', '状態') }}</th>
-              <th class="o-table-th" style="width: 80px">{{ t('wms.settings.executionTime', '実行時間') }}</th>
-              <th class="o-table-th">{{ t('wms.settings.errorOutput', 'エラー / 出力') }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="logsLoading">
-              <td class="o-table-td o-table-empty" colspan="4">{{ t('wms.settings.loading', '読み込み中...') }}</td>
-            </tr>
-            <tr v-else-if="logs.length === 0">
-              <td class="o-table-td o-table-empty" colspan="4">{{ t('wms.settings.noLogs', 'ログがありません') }}</td>
-            </tr>
-            <tr v-for="log in logs" :key="log._id" class="o-table-row">
-              <td class="o-table-td">{{ formatDate(log.createdAt) }}</td>
-              <td class="o-table-td">
+      <div class="rounded-md border overflow-auto" style="max-height: 400px; overflow-y: auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width: 160px">{{ t('wms.settings.dateTime', '日時') }}</TableHead>
+              <TableHead style="width: 80px">{{ t('wms.settings.state', '状態') }}</TableHead>
+              <TableHead style="width: 80px">{{ t('wms.settings.executionTime', '実行時間') }}</TableHead>
+              <TableHead>{{ t('wms.settings.errorOutput', 'エラー / 出力') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-if="logsLoading">
+              <TableCell colspan="4">
+                <div class="space-y-3 p-4">
+                  <Skeleton class="h-4 w-[250px] mx-auto" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                </div>
+              </TableCell>
+            </TableRow>
+            <TableRow v-else-if="logs.length === 0">
+              <TableCell class="text-center py-8 text-muted-foreground" colspan="4">{{ t('wms.settings.noLogs', 'ログがありません') }}</TableCell>
+            </TableRow>
+            <TableRow v-for="log in logs" :key="log._id">
+              <TableCell>{{ formatDate(log.createdAt) }}</TableCell>
+              <TableCell>
                 <span :class="logStatusClass(log.status)">{{ logStatusLabel(log.status) }}</span>
-              </td>
-              <td class="o-table-td" style="text-align: right">{{ log.duration }}ms</td>
-              <td class="o-table-td">
+              </TableCell>
+              <TableCell style="text-align: right">{{ log.duration }}ms</TableCell>
+              <TableCell>
                 <span v-if="log.error" class="error-cell">{{ log.error }}</span>
                 <span v-else-if="log.output && Object.keys(log.output).length > 0" class="output-cell">
                   {{ JSON.stringify(log.output) }}
                 </span>
                 <span v-else>-</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
       <div v-if="logsPagination.totalPages > 1" class="o-table-pagination" style="margin-top: 12px">
         <span class="o-table-pagination__info">{{ t('wms.settings.totalCount', `全${logsPagination.total}件`) }}</span>
         <div class="o-table-pagination__controls">
-          <OButton variant="secondary" size="sm" :disabled="logsPagination.page <= 1" @click="goToLogsPage(logsPagination.page - 1)">&lsaquo;</OButton>
+          <Button variant="secondary" size="sm" :disabled="logsPagination.page <= 1" @click="goToLogsPage(logsPagination.page - 1)">&lsaquo;</Button>
           <span class="o-table-pagination__page">{{ logsPagination.page }} / {{ logsPagination.totalPages }}</span>
-          <OButton variant="secondary" size="sm" :disabled="logsPagination.page >= logsPagination.totalPages" @click="goToLogsPage(logsPagination.page + 1)">&rsaquo;</OButton>
+          <Button variant="secondary" size="sm" :disabled="logsPagination.page >= logsPagination.totalPages" @click="goToLogsPage(logsPagination.page + 1)">&rsaquo;</Button>
         </div>
       </div>
-      <template #footer>
-        <OButton variant="secondary" @click="logsDialogOpen = false">{{ t('wms.settings.close', '閉じる') }}</OButton>
-      </template>
-    </ODialog>
+      <DialogFooter>
+        <Button variant="secondary" @click="logsDialogOpen = false">{{ t('wms.settings.close', '閉じる') }}</Button>
+      </DialogFooter>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   fetchScripts,
   createScript,
@@ -185,7 +219,11 @@ import {
   type AutomationScript,
   type ScriptExecutionLog,
 } from '@/api/script'
-
+import { computed, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 const { t } = useI18n()
 
@@ -280,13 +318,7 @@ const handleSave = async () => {
 }
 
 const confirmDelete = async (s: AutomationScript) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${s.name}」を削除してもよろしいですか？ / 确定要删除「${s.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   deleteScriptApi(s._id)
     .then(async () => {
       showToast(t('wms.settings.deleted', '削除しました'), 'success')

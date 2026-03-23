@@ -206,16 +206,16 @@
         />
       </template>
 
-      <OButton variant="danger" size="sm" @click="removeCondition(index)" title="削除">✕</OButton>
+      <Button variant="destructive" size="sm" @click="removeCondition(index)" title="削除">✕</Button>
     </div>
 
-    <OButton variant="secondary" size="sm" @click="addCondition">+ 条件を追加</OButton>
+    <Button variant="secondary" size="sm" @click="addCondition">+ 条件を追加</Button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
 import type { AutoProcessingCondition, ConditionType, RawRowOperator, OrderFieldOperator } from '@/types/autoProcessingRule'
 import { RAW_ROW_OPERATOR_LABELS } from '@/types/autoProcessingRule'
 import { fetchOrderGroups } from '@/api/orderGroup'

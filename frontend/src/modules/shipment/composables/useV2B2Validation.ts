@@ -1,4 +1,5 @@
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { toast } from 'vue-sonner'
 import { updateShipmentOrderStatusBulk } from '@/api/shipmentOrders'
 import { yamatoB2Validate, fetchCarrierAutomationConfig } from '@/api/carrierAutomation'
 import type { AutoValidationConfig } from '@/types/carrierAutomation'
@@ -25,26 +26,22 @@ export function useV2B2Validation({ state, loadBackendOrders }: B2ValidationDeps
     if (ids.length === 0) return
     try {
       await updateShipmentOrderStatusBulk(ids, 'mark-print-ready')
-      ElMessage.success(`${ids.length}件の出荷指示を確定しました`)
+      toast.success(`${ids.length}件の出荷指示を確定しました`)
       state.selectedRows.value = []
       await loadBackendOrders()
     } catch (e: any) {
-      ElMessage.error(e?.message || '出荷指示確定に失敗しました')
+      toast.error(e?.message || '出荷指示確定に失敗しました')
     }
   }
 
   const handleConfirmPrintReady = async () => {
     if (state.selectedRows.value.length === 0) {
-      ElMessage.warning('確認する行を選択してください')
+      toast.warning('確認する行を選択してください')
       return
     }
 
     try {
-      await ElMessageBox.confirm(
-        `選択した${state.selectedRows.value.length}件の出荷指示を確定しますか？`,
-        '出荷指示確定',
-        { confirmButtonText: '確定', cancelButtonText: 'キャンセル', type: 'info' }
-      )
+      if (!confirm('この操作を実行しますか？')) return
     } catch { return }
 
     const rows = state.selectedRows.value
@@ -197,13 +194,13 @@ export function useV2B2Validation({ state, loadBackendOrders }: B2ValidationDeps
         } else {
           state.b2ValidationErrors.value = newErrors
           state.isAutoValidating.value = false
-          ElMessage.warning(`${newErrors.size}件のデータにエラーがあります。修正後、再度確認してください。`)
+          toast.warning(`${newErrors.size}件のデータにエラーがあります。修正後、再度確認してください。`)
         }
       } else {
         state.b2ValidationErrors.value = new Map()
         state.isAutoValidating.value = false
         if (validIds.length > 0) {
-          ElMessage.success(`${validIds.length}件の検証が正常に完了しました`)
+          toast.success(`${validIds.length}件の検証が正常に完了しました`)
         }
       }
     } catch (e: any) {
@@ -215,7 +212,7 @@ export function useV2B2Validation({ state, loadBackendOrders }: B2ValidationDeps
         }, retryDelayMs)
       } else {
         state.isAutoValidating.value = false
-        ElMessage.error(e?.message || 'B2 Cloud の検証中にエラーが発生しました')
+        toast.error(e?.message || 'B2 Cloud の検証中にエラーが発生しました')
       }
     }
   }

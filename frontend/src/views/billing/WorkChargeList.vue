@@ -1,27 +1,36 @@
 <template>
   <div class="work-charge-list">
-    <ControlPanel title="作業チャージ一覧" :show-search="false">
+    <PageHeader title="作業チャージ一覧" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-          <input v-model="filterPeriod" type="month" class="o-input o-input-sm" style="width:160px;" @change="handleFilterChange" />
-          <select v-model="filterChargeType" class="o-input o-input-sm" style="width:150px;" @change="handleFilterChange">
-            <option value="">全種別</option>
-            <option v-for="ct in CHARGE_TYPES" :key="ct" :value="ct">{{ CHARGE_TYPE_LABELS[ct] }}</option>
-          </select>
-          <select v-model="filterClientId" class="o-input o-input-sm" style="width:150px;" @change="handleFilterChange">
-            <option value="">全荷主</option>
-            <option v-for="c in clients" :key="c._id" :value="c._id">{{ c.name }}</option>
-          </select>
-          <select v-model="filterIsBilled" class="o-input o-input-sm" style="width:120px;" @change="handleFilterChange">
-            <option value="">全ステータス</option>
-            <option value="false">未請求</option>
-            <option value="true">請求済</option>
-          </select>
-          <OButton variant="primary" size="sm" @click="openManualCreate"><span class="o-icon">+</span> 手動追加</OButton>
-          <OButton variant="secondary" size="sm" @click="loadData">更新</OButton>
+          <Input v-model="filterPeriod" type="month" class="h-8 text-sm" style="width:160px;" @change="handleFilterChange" />
+          <Select :model-value="filterChargeType || '__all__'" @update:model-value="(v: string) => { filterChargeType = v === '__all__' ? '' : v; handleFilterChange() }">
+            <SelectTrigger class="h-8 text-sm" style="width:150px;"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">全種別</SelectItem>
+              <SelectItem v-for="ct in CHARGE_TYPES" :key="ct" :value="ct">{{ CHARGE_TYPE_LABELS[ct] }}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select :model-value="filterClientId || '__all__'" @update:model-value="(v: string) => { filterClientId = v === '__all__' ? '' : v; handleFilterChange() }">
+            <SelectTrigger class="h-8 text-sm" style="width:150px;"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">全荷主</SelectItem>
+              <SelectItem v-for="c in clients" :key="c._id" :value="c._id">{{ c.name }}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select :model-value="filterIsBilled || '__all__'" @update:model-value="(v: string) => { filterIsBilled = v === '__all__' ? '' : v; handleFilterChange() }">
+            <SelectTrigger class="h-8 text-sm" style="width:120px;"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">全ステータス</SelectItem>
+              <SelectItem value="false">未請求</SelectItem>
+              <SelectItem value="true">請求済</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="default" size="sm" @click="openManualCreate"><span>+</span> 手動追加</Button>
+          <Button variant="secondary" size="sm" @click="loadData">更新</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- サマリーカード / 汇总卡片 -->
     <div v-if="summaryItems.length > 0" class="summary-cards">
@@ -37,9 +46,9 @@
       </div>
     </div>
 
-    <OLoadingState :loading="loading" :empty="!loading && rows.length === 0">
+    <div v-if="false"><!-- loading handled by DataTable --></div><template v-if="true">
       <div class="table-section">
-        <Table
+        <DataTable
           :columns="tableColumns"
           :data="rows"
           row-key="_id"
@@ -52,72 +61,77 @@
           @page-change="handlePageChange"
         />
       </div>
-    </OLoadingState>
+    </template>
 
     <!-- 手動チャージ作成ダイアログ / 手动创建对话框 -->
-    <ODialog v-model="createDialogVisible" title="作業チャージを追加" size="lg" @close="closeCreateDialog">
-      <template #default>
+    <Dialog :open="createDialogVisible" @update:open="(v) => { if (!v) closeCreateDialog() }">
+      <DialogContent class="sm:max-w-[800px]">
+        <DialogHeader><DialogTitle>作業チャージを追加</DialogTitle></DialogHeader>
         <form class="charge-form" @submit.prevent="handleCreateSubmit">
           <div class="form-row">
-            <label class="form-label">料金種別 <span class="required-badge">必須</span></label>
-            <select v-model="createForm.chargeType" class="o-input" required>
-              <option value="" disabled>選択してください</option>
-              <option v-for="ct in CHARGE_TYPES" :key="ct" :value="ct">{{ CHARGE_TYPE_LABELS[ct] }}</option>
-            </select>
+            <label>料金種別 <span class="text-destructive text-xs">*</span></label>
+            <Select v-model="createForm.chargeType">
+              <SelectTrigger><SelectValue placeholder="選択してください" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="ct in CHARGE_TYPES" :key="ct" :value="ct">{{ CHARGE_TYPE_LABELS[ct] }}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div class="form-row">
-            <label class="form-label">荷主</label>
-            <select v-model="createForm.clientId" class="o-input">
-              <option value="">なし</option>
-              <option v-for="c in clients" :key="c._id" :value="c._id">{{ c.name }}</option>
-            </select>
+            <label>荷主</label>
+            <Select :model-value="createForm.clientId || '__none__'" @update:model-value="(v: string) => { createForm.clientId = v === '__none__' ? '' : v }">
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">なし</SelectItem>
+                <SelectItem v-for="c in clients" :key="c._id" :value="c._id">{{ c.name }}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div class="form-row">
-            <label class="form-label">日付 <span class="required-badge">必須</span></label>
-            <input v-model="createForm.chargeDate" type="date" class="o-input" required />
+            <label>日付 <span class="text-destructive text-xs">*</span></label>
+            <Input v-model="createForm.chargeDate" type="date" required />
           </div>
           <div class="form-row">
-            <label class="form-label">参照種別</label>
-            <input v-model="createForm.referenceType" class="o-input" placeholder="例: manual, outbound_order" />
+            <label>参照種別</label>
+            <Input v-model="createForm.referenceType" placeholder="例: manual, outbound_order" />
           </div>
           <div class="form-row">
-            <label class="form-label">参照番号</label>
-            <input v-model="createForm.referenceNumber" class="o-input" />
+            <label>参照番号</label>
+            <Input v-model="createForm.referenceNumber" />
           </div>
           <div class="form-row">
-            <label class="form-label">数量 <span class="required-badge">必須</span></label>
-            <input v-model.number="createForm.quantity" type="number" class="o-input" min="1" required />
+            <label>数量 <span class="text-destructive text-xs">*</span></label>
+            <Input v-model.number="createForm.quantity" type="number" min="1" required />
           </div>
           <div class="form-row">
-            <label class="form-label">単価（¥） <span class="required-badge">必須</span></label>
-            <input v-model.number="createForm.unitPrice" type="number" class="o-input" min="0" step="0.01" required />
+            <label>単価（¥） <span class="text-destructive text-xs">*</span></label>
+            <Input v-model.number="createForm.unitPrice" type="number" min="0" step="0.01" required />
           </div>
           <div class="form-row">
-            <label class="form-label">説明 <span class="required-badge">必須</span></label>
-            <textarea v-model="createForm.description" class="o-input" rows="2" required />
+            <label>説明 <span class="text-destructive text-xs">*</span></label>
+            <textarea v-model="createForm.description" rows="2" required />
           </div>
           <div class="form-actions">
-            <OButton variant="secondary" type="button" @click="closeCreateDialog">キャンセル</OButton>
-            <OButton variant="primary" type="submit" :disabled="creating">
+            <Button variant="secondary" type="button" @click="closeCreateDialog">キャンセル</Button>
+            <Button variant="default" type="submit" :disabled="creating">
               {{ creating ? '作成中...' : '作成' }}
-            </OButton>
+            </Button>
           </div>
         </form>
-      </template>
-    </ODialog>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import Table from '@/components/table/Table.vue'
-import OLoadingState from '@/components/odoo/OLoadingState.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn } from '@/types/table'
 import {
   fetchWorkCharges,
@@ -130,7 +144,10 @@ import {
 import type { WorkCharge, WorkChargeSummary, ChargeType } from '@/api/serviceRate'
 import { fetchClients } from '@/api/client'
 import type { Client } from '@/api/client'
-
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 const { t } = useI18n()
 
@@ -261,7 +278,7 @@ const tableColumns: TableColumn[] = [
       // 請求済みは削除不可 / 已请求不可删除
       if (rowData.isBilled) return ''
       return h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ])
     },
   },
@@ -355,13 +372,7 @@ const handleCreateSubmit = async () => {
 
 // ── 削除 / 删除 ──
 const confirmDelete = async (item: WorkCharge) => {
-  try {
-    await ElMessageBox.confirm(
-      'この作業チャージを削除しますか？ / 确定要删除此作业费用吗？',
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteWorkCharge(item._id)
     showToast('削除しました', 'success')

@@ -1,13 +1,12 @@
 <template>
-  <ODialog
-    :open="dialogVisible"
-    size="xl"
-    @close="handleClose"
-  >
-    <template #title>
-      {{ title }}
-      <span v-if="hasErrors" class="o-status-badge o-status-warning">未入力項目あり</span>
-    </template>
+  <Dialog :open="dialogVisible" @update:open="(val: boolean) => { if (!val) handleClose() }">
+    <DialogContent class="sm:max-w-6xl">
+      <DialogHeader>
+        <DialogTitle>
+          {{ title }}
+          <span v-if="hasErrors" class="o-status-badge o-status-warning">未入力項目あり</span>
+        </DialogTitle>
+      </DialogHeader>
     <div class="o-sheet-scroll">
       <div class="o-sheet">
         <!-- Top fields above tabs (2-column like Odoo) -->
@@ -111,9 +110,9 @@
                       />
                     </td>
                     <td style="text-align:center;">
-                      <OButton v-if="index > 0" variant="icon-danger" @click="removeProduct(index)" title="削除">
+                      <Button v-if="index > 0" variant="icon-danger" @click="removeProduct(index)" title="削除">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                      </OButton>
+                      </Button>
                     </td>
                   </tr>
                 </tbody>
@@ -161,10 +160,10 @@
             <!-- ご依頼主 tab -->
             <template v-if="activeTab === 'sender'">
               <div class="o-sender-toolbar">
-                <OButton variant="secondary" size="sm" @click="openSenderSearch">
+                <Button variant="secondary" size="sm" @click="openSenderSearch">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                   登録済みご依頼主から選択
-                </OButton>
+                </Button>
               </div>
 
               <!-- Search panel -->
@@ -242,25 +241,29 @@
       </div>
     </div>
 
-    <template #footer>
+    <DialogFooter>
       <div class="o-form-footer">
-        <OButton type="button" variant="secondary" @click="handleClose">キャンセル</OButton>
-        <OButton
+        <Button type="button" variant="secondary" @click="handleClose">キャンセル</Button>
+        <Button
           type="button"
-          variant="primary"
+          variant="default"
           @click="handleSubmit"
           :disabled="submitting"
         >
           <span v-if="submitting" class="spinner"></span>
           登録
-        </OButton>
+        </Button>
       </div>
-    </template>
-  </ODialog>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 
   <!-- 商品検索ダイアログ -->
-  <ODialog :open="productSearchOpen" size="lg" @close="productSearchOpen = false">
-    <template #title>商品検索</template>
+  <Dialog :open="productSearchOpen" @update:open="productSearchOpen = $event">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>商品検索</DialogTitle>
+      </DialogHeader>
     <div class="o-product-dialog">
       <div class="o-product-dialog__search">
         <input
@@ -293,7 +296,7 @@
               <td>{{ prod.name }}</td>
               <td class="o-product-dialog__bc">{{ (prod.barcode || []).join(', ') || '-' }}</td>
               <td>
-                <OButton variant="primary" size="sm" @click="selectProduct(prod)">選択</OButton>
+                <Button variant="default" size="sm" @click="selectProduct(prod)">選択</Button>
               </td>
             </tr>
           </tbody>
@@ -303,16 +306,16 @@
         <span class="o-product-dialog__count">{{ filteredProductResults.length }} 件</span>
       </div>
     </div>
-  </ODialog>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import FormField from './FormField.vue'
 import FormFieldGroup from './FormFieldGroup.vue'
-import OCustomFields from '@/components/odoo/OCustomFields.vue'
 import type { TableColumn } from '@/types/table'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
 import type { Product } from '@/types/product'
@@ -321,6 +324,7 @@ import { getCoolTypeOptionsForInvoiceType } from '@/utils/orderValidation'
 import { fetchProducts } from '@/api/product'
 import { lookupPostalCode } from '@/utils/postalCodeLookup'
 import { fetchOrderSourceCompanies } from '@/api/orderSourceCompany'
+import OCustomFields from '@/components/odoo/OCustomFields.vue'
 
 // Top-level field keys (shown above tabs, like Odoo header fields)
 const TOP_LEFT_KEYS = ['orderNumber', 'customerManagementNumber', 'carrierId', 'invoiceType', 'coolType']

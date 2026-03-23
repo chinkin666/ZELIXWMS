@@ -1,15 +1,15 @@
 <template>
   <div class="plugin-management">
-    <ControlPanel title="プラグイン管理" :show-search="false">
+    <PageHeader title="プラグイン管理" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="runHealthCheck" :disabled="healthLoading">
+        <Button variant="secondary" size="sm" @click="runHealthCheck" :disabled="healthLoading">
           {{ healthLoading ? 'チェック中...' : 'ヘルスチェック' }}
-        </OButton>
-        <OButton variant="secondary" size="sm" @click="showSdkInfo = !showSdkInfo">
+        </Button>
+        <Button variant="secondary" size="sm" @click="showSdkInfo = !showSdkInfo">
           SDK 情報
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- 健康仪表板 / ヘルスダッシュボード -->
     <div v-if="healthDashboard" class="health-dashboard">
@@ -52,23 +52,16 @@
       </div>
     </div>
 
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="pluginManagementSearch"
-      @search="handleSearch"
-    />
-
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="plugins"
         row-key="name"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         pagination-enabled
         pagination-mode="client"
         :page-size="20"
-        :global-search-text="globalSearchText"
       />
     </div>
 
@@ -78,10 +71,12 @@
     </div>
 
     <!-- 設定ダイアログ -->
-    <ODialog v-model="configDialogOpen" :title="`${configPluginName} 設定`" size="md" @confirm="handleSaveConfig">
+    <Dialog :open="configDialogOpen" @update:open="configDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ `${configPluginName} 設定` }}</DialogTitle></DialogHeader>
       <div class="config-form">
         <div v-for="(def, key) in configSchema" :key="key" class="form-field form-field--full">
-          <label class="form-label">
+          <label>
             {{ def.description || key }}
             <span class="config-type">({{ def.type }})</span>
           </label>
@@ -92,17 +87,20 @@
             </label>
           </template>
           <template v-else-if="def.type === 'number'">
-            <input v-model.number="configValues[key]" type="number" class="o-input" />
+            <Input v-model.number="configValues[key]" type="number" />
           </template>
           <template v-else>
-            <input v-model="configValues[key]" type="text" class="o-input" />
+            <Input v-model="configValues[key]" type="text" />
           </template>
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
 
     <!-- 详细信息侧边栏 / 詳細サイドバー -->
-    <ODialog v-model="detailOpen" :title="detailPlugin?.name || ''" size="lg">
+    <Dialog :open="detailOpen" @update:open="detailOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ detailPlugin?.name || '' }}</DialogTitle></DialogHeader>
       <div v-if="detailPlugin" class="plugin-detail">
         <div class="detail-row">
           <span class="detail-label">バージョン</span>
@@ -147,21 +145,20 @@
           </span>
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
+import { Input } from '@/components/ui/input'
 import {
   fetchPlugins,
   enablePlugin,
@@ -176,7 +173,10 @@ import {
   type PluginHealthResult,
   type SdkInfo,
 } from '@/api/plugin'
-
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 const { t } = useI18n()
 
@@ -308,7 +308,7 @@ const tableColumns: TableColumn[] = [
       if (rowData.status === 'enabled') {
         buttons.push(
           h(
-            OButton,
+            Button,
             {
               variant: 'secondary',
               size: 'sm',
@@ -321,9 +321,9 @@ const tableColumns: TableColumn[] = [
       } else if (rowData.status === 'disabled') {
         buttons.push(
           h(
-            OButton,
+            Button,
             {
-              variant: 'primary',
+              variant: 'default',
               size: 'sm',
               disabled: toggling.value === rowData.name,
               onClick: () => handleEnable(rowData),
@@ -336,7 +336,7 @@ const tableColumns: TableColumn[] = [
       if (rowData.config && Object.keys(rowData.config).length > 0) {
         buttons.push(
           h(
-            OButton,
+            Button,
             { variant: 'secondary', size: 'sm', onClick: () => openConfig(rowData) },
             () => '設定',
           ),
@@ -345,7 +345,7 @@ const tableColumns: TableColumn[] = [
 
       buttons.push(
         h(
-          OButton,
+          Button,
           { variant: 'secondary', size: 'sm', onClick: () => openDetail(rowData) },
           () => '詳細',
         ),
@@ -394,13 +394,7 @@ const handleEnable = async (p: PluginInfo) => {
 }
 
 const handleDisable = async (p: PluginInfo) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${p.name}」を無効化してもよろしいですか？ / 确定要禁用「${p.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '無効化 / 禁用', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   toggling.value = p.name
   try {
     await disablePlugin(p.name)

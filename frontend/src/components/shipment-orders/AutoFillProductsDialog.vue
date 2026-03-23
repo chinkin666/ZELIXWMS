@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="visibleProxy"
-    title="商品情報の自動補完 / 送り状種類の自動設定"
-    @close="visibleProxy = false"
-    width="760px"
-  >
+  <Dialog :open="visibleProxy" @update:open="visibleProxy = $event">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>商品情報の自動補完 / 送り状種類の自動設定</DialogTitle>
+      </DialogHeader>
     <div class="meta">
       対象：<strong>{{ selectedCount }}</strong> 件（左側チェックで選択した行のみ）
     </div>
@@ -63,19 +62,20 @@
       </div>
     </div>
 
-    <template #footer>
+    <DialogFooter>
       <div class="footer">
-        <OButton variant="secondary" @click="visibleProxy = false">キャンセル</OButton>
-        <OButton variant="primary" :disabled="selectedCount === 0" @click="handleConfirm">適用</OButton>
+        <Button variant="secondary" @click="visibleProxy = false">キャンセル</Button>
+        <Button variant="default" :disabled="selectedCount === 0" @click="handleConfirm">適用</Button>
       </div>
-    </template>
-  </ODialog>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 type InvoiceMode = 'mode1' | 'mode2'
 

@@ -1,92 +1,91 @@
 <template>
   <div class="warehouse-settings">
-    <ControlPanel title="倉庫一覧" :show-search="false">
+    <PageHeader title="倉庫一覧" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" @click="handleExportCsv">CSV出力</OButton>
-        <OButton variant="primary" @click="openCreate">新規追加</OButton>
+        <Button variant="secondary" @click="handleExportCsv">CSV出力</Button>
+        <Button variant="default" @click="openCreate">新規追加</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="warehouseSettingsSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="warehouses"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         pagination-enabled
         pagination-mode="server"
         :page-size="pageSize"
         :page-sizes="[10, 20, 50, 100]"
         :total="total"
         :current-page="currentPage"
-        :global-search-text="globalSearchText"
         @page-change="handlePageChangeEvent"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogOpen" :title="isEditing ? '倉庫を編集' : '倉庫を追加'" size="lg" @confirm="handleSave">
+    <Dialog :open="dialogOpen" @update:open="dialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? '倉庫を編集' : '倉庫を追加' }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">倉庫コード <span class="required-badge">必須</span></label>
-          <input v-model="form.code" type="text" class="o-input" />
+          <label>倉庫コード <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.code" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">倉庫名 <span class="required-badge">必須</span></label>
-          <input v-model="form.name" type="text" class="o-input" />
+          <label>倉庫名 <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.name" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">倉庫名2</label>
-          <input v-model="form.name2" type="text" class="o-input" />
+          <label>倉庫名2</label>
+          <Input v-model="form.name2" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">郵便番号</label>
+          <label>郵便番号</label>
           <PostalCodeInput v-model="form.postalCode" @resolved="onPostalResolved" />
         </div>
         <div class="form-field">
-          <label class="form-label">都道府県</label>
-          <select class="o-input" v-model="form.prefecture">
-            <option value="">選択してください</option>
-            <option v-for="p in PREFECTURES" :key="p" :value="p">{{ p }}</option>
-          </select>
+          <label>都道府県</label>
+          <Select v-model="form.prefecture">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="選択してください" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="p in PREFECTURES" :key="p" :value="p">{{ p }}</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div class="form-field">
-          <label class="form-label">市区町村</label>
-          <input v-model="form.city" type="text" class="o-input" />
+          <label>市区町村</label>
+          <Input v-model="form.city" type="text" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">住所</label>
-          <input v-model="form.address" type="text" class="o-input" />
+          <label>住所</label>
+          <Input v-model="form.address" type="text" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">住所2</label>
-          <input v-model="form.address2" type="text" class="o-input" />
+          <label>住所2</label>
+          <Input v-model="form.address2" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">電話番号</label>
-          <input v-model="form.phone" type="text" class="o-input" />
+          <label>電話番号</label>
+          <Input v-model="form.phone" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">営業時間</label>
-          <input v-model="form.operatingHours" type="text" class="o-input" />
+          <label>営業時間</label>
+          <Input v-model="form.operatingHours" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">保管キャパシティ</label>
-          <input v-model.number="form.capacity" type="number" class="o-input" />
+          <label>保管キャパシティ</label>
+          <Input v-model.number="form.capacity" type="number" />
         </div>
         <div class="form-field">
-          <label class="form-label">表示順</label>
-          <input v-model.number="form.sortOrder" type="number" class="o-input" />
+          <label>表示順</label>
+          <Input v-model.number="form.sortOrder" type="number" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">対応温度帯</label>
+          <label>対応温度帯</label>
           <div style="display: flex; gap: 16px;">
             <label><input type="checkbox" value="0" v-model="form.coolTypes" /> 常温</label>
             <label><input type="checkbox" value="1" v-model="form.coolTypes" /> 冷蔵</label>
@@ -94,23 +93,24 @@
           </div>
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">備考</label>
-          <textarea v-model="form.memo" class="o-input form-textarea" rows="3" />
+          <label>備考</label>
+          <textarea v-model="form.memo" class="form-textarea" rows="3" />
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import PostalCodeInput from '@/components/form/PostalCodeInput.vue'
 import type { PostalResult } from '@/utils/postalCode'
-
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const PREFECTURES = [
   '北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県',
   '茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県',
@@ -121,11 +121,10 @@ const PREFECTURES = [
   '徳島県','香川県','愛媛県','高知県',
   '福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県',
 ] as const
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   fetchWarehouses,
   createWarehouse,
@@ -134,7 +133,9 @@ import {
   exportWarehouses,
   type Warehouse,
 } from '@/api/warehouse'
-
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 const { t } = useI18n()
 
@@ -314,8 +315,8 @@ const tableColumns: TableColumn[] = [
     width: 140,
     cellRenderer: ({ rowData }: { rowData: Warehouse }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ]),
   },
 ]
@@ -438,13 +439,7 @@ const handleSave = async () => {
 }
 
 const confirmDelete = async (w: Warehouse) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${w.name}」(${w.code}) を削除してもよろしいですか？ / 确定要删除「${w.name}」(${w.code}) 吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   deleteWarehouse(w._id)
     .then(async () => {
       showToast('削除しました', 'success')

@@ -1,46 +1,58 @@
 <template>
   <div class="report-page">
-    <ControlPanel :title="t('wms.report.title', '業績レポート')" :show-search="false">
+    <PageHeader :title="t('wms.report.title', '業績レポート')" :show-search="false">
       <template #actions>
         <div class="report-period-bar">
-          <button
+          <Button
             v-for="preset in periodPresets"
             :key="preset.days"
+            :variant="activeDays === preset.days ? 'default' : 'outline'"
+            size="sm"
             class="period-btn"
             :class="{ active: activeDays === preset.days }"
             @click="setPeriod(preset.days)"
-          >{{ preset.label }}</button>
-          <input type="date" v-model="customFrom" class="o-input o-input-sm" />
+          >{{ preset.label }}</Button>
+          <input type="date" v-model="customFrom" class="h-8 text-sm" />
           <span style="color:var(--o-gray-400)">〜</span>
-          <input type="date" v-model="customTo" class="o-input o-input-sm" />
-          <OButton variant="secondary" size="sm" @click="loadCustom">{{ t('wms.common.search', '検索') }}</OButton>
+          <input type="date" v-model="customTo" class="h-8 text-sm" />
+          <Button variant="secondary" size="sm" @click="loadCustom">{{ t('wms.common.search', '検索') }}</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <OLoadingState :loading="isLoading" :empty="false">
+    <div v-if="false"><!-- loading handled by DataTable --></div><template v-if="true">
       <!-- 出荷サマリーカード / 出货概要卡片 -->
       <div class="kpi-row">
-        <div class="kpi-card">
-          <div class="kpi-value">{{ shipStats?.totalShipped ?? '-' }}</div>
-          <div class="kpi-label">{{ t('wms.report.totalShipped', '出荷件数') }}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-value">{{ formatNumber(shipStats?.totalQuantity ?? 0) }}</div>
-          <div class="kpi-label">{{ t('wms.report.totalQuantity', '出荷個数') }}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-value">{{ turnover?.summary?.currentStock ?? '-' }}</div>
-          <div class="kpi-label">{{ t('wms.report.currentStock', '現在庫数') }}</div>
-        </div>
-        <div class="kpi-card kpi-card--accent">
-          <div class="kpi-value">{{ turnover?.summary?.turnoverRate ?? '-' }}</div>
-          <div class="kpi-label">{{ t('wms.report.turnoverRate', '在庫回転率') }}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-value">{{ turnover?.summary?.turnoverDays ?? '-' }}{{ t('wms.report.days', '日') }}</div>
-          <div class="kpi-label">{{ t('wms.report.turnoverDays', '在庫回転日数') }}</div>
-        </div>
+        <Card class="kpi-card text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ shipStats?.totalShipped ?? '-' }}</div>
+            <div class="kpi-label">{{ t('wms.report.totalShipped', '出荷件数') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ formatNumber(shipStats?.totalQuantity ?? 0) }}</div>
+            <div class="kpi-label">{{ t('wms.report.totalQuantity', '出荷個数') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ turnover?.summary?.currentStock ?? '-' }}</div>
+            <div class="kpi-label">{{ t('wms.report.currentStock', '現在庫数') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card kpi-card--accent text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ turnover?.summary?.turnoverRate ?? '-' }}</div>
+            <div class="kpi-label">{{ t('wms.report.turnoverRate', '在庫回転率') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ turnover?.summary?.turnoverDays ?? '-' }}{{ t('wms.report.days', '日') }}</div>
+            <div class="kpi-label">{{ t('wms.report.turnoverDays', '在庫回転日数') }}</div>
+          </CardContent>
+        </Card>
       </div>
 
       <!-- 日別出荷トレンド / 日别出货趋势 -->
@@ -63,37 +75,37 @@
       <div class="section">
         <h3 class="section-title">{{ t('wms.report.topSkuTurnover', '在庫回転率 TOP SKU') }}</h3>
         <div class="table-wrap">
-          <table class="o-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>SKU</th>
-                <th>{{ t('wms.report.productName', '商品名') }}</th>
-                <th class="text-right">{{ t('wms.report.outboundQty', '出庫数') }}</th>
-                <th class="text-right">{{ t('wms.report.currentStock', '在庫数') }}</th>
-                <th class="text-right">{{ t('wms.report.turnoverRate', '回転率') }}</th>
-                <th>{{ t('wms.report.turnoverBar', '回転率') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(item, idx) in turnover?.topSkus ?? []" :key="item.sku">
-                <td>{{ idx + 1 }}</td>
-                <td class="sku-cell">{{ item.sku }}</td>
-                <td>{{ item.productName || '-' }}</td>
-                <td class="text-right">{{ formatNumber(item.outboundQty) }}</td>
-                <td class="text-right">{{ formatNumber(item.currentStock) }}</td>
-                <td class="text-right font-bold">{{ item.turnover }}</td>
-                <td style="width:120px;">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>SKU</TableHead>
+                <TableHead>{{ t('wms.report.productName', '商品名') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.report.outboundQty', '出庫数') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.report.currentStock', '在庫数') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.report.turnoverRate', '回転率') }}</TableHead>
+                <TableHead>{{ t('wms.report.turnoverBar', '回転率') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="(item, idx) in turnover?.topSkus ?? []" :key="item.sku">
+                <TableCell>{{ idx + 1 }}</TableCell>
+                <TableCell class="sku-cell">{{ item.sku }}</TableCell>
+                <TableCell>{{ item.productName || '-' }}</TableCell>
+                <TableCell class="text-right">{{ formatNumber(item.outboundQty) }}</TableCell>
+                <TableCell class="text-right">{{ formatNumber(item.currentStock) }}</TableCell>
+                <TableCell class="text-right font-bold">{{ item.turnover }}</TableCell>
+                <TableCell style="width:120px;">
                   <div class="turnover-bar-wrap">
                     <div class="turnover-bar" :style="{ width: Math.min(100, (item.turnover / maxTurnover) * 100) + '%' }" />
                   </div>
-                </td>
-              </tr>
-              <tr v-if="!turnover?.topSkus?.length">
-                <td colspan="7" class="empty-row">{{ t('wms.report.noData', 'データがありません') }}</td>
-              </tr>
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+              <TableRow v-if="!turnover?.topSkus?.length">
+                <TableCell colspan="7" class="empty-row">{{ t('wms.report.noData', 'データがありません') }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
 
@@ -101,26 +113,26 @@
       <div class="section" v-if="clientReport?.shipments?.length">
         <h3 class="section-title">{{ t('wms.report.clientShipments', '荷主別出荷実績') }}</h3>
         <div class="table-wrap">
-          <table class="o-table">
-            <thead>
-              <tr>
-                <th>{{ t('wms.report.client', '荷主') }}</th>
-                <th class="text-right">{{ t('wms.report.orderCount', '注文数') }}</th>
-                <th class="text-right">{{ t('wms.report.totalQuantity', '個数') }}</th>
-                <th class="text-right">{{ t('wms.report.totalAmount', '金額') }}</th>
-                <th class="text-right">{{ t('wms.report.shippingCost', '配送料') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in clientReport.shipments" :key="row.clientId">
-                <td>{{ row.clientId || t('wms.report.directOrder', '直接注文') }}</td>
-                <td class="text-right">{{ formatNumber(row.orderCount) }}</td>
-                <td class="text-right">{{ formatNumber(row.totalQuantity) }}</td>
-                <td class="text-right">¥{{ formatNumber(row.totalAmount) }}</td>
-                <td class="text-right">¥{{ formatNumber(row.shippingCost) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{{ t('wms.report.client', '荷主') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.report.orderCount', '注文数') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.report.totalQuantity', '個数') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.report.totalAmount', '金額') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.report.shippingCost', '配送料') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="row in clientReport.shipments" :key="row.clientId">
+                <TableCell>{{ row.clientId || t('wms.report.directOrder', '直接注文') }}</TableCell>
+                <TableCell class="text-right">{{ formatNumber(row.orderCount) }}</TableCell>
+                <TableCell class="text-right">{{ formatNumber(row.totalQuantity) }}</TableCell>
+                <TableCell class="text-right">¥{{ formatNumber(row.totalAmount) }}</TableCell>
+                <TableCell class="text-right">¥{{ formatNumber(row.shippingCost) }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
 
@@ -128,35 +140,37 @@
       <div class="section" v-if="clientReport?.inbound?.length">
         <h3 class="section-title">{{ t('wms.report.supplierInbound', '仕入先別入庫実績') }}</h3>
         <div class="table-wrap">
-          <table class="o-table">
-            <thead>
-              <tr>
-                <th>{{ t('wms.report.supplier', '仕入先') }}</th>
-                <th class="text-right">{{ t('wms.report.inboundCount', '入庫件数') }}</th>
-                <th class="text-right">{{ t('wms.report.totalLines', '行数') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in clientReport.inbound" :key="row.supplierName">
-                <td>{{ row.supplierName }}</td>
-                <td class="text-right">{{ row.inboundCount }}</td>
-                <td class="text-right">{{ row.totalLines }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{{ t('wms.report.supplier', '仕入先') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.report.inboundCount', '入庫件数') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.report.totalLines', '行数') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="row in clientReport.inbound" :key="row.supplierName">
+                <TableCell>{{ row.supplierName }}</TableCell>
+                <TableCell class="text-right">{{ row.inboundCount }}</TableCell>
+                <TableCell class="text-right">{{ row.totalLines }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
-    </OLoadingState>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
-import OLoadingState from '@/components/odoo/OLoadingState.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   fetchShipmentStats, fetchClientReport, fetchInventoryTurnover,
   type ShipmentStatsResult, type ClientReportResult, type InventoryTurnoverResult,

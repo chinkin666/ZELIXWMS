@@ -1,23 +1,23 @@
 <template>
   <div class="stocktaking-create">
-    <ControlPanel :title="t('wms.stocktaking.create', '棚卸作成')" :show-search="false">
+    <PageHeader :title="t('wms.stocktaking.create', '棚卸作成')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="$router.back()">{{ t('wms.stocktaking.back', '戻る') }}</OButton>
+        <Button variant="secondary" size="sm" @click="$router.back()">{{ t('wms.stocktaking.back', '戻る') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div class="form-card o-card">
+    <div class="rounded-lg border bg-card p-4">
       <div class="form-row">
-        <label class="form-label">{{ t('wms.stocktaking.warehouse', '倉庫') }} <span style="color: #f56c6c">*</span></label>
-        <select v-model="form.warehouseId" class="o-input" style="width:200px;">
+        <label>{{ t('wms.stocktaking.warehouse', '倉庫') }} <span style="color: #f56c6c">*</span></label>
+        <select v-model="form.warehouseId" style="width:200px;">
           <option value="">{{ t('wms.stocktaking.selectWarehousePlaceholder', '-- 倉庫を選択 / 选择仓库 --') }}</option>
           <option v-for="wh in warehouses" :key="wh._id" :value="wh._id">{{ wh.code }} - {{ wh.name }}</option>
         </select>
       </div>
 
       <div class="form-row">
-        <label class="form-label">{{ t('wms.stocktaking.type', '棚卸タイプ') }}</label>
-        <select v-model="form.type" class="o-input" style="width:200px;">
+        <label>{{ t('wms.stocktaking.type', '棚卸タイプ') }}</label>
+        <select v-model="form.type" style="width:200px;">
           <option value="full">{{ t('wms.stocktaking.typeFull', '全棚卸') }}</option>
           <option value="cycle">{{ t('wms.stocktaking.typeCycle', '循環棚卸') }}</option>
           <option value="spot">{{ t('wms.stocktaking.typeSpot', 'スポット棚卸') }}</option>
@@ -25,14 +25,14 @@
       </div>
 
       <div class="form-row">
-        <label class="form-label">{{ t('wms.stocktaking.scheduledDate', '予定日') }}</label>
-        <input v-model="form.scheduledDate" type="date" class="o-input" style="width:200px;" />
+        <label>{{ t('wms.stocktaking.scheduledDate', '予定日') }}</label>
+        <input v-model="form.scheduledDate" type="date" style="width:200px;" />
       </div>
 
       <div class="form-row">
-        <label class="form-label">{{ t('wms.stocktaking.targetLocations', '対象ロケーション') }}</label>
+        <label>{{ t('wms.stocktaking.targetLocations', '対象ロケーション') }}</label>
         <div class="tag-select">
-          <select class="o-input" style="width:200px;" @change="addLocation($event)">
+          <select style="width:200px;" @change="addLocation($event)">
             <option value="">{{ t('wms.stocktaking.selectLocationPlaceholder', '-- 選択（空=全て） --') }}</option>
             <option v-for="loc in locations" :key="loc._id" :value="loc._id" :disabled="form.targetLocations.includes(loc._id)">
               {{ loc.code }} - {{ loc.name }}
@@ -41,34 +41,36 @@
           <div class="tags">
             <span v-for="id in form.targetLocations" :key="id" class="tag">
               {{ locationName(id) }}
-              <button class="tag-remove" @click="form.targetLocations = form.targetLocations.filter(x => x !== id)">&times;</button>
+              <Button class="tag-remove" @click="form.targetLocations = form.targetLocations.filter(x => x !== id)">&times;</Button>
             </span>
           </div>
         </div>
       </div>
 
       <div class="form-row">
-        <label class="form-label">{{ t('wms.stocktaking.memo', 'メモ') }}</label>
-        <textarea v-model="form.memo" class="o-input" rows="2" style="width:100%;max-width:500px;" />
+        <label>{{ t('wms.stocktaking.memo', 'メモ') }}</label>
+        <textarea v-model="form.memo" rows="2" style="width:100%;max-width:500px;" />
       </div>
 
       <div class="form-actions">
-        <OButton variant="primary" :disabled="isSubmitting" @click="handleCreate">
+        <Button variant="default" :disabled="isSubmitting" @click="handleCreate">
           {{ isSubmitting ? t('wms.stocktaking.creating', '作成中...') : t('wms.common.create', '作成') }}
-        </OButton>
+        </Button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { onMounted, ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import { ElMessage } from 'element-plus'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { createStocktakingOrder } from '@/api/stocktakingOrder'
 import { fetchWarehouses } from '@/api/warehouse'
 import type { Warehouse } from '@/api/warehouse'
@@ -123,7 +125,7 @@ const addLocation = (e: Event) => {
 const handleCreate = async () => {
   // バリデーション / 表单验证
   if (!form.warehouseId) {
-    ElMessage.warning('倉庫を選択してください / 请选择仓库')
+    toast.showWarning('倉庫を選択してください / 请选择仓库')
     return
   }
   isSubmitting.value = true

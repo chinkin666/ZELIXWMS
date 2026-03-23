@@ -1,23 +1,23 @@
 <template>
   <div class="serial-tracking">
-    <ControlPanel :title="t('wms.warehouse.serialTracking', 'シリアル番号管理')" :show-search="false">
+    <PageHeader :title="t('wms.warehouse.serialTracking', 'シリアル番号管理')" :show-search="false">
       <template #actions>
-        <OButton variant="success" @click="openBulkCreate">{{ t('wms.warehouse.bulkCreate', '一括登録') }}</OButton>
-        <OButton variant="primary" @click="openCreate">{{ t('wms.warehouse.newCreate', '新規登録') }}</OButton>
+        <Button variant="default" @click="openBulkCreate">{{ t('wms.warehouse.bulkCreate', '一括登録') }}</Button>
+        <Button variant="default" @click="openCreate">{{ t('wms.warehouse.newCreate', '新規登録') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- Search bar -->
     <div class="search-section">
       <input
         v-model="searchText"
         type="text"
-        class="o-input"
+       
         style="flex: 1; max-width: 400px;"
         :placeholder="t('wms.warehouse.searchSerialPlaceholder', 'シリアル番号で検索...')"
         @keydown.enter="handleSearch"
       />
-      <select v-model="statusFilter" class="o-input" style="width: 160px;" @change="handleSearch">
+      <select v-model="statusFilter" style="width: 160px;" @change="handleSearch">
         <option value="">{{ t('wms.warehouse.allStatuses', '全ステータス') }}</option>
         <option value="available">{{ t('wms.warehouse.statusAvailable', '利用可能') }}</option>
         <option value="reserved">{{ t('wms.warehouse.statusReserved', '引当済') }}</option>
@@ -26,117 +26,133 @@
         <option value="damaged">{{ t('wms.warehouse.statusDamaged', '破損') }}</option>
         <option value="scrapped">{{ t('wms.warehouse.statusScrapped', '廃棄') }}</option>
       </select>
-      <OButton variant="primary" @click="handleSearch">{{ t('wms.warehouse.search', '検索') }}</OButton>
+      <Button variant="default" @click="handleSearch">{{ t('wms.warehouse.search', '検索') }}</Button>
     </div>
 
     <!-- Table -->
-    <div class="o-table-wrapper">
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th" style="width: 180px">{{ t('wms.warehouse.serialNumber', 'シリアル番号') }}</th>
-            <th class="o-table-th" style="width: 140px">{{ t('wms.warehouse.productId', '商品ID') }}</th>
-            <th class="o-table-th" style="width: 100px">{{ t('wms.warehouse.status', 'ステータス') }}</th>
-            <th class="o-table-th" style="width: 120px">{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</th>
-            <th class="o-table-th" style="width: 120px">{{ t('wms.warehouse.location', 'ロケーション') }}</th>
-            <th class="o-table-th" style="width: 110px">{{ t('wms.warehouse.receivedDate', '入荷日') }}</th>
-            <th class="o-table-th" style="width: 110px">{{ t('wms.warehouse.shippedDate', '出荷日') }}</th>
-            <th class="o-table-th" style="width: 180px">{{ t('wms.common.actions', '操作') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td class="o-table-td o-table-empty" colspan="8">{{ t('wms.common.loading', '読み込み中...') }}</td>
-          </tr>
-          <tr v-else-if="serialNumbers.length === 0">
-            <td class="o-table-td o-table-empty" colspan="8">{{ t('wms.warehouse.noData', 'データがありません') }}</td>
-          </tr>
-          <tr v-for="sn in serialNumbers" :key="sn._id" class="o-table-row">
-            <td class="o-table-td">{{ sn.serialNumber }}</td>
-            <td class="o-table-td">{{ sn.productId }}</td>
-            <td class="o-table-td">
+    <div class="rounded-md border overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width: 180px">{{ t('wms.warehouse.serialNumber', 'シリアル番号') }}</TableHead>
+            <TableHead style="width: 140px">{{ t('wms.warehouse.productId', '商品ID') }}</TableHead>
+            <TableHead style="width: 100px">{{ t('wms.warehouse.status', 'ステータス') }}</TableHead>
+            <TableHead style="width: 120px">{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</TableHead>
+            <TableHead style="width: 120px">{{ t('wms.warehouse.location', 'ロケーション') }}</TableHead>
+            <TableHead style="width: 110px">{{ t('wms.warehouse.receivedDate', '入荷日') }}</TableHead>
+            <TableHead style="width: 110px">{{ t('wms.warehouse.shippedDate', '出荷日') }}</TableHead>
+            <TableHead style="width: 180px">{{ t('wms.common.actions', '操作') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="loading">
+            <TableCell colspan="8">
+              <div class="space-y-3 p-4">
+                <Skeleton class="h-4 w-[250px] mx-auto" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+              </div>
+            </TableCell>
+          </TableRow>
+          <TableRow v-else-if="serialNumbers.length === 0">
+            <TableCell class="text-center py-8 text-muted-foreground" colspan="8">{{ t('wms.warehouse.noData', 'データがありません') }}</TableCell>
+          </TableRow>
+          <TableRow v-for="sn in serialNumbers" :key="sn._id">
+            <TableCell>{{ sn.serialNumber }}</TableCell>
+            <TableCell>{{ sn.productId }}</TableCell>
+            <TableCell>
               <span :class="'o-status-tag o-status-tag--' + statusClass(sn.status)">
                 {{ snStatusLabel(sn.status) }}
               </span>
-            </td>
-            <td class="o-table-td">{{ sn.warehouseId || '-' }}</td>
-            <td class="o-table-td">{{ sn.locationId || '-' }}</td>
-            <td class="o-table-td">{{ formatDate(sn.receivedAt) }}</td>
-            <td class="o-table-td">{{ formatDate(sn.shippedAt) }}</td>
-            <td class="o-table-td o-table-td--actions">
-              <OButton variant="primary" size="sm" @click="openEdit(sn)">{{ t('wms.common.edit', '編集') }}</OButton>
-              <OButton
+            </TableCell>
+            <TableCell>{{ sn.warehouseId || '-' }}</TableCell>
+            <TableCell>{{ sn.locationId || '-' }}</TableCell>
+            <TableCell>{{ formatDate(sn.receivedAt) }}</TableCell>
+            <TableCell>{{ formatDate(sn.shippedAt) }}</TableCell>
+            <TableCell class="text-right">
+              <Button variant="default" size="sm" @click="openEdit(sn)">{{ t('wms.common.edit', '編集') }}</Button>
+              <Button
                 v-if="sn.status !== 'scrapped'"
                 variant="secondary"
                 size="sm"
                 @click="openStatusChange(sn)"
-              >{{ t('wms.warehouse.changeStatus', 'ステータス変更') }}</OButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              >{{ t('wms.warehouse.changeStatus', 'ステータス変更') }}</Button>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <!-- Pagination -->
     <div class="o-table-pagination">
       <span class="o-table-pagination__info">{{ t('wms.warehouse.paginationInfo', `全${total}件中 ${paginationStart}-${paginationEnd}件`) }}</span>
       <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
+        <select class="h-8 text-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
           <option :value="10">10</option>
           <option :value="20">20</option>
           <option :value="50">50</option>
           <option :value="100">100</option>
         </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">&lsaquo;</OButton>
+        <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">&lsaquo;</Button>
         <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">&rsaquo;</OButton>
+        <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">&rsaquo;</Button>
       </div>
     </div>
 
     <!-- Create Dialog -->
-    <ODialog v-model="createDialogOpen" :title="t('wms.warehouse.createSerialTitle', 'シリアル番号を登録')" size="lg" @confirm="handleCreate">
+    <Dialog :open="createDialogOpen" @update:open="createDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ t('wms.warehouse.createSerialTitle', 'シリアル番号を登録') }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.serialNumber', 'シリアル番号') }} <span class="required-badge">必須</span></label>
-          <input v-model="createForm.serialNumber" type="text" class="o-input" />
+          <label>{{ t('wms.warehouse.serialNumber', 'シリアル番号') }} <span class="text-destructive text-xs">*</span></label>
+          <input v-model="createForm.serialNumber" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.productId', '商品ID') }} <span class="required-badge">必須</span></label>
-          <input v-model="createForm.productId" type="text" class="o-input" />
+          <label>{{ t('wms.warehouse.productId', '商品ID') }} <span class="text-destructive text-xs">*</span></label>
+          <input v-model="createForm.productId" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
-          <input v-model="createForm.warehouseId" type="text" class="o-input" />
+          <label>{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
+          <input v-model="createForm.warehouseId" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.location', 'ロケーション') }}</label>
-          <input v-model="createForm.locationId" type="text" class="o-input" />
+          <label>{{ t('wms.warehouse.location', 'ロケーション') }}</label>
+          <input v-model="createForm.locationId" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.lotId', 'ロットID') }}</label>
-          <input v-model="createForm.lotId" type="text" class="o-input" />
+          <label>{{ t('wms.warehouse.lotId', 'ロットID') }}</label>
+          <input v-model="createForm.lotId" type="text" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.remarks', '備考') }}</label>
-          <textarea v-model="createForm.memo" class="o-input form-textarea" rows="3" />
+          <label>{{ t('wms.warehouse.remarks', '備考') }}</label>
+          <textarea v-model="createForm.memo" class="form-textarea" rows="3" />
         </div>
       </div>
-    </ODialog>
+        <DialogFooter>
+          <Button variant="secondary" @click="createDialogOpen = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+          <Button variant="default" @click="handleCreate">{{ t('wms.common.confirm', '確定') }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Bulk Create Dialog -->
-    <ODialog v-model="bulkDialogOpen" :title="t('wms.warehouse.bulkCreateTitle', 'シリアル番号一括登録')" size="lg" @confirm="handleBulkCreate">
+    <Dialog :open="bulkDialogOpen" @update:open="bulkDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ t('wms.warehouse.bulkCreateTitle', 'シリアル番号一括登録') }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.productId', '商品ID') }} <span class="required-badge">必須</span></label>
-          <input v-model="bulkForm.productId" type="text" class="o-input" />
+          <label>{{ t('wms.warehouse.productId', '商品ID') }} <span class="text-destructive text-xs">*</span></label>
+          <input v-model="bulkForm.productId" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
-          <input v-model="bulkForm.warehouseId" type="text" class="o-input" />
+          <label>{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
+          <input v-model="bulkForm.warehouseId" type="text" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.serialNumbersPerLine', 'シリアル番号（1行に1つ）') }} <span class="required-badge">必須</span></label>
-          <textarea v-model="bulkForm.serialNumbersText" class="o-input form-textarea" rows="8" placeholder="SN001&#10;SN002&#10;SN003" />
+          <label>{{ t('wms.warehouse.serialNumbersPerLine', 'シリアル番号（1行に1つ）') }} <span class="text-destructive text-xs">*</span></label>
+          <textarea v-model="bulkForm.serialNumbersText" class="form-textarea" rows="8" placeholder="SN001&#10;SN002&#10;SN003" />
         </div>
         <div v-if="bulkResult" class="form-field form-field--full">
           <div class="bulk-result">
@@ -148,20 +164,27 @@
           </div>
         </div>
       </div>
-    </ODialog>
+        <DialogFooter>
+          <Button variant="secondary" @click="bulkDialogOpen = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+          <Button variant="default" @click="handleBulkCreate">{{ t('wms.common.confirm', '確定') }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Status Change Dialog -->
-    <ODialog v-model="statusDialogOpen" :title="t('wms.warehouse.changeStatus', 'ステータス変更')" @confirm="handleStatusChange">
+    <Dialog :open="statusDialogOpen" @update:open="statusDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ t('wms.warehouse.changeStatus', 'ステータス変更') }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.currentStatus', '現在のステータス') }}</label>
+          <label>{{ t('wms.warehouse.currentStatus', '現在のステータス') }}</label>
           <span :class="'o-status-tag o-status-tag--' + statusClass(statusChangeTarget?.status || 'available')">
             {{ snStatusLabel(statusChangeTarget?.status || 'available') }}
           </span>
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.newStatus', '新しいステータス') }}</label>
-          <select v-model="newStatus" class="o-input">
+          <label>{{ t('wms.warehouse.newStatus', '新しいステータス') }}</label>
+          <select v-model="newStatus">
             <option value="available">{{ t('wms.warehouse.statusAvailable', '利用可能') }}</option>
             <option value="reserved">{{ t('wms.warehouse.statusReserved', '引当済') }}</option>
             <option value="shipped">{{ t('wms.warehouse.statusShipped', '出荷済') }}</option>
@@ -171,47 +194,60 @@
           </select>
         </div>
       </div>
-    </ODialog>
+        <DialogFooter>
+          <Button variant="secondary" @click="statusDialogOpen = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+          <Button variant="default" @click="handleStatusChange">{{ t('wms.common.confirm', '確定') }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Edit Dialog -->
-    <ODialog v-model="editDialogOpen" :title="t('wms.warehouse.editSerialTitle', 'シリアル番号を編集')" size="lg" @confirm="handleEdit">
+    <Dialog :open="editDialogOpen" @update:open="editDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ t('wms.warehouse.editSerialTitle', 'シリアル番号を編集') }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.serialNumber', 'シリアル番号') }}</label>
-          <input :value="editForm.serialNumber" type="text" class="o-input" readonly disabled />
+          <label>{{ t('wms.warehouse.serialNumber', 'シリアル番号') }}</label>
+          <input :value="editForm.serialNumber" type="text" readonly disabled />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.productId', '商品ID') }}</label>
-          <input :value="editForm.productId" type="text" class="o-input" readonly disabled />
+          <label>{{ t('wms.warehouse.productId', '商品ID') }}</label>
+          <input :value="editForm.productId" type="text" readonly disabled />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
-          <input v-model="editForm.warehouseId" type="text" class="o-input" />
+          <label>{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
+          <input v-model="editForm.warehouseId" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.location', 'ロケーション') }}</label>
-          <input v-model="editForm.locationId" type="text" class="o-input" />
+          <label>{{ t('wms.warehouse.location', 'ロケーション') }}</label>
+          <input v-model="editForm.locationId" type="text" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.warehouse.lotId', 'ロットID') }}</label>
-          <input v-model="editForm.lotId" type="text" class="o-input" />
+          <label>{{ t('wms.warehouse.lotId', 'ロットID') }}</label>
+          <input v-model="editForm.lotId" type="text" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">{{ t('wms.warehouse.remarks', '備考') }}</label>
-          <textarea v-model="editForm.memo" class="o-input form-textarea" rows="3" />
+          <label>{{ t('wms.warehouse.remarks', '備考') }}</label>
+          <textarea v-model="editForm.memo" class="form-textarea" rows="3" />
         </div>
       </div>
-    </ODialog>
+        <DialogFooter>
+          <Button variant="secondary" @click="editDialogOpen = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+          <Button variant="default" @click="handleEdit">{{ t('wms.common.confirm', '確定') }}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import {
   fetchSerialNumbers,
   createSerialNumber,
@@ -221,7 +257,9 @@ import {
   type SerialNumber,
   type BulkCreateResult,
 } from '@/api/serialNumber'
-
+import { ref, computed, onMounted } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 const { t } = useI18n()
 const { show: showToast } = useToast()
 

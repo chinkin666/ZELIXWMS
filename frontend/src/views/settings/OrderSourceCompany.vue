@@ -1,63 +1,48 @@
 <template>
   <div class="order-source-company">
-    <ControlPanel title="ご依頼主設定" :show-search="false">
+    <PageHeader title="ご依頼主設定" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" @click="showImportDialog = true">CSV取込</OButton>
-        <OButton variant="primary" @click="openCreate">新規追加</OButton>
+        <Button variant="secondary" @click="showImportDialog = true">CSV取込</Button>
+        <Button variant="default" @click="openCreate">新規追加</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="orderSourceCompanySearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <!-- 一覧テーブル / 一览表格 -->
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="list"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         highlight-columns-on-hover
         pagination-enabled
         pagination-mode="client"
         :page-size="20"
         :page-sizes="[10, 20, 50]"
-        :global-search-text="globalSearchText"
       />
     </div>
 
     <!-- 编辑弹窗 / 編集ダイアログ -->
-    <ODialog
-      :open="dialogVisible"
-      :title="isEditing ? 'ご依頼主を編集' : 'ご依頼主を追加'"
-      size="md"
-      @close="dialogVisible = false"
-    >
+    <Dialog :open="dialogVisible" @update:open="val => { if (!val) { dialogVisible = false } }">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? 'ご依頼主を編集' : 'ご依頼主を追加' }}</DialogTitle></DialogHeader>
       <div class="osc-form">
         <div class="osc-form-group">
-          <label class="osc-label">依頼主名 <span class="required-badge">必須</span></label>
-          <input class="o-input" v-model="editForm.senderName" placeholder="依頼主名を入力" />
+          <label class="osc-label">依頼主名 <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="editForm.senderName" placeholder="依頼主名を入力" />
         </div>
         <div class="osc-form-group">
-          <label class="osc-label">電話番号 <span class="required-badge">必須</span></label>
-          <input class="o-input" v-model="editForm.senderPhone" placeholder="例: 0312345678" />
+          <label class="osc-label">電話番号 <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="editForm.senderPhone" placeholder="例: 0312345678" />
         </div>
         <div class="osc-form-row">
           <div class="osc-form-group" style="flex:0 0 180px;">
-            <label class="osc-label">郵便番号 <span class="required-badge">必須</span></label>
+            <label class="osc-label">郵便番号 <span class="text-destructive text-xs">*</span></label>
             <div class="osc-postal-wrap">
-              <input
-                class="o-input"
-                v-model="editForm.senderPostalCode"
-                placeholder="例: 2310058"
-                maxlength="7"
-                @input="onPostalInput"
-              />
-              <button
+              <Input v-model="editForm.senderPostalCode" placeholder="例: 2310058" maxlength="7" @input="onPostalInput" />
+              <Button
+                variant="outline"
                 class="osc-postal-btn"
                 :disabled="postalLoading"
                 @click="lookupAddress"
@@ -66,44 +51,49 @@
               >
                 <svg v-if="!postalLoading" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/></svg>
                 <span v-else class="osc-postal-spinner" />
-              </button>
+              </Button>
             </div>
             <span v-if="postalMessage" class="osc-postal-msg" :class="postalMessageType">{{ postalMessage }}</span>
           </div>
           <div class="osc-form-group" style="flex:1;">
             <label class="osc-label">都道府県</label>
-            <select class="o-input" v-model="editForm.senderAddressPrefecture">
-              <option value="">選択してください</option>
-              <option v-for="p in PREFECTURES" :key="p" :value="p">{{ p }}</option>
-            </select>
+            <Select v-model="editForm.senderAddressPrefecture">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="選択してください" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="p in PREFECTURES" :key="p" :value="p">{{ p }}</SelectItem>
+        </SelectContent>
+      </Select>
           </div>
         </div>
         <div class="osc-form-group">
           <label class="osc-label">市区町村</label>
-          <input class="o-input" v-model="editForm.senderAddressCity" placeholder="自動入力" />
+          <Input v-model="editForm.senderAddressCity" placeholder="自動入力" />
         </div>
         <div class="osc-form-group">
           <label class="osc-label">町名・番地・建物</label>
-          <input class="o-input" v-model="editForm.senderAddressStreet" placeholder="町名・番地・建物名" />
+          <Input v-model="editForm.senderAddressStreet" placeholder="町名・番地・建物名" />
         </div>
         <div class="osc-form-row">
           <div class="osc-form-group">
             <label class="osc-label">発店コード1</label>
-            <input class="o-input" v-model="editForm.hatsuBaseNo1" placeholder="3桁" maxlength="3" />
+            <Input v-model="editForm.hatsuBaseNo1" placeholder="3桁" maxlength="3" />
           </div>
           <div class="osc-form-group">
             <label class="osc-label">発店コード2</label>
-            <input class="o-input" v-model="editForm.hatsuBaseNo2" placeholder="3桁" maxlength="3" />
+            <Input v-model="editForm.hatsuBaseNo2" placeholder="3桁" maxlength="3" />
           </div>
         </div>
       </div>
-      <template #footer>
-        <OButton variant="secondary" @click="dialogVisible = false">キャンセル</OButton>
-        <OButton variant="primary" :disabled="saving" @click="handleDialogSubmit">
+      <DialogFooter>
+        <Button variant="secondary" @click="dialogVisible = false">キャンセル</Button>
+        <Button variant="default" :disabled="saving" @click="handleDialogSubmit">
           {{ saving ? '保存中...' : (isEditing ? '更新' : '作成') }}
-        </OButton>
-      </template>
-    </ODialog>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+    </Dialog>
 
     <ImportDialog v-model="showImportDialog" :config-type="'order-source-company'" :passthrough="true" @import="handleImportCompanies" />
     <InputErrorDialog v-model="importErrorDialogVisible" :errors="importErrors" />
@@ -112,14 +102,12 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import ImportDialog from '@/components/import/ImportDialog.vue'
 import InputErrorDialog, { type InputRowError } from '@/components/input/InputErrorDialog.vue'
 import type { TableColumn, Operator } from '@/types/table'
@@ -133,6 +121,10 @@ import {
 } from '@/api/orderSourceCompany'
 import type { OrderSourceCompany, OrderSourceCompanyFilters } from '@/types/orderSourceCompany'
 import { lookupPostalCode } from '@/utils/postalCode'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const PREFECTURES = [
   '北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県',
@@ -410,13 +402,7 @@ async function duplicateRow(row: OrderSourceCompany) {
 }
 
 async function confirmDelete(row: OrderSourceCompany) {
-  try {
-    await ElMessageBox.confirm(
-      `「${row.senderName}」を削除してもよろしいですか？ / 确定要删除「${row.senderName}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   deleteOrderSourceCompany(row._id)
     .then(async () => {
       showToast('削除しました', 'success')
@@ -508,7 +494,7 @@ onMounted(() => loadList())
   display: flex;
   gap: 4px;
 }
-.osc-postal-wrap .o-input { flex: 1; }
+.osc-postal-wrap .{ flex: 1; }
 .osc-postal-btn {
   display: flex;
   align-items: center;

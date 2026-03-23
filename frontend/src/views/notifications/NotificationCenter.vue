@@ -1,34 +1,44 @@
 <template>
   <div class="notification-center">
-    <ControlPanel :title="t('wms.notifications.center', '通知センター')" :show-search="false">
+    <PageHeader :title="t('wms.notifications.center', '通知センター')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="markAllRead" :disabled="unreadCount === 0">
+        <Button variant="outline" size="sm" @click="markAllRead" :disabled="unreadCount === 0">
           {{ t('wms.notifications.markAllRead', 'すべて既読にする') }}
-        </OButton>
+        </Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- タブ切替 / 标签切换 -->
     <div class="tab-bar">
-      <button
+      <Button
+        :variant="activeTab === 'unread' ? 'default' : 'outline'"
         class="tab-item"
         :class="{ active: activeTab === 'unread' }"
         @click="activeTab = 'unread'; loadNotifications()"
       >
         {{ t('wms.notifications.unread', '未読') }}
         <span v-if="unreadCount > 0" class="unread-badge">{{ unreadCount }}</span>
-      </button>
-      <button
+      </Button>
+      <Button
+        :variant="activeTab === 'read' ? 'default' : 'outline'"
         class="tab-item"
         :class="{ active: activeTab === 'read' }"
         @click="activeTab = 'read'; loadNotifications()"
       >
         {{ t('wms.notifications.read', '既読') }}
-      </button>
+      </Button>
     </div>
 
     <!-- 通知一覧 / 通知列表 -->
-    <OLoadingState :loading="isLoading" :empty="!isLoading && notifications.length === 0">
+    <div v-if="isLoading" class="flex flex-col items-center gap-2 py-8">
+      <Skeleton class="h-16 w-full rounded-lg" />
+      <Skeleton class="h-16 w-full rounded-lg" />
+      <Skeleton class="h-16 w-full rounded-lg" />
+    </div>
+    <div v-else-if="!isLoading && notifications.length === 0" class="text-center py-8 text-muted-foreground">
+      データがありません
+    </div>
+    <template v-else>
       <div class="notification-list">
         <div
           v-for="item in notifications"
@@ -64,25 +74,25 @@
 
       <!-- ページネーション / 分页 -->
       <div v-if="totalPages > 1" class="pagination">
-        <OButton
-          variant="secondary"
+        <Button
+          variant="outline"
           size="sm"
           :disabled="currentPage <= 1"
           @click="currentPage--; loadNotifications()"
         >
           {{ t('wms.common.prev', '前へ') }}
-        </OButton>
+        </Button>
         <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton
-          variant="secondary"
+        <Button
+          variant="outline"
           size="sm"
           :disabled="currentPage >= totalPages"
           @click="currentPage++; loadNotifications()"
         >
           {{ t('wms.common.next', '次へ') }}
-        </OButton>
+        </Button>
       </div>
-    </OLoadingState>
+    </template>
   </div>
 </template>
 
@@ -96,9 +106,9 @@
 import { ref, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OLoadingState from '@/components/odoo/OLoadingState.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getApiBaseUrl } from '@/api/base'
 import { apiFetch } from '@/api/http'
 

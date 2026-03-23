@@ -2,22 +2,28 @@
   <div class="invoice-detail" :class="{ 'invoice-detail--print': isPrintMode }">
     <!-- 操作バー（印刷時非表示） / 操作栏（打印时隐藏） -->
     <div class="invoice-actions no-print">
-      <OButton variant="secondary" size="sm" @click="router.back()">戻る</OButton>
+      <Button variant="secondary" size="sm" @click="router.back()">戻る</Button>
       <div style="display:flex;gap:6px;">
-        <OButton
+        <Button
           v-if="invoice && (invoice.status === 'draft' || invoice.status === 'issued')"
-          variant="primary"
+          variant="default"
           size="sm"
           @click="handleMarkPaid"
         >
           入金確認
-        </OButton>
-        <OButton variant="secondary" size="sm" @click="handlePrint">印刷</OButton>
+        </Button>
+        <Button variant="secondary" size="sm" @click="handlePrint">印刷</Button>
       </div>
     </div>
 
     <!-- ローディング / 加载中 -->
-    <div v-if="loading" class="invoice-loading">読み込み中...</div>
+    <div v-if="loading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <!-- エラー / 错误 -->
     <div v-else-if="errorMsg" class="invoice-error">{{ errorMsg }}</div>
@@ -28,28 +34,30 @@
       <div class="invoice-header">
         <h1 class="invoice-title">請求書</h1>
         <div class="invoice-meta">
-          <table class="meta-table">
-            <tr>
-              <th>請求書番号</th>
-              <td>{{ invoice.invoiceNumber }}</td>
-            </tr>
-            <tr>
-              <th>発行日</th>
-              <td>{{ formatDate(invoice.issueDate) }}</td>
-            </tr>
-            <tr>
-              <th>お支払期限</th>
-              <td>{{ formatDate(invoice.dueDate) }}</td>
-            </tr>
-            <tr>
-              <th>ステータス</th>
-              <td>
+          <Table class="meta-table">
+            <TableBody>
+            <TableRow>
+              <TableHead>請求書番号</TableHead>
+              <TableCell>{{ invoice.invoiceNumber }}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableHead>発行日</TableHead>
+              <TableCell>{{ formatDate(invoice.issueDate) }}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableHead>お支払期限</TableHead>
+              <TableCell>{{ formatDate(invoice.dueDate) }}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableHead>ステータス</TableHead>
+              <TableCell>
                 <span class="invoice-status" :class="`invoice-status--${invoice.status}`">
                   {{ statusLabel(invoice.status) }}
                 </span>
-              </td>
-            </tr>
-          </table>
+              </TableCell>
+            </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
 
@@ -62,44 +70,46 @@
       <hr class="invoice-divider" />
 
       <!-- 明細テーブル / 明细表 -->
-      <table class="invoice-table">
-        <thead>
-          <tr>
-            <th class="col-desc">項目</th>
-            <th class="col-qty">数量</th>
-            <th class="col-unit">単価</th>
-            <th class="col-amount">金額</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(item, idx) in (invoice.lineItems ?? [])" :key="idx">
-            <td class="col-desc">{{ item.description }}</td>
-            <td class="col-qty">{{ (item.quantity ?? 0).toLocaleString() }}</td>
-            <td class="col-unit">&yen;{{ (item.unitPrice ?? 0).toLocaleString() }}</td>
-            <td class="col-amount">&yen;{{ (item.amount ?? 0).toLocaleString() }}</td>
-          </tr>
-          <tr v-if="invoice.lineItems?.length === 0">
-            <td colspan="4" style="text-align:center;color:#999;">明細なし</td>
-          </tr>
-        </tbody>
-      </table>
+      <Table class="invoice-table">
+        <TableHeader>
+          <TableRow>
+            <TableHead class="col-desc">項目</TableHead>
+            <TableHead class="col-qty">数量</TableHead>
+            <TableHead class="col-unit">単価</TableHead>
+            <TableHead class="col-amount">金額</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-for="(item, idx) in (invoice.lineItems ?? [])" :key="idx">
+            <TableCell class="col-desc">{{ item.description }}</TableCell>
+            <TableCell class="col-qty">{{ (item.quantity ?? 0).toLocaleString() }}</TableCell>
+            <TableCell class="col-unit">&yen;{{ (item.unitPrice ?? 0).toLocaleString() }}</TableCell>
+            <TableCell class="col-amount">&yen;{{ (item.amount ?? 0).toLocaleString() }}</TableCell>
+          </TableRow>
+          <TableRow v-if="invoice.lineItems?.length === 0">
+            <TableCell colspan="4" style="text-align:center;color:#999;">明細なし</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
 
       <!-- 合計エリア / 合计区域 -->
       <div class="invoice-totals">
-        <table class="totals-table">
-          <tr>
-            <th>小計</th>
-            <td>&yen;{{ (invoice.subtotal ?? 0).toLocaleString() }}</td>
-          </tr>
-          <tr>
-            <th>消費税（{{ Math.round((invoice.taxRate ?? 0) * 100) }}%）</th>
-            <td>&yen;{{ (invoice.taxAmount ?? 0).toLocaleString() }}</td>
-          </tr>
-          <tr class="total-row">
-            <th>合計</th>
-            <td>&yen;{{ (invoice.totalAmount ?? 0).toLocaleString() }}</td>
-          </tr>
-        </table>
+        <Table class="totals-table">
+          <TableBody>
+          <TableRow>
+            <TableHead>小計</TableHead>
+            <TableCell>&yen;{{ (invoice.subtotal ?? 0).toLocaleString() }}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableHead>消費税（{{ Math.round((invoice.taxRate ?? 0) * 100) }}%）</TableHead>
+            <TableCell>&yen;{{ (invoice.taxAmount ?? 0).toLocaleString() }}</TableCell>
+          </TableRow>
+          <TableRow class="total-row">
+            <TableHead>合計</TableHead>
+            <TableCell>&yen;{{ (invoice.totalAmount ?? 0).toLocaleString() }}</TableCell>
+          </TableRow>
+          </TableBody>
+        </Table>
       </div>
 
       <!-- 備考 / 备注 -->
@@ -117,12 +127,14 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { fetchInvoiceDetail, updateInvoiceStatus } from '@/api/billing'
 import type { InvoiceDetail, InvoiceStatus } from '@/api/billing'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const route = useRoute()
 const router = useRouter()
@@ -174,13 +186,7 @@ const loadInvoice = async () => {
 // ── 入金確認 / 确认入金 ──
 const handleMarkPaid = async () => {
   if (!invoice.value) return
-  try {
-    await ElMessageBox.confirm(
-      '入金を確認しますか？ / 确定要确认入金吗？',
-      '確認 / 确认',
-      { confirmButtonText: '確認 / 确认', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     const updated = await updateInvoiceStatus(invoice.value._id, 'paid')
     invoice.value = { ...invoice.value, ...updated }

@@ -18,40 +18,40 @@
 
     <!-- 订单表格 -->
     <div class="order-table-section">
-      <table ref="orderTableRef" class="o-list-table o-list-table-border" style="width: 100%">
-        <thead>
-          <tr>
-            <th style="width: 60px; text-align: center">No</th>
-            <th style="width: 150px">{{ t('wms.inspection.slipNumber', '伝票番号') }}</th>
-            <th style="width: 120px">{{ t('wms.inspection.carrierName', '配送業者') }}</th>
-            <th style="width: 110px">{{ t('wms.inspection.invoiceType', '送り状種類') }}</th>
-            <th style="min-width: 120px">{{ t('wms.inspection.productName', '商品名') }}</th>
-            <th style="min-width: 170px">SKU</th>
-            <th style="min-width: 220px">{{ t('wms.inspection.inspectionCode', '検品コード（バーコード）') }}</th>
-            <th style="width: 100px; text-align: center">{{ t('wms.inspection.shipmentCount', '出荷指示数') }}</th>
-            <th style="width: 80px; text-align: center">{{ t('wms.inspection.inspectedQty', '検品数') }}</th>
-            <th style="width: 80px; text-align: center">{{ t('wms.inspection.remainingQty', '残数') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
+      <Table ref="orderTableRef" style="width: 100%">
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width: 60px; text-align: center">No</TableHead>
+            <TableHead style="width: 150px">{{ t('wms.inspection.slipNumber', '伝票番号') }}</TableHead>
+            <TableHead style="width: 120px">{{ t('wms.inspection.carrierName', '配送業者') }}</TableHead>
+            <TableHead style="width: 110px">{{ t('wms.inspection.invoiceType', '送り状種類') }}</TableHead>
+            <TableHead style="min-width: 120px">{{ t('wms.inspection.productName', '商品名') }}</TableHead>
+            <TableHead style="min-width: 170px">SKU</TableHead>
+            <TableHead style="min-width: 220px">{{ t('wms.inspection.inspectionCode', '検品コード（バーコード）') }}</TableHead>
+            <TableHead style="width: 100px; text-align: center">{{ t('wms.inspection.shipmentCount', '出荷指示数') }}</TableHead>
+            <TableHead style="width: 80px; text-align: center">{{ t('wms.inspection.inspectedQty', '検品数') }}</TableHead>
+            <TableHead style="width: 80px; text-align: center">{{ t('wms.inspection.remainingQty', '残数') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow
             v-for="row in tableRows"
             :key="row.orderId"
             :class="getRowClassName(row)"
           >
-            <td style="text-align: center">{{ row.no }}</td>
-            <td>{{ row.trackingId }}</td>
-            <td>{{ row.carrierName }}</td>
-            <td>{{ row.invoiceTypeName }}</td>
-            <td>{{ row.productName }}</td>
-            <td>{{ row.sku }}</td>
-            <td>{{ row.barcode }}</td>
-            <td style="text-align: center">1</td>
-            <td style="text-align: center">{{ row.isInspected ? 1 : 0 }}</td>
-            <td style="text-align: center">{{ row.isInspected ? 0 : 1 }}</td>
-          </tr>
-        </tbody>
-      </table>
+            <TableCell style="text-align: center">{{ row.no }}</TableCell>
+            <TableCell>{{ row.trackingId }}</TableCell>
+            <TableCell>{{ row.carrierName }}</TableCell>
+            <TableCell>{{ row.invoiceTypeName }}</TableCell>
+            <TableCell>{{ row.productName }}</TableCell>
+            <TableCell>{{ row.sku }}</TableCell>
+            <TableCell>{{ row.barcode }}</TableCell>
+            <TableCell style="text-align: center">1</TableCell>
+            <TableCell style="text-align: center">{{ row.isInspected ? 1 : 0 }}</TableCell>
+            <TableCell style="text-align: center">{{ row.isInspected ? 0 : 1 }}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
   </div>
 </template>
@@ -59,6 +59,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
 import { useI18n } from '@/composables/useI18n'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import type { OrderDocument } from '@/types/order'
 
 interface TableRow {
@@ -83,7 +84,7 @@ const props = defineProps<{
   currentMatchedOrderId: string | null
 }>()
 
-const orderTableRef = ref<HTMLTableElement | null>(null)
+const orderTableRef = ref<any>(null)
 
 function getRowClassName(row: TableRow): string {
   if (row.isInspected) return 'row-inspected'
@@ -93,7 +94,7 @@ function getRowClassName(row: TableRow): string {
 
 function scrollToRow(index: number) {
   nextTick(() => {
-    const tableEl = orderTableRef.value
+    const tableEl = orderTableRef.value?.$el ?? orderTableRef.value
     if (!tableEl) return
     const rows = tableEl.querySelectorAll('tbody tr')
     if (rows[index]) {

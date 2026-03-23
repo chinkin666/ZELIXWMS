@@ -1,17 +1,17 @@
 <template>
   <div class="barcode-mgmt">
-    <ControlPanel title="バーコード管理" :show-search="false">
+    <PageHeader title="バーコード管理" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" @click="showImportPanel = !showImportPanel">
+          <Button variant="secondary" size="sm" @click="showImportPanel = !showImportPanel">
             CSV取込
-          </OButton>
-          <OButton variant="secondary" size="sm" @click="exportCsv">
+          </Button>
+          <Button variant="secondary" size="sm" @click="exportCsv">
             CSVエクスポート
-          </OButton>
+          </Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- CSV Import Panel -->
     <div v-if="showImportPanel" class="import-panel">
@@ -23,112 +23,109 @@
         <input ref="fileInputRef" type="file" accept=".csv,.txt" @change="handleFileSelect" />
         <div v-if="importPreview.length > 0" class="import-preview">
           <p>{{ importPreview.length }}件のバーコードを検出</p>
-          <table class="o-table" style="margin-top:8px;">
+          <table style="margin-top:8px;">
             <thead>
               <tr>
-                <th class="o-table-th">SKU</th>
-                <th class="o-table-th">バーコード</th>
+                <th>SKU</th>
+                <th>バーコード</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(row, i) in importPreview.slice(0, 10)" :key="i" class="o-table-row">
-                <td class="o-table-td">{{ row.sku }}</td>
-                <td class="o-table-td">{{ row.barcode }}</td>
+              <tr v-for="(row, i) in importPreview.slice(0, 10)" :key="i">
+                <td>{{ row.sku }}</td>
+                <td>{{ row.barcode }}</td>
               </tr>
               <tr v-if="importPreview.length > 10">
-                <td colspan="2" class="o-table-td" style="text-align:center;color:#909399;">
+                <td colspan="2" style="text-align:center;color:#909399;">
                   ... 他{{ importPreview.length - 10 }}件
                 </td>
               </tr>
             </tbody>
           </table>
           <div style="margin-top:8px;display:flex;gap:6px;">
-            <select v-model="importMode" class="o-input" style="width:160px;">
-              <option value="append">追加 (既存に追加)</option>
-              <option value="replace">置換 (既存を上書き)</option>
-            </select>
-            <OButton variant="primary" size="sm" :disabled="importing" @click="executeImport">
+            <Select v-model="importMode">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="append">追加 (既存に追加)</SelectItem>
+        <SelectItem value="replace">置換 (既存を上書き)</SelectItem>
+        </SelectContent>
+      </Select>
+            <Button variant="default" size="sm" :disabled="importing" @click="executeImport">
               {{ importing ? '取込中...' : '取込実行' }}
-            </OButton>
-            <OButton variant="secondary" size="sm" @click="clearImport">キャンセル</OButton>
+            </Button>
+            <Button variant="secondary" size="sm" @click="clearImport">キャンセル</Button>
           </div>
         </div>
       </div>
     </div>
 
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="barcodeManagementSearch"
-      @search="handleSearch"
-    />
-
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="products"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         pagination-enabled
         pagination-mode="client"
         :page-size="25"
         :page-sizes="[10, 25, 50, 100]"
-        :global-search-text="globalSearchText"
       />
     </div>
 
     <!-- Add Barcode Dialog -->
-    <ODialog v-model="addDialogVisible" title="バーコード追加" size="sm">
+    <Dialog :open="addDialogVisible" @update:open="addDialogVisible = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>バーコード追加</DialogTitle></DialogHeader>
       <div class="dialog-form">
         <div class="form-field">
-          <label class="form-label">商品: {{ addTarget?.sku }} - {{ addTarget?.name }}</label>
+          <label>商品: {{ addTarget?.sku }} - {{ addTarget?.name }}</label>
         </div>
         <div class="form-field">
-          <label class="form-label">バーコード</label>
-          <input
-            v-model="newBarcode"
-            type="text"
-            class="o-input"
-            placeholder="バーコードを入力"
-            @keyup.enter="handleAddBarcode"
-          />
+          <label>バーコード</label>
+          <Input v-model="newBarcode" type="text" placeholder="バーコードを入力" @keyup.enter="handleAddBarcode" />
         </div>
         <div v-if="addedBarcodes.length > 0" class="form-field">
-          <label class="form-label">追加待ち</label>
+          <label>追加待ち</label>
           <div class="barcode-list">
             <span v-for="(bc, idx) in addedBarcodes" :key="idx" class="barcode-tag">
               {{ bc }}
-              <button class="barcode-tag-remove" @click="removeAddedBarcode(idx)">&times;</button>
+              <Button class="barcode-tag-remove" @click="removeAddedBarcode(idx)">&times;</Button>
             </span>
           </div>
         </div>
-        <OButton variant="secondary" size="sm" @click="handleAddBarcode" :disabled="!newBarcode.trim()">
+        <Button variant="secondary" size="sm" @click="handleAddBarcode" :disabled="!newBarcode.trim()">
           + リストに追加
-        </OButton>
+        </Button>
       </div>
-      <template #footer>
-        <OButton variant="secondary" @click="addDialogVisible = false">キャンセル</OButton>
-        <OButton variant="primary" :disabled="addedBarcodes.length === 0 || saving" @click="saveAddedBarcodes">
+      <DialogFooter>
+        <Button variant="secondary" @click="addDialogVisible = false">キャンセル</Button>
+        <Button variant="default" :disabled="addedBarcodes.length === 0 || saving" @click="saveAddedBarcodes">
           {{ saving ? '保存中...' : '保存' }}
-        </OButton>
-      </template>
-    </ODialog>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, h, onMounted } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import OButton from '@/components/odoo/OButton.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import { fetchProducts, updateProduct } from '@/api/product'
 import type { Product } from '@/types/product'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const toast = useToast()
 const { t } = useI18n()
@@ -209,7 +206,7 @@ const tableColumns: TableColumn[] = [
     title: t('wms.common.actions', '操作'),
     width: 120,
     cellRenderer: ({ rowData }: { rowData: Product }) =>
-      h(OButton, { variant: 'primary', size: 'sm', onClick: () => openAddDialog(rowData) }, () => '追加'),
+      h(Button, { variant: 'default', size: 'sm', onClick: () => openAddDialog(rowData) }, () => '追加'),
   },
 ]
 
@@ -286,13 +283,7 @@ async function saveAddedBarcodes() {
 
 async function removeBarcode(product: Product, index: number) {
   const bc = (product.barcode || [])[index]
-  try {
-    await ElMessageBox.confirm(
-      `バーコード「${bc}」を削除してもよろしいですか？ / 确定要删除条码「${bc}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     const updated = [...(product.barcode || [])]
     updated.splice(index, 1)
@@ -527,7 +518,7 @@ onMounted(() => {
   color: var(--o-gray-600, #606266);
 }
 
-.o-input {
+.{
   padding: 6px 10px;
   border: 1px solid var(--o-border-color, #dcdfe6);
   border-radius: 4px;

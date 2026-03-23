@@ -5,46 +5,40 @@
       <!-- order-to-sheet カスタム項目管理 -->
       <template v-if="configType === 'order-to-sheet'">
         <div class="custom-target-controls">
-          <input
-            v-model="localNewField"
-            class="o-input"
-            :placeholder="t('wms.mapping.newTargetFieldName', '新しい出力項目名')"
-            style="width: 160px; margin-left: 16px"
-            @keyup.enter="handleAddCustomField"
-          />
-          <OButton variant="primary" @click="handleAddCustomField" :disabled="!localNewField.trim()">
+          <Input v-model="localNewField" :placeholder="t('wms.mapping.newTargetFieldName', '新しい出力項目名')" style="width: 160px; margin-left: 16px" @keyup.enter="handleAddCustomField" />
+          <Button variant="default" @click="handleAddCustomField" :disabled="!localNewField.trim()">
             {{ t('wms.mapping.add', '追加') }}
-          </OButton>
-          <OButton
-            variant="danger"
+          </Button>
+          <Button
+            variant="destructive"
             @click="$emit('remove-custom-field')"
             :disabled="!selectedTarget || !isCustomTargetField(selectedTarget.field)"
           >
             {{ t('wms.mapping.removeSelectedField', '選択項目を削除') }}
-          </OButton>
+          </Button>
         </div>
       </template>
     </div>
     <div class="target-table-wrap" style="height: 520px; overflow-y: auto;">
-      <table class="o-list-table target-table">
-        <thead>
-          <tr>
-            <th style="width: 70px">{{ t('wms.mapping.required', '必須') }}</th>
-            <th style="min-width: 220px">{{ t('wms.mapping.fieldName', '項目名') }}</th>
-            <th style="min-width: 240px">{{ t('wms.mapping.mappingContent', 'マッピング内容') }}</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table class="target-table">
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width: 70px">{{ t('wms.mapping.required', '必須') }}</TableHead>
+            <TableHead style="min-width: 220px">{{ t('wms.mapping.fieldName', '項目名') }}</TableHead>
+            <TableHead style="min-width: 240px">{{ t('wms.mapping.mappingContent', 'マッピング内容') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           <template v-for="row in targetRows" :key="row.field">
-            <tr
+            <TableRow
               :class="{ 'row-selected': selectedTarget?.field === row.field }"
               @click="$emit('select-target', row)"
               style="cursor: pointer"
             >
-              <td>
+              <TableCell>
                 <span v-if="row.required" class="required-badge">必須</span>
-              </td>
-              <td>
+              </TableCell>
+              <TableCell>
                 <div
                   :class="{ 'product-child-item': row.field?.startsWith('products.0') }"
                   style="display: flex; align-items: center; gap: 4px"
@@ -57,8 +51,8 @@
                     style="color: #909399; cursor: help; font-size: 14px"
                   >&#9432;</span>
                 </div>
-              </td>
-              <td>
+              </TableCell>
+              <TableCell>
                 <!-- 商品の子項目マッピング表示 -->
                 <template v-if="row.isExpandable && row.field === 'products' && row.children">
                   <div v-for="child in row.children" :key="child.field" style="margin-bottom: 4px">
@@ -76,44 +70,46 @@
                   </span>
                   <span class="pipeline-chip empty" v-else>{{ t('wms.mapping.notSet', '未設定') }}</span>
                 </template>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
             <!-- Render children rows for tree-like products -->
             <template v-if="row.isExpandable && row.children">
-              <tr
+              <TableRow
                 v-for="child in row.children"
                 :key="child.field"
                 :class="{ 'row-selected': selectedTarget?.field === child.field }"
                 @click="$emit('select-target', child)"
                 style="cursor: pointer; background-color: #f9fafc"
               >
-                <td>
+                <TableCell>
                   <span v-if="child.required" class="required-badge">必須</span>
-                </td>
-                <td>
+                </TableCell>
+                <TableCell>
                   <div class="product-child-item" style="display: flex; align-items: center; gap: 4px">
                     <span>{{ child.label || child.field }}</span>
                   </div>
-                </td>
-                <td>
+                </TableCell>
+                <TableCell>
                   <span class="pipeline-chip" v-if="mappings[child.field]">
                     {{ summaryForMapping(mappings[child.field]) }}
                   </span>
                   <span class="pipeline-chip empty" v-else>{{ t('wms.mapping.notSet', '未設定') }}</span>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             </template>
           </template>
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
 import { useI18n } from '@/composables/useI18n'
+import { Input } from '@/components/ui/input'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 const { t } = useI18n()
 
@@ -222,7 +218,7 @@ function isCustomTargetField(field: string): boolean {
   background: #f4f4f5;
   color: #909399;
 }
-.o-input {
+.{
   padding: 6px 10px;
   border: 1px solid var(--o-border-color, #dee2e6);
   border-radius: 4px;

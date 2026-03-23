@@ -1,90 +1,83 @@
 <template>
   <div class="carrier-settings">
-    <ControlPanel :title="t('wms.settings.carrierSettingsTitle', '配送業者設定')" :show-search="false">
+    <PageHeader :title="t('wms.settings.carrierSettingsTitle', '配送業者設定')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">{{ t('wms.settings.addNew', '新規追加') }}</OButton>
+        <Button variant="default" @click="openCreate">{{ t('wms.settings.addNew', '新規追加') }}</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="carrierSettingsSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="list"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         highlight-columns-on-hover
         pagination-enabled
         pagination-mode="client"
         :page-size="20"
         :page-sizes="[10, 20, 50]"
-        :global-search-text="globalSearchText"
       />
     </div>
 
     <!-- Template Settings Dialog -->
-    <ODialog :open="templateDialogVisible" :title="`${t('wms.settings.printTemplateSettings', '印刷テンプレート設定')} - ${templateEditingCarrier?.name || ''}`" @close="templateDialogVisible = false">
-      <table class="o-list-table">
-        <thead>
-          <tr>
-            <th style="width:220px">{{ t('wms.settings.waybillType') }}</th>
-            <th>{{ t('wms.settings.printTemplate') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in templateMappingList" :key="row.invoiceType">
-            <td>{{ row.invoiceType }}: {{ row.name }}</td>
-            <td>
-              <select class="o-input" v-model="row.printTemplateId" style="width:100%">
-                <option value="">{{ t('wms.settings.pleaseSelect', '選択してください') }}</option>
-                <option
-                  v-for="tpl in printTemplates"
-                  :key="tpl.id"
-                  :value="tpl.id"
-                >{{ tpl.name }}</option>
-              </select>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <template #footer>
-        <OButton variant="secondary" @click="templateDialogVisible = false">{{ t('wms.common.cancel') }}</OButton>
-        <OButton variant="primary" :disabled="templateSaving" @click="saveTemplateSettings">{{ t('wms.common.save') }}</OButton>
-      </template>
-    </ODialog>
+    <Dialog :open="templateDialogVisible" @update:open="val => { if (!val) { templateDialogVisible = false } }">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ `${t('wms.settings.printTemplateSettings', '印刷テンプレート設定')} - ${templateEditingCarrier?.name || ''}` }}</DialogTitle></DialogHeader>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width:220px">{{ t('wms.settings.waybillType') }}</TableHead>
+            <TableHead>{{ t('wms.settings.printTemplate') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-for="row in templateMappingList" :key="row.invoiceType">
+            <TableCell>{{ row.invoiceType }}: {{ row.name }}</TableCell>
+            <TableCell>
+              <Select v-model="row.printTemplateId">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="{{ t('wms.settings.pleaseSelect', '選択してください') }}" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="tpl in printTemplates" :key="tpl.id" :value="tpl.id">{{ tpl.name }}</SelectItem>
+        </SelectContent>
+      </Select>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+      <DialogFooter>
+        <Button variant="secondary" @click="templateDialogVisible = false">{{ t('wms.common.cancel') }}</Button>
+        <Button variant="default" :disabled="templateSaving" @click="saveTemplateSettings">{{ t('wms.common.save') }}</Button>
+      </DialogFooter>
+    </DialogContent>
+    </Dialog>
 
-    <ODialog
-      :open="dialogVisible"
-      :title="isEditing ? t('wms.settings.editCarrier') : t('wms.settings.addCarrier')"
-      size="xl"
-      @close="dialogVisible = false"
-    >
+    <Dialog :open="dialogVisible" @update:open="val => { if (!val) { dialogVisible = false } }">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? t('wms.settings.editCarrier') : t('wms.settings.addCarrier') }}</DialogTitle></DialogHeader>
       <div class="carrier-form">
         <!-- 基本信息区 / 基本情報エリア -->
         <div class="form-section">
           <div class="form-section-title">基本情報</div>
           <div class="form-grid">
             <div class="o-form-group">
-              <label class="form-label">配送業者コード <span class="required-badge">必須</span></label>
-              <input class="o-input" v-model="editForm.code" placeholder="例: yamato_b2" :disabled="isEditing" :class="{ 'o-input--disabled': isEditing }" />
+              <Label>配送業者コード <span class="text-destructive">*</span></Label>
+              <Input v-model="editForm.code" placeholder="例: yamato_b2" :disabled="isEditing" />
               <span v-if="isEditing" class="form-hint">コードは変更できません</span>
             </div>
             <div class="o-form-group">
-              <label class="form-label">配送業者名 <span class="required-badge">必須</span></label>
-              <input class="o-input" v-model="editForm.name" placeholder="配送業者名" />
+              <Label>配送業者名 <span class="text-destructive">*</span></Label>
+              <Input v-model="editForm.name" placeholder="配送業者名" />
             </div>
             <div class="o-form-group">
-              <label class="form-label">追跡番号列名</label>
-              <input class="o-input" v-model="editForm.trackingIdColumnName" placeholder="回执/実績ファイルの列名（例: 伝票番号）" />
+              <Label>追跡番号列名</Label>
+              <Input v-model="editForm.trackingIdColumnName" placeholder="回执/実績ファイルの列名（例: 伝票番号）" />
             </div>
             <div class="o-form-group">
-              <label class="form-label">有効</label>
+              <Label>有効</Label>
               <label class="o-toggle">
                 <input type="checkbox" v-model="editForm.enabled" />
                 <span class="o-toggle-slider"></span>
@@ -92,8 +85,8 @@
             </div>
           </div>
           <div class="o-form-group">
-            <label class="form-label">説明</label>
-            <textarea class="o-input" v-model="editForm.description" rows="2" placeholder="補足説明"></textarea>
+            <Label>説明</Label>
+            <textarea v-model="editForm.description" rows="2" placeholder="補足説明"></textarea>
           </div>
         </div>
 
@@ -105,13 +98,13 @@
               <p class="subtext">列名・型・最大文字数・必須・ユーザー入力可否を編集できます</p>
             </div>
             <div class="format-actions">
-              <OButton variant="secondary" size="sm" @click="addColumn">列を追加</OButton>
-              <OButton variant="secondary" size="sm" @click="resetColumnsFromEditing">リセット</OButton>
+              <Button variant="secondary" size="sm" @click="addColumn">列を追加</Button>
+              <Button variant="secondary" size="sm" @click="resetColumnsFromEditing">リセット</Button>
             </div>
           </div>
 
           <div class="format-table-wrapper">
-            <table class="o-list-table format-table">
+            <table class="format-table">
               <thead>
                 <tr>
                   <th style="width:30px;text-align:center">#</th>
@@ -127,28 +120,34 @@
               <tbody>
                 <tr v-for="(row, $index) in editForm.formatDefinition.columns" :key="row.__key">
                   <td style="text-align:center;color:var(--o-gray-400);font-size:11px;">{{ $index + 1 }}</td>
-                  <td><input class="o-input o-input--compact" v-model="row.name" placeholder="列名" /></td>
-                  <td><input class="o-input o-input--compact" v-model="row.description" placeholder="説明" /></td>
+                  <td><Input v-model="row.name" placeholder="列名" /></td>
+                  <td><Input v-model="row.description" placeholder="説明" /></td>
                   <td>
-                    <select class="o-input o-input--compact" v-model="row.type">
-                      <option value="string">文字列</option>
-                      <option value="number">数値</option>
-                      <option value="date">日付</option>
-                      <option value="boolean">真偽値</option>
-                    </select>
+                    <Select v-model="row.type">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="string">文字列</SelectItem>
+        <SelectItem value="number">数値</SelectItem>
+        <SelectItem value="date">日付</SelectItem>
+        <SelectItem value="boolean">真偽値</SelectItem>
+        </SelectContent>
+      </Select>
                   </td>
-                  <td><input class="o-input o-input--compact" v-model.number="row.maxWidth" type="number" min="1" placeholder="幅" /></td>
-                  <td style="text-align:center"><input type="checkbox" v-model="row.required" /></td>
-                  <td style="text-align:center"><input type="checkbox" v-model="row.userUploadable" /></td>
+                  <td><Input v-model.number="row.maxWidth" type="number" min="1" placeholder="幅" /></td>
+                  <td style="text-align:center"><Checkbox :checked="row.required" @update:checked="val => row.required = val" /></td>
+                  <td style="text-align:center"><Checkbox :checked="row.userUploadable" @update:checked="val => row.userUploadable = val" /></td>
                   <td>
-                    <button
-                      class="o-btn-icon o-btn-icon--danger"
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       @click="removeColumn($index)"
                       :disabled="editForm.formatDefinition.columns.length <= 1"
                       title="削除"
                     >
                       <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H5.5l1-1h3l1 1H14a1 1 0 0 1 1 1v1z"/></svg>
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               </tbody>
@@ -157,31 +156,38 @@
         </div>
       </div>
 
-      <template #footer>
-        <OButton variant="secondary" @click="dialogVisible = false">キャンセル</OButton>
-        <OButton variant="primary" :disabled="saving" @click="handleSave">
+      <DialogFooter>
+        <Button variant="secondary" @click="dialogVisible = false">キャンセル</Button>
+        <Button variant="default" :disabled="saving" @click="handleSave">
           {{ isEditing ? '更新' : '作成' }}
-        </OButton>
-      </template>
-    </ODialog>
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import { createCarrier, deleteCarrier, fetchCarriers, updateCarrier } from '@/api/carrier'
 import { fetchPrintTemplates } from '@/api/printTemplates'
 import type { Carrier, CarrierFilters, CarrierColumnConfig, CarrierService } from '@/types/carrier'
 import type { PrintTemplate } from '@/types/printTemplate'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const { t } = useI18n()
 const { show: showToast } = useToast()
@@ -276,6 +282,13 @@ const baseColumns: TableColumn[] = [
     searchType: 'string',
   },
   {
+    key: 'description',
+    dataKey: 'description',
+    title: t('wms.settings.description', '説明'),
+    width: 200,
+    fieldType: 'string',
+  },
+  {
     key: 'trackingIdColumnName',
     dataKey: 'trackingIdColumnName',
     title: t('wms.settings.trackingColumn'),
@@ -292,6 +305,27 @@ const baseColumns: TableColumn[] = [
     fieldType: 'boolean',
     searchable: true,
     searchType: 'boolean',
+  },
+  {
+    key: 'automationType',
+    dataKey: 'automationType',
+    title: t('wms.settings.automationType', '連携方式'),
+    width: 110,
+    fieldType: 'string',
+  },
+  {
+    key: 'services',
+    dataKey: 'services',
+    title: t('wms.settings.services', 'サービス'),
+    width: 110,
+    fieldType: 'string',
+  },
+  {
+    key: 'sortOrder',
+    dataKey: 'sortOrder',
+    title: t('wms.settings.sortOrder', '表示順'),
+    width: 80,
+    fieldType: 'number',
   },
   {
     key: 'formatColumns',
@@ -324,6 +358,38 @@ const tableColumns: TableColumn[] = [
             rowData.enabled ? 'ON' : 'OFF'),
       }
     }
+    if (col.key === 'automationType') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Carrier }) => {
+          const v = (rowData as any).automationType
+          const label: Record<string, string> = { csv: 'CSV', api: 'API', manual: '手動' }
+          return label[v] ?? v ?? '-'
+        },
+      }
+    }
+    if (col.key === 'services') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Carrier }) => {
+          const s = (rowData as any).services
+          if (Array.isArray(s) && s.length > 0) return `${s.length}種`
+          return '-'
+        },
+      }
+    }
+    if (col.key === 'sortOrder') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Carrier }) => (rowData as any).sortOrder ?? '-',
+      }
+    }
+    if (col.key === 'description') {
+      return {
+        ...col,
+        cellRenderer: ({ rowData }: { rowData: Carrier }) => (rowData as any).description || '-',
+      }
+    }
     if (col.key === 'formatColumns') {
       return {
         ...col,
@@ -354,14 +420,14 @@ const tableColumns: TableColumn[] = [
     width: 280,
     cellRenderer: ({ rowData }: { rowData: Carrier }) => {
       const buttons = [
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'secondary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
       ]
       if (!rowData.isBuiltIn) {
-        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateCarrier(rowData) }, () => '複製'))
+        buttons.push(h(Button, { variant: 'secondary', size: 'sm', onClick: () => duplicateCarrier(rowData) }, () => '複製'))
       }
-      buttons.push(h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openTemplateSettings(rowData) }, () => 'テンプレート'))
+      buttons.push(h(Button, { variant: 'secondary', size: 'sm', onClick: () => openTemplateSettings(rowData) }, () => 'テンプレート'))
       if (!rowData.isBuiltIn) {
-        buttons.push(h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'))
+        buttons.push(h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'))
       }
       return h('div', { style: 'display:flex;gap:4px;flex-wrap:wrap;' }, buttons)
     },
@@ -526,13 +592,7 @@ const duplicateCarrier = async (row: Carrier) => {
 }
 
 const confirmDelete = async (row: Carrier) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${row.name}」を削除してもよろしいですか？ / 确定要删除「${row.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   deleteCarrier(row._id)
     .then(async () => {
       showToast(t('wms.settings.deleted', '削除しました'), 'success')
@@ -628,7 +688,7 @@ onMounted(() => {
 }
 .table-section { width: 100%; }
 
-.o-input {
+.{
   width: 100%;
   padding: 6px 10px;
   border: 1px solid var(--o-border-color, #dcdfe6);
@@ -638,7 +698,7 @@ onMounted(() => {
   background: var(--o-view-background, #fff);
   box-sizing: border-box;
 }
-textarea.o-input { resize: vertical; }
+textarea.{ resize: vertical; }
 
 .o-form-group { margin-bottom: 1rem; }
 .form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }

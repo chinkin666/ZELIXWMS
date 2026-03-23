@@ -1,34 +1,40 @@
 <template>
   <div class="workflow-settings">
-    <ControlPanel title="ワークフロー管理 / 工作流管理" :show-search="false">
+    <PageHeader title="ワークフロー管理 / 工作流管理" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">新規作成 / 新建</OButton>
+        <Button variant="default" @click="openCreate">新規作成 / 新建</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- ワークフロー一覧 / 工作流列表 -->
     <div class="table-section">
-      <div v-if="loading" class="loading-state">読み込み中... / 加载中...</div>
+      <div v-if="loading" class="space-y-3 p-4">
+        <Skeleton class="h-4 w-[250px]" />
+        <Skeleton class="h-4 w-[200px]" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+        <Skeleton class="h-10 w-full" />
+      </div>
       <div v-else-if="workflows.length === 0" class="empty-state">
         ワークフローがありません / 没有工作流
       </div>
-      <div class="o-table-wrapper" v-else>
-        <table class="o-table">
-          <thead>
-            <tr>
-              <th class="o-table-th" style="width: 60px">状態 / 状态</th>
-              <th class="o-table-th" style="width: 180px">名称 / 名称</th>
-              <th class="o-table-th" style="width: 160px">トリガーイベント / 触发事件</th>
-              <th class="o-table-th" style="width: 80px">アクション数 / 动作数</th>
-              <th class="o-table-th" style="width: 100px">最終実行 / 最后运行</th>
-              <th class="o-table-th" style="width: 80px">実行結果 / 运行结果</th>
-              <th class="o-table-th" style="width: 60px">実行回数 / 运行次数</th>
-              <th class="o-table-th" style="width: 240px">操作 / 操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="wf in workflows" :key="wf._id" class="o-table-row">
-              <td class="o-table-td">
+      <div class="rounded-md border overflow-auto" v-else>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width: 60px">状態 / 状态</TableHead>
+              <TableHead style="width: 180px">名称 / 名称</TableHead>
+              <TableHead style="width: 160px">トリガーイベント / 触发事件</TableHead>
+              <TableHead style="width: 80px">アクション数 / 动作数</TableHead>
+              <TableHead style="width: 100px">最終実行 / 最后运行</TableHead>
+              <TableHead style="width: 80px">実行結果 / 运行结果</TableHead>
+              <TableHead style="width: 60px">実行回数 / 运行次数</TableHead>
+              <TableHead style="width: 240px">操作 / 操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="wf in workflows" :key="wf._id">
+              <TableCell>
                 <span
                   :class="wf.enabled
                     ? 'o-status-tag o-status-tag--confirmed'
@@ -38,95 +44,97 @@
                 >
                   {{ wf.enabled ? 'ON' : 'OFF' }}
                 </span>
-              </td>
-              <td class="o-table-td">
+              </TableCell>
+              <TableCell>
                 <span class="wf-name">{{ wf.name }}</span>
                 <span v-if="wf.description" class="wf-desc">{{ wf.description }}</span>
-              </td>
-              <td class="o-table-td">
+              </TableCell>
+              <TableCell>
                 <code class="event-code">{{ wf.triggerEvent }}</code>
-              </td>
-              <td class="o-table-td" style="text-align: center">{{ wf.actions.length }}</td>
-              <td class="o-table-td">
+              </TableCell>
+              <TableCell style="text-align: center">{{ wf.actions.length }}</TableCell>
+              <TableCell>
                 <span v-if="wf.lastRunAt" class="last-run">{{ formatDate(wf.lastRunAt) }}</span>
                 <span v-else class="last-run">-</span>
-              </td>
-              <td class="o-table-td">
+              </TableCell>
+              <TableCell>
                 <span v-if="wf.lastRunStatus" :class="runStatusClass(wf.lastRunStatus)">
                   {{ runStatusLabel(wf.lastRunStatus) }}
                 </span>
                 <span v-else>-</span>
-              </td>
-              <td class="o-table-td" style="text-align: center">{{ wf.runCount }}</td>
-              <td class="o-table-td">
+              </TableCell>
+              <TableCell style="text-align: center">{{ wf.runCount }}</TableCell>
+              <TableCell>
                 <div class="action-cell">
-                  <OButton
+                  <Button
                     variant="secondary"
                     size="sm"
                     :disabled="testingId === wf._id"
                     @click="handleTest(wf)"
                   >
                     {{ testingId === wf._id ? 'テスト中...' : 'テスト / 测试' }}
-                  </OButton>
-                  <OButton variant="primary" size="sm" @click="openEdit(wf)">
+                  </Button>
+                  <Button variant="default" size="sm" @click="openEdit(wf)">
                     編集 / 编辑
-                  </OButton>
-                  <OButton variant="icon-danger" size="sm" @click="confirmDelete(wf)">
+                  </Button>
+                  <Button variant="destructive" size="sm" @click="confirmDelete(wf)">
                     削除 / 删除
-                  </OButton>
+                  </Button>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
     </div>
 
     <!-- 作成・編集ダイアログ / 创建/编辑对话框 -->
-    <ODialog
-      v-model="dialogOpen"
-      :title="editingId ? 'ワークフロー編集 / 编辑工作流' : 'ワークフロー作成 / 新建工作流'"
-      size="lg"
-      @confirm="handleSave"
-    >
+    <Dialog :open="dialogOpen" @update:open="dialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ editingId ? 'ワークフロー編集 / 编辑工作流' : 'ワークフロー作成 / 新建工作流' }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field form-field--full">
-          <label class="form-label">名称 / 名称 <span class="required-badge">必須</span></label>
-          <input v-model="form.name" type="text" class="o-input" placeholder="例: 出荷完了通知 / 例: 出货完成通知" />
+          <label>名称 / 名称 <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.name" type="text" placeholder="例: 出荷完了通知 / 例: 出货完成通知" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">トリガーイベント / 触发事件 <span class="required-badge">必須</span></label>
-          <select v-model="form.triggerEvent" class="o-input">
-            <option value="" disabled>選択してください / 请选择</option>
-            <option v-for="ev in triggerEvents" :key="ev" :value="ev">{{ ev }}</option>
-          </select>
+          <label>トリガーイベント / 触发事件 <span class="text-destructive text-xs">*</span></label>
+          <Select v-model="form.triggerEvent">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="選択してください / 请选择" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="ev in triggerEvents" :key="ev" :value="ev">{{ ev }}</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">説明 / 描述</label>
-          <textarea v-model="form.description" class="o-input form-textarea" rows="2" />
+          <label>説明 / 描述</label>
+          <textarea v-model="form.description" class="form-textarea" rows="2" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">アクション定義（JSON）/ 动作定义（JSON）</label>
+          <label>アクション定義（JSON）/ 动作定义（JSON）</label>
           <textarea
             v-model="actionsJson"
-            class="o-input form-textarea mono-text"
+            class="form-textarea mono-text"
             rows="6"
             placeholder='[{"type": "email", "config": {"to": "admin@example.com"}}]'
           />
           <div v-if="actionsError" class="field-error">{{ actionsError }}</div>
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   getWorkflows,
   createWorkflow,
@@ -136,7 +144,11 @@ import {
   testWorkflow,
   type Workflow,
 } from '@/api/workflow'
-
+import { computed, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 
 // === トリガーイベント / 触发事件 ===
@@ -252,13 +264,7 @@ const handleSave = async () => {
 }
 
 const confirmDelete = async (wf: Workflow) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${wf.name}」を削除してもよろしいですか？ / 确定要删除「${wf.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   deleteWorkflow(wf._id)
     .then(async () => {
       showToast('ワークフローを削除しました / 工作流已删除', 'success')

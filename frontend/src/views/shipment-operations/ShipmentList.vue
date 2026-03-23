@@ -1,6 +1,6 @@
 <template>
   <div class="shipment-list">
-    <ControlPanel :title="t('wms.shipment.listTitle', '出荷作業一覧')" :show-search="false" />
+    <PageHeader :title="t('wms.shipment.listTitle', '出荷作業一覧')" :show-search="false" />
 
     <CarrierSelector
       v-model="selectedCarrierId"
@@ -9,7 +9,6 @@
       @carriers-loaded="handleCarriersLoaded"
     />
 
-    <OrderSearchFormWrapper
       ref="searchFormRef"
       class="search-section"
       :columns="searchColumns"
@@ -42,64 +41,67 @@
     />
 
     <!-- Plain table (same style as shipment-orders/create) -->
-    <div class="o-table-wrapper table-attached">
+    <div class="rounded-md border overflow-auto table-attached">
       <div v-if="tableSelectedKeys.length > 0" class="o-list-toolbar o-toolbar-active">
         <span class="o-selected-count">{{ t('wms.shipment.selectedCount', '{count}件選択中').replace('{count}', String(tableSelectedKeys.length)) }}</span>
       </div>
-      <table class="o-table">
-        <thead>
-          <tr>
-            <th class="o-table-th o-table-th--checkbox" style="width:40px;">
-              <input
-                type="checkbox"
-                :checked="isAllCurrentPageSelected"
-                :indeterminate="isSomeCurrentPageSelected && !isAllCurrentPageSelected"
-                @change="toggleSelectAll"
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width:40px;">
+              <Checkbox
+                :checked="isAllCurrentPageSelected ? true : (isSomeCurrentPageSelected ? 'indeterminate' : false)"
+                @update:checked="toggleSelectAll"
               />
-            </th>
-            <th class="o-table-th" style="width:90px;">{{ t('wms.shipment.status', '状態') }}</th>
-            <th class="o-table-th o-table-th--sortable" style="width:220px;" @click="handleSortClick('orderNumber')">
+            </TableHead>
+            <TableHead style="width:90px;">{{ t('wms.shipment.status', '状態') }}</TableHead>
+            <TableHead style="width:220px;" @click="handleSortClick('orderNumber')">
               {{ t('wms.shipment.orderNumber', '出荷管理番号') }}
               <span v-if="sortBy === 'orderNumber'" class="o-sort-icon">{{ sortOrder === 'asc' ? '▲' : '▼' }}</span>
-            </th>
-            <th class="o-table-th" style="width:200px;">{{ t('wms.shipment.deliveryInfo', '配送情報') }}</th>
-            <th class="o-table-th" style="width:180px;">{{ t('wms.shipment.deliveryPreference', '配送指定') }}</th>
-            <th class="o-table-th" style="width:200px;">{{ t('wms.shipment.recipient', 'お届け先') }}</th>
-            <th class="o-table-th" style="width:250px;">{{ t('wms.shipment.products', '商品') }}</th>
-            <th class="o-table-th" style="width:170px;">{{ t('wms.shipment.history', '履歴') }}</th>
-            <th class="o-table-th" style="width:220px;">{{ t('wms.common.actions', '操作') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="isLoadingOrders">
-            <td colspan="9" class="o-table-empty">{{ t('wms.common.loading', '読み込み中...') }}</td>
-          </tr>
-          <tr v-else-if="paginatedRows.length === 0">
-            <td colspan="9" class="o-table-empty">{{ t('wms.common.noData', 'データがありません') }}</td>
-          </tr>
-          <tr
+            </TableHead>
+            <TableHead style="width:200px;">{{ t('wms.shipment.deliveryInfo', '配送情報') }}</TableHead>
+            <TableHead style="width:180px;">{{ t('wms.shipment.deliveryPreference', '配送指定') }}</TableHead>
+            <TableHead style="width:200px;">{{ t('wms.shipment.recipient', 'お届け先') }}</TableHead>
+            <TableHead style="width:250px;">{{ t('wms.shipment.products', '商品') }}</TableHead>
+            <TableHead style="width:170px;">{{ t('wms.shipment.history', '履歴') }}</TableHead>
+            <TableHead style="width:220px;">{{ t('wms.common.actions', '操作') }}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-if="isLoadingOrders">
+            <TableCell colspan="9">
+              <div class="space-y-3 p-4">
+                <Skeleton class="h-4 w-[250px] mx-auto" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+              </div>
+            </TableCell>
+          </TableRow>
+          <TableRow v-else-if="paginatedRows.length === 0">
+            <TableCell colspan="9" class="text-center py-8 text-muted-foreground">{{ t('wms.common.noData', 'データがありません') }}</TableCell>
+          </TableRow>
+          <TableRow
             v-for="row in paginatedRows"
             :key="row._id"
-            class="o-table-row"
-            :class="{ 'o-table-row--selected': tableSelectedKeys.includes(String(row._id)) }"
+            :class="{ 'bg-accent': tableSelectedKeys.includes(String(row._id)) }"
           >
-            <td class="o-table-td o-table-td--checkbox">
-              <input
-                type="checkbox"
+            <TableCell>
+              <Checkbox
                 :checked="tableSelectedKeys.includes(String(row._id))"
-                @change="toggleRowSelection(row)"
+                @update:checked="() => toggleRowSelection(row)"
               />
-            </td>
-            <td class="o-table-td o-table-td--status">
+            </TableCell>
+            <TableCell>
               <div class="status-cell">
                 <span v-if="row.statusConfirmed" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipment.confirmed', '確定済') }}</span>
                 <span v-if="row.statusCarrierReceived" class="o-status-tag o-status-tag--issued">{{ t('wms.shipment.invoiceIssued', '送り状発行済') }}</span>
                 <span v-if="row.statusPrinted" class="o-status-tag o-status-tag--printed">{{ t('wms.shipment.printed', '印刷済') }}</span>
                 <span v-if="row.statusInspected" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipment.inspected', '検品済') }}</span>
               </div>
-            </td>
+            </TableCell>
             <!-- 出荷管理番号 -->
-            <td class="o-table-td o-table-td--mgmt">
+            <TableCell>
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipment.orderNo', '出荷管理No') }}</span>
@@ -114,9 +116,9 @@
                   <span class="mgmt-cell__value">{{ row.trackingId || '-' }}</span>
                 </div>
               </div>
-            </td>
+            </TableCell>
             <!-- 配送情報 -->
-            <td class="o-table-td o-table-td--mgmt">
+            <TableCell>
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipment.carrier', '配送会社') }}</span>
@@ -131,9 +133,9 @@
                   <span class="mgmt-cell__value" :style="{ color: getCoolTypeInfo(row).color }">{{ getCoolTypeInfo(row).label }}</span>
                 </div>
               </div>
-            </td>
+            </TableCell>
             <!-- 配送指定 -->
-            <td class="o-table-td o-table-td--mgmt">
+            <TableCell>
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipment.shipPlanDate', '出荷予定日') }}</span>
@@ -148,18 +150,18 @@
                   <span class="mgmt-cell__value">{{ getTimeSlotLabel(row) }}</span>
                 </div>
               </div>
-            </td>
+            </TableCell>
             <!-- お届け先 -->
-            <td class="o-table-td">
+            <TableCell>
               <div class="recipient-cell">
                 <div>〒{{ fmtPostal(row.recipient?.postalCode) }}</div>
                 <div>{{ [row.recipient?.prefecture, row.recipient?.city, row.recipient?.street, row.recipient?.building].filter(Boolean).join(' ') || '-' }}</div>
                 <div>{{ row.recipient?.phone || '-' }}</div>
                 <div class="recipient-cell__name">{{ row.recipient?.name || '-' }} {{ row.honorific || '様' }}</div>
               </div>
-            </td>
+            </TableCell>
             <!-- 商品 -->
-            <td class="o-table-td">
+            <TableCell>
               <div class="product-list">
                 <div v-for="(p, pi) in (row.products || [])" :key="pi" class="product-item">
                   <img :src="resolveImageUrl(p.imageUrl)" class="product-item__img" alt="" @error="(e: Event) => { (e.target as HTMLImageElement).src = noImageSrc }" />
@@ -170,9 +172,9 @@
                 </div>
                 <span v-if="!row.products?.length" class="o-cell">-</span>
               </div>
-            </td>
+            </TableCell>
             <!-- 履歴 -->
-            <td class="o-table-td o-table-td--mgmt">
+            <TableCell>
               <div class="mgmt-cell">
                 <div class="mgmt-cell__row">
                   <span class="mgmt-cell__label">{{ t('wms.shipment.confirmedAt', '確定日時') }}</span>
@@ -187,35 +189,38 @@
                   <span class="mgmt-cell__value">{{ fmtDateTime(row.statusPrintedAt) }}</span>
                 </div>
               </div>
-            </td>
+            </TableCell>
             <!-- 操作 -->
-            <td class="o-table-td o-table-td--actions">
+            <TableCell class="text-right">
               <div style="display:inline-flex;gap:4px;flex-wrap:wrap;">
-                <OButton variant="primary" size="sm" @click="handleView(row)">{{ t('wms.shipment.detail', '詳細') }}</OButton>
-                <OButton variant="warning" size="sm" :disabled="isUnconfirming" @click="openUnconfirmDialog(row)">{{ t('wms.shipment.unconfirm', '確認取消') }}</OButton>
-                <OButton variant="secondary" size="sm" :disabled="isChangingInvoiceType" @click="openChangeInvoiceTypeDialog(row)">{{ t('wms.shipment.changeType', '種類変更') }}</OButton>
-                <OButton variant="success" size="sm" :disabled="!canSplitOrder(row) || isSplittingOrder" @click="openSplitOrderDialog(row)">{{ t('wms.shipment.split', '分割') }}</OButton>
+                <Button variant="default" size="sm" @click="handleView(row)">{{ t('wms.shipment.detail', '詳細') }}</Button>
+                <Button variant="warning" size="sm" :disabled="isUnconfirming" @click="openUnconfirmDialog(row)">{{ t('wms.shipment.unconfirm', '確認取消') }}</Button>
+                <Button variant="secondary" size="sm" :disabled="isChangingInvoiceType" @click="openChangeInvoiceTypeDialog(row)">{{ t('wms.shipment.changeType', '種類変更') }}</Button>
+                <Button variant="default" size="sm" :disabled="!canSplitOrder(row) || isSplittingOrder" @click="openSplitOrderDialog(row)">{{ t('wms.shipment.split', '分割') }}</Button>
               </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <!-- Pagination -->
     <div class="o-table-pagination">
       <span class="o-table-pagination__info">{{ totalRows }} {{ t('wms.common.items', '件') }}</span>
       <div class="o-table-pagination__controls">
-        <select class="o-input o-input-sm" v-model.number="pageSize" style="width:80px;">
-          <option :value="10">10</option>
-          <option :value="25">25</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-          <option :value="500">500</option>
-        </select>
-        <OButton variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--; loadOrders(false)">&lsaquo;</OButton>
+        <Select :model-value="String(pageSize)" @update:model-value="(v: string) => { pageSize = Number(v) }">
+          <SelectTrigger class="h-8 text-sm" style="width:80px;"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10</SelectItem>
+            <SelectItem value="25">25</SelectItem>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+            <SelectItem value="500">500</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--; loadOrders(false)">&lsaquo;</Button>
         <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
-        <OButton variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++; loadOrders(false)">&rsaquo;</OButton>
+        <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++; loadOrders(false)">&rsaquo;</Button>
       </div>
     </div>
 
@@ -226,73 +231,73 @@
       :total-label="t('wms.shipment.displayCount', '表示件数')"
     >
       <template #left>
-        <OButton
-          variant="success"
+        <Button
+          variant="default"
           size="sm"
           :disabled="tableSelectedKeys.length === 0 || isReserving"
           @click="handleReserveStock"
         >
           {{ isReserving ? t('wms.shipment.reserving', '引当中...') : t('wms.shipment.reserveStock', '出荷引当') }}
-        </OButton>
-        <OButton
+        </Button>
+        <Button
           variant="warning"
           size="sm"
           :disabled="tableSelectedKeys.length === 0 || isUnconfirming"
           @click="openBatchUnconfirmDialog"
         >
           {{ isUnconfirming ? t('wms.common.processing', '処理中...') : t('wms.shipment.batchUnconfirm', '一括確認取消') }}
-        </OButton>
+        </Button>
       </template>
       <template #right>
-        <OButton
+        <Button
           variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handlePickingListClick"
         >
           {{ t('wms.shipment.pickingListExport', 'ピッキングリスト出力') }}
-        </OButton>
-        <OButton
+        </Button>
+        <Button
           variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleCustomExportClick"
         >
           {{ t('wms.shipment.shipmentDetailCsv', '出荷明細リスト出力(csv)') }}
-        </OButton>
-        <OButton
+        </Button>
+        <Button
           variant="secondary"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleShipmentDetailListClick"
         >
           {{ t('wms.shipment.shipmentDetailPdf', '出荷明細リスト出力(pdf)') }}
-        </OButton>
-        <OButton
-          variant="primary"
+        </Button>
+        <Button
+          variant="default"
           :disabled="tableSelectedKeys.length === 0"
           @click="handlePrintClick"
         >
           {{ t('wms.shipment.printInvoice', '送り状印刷') }}
-        </OButton>
-        <OButton
-          variant="success"
+        </Button>
+        <Button
+          variant="default"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleOneByOneStart"
         >
           {{ t('wms.shipment.oneByOneStart', '1-1検品開始') }}
-        </OButton>
-        <OButton
+        </Button>
+        <Button
           variant="warning"
           size="sm"
           :disabled="tableSelectedKeys.length === 0"
           @click="handleNByOneStart"
         >
           {{ t('wms.shipment.nByOneStart', 'N-1検品開始') }}
-        </OButton>
-        <OButton
+        </Button>
+        <Button
           variant="secondary"
           @click="schemaAnalysisDrawerVisible = true"
         >
           {{ t('wms.shipment.dataAnalysis', 'データ分析') }}
-        </OButton>
+        </Button>
       </template>
     </OrderBottomBar>
 
@@ -360,15 +365,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { ElMessageBox } from 'element-plus'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { useI18n } from '@/composables/useI18n'
 import OrderBottomBar from '@/components/table/OrderBottomBar.vue'
-import OrderSearchFormWrapper from '@/components/search/OrderSearchFormWrapper.vue'
 import CarrierSelector from '@/components/search/CarrierSelector.vue'
 import OrderGroupSelector from '@/components/search/OrderGroupSelector.vue'
 import { UNCATEGORIZED_VALUE } from '@/types/orderGroup'
@@ -387,20 +393,20 @@ import { getOrderFieldDefinitions } from '@/types/order'
 import { useOrderCellHelpers } from '@/composables/useOrderCellHelpers'
 import { resolveImageUrl } from '@/utils/imageUrl'
 import noImageSrc from '@/assets/images/no_image.png'
-
-import { fetchShipmentOrder, fetchShipmentOrdersPage, fetchShipmentOrdersByIds } from '@/api/shipmentOrders'
+import { computed, onMounted, ref, watch } from 'vue'
+import { Badge } from '@/components/ui/badge'
 import { reserveOrdersStock } from '@/api/inventory'
-
-import type { Carrier } from '@/types/carrier'
+import { fetchShipmentOrder, fetchShipmentOrdersPage, fetchShipmentOrdersByIds } from '@/api/shipmentOrders'
 import { fetchProducts } from '@/api/product'
 import type { Product } from '@/types/product'
 import type { PrintTemplate } from '@/types/printTemplate'
 import { fetchPrintTemplates } from '@/api/printTemplates'
 import type { OrderDocument } from '@/types/order'
-
+import type { Carrier } from '@/types/carrier'
 const router = useRouter()
 const { show: showToast } = useToast()
 const { t } = useI18n()
+const { confirm } = useConfirmDialog()
 
 
 type SortOrder = 'asc' | 'desc' | null
@@ -415,14 +421,7 @@ const isReserving = ref(false)
 
 const handleReserveStock = async () => {
   if (tableSelectedKeys.value.length === 0) return
-  try {
-    await ElMessageBox.confirm(
-      `${tableSelectedKeys.value.length}件の出荷指示に対して在庫引当を実行しますか？ / 确定要对 ${tableSelectedKeys.value.length} 条出货指示执行库存预留吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '実行 / 执行', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
-
+  if (!(await confirm('この操作を実行しますか？'))) return
   isReserving.value = true
   try {
     const result = await reserveOrdersStock(tableSelectedKeys.value)

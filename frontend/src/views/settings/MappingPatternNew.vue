@@ -1,6 +1,6 @@
 <template>
   <div class="mapping-pattern-new">
-    <ControlPanel :title="route.params.id ? t('wms.mapping.editLayout', 'レイアウト編集') : t('wms.mapping.newLayout', 'レイアウト新規作成')" :show-search="false" />
+    <PageHeader :title="route.params.id ? t('wms.mapping.editLayout', 'レイアウト編集') : t('wms.mapping.newLayout', 'レイアウト新規作成')" :show-search="false" />
 
     <MappingTopBar
       :config-type="configType"
@@ -110,8 +110,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { useRoute } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'

@@ -1,5 +1,9 @@
 <template>
-  <ODialog :open="visible" :title="dialogTitle" @close="visible = false" width="600px">
+  <Dialog :open="visible" @update:open="visible = $event">
+    <DialogContent class="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>{{ dialogTitle }}</DialogTitle>
+      </DialogHeader>
     <div class="form-export-dialog">
       <div class="info-section">
         <div class="info-item">
@@ -50,32 +54,33 @@
       </div>
     </div>
 
-    <template #footer>
+    <DialogFooter>
       <div class="dialog-footer">
-        <OButton variant="secondary" @click="visible = false">キャンセル</OButton>
-        <OButton
+        <Button variant="secondary" @click="visible = false">キャンセル</Button>
+        <Button
           variant="secondary"
           :disabled="!canGenerate || printing"
           @click="handlePrint"
         >
           {{ printing ? '印刷中...' : '印刷' }}
-        </OButton>
-        <OButton
-          variant="primary"
+        </Button>
+        <Button
+          variant="default"
           :disabled="!canGenerate || generating"
           @click="handleGenerate"
         >
           {{ generating ? '生成中...' : 'PDF出力' }}
-        </OButton>
+        </Button>
       </div>
-    </template>
-  </ODialog>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { FormTemplate } from '@/types/formTemplate'
 import type { OrderDocument } from '@/types/order'
 import type { Carrier } from '@/types/carrier'

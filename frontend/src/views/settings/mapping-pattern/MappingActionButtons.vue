@@ -5,10 +5,10 @@
       <div class="o-alert o-alert-info" style="margin-bottom: 10px">
         {{ t('wms.mapping.productsExpandHint', '「商品」は展開のみ可能です。子項目（SKU、数量、商品名）を選択して設定してください。') }}
       </div>
-      <OButton variant="danger" :disabled="!selectedTarget" @click="$emit('clear-selected')">
+      <Button variant="destructive" :disabled="!selectedTarget" @click="$emit('clear-selected')">
         {{ t('wms.mapping.clear', 'クリア') }}
-      </OButton>
-      <OButton variant="danger" @click="$emit('clear-all')">{{ t('wms.mapping.clearAll', '全てクリア') }}</OButton>
+      </Button>
+      <Button variant="destructive" @click="$emit('clear-all')">{{ t('wms.mapping.clearAll', '全てクリア') }}</Button>
     </template>
 
     <!-- 荷扱いタグ・バーコード専用ボタン -->
@@ -18,107 +18,107 @@
         (configType === 'product' && selectedTarget?.field === 'barcode')
       "
     >
-      <OButton
+      <Button
         v-if="configType === 'product' && selectedTarget?.field === 'barcode'"
-        variant="primary"
+        variant="default"
         :disabled="!selectedTarget"
         @click="$emit('open-barcode-mapping')"
       >
         {{ t('wms.mapping.barcodeLayoutSettings', 'バーコードレイアウト設定') }}
-      </OButton>
-      <OButton
+      </Button>
+      <Button
         v-if="selectedTarget?.field === 'handlingTags'"
-        variant="primary"
+        variant="default"
         :disabled="!selectedTarget"
         @click="$emit('open-handling-tags-mapping')"
       >
         {{ t('wms.mapping.handlingTagsLayoutSettings', '荷扱いタグレイアウト設定') }}
-      </OButton>
-      <OButton variant="danger" :disabled="!selectedTarget" @click="$emit('clear-selected')">
+      </Button>
+      <Button variant="destructive" :disabled="!selectedTarget" @click="$emit('clear-selected')">
         {{ t('wms.mapping.clear', 'クリア') }}
-      </OButton>
-      <OButton variant="danger" @click="$emit('clear-all')">{{ t('wms.mapping.clearAll', '全てクリア') }}</OButton>
+      </Button>
+      <Button variant="destructive" @click="$emit('clear-all')">{{ t('wms.mapping.clearAll', '全てクリア') }}</Button>
     </template>
 
     <!-- 入力元が「商品」の場合 -->
     <template v-else-if="selectedSources.length === 1 && selectedSources[0]?.name === 'products'">
-      <OButton
-        variant="primary"
+      <Button
+        variant="default"
         :disabled="!selectedTarget"
         @click="$emit('open-product-to-string')"
       >
         {{ t('wms.mapping.convertProductsToString', '商品を文字列に変換') }}
-      </OButton>
-      <OButton variant="danger" :disabled="!selectedTarget" @click="$emit('clear-selected')">
+      </Button>
+      <Button variant="destructive" :disabled="!selectedTarget" @click="$emit('clear-selected')">
         {{ t('wms.mapping.clear', 'クリア') }}
-      </OButton>
-      <OButton variant="danger" @click="$emit('clear-all')">{{ t('wms.mapping.clearAll', '全てクリア') }}</OButton>
+      </Button>
+      <Button variant="destructive" @click="$emit('clear-all')">{{ t('wms.mapping.clearAll', '全てクリア') }}</Button>
     </template>
 
     <!-- 入力元が「荷扱いタグ」の場合 -->
     <template v-else-if="selectedSources.length === 1 && selectedSources[0]?.name === 'handlingTags'">
-      <OButton
-        variant="primary"
+      <Button
+        variant="default"
         :disabled="!selectedTarget"
         @click="$emit('open-handling-tags-index')"
       >
         {{ t('wms.mapping.getArrayElement', '配列要素を取得') }}
-      </OButton>
-      <OButton variant="danger" :disabled="!selectedTarget" @click="$emit('clear-selected')">
+      </Button>
+      <Button variant="destructive" :disabled="!selectedTarget" @click="$emit('clear-selected')">
         {{ t('wms.mapping.clear', 'クリア') }}
-      </OButton>
-      <OButton variant="danger" @click="$emit('clear-all')">{{ t('wms.mapping.clearAll', '全てクリア') }}</OButton>
+      </Button>
+      <Button variant="destructive" @click="$emit('clear-all')">{{ t('wms.mapping.clearAll', '全てクリア') }}</Button>
     </template>
 
     <!-- 通常ボタン -->
     <template v-else>
       <!-- order-to-sheet 項目追加ボタン -->
-      <OButton
+      <Button
         v-if="configType === 'order-to-sheet'"
-        variant="success"
+        variant="default"
         :disabled="selectedSources.length !== 1"
         @click="$emit('quick-add-from-source')"
       >
         &lt;&lt; {{ t('wms.mapping.addField', '項目を追加') }}
-      </OButton>
-      <OButton
-        variant="primary"
+      </Button>
+      <Button
+        variant="default"
         :disabled="!selectedTarget || selectedSources.length === 0"
         @click="$emit('direct-link')"
       >
         &lt;&lt; {{ t('wms.mapping.link', 'マッピング') }}
-      </OButton>
-      <OButton
+      </Button>
+      <Button
         variant="warning"
         :disabled="!selectedTarget"
         @click="$emit('add-literal')"
       >
         {{ t('wms.mapping.addLiteral', '固定値を追加') }}
-      </OButton>
-      <OButton
-        variant="primary"
+      </Button>
+      <Button
+        variant="default"
         :disabled="!selectedTarget"
         @click="$emit('open-transform-dialog')"
       >
         &lt;&lt; {{ t('wms.mapping.linkWithTransform', '変換付きマッピング') }}
-      </OButton>
-      <OButton
+      </Button>
+      <Button
         variant="secondary"
         :disabled="!selectedTarget"
         @click="$emit('open-detail-dialog')"
       >
         {{ t('wms.mapping.linkDetailSettings', 'マッピング詳細設定') }}
-      </OButton>
-      <OButton variant="danger" :disabled="!selectedTarget" @click="$emit('clear-selected')">
+      </Button>
+      <Button variant="destructive" :disabled="!selectedTarget" @click="$emit('clear-selected')">
         {{ t('wms.mapping.clear', 'クリア') }}
-      </OButton>
-      <OButton variant="danger" @click="$emit('clear-all')">{{ t('wms.mapping.clearAll', '全てクリア') }}</OButton>
+      </Button>
+      <Button variant="destructive" @click="$emit('clear-all')">{{ t('wms.mapping.clearAll', '全てクリア') }}</Button>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
 import { useI18n } from '@/composables/useI18n'
 
 const { t } = useI18n()

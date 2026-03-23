@@ -1,79 +1,126 @@
 <template>
   <div class="gift-options">
-    <ControlPanel :title="t('wms.shipment.gift.title', 'ギフト設定')" :show-search="false" />
+    <PageHeader :title="t('wms.shipment.gift.title', 'ギフト設定')" :show-search="false" />
 
     <div class="cards-section">
-      <el-row :gutter="16">
+      <div class="grid grid-cols-3 gap-4">
         <!-- ラッピングカラー / 包装颜色 -->
-        <el-col :span="8">
-          <el-card shadow="hover">
-            <template #header>
-              <span style="font-weight: 600">🎁 ラッピング / 包装</span>
-            </template>
-            <el-table :data="wrappingItems" v-loading="loading" stripe size="small">
-              <el-table-column prop="name" label="名称" min-width="120" />
-              <el-table-column prop="color" label="カラー / 颜色" width="100">
-                <template #default="{ row }">
-                  <div v-if="row.color" style="display: flex; align-items: center; gap: 6px">
-                    <span :style="{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '3px', backgroundColor: row.color, border: '1px solid #ddd' }" />
-                    {{ row.color }}
-                  </div>
-                  <span v-else>-</span>
-                </template>
-              </el-table-column>
-              <el-table-column prop="price" label="料金 / 价格" width="100" align="right">
-                <template #default="{ row }">{{ row.price != null ? `¥${row.price}` : '-' }}</template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-col>
+        <div class="rounded-lg border bg-card shadow-sm hover:shadow-md transition-shadow">
+          <div class="border-b px-4 py-3">
+            <span style="font-weight: 600">🎁 ラッピング / 包装</span>
+          </div>
+          <div class="p-4">
+            <div class="rounded-md border overflow-auto">
+              <Table class="w-full text-sm">
+                <TableHeader>
+                  <TableRow class="border-b bg-muted/50">
+                    <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground" style="min-width: 120px">名称</TableHead>
+                    <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground" style="width: 100px">カラー / 颜色</TableHead>
+                    <TableHead class="h-8 px-2 text-right font-medium text-muted-foreground" style="width: 100px">料金 / 价格</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="row in wrappingItems" :key="row._id" class="border-b hover:bg-muted/50">
+                    <TableCell class="p-2">{{ row.name }}</TableCell>
+                    <TableCell class="p-2">
+                      <div v-if="row.color" style="display: flex; align-items: center; gap: 6px">
+                        <span :style="{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '3px', backgroundColor: row.color, border: '1px solid #ddd' }" />
+                        {{ row.color }}
+                      </div>
+                      <span v-else>-</span>
+                    </TableCell>
+                    <TableCell class="p-2 text-right">{{ row.price != null ? `¥${row.price}` : '-' }}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
 
         <!-- のし / 熨斗 -->
-        <el-col :span="8">
-          <el-card shadow="hover">
-            <template #header>
-              <span style="font-weight: 600">📜 のし / 熨斗</span>
-            </template>
-            <el-table :data="noshiItems" v-loading="loading" stripe size="small">
-              <el-table-column prop="name" label="名称" min-width="140" />
-              <el-table-column prop="price" label="料金 / 价格" width="100" align="right">
-                <template #default="{ row }">{{ row.price != null ? `¥${row.price}` : '-' }}</template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-col>
+        <div class="rounded-lg border bg-card shadow-sm hover:shadow-md transition-shadow">
+          <div class="border-b px-4 py-3">
+            <span style="font-weight: 600">📜 のし / 熨斗</span>
+          </div>
+          <div class="p-4">
+            <div class="rounded-md border overflow-auto">
+              <Table class="w-full text-sm">
+                <TableHeader>
+                  <TableRow class="border-b bg-muted/50">
+                    <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground" style="min-width: 140px">名称</TableHead>
+                    <TableHead class="h-8 px-2 text-right font-medium text-muted-foreground" style="width: 100px">料金 / 价格</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="row in noshiItems" :key="row._id" class="border-b hover:bg-muted/50">
+                    <TableCell class="p-2">{{ row.name }}</TableCell>
+                    <TableCell class="p-2 text-right">{{ row.price != null ? `¥${row.price}` : '-' }}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
 
         <!-- メッセージカード / 贺卡 -->
-        <el-col :span="8">
-          <el-card shadow="hover">
-            <template #header>
-              <span style="font-weight: 600">💌 メッセージカード / 贺卡</span>
-            </template>
-            <el-table :data="messageCardItems" v-loading="loading" stripe size="small">
-              <el-table-column prop="name" label="名称" min-width="140" />
-              <el-table-column prop="price" label="料金 / 价格" width="100" align="right">
-                <template #default="{ row }">{{ row.price != null ? `¥${row.price}` : '-' }}</template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-col>
-      </el-row>
+        <div class="rounded-lg border bg-card shadow-sm hover:shadow-md transition-shadow">
+          <div class="border-b px-4 py-3">
+            <span style="font-weight: 600">💌 メッセージカード / 贺卡</span>
+          </div>
+          <div class="p-4">
+            <div class="rounded-md border overflow-auto">
+              <Table class="w-full text-sm">
+                <TableHeader>
+                  <TableRow class="border-b bg-muted/50">
+                    <TableHead class="h-8 px-2 text-left font-medium text-muted-foreground" style="min-width: 140px">名称</TableHead>
+                    <TableHead class="h-8 px-2 text-right font-medium text-muted-foreground" style="width: 100px">料金 / 价格</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="row in messageCardItems" :key="row._id" class="border-b hover:bg-muted/50">
+                    <TableCell class="p-2">{{ row.name }}</TableCell>
+                    <TableCell class="p-2 text-right">{{ row.price != null ? `¥${row.price}` : '-' }}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 全オプション一覧 / 全选项列表 -->
     <div class="table-section">
       <h3 style="margin: 8px 0">全ギフトオプション / 全部礼品选项</h3>
-      <el-table :data="items" v-loading="loading" stripe border style="width: 100%">
-        <el-table-column prop="type" :label="t('wms.shipment.gift.type', '種別')" width="140">
-          <template #default="{ row }">
-            <el-tag :type="typeTagType(row.type)" size="small">{{ typeLabel(row.type) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="name" :label="t('wms.shipment.gift.name', '名称')" min-width="200" />
-        <el-table-column prop="price" :label="t('wms.shipment.gift.price', '料金')" width="120" align="right">
-          <template #default="{ row }">{{ row.price != null ? `¥${row.price}` : '-' }}</template>
-        </el-table-column>
-      </el-table>
+      <div class="rounded-md border overflow-auto">
+        <Table class="w-full text-sm">
+          <TableHeader>
+            <TableRow class="border-b bg-muted/50">
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="width: 140px">{{ t('wms.shipment.gift.type', '種別') }}</TableHead>
+              <TableHead class="h-10 px-2 text-left font-medium text-muted-foreground" style="min-width: 200px">{{ t('wms.shipment.gift.name', '名称') }}</TableHead>
+              <TableHead class="h-10 px-2 text-right font-medium text-muted-foreground" style="width: 120px">{{ t('wms.shipment.gift.price', '料金') }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-if="loading">
+              <TableCell colspan="3">
+                <div class="space-y-3 p-4">
+                  <Skeleton class="h-4 w-[250px] mx-auto" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                </div>
+              </TableCell>
+            </TableRow>
+            <TableRow v-for="row in items" :key="row._id" class="border-b hover:bg-muted/50">
+              <TableCell class="p-2">
+                <span :class="typeTagClass(row.type)" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium">{{ typeLabel(row.type) }}</span>
+              </TableCell>
+              <TableCell class="p-2">{{ row.name }}</TableCell>
+              <TableCell class="p-2 text-right">{{ row.price != null ? `¥${row.price}` : '-' }}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
     </div>
   </div>
 </template>
@@ -84,7 +131,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
 import { http } from '@/api/http'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Card, CardContent } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import PageHeader from '@/components/shared/PageHeader.vue'
 
 const { t } = useI18n()
 const { show: showToast } = useToast()
@@ -97,13 +146,13 @@ const noshiItems = computed(() => items.value.filter((i) => i.type === 'noshi'))
 const messageCardItems = computed(() => items.value.filter((i) => i.type === 'message_card'))
 
 // タイプ表示 / 类型显示
-const typeTagType = (type: string): '' | 'success' | 'warning' | 'danger' | 'info' => {
-  const map: Record<string, '' | 'success' | 'warning' | 'danger' | 'info'> = {
-    wrapping: '',
-    noshi: 'success',
-    message_card: 'warning',
+const typeTagClass = (type: string): string => {
+  const map: Record<string, string> = {
+    wrapping: 'bg-blue-100 text-blue-800',
+    noshi: 'bg-green-100 text-green-800',
+    message_card: 'bg-yellow-100 text-yellow-800',
   }
-  return map[type] ?? 'info'
+  return map[type] ?? 'bg-muted text-muted-foreground'
 }
 
 const typeLabel = (type: string): string => {

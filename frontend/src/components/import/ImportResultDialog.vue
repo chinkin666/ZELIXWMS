@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="visibleProxy"
-    :title="dialogTitle"
-    size="lg"
-    @close="visibleProxy = false"
-  >
+  <Dialog :open="visibleProxy" @update:open="visibleProxy = $event">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>{{ dialogTitle }}</DialogTitle>
+      </DialogHeader>
     <!-- 結果摘要 -->
     <div class="summary">
       <div
@@ -73,16 +72,17 @@
       </div>
     </div>
 
-    <template #footer>
-      <OButton variant="primary" @click="visibleProxy = false">閉じる</OButton>
-    </template>
-  </ODialog>
+    <DialogFooter>
+      <Button variant="default" @click="visibleProxy = false">閉じる</Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 export type ImportRowError = {
   rowIndex: number

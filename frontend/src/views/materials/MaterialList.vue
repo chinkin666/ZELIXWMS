@@ -1,24 +1,26 @@
 <template>
   <div class="material-list">
-    <ControlPanel title="耗材一覧" :show-search="false">
+    <PageHeader title="耗材一覧" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate"><span class="o-icon">+</span> 新規追加</OButton>
+        <Button variant="default" @click="openCreate"><span>+</span> 新規追加</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- カテゴリフィルタータブ / 类别过滤标签 -->
     <div class="category-filter-bar">
-      <button
+      <Button
         v-for="tab in categoryTabs"
         :key="tab.value"
+        :variant="categoryFilter === tab.value ? 'default' : 'outline'"
+        size="sm"
         class="category-filter-btn"
         :class="{ 'category-filter-btn--active': categoryFilter === tab.value }"
         @click="onCategoryChange(tab.value as MaterialCategory | '')"
-      >{{ tab.label }}</button>
+      >{{ tab.label }}</Button>
     </div>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="list"
         row-key="_id"
@@ -33,104 +35,109 @@
     </div>
 
     <!-- 作成/編集ダイアログ / 创建/编辑对话框 -->
-    <ODialog :open="dialogVisible" :title="isEditing ? '耗材を編集' : '耗材を追加'" size="lg" @close="closeDialog">
+    <Dialog :open="dialogVisible" @update:open="(v: boolean) => { if (!v) closeDialog() }">
+      <DialogContent class="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{{ isEditing ? '耗材を編集' : '耗材を追加' }}</DialogTitle>
+        </DialogHeader>
         <form class="material-form" @submit.prevent="handleSubmit">
           <div class="form-grid">
             <div class="form-col">
               <!-- SKU -->
               <div class="form-row">
-                <label class="form-label">SKU <span class="required-badge">必須</span></label>
-                <input class="o-input" v-model="form.sku" required :disabled="isEditing" placeholder="半角英数字" />
+                <label>SKU <span class="text-destructive text-xs">*</span></label>
+                <input v-model="form.sku" required :disabled="isEditing" placeholder="半角英数字" />
               </div>
               <!-- 耗材名 / 耗材名称 -->
               <div class="form-row">
-                <label class="form-label">耗材名 <span class="required-badge">必須</span></label>
-                <input class="o-input" v-model="form.name" required placeholder="耗材名を入力" />
+                <label>耗材名 <span class="text-destructive text-xs">*</span></label>
+                <input v-model="form.name" required placeholder="耗材名を入力" />
               </div>
               <!-- カテゴリ / 类别 -->
               <div class="form-row">
-                <label class="form-label">カテゴリ <span class="required-badge">必須</span></label>
-                <select class="o-input" v-model="form.category" required>
+                <label>カテゴリ <span class="text-destructive text-xs">*</span></label>
+                <select v-model="form.category" required>
                   <option value="">選択してください</option>
                   <option v-for="opt in CATEGORY_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                 </select>
               </div>
               <!-- 単価 / 单价 -->
               <div class="form-row">
-                <label class="form-label">単価 (円)</label>
-                <input class="o-input" type="number" v-model.number="form.unitCost" min="0" step="0.01" placeholder="0" />
+                <label>単価 (円)</label>
+                <input type="number" v-model.number="form.unitCost" min="0" step="0.01" placeholder="0" />
               </div>
               <!-- 箱入数 / 箱入数量 -->
               <div class="form-row">
-                <label class="form-label">箱入数</label>
-                <input class="o-input" type="number" v-model.number="form.caseQuantity" min="1" placeholder="1ケースあたりの個数" />
+                <label>箱入数</label>
+                <input type="number" v-model.number="form.caseQuantity" min="1" placeholder="1ケースあたりの個数" />
               </div>
             </div>
             <div class="form-col">
               <!-- 在庫管理 / 库存管理 -->
               <div class="form-row">
-                <label class="form-label">在庫管理</label>
-                <select class="o-input" v-model="form.inventoryEnabled">
+                <label>在庫管理</label>
+                <select v-model="form.inventoryEnabled">
                   <option :value="false">しない</option>
                   <option :value="true">する</option>
                 </select>
               </div>
               <!-- 安全在庫 / 安全库存 -->
               <div class="form-row">
-                <label class="form-label">安全在庫</label>
-                <input class="o-input" type="number" v-model.number="form.safetyStock" min="0" placeholder="安全在庫数" />
+                <label>安全在庫</label>
+                <input type="number" v-model.number="form.safetyStock" min="0" placeholder="安全在庫数" />
               </div>
               <!-- サイズ（箱カテゴリのみ表示）/ 尺寸（仅箱类别显示） -->
               <template v-if="form.category === 'box'">
                 <div class="form-row">
-                  <label class="form-label">幅 (mm)</label>
-                  <input class="o-input" type="number" v-model.number="form.widthMm" min="0" step="0.1" />
+                  <label>幅 (mm)</label>
+                  <input type="number" v-model.number="form.widthMm" min="0" step="0.1" />
                 </div>
                 <div class="form-row">
-                  <label class="form-label">奥行 (mm)</label>
-                  <input class="o-input" type="number" v-model.number="form.depthMm" min="0" step="0.1" />
+                  <label>奥行 (mm)</label>
+                  <input type="number" v-model.number="form.depthMm" min="0" step="0.1" />
                 </div>
                 <div class="form-row">
-                  <label class="form-label">高さ (mm)</label>
-                  <input class="o-input" type="number" v-model.number="form.heightMm" min="0" step="0.1" />
+                  <label>高さ (mm)</label>
+                  <input type="number" v-model.number="form.heightMm" min="0" step="0.1" />
                 </div>
               </template>
               <!-- 仕入先コード / 供应商代码 -->
               <div class="form-row">
-                <label class="form-label">仕入先コード</label>
-                <input class="o-input" v-model="form.supplierCode" placeholder="仕入先コード" />
+                <label>仕入先コード</label>
+                <input v-model="form.supplierCode" placeholder="仕入先コード" />
               </div>
               <!-- リードタイム / 交付周期 -->
               <div class="form-row">
-                <label class="form-label">リードタイム (日)</label>
-                <input class="o-input" type="number" v-model.number="form.leadTime" min="0" placeholder="日数" />
+                <label>リードタイム (日)</label>
+                <input type="number" v-model.number="form.leadTime" min="0" placeholder="日数" />
               </div>
               <!-- メモ / 备注 -->
               <div class="form-row">
-                <label class="form-label">メモ</label>
-                <textarea class="o-input" v-model="form.memo" rows="2" />
+                <label>メモ</label>
+                <textarea v-model="form.memo" rows="2" />
               </div>
             </div>
           </div>
           <div class="form-actions">
-            <OButton variant="secondary" type="button" @click="closeDialog">キャンセル</OButton>
-            <OButton variant="primary" type="submit" :disabled="saving">
+            <Button variant="outline" type="button" @click="closeDialog">キャンセル</Button>
+            <Button variant="default" type="submit" :disabled="saving">
               {{ saving ? '保存中...' : '保存' }}
-            </OButton>
+            </Button>
           </div>
         </form>
-    </ODialog>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn } from '@/types/table'
 import {
   fetchMaterials,
@@ -139,7 +146,10 @@ import {
   deleteMaterial,
 } from '@/api/material'
 import type { Material, MaterialCategory } from '@/api/material'
-
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 
 // ---------------------------------------------------------------------------
@@ -282,8 +292,8 @@ const tableColumns: TableColumn[] = [
     width: 160,
     cellRenderer: ({ rowData }: { rowData: Material }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
-        h(OButton, { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) }, () => '編集'),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => '削除'),
       ]),
   },
 ]
@@ -409,13 +419,7 @@ const handleSubmit = async () => {
 // 削除 / 删除
 // ---------------------------------------------------------------------------
 const confirmDelete = async (item: Material) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${item.name}」を削除しますか？ / 确定要删除「${item.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteMaterial(item._id)
     showToast('削除しました', 'success')

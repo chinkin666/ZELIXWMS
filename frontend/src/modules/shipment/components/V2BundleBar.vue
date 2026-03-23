@@ -13,7 +13,6 @@
 </template>
 
 <script setup lang="ts">
-import { Edit as EditIcon } from '@element-plus/icons-vue'
 
 defineProps<{
   bundleFilterLabels: string

@@ -1,10 +1,5 @@
 <template>
-  <ODialog
-    :open="visible"
-    :title="title"
-    @close="visible = false"
-    width="560px"
-  >
+  <Dialog :open="visible" @update:open="visible = $event"><DialogContent class="sm:max-w-lg"><DialogHeader><DialogTitle>{{ title }}</DialogTitle></DialogHeader>
     <div class="bulk-edit__meta">
       <div>選択中件数：<strong>{{ selectedCount }}</strong></div>
     </div>
@@ -89,19 +84,19 @@
       <span style="margin-left: 8px; font-size: 13px; color: #606266">{{ overwrite ? '上書き' : '保持' }}</span>
     </div>
 
-    <template #footer>
+    <DialogFooter>
       <div class="bulk-edit__footer">
-        <OButton variant="secondary" @click="visible = false">キャンセル</OButton>
-        <OButton variant="primary" :disabled="!selectedColumn" @click="confirm">確定</OButton>
+        <Button variant="secondary" @click="visible = false">キャンセル</Button>
+        <Button variant="default" :disabled="!selectedColumn" @click="confirm">確定</Button>
       </div>
-    </template>
-  </ODialog>
+    </DialogFooter>
+  </DialogContent></Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 type AnyColumn = Record<string, any>
 

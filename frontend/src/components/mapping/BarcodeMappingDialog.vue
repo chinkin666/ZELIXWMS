@@ -1,5 +1,9 @@
 <template>
-  <ODialog :open="visibleProxy" title="バーコードレイアウト設定" @close="visibleProxy = false" width="600px">
+  <Dialog :open="visibleProxy" @update:open="visibleProxy = $event">
+    <DialogContent class="sm:max-w-lg">
+      <DialogHeader>
+        <DialogTitle>バーコードレイアウト設定</DialogTitle>
+      </DialogHeader>
     <div class="o-form-group">
       <label class="o-form-label">対象列</label>
       <div class="columns-list">
@@ -8,9 +12,9 @@
             <option value="" disabled>列を選択</option>
             <option v-for="c in availableColumns" :key="c" :value="c">{{ c }}</option>
           </select>
-          <OButton v-if="form.columns.length > 1" variant="danger" size="sm" @click="removeColumn(idx)" style="margin-left: 8px">削除</OButton>
+          <Button v-if="form.columns.length > 1" variant="destructive" size="sm" @click="removeColumn(idx)" style="margin-left: 8px">削除</Button>
         </div>
-        <OButton variant="primary" size="sm" @click="addColumn" style="margin-top: 8px">+ 列を追加</OButton>
+        <Button variant="default" size="sm" @click="addColumn" style="margin-top: 8px">+ 列を追加</Button>
       </div>
       <div class="hint">選択した列の値を配列（string[]）として保存します（空は除外）</div>
     </div>
@@ -23,17 +27,18 @@
       </div>
     </div>
 
-    <template #footer>
-      <OButton variant="secondary" @click="visibleProxy = false">キャンセル</OButton>
-      <OButton variant="primary" @click="handleSubmit">適用</OButton>
-    </template>
-  </ODialog>
+    <DialogFooter>
+      <Button variant="secondary" @click="visibleProxy = false">キャンセル</Button>
+      <Button variant="default" @click="handleSubmit">適用</Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { TransformMapping } from '@/api/mappingConfig'
 import { runTransformMapping } from '@/utils/transformRunner'
 

@@ -1,30 +1,23 @@
 <template>
   <div class="mapping-config-list">
-    <ControlPanel :title="t('wms.settings.mapping.title', 'レイアウト管理')" :show-search="false">
+    <PageHeader :title="t('wms.settings.mapping.title', 'レイアウト管理')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="handleAdd">{{ t('wms.settings.mapping.newLayout', '新規レイアウト') }}</OButton>
+        <Button variant="default" @click="handleAdd">{{ t('wms.settings.mapping.newLayout', '新規レイアウト') }}</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="mappingPatternsSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="mappingConfigs"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         highlight-columns-on-hover
         pagination-enabled
         pagination-mode="client"
         :page-size="10"
         :page-sizes="[10, 20, 50]"
-        :global-search-text="globalSearchText"
       />
     </div>
   </div>
@@ -32,16 +25,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted, h } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import { getAllMappingConfigs, createMappingConfig, deleteMappingConfig, type MappingConfig } from '@/api/mappingConfig'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 
 const router = useRouter()
 const { t } = useI18n()
@@ -196,9 +189,9 @@ const tableColumns: TableColumn[] = [
     width: 200,
     cellRenderer: ({ rowData }: { rowData: MappingConfig }) =>
       h('div', { class: 'action-cell' }, [
-        h(OButton, { variant: 'primary', size: 'sm', onClick: () => handleEdit(rowData) }, () => t('wms.common.edit')),
-        h(OButton, { variant: 'secondary', size: 'sm', onClick: () => duplicateMappingConfig(rowData) }, () => t('wms.settings.mapping.duplicate', '複製')),
-        h(OButton, { variant: 'danger', size: 'sm', onClick: () => confirmDelete(rowData) }, () => t('wms.common.delete')),
+        h(Button, { variant: 'default', size: 'sm', onClick: () => handleEdit(rowData) }, () => t('wms.common.edit')),
+        h(Button, { variant: 'secondary', size: 'sm', onClick: () => duplicateMappingConfig(rowData) }, () => t('wms.settings.mapping.duplicate', '複製')),
+        h(Button, { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) }, () => t('wms.common.delete')),
       ]),
   },
 ]
@@ -257,13 +250,7 @@ const duplicateMappingConfig = async (row: MappingConfig) => {
 
 // 削除確認
 const confirmDelete = async (row: MappingConfig) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${row.name}」を削除してもよろしいですか？ / 确定要删除「${row.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   deleteMappingConfig(row._id)
     .then(async () => {
       showToast(t('wms.settings.mapping.deleteSuccess', '削除しました'), 'success')

@@ -1,33 +1,33 @@
 <template>
   <div class="inventory-ledger-view">
-    <ControlPanel :title="t('wms.inventory.ledgerView', '受払一覧')" :show-search="false">
+    <PageHeader :title="t('wms.inventory.ledgerView', '受払一覧')" :show-search="false">
       <template #actions>
-        <OButton variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</OButton>
+        <Button variant="secondary" size="sm" @click="exportCsv">{{ t('wms.inventory.csvExport', 'CSV出力') }}</Button>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
     <!-- 検索フォーム / 搜索表单 -->
-    <div class="search-form o-card">
+    <div class="search-form rounded-lg border bg-card p-4">
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.startDate', '開始日') }}</label>
-          <input v-model="startDate" type="date" class="o-input" />
+          <label>{{ t('wms.inventory.startDate', '開始日') }}</label>
+          <Input v-model="startDate" type="date" />
         </div>
         <div class="form-field">
-          <label class="form-label">{{ t('wms.inventory.endDate', '終了日') }}</label>
-          <input v-model="endDate" type="date" class="o-input" />
+          <label>{{ t('wms.inventory.endDate', '終了日') }}</label>
+          <Input v-model="endDate" type="date" />
         </div>
         <div class="form-field form-field--action">
-          <OButton variant="primary" :disabled="isLoading" @click="handleSearch">
+          <Button variant="default" :disabled="isLoading" @click="handleSearch">
             {{ isLoading ? t('wms.inventory.searching', '検索中...') : t('wms.inventory.search', '検索') }}
-          </OButton>
+          </Button>
         </div>
       </div>
     </div>
 
     <!-- 受払テーブル / 收发一览表 -->
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="rows"
         row-key="sku"
@@ -42,6 +42,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 /**
  * 受払一覧画面 / 收发一览页面
  *
@@ -49,11 +50,12 @@
  * 显示指定期间的库存收发汇总。
  */
 import { computed, h, onMounted, ref } from 'vue'
+import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn } from '@/types/table'
 import { apiFetch, getApiBaseUrl } from '@/api/base'
 
@@ -209,7 +211,7 @@ onMounted(() => handleSearch())
   color: var(--o-gray-700, #303133);
 }
 
-.o-input {
+.{
   padding: 8px 12px;
   border: 1px solid var(--o-border-color, #dcdfe6);
   border-radius: var(--o-border-radius, 4px);

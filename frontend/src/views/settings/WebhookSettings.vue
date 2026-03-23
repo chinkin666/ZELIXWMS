@@ -1,112 +1,126 @@
 <template>
   <div class="webhook-settings">
-    <ControlPanel title="Webhook 管理" :show-search="false">
+    <PageHeader title="Webhook 管理" :show-search="false">
       <template #actions>
-        <OButton variant="primary" @click="openCreate">新規追加</OButton>
+        <Button variant="default" @click="openCreate">新規追加</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="webhookSettingsSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="webhooks"
         row-key="_id"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         pagination-enabled
         pagination-mode="client"
         :page-size="20"
-        :global-search-text="globalSearchText"
       />
     </div>
 
     <!-- Create/Edit Dialog -->
-    <ODialog v-model="dialogOpen" :title="isEditing ? 'Webhook を編集' : 'Webhook を追加'" size="lg" @confirm="handleSave">
+    <Dialog :open="dialogOpen" @update:open="dialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ isEditing ? 'Webhook を編集' : 'Webhook を追加' }}</DialogTitle></DialogHeader>
       <div class="form-grid">
         <div class="form-field">
-          <label class="form-label">名称 <span class="required-badge">必須</span></label>
-          <input v-model="form.name" type="text" class="o-input" placeholder="例: 出荷通知 Slack" />
+          <label>名称 <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.name" type="text" placeholder="例: 出荷通知 Slack" />
         </div>
         <div class="form-field">
-          <label class="form-label">イベント <span class="required-badge">必須</span></label>
-          <select v-model="form.event" class="o-input">
-            <option value="" disabled>選択してください</option>
-            <option v-for="ev in availableEvents" :key="ev" :value="ev">{{ ev }}</option>
-          </select>
+          <label>イベント <span class="text-destructive text-xs">*</span></label>
+          <Select v-model="form.event">
+        <SelectTrigger class="w-full">
+          <SelectValue placeholder="選択してください" />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem v-for="ev in availableEvents" :key="ev" :value="ev">{{ ev }}</SelectItem>
+        </SelectContent>
+      </Select>
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">URL <span class="required-badge">必須</span></label>
-          <input v-model="form.url" type="url" class="o-input" placeholder="https://example.com/webhook" />
+          <label>URL <span class="text-destructive text-xs">*</span></label>
+          <Input v-model="form.url" type="url" placeholder="https://example.com/webhook" />
         </div>
         <div class="form-field">
-          <label class="form-label">Secret</label>
+          <label>Secret</label>
           <div class="secret-field">
             <input
               v-model="form.secret"
               :type="showSecret ? 'text' : 'password'"
-              class="o-input"
+             
               placeholder="自動生成（空欄可）"
             />
-            <button type="button" class="secret-toggle" @click="showSecret = !showSecret">
+            <Button type="button" class="secret-toggle" @click="showSecret = !showSecret">
               {{ showSecret ? '隠す' : '表示' }}
-            </button>
+            </Button>
           </div>
         </div>
         <div class="form-field">
-          <label class="form-label">リトライ回数</label>
-          <input v-model.number="form.retry" type="number" class="o-input" min="0" max="10" />
+          <label>リトライ回数</label>
+          <Input v-model.number="form.retry" type="number" min="0" max="10" />
         </div>
         <div class="form-field form-field--full">
-          <label class="form-label">メモ</label>
-          <textarea v-model="form.description" class="o-input form-textarea" rows="2" />
+          <label>メモ</label>
+          <textarea v-model="form.description" class="form-textarea" rows="2" />
         </div>
       </div>
-    </ODialog>
+    </DialogContent>
+    </Dialog>
 
     <!-- Logs Dialog -->
-    <ODialog v-model="logsDialogOpen" :title="`配信ログ — ${logsWebhookName}`" size="xl">
+    <Dialog :open="logsDialogOpen" @update:open="logsDialogOpen = $event">
+      <DialogContent>
+        <DialogHeader><DialogTitle>{{ `配信ログ — ${logsWebhookName}` }}</DialogTitle></DialogHeader>
       <div class="logs-filter">
-        <select v-model="logsFilterStatus" class="o-input" style="width: 160px" @change="loadLogs">
-          <option value="">すべて</option>
-          <option value="success">成功</option>
-          <option value="failed">失敗</option>
-          <option value="retrying">リトライ中</option>
-        </select>
+        <Select v-model="logsFilterStatus" @update:model-value="loadLogs">
+        <SelectTrigger class="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+        <SelectItem value="__all__">すべて</SelectItem>
+        <SelectItem value="success">成功</SelectItem>
+        <SelectItem value="failed">失敗</SelectItem>
+        <SelectItem value="retrying">リトライ中</SelectItem>
+        </SelectContent>
+      </Select>
       </div>
-      <div class="o-table-wrapper" style="max-height: 400px; overflow-y: auto">
-        <table class="o-table">
+      <div class="rounded-md border overflow-auto" style="max-height: 400px; overflow-y: auto">
+        <table>
           <thead>
             <tr>
-              <th class="o-table-th" style="width: 160px">日時</th>
-              <th class="o-table-th" style="width: 80px">状態</th>
-              <th class="o-table-th" style="width: 80px">HTTP</th>
-              <th class="o-table-th" style="width: 60px">試行</th>
-              <th class="o-table-th" style="width: 80px">応答時間</th>
-              <th class="o-table-th">エラー</th>
+              <th style="width: 160px">日時</th>
+              <th style="width: 80px">状態</th>
+              <th style="width: 80px">HTTP</th>
+              <th style="width: 60px">試行</th>
+              <th style="width: 80px">応答時間</th>
+              <th>エラー</th>
             </tr>
           </thead>
           <tbody>
             <tr v-if="logsLoading">
-              <td class="o-table-td o-table-empty" colspan="6">読み込み中...</td>
+              <td colspan="6">
+                <div class="space-y-3 p-4">
+                  <Skeleton class="h-4 w-[250px] mx-auto" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                  <Skeleton class="h-10 w-full" />
+                </div>
+              </td>
             </tr>
             <tr v-else-if="logs.length === 0">
-              <td class="o-table-td o-table-empty" colspan="6">ログがありません</td>
+              <td class="text-center py-8 text-muted-foreground" colspan="6">ログがありません</td>
             </tr>
-            <tr v-for="log in logs" :key="log._id" class="o-table-row">
-              <td class="o-table-td">{{ formatDate(log.createdAt) }}</td>
-              <td class="o-table-td">
+            <tr v-for="log in logs" :key="log._id">
+              <td>{{ formatDate(log.createdAt) }}</td>
+              <td>
                 <span :class="logStatusClass(log.status)">{{ logStatusLabel(log.status) }}</span>
               </td>
-              <td class="o-table-td" style="text-align: center">{{ log.statusCode || '-' }}</td>
-              <td class="o-table-td" style="text-align: center">{{ log.attempt }}</td>
-              <td class="o-table-td" style="text-align: right">{{ log.duration }}ms</td>
-              <td class="o-table-td"><span class="error-cell">{{ log.error || '-' }}</span></td>
+              <td style="text-align: center">{{ log.statusCode || '-' }}</td>
+              <td style="text-align: center">{{ log.attempt }}</td>
+              <td style="text-align: right">{{ log.duration }}ms</td>
+              <td><span class="error-cell">{{ log.error || '-' }}</span></td>
             </tr>
           </tbody>
         </table>
@@ -115,29 +129,29 @@
       <div v-if="logsPagination.totalPages > 1" class="o-table-pagination" style="margin-top: 12px">
         <span class="o-table-pagination__info">全{{ logsPagination.total }}件</span>
         <div class="o-table-pagination__controls">
-          <OButton variant="secondary" size="sm" :disabled="logsPagination.page <= 1" @click="goToLogsPage(logsPagination.page - 1)">&lsaquo;</OButton>
+          <Button variant="secondary" size="sm" :disabled="logsPagination.page <= 1" @click="goToLogsPage(logsPagination.page - 1)">&lsaquo;</Button>
           <span class="o-table-pagination__page">{{ logsPagination.page }} / {{ logsPagination.totalPages }}</span>
-          <OButton variant="secondary" size="sm" :disabled="logsPagination.page >= logsPagination.totalPages" @click="goToLogsPage(logsPagination.page + 1)">&rsaquo;</OButton>
+          <Button variant="secondary" size="sm" :disabled="logsPagination.page >= logsPagination.totalPages" @click="goToLogsPage(logsPagination.page + 1)">&rsaquo;</Button>
         </div>
       </div>
-      <template #footer>
-        <OButton variant="secondary" @click="logsDialogOpen = false">閉じる</OButton>
-      </template>
-    </ODialog>
+      <DialogFooter>
+        <Button variant="secondary" @click="logsDialogOpen = false">閉じる</Button>
+      </DialogFooter>
+    </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   fetchWebhooks,
   createWebhook,
@@ -149,7 +163,10 @@ import {
   type Webhook,
   type WebhookLog,
 } from '@/api/webhook'
-
+import { computed, h, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+const { confirm } = useConfirmDialog()
 const { show: showToast } = useToast()
 const { t } = useI18n()
 
@@ -277,7 +294,7 @@ const tableColumns: TableColumn[] = [
     cellRenderer: ({ rowData }: { rowData: Webhook }) =>
       h('div', { class: 'action-cell' }, [
         h(
-          OButton,
+          Button,
           {
             variant: 'secondary',
             size: 'sm',
@@ -287,18 +304,18 @@ const tableColumns: TableColumn[] = [
           () => (testingId.value === rowData._id ? 'テスト中...' : 'テスト'),
         ),
         h(
-          OButton,
+          Button,
           { variant: 'secondary', size: 'sm', onClick: () => openLogs(rowData) },
           () => 'ログ',
         ),
         h(
-          OButton,
-          { variant: 'primary', size: 'sm', onClick: () => openEdit(rowData) },
+          Button,
+          { variant: 'default', size: 'sm', onClick: () => openEdit(rowData) },
           () => '編集',
         ),
         h(
-          OButton,
-          { variant: 'icon-danger', size: 'sm', onClick: () => confirmDelete(rowData) },
+          Button,
+          { variant: 'destructive', size: 'sm', onClick: () => confirmDelete(rowData) },
           () => '削除',
         ),
       ]),
@@ -393,13 +410,7 @@ const handleSave = async () => {
 }
 
 const confirmDelete = async (w: Webhook) => {
-  try {
-    await ElMessageBox.confirm(
-      `「${w.name}」を削除してもよろしいですか？ / 确定要删除「${w.name}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   deleteWebhook(w._id)
     .then(async () => {
       showToast('削除しました', 'success')
@@ -580,7 +591,7 @@ onMounted(() => {
   gap: 4px;
 }
 
-.secret-field .o-input {
+.secret-field .{
   flex: 1;
 }
 

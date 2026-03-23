@@ -27,7 +27,7 @@ const { toasts, remove } = useToast()
 <style scoped>
 .o-toast-container {
   position: fixed;
-  top: calc(var(--o-navbar-height, 46px) + 0.5rem);
+  top: calc(var(--topbar-height, 56px) + 0.5rem);
   right: 1rem;
   z-index: 2000;
   display: flex;

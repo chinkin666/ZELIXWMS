@@ -1,39 +1,55 @@
 <template>
   <div class="inbound-dashboard">
-    <ControlPanel :title="t('wms.inbound.dashboard', '入庫ダッシュボード')" :show-search="false">
+    <PageHeader :title="t('wms.inbound.dashboard', '入庫ダッシュボード')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" @click="loadData">{{ t('wms.common.refresh', '更新') }}</OButton>
-          <OButton variant="primary" size="sm" @click="$router.push('/inbound/create')">{{ t('wms.common.create', '新規作成') }}</OButton>
+          <Button variant="secondary" size="sm" @click="loadData">{{ t('wms.common.refresh', '更新') }}</Button>
+          <Button variant="default" size="sm" @click="$router.push('/inbound/create')">{{ t('wms.common.create', '新規作成') }}</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div v-if="isLoading" class="loading-state">{{ t('wms.common.loading', '読み込み中...') }}</div>
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else>
       <!-- ステータス集計カード -->
       <div class="summary-cards">
-        <div class="summary-card">
-          <div class="summary-number">{{ statusCounts.draft }}</div>
-          <div class="summary-label">{{ t('wms.inbound.statusDraft', '下書き') }}</div>
-        </div>
-        <div class="summary-card summary-card--primary">
-          <div class="summary-number">{{ statusCounts.confirmed }}</div>
-          <div class="summary-label">{{ t('wms.inbound.statusConfirmedWaiting', '確認済（検品待ち）') }}</div>
-        </div>
-        <div class="summary-card summary-card--warning">
-          <div class="summary-number">{{ statusCounts.receiving }}</div>
-          <div class="summary-label">{{ t('wms.inbound.statusReceiving', '検品中') }}</div>
-        </div>
-        <div class="summary-card summary-card--info">
-          <div class="summary-number">{{ statusCounts.received }}</div>
-          <div class="summary-label">{{ t('wms.inbound.statusReceivedWaiting', '検品済（棚入れ待ち）') }}</div>
-        </div>
-        <div class="summary-card summary-card--success">
-          <div class="summary-number">{{ statusCounts.done }}</div>
-          <div class="summary-label">{{ t('wms.inbound.statusDone', '完了') }}</div>
-        </div>
+        <Card class="summary-card text-center">
+          <CardContent class="pt-6">
+            <div class="summary-number">{{ statusCounts.draft }}</div>
+            <div class="summary-label">{{ t('wms.inbound.statusDraft', '下書き') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="summary-card summary-card--primary text-center">
+          <CardContent class="pt-6">
+            <div class="summary-number">{{ statusCounts.confirmed }}</div>
+            <div class="summary-label">{{ t('wms.inbound.statusConfirmedWaiting', '確認済（検品待ち）') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="summary-card summary-card--warning text-center">
+          <CardContent class="pt-6">
+            <div class="summary-number">{{ statusCounts.receiving }}</div>
+            <div class="summary-label">{{ t('wms.inbound.statusReceiving', '検品中') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="summary-card summary-card--info text-center">
+          <CardContent class="pt-6">
+            <div class="summary-number">{{ statusCounts.received }}</div>
+            <div class="summary-label">{{ t('wms.inbound.statusReceivedWaiting', '検品済（棚入れ待ち）') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="summary-card summary-card--success text-center">
+          <CardContent class="pt-6">
+            <div class="summary-number">{{ statusCounts.done }}</div>
+            <div class="summary-label">{{ t('wms.inbound.statusDone', '完了') }}</div>
+          </CardContent>
+        </Card>
       </div>
 
       <!-- 本日予定到着 -->
@@ -41,23 +57,25 @@
         <h2 class="section-title">{{ t('wms.inbound.todaySchedule', '本日の入庫予定') }}</h2>
         <div v-if="todayOrders.length === 0" class="empty-state">{{ t('wms.inbound.noTodaySchedule', '本日の入庫予定はありません') }}</div>
         <div v-else class="today-grid">
-          <div v-for="row in todayOrders" :key="row._id" class="o-card today-card" @click="goToOrder(row)">
-            <div class="today-header">
-              <span class="order-number">{{ row.orderNumber }}</span>
-              <span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span>
-            </div>
-            <div class="today-info">
-              <span v-if="row.supplier?.name">{{ row.supplier.name }}</span>
-              <span>{{ (row.lines ?? []).length }} {{ t('wms.inbound.lines', '行') }}</span>
-              <span>{{ totalExpected(row) }} {{ t('wms.inbound.pieces', '個') }}</span>
-            </div>
-            <div class="today-progress">
-              <div class="progress-bar">
-                <div class="progress-bar__fill" :style="{ width: orderProgress(row) + '%' }"></div>
+          <Card v-for="row in todayOrders" :key="row._id" class="today-card" @click="goToOrder(row)">
+            <CardContent class="p-4">
+              <div class="today-header">
+                <span class="order-number">{{ row.orderNumber }}</span>
+                <span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span>
               </div>
-              <span class="progress-text">{{ totalReceived(row) }} / {{ totalExpected(row) }}</span>
-            </div>
-          </div>
+              <div class="today-info">
+                <span v-if="row.supplier?.name">{{ row.supplier.name }}</span>
+                <span>{{ (row.lines ?? []).length }} {{ t('wms.inbound.lines', '行') }}</span>
+                <span>{{ totalExpected(row) }} {{ t('wms.inbound.pieces', '個') }}</span>
+              </div>
+              <div class="today-progress">
+                <div class="progress-bar">
+                  <div class="progress-bar__fill" :style="{ width: orderProgress(row) + '%' }"></div>
+                </div>
+                <span class="progress-text">{{ totalReceived(row) }} / {{ totalExpected(row) }}</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -65,64 +83,64 @@
       <div class="section">
         <h2 class="section-title">{{ t('wms.inbound.pending', '処理待ち') }}</h2>
         <div v-if="pendingOrders.length === 0" class="empty-state">{{ t('wms.inbound.noPending', '処理待ちの入庫指示はありません') }}</div>
-        <div class="o-table-wrapper" v-else>
-          <table class="o-table">
-            <thead>
-              <tr>
-                <th class="o-table-th">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</th>
-                <th class="o-table-th">{{ t('wms.inbound.status', '状態') }}</th>
-                <th class="o-table-th">{{ t('wms.inbound.supplier', '仕入先') }}</th>
-                <th class="o-table-th o-table-th--right">{{ t('wms.inbound.lineCount', '行数') }}</th>
-                <th class="o-table-th o-table-th--right">{{ t('wms.inbound.progress', '進捗') }}</th>
-                <th class="o-table-th">{{ t('wms.inbound.expectedDate', '入庫予定日') }}</th>
-                <th class="o-table-th" style="width:120px;">{{ t('wms.common.actions', '操作') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in pendingOrders" :key="row._id" class="o-table-row">
-                <td class="o-table-td"><span class="order-number">{{ row.orderNumber }}</span></td>
-                <td class="o-table-td"><span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></td>
-                <td class="o-table-td">{{ row.supplier?.name || '-' }}</td>
-                <td class="o-table-td o-table-td--right">{{ (row.lines ?? []).length }}</td>
-                <td class="o-table-td o-table-td--right">{{ totalReceived(row) }} / {{ totalExpected(row) }}</td>
-                <td class="o-table-td">{{ row.expectedDate ? formatDate(row.expectedDate) : '-' }}</td>
-                <td class="o-table-td">
-                  <OButton variant="primary" size="sm" @click="goToOrder(row)">{{ t('wms.inbound.handle', '対応') }}</OButton>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="rounded-md border overflow-auto" v-else>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</TableHead>
+                <TableHead>{{ t('wms.inbound.status', '状態') }}</TableHead>
+                <TableHead>{{ t('wms.inbound.supplier', '仕入先') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.inbound.lineCount', '行数') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.inbound.progress', '進捗') }}</TableHead>
+                <TableHead>{{ t('wms.inbound.expectedDate', '入庫予定日') }}</TableHead>
+                <TableHead style="width:120px;">{{ t('wms.common.actions', '操作') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="row in pendingOrders" :key="row._id">
+                <TableCell><span class="order-number">{{ row.orderNumber }}</span></TableCell>
+                <TableCell><span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></TableCell>
+                <TableCell>{{ row.supplier?.name || '-' }}</TableCell>
+                <TableCell class="text-right">{{ (row.lines ?? []).length }}</TableCell>
+                <TableCell class="text-right">{{ totalReceived(row) }} / {{ totalExpected(row) }}</TableCell>
+                <TableCell>{{ row.expectedDate ? formatDate(row.expectedDate) : '-' }}</TableCell>
+                <TableCell>
+                  <Button variant="default" size="sm" @click="goToOrder(row)">{{ t('wms.inbound.handle', '対応') }}</Button>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
 
       <!-- 期限切れ（overdue） -->
       <div v-if="overdueOrders.length > 0" class="section">
         <h2 class="section-title section-title--danger">{{ t('wms.inbound.overdue', '期限超過') }}</h2>
-        <div class="o-table-wrapper">
-          <table class="o-table">
-            <thead>
-              <tr>
-                <th class="o-table-th">{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</th>
-                <th class="o-table-th">{{ t('wms.inbound.status', '状態') }}</th>
-                <th class="o-table-th">{{ t('wms.inbound.supplier', '仕入先') }}</th>
-                <th class="o-table-th">{{ t('wms.inbound.expectedDate', '入庫予定日') }}</th>
-                <th class="o-table-th">{{ t('wms.inbound.daysOverdue', '経過日数') }}</th>
-                <th class="o-table-th" style="width:120px;">{{ t('wms.common.actions', '操作') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in overdueOrders" :key="row._id" class="o-table-row">
-                <td class="o-table-td"><span class="order-number">{{ row.orderNumber }}</span></td>
-                <td class="o-table-td"><span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></td>
-                <td class="o-table-td">{{ row.supplier?.name || '-' }}</td>
-                <td class="o-table-td text-danger">{{ formatDate(row.expectedDate!) }}</td>
-                <td class="o-table-td text-danger">{{ daysOverdue(row.expectedDate!) }}{{ t('wms.inbound.days', '日') }}</td>
-                <td class="o-table-td">
-                  <OButton variant="primary" size="sm" @click="goToOrder(row)">{{ t('wms.inbound.handle', '対応') }}</OButton>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="rounded-md border overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{{ t('wms.inbound.orderNumber', '入庫指示番号') }}</TableHead>
+                <TableHead>{{ t('wms.inbound.status', '状態') }}</TableHead>
+                <TableHead>{{ t('wms.inbound.supplier', '仕入先') }}</TableHead>
+                <TableHead>{{ t('wms.inbound.expectedDate', '入庫予定日') }}</TableHead>
+                <TableHead>{{ t('wms.inbound.daysOverdue', '経過日数') }}</TableHead>
+                <TableHead style="width:120px;">{{ t('wms.common.actions', '操作') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="row in overdueOrders" :key="row._id">
+                <TableCell><span class="order-number">{{ row.orderNumber }}</span></TableCell>
+                <TableCell><span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></TableCell>
+                <TableCell>{{ row.supplier?.name || '-' }}</TableCell>
+                <TableCell class="text-danger">{{ formatDate(row.expectedDate!) }}</TableCell>
+                <TableCell class="text-danger">{{ daysOverdue(row.expectedDate!) }}{{ t('wms.inbound.days', '日') }}</TableCell>
+                <TableCell>
+                  <Button variant="default" size="sm" @click="goToOrder(row)">{{ t('wms.inbound.handle', '対応') }}</Button>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </template>
@@ -130,15 +148,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { fetchInboundOrders } from '@/api/inboundOrder'
 import type { InboundOrder } from '@/types/inventory'
-
+import { computed, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()

@@ -19,8 +19,6 @@ import { useSettingsStore } from '@/stores/settings'
 import type { TableColumn, Operator } from '@/types/table'
 
 // 异步加载组件
-const SearchForm = defineAsyncComponent(() => import('@/components/search/SearchForm.vue'))
-const ClassicOrderSearchForm = defineAsyncComponent(() => import('@/components/search/classic/OrderSearchForm.vue'))
 
 interface Props {
   columns: TableColumn[]
@@ -47,7 +45,6 @@ const emits = defineEmits<{
 const settingsStore = useSettingsStore()
 
 const searchFormComponent = computed(() => {
-  return settingsStore.orderSearchStyle === 'classic' ? ClassicOrderSearchForm : SearchForm
 })
 
 const handleSearch = (payload: Record<string, { operator: Operator; value: any }>) => {

@@ -10,27 +10,27 @@
       </div>
     </div>
     <div class="bottom-bar__right">
-      <OButton
+      <Button
         variant="warning"
         :disabled="isUnconfirming"
         @click="$emit('open-unconfirm')"
       >
         {{ isUnconfirming ? t('wms.common.processing', '処理中...') : t('wms.inspection.unconfirm', '確認取消') }}
-      </OButton>
-      <OButton
+      </Button>
+      <Button
         variant="info"
         :disabled="isChangingInvoiceType"
         @click="$emit('open-change-invoice-type')"
       >
         {{ isChangingInvoiceType ? t('wms.common.processing', '処理中...') : t('wms.inspection.changeInvoiceType', '送り状種類変更') }}
-      </OButton>
+      </Button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
 
 const { t } = useI18n()
 

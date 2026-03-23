@@ -1,65 +1,89 @@
 <template>
   <div class="return-dashboard">
-    <ControlPanel :title="t('wms.returns.dashboard', '返品ダッシュボード')" :show-search="false">
+    <PageHeader :title="t('wms.returns.dashboard', '返品ダッシュボード')" :show-search="false">
       <template #actions>
         <div style="display:flex;gap:6px;">
-          <OButton variant="secondary" size="sm" @click="loadData">{{ t('wms.common.refresh', '更新') }}</OButton>
-          <OButton variant="primary" size="sm" @click="$router.push('/returns/create')">{{ t('wms.common.create', '新規作成') }}</OButton>
+          <Button variant="secondary" size="sm" @click="loadData">{{ t('wms.common.refresh', '更新') }}</Button>
+          <Button variant="default" size="sm" @click="$router.push('/returns/create')">{{ t('wms.common.create', '新規作成') }}</Button>
         </div>
       </template>
-    </ControlPanel>
+    </PageHeader>
 
-    <div v-if="isLoading" class="loading-state">{{ t('wms.common.loading', '読み込み中...') }}</div>
+    <div v-if="isLoading" class="space-y-3 p-4">
+      <Skeleton class="h-4 w-[250px]" />
+      <Skeleton class="h-4 w-[200px]" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+      <Skeleton class="h-10 w-full" />
+    </div>
 
     <template v-else-if="stats && stats.statusCounts">
       <!-- ステータス別KPIカード / 按状态KPI卡片 -->
       <div class="kpi-grid">
-        <div class="kpi-card">
-          <div class="kpi-value">{{ totalReturns }}</div>
-          <div class="kpi-label">{{ t('wms.returns.totalReturns', '返品合計') }}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-value">{{ stats.statusCounts?.draft ?? 0 }}</div>
-          <div class="kpi-label">{{ t('wms.returns.statusDraft', '下書き') }}</div>
-        </div>
-        <div class="kpi-card kpi-card--warning">
-          <div class="kpi-value">{{ stats.statusCounts?.inspecting ?? 0 }}</div>
-          <div class="kpi-label">{{ t('wms.returns.statusInspecting', '検品中') }}</div>
-        </div>
-        <div class="kpi-card kpi-card--success">
-          <div class="kpi-value">{{ stats.statusCounts?.completed ?? 0 }}</div>
-          <div class="kpi-label">{{ t('wms.returns.statusCompleted', '完了') }}</div>
-        </div>
-        <div class="kpi-card kpi-card--danger">
-          <div class="kpi-value">{{ stats.statusCounts?.cancelled ?? 0 }}</div>
-          <div class="kpi-label">{{ t('wms.returns.statusCancelled', 'キャンセル') }}</div>
-        </div>
+        <Card class="kpi-card text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ totalReturns }}</div>
+            <div class="kpi-label">{{ t('wms.returns.totalReturns', '返品合計') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ stats.statusCounts?.draft ?? 0 }}</div>
+            <div class="kpi-label">{{ t('wms.returns.statusDraft', '下書き') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card kpi-card--warning text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ stats.statusCounts?.inspecting ?? 0 }}</div>
+            <div class="kpi-label">{{ t('wms.returns.statusInspecting', '検品中') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card kpi-card--success text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ stats.statusCounts?.completed ?? 0 }}</div>
+            <div class="kpi-label">{{ t('wms.returns.statusCompleted', '完了') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card kpi-card--danger text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ stats.statusCounts?.cancelled ?? 0 }}</div>
+            <div class="kpi-label">{{ t('wms.returns.statusCancelled', 'キャンセル') }}</div>
+          </CardContent>
+        </Card>
       </div>
 
       <!-- 再入庫・廃棄集計 / 再入库・废弃汇总 -->
       <div class="kpi-grid kpi-grid--secondary">
-        <div class="kpi-card">
-          <div class="kpi-value">{{ stats.totalRestocked ?? 0 }}</div>
-          <div class="kpi-label">{{ t('wms.returns.totalRestocked', '再入庫合計') }}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-value">{{ stats.totalDisposed ?? 0 }}</div>
-          <div class="kpi-label">{{ t('wms.returns.totalDisposed', '廃棄合計') }}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-value">{{ restockRatio }}%</div>
-          <div class="kpi-label">{{ t('wms.returns.restockRatio', '再入庫率') }}</div>
-        </div>
+        <Card class="kpi-card text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ stats.totalRestocked ?? 0 }}</div>
+            <div class="kpi-label">{{ t('wms.returns.totalRestocked', '再入庫合計') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ stats.totalDisposed ?? 0 }}</div>
+            <div class="kpi-label">{{ t('wms.returns.totalDisposed', '廃棄合計') }}</div>
+          </CardContent>
+        </Card>
+        <Card class="kpi-card text-center">
+          <CardContent class="pt-6">
+            <div class="kpi-value">{{ restockRatio }}%</div>
+            <div class="kpi-label">{{ t('wms.returns.restockRatio', '再入庫率') }}</div>
+          </CardContent>
+        </Card>
       </div>
 
       <!-- 返品理由別内訳 / 按退货理由分类 -->
       <div class="section">
         <h2 class="section-title">{{ t('wms.returns.reasonBreakdown', '返品理由別内訳') }}</h2>
         <div class="reason-grid">
-          <div v-for="(count, reason) in (stats.reasonBreakdown ?? {})" :key="reason" class="reason-card">
-            <div class="reason-count">{{ count }}</div>
-            <div class="reason-label">{{ reasonLabel(String(reason)) }}</div>
-          </div>
+          <Card v-for="(count, reason) in (stats.reasonBreakdown ?? {})" :key="reason" class="reason-card text-center">
+            <CardContent class="pt-6">
+              <div class="reason-count">{{ count }}</div>
+              <div class="reason-label">{{ reasonLabel(String(reason)) }}</div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -67,33 +91,33 @@
       <div class="section">
         <h2 class="section-title">{{ t('wms.returns.recentReturns', '最近の返品') }}</h2>
         <div v-if="!stats.recentReturns || stats.recentReturns.length === 0" class="empty-state">{{ t('wms.returns.noReturns', '返品データがありません') }}</div>
-        <div class="o-table-wrapper" v-else>
-          <table class="o-table">
-            <thead>
-              <tr>
-                <th class="o-table-th">{{ t('wms.returns.orderNumber', '返品番号') }}</th>
-                <th class="o-table-th">{{ t('wms.returns.status', '状態') }}</th>
-                <th class="o-table-th">{{ t('wms.returns.reason', '理由') }}</th>
-                <th class="o-table-th">{{ t('wms.returns.customer', '顧客') }}</th>
-                <th class="o-table-th o-table-th--right">{{ t('wms.returns.lineCount', '行数') }}</th>
-                <th class="o-table-th">{{ t('wms.returns.receivedDate', '受領日') }}</th>
-                <th class="o-table-th" style="width:100px;">{{ t('wms.common.actions', '操作') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in (stats.recentReturns ?? [])" :key="row._id" class="o-table-row">
-                <td class="o-table-td"><span class="order-number">{{ row.orderNumber }}</span></td>
-                <td class="o-table-td"><span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></td>
-                <td class="o-table-td">{{ reasonLabel(row.returnReason) }}</td>
-                <td class="o-table-td">{{ row.customerName || '-' }}</td>
-                <td class="o-table-td o-table-td--right">{{ row.lines?.length ?? 0 }}</td>
-                <td class="o-table-td">{{ formatDate(row.receivedDate) }}</td>
-                <td class="o-table-td">
-                  <OButton variant="primary" size="sm" @click="goToDetail(row)">{{ t('wms.common.detail', '詳細') }}</OButton>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="rounded-md border overflow-auto" v-else>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{{ t('wms.returns.orderNumber', '返品番号') }}</TableHead>
+                <TableHead>{{ t('wms.returns.status', '状態') }}</TableHead>
+                <TableHead>{{ t('wms.returns.reason', '理由') }}</TableHead>
+                <TableHead>{{ t('wms.returns.customer', '顧客') }}</TableHead>
+                <TableHead class="text-right">{{ t('wms.returns.lineCount', '行数') }}</TableHead>
+                <TableHead>{{ t('wms.returns.receivedDate', '受領日') }}</TableHead>
+                <TableHead style="width:100px;">{{ t('wms.common.actions', '操作') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="row in (stats.recentReturns ?? [])" :key="row._id">
+                <TableCell><span class="order-number">{{ row.orderNumber }}</span></TableCell>
+                <TableCell><span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></TableCell>
+                <TableCell>{{ reasonLabel(row.returnReason) }}</TableCell>
+                <TableCell>{{ row.customerName || '-' }}</TableCell>
+                <TableCell class="text-right">{{ row.lines?.length ?? 0 }}</TableCell>
+                <TableCell>{{ formatDate(row.receivedDate) }}</TableCell>
+                <TableCell>
+                  <Button variant="default" size="sm" @click="goToDetail(row)">{{ t('wms.common.detail', '詳細') }}</Button>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </template>
@@ -101,14 +125,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import PageHeader from '@/components/shared/PageHeader.vue'
 import { fetchReturnDashboardStats, type ReturnDashboardStats, type ReturnOrder } from '@/api/returnOrder'
-
+import { computed, onMounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()

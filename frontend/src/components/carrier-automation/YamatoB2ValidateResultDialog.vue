@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="modelValue"
-    title="B2 Cloud 検証結果"
-    @close="$emit('update:modelValue', false)"
-    size="lg"
-  >
+  <Dialog :open="modelValue" @update:open="$emit('update:modelValue', $event)">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>B2 Cloud 検証結果</DialogTitle>
+      </DialogHeader>
     <div v-if="result">
       <div v-if="result.all_valid" class="alert-success">
         <strong>すべてのデータが正常です</strong>
@@ -50,24 +49,25 @@
         </div>
       </div>
     </div>
-    <template #footer>
+    <DialogFooter>
       <div class="dialog-footer">
-        <OButton variant="secondary" @click="$emit('cancel')">キャンセル</OButton>
-        <OButton
-          variant="primary"
+        <Button variant="secondary" @click="$emit('cancel')">キャンセル</Button>
+        <Button
+          variant="default"
           :disabled="!result || result.valid_count === 0"
           @click="$emit('confirm')"
         >
           {{ confirmButtonText }}{{ result && !result.all_valid && result.valid_count > 0 ? `（${result.valid_count}件）` : '' }}
-        </OButton>
+        </Button>
       </div>
-    </template>
-  </ODialog>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type { YamatoB2ValidateResult } from '@/types/carrierAutomation'
 
 withDefaults(defineProps<{

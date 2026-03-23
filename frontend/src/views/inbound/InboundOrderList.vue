@@ -1,34 +1,26 @@
 <template>
   <div class="inbound-order-list">
-    <ControlPanel :title="t('wms.inbound.orderList', '入庫指示一覧')" :show-search="false">
+    <PageHeader :title="t('wms.inbound.orderList', '入庫指示一覧')" :show-search="false">
       <template #actions>
-        <OButton variant="primary" size="sm" @click="$router.push('/inbound/create')">{{ t('wms.common.create', '新規作成') }}</OButton>
+        <Button variant="default" size="sm" @click="$router.push('/inbound/create')">{{ t('wms.common.create', '新規作成') }}</Button>
       </template>
-    </ControlPanel>
-
-    <SearchForm
-      class="search-section"
-      :columns="searchColumns"
-      :show-save="false"
-      storage-key="inboundOrderListSearch"
-      @search="handleSearch"
-    />
+    </PageHeader>
 
     <!-- 一括操作バー / 批量操作栏 -->
     <div v-if="selectedIds.length > 0" class="bulk-bar">
       <span class="bulk-info">{{ selectedIds.length }} {{ t('wms.inbound.itemsSelected', '件選択') }}</span>
-      <OButton variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;" :disabled="isBulkDeleting" @click="handleBulkDelete">
+      <Button variant="secondary" size="sm" style="border-color:#f56c6c;color:#f56c6c;" :disabled="isBulkDeleting" @click="handleBulkDelete">
         {{ isBulkDeleting ? t('wms.inbound.deleting', '削除中...') : t('wms.inbound.bulkDelete', '一括削除') }}
-      </OButton>
-      <OButton variant="secondary" size="sm" @click="handleBulkCancel" :disabled="isBulkProcessing">{{ t('wms.inbound.bulkCancel', '一括キャンセル') }}</OButton>
+      </Button>
+      <Button variant="secondary" size="sm" @click="handleBulkCancel" :disabled="isBulkProcessing">{{ t('wms.inbound.bulkCancel', '一括キャンセル') }}</Button>
       <!-- 帳票印刷ドロップダウン / 帐票打印下拉菜单 -->
       <div class="form-print-dropdown" ref="formPrintDropdownRef">
-        <OButton variant="secondary" size="sm" :disabled="isFormPrinting" @click="toggleFormPrintMenu">
+        <Button variant="secondary" size="sm" :disabled="isFormPrinting" @click="toggleFormPrintMenu">
           {{ isFormPrinting ? t('wms.inbound.printing', '印刷中...') : t('wms.inbound.formPrint', '帳票印刷') }}
-        </OButton>
+        </Button>
         <div v-if="showFormPrintMenu" class="form-print-menu">
-          <div v-if="formTemplatesLoading" class="form-print-menu-item form-print-menu-loading">
-            {{ t('wms.common.loading', '読み込み中...') }}
+          <div v-if="formTemplatesLoading" class="form-print-menu-item form-print-menu-loading p-2">
+            <Skeleton class="h-4 w-[150px]" />
           </div>
           <template v-else-if="formTemplates.length > 0">
             <div
@@ -46,11 +38,11 @@
           </div>
         </div>
       </div>
-      <OButton variant="secondary" size="sm" @click="selectedIds = []">{{ t('wms.inbound.deselectAll', '選択解除') }}</OButton>
+      <Button variant="secondary" size="sm" @click="selectedIds = []">{{ t('wms.inbound.deselectAll', '選択解除') }}</Button>
     </div>
 
     <div class="table-section">
-      <Table
+      <DataTable
         :columns="tableColumns"
         :data="rows"
         row-key="_id"
@@ -61,6 +53,8 @@
         :page-size="pageSize"
         :page-sizes="[25, 50, 100]"
         :global-search-text="globalSearchText"
+        :search-columns="searchColumns"
+        @search="handleSearch"
         @page-change="handlePageChange"
       />
     </div>
@@ -68,15 +62,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, onMounted, onUnmounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
-import OButton from '@/components/odoo/OButton.vue'
-import ControlPanel from '@/components/odoo/ControlPanel.vue'
-import SearchForm from '@/components/search/SearchForm.vue'
-import Table from '@/components/table/Table.vue'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+import { Button } from '@/components/ui/button'
+import PageHeader from '@/components/shared/PageHeader.vue'
+import { DataTable } from '@/components/data-table'
 import type { TableColumn, Operator } from '@/types/table'
 import {
   fetchInboundOrders,
@@ -89,10 +81,12 @@ import type { InboundOrder } from '@/types/inventory'
 import { fetchFormTemplates } from '@/api/formTemplate'
 import { generateFormPdf } from '@/utils/form-export/pdfGenerator'
 import type { FormTemplate } from '@/types/formTemplate'
-
+import { computed, h, onMounted, onUnmounted, ref } from 'vue'
+import { Badge } from '@/components/ui/badge'
 const { t } = useI18n()
 const router = useRouter()
 const toast = useToast()
+const { confirm } = useConfirmDialog()
 const isLoading = ref(false)
 const isConfirming = ref(false)
 const isBulkDeleting = ref(false)
@@ -153,8 +147,8 @@ const getDestCode = (row: InboundOrder) => {
   return String(row.destinationLocationId || '-')
 }
 
-const totalExpected = (row: InboundOrder) => row.lines.reduce((sum, l) => sum + l.expectedQuantity, 0)
-const totalReceived = (row: InboundOrder) => row.lines.reduce((sum, l) => sum + l.receivedQuantity, 0)
+const totalExpected = (row: InboundOrder) => (row.lines ?? []).reduce((sum, l) => sum + (l.expectedQuantity ?? 0), 0)
+const totalReceived = (row: InboundOrder) => (row.lines ?? []).reduce((sum, l) => sum + (l.receivedQuantity ?? 0), 0)
 
 const formatDate = (d: string) => new Date(d).toLocaleDateString('ja-JP')
 const formatDateTime = (d: string) => new Date(d).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -225,6 +219,28 @@ const baseColumns = computed<TableColumn[]>(() => [
     },
   },
   {
+    key: 'flowType',
+    dataKey: 'flowType',
+    title: t('wms.inbound.flowType', '入庫区分'),
+    width: 110,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: InboundOrder }) => {
+      const label: Record<string, string> = { standard: '通常', fba: 'FBA', rsl: 'RSL', passthrough: '通過', crossdock: '通過' }
+      return (label as any)[(rowData as any).flowType] ?? (rowData as any).flowType ?? '-'
+    },
+  },
+  {
+    key: 'clientId',
+    dataKey: 'clientId',
+    title: t('wms.inbound.client', '荷主'),
+    width: 140,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: InboundOrder }) => {
+      const client = (rowData as any).clientId
+      return typeof client === 'object' ? client?.name ?? '-' : client ?? '-'
+    },
+  },
+  {
     key: 'supplier',
     dataKey: 'supplier',
     title: t('wms.inbound.supplier', '仕入先'),
@@ -247,7 +263,7 @@ const baseColumns = computed<TableColumn[]>(() => [
     width: 80,
     fieldType: 'number',
     cellRenderer: ({ rowData }: { rowData: InboundOrder }) =>
-      h('span', { style: 'text-align:right;display:block;' }, String(rowData.lines.length)),
+      h('span', { style: 'text-align:right;display:block;' }, String((rowData.lines ?? []).length)),
   },
   {
     key: 'expectedQty',
@@ -312,6 +328,55 @@ const baseColumns = computed<TableColumn[]>(() => [
       rowData.containerType || '-',
   },
   {
+    key: 'deliveryCompany',
+    dataKey: 'deliveryCompany',
+    title: t('wms.inbound.deliveryCompany', '配送会社'),
+    width: 120,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: InboundOrder }) => (rowData as any).deliveryCompany ?? '-',
+  },
+  {
+    key: 'deliverySlipNumber',
+    dataKey: 'deliverySlipNumber',
+    title: t('wms.inbound.deliverySlipNumber', '配送伝票番号'),
+    width: 150,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: InboundOrder }) => (rowData as any).deliverySlipNumber ?? '-',
+  },
+  {
+    key: 'totalCbm',
+    dataKey: 'totalCbm',
+    title: t('wms.inbound.totalCbm', 'CBM'),
+    width: 80,
+    fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: InboundOrder }) => {
+      const v = (rowData as any).totalCbm
+      return v != null ? String(Number(v).toFixed(2)) : '-'
+    },
+  },
+  {
+    key: 'totalPallets',
+    dataKey: 'totalPallets',
+    title: t('wms.inbound.totalPallets', 'パレット数'),
+    width: 90,
+    fieldType: 'number',
+    cellRenderer: ({ rowData }: { rowData: InboundOrder }) => {
+      const v = (rowData as any).totalPallets
+      return v != null ? String(v) : '-'
+    },
+  },
+  {
+    key: 'notes',
+    dataKey: 'notes',
+    title: t('wms.inbound.notes', '備考'),
+    width: 180,
+    fieldType: 'string',
+    cellRenderer: ({ rowData }: { rowData: InboundOrder }) => {
+      const v = (rowData as any).notes ?? ''
+      return v.length > 30 ? v.slice(0, 30) + '…' : v || '-'
+    },
+  },
+  {
     key: 'createdAt',
     dataKey: 'createdAt',
     title: t('wms.inbound.createdAt', '作成日時'),
@@ -332,33 +397,33 @@ const tableColumns = computed<TableColumn[]>(() => [
     cellRenderer: ({ rowData }: { rowData: InboundOrder }) => {
       const buttons: any[] = []
       if (rowData.status === 'draft') {
-        buttons.push(h(OButton, { variant: 'primary', size: 'sm', disabled: isConfirming.value, onClick: () => handleConfirm(rowData) }, () => t('wms.inbound.confirm', '確定')))
+        buttons.push(h(Button, { variant: 'default', size: 'sm', disabled: isConfirming.value, onClick: () => handleConfirm(rowData) }, () => t('wms.inbound.confirm', '確定')))
       }
       if (rowData.status === 'confirmed' || rowData.status === 'receiving') {
-        buttons.push(h(OButton, { variant: 'success', size: 'sm', onClick: () => router.push(`/inbound/receive/${rowData._id}`) }, () => t('wms.inbound.receiveInspection', '入庫検品')))
+        buttons.push(h(Button, { variant: 'default', size: 'sm', onClick: () => router.push(`/inbound/receive/${rowData._id}`) }, () => t('wms.inbound.receiveInspection', '入庫検品')))
       }
       if (rowData.status === 'received') {
-        buttons.push(h(OButton, { variant: 'primary', size: 'sm', onClick: () => router.push(`/inbound/putaway/${rowData._id}`) }, () => t('wms.inbound.putaway', '棚入れ')))
+        buttons.push(h(Button, { variant: 'default', size: 'sm', onClick: () => router.push(`/inbound/putaway/${rowData._id}`) }, () => t('wms.inbound.putaway', '棚入れ')))
       }
       if (rowData.status === 'confirmed' || rowData.status === 'receiving' || rowData.status === 'received') {
-        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', onClick: () => handleComplete(rowData) }, () => t('wms.inbound.complete', '完了')))
+        buttons.push(h(Button, { variant: 'secondary', size: 'sm', onClick: () => handleComplete(rowData) }, () => t('wms.inbound.complete', '完了')))
       }
       if (rowData.status !== 'done' && rowData.status !== 'cancelled') {
-        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', style: 'border-color:#f56c6c;color:#f56c6c;', onClick: () => handleCancel(rowData) }, () => t('wms.common.cancel', '取消')))
+        buttons.push(h(Button, { variant: 'secondary', size: 'sm', style: 'border-color:#f56c6c;color:#f56c6c;', onClick: () => handleCancel(rowData) }, () => t('wms.common.cancel', '取消')))
       }
       if (rowData.status === 'draft') {
-        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', style: 'border-color:#f56c6c;color:#f56c6c;', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')))
+        buttons.push(h(Button, { variant: 'secondary', size: 'sm', style: 'border-color:#f56c6c;color:#f56c6c;', onClick: () => handleDelete(rowData) }, () => t('wms.common.delete', '削除')))
       }
       if (rowData.status !== 'draft' && rowData.status !== 'cancelled') {
-        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openPrint(rowData._id, 'inspection') }, () => t('wms.inbound.inspectionSheet', '検品表')))
-        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openPrint(rowData._id, 'kanban') }, () => t('wms.inbound.kanban', '看板')))
+        buttons.push(h(Button, { variant: 'secondary', size: 'sm', onClick: () => openPrint(rowData._id, 'inspection') }, () => t('wms.inbound.inspectionSheet', '検品表')))
+        buttons.push(h(Button, { variant: 'secondary', size: 'sm', onClick: () => openPrint(rowData._id, 'kanban') }, () => t('wms.inbound.kanban', '看板')))
       }
       if (rowData.status !== 'cancelled') {
-        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', onClick: () => openPrint(rowData._id, 'barcode') }, () => 'BC'))
+        buttons.push(h(Button, { variant: 'secondary', size: 'sm', onClick: () => openPrint(rowData._id, 'barcode') }, () => 'BC'))
       }
       // 帳票印刷ボタン / 帐票打印按钮
       if (rowData.status !== 'draft' && rowData.status !== 'cancelled') {
-        buttons.push(h(OButton, { variant: 'secondary', size: 'sm', disabled: isFormPrinting.value, onClick: () => handleSingleFormPrint(rowData) }, () => t('wms.inbound.formPrintShort', '帳票')))
+        buttons.push(h(Button, { variant: 'secondary', size: 'sm', disabled: isFormPrinting.value, onClick: () => handleSingleFormPrint(rowData) }, () => t('wms.inbound.formPrintShort', '帳票')))
       }
       return h('div', { class: 'action-cell' }, buttons)
     },
@@ -408,13 +473,7 @@ const loadData = async () => {
 }
 
 const handleConfirm = async (row: InboundOrder) => {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inbound.confirmOrder', `入庫指示 ${row.orderNumber} を確定しますか？ / 确定要确认入库指示 ${row.orderNumber} 吗？`),
-      '確認 / 确认',
-      { confirmButtonText: '確定 / 确定', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   isConfirming.value = true
   try {
     await confirmInboundOrder(row._id)
@@ -431,13 +490,7 @@ const handleComplete = async (row: InboundOrder) => {
   const received = totalReceived(row)
   const expected = totalExpected(row)
   if (received < expected) {
-    try {
-      await ElMessageBox.confirm(
-        t('wms.inbound.confirmForceComplete', `まだ未入庫の行があります（${received}/${expected}）。強制完了しますか？ / 还有未入库的行（${received}/${expected}），确定要强制完成吗？`),
-        '確認 / 确认',
-        { confirmButtonText: '強制完了 / 强制完成', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-      )
-    } catch { return }
+    if (!(await confirm('この操作を実行しますか？'))) return
   }
   try {
     await completeInboundOrder(row._id)
@@ -449,13 +502,7 @@ const handleComplete = async (row: InboundOrder) => {
 }
 
 const handleCancel = async (row: InboundOrder) => {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inbound.confirmCancelOrder', `入庫指示 ${row.orderNumber} をキャンセルしますか？ / 确定要取消入库指示 ${row.orderNumber} 吗？`),
-      '確認 / 确认',
-      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await cancelInboundOrder(row._id)
     toast.showSuccess(t('wms.inbound.orderCancelled', '入庫指示をキャンセルしました'))
@@ -466,13 +513,7 @@ const handleCancel = async (row: InboundOrder) => {
 }
 
 const handleDelete = async (row: InboundOrder) => {
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inbound.confirmDeleteOrder', `入庫指示 ${row.orderNumber} を削除しますか？ / 确定要删除入库指示 ${row.orderNumber} 吗？`),
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
+  if (!(await confirm('この操作を実行しますか？'))) return
   try {
     await deleteInboundOrder(row._id)
     toast.showSuccess(t('wms.inbound.orderDeleted', '入庫指示を削除しました'))
@@ -488,14 +529,7 @@ const handleBulkDelete = async () => {
     toast.showError(t('wms.inbound.noDeletableOrders', '削除可能な入庫指示（下書き状態）がありません'))
     return
   }
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inbound.confirmBulkDelete', `${targets.length}件の入庫指示を削除しますか？（下書き状態のみ） / 确定要删除 ${targets.length} 条入库指示吗？（仅草稿状态）`),
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
-
+  if (!(await confirm('この操作を実行しますか？'))) return
   isBulkDeleting.value = true
   let successCount = 0
   let failCount = 0
@@ -522,14 +556,7 @@ const handleBulkCancel = async () => {
     toast.showError(t('wms.inbound.noCancellableOrders', 'キャンセル可能な入庫指示がありません'))
     return
   }
-  try {
-    await ElMessageBox.confirm(
-      t('wms.inbound.confirmBulkCancel', `${targets.length}件の入庫指示をキャンセルしますか？ / 确定要取消 ${targets.length} 条入库指示吗？`),
-      '確認 / 确认',
-      { confirmButtonText: 'はい / 是', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
-
+  if (!(await confirm('この操作を実行しますか？'))) return
   isBulkProcessing.value = true
   let successCount = 0
   let failCount = 0
@@ -617,7 +644,7 @@ const transformToDetailRows = (orders: InboundOrder[]): Record<string, any>[] =>
       createdAt: order.createdAt,
       completedAt: order.completedAt || '',
     }
-    for (const line of order.lines) {
+    for (const line of (order.lines ?? [])) {
       flatRows.push({
         ...orderBase,
         lineNumber: line.lineNumber,
@@ -659,7 +686,7 @@ const transformToInspectionRows = (orders: InboundOrder[]): Record<string, any>[
   }>()
 
   for (const order of orders) {
-    for (const line of order.lines) {
+    for (const line of (order.lines ?? [])) {
       const key = `${line.productSku}_${line.lotNumber || ''}_${line.stockCategory || ''}`
       const existing = skuMap.get(key)
       if (existing) {

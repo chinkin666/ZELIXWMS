@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="modelValue"
-    title="B2 Cloud エラー"
-    @close="$emit('update:modelValue', false)"
-    size="lg"
-  >
+  <Dialog :open="modelValue" @update:open="$emit('update:modelValue', $event)">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>B2 Cloud エラー</DialogTitle>
+      </DialogHeader>
     <div class="alert-error">
       B2 Cloud との通信中にエラーが発生しました
     </div>
@@ -35,16 +34,17 @@
       <h4>エラーメッセージ</h4>
       <pre>{{ errorMessage }}</pre>
     </div>
-    <template #footer>
-      <OButton variant="primary" @click="$emit('update:modelValue', false)">閉じる</OButton>
-    </template>
-  </ODialog>
+    <DialogFooter>
+      <Button variant="default" @click="$emit('update:modelValue', false)">閉じる</Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 
 export interface ApiErrorDetail {
   rowIndex: number | null

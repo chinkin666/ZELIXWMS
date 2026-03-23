@@ -48,17 +48,18 @@
 
     <!-- F-key 操作バー / Fキー操作バー -->
     <div class="fkey-bar">
-      <button
+      <Button
         v-for="fk in fKeyDefs"
         :key="fk.key"
         v-show="!!(fk.label || fk.labelOnly)"
+        :variant="fk.key === 'F9' ? 'destructive' : 'outline'"
         class="fkey-btn"
         :class="{ 'fkey-btn--danger': fk.key === 'F9' }"
         @click="fk.action?.()"
       >
         <span class="fkey-key">{{ fk.key }}</span>
         <span class="fkey-label">{{ fk.label || fk.labelOnly || '' }}</span>
-      </button>
+      </Button>
     </div>
 
     <!-- 確認取消ダイアログ -->
@@ -87,12 +88,9 @@
     />
 
     <!-- 手動印刷確認ダイアログ -->
-    <ODialog
-      :open="completionDialogVisible"
-      :title="t('wms.inspection.inspectionComplete', '検品完了')"
-      size="lg"
-      @close="handleCompletionDialogClose"
-    >
+    <Dialog :open="completionDialogVisible" @update:open="(v) => { if (!v) handleCompletionDialogClose() }">
+      <DialogContent class="sm:max-w-[800px]">
+        <DialogHeader><DialogTitle>{{ t('wms.inspection.inspectionComplete', '検品完了') }}</DialogTitle></DialogHeader>
       <div class="completion-message">
         <p>{{ t('wms.inspection.allItemsInspected', 'すべての商品の検品が完了しました。') }}</p>
         <p>{{ t('wms.inspection.shipmentNumber', '出荷管理No') }}: {{ currentOrder?.orderNumber }}</p>
@@ -112,87 +110,87 @@
         </div>
       </div>
 
-      <template #footer>
-        <OButton variant="secondary" @click="handleCompletionConfirmNoPrint">{{ t('wms.inspection.confirmNoPrint', '確認（印刷なし）') }}</OButton>
-        <OButton
-          variant="primary"
+      <DialogFooter>
+        <Button variant="secondary" @click="handleCompletionConfirmNoPrint">{{ t('wms.inspection.confirmNoPrint', '確認（印刷なし）') }}</Button>
+        <Button
+          variant="default"
           :disabled="(inspPrint.currentPdfSource.value === 'local' && (!inspPrint.printImageUrl.value || inspPrint.printRendering.value)) || (inspPrint.currentPdfSource.value === 'b2-webapi' && !currentOrder?.trackingId)"
           @click="handlePrint"
         >
           {{ t('wms.inspection.print', '印刷') }}
-        </OButton>
-      </template>
-    </ODialog>
+        </Button>
+      </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- 注文一覧ダイアログ -->
-    <ODialog
-      :open="orderListDialogVisible"
-      :title="t('wms.inspection.orderList', '注文一覧')"
-      size="lg"
-      @close="orderListDialogVisible = false"
-    >
+    <Dialog :open="orderListDialogVisible" @update:open="(v) => { if (!v) orderListDialogVisible = false }">
+      <DialogContent class="sm:max-w-[800px]">
+        <DialogHeader><DialogTitle>{{ t('wms.inspection.orderList', '注文一覧') }}</DialogTitle></DialogHeader>
       <div class="order-list-section">
         <h4>{{ t('wms.inspection.uninspected', '未検品') }}（{{ pendingOrders.length }}{{ t('wms.common.items', '件') }}）</h4>
         <div style="max-height: 250px; overflow: auto">
-          <table class="o-list-table o-list-table-border" style="width: 100%">
-            <thead>
-              <tr>
-                <th style="width: 200px">{{ t('wms.inspection.shipmentNumber', '出荷管理No') }}</th>
-                <th style="min-width: 180px">{{ t('wms.inspection.customerManagementNumber', 'お客様管理番号') }}</th>
-                <th style="width: 160px">{{ t('wms.inspection.trackingNumber', '伝票番号') }}</th>
-                <th style="width: 80px; text-align: center">{{ t('wms.inspection.productCount', '商品数') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in pendingOrders" :key="String(row._id)">
-                <td>{{ row.orderNumber }}</td>
-                <td>{{ row.customerManagementNumber }}</td>
-                <td>{{ row.trackingId }}</td>
-                <td style="text-align: center">
+          <Table style="width: 100%">
+            <TableHeader>
+              <TableRow>
+                <TableHead style="width: 200px">{{ t('wms.inspection.shipmentNumber', '出荷管理No') }}</TableHead>
+                <TableHead style="min-width: 180px">{{ t('wms.inspection.customerManagementNumber', 'お客様管理番号') }}</TableHead>
+                <TableHead style="width: 160px">{{ t('wms.inspection.trackingNumber', '伝票番号') }}</TableHead>
+                <TableHead style="width: 80px; text-align: center">{{ t('wms.inspection.productCount', '商品数') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="row in pendingOrders" :key="String(row._id)">
+                <TableCell>{{ row.orderNumber }}</TableCell>
+                <TableCell>{{ row.customerManagementNumber }}</TableCell>
+                <TableCell>{{ row.trackingId }}</TableCell>
+                <TableCell style="text-align: center">
                   {{ Array.isArray(row.products) ? row.products.reduce((s: number, p: any) => s + (p.quantity || 1), 0) : 0 }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
       <div class="order-list-section">
         <h4>{{ t('wms.inspection.inspected', '検品済') }}（{{ processedOrdersData.length }}{{ t('wms.common.items', '件') }}）</h4>
         <div style="max-height: 250px; overflow: auto">
-          <div v-if="loadingProcessedOrders" style="text-align: center; padding: 16px; color: var(--o-gray-500)">{{ t('wms.common.loading', '読み込み中...') }}</div>
-          <table v-else class="o-list-table o-list-table-border" style="width: 100%">
-            <thead>
-              <tr>
-                <th style="width: 200px">{{ t('wms.inspection.shipmentNumber', '出荷管理No') }}</th>
-                <th style="min-width: 180px">{{ t('wms.inspection.customerManagementNumber', 'お客様管理番号') }}</th>
-                <th style="width: 160px">{{ t('wms.inspection.trackingNumber', '伝票番号') }}</th>
-                <th style="width: 80px; text-align: center">{{ t('wms.inspection.productCount', '商品数') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in processedOrdersData" :key="String(row._id)">
-                <td>{{ row.orderNumber }}</td>
-                <td>{{ row.customerManagementNumber }}</td>
-                <td>{{ row.trackingId }}</td>
-                <td style="text-align: center">
+          <div v-if="loadingProcessedOrders" class="space-y-3 p-4">
+            <Skeleton class="h-4 w-[250px]" />
+            <Skeleton class="h-10 w-full" />
+            <Skeleton class="h-10 w-full" />
+          </div>
+          <Table v-else style="width: 100%">
+            <TableHeader>
+              <TableRow>
+                <TableHead style="width: 200px">{{ t('wms.inspection.shipmentNumber', '出荷管理No') }}</TableHead>
+                <TableHead style="min-width: 180px">{{ t('wms.inspection.customerManagementNumber', 'お客様管理番号') }}</TableHead>
+                <TableHead style="width: 160px">{{ t('wms.inspection.trackingNumber', '伝票番号') }}</TableHead>
+                <TableHead style="width: 80px; text-align: center">{{ t('wms.inspection.productCount', '商品数') }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="row in processedOrdersData" :key="String(row._id)">
+                <TableCell>{{ row.orderNumber }}</TableCell>
+                <TableCell>{{ row.customerManagementNumber }}</TableCell>
+                <TableCell>{{ row.trackingId }}</TableCell>
+                <TableCell style="text-align: center">
                   {{ Array.isArray(row.products) ? row.products.reduce((s: number, p: any) => s + (p.quantity || 1), 0) : 0 }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
-      <template #footer>
-        <OButton variant="secondary" @click="orderListDialogVisible = false">{{ t('wms.common.close', '閉じる') }}</OButton>
-      </template>
-    </ODialog>
+      <DialogFooter>
+        <Button variant="secondary" @click="orderListDialogVisible = false">{{ t('wms.common.close', '閉じる') }}</Button>
+      </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- 誤スキャン警告ダイアログ -->
-    <ODialog
-      :open="wrongScanDialogVisible"
-      size="sm"
-      @close="wrongScanDialogVisible = false"
-    >
+    <Dialog :open="wrongScanDialogVisible" @update:open="(v) => { if (!v) wrongScanDialogVisible = false }">
+      <DialogContent class="sm:max-w-[400px]">
       <div class="wrong-scan-content">
         <div class="wrong-scan-icon">!</div>
         <div class="wrong-scan-title">{{ t('wms.inspection.wrongScanTitle', 'この注文に該当しない商品です') }}</div>
@@ -208,58 +206,58 @@
             <span v-for="sku in expectedScanValues" :key="sku" class="expected-sku-tag">{{ sku }}</span>
           </div>
         </div>
-        <OButton
-          variant="danger"
+        <Button
+          variant="destructive"
           class="wrong-scan-close-btn"
           @click="wrongScanDialogVisible = false"
         >
           {{ t('wms.inspection.confirmAndClose', '確認して閉じる') }}
-        </OButton>
+        </Button>
       </div>
-      <template #footer><span></span></template>
-    </ODialog>
+      <DialogFooter><span></span></DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- 手動検品数調整ダイアログ -->
-    <ODialog
-      :open="adjustDialogVisible"
-      :title="t('wms.inspection.adjustQuantity', '検品数を調整')"
-      size="sm"
-      @close="adjustDialogVisible = false"
-    >
+    <Dialog :open="adjustDialogVisible" @update:open="(v) => { if (!v) adjustDialogVisible = false }">
+      <DialogContent class="sm:max-w-[400px]">
+        <DialogHeader><DialogTitle>{{ t('wms.inspection.adjustQuantity', '検品数を調整') }}</DialogTitle></DialogHeader>
       <div v-if="adjustTarget" class="adjust-dialog-content">
         <p>{{ adjustTarget.name }}</p>
         <input
           ref="adjustInputRef"
           v-model.number="adjustValue"
           type="number"
-          class="o-input"
+         
           :min="0"
           :max="adjustTarget.totalQuantity"
           style="width: 120px"
         />
         <span class="adjust-hint"> / {{ adjustTarget.totalQuantity }}</span>
       </div>
-      <template #footer>
+      <DialogFooter>
         <div class="adjust-dialog-footer">
           <span class="adjust-shortcuts">ESC {{ t('wms.common.cancel', 'キャンセル') }} / F1 {{ t('wms.inspection.confirm', '確定') }}</span>
           <div>
-            <OButton variant="secondary" @click="adjustDialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-            <OButton variant="primary" @click="handleAdjustConfirm">{{ t('wms.inspection.confirm', '確定') }}</OButton>
+            <Button variant="secondary" @click="adjustDialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</Button>
+            <Button variant="default" @click="handleAdjustConfirm">{{ t('wms.inspection.confirm', '確定') }}</Button>
           </div>
         </div>
-      </template>
-    </ODialog>
+      </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import UnconfirmReasonDialog from '@/components/dialogs/UnconfirmReasonDialog.vue'
 import ChangeInvoiceTypeDialog from '@/components/dialogs/ChangeInvoiceTypeDialog.vue'
 import SplitOrderDialog from '@/components/dialogs/SplitOrderDialog.vue'
-import ODialog from '@/components/odoo/ODialog.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import InspectionLeftPanel from './one-by-one/InspectionLeftPanel.vue'
 import InspectionRightPanel from './one-by-one/InspectionRightPanel.vue'
 import { useAutoPrint } from '@/composables/useAutoPrint'
@@ -564,7 +562,7 @@ function handleCompletionDialogClose() {
 .adjust-shortcuts { font-size: 12px; color: var(--o-gray-500); }
 
 /* ─── Button / Input styles ──────────────── */
-.o-input {
+.{
   padding: 8px 12px;
   border: 1px solid #dcdfe6;
   border-radius: 4px;

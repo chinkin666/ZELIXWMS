@@ -1,10 +1,9 @@
 <template>
-  <ODialog
-    :open="modelValue"
-    :title="isEditing ? '自動処理ルールを編集' : '自動処理の新規登録'"
-    @close="emit('update:modelValue', false)"
-    width="900px"
-  >
+  <Dialog :open="modelValue" @update:open="emit('update:modelValue', $event)">
+    <DialogContent class="sm:max-w-4xl">
+      <DialogHeader>
+        <DialogTitle>{{ isEditing ? '自動処理ルールを編集' : '自動処理の新規登録' }}</DialogTitle>
+      </DialogHeader>
     <form class="rule-form" @submit.prevent="handleSubmit">
       <!-- 基本設定 -->
       <div class="form-section">
@@ -77,19 +76,20 @@
       </div>
     </form>
 
-    <template #footer>
-      <OButton variant="secondary" @click="emit('update:modelValue', false)">キャンセル</OButton>
-      <OButton variant="primary" @click="handleSubmit" :disabled="!form.name?.trim()">
+    <DialogFooter>
+      <Button variant="secondary" @click="emit('update:modelValue', false)">キャンセル</Button>
+      <Button variant="default" @click="handleSubmit" :disabled="!form.name?.trim()">
         {{ isEditing ? '更新' : '作成' }}
-      </OButton>
-    </template>
-  </ODialog>
+      </Button>
+    </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import ODialog from '@/components/odoo/ODialog.vue'
-import OButton from '@/components/odoo/OButton.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import type {
   AutoProcessingRule,
   AutoProcessingRuleFormData,

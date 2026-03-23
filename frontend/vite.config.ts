@@ -4,10 +4,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
-// Element Plus 按需自动导入 / Element Plus オンデマンド自動インポート
-import AutoImport from 'unplugin-auto-import/vite'
-import Components from 'unplugin-vue-components/vite'
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -15,13 +12,7 @@ export default defineConfig({
     vue(),
     vueJsx(),
     vueDevTools(),
-    // Element Plus 组件和API按需自动导入 / Element Plus コンポーネントとAPIのオンデマンド自動インポート
-    AutoImport({
-      resolvers: [ElementPlusResolver()],
-    }),
-    Components({
-      resolvers: [ElementPlusResolver()],
-    }),
+    tailwindcss(),
   ],
   resolve: {
     alias: {
