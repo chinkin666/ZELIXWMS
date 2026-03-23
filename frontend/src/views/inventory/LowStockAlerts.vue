@@ -76,8 +76,8 @@ const totalReorderQty = computed(() => alerts.value.reduce((sum, a) => sum + a.r
  */
 function getStatusTagClass(status: string): string {
   return status === 'critical'
-    ? 'o-status-tag o-status-tag--error'
-    : 'o-status-tag o-status-tag--warning'
+    ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800'
+    : 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium--warning'
 }
 
 /**

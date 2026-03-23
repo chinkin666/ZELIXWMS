@@ -158,7 +158,6 @@ defineExpose({ scrollToRow })
   max-height: calc(100vh - 200px);
 }
 
-/* .o-list-table base styles are defined globally in style.css */
 
 .row-inspected { background-color: #81B337 !important; }
 .row-inspected td { color: #fff !important; background-color: #81B337 !important; }

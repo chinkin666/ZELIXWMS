@@ -109,12 +109,12 @@ function getUrgencyLevel(alert: ExpiryAlert): 'expired' | 'critical' | 'warning'
 /** 緊急度に応じたCSSクラスを返す / 根据紧急程度返回CSS类 */
 function getUrgencyTagClass(level: string): string {
   const map: Record<string, string> = {
-    expired: 'o-status-tag o-status-tag--error',
-    critical: 'o-status-tag expiry-tag--critical',
-    warning: 'o-status-tag expiry-tag--warning',
-    caution: 'o-status-tag expiry-tag--caution',
+    expired: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800',
+    critical: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium expiry-tag--critical',
+    warning: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium expiry-tag--warning',
+    caution: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium expiry-tag--caution',
   }
-  return map[level] ?? 'o-status-tag'
+  return map[level] ?? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground'
 }
 
 /** 緊急度に応じたテキスト色クラスを返す / 根据紧急程度返回文本颜色类 */

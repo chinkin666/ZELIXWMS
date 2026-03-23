@@ -112,9 +112,9 @@ const dailyStatusLabel = (s: string) => ({
 }[s] || s)
 
 const dailyStatusClass = (s: string) => ({
-  open: 'o-status-tag--printed',
-  closed: 'o-status-tag--issued',
-  locked: 'o-status-tag--confirmed',
+  open: 'bg-amber-100 text-amber-800',
+  closed: 'bg-blue-100 text-blue-800',
+  locked: 'bg-blue-100 text-blue-800',
 }[s] || '')
 
 const formatDateTime = (d: string) => new Date(d).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
@@ -146,7 +146,7 @@ const baseColumns = computed<TableColumn[]>(() => [
       { label: t('wms.daily.statusLocked', 'ロック済'), value: 'locked' },
     ],
     cellRenderer: ({ rowData }: { rowData: DailyReport }) =>
-      h('span', { class: `o-status-tag ${dailyStatusClass(rowData.status)}` }, dailyStatusLabel(rowData.status)),
+      h('span', { class: `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${dailyStatusClass(rowData.status)}` }, dailyStatusLabel(rowData.status)),
   },
   {
     key: 'shipments.totalOrders',

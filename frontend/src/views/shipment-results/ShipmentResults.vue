@@ -549,13 +549,5 @@ onMounted(async () => {
 .o-toggle input:checked + .o-toggle-slider { background:var(--o-brand-primary, #0052A3); }
 .o-toggle input:checked + .o-toggle-slider::after { left:22px; }
 
-.o-status-tag--shipped {
-  background: var(--o-success-bg);
-  color: var(--o-success);
-}
 
-.o-status-tag--exported {
-  background: var(--o-info-bg);
-  color: var(--o-info);
-}
 </style>

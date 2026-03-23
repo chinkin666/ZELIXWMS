@@ -122,7 +122,7 @@ const dailyStatusLabel = (s: string) => ({
   locked: t('wms.daily.statusLocked', 'ロック済'),
 }[s] || s)
 
-const dailyStatusClass = (s: string) => ({ open: 'o-status-tag--printed', closed: 'o-status-tag--issued', locked: 'o-status-tag--confirmed' }[s] || '')
+const dailyStatusClass = (s: string) => ({ open: 'bg-amber-100 text-amber-800', closed: 'bg-blue-100 text-blue-800', locked: 'bg-blue-100 text-blue-800' }[s] || '')
 
 const loadData = async () => {
   isLoading.value = true

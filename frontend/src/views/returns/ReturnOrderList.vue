@@ -121,8 +121,8 @@ const currentFilterStatus = ref('')
 
 const statusLabel = (s: string) => ({ draft: t('wms.returns.statusDraft', '下書き'), inspecting: t('wms.returns.statusInspecting', '検品中'), completed: t('wms.returns.statusCompleted', '完了'), cancelled: t('wms.returns.statusCancelled', 'キャンセル') }[s] || s)
 const statusClass = (s: string) => ({
-  draft: 'o-status-tag--draft', inspecting: 'o-status-tag--printed',
-  completed: 'o-status-tag--confirmed', cancelled: 'o-status-tag--cancelled',
+  draft: 'bg-muted text-muted-foreground', inspecting: 'bg-amber-100 text-amber-800',
+  completed: 'bg-blue-100 text-blue-800', cancelled: 'bg-red-100 text-red-800',
 }[s] || '')
 const reasonLabel = (r: string) => ({
   customer_request: t('wms.returns.reasonCustomerRequest', 'お客様都合'), defective: t('wms.returns.reasonDefective', '不良品'), wrong_item: t('wms.returns.reasonWrongItem', '誤配送'), damaged: t('wms.returns.reasonDamaged', '破損'), other: t('wms.returns.reasonOther', 'その他'),
@@ -194,7 +194,7 @@ const baseColumns: TableColumn[] = [
       { label: t('wms.returns.statusCancelled', 'キャンセル'), value: 'cancelled' },
     ],
     cellRenderer: ({ rowData }: { rowData: ReturnOrder }) =>
-      h('span', { class: `o-status-tag ${statusClass(rowData.status)}` }, statusLabel(rowData.status)),
+      h('span', { class: `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusClass(rowData.status)}` }, statusLabel(rowData.status)),
   },
   {
     key: 'returnReason',
@@ -499,8 +499,6 @@ onMounted(() => loadData())
 <style>
 @import '@/styles/order-table.css';
 
-.o-status-tag--draft { background: #f4f4f5; color: #909399; }
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 </style>
 
 <style scoped>

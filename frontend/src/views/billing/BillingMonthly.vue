@@ -81,10 +81,10 @@ const statusLabel = (s: BillingStatus): string => {
 
 const statusClass = (s: BillingStatus): string => {
   const map: Record<BillingStatus, string> = {
-    draft: 'o-status-tag--draft',
-    confirmed: 'o-status-tag--confirmed',
-    invoiced: 'o-status-tag--issued',
-    paid: 'o-status-tag--printed',
+    draft: 'bg-muted text-muted-foreground',
+    confirmed: 'bg-blue-100 text-blue-800',
+    invoiced: 'bg-blue-100 text-blue-800',
+    paid: 'bg-amber-100 text-amber-800',
   }
   return map[s] || ''
 }
@@ -108,7 +108,7 @@ const tableColumns: TableColumn[] = [
   },
   { key: 'status', dataKey: 'status', title: 'ステータス', width: 100, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: BillingRecord }) =>
-      h('span', { class: `o-status-tag ${statusClass(rowData.status)}` }, statusLabel(rowData.status)),
+      h('span', { class: `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusClass(rowData.status)}` }, statusLabel(rowData.status)),
   },
   {
     key: 'actions',
@@ -297,5 +297,4 @@ onMounted(() => {
   gap: 4px;
 }
 
-.o-status-tag--draft { background: var(--o-gray-100, #f5f7fa); color: var(--o-gray-500, #909399); }
 </style>

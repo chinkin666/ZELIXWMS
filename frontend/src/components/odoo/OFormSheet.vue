@@ -178,7 +178,6 @@ const headerClass = computed(() => ({
   padding: 0 1.5rem 1.25rem;
 }
 
-/* ---------- Chatter ---------- */
 
 .o-form-sheet-chatter {
   width: 340px;
@@ -201,7 +200,6 @@ const headerClass = computed(() => ({
   max-height: none;
 }
 
-/* ---------- Responsive ---------- */
 
 @media (max-width: 768px) {
   .o-form-sheet-header {
@@ -221,7 +219,6 @@ const headerClass = computed(() => ({
   }
 }
 
-/* ---------- Dark theme ---------- */
 
 [data-theme="dark"] .o-form-sheet-wrapper {
   background: var(--o-gray-100, #1a1a2e);

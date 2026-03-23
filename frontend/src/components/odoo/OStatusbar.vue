@@ -294,7 +294,6 @@ function selectFromDropdown(stage: Stage) {
   align-items: center;
 }
 
-/* ---------- Mobile dropdown ---------- */
 
 .o-statusbar-dropdown {
   position: relative;
@@ -365,7 +364,6 @@ function selectFromDropdown(stage: Stage) {
   background: var(--o-brand-primary, #0052A3);
 }
 
-/* ---------- Confirm dialog ---------- */
 
 .o-confirm-backdrop {
   position: fixed;
@@ -398,7 +396,6 @@ function selectFromDropdown(stage: Stage) {
   gap: 0.5rem;
 }
 
-/* ---------- Transition ---------- */
 
 .o-dialog-enter-active,
 .o-dialog-leave-active {

@@ -266,7 +266,7 @@ const tableColumns: TableColumn[] = [
     cellRenderer: ({ rowData }: { rowData: WorkCharge }) =>
       h(
         'span',
-        { class: rowData.isBilled ? 'o-status-tag o-status-tag--confirmed' : 'o-status-tag o-status-tag--draft' },
+        { class: rowData.isBilled ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800' : 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground' },
         rowData.isBilled ? '請求済' : '未請求',
       ),
   },
@@ -482,5 +482,4 @@ onMounted(() => {
   margin-top: 8px;
 }
 
-.o-status-tag--draft { background: var(--o-gray-100, #f5f7fa); color: var(--o-gray-500, #909399); }
 </style>

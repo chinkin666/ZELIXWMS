@@ -130,12 +130,12 @@ const statusLabel = (s: string) => {
 
 const statusClass = (s: string) => {
   const map: Record<string, string> = {
-    draft: 'o-status-tag--draft',
-    confirmed: 'o-status-tag--issued',
-    receiving: 'o-status-tag--printed',
-    received: 'o-status-tag--issued',
-    done: 'o-status-tag--confirmed',
-    cancelled: 'o-status-tag--cancelled',
+    draft: 'bg-muted text-muted-foreground',
+    confirmed: 'bg-blue-100 text-blue-800',
+    receiving: 'bg-amber-100 text-amber-800',
+    received: 'bg-blue-100 text-blue-800',
+    done: 'bg-blue-100 text-blue-800',
+    cancelled: 'bg-red-100 text-red-800',
   }
   return map[s] || ''
 }
@@ -209,11 +209,11 @@ const baseColumns = computed<TableColumn[]>(() => [
     ],
     cellRenderer: ({ rowData }: { rowData: InboundOrder }) => {
       const tags = [
-        h('span', { class: `o-status-tag ${statusClass(rowData.status)}` }, statusLabel(rowData.status)),
+        h('span', { class: `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusClass(rowData.status)}` }, statusLabel(rowData.status)),
       ]
       // 通過型バッジ表示 / 通过型标签显示
       if ((rowData as any).flowType === 'crossdock') {
-        tags.push(h('span', { class: 'o-status-tag o-status-tag--crossdock' }, t('wms.inbound.crossdock', '通過')))
+        tags.push(h('span', { class: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium--crossdock' }, t('wms.inbound.crossdock', '通過')))
       }
       return h('div', { style: 'display:flex;gap:4px;align-items:center;flex-wrap:wrap;' }, tags)
     },
@@ -798,9 +798,6 @@ onUnmounted(() => {
 </script>
 
 <style>
-.o-status-tag--draft { background: #f4f4f5; color: #909399; }
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
-.o-status-tag--crossdock { background: #fdf2e9; color: #e67e22; font-size: 11px; }
 </style>
 
 <style scoped>

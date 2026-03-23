@@ -329,5 +329,4 @@ onMounted(() => {
   font-size: 11px;
 }
 
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 </style>

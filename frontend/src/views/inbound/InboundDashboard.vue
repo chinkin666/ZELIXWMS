@@ -208,8 +208,8 @@ const statusLabel = (s: string) => {
 
 const statusClass = (s: string) => {
   const map: Record<string, string> = {
-    draft: 'o-status-tag--draft', confirmed: 'o-status-tag--issued', receiving: 'o-status-tag--printed',
-    received: 'o-status-tag--issued', done: 'o-status-tag--confirmed', cancelled: 'o-status-tag--cancelled',
+    draft: 'bg-muted text-muted-foreground', confirmed: 'bg-blue-100 text-blue-800', receiving: 'bg-amber-100 text-amber-800',
+    received: 'bg-blue-100 text-blue-800', done: 'bg-blue-100 text-blue-800', cancelled: 'bg-red-100 text-red-800',
   }
   return map[s] || ''
 }
@@ -402,6 +402,4 @@ onMounted(() => loadData())
 .o-table-td--right { text-align: right; }
 .o-table-th--right { text-align: right; }
 
-.o-status-tag--draft { background: var(--o-gray-100); color: var(--o-gray-500); }
-.o-status-tag--cancelled { background: var(--o-danger-bg); color: var(--o-danger); }
 </style>

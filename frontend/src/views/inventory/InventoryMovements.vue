@@ -81,10 +81,10 @@ const stateLabel = (s: string) => {
 
 const stateClass = (s: string) => {
   const map: Record<string, string> = {
-    draft: 'o-status-tag--draft',
-    confirmed: 'o-status-tag--issued',
-    done: 'o-status-tag--confirmed',
-    cancelled: 'o-status-tag--cancelled',
+    draft: 'bg-muted text-muted-foreground',
+    confirmed: 'bg-blue-100 text-blue-800',
+    done: 'bg-blue-100 text-blue-800',
+    cancelled: 'bg-red-100 text-red-800',
   }
   return map[s] || ''
 }
@@ -148,7 +148,7 @@ const tableColumns = computed<TableColumn[]>(() => [
       { label: t('wms.inventory.stateCancelled', '取消'), value: 'cancelled' },
     ],
     cellRenderer: ({ rowData }: { rowData: StockMove }) =>
-      h('span', { class: `o-status-tag ${stateClass(rowData.state)}` }, stateLabel(rowData.state)),
+      h('span', { class: `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${stateClass(rowData.state)}` }, stateLabel(rowData.state)),
   },
   { key: 'productSku', dataKey: 'productSku', title: 'SKU', width: 120, fieldType: 'string', searchable: true, searchType: 'string' },
   { key: 'productName', dataKey: 'productName', title: t('wms.inventory.productName', '商品名'), width: 160, fieldType: 'string' },
@@ -298,8 +298,6 @@ onMounted(() => loadData())
 .move-type--adjustment { background: #fdf6ec; color: #e6a23c; }
 .move-type--return { background: #f4f4f5; color: #909399; }
 
-.o-status-tag--draft { background: #f4f4f5; color: #909399; }
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; text-decoration: line-through; }
 
 .location-badge {
   font-family: monospace;

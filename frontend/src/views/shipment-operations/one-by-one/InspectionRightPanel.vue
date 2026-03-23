@@ -169,7 +169,6 @@ function getRowClassName(row: InspectionItem): string {
   border-radius: 8px;
 }
 
-/* .o-list-table base styles are defined globally in style.css */
 
 .col-inspected, .col-remaining { padding: 0 !important; }
 

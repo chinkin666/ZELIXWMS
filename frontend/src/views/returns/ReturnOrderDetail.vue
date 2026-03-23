@@ -201,7 +201,7 @@ const hasValidationErrors = computed(() =>
 )
 
 const statusLabel = (s: string) => ({ draft: t('wms.returns.statusDraft', '下書き'), inspecting: t('wms.returns.statusInspecting', '検品中'), completed: t('wms.returns.statusCompleted', '完了'), cancelled: t('wms.returns.statusCancelled', 'キャンセル') }[s] || s)
-const statusClass = (s: string) => ({ draft: 'o-status-tag--draft', inspecting: 'o-status-tag--printed', completed: 'o-status-tag--confirmed', cancelled: 'o-status-tag--cancelled' }[s] || '')
+const statusClass = (s: string) => ({ draft: 'bg-muted text-muted-foreground', inspecting: 'bg-amber-100 text-amber-800', completed: 'bg-blue-100 text-blue-800', cancelled: 'bg-red-100 text-red-800' }[s] || '')
 const reasonLabel = (r: string) => ({ customer_request: t('wms.returns.reasonCustomerRequest', 'お客様都合'), defective: t('wms.returns.reasonDefective', '不良品'), wrong_item: t('wms.returns.reasonWrongItem', '誤配送'), damaged: t('wms.returns.reasonDamaged', '破損'), other: t('wms.returns.reasonOther', 'その他') }[r] || r)
 const dispLabel = (d: string) => ({ restock: t('wms.returns.dispRestock', '再入庫'), dispose: t('wms.returns.dispDispose', '廃棄'), repair: t('wms.returns.dispRepair', '修理'), pending: t('wms.returns.dispPending', '未判定') }[d] || d)
 const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('ja-JP') : '-'
@@ -270,8 +270,6 @@ onMounted(() => loadData())
 .info-bar { display: flex; gap: 1.5rem; padding: 0.75rem 1rem; background: var(--o-gray-50, #fafafa); border-radius: 6px; margin-bottom: 0.75rem; font-size: 13px; flex-wrap: wrap; }
 .o-table-td--right { text-align: right; }
 .o-table-th--right { text-align: right; }
-.o-status-tag--draft { background: #f4f4f5; color: #909399; }
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 .disp-restock { color: #67c23a; font-weight: 600; }
 .disp-dispose { color: #f56c6c; font-weight: 600; }
 .disp-repair { color: #e6a23c; font-weight: 600; }

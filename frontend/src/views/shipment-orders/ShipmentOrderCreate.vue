@@ -808,9 +808,6 @@ onBeforeUnmount(() => {
 }
 
 /* Page-specific status tags */
-.o-status-tag--bundleable { background: #2563eb; color: #fff; }
-.o-status-tag--validating { background: #e0e7ff; color: #4338ca; animation: pulse 1.5s infinite; }
-.o-status-tag--duplicate { background: #f59e0b; color: #fff; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 .o-table-row--has-error { background: #fff5f5 !important; }

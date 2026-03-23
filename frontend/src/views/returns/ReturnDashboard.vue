@@ -170,10 +170,10 @@ const statusLabel = (s: string) => {
 // ステータスCSSクラス / 状态CSS类
 const statusClass = (s: string) => {
   const map: Record<string, string> = {
-    draft: 'o-status-tag--draft',
-    inspecting: 'o-status-tag--printed',
-    completed: 'o-status-tag--confirmed',
-    cancelled: 'o-status-tag--cancelled',
+    draft: 'bg-muted text-muted-foreground',
+    inspecting: 'bg-amber-100 text-amber-800',
+    completed: 'bg-blue-100 text-blue-800',
+    cancelled: 'bg-red-100 text-red-800',
   }
   return map[s] || ''
 }
@@ -320,6 +320,4 @@ onMounted(() => loadData())
 .o-table-td--right { text-align: right; }
 .o-table-th--right { text-align: right; }
 
-.o-status-tag--draft { background: var(--o-gray-100); color: var(--o-gray-500); }
-.o-status-tag--cancelled { background: var(--o-danger-bg); color: var(--o-danger); }
 </style>

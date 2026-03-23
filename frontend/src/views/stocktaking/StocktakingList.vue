@@ -66,11 +66,11 @@ const currentFilterType = ref('')
 const typeLabel = (tp: string) => ({ full: '全棚卸', cycle: '循環棚卸', spot: 'スポット' }[tp] || tp)
 const statusLabel = (s: string) => ({ draft: '下書き', in_progress: '進行中', completed: '完了', adjusted: '調整済', cancelled: 'キャンセル' }[s] || s)
 const statusClass = (s: string) => ({
-  draft: 'o-status-tag--draft',
-  in_progress: 'o-status-tag--printed',
-  completed: 'o-status-tag--issued',
-  adjusted: 'o-status-tag--confirmed',
-  cancelled: 'o-status-tag--cancelled',
+  draft: 'bg-muted text-muted-foreground',
+  in_progress: 'bg-amber-100 text-amber-800',
+  completed: 'bg-blue-100 text-blue-800',
+  adjusted: 'bg-blue-100 text-blue-800',
+  cancelled: 'bg-red-100 text-red-800',
 }[s] || '')
 
 const countedLines = (row: StocktakingOrder) => (row.lines ?? []).filter(l => l.status !== 'pending').length
@@ -123,7 +123,7 @@ const baseColumns = computed<TableColumn[]>(() => [
       { label: t('wms.stocktaking.statusCancelled', 'キャンセル'), value: 'cancelled' },
     ],
     cellRenderer: ({ rowData }: { rowData: StocktakingOrder }) =>
-      h('span', { class: `o-status-tag ${statusClass(rowData.status)}` }, statusLabel(rowData.status)),
+      h('span', { class: `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusClass(rowData.status)}` }, statusLabel(rowData.status)),
   },
   {
     key: 'lineCount',
@@ -300,8 +300,6 @@ onMounted(() => loadData())
 </script>
 
 <style>
-.o-status-tag--draft { background: #f4f4f5; color: #909399; }
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 </style>
 
 <style scoped>

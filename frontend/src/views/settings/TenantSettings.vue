@@ -177,21 +177,21 @@ const planLabel = (plan: TenantPlan) => planLabels[plan] || plan
 
 const statusTagClass = (status: TenantStatus) => {
   const map: Record<TenantStatus, string> = {
-    active: 'o-status-tag--confirmed',
-    trial: 'o-status-tag--trial',
-    suspended: 'o-status-tag--suspended',
-    cancelled: 'o-status-tag--cancelled',
+    active: 'bg-blue-100 text-blue-800',
+    trial: 'bg-purple-100 text-purple-800',
+    suspended: 'bg-orange-100 text-orange-800',
+    cancelled: 'bg-red-100 text-red-800',
   }
   return map[status] || ''
 }
 
 const planTagClass = (plan: TenantPlan) => {
   const map: Record<TenantPlan, string> = {
-    free: 'o-status-tag--plan-free',
-    starter: 'o-status-tag--plan-starter',
-    standard: 'o-status-tag--plan-standard',
-    pro: 'o-status-tag--plan-pro',
-    enterprise: 'o-status-tag--plan-enterprise',
+    free: 'bg-gray-100 text-gray-800',
+    starter: 'bg-blue-100 text-blue-800',
+    standard: 'bg-green-100 text-green-800',
+    pro: 'bg-purple-100 text-purple-800',
+    enterprise: 'bg-amber-100 text-amber-800',
   }
   return map[plan] || ''
 }
@@ -272,14 +272,14 @@ const tableColumns: TableColumn[] = [
       return {
         ...col,
         cellRenderer: ({ rowData }: { rowData: Tenant }) =>
-          h('span', { class: ['o-status-tag', planTagClass(rowData.plan)] }, planLabel(rowData.plan)),
+          h('span', { class: ['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground', planTagClass(rowData.plan)] }, planLabel(rowData.plan)),
       }
     }
     if (col.key === 'status') {
       return {
         ...col,
         cellRenderer: ({ rowData }: { rowData: Tenant }) =>
-          h('span', { class: ['o-status-tag', statusTagClass(rowData.status)] }, statusLabel(rowData.status)),
+          h('span', { class: ['inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground', statusTagClass(rowData.status)] }, statusLabel(rowData.status)),
       }
     }
     return col
@@ -471,14 +471,6 @@ onMounted(() => {
 </script>
 
 <style>
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
-.o-status-tag--trial { background: #ecf5ff; color: #409eff; }
-.o-status-tag--suspended { background: #fdf6ec; color: #e6a23c; }
-.o-status-tag--plan-free { background: #f4f4f5; color: #909399; }
-.o-status-tag--plan-starter { background: #ecf5ff; color: #409eff; }
-.o-status-tag--plan-standard { background: #f0f9eb; color: #67c23a; }
-.o-status-tag--plan-pro { background: #fdf6ec; color: #e6a23c; }
-.o-status-tag--plan-enterprise { background: #f4e8ff; color: #9b59b6; }
 </style>
 
 <style scoped>

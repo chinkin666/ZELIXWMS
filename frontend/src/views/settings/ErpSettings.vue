@@ -394,5 +394,4 @@ onMounted(() => {
   justify-content: flex-end;
 }
 
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 </style>

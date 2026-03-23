@@ -475,11 +475,11 @@ const loadSdkInfo = async () => {
 // Helpers
 const statusTagClass = (status: string) => {
   const map: Record<string, string> = {
-    enabled: 'o-status-tag o-status-tag--confirmed',
-    disabled: 'o-status-tag o-status-tag--cancelled',
-    error: 'o-status-tag o-status-tag--cancelled',
+    enabled: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800',
+    disabled: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800',
+    error: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800',
   }
-  return map[status] || 'o-status-tag'
+  return map[status] || 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground'
 }
 
 const statusLabel = (status: string) => {
@@ -503,7 +503,6 @@ onMounted(() => {
 </script>
 
 <style>
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 </style>
 
 <style scoped>

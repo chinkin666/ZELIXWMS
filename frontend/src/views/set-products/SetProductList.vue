@@ -191,7 +191,7 @@ const baseColumns = computed<TableColumn[]>(() => [
     cellRenderer: ({ rowData }: { rowData: SetProduct }) =>
       h(
         'span',
-        { class: rowData.isActive ? 'o-status-tag o-status-tag--confirmed' : 'o-status-tag o-status-tag--inactive' },
+        { class: rowData.isActive ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800' : 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium--inactive' },
         rowData.isActive ? t('wms.setProduct.active', '有効') : t('wms.setProduct.inactive', '無効'),
       ),
   },
@@ -390,8 +390,6 @@ onMounted(() => {
 :deep(.comp-tag) { display: inline-block; padding: 2px 8px; background: var(--o-success-bg, #f0f9eb); color: var(--o-success, #67c23a); border-radius: 4px; font-size: 12px; font-weight: 500; }
 
 /* Inactive status tag */
-:deep(.o-status-tag--inactive) { background: var(--o-gray-200, #f5f5f5); color: var(--o-gray-500, #909399); }
-
 :deep(.action-cell) {
   display: inline-flex;
   gap: 4px;

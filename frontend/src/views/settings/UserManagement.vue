@@ -378,8 +378,8 @@ const tableColumns: TableColumn[] = [
             'span',
             {
               class: rowData.isActive
-                ? 'o-status-tag o-status-tag--confirmed'
-                : 'o-status-tag o-status-tag--cancelled',
+                ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800'
+                : 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800',
             },
             rowData.isActive ? '有効' : '無効',
           ),
@@ -650,7 +650,6 @@ onMounted(() => {
 <style>
 @import '@/styles/order-table.css';
 
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 </style>
 
 <style scoped>

@@ -64,9 +64,9 @@ const selectedIds = ref<string[]>([])
 // ステータスバッジ / 状态徽章
 const getStatusClass = (status: string): string => {
   switch (status) {
-    case 'approved': return 'o-status-tag o-status-tag--success'
-    case 'rejected': return 'o-status-tag o-status-tag--error'
-    default: return 'o-status-tag o-status-tag--warning'
+    case 'approved': return 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium--success'
+    case 'rejected': return 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800'
+    default: return 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium--warning'
   }
 }
 

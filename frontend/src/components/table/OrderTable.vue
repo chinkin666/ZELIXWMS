@@ -1386,7 +1386,6 @@ defineExpose({
   background: var(--o-view-background, #fff);
 }
 
-/* .o-list-table base styles are defined globally in style.css */
 
 .nex-table__pagination {
   margin-top: 16px;

@@ -105,10 +105,10 @@ const filteredRows = computed(() => {
 // ステータスバッジクラス / 状态徽章样式
 const getStatusClass = (status: string): string => {
   switch (status) {
-    case 'delivered': return 'o-status-tag o-status-tag--success'
-    case 'in_transit': return 'o-status-tag o-status-tag--warning'
-    case 'pending': return 'o-status-tag o-status-tag--info'
-    default: return 'o-status-tag'
+    case 'delivered': return 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium--success'
+    case 'in_transit': return 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium--warning'
+    case 'pending': return 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium--info'
+    default: return 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground'
   }
 }
 

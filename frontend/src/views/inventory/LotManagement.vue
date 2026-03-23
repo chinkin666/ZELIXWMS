@@ -264,7 +264,7 @@ const tableColumns = computed<TableColumn[]>(() => [
       { label: t('wms.inventory.statusQuarantine', '隔離'), value: 'quarantine' },
     ],
     cellRenderer: ({ rowData }: { rowData: Lot }) =>
-      h('span', { class: `o-status-tag o-status-tag--${statusTagVariant(rowData.status)}` }, statusLabel(rowData.status)),
+      h('span', { class: `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium--${statusTagVariant(rowData.status)}` }, statusLabel(rowData.status)),
   },
   {
     key: 'memo',

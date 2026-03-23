@@ -121,8 +121,8 @@ const statusLabel = (s: string) => ({
 }[s] || s)
 
 const statusClass = (s: string) => ({
-  draft: 'o-status-tag--draft', in_progress: 'o-status-tag--printed',
-  completed: 'o-status-tag--issued', adjusted: 'o-status-tag--confirmed', cancelled: 'o-status-tag--cancelled',
+  draft: 'bg-muted text-muted-foreground', in_progress: 'bg-amber-100 text-amber-800',
+  completed: 'bg-blue-100 text-blue-800', adjusted: 'bg-blue-100 text-blue-800', cancelled: 'bg-red-100 text-red-800',
 }[s] || '')
 
 const lineStatusLabel = (s: string) => ({
@@ -208,8 +208,6 @@ onMounted(() => loadData())
 .line-status--pending { background: #f4f4f5; color: #909399; }
 .line-status--counted { background: #f0f9ff; color: #409eff; }
 .line-status--verified { background: #f0f9eb; color: #67c23a; }
-.o-status-tag--draft { background: #f4f4f5; color: #909399; }
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
 
 /* モバイルレスポンシブ対応 / 移动端响应式适配 */
 @media (max-width: 768px) {

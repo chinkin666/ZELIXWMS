@@ -255,8 +255,8 @@ const tableColumns: TableColumn[] = [
             'span',
             {
               class: rowData.enabled
-                ? 'o-status-tag o-status-tag--confirmed'
-                : 'o-status-tag o-status-tag--cancelled',
+                ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800'
+                : 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800',
               style: 'cursor: pointer',
               onClick: () => handleToggle(rowData),
             },
@@ -489,11 +489,11 @@ const formatDate = (dateStr: string) => {
 
 const logStatusClass = (status: string) => {
   const map: Record<string, string> = {
-    success: 'o-status-tag o-status-tag--confirmed',
-    failed: 'o-status-tag o-status-tag--cancelled',
-    retrying: 'o-status-tag o-status-tag--pending',
+    success: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800',
+    failed: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800',
+    retrying: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800',
   }
-  return map[status] || 'o-status-tag'
+  return map[status] || 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground'
 }
 
 const logStatusLabel = (status: string) => {
@@ -509,8 +509,6 @@ onMounted(() => {
 <style>
 @import '@/styles/order-table.css';
 
-.o-status-tag--cancelled { background: #fef0f0; color: #f56c6c; }
-.o-status-tag--pending { background: #fdf6ec; color: #e6a23c; }
 </style>
 
 <style scoped>

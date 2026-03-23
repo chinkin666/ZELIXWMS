@@ -105,10 +105,10 @@ const statusLabel = (s: BillingStatus): string => {
 
 const statusClass = (s: BillingStatus): string => {
   const map: Record<BillingStatus, string> = {
-    draft: 'o-status-tag--draft',
-    confirmed: 'o-status-tag--confirmed',
-    invoiced: 'o-status-tag--issued',
-    paid: 'o-status-tag--printed',
+    draft: 'bg-muted text-muted-foreground',
+    confirmed: 'bg-blue-100 text-blue-800',
+    invoiced: 'bg-blue-100 text-blue-800',
+    paid: 'bg-amber-100 text-amber-800',
   }
   return map[s] || ''
 }
@@ -196,5 +196,4 @@ onMounted(() => loadData())
 .o-table-td--right { text-align: right; }
 .o-table-th--right { text-align: right; }
 
-.o-status-tag--draft { background: var(--o-gray-100, #f5f7fa); color: var(--o-gray-500, #909399); }
 </style>

@@ -447,7 +447,6 @@ function handleCompletionDialogClose() {
 .order-list-section { margin-bottom: 16px; }
 .order-list-section h4 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--o-gray-900); }
 
-/* .o-list-table base styles are defined globally in style.css */
 
 /* ─── Wrong scan warning dialog ──────────── */
 .wrong-scan-content {

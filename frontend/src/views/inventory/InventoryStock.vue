@@ -241,8 +241,8 @@ const summaryTableColumns: TableColumn[] = [
   {
     key: 'status', title: '状態', width: 80, fieldType: 'string',
     cellRenderer: ({ rowData }: { rowData: StockSummary }) => {
-      if (rowData.isBelowSafety) return h('span', { class: 'o-status-tag o-status-tag--danger' }, '在庫不足')
-      return h('span', { class: 'o-status-tag o-status-tag--confirmed' }, '正常')
+      if (rowData.isBelowSafety) return h('span', { class: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium--danger' }, '在庫不足')
+      return h('span', { class: 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800' }, '正常')
     },
   },
 ]
@@ -526,10 +526,6 @@ onMounted(() => loadData())
 .text-danger { color: #f56c6c; font-weight: 600; }
 .text-success { color: #67c23a; font-weight: 600; }
 
-.o-status-tag--danger {
-  background: #fef0f0;
-  color: #f56c6c;
-}
 
 .switch-label {
   display: inline-flex;

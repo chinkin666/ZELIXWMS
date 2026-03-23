@@ -522,36 +522,6 @@ onMounted(() => {
 }
 
 /* Status tags */
-:deep(.o-status-tag--available) {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-:deep(.o-status-tag--reserved) {
-  background: #fff3e0;
-  color: #e65100;
-}
-
-:deep(.o-status-tag--shipped) {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-
-:deep(.o-status-tag--returned) {
-  background: #e0f7fa;
-  color: #00838f;
-}
-
-:deep(.o-status-tag--damaged) {
-  background: #fef0f0;
-  color: #f56c6c;
-}
-
-:deep(.o-status-tag--scrapped) {
-  background: #f5f5f5;
-  color: #9e9e9e;
-}
-
 /* Form */
 .form-grid {
   display: grid;
