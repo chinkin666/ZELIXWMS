@@ -484,10 +484,6 @@ onMounted(async () => {
   width: 100%;
 }
 
-.o-input-sm {
-  padding: 4px 8px;
-  font-size: 13px;
-}
 
 .crossdock-hint {
   margin: 4px 0 0;

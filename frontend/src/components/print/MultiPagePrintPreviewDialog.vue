@@ -8,10 +8,13 @@
       <div class="toolbar-row">
         <div class="toolbar-item">
           <label class="toolbar-label">DPI</label>
-          <select class="o-input" v-model.number="exportDpi" style="width: 120px">
-            <option :value="203">203</option>
-            <option :value="300">300</option>
-          </select>
+          <Select :model-value="String(exportDpi)" @update:model-value="(val: string) => exportDpi = Number(val)">
+            <SelectTrigger class="h-9" style="width: 120px"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="203">203</SelectItem>
+              <SelectItem value="300">300</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div class="toolbar-item">
@@ -86,6 +89,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { OrderDocument } from '@/types/order'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'
 import type { PrintTemplate } from '@/types/printTemplate'

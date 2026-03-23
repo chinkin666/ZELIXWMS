@@ -30,22 +30,22 @@
       <div v-if="result.results.some(r => !r.valid)" class="validate-errors">
         <h4>エラー詳細</h4>
         <div class="error-table-wrapper">
-          <table class="error-table">
-            <thead>
-              <tr>
-                <th class="error-table-th" style="width:200px">出荷管理番号</th>
-                <th class="error-table-th">エラー内容</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in result.results.filter(r => !r.valid)" :key="row.index" class="error-table-row">
-                <td class="error-table-td order-number-cell">{{ orderMap?.get(row.index) || `#${row.index + 1}` }}</td>
-                <td class="error-table-td">
+          <Table class="error-table">
+            <TableHeader>
+              <TableRow>
+                <TableHead class="error-table-th" style="width:200px">出荷管理番号</TableHead>
+                <TableHead class="error-table-th">エラー内容</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="row in result.results.filter(r => !r.valid)" :key="row.index" class="error-table-row">
+                <TableCell class="error-table-td order-number-cell">{{ orderMap?.get(row.index) || `#${row.index + 1}` }}</TableCell>
+                <TableCell class="error-table-td">
                   <div v-for="(err, i) in row.errors" :key="i" class="error-msg">{{ parseB2Error(err) }}</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>
@@ -66,6 +66,7 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import type { YamatoB2ValidateResult } from '@/types/carrierAutomation'

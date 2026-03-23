@@ -2,7 +2,7 @@
   <div class="order-group-tabs" v-if="enabledGroups.length > 0">
     <div class="o-tabs">
       <!-- 全て -->
-      <button
+      <Button
         class="o-tab"
         :class="{ active: activeTab === '' }"
         @click="handleTabChange('')"
@@ -14,7 +14,7 @@
       </button>
 
       <!-- 各グループ -->
-      <button
+      <Button
         v-for="group in enabledGroups"
         :key="group._id"
         class="o-tab"
@@ -28,7 +28,7 @@
       </button>
 
       <!-- その他（未分類） -->
-      <button
+      <Button
         class="o-tab"
         :class="{ active: activeTab === UNCATEGORIZED_VALUE }"
         @click="handleTabChange(UNCATEGORIZED_VALUE)"
@@ -43,6 +43,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import { ref, onMounted, watch, computed } from 'vue'
 import { fetchOrderGroups, fetchOrderGroupCounts } from '@/api/orderGroup'
 import type { OrderGroupCounts } from '@/api/orderGroup'

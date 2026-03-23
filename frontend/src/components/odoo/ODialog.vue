@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 defineOptions({ inheritAttrs: false })
 import { computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
@@ -47,20 +48,20 @@ function handleClose() {
             <h4 class="o-dialog-title">
               <slot name="title">{{ title }}</slot>
             </h4>
-            <button class="o-dialog-close" @click="handleClose()">&times;</button>
+            <Button class="o-dialog-close" @click="handleClose()">&times;</Button>
           </div>
           <div class="o-dialog-body">
             <slot />
           </div>
           <div class="o-dialog-footer">
             <slot name="footer">
-              <OButton variant="secondary" @click="handleClose()">{{ t('dialog.cancel') }}</OButton>
-              <OButton
+              <Button variant="secondary" @click="handleClose()">{{ t('dialog.cancel') }}</Button>
+              <Button
                 :variant="danger ? 'danger' : 'primary'"
                 @click="emit('confirm')"
               >
                 <slot name="confirm-text">{{ t('dialog.confirm') }}</slot>
-              </OButton>
+              </Button>
             </slot>
           </div>
         </div>

@@ -13,13 +13,13 @@
     <div class="osc-form">
       <div class="osc-form-group">
         <label class="osc-label">グループ名 <span class="required-badge">必須</span></label>
-        <input class="o-input" v-model="formData.name" placeholder="例: VIP、通常、冷凍品" />
+        <Input v-model="formData.name" placeholder="例: VIP、通常、冷凍品" />
         <div v-if="nameError" class="field-error">{{ nameError }}</div>
       </div>
 
       <div class="osc-form-group">
         <label class="osc-label">説明</label>
-        <textarea class="o-input" v-model="formData.description" rows="2" placeholder="グループの用途を入力（任意）"></textarea>
+        <Textarea v-model="formData.description" rows="2" placeholder="グループの用途を入力（任意）"></Textarea>
       </div>
 
       <div class="osc-form-group">
@@ -42,12 +42,15 @@
 
         <div class="osc-form-group">
           <label class="osc-label osc-label--sub">条件タイプ / 条件类型</label>
-          <select class="o-input" v-model="criteriaType" @change="onCriteriaTypeChange">
-            <option value="">なし（手動割当のみ）/ 无（仅手动分配）</option>
-            <option v-for="opt in criteriaTypeOptions" :key="opt.value" :value="opt.value">
-              {{ opt.label }}
-            </option>
-          </select>
+          <Select :model-value="criteriaType || '__all__'" @update:model-value="(val: string) => { criteriaType = val === '__all__' ? '' : val as SortCriteriaType; onCriteriaTypeChange() }">
+            <SelectTrigger class="h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">なし（手動割当のみ）/ 无（仅手动分配）</SelectItem>
+              <SelectItem v-for="opt in criteriaTypeOptions" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <!-- 都道府県条件 / 都道府县条件 -->
@@ -65,22 +68,22 @@
             </label>
           </div>
           <div class="criteria-quick-actions">
-            <button type="button" class="link-btn" @click="selectAllPrefectures">全選択</button>
-            <button type="button" class="link-btn" @click="clearAllPrefectures">全解除</button>
-            <button type="button" class="link-btn" @click="selectKantoRegion">関東</button>
-            <button type="button" class="link-btn" @click="selectKansaiRegion">関西</button>
+            <Button type="button" class="link-btn" @click="selectAllPrefectures">全選択</Button>
+            <Button type="button" class="link-btn" @click="clearAllPrefectures">全解除</Button>
+            <Button type="button" class="link-btn" @click="selectKantoRegion">関東</Button>
+            <Button type="button" class="link-btn" @click="selectKansaiRegion">関西</Button>
           </div>
         </div>
 
         <!-- 荷主条件 / 货主条件 -->
         <div v-if="criteriaType === 'customer'" class="criteria-detail">
           <label class="osc-label osc-label--sub">荷主ID（カンマ区切り）/ 货主ID（逗号分隔）</label>
-          <textarea
-            class="o-input"
+          <Textarea
+           
             v-model="customerIdsText"
             rows="2"
             placeholder="例: client-001, client-002"
-          ></textarea>
+          ></Textarea>
           <div class="criteria-help">荷主（依頼元会社）のIDを入力してください / 请输入货主（委托方公司）的ID</div>
         </div>
 
@@ -108,7 +111,7 @@
               :key="bt.value"
               class="checkbox-label"
             >
-              <input
+              <Input
                 type="checkbox"
                 :checked="selectedBusinessTypes.has(bt.value)"
                 @change="toggleBusinessType(bt.value)"
@@ -121,7 +124,7 @@
         <!-- SLA条件 / SLA条件 -->
         <div v-if="criteriaType === 'sla'" class="criteria-detail">
           <label class="osc-label osc-label--sub">最大残り時間（時間）/ 最大剩余时间（小时）</label>
-          <input class="o-input" type="number" v-model.number="slaMaxHours" min="1" max="720" placeholder="例: 24" />
+          <Input type="number" v-model.number="slaMaxHours" min="1" max="720" placeholder="例: 24" />
           <div class="criteria-help">出荷予定日まで指定時間以内の注文をマッチ / 匹配距出货预定日在指定时间内的订单</div>
         </div>
       </div>
@@ -136,9 +139,12 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { ref, reactive, watch, computed } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { OrderGroup, SortCriteria, SortCriteriaType } from '@/types/orderGroup'
 import { SORT_CRITERIA_TYPE_LABELS, BUSINESS_TYPE_LABELS } from '@/types/orderGroup'
 

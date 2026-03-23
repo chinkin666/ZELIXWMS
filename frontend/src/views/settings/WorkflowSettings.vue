@@ -104,11 +104,11 @@
         </div>
         <div class="form-field form-field--full">
           <label>説明 / 描述</label>
-          <textarea v-model="form.description" class="form-textarea" rows="2" />
+          <Textarea v-model="form.description" class="form-textarea" rows="2" />
         </div>
         <div class="form-field form-field--full">
           <label>アクション定義（JSON）/ 动作定义（JSON）</label>
-          <textarea
+          <Textarea
             v-model="actionsJson"
             class="form-textarea mono-text"
             rows="6"
@@ -123,6 +123,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/composables/useToast'
 import { Button } from '@/components/ui/button'
 import PageHeader from '@/components/shared/PageHeader.vue'

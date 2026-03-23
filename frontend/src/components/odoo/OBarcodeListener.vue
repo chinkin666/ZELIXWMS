@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 
@@ -275,14 +277,14 @@ watch(() => props.enabled, (enabled) => {
         {{ t('barcode.manualEntry') || 'Manual Entry' }}
       </label>
       <div class="o-barcode-manual__row">
-        <input
+        <Input
           v-model="manualInput"
           type="text"
           class="o-barcode-manual__input"
           :placeholder="t('barcode.enterBarcode') || 'Enter barcode...'"
           @keydown.enter="submitManualEntry"
         />
-        <button
+        <Button
           class="o-barcode-manual__submit"
           :disabled="manualInput.trim().length === 0"
           @click="submitManualEntry"

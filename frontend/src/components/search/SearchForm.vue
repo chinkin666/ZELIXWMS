@@ -5,8 +5,8 @@
         <!-- テキスト検索 -->
         <div v-if="field.type === 'string'" class="search-field">
           <label class="search-field__label">{{ field.label }}</label>
-          <input
-            class="o-input o-input-sm"
+          <Input
+            class="o-input -sm"
             v-model="fieldValues[field.key]"
             :placeholder="field.label"
             @keyup.enter="doSearch"
@@ -16,9 +16,9 @@
         <!-- 数値検索 -->
         <div v-else-if="field.type === 'number'" class="search-field">
           <label class="search-field__label">{{ field.label }}</label>
-          <input
+          <Input
             type="number"
-            class="o-input o-input-sm"
+            class="o-input -sm"
             v-model.number="fieldValues[field.key]"
             :placeholder="field.label"
             @keyup.enter="doSearch"
@@ -28,32 +28,38 @@
         <!-- セレクト検索 -->
         <div v-else-if="field.type === 'select'" class="search-field">
           <label class="search-field__label">{{ field.label }}</label>
-          <select class="o-input o-input-sm" v-model="fieldValues[field.key]">
-            <option value="">{{ t('wms.search.all') }}</option>
-            <option
-              v-for="opt in field.options"
-              :key="opt.value"
-              :value="opt.value"
-            >{{ opt.label }}</option>
-          </select>
+          <Select :model-value="fieldValues[field.key] || '__all__'" @update:model-value="(val: string) => fieldValues[field.key] = val === '__all__' ? '' : val">
+            <SelectTrigger class="h-7 -sm"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">{{ t('wms.search.all') }}</SelectItem>
+              <SelectItem
+                v-for="opt in field.options"
+                :key="opt.value"
+                :value="String(opt.value)"
+              >{{ opt.label }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <!-- ブール検索 -->
         <div v-else-if="field.type === 'boolean'" class="search-field">
           <label class="search-field__label">{{ field.label }}</label>
-          <select class="o-input o-input-sm" v-model="fieldValues[field.key]">
-            <option value="">{{ t('wms.search.all') }}</option>
-            <option :value="true">{{ t('wms.search.yes') }}</option>
-            <option :value="false">{{ t('wms.search.no') }}</option>
-          </select>
+          <Select :model-value="fieldValues[field.key] === true ? 'true' : fieldValues[field.key] === false ? 'false' : '__all__'" @update:model-value="(val: string) => fieldValues[field.key] = val === '__all__' ? '' : val === 'true'">
+            <SelectTrigger class="h-7 -sm"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">{{ t('wms.search.all') }}</SelectItem>
+              <SelectItem value="true">{{ t('wms.search.yes') }}</SelectItem>
+              <SelectItem value="false">{{ t('wms.search.no') }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <!-- 日付検索 -->
         <div v-else-if="field.type === 'date'" class="search-field">
           <label class="search-field__label">{{ field.label }}</label>
-          <input
+          <Input
             type="date"
-            class="o-input o-input-sm"
+            class="o-input -sm"
             v-model="fieldValues[field.key]"
             @keyup.enter="doSearch"
           />
@@ -63,16 +69,16 @@
         <div v-else-if="field.type === 'daterange'" class="search-field search-field--daterange">
           <label class="search-field__label">{{ field.label }}</label>
           <div class="daterange-inputs">
-            <input
+            <Input
               type="date"
-              class="o-input o-input-sm"
+              class="o-input -sm"
               v-model="fieldValues[field.key + '__from']"
               @keyup.enter="doSearch"
             />
             <span class="daterange-sep">〜</span>
-            <input
+            <Input
               type="date"
-              class="o-input o-input-sm"
+              class="o-input -sm"
               v-model="fieldValues[field.key + '__to']"
               @keyup.enter="doSearch"
             />
@@ -81,14 +87,17 @@
       </template>
 
       <div class="search-actions">
-        <button class="o-btn o-btn-primary o-btn-sm" @click="doSearch">{{ t('wms.search.search') }}</button>
-        <button class="o-btn o-btn-secondary o-btn-sm" @click="doReset">{{ t('wms.search.clear') }}</button>
+        <Button class="o-btn o-btn-primary o-btn-sm" @click="doSearch">{{ t('wms.search.search') }}</Button>
+        <Button class="o-btn o-btn-secondary o-btn-sm" @click="doReset">{{ t('wms.search.clear') }}</Button>
       </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import type { TableColumn, Operator } from '@/types/table'
@@ -279,29 +288,15 @@ defineExpose({
   white-space: nowrap;
 }
 
-.search-field .o-input-sm {
-  width: 150px;
-  height: 28px;
-  font-size: 13px;
-  padding: 2px 8px;
-  border: 1px solid var(--o-border-color, #E2DBD5);
-  outline: none;
-}
-
-.search-field .o-input-sm:focus {
-  border-color: var(--o-brand-primary, #0052A3);
-}
-
+.search-field 
+.search-field 
 .search-field--daterange .daterange-inputs {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.search-field--daterange .o-input-sm {
-  width: 130px;
-}
-
+.search-field--daterange 
 .daterange-sep {
   color: var(--o-gray-500, #A69B91);
   font-size: 12px;

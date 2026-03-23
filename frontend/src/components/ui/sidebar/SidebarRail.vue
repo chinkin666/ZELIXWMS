@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import type { HTMLAttributes } from "vue"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "./utils"
@@ -11,7 +12,7 @@ const { toggleSidebar } = useSidebar()
 </script>
 
 <template>
-  <button
+  <Button
     data-sidebar="rail"
     data-slot="sidebar-rail"
     aria-label="Toggle Sidebar"

@@ -35,24 +35,24 @@
 
     <!-- エラーテーブル（エラーがある場合） -->
     <div v-if="hasErrors" style="max-height: 360px; overflow: auto; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px">
-      <table class="o-list-table" style="font-size: 13px">
-        <thead>
-          <tr>
-            <th style="width: 90px">行</th>
-            <th style="width: 180px">SKU</th>
-            <th style="width: 160px">フィールド</th>
-            <th style="min-width: 360px">メッセージ</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(err, idx) in result.errors" :key="idx">
-            <td>{{ (err.rowIndex ?? 0) + 1 }}</td>
-            <td>{{ err.sku }}</td>
-            <td>{{ err.field }}</td>
-            <td>{{ err.message }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <Table class="o-list-table" style="font-size: 13px">
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width: 90px">行</TableHead>
+            <TableHead style="width: 180px">SKU</TableHead>
+            <TableHead style="width: 160px">フィールド</TableHead>
+            <TableHead style="min-width: 360px">メッセージ</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-for="(err, idx) in result.errors" :key="idx">
+            <TableCell>{{ (err.rowIndex ?? 0) + 1 }}</TableCell>
+            <TableCell>{{ err.sku }}</TableCell>
+            <TableCell>{{ err.field }}</TableCell>
+            <TableCell>{{ err.message }}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <!-- スキップされたSKU一覧（skipモードの場合） -->
@@ -80,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { computed } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

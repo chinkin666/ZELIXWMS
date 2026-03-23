@@ -526,7 +526,4 @@ onMounted(() => {
   outline: none;
   transition: border-color 0.2s;
 }
-.o-input:focus {
-  border-color: var(--o-brand-primary, #714b67);
-}
 </style>

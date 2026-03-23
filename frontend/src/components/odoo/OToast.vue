@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import { ref, onMounted } from 'vue'
 
 interface Props {
@@ -35,7 +36,7 @@ const icons: Record<string, string> = {
   <div class="o-toast" :class="[`o-toast--${type}`, { 'o-toast--visible': visible }]">
     <span class="o-toast-icon">{{ icons[type] }}</span>
     <span class="o-toast-msg">{{ message }}</span>
-    <button class="o-toast-close" @click="visible = false; $emit('close')">&times;</button>
+    <Button class="o-toast-close" @click="visible = false; $emit('close')">&times;</Button>
   </div>
 </template>
 

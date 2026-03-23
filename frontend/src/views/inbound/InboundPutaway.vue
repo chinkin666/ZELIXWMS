@@ -428,8 +428,7 @@ onMounted(() => {
   .o-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
   /* 入力フィールド全幅 / 输入框全宽 */
-  .o-input, select.{ width: 100% !important; }
-
+  
   /* 一括棚入れセクション縦積み / 批量上架区域纵向排列 */
   .bulk-putaway-card { padding: 12px; }
 }

@@ -7,7 +7,7 @@
       </label>
       <div class="o-field-value">
         <!-- text -->
-        <input
+        <Input
           v-if="def.fieldType === 'text'"
           class="o-inline-input"
           type="text"
@@ -17,7 +17,7 @@
         />
 
         <!-- number -->
-        <input
+        <Input
           v-else-if="def.fieldType === 'number'"
           class="o-inline-input"
           type="number"
@@ -38,7 +38,7 @@
         </select>
 
         <!-- date -->
-        <input
+        <Input
           v-else-if="def.fieldType === 'date'"
           class="o-inline-input"
           type="date"
@@ -65,6 +65,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, onMounted, watch } from 'vue'
 import {
   fetchActiveDefinitions,

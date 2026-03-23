@@ -68,7 +68,7 @@
           </div>
           <div class="form-field">
             <label>{{ t('wms.inventory.memo', 'メモ') }}</label>
-            <textarea v-model="form.memo" rows="2" />
+            <Textarea v-model="form.memo" rows="2" />
           </div>
         </div>
         <DialogFooter>
@@ -83,6 +83,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import PageHeader from '@/components/shared/PageHeader.vue'

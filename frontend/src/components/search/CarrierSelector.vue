@@ -8,7 +8,7 @@
         class="carrier-option"
       >
         <label class="o-checkbox">
-          <input
+          <Input
             type="checkbox"
             :checked="selectedCarrierId === String(carrier._id)"
             @change="() => handleCarrierClick(carrier._id)"
@@ -21,6 +21,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, onMounted, watch } from 'vue'
 import { fetchCarriers } from '@/api/carrier'
 import type { Carrier } from '@/types/carrier'

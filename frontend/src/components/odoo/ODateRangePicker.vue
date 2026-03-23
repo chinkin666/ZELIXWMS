@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 
@@ -328,7 +330,7 @@ onUnmounted(() => {
     <div ref="triggerRef" class="o-date-range-inputs" @click="toggleCalendar">
       <div class="o-date-range-field">
         <label class="o-date-range-label">{{ t('common.from') || 'From' }}</label>
-        <input
+        <Input
           type="text"
           class="o-date-range-input"
           :value="fromInput"
@@ -344,7 +346,7 @@ onUnmounted(() => {
       </span>
       <div class="o-date-range-field">
         <label class="o-date-range-label">{{ t('common.to') || 'To' }}</label>
-        <input
+        <Input
           type="text"
           class="o-date-range-input"
           :value="toInput"
@@ -353,7 +355,7 @@ onUnmounted(() => {
           @click.stop
         />
       </div>
-      <button
+      <Button
         v-if="fromInput || toInput"
         class="o-date-range-clear"
         type="button"
@@ -366,7 +368,7 @@ onUnmounted(() => {
 
     <div v-if="showCalendar" ref="calendarRef" class="o-date-range-dropdown">
       <div v-if="presets" class="o-date-range-presets">
-        <button
+        <Button
           v-for="preset in presetList"
           :key="preset.key"
           type="button"
@@ -381,7 +383,7 @@ onUnmounted(() => {
       <div class="o-date-range-calendars">
         <div class="o-date-range-calendar">
           <div class="o-date-range-cal-header">
-            <button type="button" class="o-date-range-nav" @click="prevMonth">
+            <Button type="button" class="o-date-range-nav" @click="prevMonth">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M15 18l-6-6 6-6" />
               </svg>
@@ -392,7 +394,7 @@ onUnmounted(() => {
           <div class="o-date-range-cal-grid">
             <span v-for="day in DAYS_OF_WEEK" :key="day" class="o-date-range-day-header">{{ day }}</span>
             <template v-for="(week, wi) in leftWeeks" :key="wi">
-              <button
+              <Button
                 v-for="(dateStr, di) in week"
                 :key="di"
                 type="button"
@@ -418,7 +420,7 @@ onUnmounted(() => {
           <div class="o-date-range-cal-header">
             <span />
             <span class="o-date-range-month-label">{{ rightMonthLabel }}</span>
-            <button type="button" class="o-date-range-nav" @click="nextMonth">
+            <Button type="button" class="o-date-range-nav" @click="nextMonth">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M9 18l6-6-6-6" />
               </svg>
@@ -427,7 +429,7 @@ onUnmounted(() => {
           <div class="o-date-range-cal-grid">
             <span v-for="day in DAYS_OF_WEEK" :key="day" class="o-date-range-day-header">{{ day }}</span>
             <template v-for="(week, wi) in rightWeeks" :key="wi">
-              <button
+              <Button
                 v-for="(dateStr, di) in week"
                 :key="di"
                 type="button"
@@ -452,7 +454,7 @@ onUnmounted(() => {
 
       <div class="o-date-range-footer">
         <label class="o-date-range-comparison">
-          <input
+          <Input
             v-model="comparisonMode"
             type="checkbox"
             class="o-date-range-comparison-check"

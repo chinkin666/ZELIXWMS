@@ -25,7 +25,7 @@
             <span class="required-badge">必須</span>
           </label>
           <select
-            class="o-input"
+           
             v-model="formData.configId"
             style="width: 100%"
           >
@@ -44,7 +44,7 @@
             <span class="form-label">ご依頼主</span>
           </label>
           <select
-            class="o-input"
+           
             v-model="formData.orderSourceCompanyId"
             style="width: 100%"
           >
@@ -64,7 +64,7 @@
             <span class="required-badge">必須</span>
           </label>
           <select
-            class="o-input"
+           
             v-model="formData.carrierId"
             style="width: 100%"
           >
@@ -99,7 +99,7 @@
           </div>
           <div class="upload-tip">取込可能形式：CSV、XLSX、XLS</div>
         </div>
-        <input
+        <Input
           ref="fileInputRef"
           type="file"
           accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
@@ -114,7 +114,7 @@
           <div class="o-form-group" style="margin-top: 12px; margin-bottom: 0">
             <label class="o-form-label">文字コード</label>
             <select
-              class="o-input"
+             
               v-model="fileEncoding"
               style="width: 200px"
               @change="handleEncodingChange"
@@ -143,23 +143,23 @@
       <div v-if="previewRows.length > 0" class="preview-section">
         <h3>プレビュー（最初の5行）</h3>
         <div style="max-height: 240px; overflow: auto; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px">
-          <table class="o-list-table" style="font-size: 12px">
-            <thead>
-              <tr>
-                <th style="min-width: 60px">#</th>
-                <th v-for="key in Object.keys(previewRows[0] || {})" :key="key" style="min-width: 120px">{{ key }}</th>
-                <th style="min-width: 200px">検証結果</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
+          <Table class="o-list-table" style="font-size: 12px">
+            <TableHeader>
+              <TableRow>
+                <TableHead style="min-width: 60px">#</TableHead>
+                <TableHead v-for="key in Object.keys(previewRows[0] || {})" :key="key" style="min-width: 120px">{{ key }}</TableHead>
+                <TableHead style="min-width: 200px">検証結果</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow
                 v-for="(row, idx) in previewRows"
                 :key="idx"
                 :class="{ 'row-error': rowValidationErrors[idx] && rowValidationErrors[idx].length > 0 }"
               >
-                <td>{{ idx + 1 }}</td>
-                <td v-for="key in Object.keys(previewRows[0] || {})" :key="key">{{ row[key] }}</td>
-                <td class="validation-cell">
+                <TableCell>{{ idx + 1 }}</TableCell>
+                <TableCell v-for="key in Object.keys(previewRows[0] || {})" :key="key">{{ row[key] }}</TableCell>
+                <TableCell class="validation-cell">
                   <template v-if="rowValidationErrors[idx] && rowValidationErrors[idx].length > 0">
                     <span
                       v-for="(err, errIdx) in rowValidationErrors[idx]"
@@ -168,10 +168,10 @@
                     >{{ err }}</span>
                   </template>
                   <span v-else class="validation-ok">OK</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>
@@ -195,6 +195,8 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Input } from '@/components/ui/input'
 import { computed, reactive, ref, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

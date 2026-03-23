@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import OFileUploader from './OFileUploader.vue'
@@ -111,19 +112,19 @@ function navigateBreadcrumb(route?: string) {
       <!-- Action buttons -->
       <div class="o-cp-actions">
         <slot name="actions">
-          <OButton v-if="showUpload" variant="secondary" @click="showUploadDialog = true">
+          <Button v-if="showUpload" variant="secondary" @click="showUploadDialog = true">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
               <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
             </svg>
             {{ t('common.upload') }}
-          </OButton>
-          <OButton v-if="showCreate" variant="primary" @click="$emit('create')">
+          </Button>
+          <Button v-if="showCreate" variant="primary" @click="$emit('create')">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/>
             </svg>
             {{ createLabel || t('controlPanel.new') }}
-          </OButton>
+          </Button>
         </slot>
       </div>
     </div>
@@ -135,7 +136,7 @@ function navigateBreadcrumb(route?: string) {
           <svg class="o-searchview-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
           </svg>
-          <input
+          <Input
             type="text"
             class="o-searchview-input"
             :placeholder="t('common.search')"
@@ -144,12 +145,12 @@ function navigateBreadcrumb(route?: string) {
         </div>
         <slot name="search-actions">
           <div class="o-search-options">
-            <button class="o-search-option-btn" :title="t('controlPanel.groupBy')">
+            <Button class="o-search-option-btn" :title="t('controlPanel.groupBy')">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z"/>
               </svg>
             </button>
-            <button class="o-search-option-btn" :title="t('controlPanel.favorites')">
+            <Button class="o-search-option-btn" :title="t('controlPanel.favorites')">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
               </svg>

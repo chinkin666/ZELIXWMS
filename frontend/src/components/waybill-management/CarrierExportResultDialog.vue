@@ -10,7 +10,7 @@
         <div class="meta__item meta__item--select">
           <span class="meta__label">出力レイアウト：</span>
           <select
-            class="o-input"
+           
             v-model="selectedMappingIdProxy"
             :disabled="(mappingOptions?.length || 0) === 0"
             style="width: 340px"
@@ -26,18 +26,18 @@
     <div class="preview">
       <div class="preview__title">プレビュー（先頭 {{ previewRows.length }} 件）</div>
       <div style="max-height: 420px; overflow: auto">
-        <table class="o-list-table">
-          <thead>
-            <tr>
-              <th v-for="h in headers" :key="h" style="min-width: 160px">{{ h }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, idx) in previewRows" :key="idx">
-              <td v-for="h in headers" :key="h">{{ row[h] ?? '' }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <Table class="o-list-table">
+          <TableHeader>
+            <TableRow>
+              <TableHead v-for="h in headers" :key="h" style="min-width: 160px">{{ h }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="(row, idx) in previewRows" :key="idx">
+              <TableCell v-for="h in headers" :key="h">{{ row[h] ?? '' }}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
     </div>
 
@@ -58,6 +58,7 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { computed } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

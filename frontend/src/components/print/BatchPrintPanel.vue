@@ -4,7 +4,7 @@
       <div v-if="visible" class="batch-print-panel">
         <div class="panel-header">
           <span class="panel-title">一括印刷</span>
-          <button class="o-btn o-btn-sm" style="border:none; background:none; font-size:18px; cursor:pointer" @click="handleClose" :disabled="printing">✕</button>
+          <Button class="o-btn o-btn-sm" style="border:none; background:none; font-size:18px; cursor:pointer" @click="handleClose" :disabled="printing">✕</Button>
         </div>
 
         <div class="panel-content">
@@ -12,10 +12,13 @@
           <div class="settings-section">
             <div class="setting-row">
               <span class="setting-label">DPI</span>
-              <select class="o-input" v-model.number="exportDpi" style="width: 80px" :disabled="printing">
-                <option :value="203">203</option>
-                <option :value="300">300</option>
-              </select>
+              <Select :model-value="String(exportDpi)" @update:model-value="(val: string) => exportDpi = Number(val)" :disabled="printing">
+                <SelectTrigger class="h-9" style="width: 80px"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="203">203</SelectItem>
+                  <SelectItem value="300">300</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div class="setting-row">
               <span class="setting-label">印刷済み登録</span>
@@ -97,6 +100,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { OrderDocument } from '@/types/order'
 import type { PrintTemplate } from '@/types/printTemplate'
 import type { Carrier } from '@/types/carrier'

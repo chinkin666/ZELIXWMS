@@ -9,10 +9,13 @@
       <div class="layout-section">
         <h3>取込レイアウト</h3>
         <div class="layout-row">
-          <select class="o-input" v-model="selectedMode" style="width: 260px">
-            <option value="manual">手動マッチ（レイアウト未使用）</option>
-            <option v-for="opt in layoutOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-          </select>
+          <Select v-model="selectedMode">
+            <SelectTrigger class="h-9" style="width: 260px"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="manual">手動マッチ（レイアウト未使用）</SelectItem>
+              <SelectItem v-for="opt in layoutOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -22,17 +25,23 @@
         <div class="match-row">
           <div class="match-item">
             <div class="match-label">注文の項目</div>
-            <select class="o-input" v-model="orderMatchField" style="width: 100%">
-              <option v-for="opt in orderMatchFieldOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
+            <Select v-model="orderMatchField">
+              <SelectTrigger class="h-9 w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="opt in orderMatchFieldOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div class="match-eq">=</div>
           <div class="match-item">
             <div class="match-label">ファイルの列</div>
-            <select class="o-input" v-model="fileMatchColumn" style="width: 100%">
-              <option value="">列を選択</option>
-              <option v-for="h in fileHeaders" :key="h" :value="h">{{ h }}</option>
-            </select>
+            <Select :model-value="fileMatchColumn || '__all__'" @update:model-value="(val: string) => fileMatchColumn = val === '__all__' ? '' : val">
+              <SelectTrigger class="h-9 w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">列を選択</SelectItem>
+                <SelectItem v-for="h in fileHeaders" :key="h" :value="h">{{ h }}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <div class="match-hint">
@@ -46,9 +55,12 @@
         <div class="match-row" style="grid-template-columns: 1fr">
           <div class="match-item">
             <div class="match-label">注文のどの項目で照合するか</div>
-            <select class="o-input" v-model="orderMatchField" style="width: 100%">
-              <option v-for="opt in orderMatchFieldOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
+            <Select v-model="orderMatchField">
+              <SelectTrigger class="h-9 w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="opt in orderMatchFieldOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -74,7 +86,7 @@
           </div>
           <div class="upload-tip">取込可能形式：CSV、XLSX、XLS</div>
         </div>
-        <input
+        <Input
           ref="fileInputRef"
           type="file"
           accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
@@ -88,9 +100,12 @@
         <div v-if="isCsvFile" class="encoding-section">
           <div class="o-form-group" style="margin-top: 12px; margin-bottom: 0">
             <label class="o-form-label">文字コード</label>
-            <select class="o-input" v-model="fileEncoding" style="width: 200px">
-              <option v-for="enc in encodingOptions" :key="enc.value" :value="enc.value">{{ enc.label }}</option>
-            </select>
+            <Select v-model="fileEncoding">
+              <SelectTrigger class="h-9" style="width: 200px"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem v-for="enc in encodingOptions" :key="enc.value" :value="enc.value">{{ enc.label }}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -104,18 +119,18 @@
           </span>
         </h3>
         <div style="max-height: 200px; overflow: auto; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px">
-          <table class="o-list-table" style="font-size: 12px">
-            <thead>
-              <tr>
-                <th v-for="h in previewHeaders" :key="h" style="min-width: 120px">{{ h }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, idx) in previewRows" :key="idx">
-                <td v-for="h in previewHeaders" :key="h">{{ row[h] }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <Table class="o-list-table" style="font-size: 12px">
+            <TableHeader>
+              <TableRow>
+                <TableHead v-for="h in previewHeaders" :key="h" style="min-width: 120px">{{ h }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="(row, idx) in previewRows" :key="idx">
+                <TableCell v-for="h in previewHeaders" :key="h">{{ row[h] }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
 
@@ -165,7 +180,10 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Input } from '@/components/ui/input'
 import { computed, ref, watch } from 'vue'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 // XLSX动态导入，减少初始包大小 / XLSXを動的インポートし初期バンドルサイズを削減
 const loadXLSX = () => import('xlsx')
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'

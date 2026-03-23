@@ -12,14 +12,17 @@
       <div class="search-row">
         <div class="search-field">
           <label class="field-label">送り状種類</label>
-          <select class="o-input o-input-sm" v-model="filters.carrierId" style="width: 120px">
-            <option value="">全て</option>
-            <option
-              v-for="opt in carrierOptions"
-              :key="String(opt.value)"
-              :value="opt.value"
-            >{{ opt.label }}</option>
-          </select>
+          <Select :model-value="filters.carrierId || '__all__'" @update:model-value="(val: string) => filters.carrierId = val === '__all__' ? '' : val">
+            <SelectTrigger class="h-7" style="width: 120px"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">全て</SelectItem>
+              <SelectItem
+                v-for="opt in carrierOptions"
+                :key="String(opt.value)"
+                :value="String(opt.value)"
+              >{{ opt.label }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div class="search-field">
@@ -34,21 +37,27 @@
         <div class="search-field">
           <label class="field-label">その他</label>
           <span class="field-value">注文数</span>
-          <input type="number" class="o-input o-input-sm" v-model.number="filters.orderCountMin" :min="0" style="width: 60px" />
+          <Input type="number" class="o-input -sm" v-model.number="filters.orderCountMin" :min="0" style="width: 60px" />
           <span class="field-separator">〜</span>
-          <select class="o-input o-input-sm" v-model="filters.orderCountOp" style="width: 60px">
-            <option value="lte">以下</option>
-            <option value="gte">以上</option>
-          </select>
+          <Select v-model="filters.orderCountOp">
+            <SelectTrigger class="h-7" style="width: 60px"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="lte">以下</SelectItem>
+              <SelectItem value="gte">以上</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div class="search-field">
           <span class="field-value">等口数</span>
-          <select class="o-input o-input-sm" v-model="filters.skuCountOp" style="width: 80px">
-            <option value="">全て</option>
-            <option value="1">1種類</option>
-            <option value="2+">2種以上</option>
-          </select>
+          <Select :model-value="filters.skuCountOp || '__all__'" @update:model-value="(val: string) => filters.skuCountOp = val === '__all__' ? '' : val">
+            <SelectTrigger class="h-7" style="width: 80px"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">全て</SelectItem>
+              <SelectItem value="1">1種類</SelectItem>
+              <SelectItem value="2+">2種以上</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div class="search-field">
@@ -77,16 +86,19 @@
 
         <div class="search-field">
           <label class="field-label">期間</label>
-          <select class="o-input o-input-sm" v-model="filters.dateField" style="width: 100px">
-            <option value="shipPlanDate">出荷予定日</option>
-            <option value="createdAt">作成日時</option>
-          </select>
+          <Select v-model="filters.dateField">
+            <SelectTrigger class="h-7" style="width: 100px"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="shipPlanDate">出荷予定日</SelectItem>
+              <SelectItem value="createdAt">作成日時</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div class="search-field">
-          <input type="date" class="o-input o-input-sm" v-model="dateStart" style="width: 130px" />
+          <Input type="date" class="o-input -sm" v-model="dateStart" style="width: 130px" />
           <span class="field-separator">〜</span>
-          <input type="date" class="o-input o-input-sm" v-model="dateEnd" style="width: 130px" />
+          <Input type="date" class="o-input -sm" v-model="dateEnd" style="width: 130px" />
         </div>
 
         <div class="search-field date-shortcuts">
@@ -110,44 +122,53 @@
       <div class="search-row">
         <div class="search-field">
           <label class="field-label">ダイレクト検索</label>
-          <select class="o-input o-input-sm" v-model="filters.directSearchField" style="width: 100px">
-            <option value="orderNumber">注文番号</option>
-            <option value="customerManagementNumber">管理番号</option>
-          </select>
-          <input class="o-input o-input-sm" v-model="filters.directSearchValue1" style="width: 120px" placeholder="" />
+          <Select v-model="filters.directSearchField">
+            <SelectTrigger class="h-7" style="width: 100px"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="orderNumber">注文番号</SelectItem>
+              <SelectItem value="customerManagementNumber">管理番号</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input class="o-input -sm" v-model="filters.directSearchValue1" style="width: 120px" placeholder="" />
         </div>
 
         <div class="search-field">
           <span class="field-value">氏名</span>
-          <select class="o-input o-input-sm" v-model="filters.nameSearchField" style="width: 100px">
-            <option value="orderer.name">注文者氏名</option>
-            <option value="recipient.name">お届け先名</option>
-          </select>
-          <input class="o-input o-input-sm" v-model="filters.nameSearchValue" style="width: 120px" placeholder="" />
+          <Select v-model="filters.nameSearchField">
+            <SelectTrigger class="h-7" style="width: 100px"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="orderer.name">注文者氏名</SelectItem>
+              <SelectItem value="recipient.name">お届け先名</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input class="o-input -sm" v-model="filters.nameSearchValue" style="width: 120px" placeholder="" />
         </div>
 
         <div class="search-field">
           <span class="field-value">電話番号</span>
-          <select class="o-input o-input-sm" v-model="filters.phoneSearchField" style="width: 100px">
-            <option value="orderer.phone">注文者氏名</option>
-            <option value="recipient.phone">お届け先</option>
-          </select>
-          <input class="o-input o-input-sm" v-model="filters.phoneSearchValue" style="width: 100px" placeholder="" />
+          <Select v-model="filters.phoneSearchField">
+            <SelectTrigger class="h-7" style="width: 100px"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="orderer.phone">注文者氏名</SelectItem>
+              <SelectItem value="recipient.phone">お届け先</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input class="o-input -sm" v-model="filters.phoneSearchValue" style="width: 100px" placeholder="" />
         </div>
 
         <div class="search-field">
           <span class="field-value">お届物伝票番号</span>
-          <input class="o-input o-input-sm" v-model="filters.trackingId" style="width: 140px" placeholder="" />
+          <Input class="o-input -sm" v-model="filters.trackingId" style="width: 140px" placeholder="" />
         </div>
 
         <div class="search-field">
           <span class="field-value">都道府県</span>
-          <input class="o-input o-input-sm" v-model="filters.prefecture" style="width: 80px" placeholder="" />
+          <Input class="o-input -sm" v-model="filters.prefecture" style="width: 80px" placeholder="" />
         </div>
 
         <div class="search-field">
           <span class="field-value">住所</span>
-          <input class="o-input o-input-sm" v-model="filters.address" style="width: 100px" placeholder="" />
+          <Input class="o-input -sm" v-model="filters.address" style="width: 100px" placeholder="" />
         </div>
       </div>
 
@@ -155,7 +176,7 @@
       <div class="search-row">
         <div class="search-field">
           <label class="field-label">商品</label>
-          <input class="o-input o-input-sm" v-model="filters.productSearch" style="width: 200px" placeholder="商品名・SKUで検索" />
+          <Input class="o-input -sm" v-model="filters.productSearch" style="width: 200px" placeholder="商品名・SKUで検索" />
         </div>
       </div>
     </div>
@@ -169,8 +190,10 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, reactive, computed, watch } from 'vue'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { TableColumn } from '@/types/table'
 
 interface Props {
@@ -417,5 +440,4 @@ const handleClear = () => {
 .radio-item input[type="radio"] { margin: 0; }
 .o-checkbox { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #606266; cursor: pointer; white-space: nowrap; }
 .o-checkbox input[type="checkbox"] { margin: 0; }
-.o-input-sm { font-size: 12px; padding: 2px 6px; height: 26px; }
 </style>

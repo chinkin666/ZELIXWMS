@@ -1,5 +1,5 @@
 <template>
-  <button
+  <Button
     :class="classes"
     :type="type"
     :disabled="disabled"
@@ -10,6 +10,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import { computed } from 'vue'
 
 interface Props {

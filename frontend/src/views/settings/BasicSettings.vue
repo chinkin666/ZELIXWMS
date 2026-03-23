@@ -330,10 +330,6 @@ onMounted(loadSettings)
   transition: border-color 0.15s;
 }
 
-.o-input:focus {
-  border-color: var(--o-brand-primary, #0052A3);
-  box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.15);
-}
 
 select.{
   cursor: pointer;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { ref, h, onMounted, computed } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import PageHeader from '@/components/shared/PageHeader.vue'
@@ -456,12 +457,12 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
           <div class="body-layout">
             <div class="body-editor">
               <label>{{ t('wms.settings.email.bodyTemplate', 'メール本文テンプレート') }} <span class="text-destructive text-xs">*</span></label>
-              <textarea
+              <Textarea
                 v-model="form.bodyTemplate"
                 class="form-input form-textarea"
                 rows="12"
                 placeholder="{{customerName}} 様&#10;&#10;ご注文ありがとうございます。&#10;ご注文番号: {{orderNumber}}&#10;配送業者: {{carrierName}}&#10;追跡番号: {{trackingNumber}}&#10;出荷日: {{shippingDate}}&#10;&#10;■ 商品一覧&#10;{{itemList}}"
-              ></textarea>
+              ></Textarea>
             </div>
             <div class="placeholder-list">
               <label>{{ t('wms.settings.email.availablePlaceholders', '利用可能なプレースホルダー') }}</label>
@@ -476,12 +477,12 @@ async function toggleActive(template: EmailTemplate): Promise<void> {
 
         <div class="form-group full-width">
           <label>{{ t('wms.settings.email.footer', 'フッター') }}</label>
-          <textarea
+          <Textarea
             v-model="form.footerText"
             class="form-input form-textarea-sm"
             rows="3"
             placeholder="例: ※ このメールは自動送信です。ご返信いただいても対応できません。"
-          ></textarea>
+          ></Textarea>
         </div>
 
         <div class="form-group checkbox-group">

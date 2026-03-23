@@ -69,7 +69,7 @@
         </div>
         <div class="form-field form-field--full">
           <label>備考</label>
-          <textarea v-model="form.memo" class="form-textarea" rows="2" />
+          <Textarea v-model="form.memo" class="form-textarea" rows="2" />
         </div>
       </div>
 
@@ -143,7 +143,7 @@
         </div>
         <div class="form-field">
           <label>コンテキスト (JSON)</label>
-          <textarea v-model="testForm.contextJson" class="form-textarea" rows="6" placeholder='{"productCode": "ABC", "quantity": 10}' />
+          <Textarea v-model="testForm.contextJson" class="form-textarea" rows="6" placeholder='{"productCode": "ABC", "quantity": 10}' />
         </div>
         <div class="test-dialog__actions">
           <Button variant="default" @click="handleTest">テスト実行</Button>
@@ -170,6 +170,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { h, ref, computed, onMounted } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'

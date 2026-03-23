@@ -24,35 +24,35 @@
     </div>
 
     <div class="rounded-md border overflow-auto" :style="tableHeight ? { maxHeight: tableHeight + 'px' } : {}">
-      <table class="w-full caption-bottom text-sm">
+      <Table class="w-full caption-bottom text-sm">
         <thead class="[&_tr]:border-b">
-          <tr>
+          <TableRow>
             <!-- Selection column header / 選択列ヘッダー -->
-            <th
+            <TableHead
               v-if="rowSelectionEnabled && paginationMode !== 'server'"
               class="h-10 px-2 text-center align-middle font-medium text-muted-foreground"
               style="width: 50px;"
             >
-              <input
+              <Input
                 type="checkbox"
                 :checked="isAllCurrentPageSelected"
                 :indeterminate="isIndeterminate"
                 @change="handleSelectAllToggle"
                 class="cursor-pointer"
               />
-            </th>
+            </TableHead>
 
             <!-- Bundle column header / 同梱列ヘッダー -->
-            <th
+            <TableHead
               v-if="hasBundleColumn"
               class="h-10 px-2 text-center align-middle font-medium text-muted-foreground"
               :style="{ width: (bundleColumn?.width || 110) + 'px' }"
             >
               {{ bundleColumn?.title || '同梱' }}
-            </th>
+            </TableHead>
 
             <!-- Regular column headers / 通常列ヘッダー -->
-            <th
+            <TableHead
               v-for="col in visibleRegularColumns"
               :key="String(col.key || col.dataKey)"
               class="h-10 px-2 align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
@@ -64,40 +64,40 @@
               :class="col.className"
             >
               {{ col.title }}
-            </th>
+            </TableHead>
 
             <!-- Action column header / 操作列ヘッダー -->
-            <th
+            <TableHead
               v-if="hasActionColumn"
               class="h-10 px-2 align-middle font-medium text-muted-foreground"
               :style="{ width: (actionColumn?.width || 110) + 'px', textAlign: actionColumn?.align || 'center' }"
             >
               {{ actionColumn?.title || t('wms.common.actions', '操作') }}
-            </th>
-          </tr>
-        </thead>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
         <tbody class="[&_tr:last-child]:border-0">
-          <tr
+          <TableRow
             v-for="(row, rowIndex) in displayData"
             :key="String((row as any)[rowKey as string] ?? (row as any).id ?? rowIndex)"
             class="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
             :class="getRowClassName({ row })"
           >
             <!-- Selection column / 選択列 -->
-            <td
+            <TableCell
               v-if="rowSelectionEnabled && paginationMode !== 'server'"
               class="p-2 align-middle text-center"
             >
-              <input
+              <Input
                 type="checkbox"
                 :checked="isRowSelected(row)"
                 @change="handleRowCheckboxChange(row, $event)"
                 class="cursor-pointer"
               />
-            </td>
+            </TableCell>
 
             <!-- Bundle column / 同梱列 -->
-            <td
+            <TableCell
               v-if="hasBundleColumn"
               class="p-2 align-middle text-center"
             >
@@ -107,10 +107,10 @@
                 :row-data="row"
               />
               <span v-else>-</span>
-            </td>
+            </TableCell>
 
             <!-- Regular columns / 通常列 -->
-            <td
+            <TableCell
               v-for="col in visibleRegularColumns"
               :key="String(col.key || col.dataKey)"
               class="p-2 align-middle [&:has([role=checkbox])]:pr-0"
@@ -123,10 +123,10 @@
                 :row-data="row"
               />
               <span v-else>{{ formatColumnValue(row, col) }}</span>
-            </td>
+            </TableCell>
 
             <!-- Action column / 操作列 -->
-            <td
+            <TableCell
               v-if="hasActionColumn"
               class="p-2 align-middle"
               :style="{ textAlign: actionColumn?.align || 'center' }"
@@ -140,10 +140,10 @@
                 <Button variant="default" size="sm">編集</Button>
                 <Button variant="destructive" size="sm">削除</Button>
               </div>
-            </td>
-          </tr>
-          <tr v-if="displayData.length === 0">
-            <td
+            </TableCell>
+          </TableRow>
+          <TableRow v-if="displayData.length === 0">
+            <TableCell
               :colspan="totalColumnCount"
               class="text-center text-muted-foreground py-8"
             >
@@ -153,10 +153,10 @@
                 </svg>
                 <span>データがありません</span>
               </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <!-- ページネーション / 分页 -->
@@ -223,6 +223,8 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Input } from '@/components/ui/input'
 import { computed, h, ref, toRefs, watch, defineComponent } from 'vue'
 import type { HeaderGroupingConfig } from './tableHeaderGroup'
 import { getNestedValue, setNestedValue } from '@/utils/nestedObject'

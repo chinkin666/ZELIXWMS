@@ -22,9 +22,9 @@ defineEmits<{
     <div class="o-empty-icon">{{ icon }}</div>
     <h3 class="o-empty-title">{{ title }}</h3>
     <p v-if="description" class="o-empty-description">{{ description }}</p>
-    <OButton v-if="actionLabel" variant="primary" @click="$emit('action')">
+    <Button v-if="actionLabel" variant="primary" @click="$emit('action')">
       {{ actionLabel }}
-    </OButton>
+    </Button>
   </div>
 </template>
 

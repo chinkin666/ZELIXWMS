@@ -109,7 +109,7 @@
           </div>
           <div class="form-row">
             <label>説明 <span class="text-destructive text-xs">*</span></label>
-            <textarea v-model="createForm.description" rows="2" required />
+            <Textarea v-model="createForm.description" rows="2" required />
           </div>
           <div class="form-actions">
             <Button variant="secondary" type="button" @click="closeCreateDialog">キャンセル</Button>
@@ -124,6 +124,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/composables/useToast'

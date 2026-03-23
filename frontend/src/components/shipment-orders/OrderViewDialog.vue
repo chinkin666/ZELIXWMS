@@ -36,57 +36,57 @@
           <div class="section-divider"><span>内部データ</span></div>
           <div class="internal-record-area">
             <div style="max-height: 180px; overflow: auto">
-              <table class="o-list-table">
-                <thead>
-                  <tr>
-                    <th style="width: 180px">日時</th>
-                    <th style="width: 120px">発起者</th>
-                    <th style="min-width: 300px">内容</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(row, i) in internalRecords" :key="i">
-                    <td>{{ fmtDateTime(row.timestamp) }}</td>
-                    <td>{{ row.user }}</td>
-                    <td><span class="internal-record-content">{{ row.content }}</span></td>
-                  </tr>
-                </tbody>
-              </table>
+              <Table class="o-list-table">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead style="width: 180px">日時</TableHead>
+                    <TableHead style="width: 120px">発起者</TableHead>
+                    <TableHead style="min-width: 300px">内容</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="(row, i) in internalRecords" :key="i">
+                    <TableCell>{{ fmtDateTime(row.timestamp) }}</TableCell>
+                    <TableCell>{{ row.user }}</TableCell>
+                    <TableCell><span class="internal-record-content">{{ row.content }}</span></TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </div>
           </div>
         </template>
 
         <div class="section-divider"><span>商品</span></div>
         <div style="max-height: 280px; overflow: auto">
-          <table class="o-list-table">
-            <thead>
-              <tr>
-                <th style="width: 70px; text-align: center">画像</th>
-                <th style="min-width: 160px">SKU</th>
-                <th style="min-width: 260px">商品名</th>
-                <th style="width: 80px">数量</th>
-                <th style="min-width: 160px">バーコード</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, i) in productsTable" :key="i">
-                <td style="text-align: center">
+          <Table class="o-list-table">
+            <TableHeader>
+              <TableRow>
+                <TableHead style="width: 70px; text-align: center">画像</TableHead>
+                <TableHead style="min-width: 160px">SKU</TableHead>
+                <TableHead style="min-width: 260px">商品名</TableHead>
+                <TableHead style="width: 80px">数量</TableHead>
+                <TableHead style="min-width: 160px">バーコード</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="(row, i) in productsTable" :key="i">
+                <TableCell style="text-align: center">
                   <img
                     :src="resolveImageUrl(row.imageUrl)"
                     style="width: 40px; height: 40px; object-fit: contain"
                     @error="(e: Event) => { (e.target as HTMLImageElement).src = noImageSrc }"
                   />
-                </td>
-                <td>{{ row.sku }}</td>
-                <td>{{ row.name }}</td>
-                <td>{{ row.quantity }}</td>
-                <td>
+                </TableCell>
+                <TableCell>{{ row.sku }}</TableCell>
+                <TableCell>{{ row.name }}</TableCell>
+                <TableCell>{{ row.quantity }}</TableCell>
+                <TableCell>
                   <span v-if="row.barcode && row.barcode.length > 0">{{ row.barcode.join(', ') }}</span>
                   <span v-else>-</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
 
         <div class="section-divider"><span>元データ（取込時の行）</span></div>
@@ -96,7 +96,7 @@
         <div v-else>
           <div class="o-tabs">
             <div class="o-tab-nav">
-              <button
+              <Button
                 v-for="(row, idx) in rawRows"
                 :key="idx"
                 class="o-tab"
@@ -106,20 +106,20 @@
             </div>
             <div class="o-tab-content">
               <div style="max-height: 300px; overflow: auto">
-                <table class="o-list-table">
-                  <thead>
-                    <tr>
-                      <th style="min-width: 220px">キー</th>
-                      <th style="min-width: 420px">値</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="r in toKeyValueRows(rawRows[activeRawRowTab] || {})" :key="r.key">
-                      <td>{{ r.key }}</td>
-                      <td><span class="mono">{{ r.value }}</span></td>
-                    </tr>
-                  </tbody>
-                </table>
+                <Table class="o-list-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead style="min-width: 220px">キー</TableHead>
+                      <TableHead style="min-width: 420px">値</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow v-for="r in toKeyValueRows(rawRows[activeRawRowTab] || {})" :key="r.key">
+                      <TableCell>{{ r.key }}</TableCell>
+                      <TableCell><span class="mono">{{ r.value }}</span></TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
               </div>
             </div>
           </div>
@@ -137,6 +137,7 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { computed, onMounted, ref } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

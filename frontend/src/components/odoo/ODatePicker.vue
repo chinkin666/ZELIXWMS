@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 
 const props = withDefaults(defineProps<{
@@ -193,7 +195,7 @@ onUnmounted(() => {
       <svg class="o-datepicker-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
         <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
       </svg>
-      <input
+      <Input
         type="text"
         class="o-datepicker-input"
         :value="inputValue"
@@ -201,7 +203,7 @@ onUnmounted(() => {
         @input="onInput"
         @click.stop
       />
-      <button
+      <Button
         v-if="inputValue"
         class="o-datepicker-clear"
         type="button"
@@ -212,13 +214,13 @@ onUnmounted(() => {
     <Teleport to="body">
     <div v-if="showCalendar" ref="calendarRef" class="o-datepicker-dropdown" :style="dropdownStyle">
       <div class="o-datepicker-header">
-        <button type="button" class="o-datepicker-nav" @click="prevMonth">
+        <Button type="button" class="o-datepicker-nav" @click="prevMonth">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
         <span class="o-datepicker-month">{{ monthLabel }}</span>
-        <button type="button" class="o-datepicker-nav" @click="nextMonth">
+        <Button type="button" class="o-datepicker-nav" @click="nextMonth">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M9 18l6-6-6-6" />
           </svg>
@@ -230,7 +232,7 @@ onUnmounted(() => {
         <template v-for="(week, wi) in weeks" :key="wi">
           <template v-for="(dateStr, di) in week" :key="di">
             <span v-if="!dateStr" class="o-datepicker-day o-datepicker-day--empty" />
-            <button
+            <Button
               v-else
               type="button"
               class="o-datepicker-day"
@@ -249,7 +251,7 @@ onUnmounted(() => {
       </div>
 
       <div class="o-datepicker-footer">
-        <button type="button" class="o-datepicker-today-btn" @click="selectToday">今日</button>
+        <Button type="button" class="o-datepicker-today-btn" @click="selectToday">今日</Button>
       </div>
     </div>
     </Teleport>

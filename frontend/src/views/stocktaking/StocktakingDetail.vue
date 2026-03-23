@@ -221,8 +221,7 @@ onMounted(() => loadData())
   .o-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
   /* 入力フィールド全幅 / 输入框全宽 */
-  .o-input, .o-input-sm { width: 100% !important; }
-
+  
   /* タッチターゲット拡大 / 触摸目标放大 */
   button, .o-btn, .el-button { min-height: 44px; min-width: 44px; }
 

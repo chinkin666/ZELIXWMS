@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { ref, computed } from 'vue'
 import OButton from './OButton.vue'
 
@@ -71,7 +73,7 @@ const activeFilterCount = computed(() => Object.keys(activeFilters.value).length
   <div class="o-search-panel">
     <!-- Tabs -->
     <div class="o-sp-tabs">
-      <button
+      <Button
         class="o-sp-tab"
         :class="{ active: activeTab === 'filters' }"
         @click="activeTab = 'filters'"
@@ -79,7 +81,7 @@ const activeFilterCount = computed(() => Object.keys(activeFilters.value).length
         Filters
         <span v-if="activeFilterCount" class="o-sp-badge">{{ activeFilterCount }}</span>
       </button>
-      <button
+      <Button
         class="o-sp-tab"
         :class="{ active: activeTab === 'groupby' }"
         @click="activeTab = 'groupby'"
@@ -87,7 +89,7 @@ const activeFilterCount = computed(() => Object.keys(activeFilters.value).length
         Group By
         <span v-if="groupBy" class="o-sp-badge">1</span>
       </button>
-      <button
+      <Button
         v-if="showFavorites"
         class="o-sp-tab"
         :class="{ active: activeTab === 'favorites' }"
@@ -139,14 +141,14 @@ const activeFilterCount = computed(() => Object.keys(activeFilters.value).length
         <span>{{ fav.name }}</span>
       </div>
       <div class="o-sp-fav-add">
-        <input
+        <Input
           v-model="favoriteName"
           type="text"
           placeholder="Save current search..."
           class="o-sp-fav-input"
           @keydown.enter="saveFavorite"
         />
-        <OButton variant="primary" size="sm" @click="saveFavorite">Save</OButton>
+        <Button variant="primary" size="sm" @click="saveFavorite">Save</Button>
       </div>
     </div>
 
@@ -158,11 +160,11 @@ const activeFilterCount = computed(() => Object.keys(activeFilters.value).length
         class="o-sp-tag"
       >
         {{ key }}: {{ val }}
-        <button class="o-sp-tag-remove" @click="toggleFilter(String(key), val)">&times;</button>
+        <Button class="o-sp-tag-remove" @click="toggleFilter(String(key), val)">&times;</Button>
       </span>
       <span v-if="groupBy" class="o-sp-tag o-sp-tag--group">
         Group: {{ groupByOptions?.find(o => o.key === groupBy)?.label }}
-        <button class="o-sp-tag-remove" @click="setGroupBy(groupBy)">&times;</button>
+        <Button class="o-sp-tag-remove" @click="setGroupBy(groupBy)">&times;</Button>
       </span>
     </div>
   </div>

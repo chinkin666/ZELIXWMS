@@ -9,7 +9,7 @@
         <div class="meta__item meta__item--select">
           <span class="meta__label">出力レイアウト：</span>
           <select
-            class="o-input"
+           
             v-model="selectedConfigId"
             :disabled="configOptions.length === 0"
             style="width: 340px"
@@ -26,18 +26,18 @@
     <div class="preview">
       <div class="preview__title">出力プレビュー（先頭 {{ previewRows.length }} 件）</div>
       <div v-if="outputRows.length > 0" style="max-height:280px; overflow:auto">
-        <table class="o-list-table">
-          <thead>
-            <tr>
-              <th v-for="h in outputHeaders" :key="h">{{ h }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, idx) in previewRows" :key="idx">
-              <td v-for="h in outputHeaders" :key="h">{{ row[h] ?? '' }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <Table class="o-list-table">
+          <TableHeader>
+            <TableRow>
+              <TableHead v-for="h in outputHeaders" :key="h">{{ h }}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="(row, idx) in previewRows" :key="idx">
+              <TableCell v-for="h in outputHeaders" :key="h">{{ row[h] ?? '' }}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
       <div v-else class="empty-state">出力レイアウトを選択してください</div>
     </div>
@@ -59,6 +59,7 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { computed, ref, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

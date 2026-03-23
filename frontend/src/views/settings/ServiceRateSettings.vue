@@ -87,7 +87,7 @@
           </div>
           <div class="form-row">
             <label>メモ</label>
-            <textarea v-model="form.memo" rows="3" />
+            <Textarea v-model="form.memo" rows="3" />
           </div>
           <div class="form-actions">
             <Button variant="secondary" type="button" @click="closeDialog">キャンセル</Button>
@@ -102,6 +102,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import { Button } from '@/components/ui/button'

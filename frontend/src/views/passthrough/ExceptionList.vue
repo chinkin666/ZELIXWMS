@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 /**
@@ -244,7 +245,7 @@ onMounted(loadData)
           </div>
           <div class="grid grid-cols-4 items-center gap-4">
             <label class="text-right text-sm">内容</label>
-            <textarea v-model="createForm.description" rows="3" class="col-span-3 flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
+            <Textarea v-model="createForm.description" rows="3" class="col-span-3 flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm" />
           </div>
           <div class="grid grid-cols-4 items-center gap-4">
             <label class="text-right text-sm">推奨対応</label>

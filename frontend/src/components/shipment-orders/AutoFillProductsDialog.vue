@@ -57,7 +57,7 @@
     <div v-if="invoiceMode === 'mode2'" class="o-form-group">
       <label class="o-form-label">方式2の閾値（>= で発払い宅急便）</label>
       <div class="row">
-        <input type="number" class="o-input" v-model.number="threshold" :min="0" :step="1" style="width: 140px" />
+        <Input type="number" v-model.number="threshold" :min="0" :step="1" style="width: 140px" />
         <div class="hint">デフォルト：100</div>
       </div>
     </div>
@@ -73,6 +73,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { computed, ref, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

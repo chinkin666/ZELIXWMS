@@ -124,7 +124,7 @@
         </div>
         <div class="form-field form-field--full">
           <label>備考</label>
-          <textarea v-model="form.memo" class="form-textarea" rows="3" />
+          <Textarea v-model="form.memo" class="form-textarea" rows="3" />
         </div>
       </div>
     </DialogContent>
@@ -133,6 +133,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import { Button } from '@/components/ui/button'

@@ -619,8 +619,7 @@ onMounted(() => loadOrder())
   .o-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
   /* 入力フィールド全幅 / 输入框全宽 */
-  .o-input, select.{ width: 100% !important; }
-
+  
   /* スキャン行縦積み・全幅化 / 扫描行纵向排列・全宽化 */
   .scan-row { flex-direction: column; }
   .scan-input { width: 100%; font-size: 18px; }

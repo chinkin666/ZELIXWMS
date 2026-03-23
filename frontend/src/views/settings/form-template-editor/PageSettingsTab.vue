@@ -72,5 +72,4 @@ defineEmits<{
 .margin-input { display: flex; align-items: center; gap: 8px; }
 .margin-input span { font-size: 12px; color: #606266; width: 20px; }
 .{ padding: 6px 10px; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px; font-size: 13px; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
-.o-input:focus { border-color: var(--o-primary, #0052A3); }
 </style>

@@ -61,12 +61,12 @@
 
       <div class="form-group" style="margin-top:12px">
         <label>エレメント定義 (JSON) <span class="text-destructive text-xs">*</span></label>
-        <textarea
+        <Textarea
           class="code-textarea"
           v-model="elementsJson"
           rows="12"
           placeholder='例: [{"id":"t1","type":"text",...}]'
-        ></textarea>
+        ></Textarea>
         <div class="field-hint">
           JSONで直接編集できます。ビジュアル編集は一覧の「レイアウト編集」から開けます。
         </div>
@@ -82,6 +82,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { computed, h, onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'

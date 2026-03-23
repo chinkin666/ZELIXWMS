@@ -1,33 +1,33 @@
 <template>
   <div ref="tableContainerRef" class="nex-table" @click="handleTableClick">
     <div class="nex-table__wrapper">
-      <table class="o-list-table">
-        <thead>
-          <tr>
+      <Table class="o-list-table">
+        <TableHeader>
+          <TableRow>
             <!-- Selection column header -->
-            <th
+            <TableHead
               v-if="rowSelectionEnabled"
               class="selection-column"
               style="width: 40px; text-align: center;"
             >
-              <input
+              <Input
                 type="checkbox"
                 :checked="isAllCurrentPageSelected"
                 :indeterminate="isIndeterminate"
                 @change="handleSelectAllToggle"
               />
-            </th>
+            </TableHead>
 
             <!-- Bundle column header -->
-            <th
+            <TableHead
               v-if="hasBundleColumn"
               :style="{ width: (bundleColumn?.width || 110) + 'px', textAlign: 'center' }"
             >
               {{ bundleColumn?.title || '同梱' }}
-            </th>
+            </TableHead>
 
             <!-- Category group headers -->
-            <th
+            <TableHead
               v-for="(group, groupIndex) in categoryGroups"
               :key="`category-header-${groupIndex}`"
               :style="{
@@ -37,7 +37,7 @@
               <div class="category-header">
                 <span class="category-header-title">{{ group.title }}</span>
                 <div class="sort-dropdown-wrapper">
-                  <button
+                  <Button
                     class="sort-button"
                     title="並べ替え"
                     @click.stop="toggleSortPopover(group.title)"
@@ -52,13 +52,13 @@
                     @click.stop
                   >
                     <div class="sort-order-buttons">
-                      <button
+                      <Button
                         :class="['o-btn', 'o-btn-sm', getSortOrderForGroup(group.title) === 'asc' ? 'o-btn-primary' : 'o-btn-secondary']"
                         @click="setSortOrderForGroup(group.title, 'asc')"
                       >
                         &#9650; 昇順
                       </button>
-                      <button
+                      <Button
                         :class="['o-btn', 'o-btn-sm', getSortOrderForGroup(group.title) === 'desc' ? 'o-btn-primary' : 'o-btn-secondary']"
                         @click="setSortOrderForGroup(group.title, 'desc')"
                       >
@@ -66,7 +66,7 @@
                       </button>
                     </div>
                     <select
-                      class="o-input sort-field-select"
+                      class=" sort-field-select"
                       :value="sortFieldForGroup[group.title] || ''"
                       @change="handleSortFieldSelectChange(group.title, $event)"
                     >
@@ -79,7 +79,7 @@
                         {{ field.label }}
                       </option>
                     </select>
-                    <button
+                    <Button
                       v-if="getSortInfoForGroup(group.title)"
                       class="o-btn o-btn-sm clear-sort-button"
                       style="width: 100%; margin-top: 8px;"
@@ -93,38 +93,38 @@
               <div v-if="getSortInfoForGroup(group.title)" class="sort-info">
                 並べ替え: {{ getSortInfoForGroup(group.title) }}
               </div>
-            </th>
+            </TableHead>
 
             <!-- Action column header -->
-            <th
+            <TableHead
               v-if="hasActionColumn"
               style="width: 120px; text-align: center;"
             >
               {{ t('wms.common.actions', '操作') }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow
             v-for="(row, rowIndex) in displayData"
             :key="String((row as any)[rowKey as string] ?? (row as any).id ?? rowIndex)"
             :class="getRowClassName({ row })"
           >
             <!-- Selection column -->
-            <td
+            <TableCell
               v-if="rowSelectionEnabled"
               class="selection-column"
               style="text-align: center; vertical-align: top;"
             >
-              <input
+              <Input
                 type="checkbox"
                 :checked="isRowSelected(row)"
                 @change="handleRowCheckboxChange(row, $event)"
               />
-            </td>
+            </TableCell>
 
             <!-- Bundle column -->
-            <td
+            <TableCell
               v-if="hasBundleColumn"
               style="text-align: center; vertical-align: top;"
             >
@@ -134,10 +134,10 @@
                 :row-data="row"
               />
               <span v-else>-</span>
-            </td>
+            </TableCell>
 
             <!-- Category group cells -->
-            <td
+            <TableCell
               v-for="(group, groupIndex) in categoryGroups"
               :key="`category-cell-${groupIndex}`"
               style="vertical-align: top;"
@@ -375,10 +375,10 @@
                   </div>
                 </div>
               </template>
-            </td>
+            </TableCell>
 
             <!-- Action column -->
-            <td
+            <TableCell
               v-if="hasActionColumn"
               style="text-align: center; vertical-align: top;"
             >
@@ -391,10 +391,10 @@
                 <Button variant="default" size="sm" @click="handleEdit(row)">編集</Button>
                 <Button variant="destructive" size="sm" @click="handleDelete(row)">削除</Button>
               </div>
-            </td>
-          </tr>
-          <tr v-if="displayData.length === 0">
-            <td
+            </TableCell>
+          </TableRow>
+          <TableRow v-if="displayData.length === 0">
+            <TableCell
               :colspan="totalColumnCount"
               style="text-align: center; padding: 2rem; color: var(--o-gray-400, #c0c4cc);"
             >
@@ -404,10 +404,10 @@
                 </svg>
                 <span>データがありません</span>
               </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <div
@@ -432,6 +432,8 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Input } from '@/components/ui/input'
 import { computed, h, ref, toRefs, watch, defineComponent } from 'vue'
 import type { HeaderGroupingConfig } from './tableHeaderGroup'
 import { getNestedValue, setNestedValue } from '@/utils/nestedObject'
@@ -1727,16 +1729,5 @@ defineExpose({
   font-size: 13px;
 }
 
-.o-input {
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.2s;
-}
 
-.o-input:focus {
-  border-color: #00798F;
-}
 </style>

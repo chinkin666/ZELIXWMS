@@ -295,7 +295,6 @@ onMounted(() => {
 .period-btn:hover { border-color: var(--o-brand-primary); color: var(--o-brand-primary); }
 .period-btn.active { background: var(--o-brand-primary); color: #fff; border-color: var(--o-brand-primary); }
 
-.o-input-sm { height: 30px; padding: 4px 8px; font-size: 13px; border: 1px solid var(--o-border-color); border-radius: 4px; }
 
 /* KPI */
 .kpi-row {

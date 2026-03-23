@@ -296,7 +296,7 @@
           </div>
           <div class="form-field form-field--full">
             <label>{{ t('wms.inventory.memo', '備考') }}</label>
-            <textarea v-model="adjustmentForm.memo" class="form-textarea" rows="3" />
+            <Textarea v-model="adjustmentForm.memo" class="form-textarea" rows="3" />
           </div>
         </div>
         <DialogFooter>
@@ -309,6 +309,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { ref, computed, onMounted, watch } from 'vue'

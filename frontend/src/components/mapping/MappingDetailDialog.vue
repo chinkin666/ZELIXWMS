@@ -24,7 +24,7 @@
 
           <div class="o-form-group">
             <label class="o-form-label">デフォルト値</label>
-            <input class="o-input" v-model="form.defaultValue" placeholder="空の場合のデフォルト値（任意）" style="width: 100%" />
+            <Input v-model="form.defaultValue" placeholder="空の場合のデフォルト値（任意）" style="width: 100%" />
           </div>
 
           <div class="o-form-group">
@@ -52,7 +52,7 @@
                   </div>
                   <span class="input-number">{{ idx + 1 }}</span>
                   <select
-                    class="o-input o-input-sm"
+                    class="o-input -sm"
                     v-model="input.type"
                     style="width: 120px"
                     @change="onInputTypeChange(idx)"
@@ -63,7 +63,7 @@
 
                   <select
                     v-if="input.type === 'column'"
-                    class="o-input o-input-sm"
+                    class="o-input -sm"
                     v-model="input.column"
                     style="width: 200px; margin-left: 8px"
                   >
@@ -75,9 +75,9 @@
                     >{{ col }}</option>
                   </select>
 
-                  <input
+                  <Input
                     v-if="input.type === 'literal'"
-                    class="o-input o-input-sm"
+                    class="o-input -sm"
                     v-model="input.value"
                     placeholder="固定値"
                     style="width: 200px; margin-left: 8px"
@@ -101,7 +101,7 @@
                     <div class="step-header">
                       <span class="step-number">{{ stepIdx + 1 }}</span>
                       <select
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model="step.plugin"
                         style="width: 180px"
                         @change="onInputStepPluginChange(idx, stepIdx)"
@@ -140,16 +140,16 @@
                               class="key-value-row"
                               style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                             >
-                              <input
-                                class="o-input o-input-sm"
+                              <Input
+                                class="o-input -sm"
                                 :value="entry.key"
                                 placeholder="キー（入力値）"
                                 style="width: 130px"
                                 @change="(e: Event) => updateLookupMapEntryKey(step.params, entry.key, (e.target as HTMLInputElement).value)"
                               />
                               <span style="color: #909399">→</span>
-                              <input
-                                class="o-input o-input-sm"
+                              <Input
+                                class="o-input -sm"
                                 :value="entry.value"
                                 placeholder="値（出力値）"
                                 style="flex: 1"
@@ -176,9 +176,9 @@
                           style="margin-bottom: 4px"
                         >
                           <label class="o-form-label">{{ field.label }}</label>
-                          <input
+                          <Input
                             v-if="field.type === 'string'"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="step.params[field.key]"
                             :placeholder="field.placeholder"
                             style="width: 100%"
@@ -200,15 +200,15 @@
                               class="key-value-row"
                               style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                             >
-                              <input
-                                class="o-input o-input-sm"
+                              <Input
+                                class="o-input -sm"
                                 v-model="rule.search"
                                 placeholder="検索文字列（含む）"
                                 style="width: 150px"
                               />
                               <span style="color: #909399">→</span>
-                              <input
-                                class="o-input o-input-sm"
+                              <Input
+                                class="o-input -sm"
                                 v-model="rule.value"
                                 placeholder="出力値"
                                 style="flex: 1"
@@ -234,9 +234,9 @@
                           style="margin-bottom: 4px"
                         >
                           <label class="o-form-label">{{ field.label }}</label>
-                          <input
+                          <Input
                             v-if="field.type === 'string'"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="step.params[field.key]"
                             :placeholder="field.placeholder"
                             style="width: 100%"
@@ -258,22 +258,22 @@
                               class="key-value-row"
                               style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                             >
-                              <input
-                                class="o-input o-input-sm"
+                              <Input
+                                class="o-input -sm"
                                 v-model="rule.search"
                                 placeholder="検索文字列"
                                 style="width: 120px"
                               />
                               <span style="color: #909399">→</span>
-                              <input
-                                class="o-input o-input-sm"
+                              <Input
+                                class="o-input -sm"
                                 v-model="rule.replace"
                                 placeholder="置換後"
                                 style="width: 120px"
                               />
-                              <input
+                              <Input
                                 type="number"
-                                class="o-input o-input-sm"
+                                class="o-input -sm"
                                 v-model.number="rule.count"
                                 :min="0"
                                 placeholder="回数"
@@ -314,7 +314,7 @@
                                 style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                               >
                                 <select
-                                  class="o-input o-input-sm"
+                                  class="o-input -sm"
                                   v-model="step.params.formats[fmtIdx]"
                                   style="flex: 1; min-width: 280px"
                                   @change="onDateParseFormatsChanged(step)"
@@ -343,7 +343,7 @@
                           <!-- precision 選択 -->
                           <select
                             v-else-if="field.key === 'precision'"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="step.params[field.key]"
                             style="width: 100%"
                           >
@@ -353,7 +353,7 @@
                           <!-- format/dateFormat/timeFormat ドロップダウン -->
                           <select
                             v-else-if="field.type === 'select' && (field.key === 'format' || field.key === 'dateFormat' || field.key === 'timeFormat')"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="step.params[field.key]"
                             style="width: 100%; min-width: 280px"
                           >
@@ -365,17 +365,17 @@
                             >{{ opt.label }}</option>
                           </select>
                           <!-- その他のフィールド -->
-                          <input
+                          <Input
                             v-else-if="field.type === 'string'"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="step.params[field.key]"
                             :placeholder="field.placeholder"
                             style="width: 100%"
                           />
-                          <input
+                          <Input
                             v-else-if="field.type === 'number'"
                             type="number"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model.number="step.params[field.key]"
                             :min="field.min"
                             :max="field.max"
@@ -383,7 +383,7 @@
                           />
                           <select
                             v-else-if="field.type === 'select'"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="step.params[field.key]"
                             style="width: 100%"
                           >
@@ -408,17 +408,17 @@
                           style="margin-bottom: 4px"
                         >
                           <label class="o-form-label">{{ field.label }}</label>
-                          <input
+                          <Input
                             v-if="field.type === 'string'"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="step.params[field.key]"
                             :placeholder="field.placeholder"
                             style="width: 100%"
                           />
-                          <input
+                          <Input
                             v-else-if="field.type === 'number'"
                             type="number"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model.number="step.params[field.key]"
                             :min="field.min"
                             :max="field.max"
@@ -426,7 +426,7 @@
                           />
                           <select
                             v-else-if="field.type === 'select'"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="step.params[field.key]"
                             style="width: 100%"
                           >
@@ -450,14 +450,14 @@
                               class="body-param-row"
                               style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                             >
-                              <input
-                                class="o-input o-input-sm"
+                              <Input
+                                class="o-input -sm"
                                 v-model="param.key"
                                 placeholder="パラメータ名"
                                 style="width: 150px"
                               />
                               <select
-                                class="o-input o-input-sm"
+                                class="o-input -sm"
                                 v-model="param.source"
                                 style="width: 120px"
                                 @change="onBodyParamSourceChange(param)"
@@ -465,16 +465,16 @@
                                 <option value="literal">固定値</option>
                                 <option value="column">列から取得</option>
                               </select>
-                              <input
+                              <Input
                                 v-if="param.source === 'literal'"
-                                class="o-input o-input-sm"
+                                class="o-input -sm"
                                 v-model="param.value"
                                 placeholder="固定値"
                                 style="flex: 1"
                               />
                               <select
                                 v-else-if="param.source === 'column'"
-                                class="o-input o-input-sm"
+                                class="o-input -sm"
                                 v-model="param.column"
                                 style="flex: 1"
                               >
@@ -511,9 +511,9 @@
                               class="position-row"
                               style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                             >
-                              <input
+                              <Input
                                 type="number"
-                                class="o-input o-input-sm"
+                                class="o-input -sm"
                                 v-model.number="step.params.positions[posIdx]"
                                 :min="0"
                                 placeholder="位置（0から始まる）"
@@ -541,9 +541,9 @@
                           style="margin-bottom: 4px"
                         >
                           <label class="o-form-label">{{ field.label }}</label>
-                          <input
+                          <Input
                             v-if="field.type === 'string'"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="step.params[field.key]"
                             :placeholder="field.placeholder"
                             style="width: 100%"
@@ -559,17 +559,17 @@
                           style="margin-bottom: 4px"
                         >
                           <label class="o-form-label">{{ field.label }}</label>
-                          <input
+                          <Input
                             v-if="field.type === 'string'"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="step.params[field.key]"
                             :placeholder="field.placeholder"
                             style="width: 100%"
                           />
-                          <input
+                          <Input
                             v-else-if="field.type === 'number'"
                             type="number"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model.number="step.params[field.key]"
                             :min="field.min"
                             :max="field.max"
@@ -577,7 +577,7 @@
                           />
                           <select
                             v-else-if="field.type === 'select'"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="step.params[field.key]"
                             style="width: 100%"
                           >
@@ -621,7 +621,7 @@
                 <div class="step-header">
                   <span class="step-number">{{ stepIdx + 1 }}</span>
                   <select
-                    class="o-input o-input-sm"
+                    class="o-input -sm"
                     v-model="step.plugin"
                     style="width: 180px"
                     @change="onOutputStepPluginChange(stepIdx)"
@@ -657,16 +657,16 @@
                           class="key-value-row"
                           style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                         >
-                          <input
-                            class="o-input o-input-sm"
+                          <Input
+                            class="o-input -sm"
                             :value="entry.key"
                             placeholder="キー（入力値）"
                             style="width: 200px"
                             @change="(e: Event) => updateLookupMapEntryKey(step.params, entry.key, (e.target as HTMLInputElement).value)"
                           />
                           <span style="color: #909399">→</span>
-                          <input
-                            class="o-input o-input-sm"
+                          <Input
+                            class="o-input -sm"
                             :value="entry.value"
                             placeholder="値（出力値）"
                             style="flex: 1"
@@ -693,9 +693,9 @@
                       style="margin-bottom: 4px"
                     >
                       <label class="o-form-label">{{ field.label }}</label>
-                      <input
+                      <Input
                         v-if="field.type === 'string'"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model="step.params[field.key]"
                         :placeholder="field.placeholder"
                         style="width: 100%"
@@ -717,15 +717,15 @@
                           class="key-value-row"
                           style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                         >
-                          <input
-                            class="o-input o-input-sm"
+                          <Input
+                            class="o-input -sm"
                             v-model="rule.search"
                             placeholder="検索文字列（含む）"
                             style="width: 150px"
                           />
                           <span style="color: #909399">→</span>
-                          <input
-                            class="o-input o-input-sm"
+                          <Input
+                            class="o-input -sm"
                             v-model="rule.value"
                             placeholder="出力値"
                             style="flex: 1"
@@ -751,9 +751,9 @@
                       style="margin-bottom: 4px"
                     >
                       <label class="o-form-label">{{ field.label }}</label>
-                      <input
+                      <Input
                         v-if="field.type === 'string'"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model="step.params[field.key]"
                         :placeholder="field.placeholder"
                         style="width: 100%"
@@ -775,22 +775,22 @@
                           class="key-value-row"
                           style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                         >
-                          <input
-                            class="o-input o-input-sm"
+                          <Input
+                            class="o-input -sm"
                             v-model="rule.search"
                             placeholder="検索文字列"
                             style="width: 120px"
                           />
                           <span style="color: #909399">→</span>
-                          <input
-                            class="o-input o-input-sm"
+                          <Input
+                            class="o-input -sm"
                             v-model="rule.replace"
                             placeholder="置換後"
                             style="width: 120px"
                           />
-                          <input
+                          <Input
                             type="number"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model.number="rule.count"
                             :min="0"
                             placeholder="回数"
@@ -821,17 +821,17 @@
                       style="margin-bottom: 4px"
                     >
                       <label class="o-form-label">{{ field.label }}</label>
-                      <input
+                      <Input
                         v-if="field.type === 'string'"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model="step.params[field.key]"
                         :placeholder="field.placeholder"
                         style="width: 100%"
                       />
-                      <input
+                      <Input
                         v-else-if="field.type === 'number'"
                         type="number"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model.number="step.params[field.key]"
                         :min="field.min"
                         :max="field.max"
@@ -839,7 +839,7 @@
                       />
                       <select
                         v-else-if="field.type === 'select'"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model="step.params[field.key]"
                         style="width: 100%"
                       >
@@ -863,14 +863,14 @@
                           class="body-param-row"
                           style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                         >
-                          <input
-                            class="o-input o-input-sm"
+                          <Input
+                            class="o-input -sm"
                             v-model="param.key"
                             placeholder="パラメータ名"
                             style="width: 150px"
                           />
                           <select
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="param.source"
                             style="width: 120px"
                             @change="onBodyParamSourceChange(param)"
@@ -878,16 +878,16 @@
                             <option value="literal">固定値</option>
                             <option value="column">列から取得</option>
                           </select>
-                          <input
+                          <Input
                             v-if="param.source === 'literal'"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="param.value"
                             placeholder="固定値"
                             style="flex: 1"
                           />
                           <select
                             v-else-if="param.source === 'column'"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model="param.column"
                             style="flex: 1"
                           >
@@ -932,7 +932,7 @@
                             style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                           >
                             <select
-                              class="o-input o-input-sm"
+                              class="o-input -sm"
                               v-model="step.params.formats[fmtIdx]"
                               style="flex: 1; min-width: 280px"
                               @change="onDateParseFormatsChanged(step)"
@@ -961,7 +961,7 @@
                       <!-- precision 選択 -->
                       <select
                         v-else-if="field.key === 'precision'"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model="step.params[field.key]"
                         style="width: 100%"
                       >
@@ -971,7 +971,7 @@
                       <!-- format/dateFormat/timeFormat ドロップダウン -->
                       <select
                         v-else-if="field.type === 'select' && (field.key === 'format' || field.key === 'dateFormat' || field.key === 'timeFormat')"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model="step.params[field.key]"
                         style="width: 100%; min-width: 280px"
                       >
@@ -983,17 +983,17 @@
                         >{{ opt.label }}</option>
                       </select>
                       <!-- その他のフィールド -->
-                      <input
+                      <Input
                         v-else-if="field.type === 'string'"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model="step.params[field.key]"
                         :placeholder="field.placeholder"
                         style="width: 100%"
                       />
-                      <input
+                      <Input
                         v-else-if="field.type === 'number'"
                         type="number"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model.number="step.params[field.key]"
                         :min="field.min"
                         :max="field.max"
@@ -1001,7 +1001,7 @@
                       />
                       <select
                         v-else-if="field.type === 'select'"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model="step.params[field.key]"
                         style="width: 100%"
                       >
@@ -1028,9 +1028,9 @@
                           class="position-row"
                           style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center"
                         >
-                          <input
+                          <Input
                             type="number"
-                            class="o-input o-input-sm"
+                            class="o-input -sm"
                             v-model.number="step.params.positions[posIdx]"
                             :min="0"
                             placeholder="位置（0から始まる）"
@@ -1058,9 +1058,9 @@
                       style="margin-bottom: 4px"
                     >
                       <label class="o-form-label">{{ field.label }}</label>
-                      <input
+                      <Input
                         v-if="field.type === 'string'"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model="step.params[field.key]"
                         :placeholder="field.placeholder"
                         style="width: 100%"
@@ -1076,17 +1076,17 @@
                       style="margin-bottom: 4px"
                     >
                       <label class="o-form-label">{{ field.label }}</label>
-                      <input
+                      <Input
                         v-if="field.type === 'string'"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model="step.params[field.key]"
                         :placeholder="field.placeholder"
                         style="width: 100%"
                       />
-                      <input
+                      <Input
                         v-else-if="field.type === 'number'"
                         type="number"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model.number="step.params[field.key]"
                         :min="field.min"
                         :max="field.max"
@@ -1094,7 +1094,7 @@
                       />
                       <select
                         v-else-if="field.type === 'select'"
-                        class="o-input o-input-sm"
+                        class="o-input -sm"
                         v-model="step.params[field.key]"
                         style="width: 100%"
                       >
@@ -1146,6 +1146,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 /**
  * マッピング詳細ダイアログ / 映射详情对话框
  *
@@ -1445,7 +1446,6 @@ const handleSubmit = () => {
 }
 .o-form-group { margin-bottom: 1rem; }
 .o-form-label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 0.25rem; }
-.o-input-sm { font-size: 12px; padding: 2px 6px; height: 26px; }
 .o-toggle { position: relative; display: inline-block; width: 40px; height: 20px; cursor: pointer; }
 .o-toggle input { opacity: 0; width: 0; height: 0; }
 .o-toggle-slider { position: absolute; inset: 0; background: #ccc; border-radius: 20px; transition: background .2s; }

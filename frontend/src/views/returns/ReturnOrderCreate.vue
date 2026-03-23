@@ -41,7 +41,7 @@
 
         <div class="form-row" style="grid-column:1/-1;">
           <label>{{ t('wms.returns.reasonDetail', '理由詳細') }}</label>
-          <textarea v-model="form.reasonDetail" rows="2" style="width:100%;max-width:500px;" />
+          <Textarea v-model="form.reasonDetail" rows="2" style="width:100%;max-width:500px;" />
         </div>
       </div>
 
@@ -97,6 +97,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { onMounted, ref, reactive } from 'vue'

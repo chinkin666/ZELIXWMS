@@ -64,7 +64,7 @@
         <h3 class="dialog-title">出荷停止</h3>
         <div class="dialog-body">
           <label class="dialog-label">停止する注文IDを入力（カンマ区切り）</label>
-          <textarea v-model="stopIdsInput" class="dialog-textarea" rows="3" placeholder="ID1, ID2, ..."></textarea>
+          <Textarea v-model="stopIdsInput" class="dialog-textarea" rows="3" placeholder="ID1, ID2, ..."></Textarea>
           <label class="dialog-label">停止理由（必須）</label>
           <Input v-model="stopReason" placeholder="例: 在庫不足のため停止" />
         </div>
@@ -98,6 +98,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 // 出荷停止画面 / 出货停止页面
 import { onMounted, ref } from 'vue'
 import { useToast } from '@/composables/useToast'

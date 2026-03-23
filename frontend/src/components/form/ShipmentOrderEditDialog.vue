@@ -25,12 +25,15 @@
             <div class="o-field-row">
               <label class="o-field-label">出荷先タイプ</label>
               <div class="o-field-value">
-                <select class="o-inline-input" :value="getNestedValue(formData, 'destinationType')" @change="handleFieldUpdate('destinationType', ($event.target as HTMLSelectElement).value)">
-                  <option value="B2C">B2C（個人宅配）</option>
-                  <option value="B2B">B2B（法人配送）</option>
-                  <option value="FBA">FBA（Amazon倉庫）</option>
-                  <option value="RSL">RSL（楽天倉庫）</option>
-                </select>
+                <Select :model-value="getNestedValue(formData, 'destinationType')" @update:model-value="(val: string) => handleFieldUpdate('destinationType', val)">
+                  <SelectTrigger class="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="B2C">B2C（個人宅配）</SelectItem>
+                    <SelectItem value="B2B">B2B（法人配送）</SelectItem>
+                    <SelectItem value="FBA">FBA（Amazon倉庫）</SelectItem>
+                    <SelectItem value="RSL">RSL（楽天倉庫）</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -50,7 +53,7 @@
         <!-- Notebook tabs -->
         <div class="o-notebook">
           <div class="o-notebook-tabs">
-            <button
+            <Button
               v-for="tab in tabDefs"
               :key="tab.key"
               :class="{ active: activeTab === tab.key }"
@@ -64,25 +67,25 @@
           <div class="o-notebook-page">
             <!-- 商品明細 tab -->
             <template v-if="activeTab === 'products'">
-              <table class="o-lines-table">
-                <thead>
-                  <tr>
-                    <th style="width:36px;"></th>
-                    <th>SKU管理番号 <span class="required-badge">必須</span></th>
-                    <th>商品名（印刷用）</th>
-                    <th style="text-align:right;width:100px;">数量</th>
-                    <th style="width:50px;"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(item, index) in productItems" :key="index">
-                    <td style="text-align:center;">
-                      <button class="o-product-search-btn" @click="openProductSearchForRow(index)" title="商品検索">
+              <Table class="o-lines-table">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead style="width:36px;"></TableHead>
+                    <TableHead>SKU管理番号 <span class="required-badge">必須</span></TableHead>
+                    <TableHead>商品名（印刷用）</TableHead>
+                    <TableHead style="text-align:right;width:100px;">数量</TableHead>
+                    <TableHead style="width:50px;"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="(item, index) in productItems" :key="index">
+                    <TableCell style="text-align:center;">
+                      <Button class="o-product-search-btn" @click="openProductSearchForRow(index)" title="商品検索">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                       </button>
-                    </td>
-                    <td>
-                      <input
+                    </TableCell>
+                    <TableCell>
+                      <Input
                         class="o-inline-input"
                         :class="{ 'o-inline-input--error': !item.inputSku || !isValidSku(item.inputSku) }"
                         :value="item.inputSku"
@@ -90,17 +93,17 @@
                         placeholder="半角英数字30文字以内"
                         maxlength="30"
                       />
-                    </td>
-                    <td>
-                      <input
+                    </TableCell>
+                    <TableCell>
+                      <Input
                         class="o-inline-input"
                         :value="item.productName"
                         @input="(e: Event) => onProductNameInput(index, (e.target as HTMLInputElement).value)"
                         placeholder="全角25文字/半角50文字以内（印刷用）"
                       />
-                    </td>
-                    <td>
-                      <input
+                    </TableCell>
+                    <TableCell>
+                      <Input
                         class="o-inline-input o-no-spin"
                         type="text"
                         inputmode="numeric"
@@ -108,25 +111,25 @@
                         @input="(e: Event) => onQuantityInput(index, (e.target as HTMLInputElement).value)"
                         style="text-align:right;"
                       />
-                    </td>
-                    <td style="text-align:center;">
+                    </TableCell>
+                    <TableCell style="text-align:center;">
                       <Button v-if="index > 0" variant="icon-danger" @click="removeProduct(index)" title="削除">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                       </Button>
-                    </td>
-                  </tr>
-                </tbody>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
                 <tfoot>
-                  <tr>
-                    <td colspan="5">
-                      <button class="o-add-line-btn" @click="addProduct">
+                  <TableRow>
+                    <TableCell colspan="5">
+                      <Button class="o-add-line-btn" @click="addProduct">
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/></svg>
                         商品を追加
                       </button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 </tfoot>
-              </table>
+              </Table>
 
               <!-- 荷扱い (max 2 for Yamato B2) -->
               <div class="o-handling-section">
@@ -138,7 +141,7 @@
                     class="o-handling-chip"
                     :class="{ 'o-handling-chip--active': handlingTagsValue.includes(opt), 'o-handling-chip--disabled': !handlingTagsValue.includes(opt) && handlingTagsValue.length >= 2 }"
                   >
-                    <input
+                    <Input
                       type="checkbox"
                       :checked="handlingTagsValue.includes(opt)"
                       :disabled="!handlingTagsValue.includes(opt) && handlingTagsValue.length >= 2"
@@ -168,7 +171,7 @@
 
               <!-- Search panel -->
               <div v-if="senderSearchOpen" class="o-sender-search-panel">
-                <input
+                <Input
                   v-model="senderSearchQuery"
                   class="o-inline-input"
                   placeholder="名前・郵便番号・電話番号で検索..."
@@ -191,7 +194,7 @@
                     </div>
                   </div>
                 </div>
-                <button class="o-btn o-btn-sm o-btn-text" @click="senderSearchOpen = false" style="margin-top:4px;">閉じる</button>
+                <Button class="o-btn o-btn-sm o-btn-text" @click="senderSearchOpen = false" style="margin-top:4px;">閉じる</Button>
               </div>
 
               <div class="o-form-grid">
@@ -216,14 +219,14 @@
               <div v-if="sourceRawRows.length > 0" class="o-raw-data-section">
                 <h4 class="o-raw-data-title">元データ（取込時の行）</h4>
                 <div v-for="(row, ri) in sourceRawRows" :key="ri" class="o-raw-data-card">
-                  <table class="o-raw-data-table">
-                    <tbody>
-                      <tr v-for="(val, key) in row" :key="String(key)">
-                        <th>{{ key }}</th>
-                        <td>{{ val ?? '-' }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <Table class="o-raw-data-table">
+                    <TableBody>
+                      <TableRow v-for="(val, key) in row" :key="String(key)">
+                        <TableHead>{{ key }}</TableHead>
+                        <TableCell>{{ val ?? '-' }}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             </template>
@@ -266,9 +269,9 @@
       </DialogHeader>
     <div class="o-product-dialog">
       <div class="o-product-dialog__search">
-        <input
+        <Input
           v-model="productSearchQuery"
-          class="o-input o-product-dialog__input"
+          class=" o-product-dialog__input"
           placeholder="SKU・商品名・バーコードで検索..."
           autofocus
         />
@@ -276,31 +279,31 @@
       <div class="o-product-dialog__list">
         <div v-if="productSearchLoading" class="o-product-dialog__empty">読み込み中...</div>
         <div v-else-if="filteredProductResults.length === 0" class="o-product-dialog__empty">該当する商品がありません</div>
-        <table v-else class="o-product-dialog__table">
-          <thead>
-            <tr>
-              <th style="width:50px;"></th>
-              <th>SKU</th>
-              <th>商品名</th>
-              <th>バーコード</th>
-              <th style="width:70px;"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="prod in filteredProductResults" :key="prod._id" class="o-product-dialog__row">
-              <td>
+        <Table v-else class="o-product-dialog__table">
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width:50px;"></TableHead>
+              <TableHead>SKU</TableHead>
+              <TableHead>商品名</TableHead>
+              <TableHead>バーコード</TableHead>
+              <TableHead style="width:70px;"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="prod in filteredProductResults" :key="prod._id" class="o-product-dialog__row">
+              <TableCell>
                 <img v-if="prod.imageUrl" :src="prod.imageUrl" class="o-product-dialog__img" />
                 <div v-else class="o-product-dialog__img o-product-dialog__img--empty"></div>
-              </td>
-              <td class="o-product-dialog__sku">{{ prod.sku }}</td>
-              <td>{{ prod.name }}</td>
-              <td class="o-product-dialog__bc">{{ (prod.barcode || []).join(', ') || '-' }}</td>
-              <td>
+              </TableCell>
+              <TableCell class="o-product-dialog__sku">{{ prod.sku }}</TableCell>
+              <TableCell>{{ prod.name }}</TableCell>
+              <TableCell class="o-product-dialog__bc">{{ (prod.barcode || []).join(', ') || '-' }}</TableCell>
+              <TableCell>
                 <Button variant="default" size="sm" @click="selectProduct(prod)">選択</Button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
       <div class="o-product-dialog__footer">
         <span class="o-product-dialog__count">{{ filteredProductResults.length }} 件</span>
@@ -311,6 +314,9 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { computed, ref, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -880,22 +886,8 @@ const handleSubmit = async () => {
   min-width: 0;
 }
 
-.o-field-value :deep(.o-input),
-.o-field-value :deep(select.o-input) {
-  width: 100%;
-  padding: 0.3rem 0.5rem;
-  font-size: 13px;
-  border: 1px solid var(--o-border-color, #d6d6d6);
-  border-radius: var(--o-border-radius, 4px);
-}
-
-.o-field-value :deep(.o-input:focus),
-.o-field-value :deep(select.o-input:focus) {
-  border-color: var(--o-brand-primary, #0052A3);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.12);
-}
-
+.o-field-value :deep(
+.o-field-value :deep(
 /* ── Notebook ── */
 .o-notebook { margin-top: 0; }
 
@@ -970,22 +962,8 @@ const handleSubmit = async () => {
   min-width: 0;
 }
 
-.o-form-field :deep(.o-input),
-.o-form-field :deep(select.o-input) {
-  width: 100%;
-  padding: 0.3rem 0.5rem;
-  font-size: 13px;
-  border: 1px solid var(--o-border-color, #d6d6d6);
-  border-radius: var(--o-border-radius, 4px);
-}
-
-.o-form-field :deep(.o-input:focus),
-.o-form-field :deep(select.o-input:focus) {
-  border-color: var(--o-brand-primary, #0052A3);
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 82, 163, 0.12);
-}
-
+.o-form-field :deep(
+.o-form-field :deep(
 .required-badge {
   display: inline-block;
   background: var(--o-danger);

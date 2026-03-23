@@ -187,7 +187,7 @@ const langDisplay = computed(() => {
             <SheetTitle class="text-lg font-bold tracking-tight">ZELIX WMS</SheetTitle>
           </SheetHeader>
           <nav class="flex flex-col py-2">
-            <button
+            <Button
               :class="cn(
                 'flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left',
                 isActive('/home')
@@ -199,7 +199,7 @@ const langDisplay = computed(() => {
               <Home class="size-4" />
               ホーム
             </button>
-            <button
+            <Button
               v-for="item in visibleMenuItems"
               :key="item.to"
               :class="cn(
@@ -217,7 +217,7 @@ const langDisplay = computed(() => {
       </Sheet>
 
       <!-- ロゴ / Logo -->
-      <button
+      <Button
         class="flex items-center gap-2 shrink-0 mr-2"
         @click="navigateTo('/home')"
       >

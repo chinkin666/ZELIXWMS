@@ -86,7 +86,7 @@
           </div>
           <div class="o-form-group">
             <Label>説明</Label>
-            <textarea v-model="editForm.description" rows="2" placeholder="補足説明"></textarea>
+            <Textarea v-model="editForm.description" rows="2" placeholder="補足説明"></Textarea>
           </div>
         </div>
 
@@ -168,6 +168,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { computed, h, onMounted, ref } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { useToast } from '@/composables/useToast'
@@ -775,17 +776,7 @@ textarea.{ resize: vertical; }
   border: 1px solid var(--o-border-color, #e4e7ed);
 }
 
-.o-input--compact {
-  padding: 4px 8px;
-  font-size: 13px;
-  height: 28px;
-}
 
-.o-input--disabled {
-  background: var(--o-gray-100, #f5f7fa);
-  color: var(--o-gray-500);
-  cursor: not-allowed;
-}
 
 .form-hint {
   display: block;

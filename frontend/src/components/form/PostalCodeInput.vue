@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 /**
  * 邮编自动填写输入组件 / 郵便番号自動入力コンポーネント
  *
@@ -67,14 +69,14 @@ async function lookup() {
 <template>
   <div class="postal-input">
     <div class="postal-input__row">
-      <input
-        class="o-input"
+      <Input
+       
         :value="modelValue"
         @input="onInput"
         placeholder="例: 2310058"
         maxlength="8"
       />
-      <button
+      <Button
         class="postal-input__btn"
         :disabled="loading"
         @click="lookup"
@@ -94,8 +96,7 @@ async function lookup() {
   display: flex;
   gap: 4px;
 }
-.postal-input__row .o-input { flex: 1; }
-.postal-input__btn {
+.postal-input__row .postal-input__btn {
   display: flex;
   align-items: center;
   justify-content: center;

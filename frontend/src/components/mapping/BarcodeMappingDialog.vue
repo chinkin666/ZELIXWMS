@@ -8,10 +8,12 @@
       <label class="o-form-label">対象列</label>
       <div class="columns-list">
         <div v-for="(col, idx) in form.columns" :key="idx" class="column-item">
-          <select class="o-input" v-model="form.columns[idx]" style="width: 100%">
-            <option value="" disabled>列を選択</option>
-            <option v-for="c in availableColumns" :key="c" :value="c">{{ c }}</option>
-          </select>
+          <Select :model-value="form.columns[idx]" @update:model-value="(val: string) => form.columns[idx] = val">
+            <SelectTrigger class="h-9 w-full"><SelectValue placeholder="列を選択" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="c in availableColumns" :key="c" :value="c">{{ c }}</SelectItem>
+            </SelectContent>
+          </Select>
           <Button v-if="form.columns.length > 1" variant="destructive" size="sm" @click="removeColumn(idx)" style="margin-left: 8px">削除</Button>
         </div>
         <Button variant="default" size="sm" @click="addColumn" style="margin-top: 8px">+ 列を追加</Button>
@@ -39,6 +41,7 @@
 import { computed, watch, ref } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { TransformMapping } from '@/api/mappingConfig'
 import { runTransformMapping } from '@/utils/transformRunner'
 

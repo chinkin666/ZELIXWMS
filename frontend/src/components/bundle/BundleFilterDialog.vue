@@ -7,7 +7,7 @@
     <div class="bundle-filter">
       <div class="bundle-filter__actions">
         <label class="o-checkbox">
-          <input
+          <Input
             type="checkbox"
             :checked="isAllChecked"
             :indeterminate="isIndeterminate"
@@ -30,7 +30,7 @@
           class="bundle-filter__item"
         >
           <label class="o-checkbox">
-            <input
+            <Input
               type="checkbox"
               :value="field.key"
               v-model="innerSelected"
@@ -57,6 +57,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { computed, ref, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

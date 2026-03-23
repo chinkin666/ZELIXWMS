@@ -11,24 +11,24 @@
     </div>
 
     <div style="max-height:420px; overflow:auto">
-      <table class="o-list-table">
-        <thead>
-          <tr>
-            <th style="width:90px">行</th>
-            <th style="width:180px">SKU</th>
-            <th style="width:160px">フィールド</th>
-            <th>メッセージ</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(row, idx) in errors" :key="idx">
-            <td>{{ (row.rowIndex ?? 0) + 1 }}</td>
-            <td>{{ row.sku }}</td>
-            <td>{{ row.field }}</td>
-            <td>{{ row.message }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <Table class="o-list-table">
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width:90px">行</TableHead>
+            <TableHead style="width:180px">SKU</TableHead>
+            <TableHead style="width:160px">フィールド</TableHead>
+            <TableHead>メッセージ</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-for="(row, idx) in errors" :key="idx">
+            <TableCell>{{ (row.rowIndex ?? 0) + 1 }}</TableCell>
+            <TableCell>{{ row.sku }}</TableCell>
+            <TableCell>{{ row.field }}</TableCell>
+            <TableCell>{{ row.message }}</TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
 
     <DialogFooter>
@@ -39,6 +39,7 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { computed } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

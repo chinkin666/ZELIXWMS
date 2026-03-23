@@ -19,7 +19,7 @@
       <div class="o-form-group">
         <label class="o-form-label">テンプレート</label>
         <select
-          class="o-input"
+         
           v-model="selectedTemplateId"
           style="width: 100%"
           :disabled="templatesForType.length === 0"

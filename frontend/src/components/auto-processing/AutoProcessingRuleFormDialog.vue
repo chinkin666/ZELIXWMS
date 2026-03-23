@@ -11,7 +11,7 @@
         <div class="form-grid">
           <div class="o-form-group">
             <label class="o-form-label">ルール名 <span class="required-badge">必須</span></label>
-            <input class="o-input" v-model="form.name" placeholder="ルール名を入力" />
+            <Input v-model="form.name" placeholder="ルール名を入力" />
           </div>
           <div class="o-form-group">
             <label class="o-form-label">有効</label>
@@ -39,7 +39,7 @@
         </div>
         <div class="o-form-group">
           <label class="o-form-label">メモ</label>
-          <textarea class="o-input" v-model="form.memo" rows="2" placeholder="メモ（任意）"></textarea>
+          <Textarea v-model="form.memo" rows="2" placeholder="メモ（任意）"></Textarea>
         </div>
       </div>
 
@@ -52,7 +52,7 @@
             :key="ev"
             class="o-checkbox"
           >
-            <input
+            <Input
               type="checkbox"
               :value="ev"
               v-model="form.triggerEvents"
@@ -87,6 +87,8 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { ref, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

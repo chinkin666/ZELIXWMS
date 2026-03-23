@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ref, computed, nextTick, onBeforeUnmount } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 
@@ -291,17 +295,17 @@ function getEditType(col: Column): string {
       <template v-if="selectedRows.size > 0">
         <span class="o-selected-count">{{ selectedRows.size }} selected</span>
         <div class="o-export-wrap" @click.stop>
-          <button class="o-toolbar-btn" @click="showExportMenu = !showExportMenu">
+          <Button class="o-toolbar-btn" @click="showExportMenu = !showExportMenu">
             Export <span class="o-caret">▾</span>
           </button>
           <div v-if="showExportMenu" class="o-export-dropdown">
-            <button class="o-export-item" @click="doExport('csv')">CSV</button>
-            <button class="o-export-item" @click="doExport('xlsx')">Excel (XLSX)</button>
-            <button class="o-export-item" @click="doExport('pdf')">PDF</button>
+            <Button class="o-export-item" @click="doExport('csv')">CSV</Button>
+            <Button class="o-export-item" @click="doExport('xlsx')">Excel (XLSX)</Button>
+            <Button class="o-export-item" @click="doExport('pdf')">PDF</Button>
           </div>
         </div>
-        <button class="o-toolbar-btn" @click="doBatchArchive">{{ t('table.archive') }}</button>
-        <button class="o-toolbar-btn o-toolbar-danger" @click="doBatchDelete">{{ t('common.delete') }}</button>
+        <Button class="o-toolbar-btn" @click="doBatchArchive">{{ t('table.archive') }}</Button>
+        <Button class="o-toolbar-btn o-toolbar-danger" @click="doBatchDelete">{{ t('common.delete') }}</Button>
       </template>
       <template v-else>
         <div class="o-toolbar-spacer" />
@@ -310,21 +314,24 @@ function getEditType(col: Column): string {
       <!-- Group By (always visible when options available) -->
       <div v-if="hasGroupBy" class="o-groupby-wrap">
         <label class="o-groupby-label">{{ t('table.groupBy') }}:</label>
-        <select v-model="groupByKey" class="o-groupby-select">
-          <option value="">{{ t('table.none') }}</option>
-          <option v-for="opt in groupByOptions" :key="opt.key" :value="opt.key">{{ opt.label }}</option>
-        </select>
+        <Select :model-value="groupByKey || '__all__'" @update:model-value="(val: string) => groupByKey = val === '__all__' ? '' : val">
+          <SelectTrigger class="h-7 o-groupby-select"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">{{ t('table.none') }}</SelectItem>
+            <SelectItem v-for="opt in groupByOptions" :key="opt.key" :value="opt.key">{{ opt.label }}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
 
     <div class="o-table-scroll">
-      <table class="o-list-table" :class="{ 'o-striped': striped, 'o-resizing': resizingCol }">
-        <thead>
-          <tr>
-            <th v-if="selectable" class="o-col-check">
+      <Table class="o-list-table" :class="{ 'o-striped': striped, 'o-resizing': resizingCol }">
+        <TableHeader>
+          <TableRow>
+            <TableHead v-if="selectable" class="o-col-check">
               <input type="checkbox" :checked="allSelected" @change="toggleAll" />
-            </th>
-            <th
+            </TableHead>
+            <TableHead
               v-for="col in visibleColumns"
               :key="col.key"
               :style="{ width: getColWidth(col), textAlign: col.align || 'left' }"
@@ -339,11 +346,11 @@ function getEditType(col: Column): string {
                 @mousedown="onResizeStart($event, col)"
                 @click.stop
               />
-            </th>
+            </TableHead>
             <!-- Optional columns gear icon -->
-            <th v-if="hasOptionalColumns" class="o-col-optional">
+            <TableHead v-if="hasOptionalColumns" class="o-col-optional">
               <div class="o-optional-columns" @click.stop>
-                <button class="o-optional-btn" @click="showOptionalMenu = !showOptionalMenu" title="Optional columns">
+                <Button class="o-optional-btn" @click="showOptionalMenu = !showOptionalMenu" title="Optional columns">
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
                     <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
                     <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.421 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.421-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.116l.094-.318z"/>
@@ -356,7 +363,7 @@ function getEditType(col: Column): string {
                     :key="col.key"
                     class="o-optional-item"
                   >
-                    <input
+                    <Input
                       type="checkbox"
                       :checked="!hiddenColumns.has(col.key)"
                       @change="toggleOptionalColumn(col.key)"
@@ -365,31 +372,31 @@ function getEditType(col: Column): string {
                   </label>
                 </div>
               </div>
-            </th>
-          </tr>
-        </thead>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
 
         <!-- Grouped view -->
         <template v-if="groupedData">
           <tbody v-for="(rows, groupKey) in groupedData" :key="groupKey">
-            <tr class="o-group-header" @click="toggleGroup(String(groupKey))">
-              <td :colspan="totalColSpan">
+            <TableRow class="o-group-header" @click="toggleGroup(String(groupKey))">
+              <TableCell :colspan="totalColSpan">
                 <span class="o-group-caret" :class="{ collapsed: collapsedGroups.has(String(groupKey)) }">▸</span>
                 <strong>{{ groupByOptions?.find(o => o.key === groupByKey)?.label }}:</strong>
                 <span class="o-group-name">{{ groupKey }}</span>
                 <span class="o-group-count">({{ rows.length }})</span>
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
             <template v-if="!collapsedGroups.has(String(groupKey))">
-              <tr
+              <TableRow
                 v-for="(row, i) in rows"
                 :key="i"
                 :class="{ 'o-selected': selectedRows.has(sortedRows.indexOf(row)) }"
               >
-                <td v-if="selectable" class="o-col-check">
+                <TableCell v-if="selectable" class="o-col-check">
                   <input type="checkbox" :checked="selectedRows.has(sortedRows.indexOf(row))" @change="toggleRow(sortedRows.indexOf(row))" />
-                </td>
-                <td
+                </TableCell>
+                <TableCell
                   v-for="col in visibleColumns"
                   :key="col.key"
                   :style="{ textAlign: col.align || 'left' }"
@@ -397,17 +404,17 @@ function getEditType(col: Column): string {
                   @click="startEditing(sortedRows.indexOf(row), col, row[col.key])"
                 >
                   <template v-if="isEditing(sortedRows.indexOf(row), col.key)">
-                    <select
+                    <Select
                       v-if="getEditType(col) === 'select'"
-                      :ref="(el: any) => { editInputRef = el }"
-                      v-model="editValue"
-                      class="o-edit-input o-edit-select"
-                      @blur="commitEdit"
-                      @keydown="onEditKeydown"
+                      :model-value="editValue"
+                      @update:model-value="(val: string) => { editValue = val; commitEdit() }"
                     >
-                      <option v-for="opt in col.editOptions" :key="opt" :value="opt">{{ opt }}</option>
-                    </select>
-                    <input
+                      <SelectTrigger class="h-8 o-edit-input o-edit-select"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem v-for="opt in col.editOptions" :key="opt" :value="opt">{{ opt }}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
                       v-else
                       :ref="(el: any) => { editInputRef = el }"
                       v-model="editValue"
@@ -425,24 +432,24 @@ function getEditType(col: Column): string {
                       <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>
                     </span>
                   </template>
-                </td>
-                <td v-if="hasOptionalColumns" class="o-col-optional-spacer" />
-              </tr>
+                </TableCell>
+                <TableCell v-if="hasOptionalColumns" class="o-col-optional-spacer" />
+              </TableRow>
             </template>
-          </tbody>
+          </TableBody>
         </template>
 
         <!-- Flat view -->
         <tbody v-else>
-          <tr
+          <TableRow
             v-for="(row, i) in sortedRows"
             :key="i"
             :class="{ 'o-selected': selectedRows.has(i) }"
           >
-            <td v-if="selectable" class="o-col-check">
+            <TableCell v-if="selectable" class="o-col-check">
               <input type="checkbox" :checked="selectedRows.has(i)" @change="toggleRow(i)" />
-            </td>
-            <td
+            </TableCell>
+            <TableCell
               v-for="col in visibleColumns"
               :key="col.key"
               :style="{ textAlign: col.align || 'left' }"
@@ -460,7 +467,7 @@ function getEditType(col: Column): string {
                 >
                   <option v-for="opt in col.editOptions" :key="opt" :value="opt">{{ opt }}</option>
                 </select>
-                <input
+                <Input
                   v-else
                   :ref="(el: any) => { editInputRef = el }"
                   v-model="editValue"
@@ -478,11 +485,11 @@ function getEditType(col: Column): string {
                   <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>
                 </span>
               </template>
-            </td>
-            <td v-if="hasOptionalColumns" class="o-col-optional-spacer" />
-          </tr>
-        </tbody>
-      </table>
+            </TableCell>
+            <TableCell v-if="hasOptionalColumns" class="o-col-optional-spacer" />
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
   </div>
 </template>

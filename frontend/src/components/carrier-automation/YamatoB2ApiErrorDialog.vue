@@ -9,26 +9,26 @@
     </div>
     <div v-if="parsedDetails.length > 0" class="api-error-details">
       <h4>エラー詳細</h4>
-      <table class="o-list-table">
-        <thead>
-          <tr>
-            <th style="width:80px">行番号</th>
-            <th style="width:200px">フィールド</th>
-            <th>エラー内容</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(row, idx) in parsedDetails" :key="idx">
-            <td>{{ row.rowIndex !== null ? `#${row.rowIndex + 1}` : '-' }}</td>
-            <td>{{ row.field }}</td>
-            <td>
+      <Table class="o-list-table">
+        <TableHeader>
+          <TableRow>
+            <TableHead style="width:80px">行番号</TableHead>
+            <TableHead style="width:200px">フィールド</TableHead>
+            <TableHead>エラー内容</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <TableRow v-for="(row, idx) in parsedDetails" :key="idx">
+            <TableCell>{{ row.rowIndex !== null ? `#${row.rowIndex + 1}` : '-' }}</TableCell>
+            <TableCell>{{ row.field }}</TableCell>
+            <TableCell>
               <div class="error-message">{{ row.message }}</div>
               <div v-if="row.input" class="error-input">入力値: {{ row.input }}</div>
               <div v-if="row.maxLength" class="error-hint">最大文字数: {{ row.maxLength }}</div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
     </div>
     <div v-else class="api-error-raw">
       <h4>エラーメッセージ</h4>
@@ -42,6 +42,7 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { computed } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

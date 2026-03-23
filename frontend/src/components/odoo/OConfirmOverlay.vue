@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 /**
  * グローバル確認ダイアログ / 全局确认弹窗
  * window.confirm() を美化版に置き換える
@@ -75,7 +76,7 @@ onUnmounted(() => {
               </svg>
             </div>
             <h3 class="cfd-title">{{ isDanger ? '操作の確認' : '確認' }}</h3>
-            <button class="cfd-close" @click="handleCancel" aria-label="Close">
+            <Button class="cfd-close" @click="handleCancel" aria-label="Close">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                 <line x1="1" y1="1" x2="13" y2="13"/><line x1="13" y1="1" x2="1" y2="13"/>
               </svg>
@@ -89,10 +90,10 @@ onUnmounted(() => {
 
           <!-- フッター / 底部 -->
           <div class="cfd-footer">
-            <button class="cfd-btn cfd-btn--cancel" @click="handleCancel">
+            <Button class="cfd-btn cfd-btn--cancel" @click="handleCancel">
               キャンセル
             </button>
-            <button
+            <Button
               ref="okBtnRef"
               class="cfd-btn"
               :class="isDanger ? 'cfd-btn--danger' : 'cfd-btn--primary'"

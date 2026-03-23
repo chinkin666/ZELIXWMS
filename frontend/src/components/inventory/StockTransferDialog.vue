@@ -7,55 +7,67 @@
     <div class="dialog-form">
       <div class="form-field">
         <Label>商品 <span class="text-destructive text-xs">*</span></Label>
-        <select v-model="form.productId" class="o-input" @change="onProductChange">
-          <option value="">商品を選択...</option>
-          <option v-for="p in products" :key="p._id" :value="p._id">
-            {{ p.sku }} - {{ p.name }}
-          </option>
-        </select>
+        <Select :model-value="form.productId || '__all__'" @update:model-value="(val: string) => { form.productId = val === '__all__' ? '' : val; onProductChange() }">
+          <SelectTrigger class="h-9"><SelectValue placeholder="商品を選択..." /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">商品を選択...</SelectItem>
+            <SelectItem v-for="p in products" :key="p._id" :value="p._id">
+              {{ p.sku }} - {{ p.name }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div class="form-row">
         <div class="form-field" style="flex:1;">
           <Label>移動元 <span class="text-destructive text-xs">*</span></Label>
-          <select v-model="form.fromLocationId" class="o-input">
-            <option value="">移動元を選択...</option>
-            <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
-              {{ loc.code }} ({{ loc.name }})
-            </option>
-          </select>
+          <Select :model-value="form.fromLocationId || '__all__'" @update:model-value="(val: string) => form.fromLocationId = val === '__all__' ? '' : val">
+            <SelectTrigger class="h-9"><SelectValue placeholder="移動元を選択..." /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">移動元を選択...</SelectItem>
+              <SelectItem v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
+                {{ loc.code }} ({{ loc.name }})
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div class="arrow-col">→</div>
         <div class="form-field" style="flex:1;">
           <Label>移動先 <span class="text-destructive text-xs">*</span></Label>
-          <select v-model="form.toLocationId" class="o-input">
-            <option value="">移動先を選択...</option>
-            <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
-              {{ loc.code }} ({{ loc.name }})
-            </option>
-          </select>
+          <Select :model-value="form.toLocationId || '__all__'" @update:model-value="(val: string) => form.toLocationId = val === '__all__' ? '' : val">
+            <SelectTrigger class="h-9"><SelectValue placeholder="移動先を選択..." /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">移動先を選択...</SelectItem>
+              <SelectItem v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
+                {{ loc.code }} ({{ loc.name }})
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-field" style="flex:1;">
           <Label>数量 <span class="text-destructive text-xs">*</span></Label>
-          <input v-model.number="form.quantity" type="number" class="o-input" min="1" />
+          <Input v-model.number="form.quantity" type="number" min="1" />
         </div>
         <div class="form-field" style="flex:1;">
           <Label>ロット</Label>
-          <select v-model="form.lotId" class="o-input">
-            <option value="">指定なし</option>
-            <option v-for="lot in lots" :key="lot._id" :value="lot._id">
-              {{ lot.lotNumber }}{{ lot.expiryDate ? ' (' + formatDate(lot.expiryDate) + ')' : '' }}
-            </option>
-          </select>
+          <Select :model-value="form.lotId || '__all__'" @update:model-value="(val: string) => form.lotId = val === '__all__' ? '' : val">
+            <SelectTrigger class="h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">指定なし</SelectItem>
+              <SelectItem v-for="lot in lots" :key="lot._id" :value="lot._id">
+                {{ lot.lotNumber }}{{ lot.expiryDate ? ' (' + formatDate(lot.expiryDate) + ')' : '' }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       <div class="form-field">
         <Label>メモ</Label>
-        <input v-model="form.memo" type="text" class="o-input" placeholder="移動理由..." />
+        <Input v-model="form.memo" type="text" placeholder="移動理由..." />
       </div>
 
       <div v-if="sourceInfo" class="source-info">
@@ -75,10 +87,12 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, computed, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { transferStock, fetchStock } from '@/api/inventory'
 import { fetchLots } from '@/api/lot'
 import type { Product } from '@/types/product'
@@ -199,8 +213,6 @@ async function handleSubmit() {
 .req { color: #dc3545; font-size: 11px; }
 .form-row { display: flex; gap: 12px; align-items: flex-end; }
 .arrow-col { display: flex; align-items: center; padding-bottom: 6px; font-size: 18px; color: var(--o-gray-500, #909399); font-weight: 600; }
-.o-input { padding: 6px 10px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: 4px; font-size: 14px; outline: none; width: 100%; }
-.o-input:focus { border-color: var(--o-brand-primary, #714b67); }
 .source-info { font-size: 13px; color: var(--o-gray-600, #606266); background: var(--o-gray-50, #fafafa); padding: 8px 12px; border-radius: 4px; display: flex; gap: 8px; flex-wrap: wrap; }
 .text-danger { color: #f56c6c; }
 </style>

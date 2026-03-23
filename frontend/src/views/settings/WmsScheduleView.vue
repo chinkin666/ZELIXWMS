@@ -168,7 +168,7 @@
           </template>
           <div class="form-field form-field--full">
             <label>{{ t('wms.schedule.metadataJson', 'メタデータ (JSON)') }}</label>
-            <textarea v-model="form.metadataJson" rows="3" placeholder='{"key": "value"}'></textarea>
+            <Textarea v-model="form.metadataJson" rows="3" placeholder='{"key": "value"}'></Textarea>
           </div>
         </div>
       <DialogFooter>
@@ -183,6 +183,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { computed, h, onMounted, reactive, ref, watch } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'

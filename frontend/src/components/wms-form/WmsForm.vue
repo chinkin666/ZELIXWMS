@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 /**
  * WMS動的フォーム / WMS动态表单
  *
@@ -164,7 +165,7 @@ function handleSubmit() {
           />
 
           <!-- Textarea -->
-          <textarea
+          <Textarea
             v-else-if="field.type === 'textarea'"
             :id="field.key"
             :placeholder="field.placeholder"

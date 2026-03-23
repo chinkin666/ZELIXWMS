@@ -69,8 +69,8 @@
                     <span v-if="item.showOn !== 'all'" class="o-badge">{{ getShowOnLabel(item.showOn) }}</span>
                   </div>
                   <div class="hf-item-actions">
-                    <Button class="" :disabled="index === 0" @click="moveHFItem(index, -1)">&#x2191;</Button>
-                    <Button class="" :disabled="index === template.headerFooterItems.length - 1" @click="moveHFItem(index, 1)">&#x2193;</Button>
+                    <Button :disabled="index === 0" @click="moveHFItem(index, -1)">&#x2191;</Button>
+                    <Button :disabled="index === template.headerFooterItems.length - 1" @click="moveHFItem(index, 1)">&#x2193;</Button>
                     <Button class="text-destructive" @click="removeHFItem(index)">&#x2715;</Button>
                   </div>
                 </div>
@@ -330,10 +330,10 @@
                     </span>
                   </div>
                   <div class="column-card-actions">
-                    <Button class="" :title="t('wms.formEditor.moveToTop', '一番上へ')" :disabled="index === 0" @click="moveColumnToTop(index)">&#x21C8;</Button>
-                    <Button class="" :title="t('wms.formEditor.moveUp', '上へ')" :disabled="index === 0" @click="moveColumn(index, -1)">&#x2191;</Button>
-                    <Button class="" :title="t('wms.formEditor.moveDown', '下へ')" :disabled="index === template.columns.length - 1" @click="moveColumn(index, 1)">&#x2193;</Button>
-                    <Button class="" :title="t('wms.formEditor.moveToBottom', '一番下へ')" :disabled="index === template.columns.length - 1" @click="moveColumnToBottom(index)">&#x21CA;</Button>
+                    <Button :title="t('wms.formEditor.moveToTop', '一番上へ')" :disabled="index === 0" @click="moveColumnToTop(index)">&#x21C8;</Button>
+                    <Button :title="t('wms.formEditor.moveUp', '上へ')" :disabled="index === 0" @click="moveColumn(index, -1)">&#x2191;</Button>
+                    <Button :title="t('wms.formEditor.moveDown', '下へ')" :disabled="index === template.columns.length - 1" @click="moveColumn(index, 1)">&#x2193;</Button>
+                    <Button :title="t('wms.formEditor.moveToBottom', '一番下へ')" :disabled="index === template.columns.length - 1" @click="moveColumnToBottom(index)">&#x21CA;</Button>
                     <Button class="text-destructive" :title="t('wms.common.delete', '削除')" @click="removeColumn(index)">&#x2715;</Button>
                   </div>
                 </div>
@@ -343,7 +343,7 @@
                   <div class="o-form-group">
                     <label>{{ t('wms.formEditor.headerLabel', 'ヘッダー') }}</label>
                     <div style="flex: 1">
-                      <textarea v-if="col.type === 'multi'" v-model="col.label" rows="2" :placeholder="t('wms.formEditor.multiLinePlaceholder', '複数行の場合は改行で区切る')" style="width: 100%"></textarea>
+                      <Textarea v-if="col.type === 'multi'" v-model="col.label" rows="2" :placeholder="t('wms.formEditor.multiLinePlaceholder', '複数行の場合は改行で区切る')" style="width: 100%"></Textarea>
                       <Input v-else v-model="col.label" :placeholder="t('wms.formEditor.columnDisplayName', '列の表示名')" style="width: 100%" />
                       <div v-if="col.type === 'multi'" class="hint">{{ t('wms.formEditor.multiLineHint', '複数行ヘッダーは改行で区切ってください') }}</div>
                     </div>
@@ -454,7 +454,7 @@
                       <div class="o-form-group">
                         <label>{{ t('wms.formEditor.previewData', 'プレビュー用一時データ') }}</label>
                         <div style="flex: 1">
-                          <textarea v-model="col.previewData" rows="3" style="width: 100%" :placeholder="t('wms.formEditor.previewDataPlaceholder', '例: サンプル値（省略可）')" @blur="updatePreview"></textarea>
+                          <Textarea v-model="col.previewData" rows="3" style="width: 100%" :placeholder="t('wms.formEditor.previewDataPlaceholder', '例: サンプル値（省略可）')" @blur="updatePreview"></Textarea>
                           <div class="hint">{{ t('wms.formEditor.previewDataHint', 'プレビュー時にこのフィールドで使用する一時データ（JSON文字列）。空白の場合はデフォルトデータが使用されます。') }}</div>
                         </div>
                       </div>
@@ -485,8 +485,8 @@
                         <div class="child-header">
                           <span class="child-number">{{ childIndex + 1 }}{{ t('wms.formEditor.rowSuffix', '行目') }}</span>
                           <div class="child-actions">
-                            <Button class="" :disabled="childIndex === 0" @click="moveChildContent(col, childIndex, -1)">&#x2191;</Button>
-                            <Button class="" :disabled="childIndex === (col.children?.length || 0) - 1" @click="moveChildContent(col, childIndex, 1)">&#x2193;</Button>
+                            <Button :disabled="childIndex === 0" @click="moveChildContent(col, childIndex, -1)">&#x2191;</Button>
+                            <Button :disabled="childIndex === (col.children?.length || 0) - 1" @click="moveChildContent(col, childIndex, 1)">&#x2193;</Button>
                             <Button class="text-destructive" @click="removeChildContent(col, childIndex)">&#x2715;</Button>
                           </div>
                         </div>
@@ -578,7 +578,7 @@
                           <div class="o-form-group">
                             <label>{{ t('wms.formEditor.previewData', 'プレビュー用一時データ') }}</label>
                             <div style="flex: 1">
-                              <textarea v-model="child.previewData" rows="3" style="width: 100%" :placeholder="t('wms.formEditor.previewDataPlaceholder', '例: サンプル値（省略可）')" @blur="updatePreview"></textarea>
+                              <Textarea v-model="child.previewData" rows="3" style="width: 100%" :placeholder="t('wms.formEditor.previewDataPlaceholder', '例: サンプル値（省略可）')" @blur="updatePreview"></Textarea>
                               <div class="hint">{{ t('wms.formEditor.previewDataHint', 'プレビュー時にこのフィールドで使用する一時データ（JSON文字列）。空白の場合はデフォルトデータが使用されます。') }}</div>
                             </div>
                           </div>
@@ -621,6 +621,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { computed, onMounted, ref, watch, nextTick } from 'vue'
 import { Button } from '@/components/ui/button'
 import PageHeader from '@/components/shared/PageHeader.vue'
@@ -1134,7 +1135,6 @@ onMounted(() => {
 
 /* */
 .{ padding: 6px 10px; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px; font-size: 13px; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
-.o-input:focus { border-color: var(--o-primary, #0052A3); }
 
 /* o-badge */
 .o-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; line-height: 1.4; }

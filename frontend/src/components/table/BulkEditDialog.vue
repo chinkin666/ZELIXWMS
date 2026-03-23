@@ -7,7 +7,7 @@
     <div class="o-form-group">
       <label class="o-form-label">対象列</label>
       <select
-        class="o-input"
+       
         v-model="selectedColumnKey"
         style="width: 100%"
       >
@@ -24,7 +24,7 @@
       <label class="o-form-label">設定値</label>
       <select
         v-if="valueInputKind === 'select'"
-        class="o-input"
+       
         v-model="value"
         style="width: 100%"
       >
@@ -36,10 +36,10 @@
         >{{ opt.label }}</option>
       </select>
 
-      <input
+      <Input
         v-else-if="valueInputKind === 'number'"
         type="number"
-        class="o-input"
+       
         v-model.number="value"
         style="width: 100%"
         :min="selectedColumn?.min"
@@ -47,17 +47,17 @@
         placeholder="数値を入力"
       />
 
-      <input
+      <Input
         v-else-if="valueInputKind === 'date'"
         :type="selectedColumn?.fieldType === 'dateOnly' ? 'date' : 'datetime-local'"
-        class="o-input"
+       
         v-model="value"
         style="width: 100%"
       />
 
       <select
         v-else-if="valueInputKind === 'boolean'"
-        class="o-input"
+       
         v-model="value"
         style="width: 100%"
       >
@@ -66,9 +66,9 @@
         <option :value="false">いいえ</option>
       </select>
 
-      <input
+      <Input
         v-else
-        class="o-input"
+       
         v-model="value"
         placeholder="文字列を入力"
         style="width: 100%"
@@ -94,6 +94,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { computed, ref, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

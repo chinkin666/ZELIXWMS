@@ -26,18 +26,18 @@
               </label>
 
               <!-- 字符串输入 -->
-              <input
+              <Input
                 v-if="column.fieldType === 'string' && !column.searchOptions"
-                class="o-input"
+               
                 :value="getNestedValueInTemplate(formData, getNestedKey(column))"
                 @input="(e: Event) => setNestedValueInTemplate(formData, getNestedKey(column), (e.target as HTMLInputElement).value)"
                 :placeholder="`${column.title}を入力してください`"
               />
 
               <!-- 数字输入 -->
-              <input
+              <Input
                 v-else-if="column.fieldType === 'number'"
-                class="o-input"
+               
                 type="number"
                 :value="getNestedValueInTemplate(formData, getNestedKey(column))"
                 @input="(e: Event) => { const v = (e.target as HTMLInputElement).value; setNestedValueInTemplate(formData, getNestedKey(column), v === '' ? undefined : Number(v)) }"
@@ -50,9 +50,9 @@
               />
 
               <!-- 日期（日時） -->
-              <input
+              <Input
                 v-else-if="column.fieldType === 'date'"
-                class="o-input"
+               
                 type="datetime-local"
                 :value="toDatetimeLocalValue(getNestedValueInTemplate(formData, getNestedKey(column)))"
                 @input="(e: Event) => setNestedValueInTemplate(formData, getNestedKey(column), fromDatetimeLocalValue((e.target as HTMLInputElement).value))"
@@ -60,9 +60,9 @@
               />
 
               <!-- 日期（年月日） -->
-              <input
+              <Input
                 v-else-if="column.fieldType === 'dateOnly'"
-                class="o-input"
+               
                 type="date"
                 :value="toDateInputValue(getNestedValueInTemplate(formData, getNestedKey(column)))"
                 @input="(e: Event) => setNestedValueInTemplate(formData, getNestedKey(column), fromDateInputValue((e.target as HTMLInputElement).value))"
@@ -72,7 +72,7 @@
               <!-- 多選タグ（荷扱いなど） -->
               <select
                 v-else-if="column.fieldType === 'array' && column.multiple && column.searchOptions"
-                class="o-input"
+               
                 multiple
                 :value="getNestedValueInTemplate(formData, getNestedKey(column))"
                 @change="(e: Event) => { const sel = e.target as HTMLSelectElement; const vals = Array.from(sel.selectedOptions).map(o => o.value); setNestedValueInTemplate(formData, getNestedKey(column), vals) }"
@@ -88,7 +88,7 @@
               <!-- 多选下拉框（ECモール等） -->
               <select
                 v-else-if="(column as any).formFieldType === 'multiSelect' && column.searchOptions && column.searchOptions.length > 0"
-                class="o-input"
+               
                 multiple
                 :value="getNestedValueInTemplate(formData, getNestedKey(column))"
                 @change="(e: Event) => { const sel = e.target as HTMLSelectElement; const vals = Array.from(sel.selectedOptions).map(o => o.value); setNestedValueInTemplate(formData, getNestedKey(column), vals) }"
@@ -104,7 +104,7 @@
               <!-- 单选下拉框 -->
               <select
                 v-else-if="column.searchOptions && column.searchOptions.length > 0"
-                class="o-input"
+               
                 :key="`${getNestedKey(column)}-${column.dependsOn ? getNestedValueInTemplate(formData, column.dependsOn) : ''}`"
                 :value="getNestedValueInTemplate(formData, getNestedKey(column))"
                 @change="(e: Event) => handleSelectChange(column, (e.target as HTMLSelectElement).value)"
@@ -121,7 +121,7 @@
               <!-- 布尔值 -->
               <select
                 v-else-if="column.fieldType === 'boolean'"
-                class="o-input"
+               
                 :value="String(getNestedValueInTemplate(formData, getNestedKey(column)))"
                 @change="(e: Event) => { const v = (e.target as HTMLSelectElement).value; setNestedValueInTemplate(formData, getNestedKey(column), v === 'true') }"
                 style="width: 100%"
@@ -138,8 +138,8 @@
                   :key="index"
                   class="array-item"
                 >
-                  <input
-                    class="o-input"
+                  <Input
+                   
                     :value="item"
                     @input="(e: Event) => updateStringArrayItem(column, index, (e.target as HTMLInputElement).value)"
                     :placeholder="`${column.title}を入力または選択してください`"
@@ -177,8 +177,8 @@
                   :key="index"
                   class="array-item"
                 >
-                  <input
-                    class="o-input"
+                  <Input
+                   
                     :value="item"
                     @input="(e: Event) => updateStringArrayItem(column, index, (e.target as HTMLInputElement).value)"
                     :placeholder="`${column.title}を入力してください`"
@@ -212,20 +212,20 @@
                   :key="index"
                   class="array-item"
                 >
-                  <input
-                    class="o-input"
+                  <Input
+                   
                     v-model="item.inputSku"
                     placeholder="SKU管理番号 *"
                     style="width: 30%; margin-right: 10px"
                   />
-                  <input
-                    class="o-input"
+                  <Input
+                   
                     v-model="item.productName"
                     placeholder="商品名（任意）"
                     style="width: 30%; margin-right: 10px"
                   />
-                  <input
-                    class="o-input"
+                  <Input
+                   
                     type="number"
                     v-model.number="item.quantity"
                     :min="1"
@@ -254,9 +254,9 @@
               </div>
 
               <!-- デフォルトテキスト入力 / 默认文本输入 -->
-              <input
+              <Input
                 v-else
-                class="o-input"
+               
                 :value="getNestedValueInTemplate(formData, getNestedKey(column))"
                 @input="(e: Event) => setNestedValueInTemplate(formData, getNestedKey(column), (e.target as HTMLInputElement).value)"
                 :placeholder="`${column.title}を入力してください`"
@@ -289,6 +289,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { computed, ref, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -825,11 +826,7 @@ const normalizeDateValue = (val: any, mode: 'date' | 'dateOnly'): string => {
   white-space: nowrap;
 }
 
-.o-form-group .o-input,
-.o-form-group select.o-input {
-  flex: 1;
-}
-
+.o-form-group 
 .array-field {
   width: 100%;
   flex: 1;

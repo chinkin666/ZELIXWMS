@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { ref, computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 
@@ -183,7 +185,7 @@ function onFileChange(event: Event) {
       @drop="onDrop"
       @click="openBrowser"
     >
-      <input
+      <Input
         ref="inputRef"
         type="file"
         class="o-file-input-hidden"
@@ -221,7 +223,7 @@ function onFileChange(event: Event) {
             <div class="o-file-progress-bar" :style="{ width: entry.progress + '%' }" />
           </div>
         </div>
-        <button
+        <Button
           class="o-file-remove"
           type="button"
           :aria-label="t('common.delete')"

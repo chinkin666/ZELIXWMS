@@ -814,11 +814,6 @@ onMounted(async () => {
   width: 100%;
 }
 
-.o-input:disabled {
-  background: var(--o-gray-100, #f5f7fa);
-  color: var(--o-gray-400, #c0c4cc);
-  cursor: not-allowed;
-}
 
 .move-number {
   font-family: monospace;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 /**
  * サブナビゲーション / 子导航
  *
@@ -55,7 +56,7 @@ defineExpose({ subNavHeight })
     class="fixed top-[var(--topbar-height)] left-0 right-0 h-auto bg-background border-b border-border z-[999] flex items-start dark:bg-background max-md:overflow-x-auto"
   >
     <div class="flex items-center flex-wrap overflow-x-hidden px-2 gap-0">
-      <button
+      <Button
         v-for="item in items"
         :key="item.to"
         :class="cn(

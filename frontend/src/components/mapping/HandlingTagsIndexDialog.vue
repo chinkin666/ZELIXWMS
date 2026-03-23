@@ -6,7 +6,7 @@
       </DialogHeader>
     <div class="o-form-group">
       <label class="o-form-label">配列インデックス</label>
-      <input type="number" class="o-input" v-model.number="form.index" :min="0" :max="100" placeholder="取得する配列のインデックス（0から開始）" style="width: 100%" />
+      <Input type="number" v-model.number="form.index" :min="0" :max="100" placeholder="取得する配列のインデックス（0から開始）" style="width: 100%" />
       <div class="hint">handlingTags 配列の指定されたインデックスの値を取得します</div>
     </div>
 
@@ -27,6 +27,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { computed, watch, ref } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

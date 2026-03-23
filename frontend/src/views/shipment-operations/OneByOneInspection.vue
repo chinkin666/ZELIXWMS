@@ -569,7 +569,6 @@ function handleCompletionDialogClose() {
   outline: none;
   box-sizing: border-box;
 }
-.o-input:focus { border-color: var(--o-info); }
 
 /* ─── Inspection Progress Bar ────────────── */
 .inspection-progress-bar { position: absolute; top: 0; left: 0; right: 0; padding: 8px 16px; background: #f5f7fa; border-radius: 0 0 4px 4px; z-index: 10; }

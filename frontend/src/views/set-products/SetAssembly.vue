@@ -377,7 +377,6 @@ onMounted(async () => {
 .req { color: var(--o-danger, #C0392B); font-size: 11px; }
 
 .{ padding: 6px 10px; border: 1px solid var(--o-border-color, #dcdfe6); border-radius: 4px; font-size: 14px; outline: none; }
-.o-input:focus { border-color: var(--o-brand-primary, #714b67); }
 
 .type-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
 .type--assembly { background: var(--o-info-bg, #ecf5ff); color: var(--o-info, #409eff); }

@@ -2,7 +2,7 @@
   <!-- Select with options -->
   <select
     v-if="column.searchOptions && column.searchOptions.length > 0"
-    class="o-input"
+   
     :key="`${dataKey}-${column.dependsOn ? getNestedValue(formData, column.dependsOn) : ''}`"
     :value="currentValue"
     :disabled="isDisabled"
@@ -19,7 +19,7 @@
   <!-- Boolean -->
   <select
     v-else-if="column.fieldType === 'boolean'"
-    class="o-input"
+   
     :value="String(currentValue)"
     @change="(e: Event) => emit('update', dataKey, (e.target as HTMLSelectElement).value === 'true')"
   >
@@ -29,9 +29,9 @@
   </select>
 
   <!-- Number -->
-  <input
+  <Input
     v-else-if="column.fieldType === 'number'"
-    class="o-input"
+   
     type="number"
     :value="currentValue"
     :min="column.min"
@@ -43,9 +43,9 @@
   />
 
   <!-- Date (datetime) -->
-  <input
+  <Input
     v-else-if="column.fieldType === 'date'"
-    class="o-input"
+   
     type="datetime-local"
     :value="toDatetimeLocal(currentValue)"
     @input="(e: Event) => emit('update', dataKey, fromDatetimeLocal((e.target as HTMLInputElement).value))"
@@ -54,7 +54,7 @@
   <!-- お届け日指定: select + conditional date picker -->
   <div v-else-if="column.fieldType === 'dateOnly' && isDeliveryDate" class="delivery-date-field">
     <select
-      class="o-input delivery-date-select"
+      class=" delivery-date-select"
       :value="deliveryDateMode"
       @change="onDeliveryModeChange"
     >
@@ -81,8 +81,8 @@
   <!-- String array (handlingTags, barcode, etc.) -->
   <div v-else-if="column.fieldType === 'array' && isStringArray" class="array-field">
     <div v-for="(item, index) in arrayValue" :key="index" class="array-item">
-      <input
-        class="o-input"
+      <Input
+       
         :value="item"
         @input="(e: Event) => updateArrayItem(index, (e.target as HTMLInputElement).value)"
         :placeholder="`${column.title}を入力`"
@@ -92,13 +92,13 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </Button>
     </div>
-    <button class="o-add-tag-btn" @click="addArrayItem">+ 追加</button>
+    <Button class="o-add-tag-btn" @click="addArrayItem">+ 追加</Button>
   </div>
 
   <!-- Default text -->
-  <input
+  <Input
     v-else
-    class="o-input"
+   
     :value="currentValue"
     :maxlength="column.maxLength"
     :disabled="isDisabled"
@@ -108,6 +108,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { computed, ref, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import type { TableColumn, SearchOption } from '@/types/table'

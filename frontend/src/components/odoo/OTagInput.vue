@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { ref, computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 
@@ -99,7 +101,7 @@ function focusInput() {
         class="o-tag-chip"
       >
         <span class="o-tag-chip-label">{{ tag }}</span>
-        <button
+        <Button
           class="o-tag-chip-remove"
           type="button"
           :aria-label="t('common.remove') || 'Remove'"
@@ -108,7 +110,7 @@ function focusInput() {
           &times;
         </button>
       </span>
-      <input
+      <Input
         ref="inputRef"
         v-model="inputValue"
         type="text"

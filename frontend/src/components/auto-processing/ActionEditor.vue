@@ -2,7 +2,7 @@
   <div class="action-editor">
     <div v-for="(action, index) in modelValue" :key="index" class="action-row">
       <select
-        class="o-input"
+       
         :value="action.type"
         @change="handleTypeChange(index, ($event.target as HTMLSelectElement).value as ActionType)"
         style="width: 180px"
@@ -19,16 +19,16 @@
 
       <!-- addProduct -->
       <template v-if="action.type === 'addProduct'">
-        <input
-          class="o-input"
+        <Input
+         
           :value="action.productSku"
           @input="updateAction(index, { ...action, productSku: ($event.target as HTMLInputElement).value })"
           placeholder="SKU"
           style="width: 200px"
         />
-        <input
+        <Input
           type="number"
-          class="o-input"
+         
           :value="action.quantity ?? 1"
           min="1"
           @input="updateAction(index, { ...action, quantity: Number(($event.target as HTMLInputElement).value) })"
@@ -39,7 +39,7 @@
       <!-- setOrderGroup -->
       <template v-if="action.type === 'setOrderGroup'">
         <select
-          class="o-input"
+         
           :value="action.orderGroupId"
           @change="updateAction(index, { ...action, orderGroupId: ($event.target as HTMLSelectElement).value })"
           style="width: 240px"
@@ -63,6 +63,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import type { AutoProcessingAction, ActionType } from '@/types/autoProcessingRule'

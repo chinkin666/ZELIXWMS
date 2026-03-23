@@ -2,7 +2,7 @@
   <div class="field-analysis-card">
     <div class="field-header">
       <span class="field-name">{{ fieldName }}</span>
-      <button
+      <Button
         v-if="uniqueCount > 20 && !forceChart"
         class="o-btn o-btn-sm"
         style="border:none; background:none; color:#409eff; cursor:pointer"
@@ -10,7 +10,7 @@
       >
         グラフ表示
       </button>
-      <button
+      <Button
         v-if="forceChart && uniqueCount > 20"
         class="o-btn o-btn-sm"
         style="border:none; background:none; color:#409eff; cursor:pointer"
@@ -132,6 +132,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import { computed, ref } from 'vue'
 import { Bar } from 'vue-chartjs'
 import {

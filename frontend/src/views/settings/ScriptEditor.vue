@@ -103,7 +103,7 @@
         </div>
         <div class="form-field form-field--full">
           <label>{{ t('wms.settings.code', 'コード') }} <span class="text-destructive text-xs">*</span></label>
-          <textarea
+          <Textarea
             v-model="form.code"
             class="code-textarea"
             rows="14"
@@ -196,6 +196,7 @@ if (order.coolType === 'frozen') {
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/composables/useToast'
 import { useI18n } from '@/composables/useI18n'
 import { Button } from '@/components/ui/button'

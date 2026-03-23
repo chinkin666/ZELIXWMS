@@ -19,7 +19,7 @@
         <div class="o-form-group">
           <label class="o-form-label">新しい送り状種類 *</label>
           <select
-            class="o-input"
+           
             v-model="selectedInvoiceType"
             style="width: 100%"
           >

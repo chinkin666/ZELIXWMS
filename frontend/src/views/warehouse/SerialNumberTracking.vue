@@ -135,7 +135,7 @@
         </div>
         <div class="form-field form-field--full">
           <label>{{ t('wms.warehouse.remarks', '備考') }}</label>
-          <textarea v-model="createForm.memo" class="form-textarea" rows="3" />
+          <Textarea v-model="createForm.memo" class="form-textarea" rows="3" />
         </div>
       </div>
         <DialogFooter>
@@ -160,7 +160,7 @@
         </div>
         <div class="form-field form-field--full">
           <label>{{ t('wms.warehouse.serialNumbersPerLine', 'シリアル番号（1行に1つ）') }} <span class="text-destructive text-xs">*</span></label>
-          <textarea v-model="bulkForm.serialNumbersText" class="form-textarea" rows="8" placeholder="SN001&#10;SN002&#10;SN003" />
+          <Textarea v-model="bulkForm.serialNumbersText" class="form-textarea" rows="8" placeholder="SN001&#10;SN002&#10;SN003" />
         </div>
         <div v-if="bulkResult" class="form-field form-field--full">
           <div class="bulk-result">
@@ -239,7 +239,7 @@
         </div>
         <div class="form-field form-field--full">
           <label>{{ t('wms.warehouse.remarks', '備考') }}</label>
-          <textarea v-model="editForm.memo" class="form-textarea" rows="3" />
+          <Textarea v-model="editForm.memo" class="form-textarea" rows="3" />
         </div>
       </div>
         <DialogFooter>
@@ -252,6 +252,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/composables/useToast'

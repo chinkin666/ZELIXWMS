@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import { ref, computed } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import OButton from './OButton.vue'
@@ -99,15 +100,15 @@ function getIconSvg(icon: string | undefined): string {
             <span class="o-batch-count">
               {{ t('batch.selectedCount', { count: String(selectedCount) }) }}
             </span>
-            <button class="o-batch-link" @click="emit('select-all')">
+            <Button class="o-batch-link" @click="emit('select-all')">
               {{ t('batch.selectAll') }}
             </button>
-            <button class="o-batch-link" @click="emit('deselect-all')">
+            <Button class="o-batch-link" @click="emit('deselect-all')">
               {{ t('batch.deselectAll') }}
             </button>
           </div>
           <div v-if="leftActions.length > 0" class="o-batch-actions">
-            <button
+            <Button
               v-for="action in leftActions"
               :key="action.id"
               class="o-batch-btn"
@@ -130,7 +131,7 @@ function getIconSvg(icon: string | undefined): string {
         </div>
 
         <div v-if="rightActions.length > 0" class="o-batch-actions">
-          <button
+          <Button
             v-for="action in rightActions"
             :key="action.id"
             class="o-batch-btn"
@@ -172,12 +173,12 @@ function getIconSvg(icon: string | undefined): string {
             <p>選択した{{ selectedCount }}件を{{ confirmingAction.label }}しますか？</p>
           </div>
           <div class="o-batch-confirm-footer">
-            <OButton variant="secondary" @click="onCancelConfirm">
+            <Button variant="secondary" @click="onCancelConfirm">
               {{ t('dialog.cancel') }}
-            </OButton>
-            <OButton variant="danger" @click="onConfirm">
+            </Button>
+            <Button variant="danger" @click="onConfirm">
               {{ confirmingAction.label }}
-            </OButton>
+            </Button>
           </div>
         </div>
       </div>

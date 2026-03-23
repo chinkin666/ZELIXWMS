@@ -3,7 +3,7 @@
     <div v-for="(cond, index) in modelValue" :key="index" class="condition-row">
       <div class="condition-type">
         <select
-          class="o-input"
+         
           :value="cond.type"
           @change="updateCondition(index, { ...cond, type: ($event.target as HTMLSelectElement).value as ConditionType })"
           style="width: 160px"
@@ -19,7 +19,7 @@
       <!-- orderField type -->
       <template v-if="cond.type === 'orderField'">
         <select
-          class="o-input"
+         
           :value="cond.fieldKey"
           @change="handleFieldKeyChange(index, cond, ($event.target as HTMLSelectElement).value)"
           style="width: 180px"
@@ -43,7 +43,7 @@
         <!-- normal field: operator + value -->
         <template v-if="cond.fieldKey">
           <select
-            class="o-input"
+           
             :value="cond.operator"
             @change="updateCondition(index, { ...cond, operator: ($event.target as HTMLSelectElement).value as OrderFieldOperator })"
             style="width: 130px"
@@ -62,7 +62,7 @@
             <!-- select field -->
             <select
               v-if="getFieldSearchType(cond.fieldKey) === 'select'"
-              class="o-input"
+             
               :value="cond.value as string"
               @change="updateCondition(index, { ...cond, value: ($event.target as HTMLSelectElement).value })"
               style="width: 180px"
@@ -79,7 +79,7 @@
             <!-- boolean field -->
             <select
               v-else-if="getFieldSearchType(cond.fieldKey) === 'boolean'"
-              class="o-input"
+             
               :value="cond.value as string"
               @change="updateCondition(index, { ...cond, value: ($event.target as HTMLSelectElement).value === 'true' })"
               style="width: 120px"
@@ -89,19 +89,19 @@
               <option :value="false">いいえ</option>
             </select>
             <!-- number field -->
-            <input
+            <Input
               v-else-if="getFieldSearchType(cond.fieldKey) === 'number'"
               type="number"
-              class="o-input"
+             
               :value="cond.value as number"
               @input="updateCondition(index, { ...cond, value: Number(($event.target as HTMLInputElement).value) })"
               placeholder="値"
               style="width: 150px"
             />
             <!-- string / default -->
-            <input
+            <Input
               v-else
-              class="o-input"
+             
               :value="cond.value as string"
               @input="updateCondition(index, { ...cond, value: ($event.target as HTMLInputElement).value })"
               placeholder="値"
@@ -114,7 +114,7 @@
       <!-- orderStatus type -->
       <template v-if="cond.type === 'orderStatus'">
         <select
-          class="o-input"
+         
           :value="cond.fieldKey"
           @change="handleFieldKeyChange(index, cond, ($event.target as HTMLSelectElement).value)"
           style="width: 160px"
@@ -130,7 +130,7 @@
         </select>
         <template v-if="cond.fieldKey">
           <select
-            class="o-input"
+           
             :value="cond.operator"
             @change="updateCondition(index, { ...cond, operator: ($event.target as HTMLSelectElement).value as OrderFieldOperator })"
             style="width: 130px"
@@ -141,7 +141,7 @@
           </select>
           <select
             v-if="!isNoValueOperator(cond.operator)"
-            class="o-input"
+           
             :value="cond.value as string"
             @change="updateCondition(index, { ...cond, value: ($event.target as HTMLSelectElement).value === 'true' })"
             style="width: 120px"
@@ -156,7 +156,7 @@
       <!-- orderGroup type -->
       <template v-if="cond.type === 'orderGroup'">
         <select
-          class="o-input"
+         
           multiple
           :value="cond.orderGroupIds || []"
           @change="updateCondition(index, { ...cond, fieldKey: 'orderGroupId', orderGroupIds: Array.from(($event.target as HTMLSelectElement).selectedOptions, o => o.value) })"
@@ -174,15 +174,15 @@
 
       <!-- carrierRawRow type -->
       <template v-if="cond.type === 'carrierRawRow'">
-        <input
-          class="o-input"
+        <Input
+         
           :value="cond.carrierColumnName"
           @input="updateCondition(index, { ...cond, carrierColumnName: ($event.target as HTMLInputElement).value })"
           placeholder="列名"
           style="width: 160px"
         />
         <select
-          class="o-input"
+         
           :value="cond.carrierOperator"
           @change="updateCondition(index, { ...cond, carrierOperator: ($event.target as HTMLSelectElement).value as RawRowOperator })"
           style="width: 120px"
@@ -196,9 +196,9 @@
             {{ label }}
           </option>
         </select>
-        <input
+        <Input
           v-if="!isNoValueRawRowOperator(cond.carrierOperator)"
-          class="o-input"
+         
           :value="cond.carrierValue as string"
           @input="updateCondition(index, { ...cond, carrierValue: ($event.target as HTMLInputElement).value })"
           placeholder="値"
@@ -214,6 +214,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, onMounted, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import type { AutoProcessingCondition, ConditionType, RawRowOperator, OrderFieldOperator } from '@/types/autoProcessingRule'

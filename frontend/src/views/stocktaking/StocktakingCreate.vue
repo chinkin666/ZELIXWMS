@@ -64,7 +64,7 @@
 
       <div class="form-row">
         <label>{{ t('wms.stocktaking.memo', 'メモ') }}</label>
-        <textarea v-model="form.memo" rows="2" style="width:100%;max-width:500px;" />
+        <Textarea v-model="form.memo" rows="2" style="width:100%;max-width:500px;" />
       </div>
 
       <div class="form-actions">
@@ -77,6 +77,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { onMounted, ref, reactive } from 'vue'

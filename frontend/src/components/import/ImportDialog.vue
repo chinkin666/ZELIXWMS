@@ -26,7 +26,7 @@
           </div>
           <div class="upload-tip">対応形式: CSV, XLSX, XLS</div>
         </div>
-        <input
+        <Input
           ref="fileInputRef"
           type="file"
           accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
@@ -41,7 +41,7 @@
           <div class="o-form-group" style="margin-top: 12px; margin-bottom: 0">
             <label class="o-form-label">文字コード</label>
             <select
-              class="o-input"
+             
               v-model="fileEncoding"
               style="width: 200px"
               @change="handleEncodingChange"
@@ -60,7 +60,7 @@
       <div class="mapping-section">
         <h3>レイアウトを選択</h3>
         <select
-          class="o-input"
+         
           v-model="selectedConfigId"
           style="width: 100%"
         >
@@ -104,18 +104,18 @@
       <div v-if="previewRows.length > 0" class="preview-section">
         <h3>プレビュー（最初の5行）</h3>
         <div style="max-height: 200px; overflow: auto; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px">
-          <table class="o-list-table" style="font-size: 12px">
-            <thead>
-              <tr>
-                <th v-for="key in Object.keys(previewRows[0] || {})" :key="key" style="min-width: 120px">{{ key }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(row, idx) in previewRows" :key="idx">
-                <td v-for="key in Object.keys(previewRows[0] || {})" :key="key">{{ row[key] }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <Table class="o-list-table" style="font-size: 12px">
+            <TableHeader>
+              <TableRow>
+                <TableHead v-for="key in Object.keys(previewRows[0] || {})" :key="key" style="min-width: 120px">{{ key }}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="(row, idx) in previewRows" :key="idx">
+                <TableCell v-for="key in Object.keys(previewRows[0] || {})" :key="key">{{ row[key] }}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </div>
@@ -139,6 +139,8 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Input } from '@/components/ui/input'
 import { computed, ref, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

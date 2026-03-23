@@ -59,7 +59,6 @@ defineEmits<{
 .o-form-group > label { width: 140px; flex-shrink: 0; font-size: 13px; color: #606266; padding-top: 6px; }
 .o-form-group > input, .o-form-group > select, .o-form-group > textarea { flex: 1; min-width: 0; }
 .{ padding: 6px 10px; border: 1px solid var(--o-border-color, #dee2e6); border-radius: 4px; font-size: 13px; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
-.o-input:focus { border-color: var(--o-primary, #0052A3); }
 .o-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
 .o-toggle input { display: none; }
 .o-toggle-slider { width: 36px; height: 20px; background: #ccc; border-radius: 10px; position: relative; transition: background 0.2s; }

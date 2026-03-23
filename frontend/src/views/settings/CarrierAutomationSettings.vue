@@ -565,7 +565,6 @@ onMounted(() => {
   background: var(--o-view-background, #fff);
   box-sizing: border-box;
 }
-.o-input:disabled { opacity: 0.6; background: #f5f7fa; }
 
 .o-form-group { margin-bottom: 1rem; }
 .form-label { display: block; font-size: var(--o-font-size-small, 13px); font-weight: 500; color: var(--o-gray-700, #303133); margin-bottom: 0.25rem; }

@@ -63,7 +63,7 @@
         </div>
         <div class="o-form-group">
           <label>{{ t('wms.printTemplate.preview') }}</label>
-          <textarea :value="textPreviewValue" readonly rows="2" style="width: 100%; resize: vertical"></textarea>
+          <Textarea :value="textPreviewValue" readonly rows="2" style="width: 100%; resize: vertical"></Textarea>
         </div>
       </template>
 
@@ -104,7 +104,7 @@
         </div>
         <div class="o-form-group">
           <label>{{ t('wms.printTemplate.preview') }}</label>
-          <textarea :value="barcodePreviewValue" readonly rows="2" style="width: 100%; resize: vertical"></textarea>
+          <Textarea :value="barcodePreviewValue" readonly rows="2" style="width: 100%; resize: vertical"></Textarea>
         </div>
         <template v-if="(selectedEl as any).format === 'codabar'">
           <div class="o-form-group">
@@ -138,7 +138,7 @@
         </template>
         <div class="o-form-group">
           <label>options(JSON)</label>
-          <textarea :value="barcodeOptionsJson" rows="4" style="width: 100%; resize: vertical" @input="$emit('update:barcodeOptionsJson', ($event.target as HTMLTextAreaElement).value)"></textarea>
+          <Textarea :value="barcodeOptionsJson" rows="4" style="width: 100%; resize: vertical" @input="$emit('update:barcodeOptionsJson', ($event.target as HTMLTextAreaElement).value)"></Textarea>
         </div>
       </template>
 
@@ -173,6 +173,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -271,7 +272,6 @@ function onImageFileChange(e: Event) {
   outline: none;
   transition: border-color 0.15s;
 }
-.o-input:focus { border-color: var(--o-brand-primary, #0052A3); }
 .o-toggle {
   position: relative;
   display: inline-flex;

@@ -90,10 +90,6 @@ defineEmits<{
   word-break: break-word;
 }
 
-.o-input.is-error {
-  border-color: #f56c6c;
-  box-shadow: 0 0 0 1px #f56c6c inset;
-}
 
 .o-divider {
   display: flex;

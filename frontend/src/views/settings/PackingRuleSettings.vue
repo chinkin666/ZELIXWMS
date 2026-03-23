@@ -120,7 +120,7 @@
 
           <div class="form-row">
             <label>備考</label>
-            <textarea v-model="form.memo" rows="2" />
+            <Textarea v-model="form.memo" rows="2" />
           </div>
 
           <div class="form-actions">
@@ -136,6 +136,7 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/composables/useToast'
 import { Button } from '@/components/ui/button'
 import PageHeader from '@/components/shared/PageHeader.vue'

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 import { ref, computed, watch } from 'vue'
 import OButton from './OButton.vue'
 
@@ -407,7 +409,7 @@ function closeWizard() {
           <!-- Header -->
           <div class="o-wizard-header">
             <h4 class="o-wizard-title">Import {{ modelName }}</h4>
-            <button class="o-wizard-close" @click="closeWizard">&times;</button>
+            <Button class="o-wizard-close" @click="closeWizard">&times;</Button>
           </div>
 
           <!-- Step indicator -->
@@ -448,7 +450,7 @@ function closeWizard() {
                     Choose File
                     <input type="file" accept=".csv,.xlsx" hidden @change="onFileSelect" />
                   </label>
-                  <OButton variant="secondary" @click="useDemoData">Use Demo Data</OButton>
+                  <Button variant="secondary" @click="useDemoData">Use Demo Data</Button>
                 </div>
               </div>
 
@@ -461,12 +463,12 @@ function closeWizard() {
                     <span class="o-file-name">{{ uploadedFile.name }}</span>
                     <span class="o-file-size">{{ formatFileSize(uploadedFile.size) }} &mdash; {{ parsedRows.length }} rows, {{ parsedHeaders.length }} columns</span>
                   </div>
-                  <button class="o-file-remove" @click="removeFile" title="Remove file">&times;</button>
+                  <Button class="o-file-remove" @click="removeFile" title="Remove file">&times;</Button>
                 </div>
               </div>
 
               <div class="o-template-download">
-                <button class="o-btn o-btn-link" @click="downloadTemplate">
+                <Button class="o-btn o-btn-link" @click="downloadTemplate">
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                     <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
                     <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
@@ -486,18 +488,18 @@ function closeWizard() {
               </div>
 
               <div class="o-mapping-table-wrap">
-                <table class="o-mapping-table">
-                  <thead>
-                    <tr>
-                      <th>File Column</th>
-                      <th>System Field</th>
-                      <th>Preview</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(header, colIdx) in parsedHeaders" :key="colIdx">
-                      <td class="o-mapping-source">{{ header }}</td>
-                      <td>
+                <Table class="o-mapping-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>File Column</TableHead>
+                      <TableHead>System Field</TableHead>
+                      <TableHead>Preview</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow v-for="(header, colIdx) in parsedHeaders" :key="colIdx">
+                      <TableCell class="o-mapping-source">{{ header }}</TableCell>
+                      <TableCell>
                         <select
                           class="o-mapping-select"
                           :value="columnMapping[colIdx] || '__skip__'"
@@ -512,15 +514,15 @@ function closeWizard() {
                             {{ field.label }}{{ field.required ? ' *' : '' }}
                           </option>
                         </select>
-                      </td>
-                      <td class="o-mapping-preview">
+                      </TableCell>
+                      <TableCell class="o-mapping-preview">
                         <span v-for="(row, rIdx) in previewRows" :key="rIdx" class="o-preview-cell">
                           {{ row[colIdx] || '(empty)' }}
                         </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
               </div>
             </div>
 
@@ -546,21 +548,21 @@ function closeWizard() {
               </div>
 
               <div class="o-preview-table-wrap">
-                <table class="o-preview-table">
-                  <thead>
-                    <tr>
-                      <th class="o-col-status">Status</th>
-                      <th v-for="field in mappedFields" :key="field.key">{{ field.label }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
+                <Table class="o-preview-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead class="o-col-status">Status</TableHead>
+                      <TableHead v-for="field in mappedFields" :key="field.key">{{ field.label }}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow
                       v-for="(row, rIdx) in previewValidatedRows"
                       :key="rIdx"
                       :class="`o-row-${row.status}`"
                     >
-                      <td class="o-col-status">
-                        <button
+                      <TableCell class="o-col-status">
+                        <Button
                           v-if="row.errors.length > 0"
                           class="o-status-icon-btn"
                           @click="toggleErrorDetail(rIdx)"
@@ -570,13 +572,13 @@ function closeWizard() {
                           <span v-else class="o-status-icon o-icon-error">X</span>
                         </button>
                         <span v-else class="o-status-icon o-icon-ok">&#10003;</span>
-                      </td>
-                      <td v-for="field in mappedFields" :key="field.key">
+                      </TableCell>
+                      <TableCell v-for="field in mappedFields" :key="field.key">
                         {{ row.data[field.key] || '' }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
               </div>
 
               <!-- Expanded error details -->
@@ -663,26 +665,26 @@ function closeWizard() {
 
           <!-- Footer -->
           <div class="o-wizard-footer">
-            <OButton v-if="importComplete" variant="primary" @click="closeWizard">Done</OButton>
+            <Button v-if="importComplete" variant="primary" @click="closeWizard">Done</Button>
             <template v-else>
-              <OButton variant="secondary" @click="closeWizard">Cancel</OButton>
+              <Button variant="secondary" @click="closeWizard">Cancel</Button>
               <div class="o-wizard-footer-right">
-                <OButton v-if="currentStep > 1 && !isImporting" variant="secondary" @click="goPrev">Previous</OButton>
-                <OButton
+                <Button v-if="currentStep > 1 && !isImporting" variant="secondary" @click="goPrev">Previous</Button>
+                <Button
                   v-if="currentStep < 4"
                   variant="primary"
                   :disabled="!canProceed(currentStep)"
                   @click="goNext"
                 >
                   Next
-                </OButton>
-                <OButton
+                </Button>
+                <Button
                   v-if="currentStep === 4 && !isImporting && !importComplete"
                   variant="primary"
                   @click="performImport"
                 >
                   Import
-                </OButton>
+                </Button>
               </div>
             </template>
           </div>

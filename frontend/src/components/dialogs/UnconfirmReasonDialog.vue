@@ -30,10 +30,10 @@
             {{ template }}
             <span class="template-tag-close" @click.stop="removeTemplate(index)">✕</span>
           </span>
-          <input
+          <Input
             v-if="showAddInput"
             ref="addInputRef"
-            class="o-input add-input"
+            class=" add-input"
             v-model="newTemplate"
             placeholder="テンプレート名"
             @keyup.enter="confirmAddTemplate"
@@ -52,12 +52,12 @@
       </div>
 
       <div class="reason-section">
-        <textarea
-          class="o-input"
+        <Textarea
+         
           v-model="reason"
           rows="3"
           placeholder="取消理由を入力してください（空欄可、入力すると内部データとして記録されます）"
-        ></textarea>
+        ></Textarea>
       </div>
     </div>
 
@@ -72,6 +72,8 @@
 </template>
 
 <script setup lang="ts">
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { ref, watch, nextTick, onMounted } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

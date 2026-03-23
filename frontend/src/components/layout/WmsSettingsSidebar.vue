@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 /**
  * 設定サイドバー / 设置侧边栏
  *
@@ -52,7 +53,7 @@ function isSubActive(to: string) {
           </div>
 
           <!-- メニュー項目 / 菜单项 -->
-          <button
+          <Button
             v-for="item in group.items"
             :key="item.to"
             :class="cn(

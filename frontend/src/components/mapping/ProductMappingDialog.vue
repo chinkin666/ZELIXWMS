@@ -6,26 +6,32 @@
       </DialogHeader>
     <div class="o-form-group">
       <label class="o-form-label">SKU列</label>
-      <select class="o-input" v-model="form.skuColumn" style="width: 100%">
-        <option value="" disabled>SKU列を選択</option>
-        <option v-for="col in availableColumns" :key="col" :value="col">{{ col }}</option>
-      </select>
+      <Select v-model="form.skuColumn">
+        <SelectTrigger class="h-9 w-full"><SelectValue placeholder="SKU列を選択" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="col in availableColumns" :key="col" :value="col">{{ col }}</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
 
     <div class="o-form-group">
       <label class="o-form-label">数量列</label>
-      <select class="o-input" v-model="form.quantityColumn" style="width: 100%">
-        <option value="" disabled>数量列を選択</option>
-        <option v-for="col in availableColumns" :key="col" :value="col">{{ col }}</option>
-      </select>
+      <Select v-model="form.quantityColumn">
+        <SelectTrigger class="h-9 w-full"><SelectValue placeholder="数量列を選択" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="col in availableColumns" :key="col" :value="col">{{ col }}</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
 
     <div class="o-form-group">
       <label class="o-form-label">商品名列</label>
-      <select class="o-input" v-model="form.nameColumn" style="width: 100%">
-        <option value="" disabled>商品名列を選択</option>
-        <option v-for="col in availableColumns" :key="col" :value="col">{{ col }}</option>
-      </select>
+      <Select v-model="form.nameColumn">
+        <SelectTrigger class="h-9 w-full"><SelectValue placeholder="商品名列を選択" /></SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="col in availableColumns" :key="col" :value="col">{{ col }}</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
 
     <div class="o-form-group">
@@ -50,6 +56,7 @@
 import { computed, watch, ref } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { TransformMapping } from '@/api/mappingConfig'
 import { runTransformMapping } from '@/utils/transformRunner'
 

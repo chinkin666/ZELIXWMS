@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 /**
  * コマンドパレット / 命令面板
  * Ctrl+K で起動、ページ名を入力して素早くナビゲーション
@@ -125,7 +127,7 @@ onUnmounted(() => document.removeEventListener('keydown', onGlobalKeydown))
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" class="cmd-search-icon">
               <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
             </svg>
-            <input
+            <Input
               ref="inputRef"
               v-model="query"
               class="cmd-input"
@@ -135,7 +137,7 @@ onUnmounted(() => document.removeEventListener('keydown', onGlobalKeydown))
             <kbd class="cmd-kbd">ESC</kbd>
           </div>
           <div class="cmd-list" v-if="filteredItems.length > 0">
-            <button
+            <Button
               v-for="(item, i) in filteredItems"
               :key="item.path"
               class="cmd-item"

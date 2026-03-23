@@ -68,9 +68,9 @@
                   <span class="product-sku">{{ item.inputSku }}</span>
                 </div>
                 <div class="product-qty-control">
-                  <input
+                  <Input
                     type="number"
-                    class="o-input"
+                   
                     v-model.number="item.quantity"
                     :min="1"
                     :max="item.maxQuantity"
@@ -120,6 +120,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input } from '@/components/ui/input'
 import { ref, computed, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'

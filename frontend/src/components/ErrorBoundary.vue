@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 // 错误边界组件 / エラーバウンダリコンポーネント
 // Catches errors from child components and displays a fallback UI
 import { ref, onErrorCaptured } from 'vue'
@@ -23,7 +24,7 @@ function reset() {
     <div class="error-boundary__icon">!</div>
     <h3 class="error-boundary__title">予期しないエラーが発生しました</h3>
     <p class="error-boundary__message">{{ error.message }}</p>
-    <button class="error-boundary__button" @click="reset">再試行</button>
+    <Button class="error-boundary__button" @click="reset">再試行</Button>
   </div>
 </template>
 

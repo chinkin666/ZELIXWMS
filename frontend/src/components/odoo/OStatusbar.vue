@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from '../../composables/useI18n'
 import OButton from './OButton.vue'
@@ -128,7 +129,7 @@ function selectFromDropdown(stage: Stage) {
 
     <!-- Desktop: pipeline bar -->
     <div v-if="!isMobile" class="o-statusbar-stages">
-      <button
+      <Button
         v-for="stage in visibleStages"
         :key="stage.value"
         class="o-stage"
@@ -151,14 +152,14 @@ function selectFromDropdown(stage: Stage) {
 
     <!-- Mobile: dropdown -->
     <div v-else class="o-statusbar-dropdown">
-      <button class="o-statusbar-dropdown-toggle" @click="dropdownOpen = !dropdownOpen">
+      <Button class="o-statusbar-dropdown-toggle" @click="dropdownOpen = !dropdownOpen">
         {{ currentLabel }}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
       <div v-if="dropdownOpen" class="o-statusbar-dropdown-menu">
-        <button
+        <Button
           v-for="stage in normalizedStages"
           :key="stage.value"
           class="o-statusbar-dropdown-item"
@@ -189,12 +190,12 @@ function selectFromDropdown(stage: Stage) {
               {{ t('statusbar.confirmBackward') || 'Move back to a previous stage?' }}
             </p>
             <div class="o-confirm-actions">
-              <OButton variant="secondary" @click="cancelBackward">
+              <Button variant="secondary" @click="cancelBackward">
                 {{ t('dialog.cancel') || 'Cancel' }}
-              </OButton>
-              <OButton variant="primary" @click="confirmBackward">
+              </Button>
+              <Button variant="primary" @click="confirmBackward">
                 {{ t('dialog.confirm') || 'Confirm' }}
-              </OButton>
+              </Button>
             </div>
           </div>
         </div>

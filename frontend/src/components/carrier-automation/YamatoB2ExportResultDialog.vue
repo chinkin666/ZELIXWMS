@@ -16,53 +16,53 @@
 
       <div v-if="result.results && result.results.length > 0" class="result-details">
         <h4>詳細</h4>
-        <table class="o-list-table">
-          <thead>
-            <tr>
-              <th style="width:60px">#</th>
-              <th style="width:100px">結果</th>
-              <th>エラー</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, idx) in result.results" :key="idx">
-              <td>{{ row.order_index }}</td>
-              <td>
+        <Table class="o-list-table">
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width:60px">#</TableHead>
+              <TableHead style="width:100px">結果</TableHead>
+              <TableHead>エラー</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="(row, idx) in result.results" :key="idx">
+              <TableCell>{{ row.order_index }}</TableCell>
+              <TableCell>
                 <span :class="['o-badge', row.success ? 'o-badge-success' : 'o-badge-danger']">
                   {{ row.success ? '成功' : '失敗' }}
                 </span>
-              </td>
-              <td>{{ row.error }}</td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+              <TableCell>{{ row.error }}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
 
       <!-- Print results summary -->
       <div v-if="result.printResults && result.printResults.length > 0" class="result-details">
         <h4>発行結果</h4>
-        <table class="o-list-table">
-          <thead>
-            <tr>
-              <th style="width:120px">伝票タイプ</th>
-              <th style="width:80px">発行</th>
-              <th style="width:80px">件数</th>
-              <th>エラー</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, idx) in result.printResults" :key="idx">
-              <td>{{ getPrintTypeName(row.print_type) }}</td>
-              <td>
+        <Table class="o-list-table">
+          <TableHeader>
+            <TableRow>
+              <TableHead style="width:120px">伝票タイプ</TableHead>
+              <TableHead style="width:80px">発行</TableHead>
+              <TableHead style="width:80px">件数</TableHead>
+              <TableHead>エラー</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow v-for="(row, idx) in result.printResults" :key="idx">
+              <TableCell>{{ getPrintTypeName(row.print_type) }}</TableCell>
+              <TableCell>
                 <span :class="['o-badge', row.success ? 'o-badge-success' : 'o-badge-danger']">
                   {{ row.success ? '成功' : '失敗' }}
                 </span>
-              </td>
-              <td>{{ row.tracking_numbers?.length || 0 }} 件</td>
-              <td>{{ row.error }}</td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+              <TableCell>{{ row.tracking_numbers?.length || 0 }} 件</TableCell>
+              <TableCell>{{ row.error }}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
     </div>
     <DialogFooter>
@@ -74,6 +74,7 @@
 </template>
 
 <script setup lang="ts">
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import type { YamatoB2ExportResult } from '@/types/carrierAutomation'
