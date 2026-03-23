@@ -16,7 +16,7 @@ COPY package.json package-lock.json* ./
 
 # 全依存パッケージをインストール
 # 安装全部依赖
-RUN npm ci
+RUN npm install --ignore-scripts
 
 # ソースコードをコピー / 复制源码
 COPY tsconfig.json tsconfig.build.json nest-cli.json ./
@@ -37,7 +37,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # 本番用依存パッケージのみ / 仅生产依赖
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm install --ignore-scripts --omit=dev && npm cache clean --force
 
 # ビルド成果物をコピー / 复制构建产物
 COPY --from=builder /app/dist ./dist

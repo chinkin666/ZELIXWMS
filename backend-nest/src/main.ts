@@ -14,14 +14,12 @@ async function bootstrap() {
   // CORS 設定（環境変数で制御）/ CORS设置（通过环境变量控制）
   const corsOrigins = config.get<string>('CORS_ORIGINS');
   if (!corsOrigins && config.get('NODE_ENV') === 'production') {
-    console.warn('⚠️  CORS_ORIGINS 未設定: 本番環境ではオリジンを制限してください / CORS_ORIGINS未设置: 生产环境请限制允许的来源');
+    throw new Error('CORS_ORIGINS must be set in production / 本番環境ではCORS_ORIGINSの設定が必須です / 生产环境必须设置CORS_ORIGINS');
   }
   app.enableCors({
     origin: corsOrigins
       ? corsOrigins.split(',').map((o: string) => o.trim())
-      : config.get('NODE_ENV') === 'production'
-        ? false  // 本番環境で未設定の場合は全拒否 / 生产环境未设置时全部拒绝
-        : true,  // 開発環境のみ全オリジン許可 / 仅开发环境允许所有来源
+      : true,  // 開発環境のみ全オリジン許可 / 仅开发环境允许所有来源
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Warehouse-Id', 'X-Tenant-Id', 'X-Request-Id', 'X-Api-Key'],

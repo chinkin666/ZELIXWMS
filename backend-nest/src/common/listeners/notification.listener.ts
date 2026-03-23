@@ -32,10 +32,9 @@ export class NotificationListener {
   private async notifyAdmins(tenantId: string, type: string, payload: Record<string, unknown>) {
     const admins = await this.findTenantAdmins(tenantId);
     for (const admin of admins) {
-      await this.queueService.addJob(QUEUE_NAMES.NOTIFICATIONS, {
+      await this.queueService.addJob(QUEUE_NAMES.NOTIFICATION, type, {
         userId: admin.id,
         email: admin.email,
-        type,
         ...payload,
       });
     }
