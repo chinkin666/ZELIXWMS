@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { RslService } from './rsl.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/rsl')
+@RequireRole('admin', 'manager', 'operator')
 export class RslController {
   constructor(private readonly rslService: RslService) {}
 

@@ -2,10 +2,12 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { SuppliersService } from './suppliers.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { createSupplierSchema, updateSupplierSchema, type CreateSupplierDto, type UpdateSupplierDto } from './dto/create-supplier.dto.js';
 
 @Controller('api/suppliers')
+@RequireRole('admin', 'manager', 'operator')
 export class SuppliersController {
   constructor(private readonly suppliersService: SuppliersService) {}
 

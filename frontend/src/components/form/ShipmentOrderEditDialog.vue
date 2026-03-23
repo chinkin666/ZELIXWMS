@@ -13,17 +13,15 @@
         <!-- Top fields above tabs (2-column like Odoo) -->
         <div class="o-top-fields">
           <div class="o-top-col">
-            <template v-for="col in topLeftFields" :key="col.key">
-              <div v-if="isFieldVisible(col)" class="o-field-row">
-                <label class="o-field-label">
-                  {{ col.title }}
-                  <span v-if="isFieldRequired(col)" class="required-badge">必須</span>
-                </label>
-                <div class="o-field-value">
-                  <FormField :column="withPlaceholder(col)" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
-                </div>
-              </div>
-            </template>
+            <FormFieldGroup
+              :fields="topLeftFields"
+              :form-data="formData"
+              :is-field-required="isFieldRequired"
+              :is-field-disabled="isFieldDisabled"
+              :is-field-visible="isFieldVisible"
+              :with-placeholder="withPlaceholder"
+              @update="handleFieldUpdate"
+            />
             <!-- 出荷先タイプ選択 / 出货目的地类型选择 -->
             <div class="o-field-row">
               <label class="o-field-label">出荷先タイプ</label>
@@ -38,17 +36,15 @@
             </div>
           </div>
           <div class="o-top-col">
-            <template v-for="col in topRightFields" :key="col.key">
-              <div v-if="isFieldVisible(col)" class="o-field-row">
-                <label class="o-field-label">
-                  {{ col.title }}
-                  <span v-if="isFieldRequired(col)" class="required-badge">必須</span>
-                </label>
-                <div class="o-field-value">
-                  <FormField :column="withPlaceholder(col)" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
-                </div>
-              </div>
-            </template>
+            <FormFieldGroup
+              :fields="topRightFields"
+              :form-data="formData"
+              :is-field-required="isFieldRequired"
+              :is-field-disabled="isFieldDisabled"
+              :is-field-visible="isFieldVisible"
+              :with-placeholder="withPlaceholder"
+              @update="handleFieldUpdate"
+            />
           </div>
         </div>
 
@@ -158,15 +154,7 @@
             <!-- お届け先 tab -->
             <template v-if="activeTab === 'recipient'">
               <div class="o-form-grid">
-                <div v-for="col in recipientFields" :key="col.key" class="o-form-group">
-                  <label class="o-form-label">
-                    {{ col.title }}
-                    <span v-if="isFieldRequired(col)" class="required-badge">必須</span>
-                  </label>
-                  <div class="o-form-field">
-                    <FormField :column="withPlaceholder(col)" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
-                  </div>
-                </div>
+                <FormFieldGroup :fields="recipientFields" :form-data="formData" :is-field-required="isFieldRequired" :is-field-disabled="isFieldDisabled" :with-placeholder="withPlaceholder" @update="handleFieldUpdate" />
               </div>
             </template>
 
@@ -208,45 +196,21 @@
               </div>
 
               <div class="o-form-grid">
-                <div v-for="col in senderFields" :key="col.key" class="o-form-group">
-                  <label class="o-form-label">
-                    {{ col.title }}
-                    <span v-if="isFieldRequired(col)" class="required-badge">必須</span>
-                  </label>
-                  <div class="o-form-field">
-                    <FormField :column="withPlaceholder(col)" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
-                  </div>
-                </div>
+                <FormFieldGroup :fields="senderFields" :form-data="formData" :is-field-required="isFieldRequired" :is-field-disabled="isFieldDisabled" :with-placeholder="withPlaceholder" @update="handleFieldUpdate" />
               </div>
             </template>
 
             <!-- 注文者 tab -->
             <template v-if="activeTab === 'orderer'">
               <div class="o-form-grid">
-                <div v-for="col in ordererFields" :key="col.key" class="o-form-group">
-                  <label class="o-form-label">
-                    {{ col.title }}
-                    <span v-if="isFieldRequired(col)" class="required-badge">必須</span>
-                  </label>
-                  <div class="o-form-field">
-                    <FormField :column="withPlaceholder(col)" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
-                  </div>
-                </div>
+                <FormFieldGroup :fields="ordererFields" :form-data="formData" :is-field-required="isFieldRequired" :is-field-disabled="isFieldDisabled" :with-placeholder="withPlaceholder" @update="handleFieldUpdate" />
               </div>
             </template>
 
             <!-- その他 tab -->
             <template v-if="activeTab === 'other'">
               <div class="o-form-grid">
-                <div v-for="col in otherFields" :key="col.key" class="o-form-group">
-                  <label class="o-form-label">
-                    {{ col.title }}
-                    <span v-if="isFieldRequired(col)" class="required-badge">必須</span>
-                  </label>
-                  <div class="o-form-field">
-                    <FormField :column="withPlaceholder(col)" :form-data="formData" :is-disabled="isFieldDisabled(col)" @update="handleFieldUpdate" />
-                  </div>
-                </div>
+                <FormFieldGroup :fields="otherFields" :form-data="formData" :is-field-required="isFieldRequired" :is-field-disabled="isFieldDisabled" :with-placeholder="withPlaceholder" @update="handleFieldUpdate" />
               </div>
 
               <!-- 元データ（取込時の行） -->
@@ -347,6 +311,7 @@ import { computed, ref, watch } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
 import FormField from './FormField.vue'
+import FormFieldGroup from './FormFieldGroup.vue'
 import OCustomFields from '@/components/odoo/OCustomFields.vue'
 import type { TableColumn } from '@/types/table'
 import type { OrderSourceCompany } from '@/types/orderSourceCompany'

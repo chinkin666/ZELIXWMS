@@ -2,10 +2,12 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, UsePipes, ParseUUIDPipe } from '@nestjs/common';
 import { ClientsService } from './clients.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { createClientSchema, updateClientSchema, type CreateClientDto, type UpdateClientDto } from './dto/create-client.dto.js';
 
 @Controller('api/clients')
+@RequireRole('admin', 'manager', 'operator')
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 

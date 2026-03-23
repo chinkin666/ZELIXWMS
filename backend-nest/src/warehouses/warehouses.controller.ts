@@ -4,8 +4,10 @@ import { WarehousesService } from './warehouses.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { createWarehouseSchema, updateWarehouseSchema, type CreateWarehouseDto, type UpdateWarehouseDto } from './dto/create-warehouse.dto.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/warehouses')
+@RequireRole('admin', 'manager', 'operator')
 export class WarehousesController {
   constructor(private readonly warehousesService: WarehousesService) {}
 

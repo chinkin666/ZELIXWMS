@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { StocktakingOrdersService } from './stocktaking-orders.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/stocktaking-orders')
+@RequireRole('admin', 'manager', 'operator')
 export class StocktakingOrdersController {
   constructor(private readonly stocktakingOrdersService: StocktakingOrdersService) {}
 

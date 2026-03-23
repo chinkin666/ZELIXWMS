@@ -2,8 +2,10 @@
 import { Controller, Get, Put, Post, Body } from '@nestjs/common';
 import { SystemSettingsService } from './system-settings.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/system-settings')
+@RequireRole('admin')
 export class SystemSettingsController {
   constructor(private readonly systemSettingsService: SystemSettingsService) {}
 

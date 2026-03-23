@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Query } from '@nestjs/common';
 import { InventoryLedgerService } from './inventory-ledger.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/inventory-ledger')
+@RequireRole('admin', 'manager', 'operator', 'viewer')
 export class InventoryLedgerController {
   constructor(private readonly inventoryLedgerService: InventoryLedgerService) {}
 

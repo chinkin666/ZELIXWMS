@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { LabelingTasksService } from './labeling-tasks.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/labeling-tasks')
+@RequireRole('admin', 'manager', 'operator')
 export class LabelingTasksController {
   constructor(private readonly labelingTasksService: LabelingTasksService) {}
 

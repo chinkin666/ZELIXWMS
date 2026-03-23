@@ -25,11 +25,12 @@ export class CycleCountsService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 循環棚卸一覧取得（プレースホルダー）/ 获取循环盘点列表（占位符）
+  // TODO: [stub] 循環棚卸テーブル作成後に実データ取得を実装 / 创建循环盘点表后实现实际数据获取
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
     const limit = Math.min(200, Math.max(1, query.limit || 20));
 
-    // プレースホルダー / 占位符
+    // TODO: [stub] プレースホルダー: 循環棚卸テーブルからデータ取得を実装 / 占位符: 实现从循环盘点表获取数据
     return createPaginatedResult([], 0, page, limit);
   }
 

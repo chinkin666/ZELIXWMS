@@ -17,12 +17,14 @@ export class SetProductsService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // セット商品一覧取得（プレースホルダー）/ 获取组合商品列表（占位符）
+  // TODO: [stub] productsテーブルのisSetProductフラグを使って実データ取得を実装
+  // 使用products表的isSetProduct标志实现实际数据获取
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
     const limit = Math.min(200, Math.max(1, query.limit || 20));
 
-    // プレースホルダー: 将来 products テーブルから isSetProduct=true を取得
-    // 占位符: 将来从 products 表获取 isSetProduct=true
+    // TODO: [stub] プレースホルダー: products テーブルから isSetProduct=true を取得
+    // 占位符: 从 products 表获取 isSetProduct=true
     return createPaginatedResult([], 0, page, limit);
   }
 

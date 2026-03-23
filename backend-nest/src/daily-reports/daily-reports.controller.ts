@@ -2,10 +2,12 @@
 import { Controller, Get, Post, Put, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { DailyReportsService } from './daily-reports.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { createDailyReportSchema, updateDailyReportSchema, type CreateDailyReportDto, type UpdateDailyReportDto } from './dto/create-daily-report.dto.js';
 
 @Controller('api/daily-reports')
+@RequireRole('admin', 'manager', 'operator', 'viewer')
 export class DailyReportsController {
   constructor(private readonly dailyReportsService: DailyReportsService) {}
 

@@ -2,10 +2,12 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { InventoryService } from './inventory.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { createLocationSchema, updateLocationSchema, type CreateLocationDto, type UpdateLocationDto } from './dto/create-location.dto.js';
 
 @Controller('api/inventory')
+@RequireRole('admin', 'manager', 'operator')
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 

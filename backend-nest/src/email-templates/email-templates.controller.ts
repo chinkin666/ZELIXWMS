@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { EmailTemplatesService } from './email-templates.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/email-templates')
+@RequireRole('admin', 'manager', 'operator')
 export class EmailTemplatesController {
   constructor(private readonly service: EmailTemplatesService) {}
 

@@ -294,17 +294,38 @@ export class ShipmentService {
     return rows[0];
   }
 
-  // 出荷注文一括ステータス変更 / 出货订单批量状态变更
+  // 出荷注文一括ステータス変更（一括UPDATE最適化）/ 出货订单批量状态变更（批量UPDATE优化）
   async bulkChangeStatus(tenantId: string, ids: string[], status: string) {
     if (!ids || ids.length === 0) {
       throw new WmsException('VALIDATION_ERROR', 'No IDs provided / IDが未指定 / 未提供ID');
     }
 
-    const results = [];
-    for (const id of ids) {
-      const result = await this.changeStatus(tenantId, id, status);
-      results.push(result);
+    // ステータスフラグマッピング / 状态标志映射
+    const statusMap: Record<string, Record<string, unknown>> = {
+      confirmed: { statusConfirmed: true, statusConfirmedAt: new Date() },
+      shipped: { statusShipped: true, statusShippedAt: new Date() },
+      held: { statusHeld: true, statusHeldAt: new Date() },
+      printed: { statusPrinted: true, statusPrintedAt: new Date() },
+      inspected: { statusInspected: true, statusInspectedAt: new Date() },
+      carrier_received: { statusCarrierReceived: true, statusCarrierReceivedAt: new Date() },
+      ec_exported: { statusEcExported: true, statusEcExportedAt: new Date() },
+    };
+
+    const fields = statusMap[status];
+    if (!fields) {
+      throw new WmsException('SHIP_INVALID_STATUS', `Unknown status: ${status} / 不明なステータス / 未知状态`);
     }
+
+    // 一括UPDATEで全IDを同時に更新 / 用批量UPDATE同时更新所有ID
+    const results = await this.db
+      .update(shipmentOrders)
+      .set({ ...fields, updatedAt: new Date() })
+      .where(and(
+        inArray(shipmentOrders.id, ids),
+        eq(shipmentOrders.tenantId, tenantId),
+        isNull(shipmentOrders.deletedAt),
+      ))
+      .returning();
 
     return { updated: results.length, items: results };
   }
@@ -937,16 +958,15 @@ export class ShipmentService {
     // 使用第一个订单作为主订单，将其他订单的商品移动到主订单
     const mergedOrderIds = orders.slice(1).map((o) => o.id);
 
-    // 他注文の商品をマスターに紐付け変更 / 将其他订单的商品关联到主订单
-    for (const mergedId of mergedOrderIds) {
-      await this.db
-        .update(shipmentOrderProducts)
-        .set({ shipmentOrderId: master.id })
-        .where(and(
-          eq(shipmentOrderProducts.shipmentOrderId, mergedId),
-          eq(shipmentOrderProducts.tenantId, tenantId),
-        ));
-    }
+    // 他注文の商品をマスターに一括紐付け変更（バルクUPDATE最適化）
+    // 将其他订单的商品批量关联到主订单（批量UPDATE优化）
+    await this.db
+      .update(shipmentOrderProducts)
+      .set({ shipmentOrderId: master.id })
+      .where(and(
+        inArray(shipmentOrderProducts.shipmentOrderId, mergedOrderIds),
+        eq(shipmentOrderProducts.tenantId, tenantId),
+      ));
 
     // 統合された注文を論理削除 / 软删除被合并的订单
     const now = new Date();

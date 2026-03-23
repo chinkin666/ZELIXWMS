@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Patch, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { ExceptionsService } from './exceptions.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/exceptions')
+@RequireRole('admin', 'manager', 'operator')
 export class ExceptionsController {
   constructor(private readonly service: ExceptionsService) {}
 

@@ -2,10 +2,12 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { ExtensionsService } from './extensions.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { createWebhookSchema, updateWebhookSchema, type CreateWebhookDto, type UpdateWebhookDto } from './dto/create-webhook.dto.js';
 
 @Controller('api/extensions')
+@RequireRole('admin')
 export class ExtensionsController {
   constructor(private readonly extensionsService: ExtensionsService) {}
 

@@ -2,10 +2,12 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { SubClientsService } from './sub-clients.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { createSubClientSchema, updateSubClientSchema, type CreateSubClientDto, type UpdateSubClientDto } from './dto/create-sub-client.dto.js';
 
 @Controller('api/sub-clients')
+@RequireRole('admin', 'manager', 'operator')
 export class SubClientsController {
   constructor(private readonly subClientsService: SubClientsService) {}
 

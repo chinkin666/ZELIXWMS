@@ -26,11 +26,12 @@ export class OutboundRequestsService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 出庫依頼一覧取得（プレースホルダー）/ 获取出库请求列表（占位符）
+  // TODO: [stub] 出庫依頼テーブル作成後に実データ取得を実装 / 创建出库请求表后实现实际数据获取
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
     const limit = Math.min(200, Math.max(1, query.limit || 20));
 
-    // プレースホルダー / 占位符
+    // TODO: [stub] プレースホルダー: 出庫依頼テーブルからデータ取得を実装 / 占位符: 实现从出库请求表获取数据
     return createPaginatedResult([], 0, page, limit);
   }
 

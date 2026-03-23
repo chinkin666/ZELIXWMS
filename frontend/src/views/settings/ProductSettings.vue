@@ -163,153 +163,14 @@ import SubSkuDialog from './product-settings/SubSkuDialog.vue'
 import LabelPrintDialog from './product-settings/LabelPrintDialog.vue'
 import { useSkuValidation } from './product-settings/useSkuValidation'
 import { useProductColumns } from './product-settings/useProductColumns'
+import { useProductExport } from './product-settings/useProductExport'
+import { useProductBulkOps } from './product-settings/useProductBulkOps'
 
 const toast = useToast()
 const { t } = useI18n()
 
-// --- CSV Export ---
-const EXPORT_STORAGE_KEY = 'zelix_product_export_presets'
-
-interface ExportColumn {
-  key: string
-  label: string
-  getValue: (r: Product) => string | number
-}
-
-interface ExportPreset {
-  name: string
-  columns: string[]
-}
-
-const allExportColumns: ExportColumn[] = [
-  { key: 'sku', label: t('wms.product.skuCode', 'SKU管理番号'), getValue: r => r.sku },
-  { key: 'name', label: t('wms.product.printName', '印刷用商品名'), getValue: r => r.name },
-  { key: 'nameFull', label: t('wms.product.productName', '商品名'), getValue: r => r.nameFull || '' },
-  { key: 'barcode', label: t('wms.product.inspectionCode', '検品コード'), getValue: r => (r.barcode || []).join(' / ') },
-  { key: 'category', label: t('wms.product.category', 'カテゴリー'), getValue: r => { const m: Record<string, string> = { '0': t('wms.product.catProduct', '商品'), '1': t('wms.product.catConsumable', '消耗品'), '2': t('wms.product.catWork', '作業'), '3': t('wms.product.catBonus', 'おまけ'), '4': t('wms.product.catMaterial', '部材') }; return m[r.category || '0'] || t('wms.product.catProduct', '商品') } },
-  { key: 'coolType', label: t('wms.product.coolType', 'クール区分'), getValue: r => { const m: Record<string, string> = { '0': t('wms.product.coolNormal', '通常'), '1': t('wms.product.coolFrozen', 'クール冷凍'), '2': t('wms.product.coolChilled', 'クール冷蔵') }; return m[r.coolType || ''] || '' } },
-  { key: 'mailCalcEnabled', label: t('wms.product.mailCalc', 'メール便計算'), getValue: r => r.mailCalcEnabled ? t('wms.product.enabled', 'する') : t('wms.product.disabled', 'しない') },
-  { key: 'mailCalcMaxQuantity', label: t('wms.product.mailCalcMax', 'メール便最大数量'), getValue: r => r.mailCalcMaxQuantity ?? '' },
-  { key: 'price', label: t('wms.product.price', '商品金額'), getValue: r => r.price ?? '' },
-  { key: 'handlingTypes', label: t('wms.product.handlingTypes', '荷扱い'), getValue: r => (r.handlingTypes || []).join(' / ') },
-  { key: 'memo', label: t('wms.product.memo', 'メモ'), getValue: r => r.memo || '' },
-  { key: 'subSkus', label: t('wms.product.subSkus', '子SKU'), getValue: r => (r.subSkus || []).map(s => s.subSku).join(' / ') },
-  { key: 'stockQuantity', label: t('wms.product.stockQuantity', '在庫数'), getValue: r => stockMap.value.get(r._id) ?? 0 },
-  { key: 'customField1', label: t('wms.product.customField1', '独自1'), getValue: r => r.customField1 || '' },
-  { key: 'customField2', label: t('wms.product.customField2', '独自2'), getValue: r => r.customField2 || '' },
-  { key: 'customField3', label: t('wms.product.customField3', '独自3'), getValue: r => r.customField3 || '' },
-  { key: 'customField4', label: t('wms.product.customField4', '独自4'), getValue: r => r.customField4 || '' },
-  { key: 'width', label: t('wms.product.width', '幅(mm)'), getValue: r => r.width ?? '' },
-  { key: 'depth', label: t('wms.product.depth', '奥行(mm)'), getValue: r => r.depth ?? '' },
-  { key: 'height', label: t('wms.product.height', '高さ(mm)'), getValue: r => r.height ?? '' },
-  { key: 'weight', label: t('wms.product.weight', '重量(g)'), getValue: r => r.weight ?? '' },
-  { key: 'nameEn', label: t('wms.product.nameEn', '英語商品名'), getValue: r => r.nameEn || '' },
-  { key: 'countryOfOrigin', label: t('wms.product.countryOfOrigin', '原産国'), getValue: r => r.countryOfOrigin || '' },
-  { key: 'allocationRule', label: t('wms.product.allocationRule', '引当規則'), getValue: r => r.allocationRule || 'FIFO' },
-  { key: 'serialTrackingEnabled', label: t('wms.product.serialTracking', 'シリアルNo管理'), getValue: r => r.serialTrackingEnabled ? t('wms.product.enabled', 'する') : t('wms.product.disabled', 'しない') },
-  { key: 'inboundExpiryDays', label: t('wms.product.inboundExpiryDays', '入庫期限日数'), getValue: r => r.inboundExpiryDays ?? '' },
-  { key: 'imageUrl', label: t('wms.product.imageUrl', '画像URL'), getValue: r => r.imageUrl || '' },
-  { key: 'createdAt', label: t('wms.product.createdAt', '作成日時'), getValue: r => r.createdAt ? new Date(r.createdAt).toLocaleString('ja-JP') : '' },
-  { key: 'updatedAt', label: t('wms.product.updatedAt', '更新日時'), getValue: r => r.updatedAt ? new Date(r.updatedAt).toLocaleString('ja-JP') : '' },
-]
-
-const showExportPanel = ref(false)
-const exportColumnKeys = ref<string[]>(allExportColumns.map(c => c.key))
-const exportPresets = ref<ExportPreset[]>([])
-const selectedExportPreset = ref('')
-
-const loadExportPresets = () => {
-  try {
-    const raw = localStorage.getItem(EXPORT_STORAGE_KEY)
-    exportPresets.value = raw ? JSON.parse(raw) : []
-  } catch { exportPresets.value = [] }
-}
-const persistExportPresets = () => {
-  localStorage.setItem(EXPORT_STORAGE_KEY, JSON.stringify(exportPresets.value))
-}
-const loadExportPreset = () => {
-  if (!selectedExportPreset.value) {
-    exportColumnKeys.value = allExportColumns.map(c => c.key)
-    return
-  }
-  const p = exportPresets.value.find(x => x.name === selectedExportPreset.value)
-  if (p) exportColumnKeys.value = [...p.columns]
-}
-const saveExportPreset = () => {
-  const name = prompt(t('wms.product.enterPresetName', 'プリセット名を入力してください:'))
-  if (!name) return
-  const preset: ExportPreset = { name, columns: [...exportColumnKeys.value] }
-  const idx = exportPresets.value.findIndex(x => x.name === name)
-  if (idx >= 0) {
-    exportPresets.value = exportPresets.value.map((p, i) => i === idx ? preset : p)
-  } else {
-    exportPresets.value = [...exportPresets.value, preset]
-  }
-  persistExportPresets()
-  selectedExportPreset.value = name
-  toast.showSuccess(t('wms.product.presetSaved', `プリセット「${name}」を保存しました`))
-}
-const deleteExportPreset = async () => {
-  if (!selectedExportPreset.value) return
-  try {
-    await ElMessageBox.confirm(
-      `プリセット「${selectedExportPreset.value}」を削除してもよろしいですか？ / 确定要删除预设「${selectedExportPreset.value}」吗？`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
-  exportPresets.value = exportPresets.value.filter(p => p.name !== selectedExportPreset.value)
-  persistExportPresets()
-  selectedExportPreset.value = ''
-  exportColumnKeys.value = allExportColumns.map(c => c.key)
-}
-const exportCsv = () => {
-  const data = filteredList.value
-  if (data.length === 0) { toast.showError(t('wms.product.noDataToExport', 'エクスポートするデータがありません')); return }
-  const activeCols = allExportColumns.filter(c => exportColumnKeys.value.includes(c.key))
-  if (activeCols.length === 0) { toast.showError(t('wms.product.selectAtLeastOneColumn', '出力する列を1つ以上選択してください')); return }
-  const headers = activeCols.map(c => c.label)
-  const csvRows = data.map(r => activeCols.map(c => c.getValue(r)))
-  const bom = '\uFEFF'
-  const csv = bom + [headers.join(','), ...csvRows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `商品マスター_${new Date().toISOString().slice(0, 10)}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
-  toast.showSuccess(t('wms.product.exportedCount', `${data.length}件をエクスポートしました`))
-}
-
-// --- Bulk delete ---
-const isBulkDeleting = ref(false)
-const handleBulkDelete = async () => {
-  if (selectedKeys.value.length === 0) return
-  try {
-    await ElMessageBox.confirm(
-      `${selectedKeys.value.length}件の商品を削除してもよろしいですか？この操作は取り消せません。 / 确定要删除${selectedKeys.value.length}件商品吗？此操作不可撤销。`,
-      '確認 / 确认',
-      { confirmButtonText: '削除 / 删除', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
-  isBulkDeleting.value = true
-  let successCount = 0
-  let failCount = 0
-  for (const id of selectedKeys.value) {
-    try {
-      await deleteProduct(id)
-      successCount++
-    } catch {
-      failCount++
-    }
-  }
-  isBulkDeleting.value = false
-  selectedKeys.value = []
-  if (successCount > 0) toast.showSuccess(t('wms.product.deletedCount', `${successCount}件を削除しました`))
-  if (failCount > 0) toast.showError(t('wms.product.deleteFailedCount', `${failCount}件の削除に失敗しました`))
-  await loadList()
-}
+// CSV出力・一括操作コンポーザブルは loadList 定義後に初期化（後方参照）
+// CSV导出和批量操作组合式函数在 loadList 定义后初始化（后方引用）
 
 // --- Category ---
 const CATEGORY_OPTIONS = [
@@ -322,38 +183,6 @@ const CATEGORY_OPTIONS = [
 const getCategoryLabel = (val?: string) => {
   const found = CATEGORY_OPTIONS.find(o => o.value === val)
   return found?.label || '商品'
-}
-
-// --- Barcode bulk generate ---
-const isBulkBarcode = ref(false)
-const handleBulkBarcodeGenerate = async () => {
-  const targets = list.value.filter(r => selectedKeys.value.includes(r._id) && (!r.barcode || r.barcode.length === 0))
-  if (targets.length === 0) {
-    toast.showError(t('wms.product.noBarcodeTargets', '選択された商品にバーコード未設定の商品がありません'))
-    return
-  }
-  try {
-    await ElMessageBox.confirm(
-      `${targets.length}件の商品にバーコードを自動生成しますか？（SKUコードをバーコードとして設定します） / 确定要为${targets.length}件商品自动生成条码吗？（将SKU代码设为条码）`,
-      '確認 / 确认',
-      { confirmButtonText: '生成 / 生成', cancelButtonText: 'キャンセル / 取消', type: 'warning' },
-    )
-  } catch { return }
-  isBulkBarcode.value = true
-  let successCount = 0
-  let failCount = 0
-  for (const p of targets) {
-    try {
-      await updateProduct(p._id, { barcode: [p.sku] })
-      successCount++
-    } catch {
-      failCount++
-    }
-  }
-  isBulkBarcode.value = false
-  if (successCount > 0) toast.showSuccess(t('wms.product.barcodeSetCount', `${successCount}件にバーコードを設定しました`))
-  if (failCount > 0) toast.showError(t('wms.product.barcodeSetFailed', `${failCount}件の設定に失敗しました`))
-  await loadList()
 }
 
 const COOL_TYPE_OPTIONS = [
@@ -412,30 +241,6 @@ const savingSubSkus = ref(false)
 
 // Product form dialog ref
 const productFormDialogRef = ref<InstanceType<typeof ProductFormDialog> | null>(null)
-
-// ラベル印刷ダイアログ / 标签打印对话框
-const labelPrintDialogVisible = ref(false)
-const labelPrintProduct = ref<Product | null>(null)
-const labelPrintProducts = ref<Product[]>([])
-
-const openLabelPrint = (product: Product) => {
-  labelPrintProduct.value = product
-  labelPrintProducts.value = []
-  labelPrintDialogVisible.value = true
-}
-
-/**
- * 一括ラベル印刷：選択された商品をまとめてラベル印刷ダイアログに渡す
- * 批量标签打印：将选中的商品传递给标签打印对话框
- */
-const handleBulkLabelPrint = () => {
-  if (selectedKeys.value.length === 0) return
-  const selected = list.value.filter((r) => selectedKeys.value.includes(r._id))
-  if (selected.length === 0) return
-  labelPrintProduct.value = null
-  labelPrintProducts.value = selected
-  labelPrintDialogVisible.value = true
-}
 
 // Sub-SKU management (edit dialog inline)
 const editDialogSubSkus = ref<SubSku[]>([])
@@ -1062,6 +867,33 @@ const formatDate = (iso: string) => {
     minute: '2-digit',
   })
 }
+
+// --- CSV出力コンポーザブル初期化 / CSV导出组合式函数初始化 ---
+const {
+  allExportColumns,
+  showExportPanel,
+  exportColumnKeys,
+  exportPresets,
+  selectedExportPreset,
+  loadExportPresets,
+  loadExportPreset,
+  saveExportPreset,
+  deleteExportPreset,
+  exportCsv,
+} = useProductExport(stockMap, filteredList)
+
+// --- 一括操作コンポーザブル初期化 / 批量操作组合式函数初始化 ---
+const {
+  isBulkDeleting,
+  handleBulkDelete,
+  isBulkBarcode,
+  handleBulkBarcodeGenerate,
+  labelPrintDialogVisible,
+  labelPrintProduct,
+  labelPrintProducts,
+  openLabelPrint,
+  handleBulkLabelPrint,
+} = useProductBulkOps(list, selectedKeys, loadList)
 
 // テーブル列定義（全ての依存関数が定義された後に初期化）
 // 表格列定义（在所有依赖函数定义之后初始化）

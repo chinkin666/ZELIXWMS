@@ -3,6 +3,7 @@ import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe }
 import { InboundService } from './inbound.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 import {
   createInboundOrderSchema,
   updateInboundOrderSchema,
@@ -11,6 +12,7 @@ import {
 } from './dto/create-inbound-order.dto.js';
 
 @Controller('api/inbound-orders')
+@RequireRole('admin', 'manager', 'operator')
 export class InboundController {
   constructor(private readonly inboundService: InboundService) {}
 

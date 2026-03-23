@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { PhotosService } from './photos.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/photos')
+@RequireRole('admin', 'manager', 'operator')
 export class PhotosController {
   constructor(private readonly photosService: PhotosService) {}
 

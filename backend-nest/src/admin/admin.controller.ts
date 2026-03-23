@@ -5,6 +5,10 @@ import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { RequireRole } from '../common/decorators/require-role.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { createUserSchema, updateUserSchema, type CreateUserDto, type UpdateUserDto } from './dto/create-user.dto.js';
+import {
+  createTenantSchema, updateTenantSchema, upsertSettingsSchema,
+  type CreateTenantDto, type UpdateTenantDto, type UpsertSettingsDto,
+} from './dto/create-tenant.dto.js';
 
 @Controller('api/admin')
 @RequireRole('admin')
@@ -80,28 +84,29 @@ export class AdminController {
     return this.adminService.getSettings(tenantId, key);
   }
 
-  // 設定更新 / 更新设置
+  // 設定更新（Zodバリデーション適用）/ 更新设置（应用Zod验证）
   @Put('settings/:key')
   upsertSettings(
     @TenantId() tenantId: string,
     @Param('key') key: string,
-    @Body() settings: Record<string, unknown>,
+    @Body(new ZodValidationPipe(upsertSettingsSchema)) dto: UpsertSettingsDto,
   ) {
-    return this.adminService.upsertSettings(tenantId, key, settings);
+    return this.adminService.upsertSettings(tenantId, key, dto.settings);
   }
 
   // ========== ダッシュボード / 仪表盘 ==========
 
-  // 管理ダッシュボード（プレースホルダ）/ 管理仪表盘（占位符）
+  // 管理ダッシュボード / 管理仪表盘
   @Get('dashboard')
   getDashboard(@TenantId() tenantId: string) {
     return this.adminService.getDashboard(tenantId);
   }
 
-  // ========== テナント管理 / 租户管理 ==========
+  // ========== テナント管理（superadmin限定）/ 租户管理（仅superadmin） ==========
 
   // テナント一覧取得 / 获取租户列表
   @Get('tenants')
+  @RequireRole('superadmin')
   findAllTenants(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -114,28 +119,34 @@ export class AdminController {
 
   // テナントID検索 / 按ID查找租户
   @Get('tenants/:id')
+  @RequireRole('superadmin')
   findTenantById(@Param('id', ParseUUIDPipe) id: string) {
     return this.adminService.findTenantById(id);
   }
 
-  // テナント作成 / 创建租户
+  // テナント作成（Zodバリデーション適用）/ 创建租户（应用Zod验证）
   @Post('tenants')
-  createTenant(@Body() dto: Record<string, unknown>) {
+  @RequireRole('superadmin')
+  createTenant(
+    @Body(new ZodValidationPipe(createTenantSchema)) dto: CreateTenantDto,
+  ) {
     return this.adminService.createTenant(dto);
   }
 
-  // テナント更新 / 更新租户
+  // テナント更新（Zodバリデーション適用）/ 更新租户（应用Zod验证）
   @Put('tenants/:id')
+  @RequireRole('superadmin')
   updateTenant(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: Record<string, unknown>,
+    @Body(new ZodValidationPipe(updateTenantSchema)) dto: UpdateTenantDto,
   ) {
     return this.adminService.updateTenant(id, dto);
   }
 
   // ========== APIログ / API日志 ==========
 
-  // APIログ取得（プレースホルダ）/ 获取API日志（占位符）
+  // APIログ取得 / 获取API日志
+  // TODO: [stub] 実テーブルから取得するよう実装が必要 / 需要实现从实际表中获取
   @Get('api-logs')
   findApiLogs(
     @TenantId() tenantId: string,

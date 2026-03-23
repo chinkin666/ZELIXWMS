@@ -2,8 +2,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { KpiService } from './kpi.service.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/dashboard')
+@RequireRole('admin', 'manager', 'operator', 'viewer')
 export class DashboardController {
   constructor(private readonly kpiService: KpiService) {}
 

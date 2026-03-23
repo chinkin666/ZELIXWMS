@@ -4,8 +4,10 @@ import { ProductsService } from './products.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { createProductSchema, updateProductSchema, type CreateProductDto, type UpdateProductDto } from './dto/create-product.dto.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/products')
+@RequireRole('admin', 'manager', 'operator')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 

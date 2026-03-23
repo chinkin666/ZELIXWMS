@@ -433,7 +433,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, ref, toRefs, watch, onMounted, defineComponent, nextTick } from 'vue'
+import { computed, h, ref, toRefs, watch, defineComponent } from 'vue'
 import type { HeaderGroupingConfig } from './tableHeaderGroup'
 import { getNestedValue, setNestedValue } from '@/utils/nestedObject'
 import { naturalSort } from '@/utils/naturalSort'
@@ -447,6 +447,10 @@ import type { Product } from '@/types/product'
 import InfoTag from './InfoTag.vue'
 import noImageSrc from '@/assets/images/no_image.png'
 import { resolveImageUrl } from '@/utils/imageUrl'
+// コンポーザブル / 组合式函数
+import { useOrderTableSelection } from './order-table/useOrderTableSelection'
+import { useOrderTableSort } from './order-table/useOrderTableSort'
+import { useOrderTableCategories } from './order-table/useOrderTableCategories'
 
 const resolveProductImageUrl = (url?: string): string => resolveImageUrl(url)
 
@@ -632,345 +636,40 @@ const {
 const innerPageSize = ref(props.pageSize)
 const innerCurrentPage = ref(props.currentPage)
 
-// 行選択内部状態
-const innerSelectedKeys = ref<Array<RowKey>>([...(props.selectedKeys ?? [])])
+// カテゴリグループコンポーザブル / 分类组组合式函数
+const { categoryGroups } = useOrderTableCategories({ columns })
 
-watch(
-  () => props.selectedKeys,
-  (val) => {
-    if (!val) return
-    const next = Array.isArray(val) ? [...val] : []
-    if (next.length !== innerSelectedKeys.value.length) {
-      innerSelectedKeys.value = next
-      return
-    }
-    const currentSet = new Set(innerSelectedKeys.value)
-    let changed = false
-    for (const key of next) {
-      if (!currentSet.has(key)) {
-        changed = true
-        break
-      }
-    }
-    if (changed) {
-      innerSelectedKeys.value = next
-    }
-  },
-)
-
-// Row selection helpers
-const isRowSelected = (row: RowData): boolean => {
-  const keyField = rowKey.value as string
-  const key = (row as any)?.[keyField]
-  return key !== undefined && key !== null && innerSelectedKeys.value.includes(key)
-}
-
-const isAllCurrentPageSelected = computed(() => {
-  if (displayData.value.length === 0) return false
-  const keyField = rowKey.value as string
-  return displayData.value.every((row) => {
-    const key = (row as any)?.[keyField]
-    return key !== undefined && key !== null && innerSelectedKeys.value.includes(key)
-  })
+// 行選択コンポーザブル（displayData/filteredData は後方で定義される computed を遅延参照）
+// 行选择组合式函数（displayData/filteredData 延迟引用后面定义的 computed）
+const _displayDataRef = computed(() => displayData.value)
+const _filteredDataRef = computed(() => filteredData.value)
+const {
+  innerSelectedKeys,
+  isRowSelected,
+  isAllCurrentPageSelected,
+  isIndeterminate,
+  handleSelectAllToggle,
+  handleRowCheckboxChange,
+} = useOrderTableSelection({
+  rowKey,
+  displayData: _displayDataRef,
+  filteredData: _filteredDataRef,
+  data,
+  rowSelectionEnabled,
+  paginationEnabled,
+  paginationMode,
+  selectedKeys: props.selectedKeys,
+  emits,
 })
-
-const isIndeterminate = computed(() => {
-  if (displayData.value.length === 0) return false
-  const keyField = rowKey.value as string
-  const selectedCount = displayData.value.filter((row) => {
-    const key = (row as any)?.[keyField]
-    return key !== undefined && key !== null && innerSelectedKeys.value.includes(key)
-  }).length
-  return selectedCount > 0 && selectedCount < displayData.value.length
-})
-
-const handleSelectAllToggle = (event: Event) => {
-  const checked = (event.target as HTMLInputElement).checked
-  const keyField = rowKey.value as string
-
-  if (checked) {
-    // Select all - when client pagination, select ALL filtered data rows (cross-page)
-    if (paginationEnabled.value && paginationMode.value === 'client') {
-      const allDataKeys = new Set(
-        filteredData.value.map((row) => (row as any)?.[keyField]).filter((k: any) => k !== undefined && k !== null),
-      )
-      const finalKeys = Array.from(allDataKeys)
-      innerSelectedKeys.value = finalKeys
-      const allSelectedRows = filteredData.value.filter((row) => allDataKeys.has((row as any)?.[keyField]))
-      emits('update:selectedKeys', finalKeys)
-      emits('selection-change', { selectedKeys: finalKeys, selectedRows: allSelectedRows, isSelectAllTriggered: true })
-    } else {
-      const currentPageKeys = displayData.value
-        .map((row) => (row as any)?.[keyField])
-        .filter((k: any) => k !== undefined && k !== null)
-      const newKeys = new Set([...innerSelectedKeys.value, ...currentPageKeys])
-      const finalKeys = Array.from(newKeys)
-      innerSelectedKeys.value = finalKeys
-      const keySet = new Set(finalKeys)
-      const allSelectedRows = filteredData.value.filter((row) => keySet.has((row as any)?.[keyField]))
-      emits('update:selectedKeys', finalKeys)
-      emits('selection-change', { selectedKeys: finalKeys, selectedRows: allSelectedRows, isSelectAllTriggered: true })
-    }
-  } else {
-    // Deselect
-    const allDataKeys = new Set(
-      filteredData.value.map((row) => (row as any)?.[keyField]).filter((k: any) => k !== undefined && k !== null),
-    )
-    const wasAllSelected =
-      allDataKeys.size > 0 &&
-      allDataKeys.size === innerSelectedKeys.value.length &&
-      Array.from(allDataKeys).every((key) => innerSelectedKeys.value.includes(key))
-
-    if (wasAllSelected && paginationEnabled.value && paginationMode.value === 'client') {
-      innerSelectedKeys.value = []
-      emits('update:selectedKeys', [])
-      emits('selection-change', { selectedKeys: [], selectedRows: [], isSelectAllTriggered: false })
-    } else {
-      const currentPageKeys = new Set(
-        displayData.value.map((row) => (row as any)?.[keyField]).filter((k: any) => k !== undefined && k !== null),
-      )
-      const finalKeys = innerSelectedKeys.value.filter((key) => !currentPageKeys.has(key))
-      innerSelectedKeys.value = finalKeys
-      const keySet = new Set(finalKeys)
-      const allSelectedRows = filteredData.value.filter((row) => keySet.has((row as any)?.[keyField]))
-      emits('update:selectedKeys', finalKeys)
-      emits('selection-change', { selectedKeys: finalKeys, selectedRows: allSelectedRows, isSelectAllTriggered: false })
-    }
-  }
-}
-
-const handleRowCheckboxChange = (row: RowData, event: Event) => {
-  const checked = (event.target as HTMLInputElement).checked
-  const keyField = rowKey.value as string
-  const key = (row as any)?.[keyField]
-  if (key === undefined || key === null) return
-
-  let finalKeys: Array<RowKey>
-  if (checked) {
-    finalKeys = [...innerSelectedKeys.value, key]
-  } else {
-    finalKeys = innerSelectedKeys.value.filter((k) => k !== key)
-  }
-  innerSelectedKeys.value = finalKeys
-
-  const keySet = new Set(finalKeys)
-  const allSelectedRows = filteredData.value.filter((r) => keySet.has((r as any)?.[keyField]))
-  emits('update:selectedKeys', finalKeys)
-  emits('selection-change', { selectedKeys: finalKeys, selectedRows: allSelectedRows })
-}
 
 // Total column count for empty-row colspan
+// 空行の colspan 用カラム数合計 / 空行 colspan 用列数合计
 const totalColumnCount = computed(() => {
   let count = categoryGroups.value.length
   if (rowSelectionEnabled.value) count++
   if (hasBundleColumn.value) count++
   if (hasActionColumn.value) count++
   return count
-})
-
-// 根据字段 key 判断所属分類
-const getFieldCategory = (key: string): string | null => {
-  const shipmentKeys = new Set([
-    'ecCompanyId',
-    'orderNumber',
-    'customerManagementNumber',
-    'carrierId',
-    'invoiceType',
-    'coolType',
-    'shipPlanDate',
-    'deliveryDatePreference',
-    'deliveryTimeSlot',
-    'handlingTags',
-    'trackingId',
-  ])
-
-  const productKeys = new Set(['products'])
-
-  const recipientKeys = new Set([
-    'recipient.postalCode',
-    'recipient.prefecture',
-    'recipient.city',
-    'recipient.street',
-    'recipientAddress',
-    'recipient.name',
-    'recipient.phone',
-    'honorific',
-  ])
-
-  const senderKeys = new Set([
-    'sender.postalCode',
-    'sender.prefecture',
-    'sender.city',
-    'sender.street',
-    'senderAddress',
-    'sender.name',
-    'sender.phone',
-  ])
-
-  const ordererKeys = new Set([
-    'orderer.postalCode',
-    'orderer.prefecture',
-    'orderer.city',
-    'orderer.street',
-    'ordererAddress',
-    'orderer.name',
-    'orderer.phone',
-  ])
-
-  const otherKeys = new Set([
-    'createdAt',
-    'updatedAt',
-    'statusPrinted',
-    'statusCarrierReceipt',
-    'statusPrintReady',
-    'statusShipped',
-    'statusConfirm',
-    'statusCarrierReceiptIsReceived',
-    'statusConfirmIsConfirmed',
-    'statusPrintedIsPrinted',
-    'statusShippedIsShipped',
-  ])
-
-  if (shipmentKeys.has(key)) return '出荷情報'
-  if (productKeys.has(key)) return '商品情報'
-  if (recipientKeys.has(key)) return 'お届け先情報'
-  if (senderKeys.has(key)) return 'ご依頼主情報'
-  if (ordererKeys.has(key)) return '注文者情報'
-  if (otherKeys.has(key)) return 'その他'
-
-  if (key.startsWith('status')) return 'その他'
-
-  return null
-}
-
-// 地址拆分字段
-const addressSplitFields = new Set([
-  'recipient.prefecture',
-  'recipient.city',
-  'recipient.street',
-  'sender.prefecture',
-  'sender.city',
-  'sender.street',
-  'orderer.prefecture',
-  'orderer.city',
-  'orderer.street',
-])
-
-// 地址合併字段映射
-const addressCombinedFieldMap: Record<string, { key: string; label: string }> = {
-  'recipient': { key: 'recipientAddress', label: 'お届け先住所' },
-  'sender': { key: 'senderAddress', label: 'ご依頼主住所' },
-  'orderer': { key: 'ordererAddress', label: '注文者住所' },
-}
-
-// 不在表格中显示的字段
-const excludedFields = new Set([
-  'carrierData.yamato.hatsuBaseNo1',
-  'carrierData.yamato.hatsuBaseNo2',
-])
-
-// 从 columns 直接构建分類組
-const categoryGroups = computed<CategoryGroup[]>(() => {
-  if (!columns.value) {
-    return []
-  }
-
-  const cols = columns.value || []
-
-  const categoryMap = new Map<string, CategoryGroup['fields']>()
-  const addedAddressFields = new Set<string>()
-
-  for (const col of cols) {
-    const key = col.key || col.dataKey
-    if (!key || key === 'actions' || key === '__selection__' || key === '__bundle__') {
-      continue
-    }
-
-    if (excludedFields.has(String(key))) {
-      continue
-    }
-
-    const keyStr = String(key)
-
-    if (addressSplitFields.has(keyStr)) {
-      let prefix = ''
-      if (keyStr.startsWith('recipient')) prefix = 'recipient'
-      else if (keyStr.startsWith('sender')) prefix = 'sender'
-      else if (keyStr.startsWith('orderer')) prefix = 'orderer'
-
-      if (prefix && !addedAddressFields.has(prefix)) {
-        addedAddressFields.add(prefix)
-        const combined = addressCombinedFieldMap[prefix]
-        if (combined) {
-          const category = getFieldCategory(combined.key)
-          if (category) {
-            if (!categoryMap.has(category)) {
-              categoryMap.set(category, [])
-            }
-            categoryMap.get(category)!.push({
-              key: combined.key,
-              dataKey: combined.key,
-              label: combined.label,
-              column: {
-                ...col,
-                key: combined.key,
-                dataKey: combined.key,
-                title: combined.label,
-                _isCombinedAddress: true,
-                _addressPrefix: prefix,
-              },
-            })
-          }
-        }
-      }
-      continue
-    }
-
-    if (keyStr === 'recipientAddress' || keyStr === 'senderAddress' || keyStr === 'ordererAddress') {
-      continue
-    }
-
-    const category = getFieldCategory(keyStr)
-    if (!category) {
-      if (!categoryMap.has('その他')) {
-        categoryMap.set('その他', [])
-      }
-      const dataKey = col.dataKey || col.key
-      categoryMap.get('その他')!.push({
-        key: keyStr,
-        dataKey: String(dataKey),
-        label: col.title || keyStr,
-        column: col,
-      })
-    } else {
-      if (!categoryMap.has(category)) {
-        categoryMap.set(category, [])
-      }
-      const dataKey = col.dataKey || col.key
-      categoryMap.get(category)!.push({
-        key: keyStr,
-        dataKey: String(dataKey),
-        label: col.title || keyStr,
-        column: col,
-      })
-    }
-  }
-
-  const categoryOrder = ['出荷情報', '商品情報', 'お届け先情報', 'ご依頼主情報', 'その他']
-  const groups: CategoryGroup[] = []
-
-  for (const category of categoryOrder) {
-    const fields = categoryMap.get(category)
-    if (fields && fields.length > 0) {
-      groups.push({
-        title: category,
-        fields,
-        minWidth: 220,
-      })
-    }
-  }
-
-  return groups
 })
 
 // 构建商品情報 Map
@@ -1091,182 +790,23 @@ const getCoolTypeColor = (row: RowData, field: CategoryGroup['fields'][0]): { bg
   }
 }
 
-// 排序相関状態
-const sortPopoverVisible = ref<Record<string, boolean>>({})
-const sortFieldForGroup = ref<Record<string, string>>({})
-const sortOrderForGroup = ref<Record<string, 'asc' | 'desc' | null>>({})
-
-// 获取排序配置的 localStorage key
-const getSortConfigKey = (): string => {
-  const pageKey = pageKeyProp.value
-  return pageKey ? `order-table-sort-${pageKey}` : 'order-table-sort-default'
-}
-
-// 从 localStorage 加載排序配置
-const loadSortConfig = () => {
-  if (!pageKeyProp.value) return
-
-  try {
-    const key = getSortConfigKey()
-    const saved = localStorage.getItem(key)
-    if (saved) {
-      const config = JSON.parse(saved)
-      if (config.sortFieldForGroup) {
-        sortFieldForGroup.value = config.sortFieldForGroup
-      }
-      if (config.sortOrderForGroup) {
-        sortOrderForGroup.value = config.sortOrderForGroup
-      }
-      if (Object.keys(sortFieldForGroup.value).length > 0) {
-        nextTick(() => {
-          applySorting()
-        })
-      }
-    }
-  } catch (e) {
-    // ソート設定読み込み失敗 / Failed to load sort config
-  }
-}
-
-// 保存排序配置到 localStorage
-const saveSortConfig = () => {
-  if (!pageKeyProp.value) return
-
-  try {
-    const key = getSortConfigKey()
-    const config = {
-      sortFieldForGroup: sortFieldForGroup.value,
-      sortOrderForGroup: sortOrderForGroup.value,
-    }
-    localStorage.setItem(key, JSON.stringify(config))
-  } catch (e) {
-    // ソート設定保存失敗 / Failed to save sort config
-  }
-}
-
-// 監聴排序配置変化并保存
-watch(
-  [sortFieldForGroup, sortOrderForGroup],
-  () => {
-    saveSortConfig()
-  },
-  { deep: true }
-)
-
-// 組件挂載時加載排序配置
-onMounted(() => {
-  loadSortConfig()
+// ソートコンポーザブル / 排序组合式函数
+const {
+  sortPopoverVisible,
+  sortFieldForGroup,
+  toggleSortPopover,
+  handleTableClick,
+  setSortOrderForGroup,
+  handleSortFieldSelectChange,
+  clearSortForGroup,
+  getSortOrderForGroup,
+  getSortInfoForGroup,
+} = useOrderTableSort({
+  sortMode,
+  pageKeyProp: pageKeyProp,
+  categoryGroups,
+  emits,
 })
-
-// 切换排序弹窗
-const toggleSortPopover = (groupTitle: string) => {
-  for (const [title, visible] of Object.entries(sortPopoverVisible.value)) {
-    if (title !== groupTitle && visible) {
-      sortPopoverVisible.value[title] = false
-    }
-  }
-  sortPopoverVisible.value[groupTitle] = !sortPopoverVisible.value[groupTitle]
-}
-
-// 点击表格外部時関閉所有弹窗
-const handleTableClick = (event: MouseEvent) => {
-  const target = event.target as HTMLElement
-  if (
-    target.closest('.sort-dropdown') ||
-    target.closest('.sort-button') ||
-    target.closest('.sort-dropdown-wrapper')
-  ) {
-    return
-  }
-  for (const title in sortPopoverVisible.value) {
-    sortPopoverVisible.value[title] = false
-  }
-}
-
-// 获取排序图标 - no longer returns component, handled in template with unicode
-// 设置排序顺序
-const setSortOrderForGroup = (groupTitle: string, order: 'asc' | 'desc') => {
-  sortOrderForGroup.value[groupTitle] = order
-  applySorting()
-}
-
-// 处理排序字段変化
-const handleSortFieldChange = (groupTitle: string) => {
-  for (const [title, field] of Object.entries(sortFieldForGroup.value)) {
-    if (title !== groupTitle && field) {
-      sortFieldForGroup.value[title] = ''
-      sortOrderForGroup.value[title] = null
-    }
-  }
-  applySorting()
-  nextTick(() => {
-    sortPopoverVisible.value[groupTitle] = true
-  })
-}
-
-// Handle native select change for sort field
-const handleSortFieldSelectChange = (groupTitle: string, event: Event) => {
-  const value = (event.target as HTMLSelectElement).value
-  sortFieldForGroup.value[groupTitle] = value
-  handleSortFieldChange(groupTitle)
-}
-
-// 清除排序规则
-const clearSortForGroup = (groupTitle: string) => {
-  sortFieldForGroup.value[groupTitle] = ''
-  sortOrderForGroup.value[groupTitle] = null
-  applySorting()
-  sortPopoverVisible.value[groupTitle] = false
-}
-
-// 获取分類的排序顺序
-const getSortOrderForGroup = (groupTitle: string): 'asc' | 'desc' | null => {
-  return sortOrderForGroup.value[groupTitle] || null
-}
-
-// 获取分類的排序情報（用于显示）
-const getSortInfoForGroup = (groupTitle: string): string => {
-  const field = sortFieldForGroup.value[groupTitle]
-  const order = sortOrderForGroup.value[groupTitle]
-  if (!field || !order) return ''
-
-  const group = categoryGroups.value.find(g => g.title === groupTitle)
-  if (!group) return ''
-  const fieldInfo = group.fields.find(f => f.dataKey === field)
-  if (!fieldInfo) return ''
-
-  const orderSymbol = order === 'asc' ? '↑' : '↓'
-  return `${fieldInfo.label} ${orderSymbol}`
-}
-
-// 応用排序
-const applySorting = () => {
-  const sortRules: Array<{ field: string; order: 'asc' | 'desc' }> = []
-  for (const [groupTitle, field] of Object.entries(sortFieldForGroup.value)) {
-    if (field && sortOrderForGroup.value[groupTitle]) {
-      sortRules.push({
-        field,
-        order: sortOrderForGroup.value[groupTitle] as 'asc' | 'desc',
-      })
-    }
-  }
-
-  if (sortRules.length > 0) {
-    const primarySort = sortRules[0]
-    if (primarySort) {
-      emits('update:sortBy', primarySort.field)
-      emits('update:sortOrder', primarySort.order)
-      emits('sort-change', {
-        sortBy: primarySort.field,
-        sortOrder: primarySort.order,
-        mode: sortMode.value,
-      })
-    }
-  } else {
-    emits('update:sortBy', null)
-    emits('update:sortOrder', null)
-  }
-}
 
 // 同梱相関函数
 const isBundled = (row: RowData): boolean => {
@@ -1781,27 +1321,8 @@ const displayData = computed(() => {
 
 const tableContainerRef = ref<HTMLElement | null>(null)
 
-// 監聴 data 変化，当数据完全重新加載時，需要恢复選中状態
-watch(
-  () => data.value,
-  (newData, _oldData) => {
-    if (!rowSelectionEnabled.value) return
-
-    const keyField = rowKey.value as string
-    const newIds = new Set(
-      newData.map((row) => (row as any)?.[keyField]).filter((k: any) => k !== undefined && k !== null)
-    )
-
-    if (innerSelectedKeys.value.length > 0) {
-      const validKeys = innerSelectedKeys.value.filter(key => newIds.has(key))
-      if (validKeys.length !== innerSelectedKeys.value.length) {
-        innerSelectedKeys.value = validKeys
-        emits('update:selectedKeys', validKeys)
-      }
-    }
-  },
-  { deep: false }
-)
+// データ変更時の選択キー整合性チェックはコンポーザブル内で処理済み
+// 数据变更时的选择键一致性检查已在组合式函数内处理
 
 const handlePageChange = (page: number) => {
   innerCurrentPage.value = page

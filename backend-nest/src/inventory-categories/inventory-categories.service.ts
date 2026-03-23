@@ -25,11 +25,12 @@ export class InventoryCategoriesService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 在庫区分一覧取得（プレースホルダー）/ 获取库存分类列表（占位符）
+  // TODO: [stub] 在庫区分テーブル作成後に実データ取得を実装 / 创建库存分类表后实现实际数据获取
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
     const limit = Math.min(200, Math.max(1, query.limit || 20));
 
-    // プレースホルダー: 将来テーブル作成後に実装 / 占位符: 将来创建表后实现
+    // TODO: [stub] プレースホルダー: 在庫区分テーブルからデータ取得を実装 / 占位符: 实现从库存分类表获取数据
     return createPaginatedResult([], 0, page, limit);
   }
 

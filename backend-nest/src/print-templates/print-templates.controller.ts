@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { PrintTemplatesService } from './print-templates.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/print-templates')
+@RequireRole('admin', 'manager', 'operator')
 export class PrintTemplatesController {
   constructor(private readonly service: PrintTemplatesService) {}
 

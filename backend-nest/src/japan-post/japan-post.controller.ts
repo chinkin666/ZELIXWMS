@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Body } from '@nestjs/common';
 import { JapanPostService } from './japan-post.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/japan-post')
+@RequireRole('admin', 'manager', 'operator')
 export class JapanPostController {
   constructor(private readonly japanPostService: JapanPostService) {}
 

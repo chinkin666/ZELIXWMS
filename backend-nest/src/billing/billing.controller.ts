@@ -3,6 +3,7 @@ import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe }
 import { BillingService } from './billing.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 import {
   createServiceRateSchema,
   updateServiceRateSchema,
@@ -11,6 +12,7 @@ import {
 } from './dto/create-service-rate.dto.js';
 
 @Controller('api/billing')
+@RequireRole('admin', 'manager', 'operator')
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}
 

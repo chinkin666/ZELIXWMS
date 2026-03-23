@@ -3,6 +3,7 @@ import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe }
 import { ReturnsService } from './returns.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 import {
   createReturnOrderSchema,
   updateReturnOrderSchema,
@@ -11,6 +12,7 @@ import {
 } from './dto/create-return-order.dto.js';
 
 @Controller('api/return-orders')
+@RequireRole('admin', 'manager', 'operator')
 export class ReturnsController {
   constructor(private readonly returnsService: ReturnsService) {}
 

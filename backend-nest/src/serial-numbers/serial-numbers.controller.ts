@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { SerialNumbersService } from './serial-numbers.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/serial-numbers')
+@RequireRole('admin', 'manager', 'operator')
 export class SerialNumbersController {
   constructor(private readonly serialNumbersService: SerialNumbersService) {}
 

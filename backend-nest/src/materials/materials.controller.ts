@@ -4,8 +4,10 @@ import { MaterialsService } from './materials.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { createMaterialSchema, updateMaterialSchema, type CreateMaterialDto, type UpdateMaterialDto } from './dto/create-material.dto.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/materials')
+@RequireRole('admin', 'manager', 'operator')
 export class MaterialsController {
   constructor(private readonly materialsService: MaterialsService) {}
 

@@ -2,8 +2,10 @@
 import { Controller, Get, Post } from '@nestjs/common';
 import { PeakModeService } from './peak-mode.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/peak-mode')
+@RequireRole('admin', 'manager', 'operator')
 export class PeakModeController {
   constructor(private readonly peakModeService: PeakModeService) {}
 

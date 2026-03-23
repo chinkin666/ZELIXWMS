@@ -11,6 +11,7 @@ import { shipmentOrders } from '../database/schema/shipments.js';
 import { inboundOrders } from '../database/schema/inbound.js';
 import { stockQuants } from '../database/schema/inventory.js';
 import type { CreateUserDto, UpdateUserDto } from './dto/create-user.dto.js';
+import type { CreateTenantDto, UpdateTenantDto } from './dto/create-tenant.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 import type { DrizzleDB } from '../database/database.types.js';
 
@@ -134,19 +135,39 @@ export class AdminService {
 
   // ========== ダッシュボード / 仪表盘 ==========
 
-  // 管理ダッシュボード（プレースホルダ）/ 管理仪表盘（占位符）
-  // TODO: 実データから集計 / 从实际数据聚合
+  // 管理ダッシュボード（実データ集計）/ 管理仪表盘（实际数据聚合）
   async getDashboard(tenantId: string) {
-    const [userCount, tenantCount] = await Promise.all([
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [userCount, tenantCount, activeUserCount, productCount, orderCount, pendingOrderCount] = await Promise.all([
+      // 総ユーザー数 / 总用户数
       this.db.select({ count: sql<number>`count(*)::int` }).from(users).where(eq(users.tenantId, tenantId)),
+      // 総テナント数 / 总租户数
       this.db.select({ count: sql<number>`count(*)::int` }).from(tenants),
+      // アクティブユーザー数（30日以内ログイン＋有効）/ 活跃用户数（30天内登录＋有效）
+      this.db.select({ count: sql<number>`count(*)::int` }).from(users).where(
+        and(eq(users.tenantId, tenantId), eq(users.isActive, true), sql`${users.lastLoginAt} >= ${thirtyDaysAgo}`),
+      ),
+      // 商品数（在庫のある商品のユニーク数）/ 商品数（有库存的唯一商品数）
+      this.db.select({ count: sql<number>`count(DISTINCT ${stockQuants.productId})::int` }).from(stockQuants).where(eq(stockQuants.tenantId, tenantId)),
+      // 総出荷数 / 总出货数
+      this.db.select({ count: sql<number>`count(*)::int` }).from(shipmentOrders).where(
+        and(eq(shipmentOrders.tenantId, tenantId), isNull(shipmentOrders.deletedAt)),
+      ),
+      // 保留中出荷数（未確認 = statusConfirmed=false）/ 待处理出货数（未确认 = statusConfirmed=false）
+      this.db.select({ count: sql<number>`count(*)::int` }).from(shipmentOrders).where(
+        and(eq(shipmentOrders.tenantId, tenantId), eq(shipmentOrders.statusConfirmed, false), isNull(shipmentOrders.deletedAt)),
+      ),
     ]);
 
     return {
       totalUsers: userCount[0]?.count ?? 0,
       totalTenants: tenantCount[0]?.count ?? 0,
-      activeUsers: 0,
-      storageUsed: 0,
+      activeUsers: activeUserCount[0]?.count ?? 0,
+      storageUsed: productCount[0]?.count ?? 0,
+      totalOrders: orderCount[0]?.count ?? 0,
+      pendingOrders: pendingOrderCount[0]?.count ?? 0,
     };
   }
 
@@ -181,17 +202,17 @@ export class AdminService {
   }
 
   // テナント作成 / 创建租户
-  async createTenant(dto: Record<string, unknown>) {
+  async createTenant(dto: CreateTenantDto) {
     const rows = await this.db
       .insert(tenants)
-      .values(dto as any)
+      .values(dto)
       .returning();
 
     return rows[0];
   }
 
   // テナント更新 / 更新租户
-  async updateTenant(id: string, dto: Record<string, unknown>) {
+  async updateTenant(id: string, dto: UpdateTenantDto) {
     // 存在確認 / 确认存在
     await this.findTenantById(id);
 
@@ -206,8 +227,8 @@ export class AdminService {
 
   // ========== APIログ / API日志 ==========
 
-  // APIログ取得（プレースホルダ）/ 获取API日志（占位符）
-  // TODO: 実テーブルから取得 / 从实际表中获取
+  // APIログ取得 / 获取API日志
+  // TODO: [stub] 実テーブルから取得するよう実装が必要 / 需要实现从实际表中获取
   async findApiLogs(tenantId: string, query: { page?: number; limit?: number }) {
     const page = Math.max(1, query.page || 1);
     const limit = Math.min(200, Math.max(1, query.limit || 20));

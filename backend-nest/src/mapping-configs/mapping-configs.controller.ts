@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { MappingConfigsService } from './mapping-configs.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/mapping-configs')
+@RequireRole('admin', 'manager', 'operator')
 export class MappingConfigsController {
   constructor(private readonly service: MappingConfigsService) {}
 

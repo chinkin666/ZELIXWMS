@@ -1,7 +1,10 @@
 // クライアントポータルコントローラ / 客户门户控制器
+// clientId は JWT claims から取得（フロントエンド入力を信頼しない）
+// clientId 从 JWT claims 获取（不信任前端输入）
 import { Controller, Get, Query } from '@nestjs/common';
 import { ClientPortalService } from './client-portal.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { ClientId } from '../common/decorators/client-id.decorator.js';
 import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/client-portal')
@@ -13,7 +16,7 @@ export class ClientPortalController {
   @Get('dashboard')
   getDashboard(
     @TenantId() tenantId: string,
-    @Query('clientId') clientId: string,
+    @ClientId() clientId: string,
   ) {
     return this.clientPortalService.getDashboard(tenantId, clientId);
   }
@@ -22,7 +25,7 @@ export class ClientPortalController {
   @Get('stock')
   getStock(
     @TenantId() tenantId: string,
-    @Query('clientId') clientId: string,
+    @ClientId() clientId: string,
   ) {
     return this.clientPortalService.getInventory(tenantId, clientId, {});
   }
@@ -31,7 +34,7 @@ export class ClientPortalController {
   @Get('tracking')
   getTracking(
     @TenantId() tenantId: string,
-    @Query('clientId') clientId: string,
+    @ClientId() clientId: string,
     @Query('q') query: string,
   ) {
     return this.clientPortalService.getOrders(tenantId, clientId, { status: query });
@@ -41,7 +44,7 @@ export class ClientPortalController {
   @Get('orders')
   getOrders(
     @TenantId() tenantId: string,
-    @Query('clientId') clientId: string,
+    @ClientId() clientId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: string,
@@ -57,7 +60,7 @@ export class ClientPortalController {
   @Get('inbound')
   getInbound(
     @TenantId() tenantId: string,
-    @Query('clientId') clientId: string,
+    @ClientId() clientId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: string,
@@ -73,7 +76,7 @@ export class ClientPortalController {
   @Get('billing')
   getBilling(
     @TenantId() tenantId: string,
-    @Query('clientId') clientId: string,
+    @ClientId() clientId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -87,7 +90,7 @@ export class ClientPortalController {
   @Get('shipments')
   getShipments(
     @TenantId() tenantId: string,
-    @Query('clientId') clientId: string,
+    @ClientId() clientId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: string,
@@ -103,7 +106,7 @@ export class ClientPortalController {
   @Get('inventory')
   getInventory(
     @TenantId() tenantId: string,
-    @Query('clientId') clientId: string,
+    @ClientId() clientId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {

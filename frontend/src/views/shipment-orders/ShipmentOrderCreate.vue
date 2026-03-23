@@ -425,86 +425,62 @@
       </template>
     </ODialog>
 
-    <!-- ご依頼主情報の一括設定 -->
-    <ODialog
+    <!-- ご依頼主情報の一括設定 / 发件人批量设置 -->
+    <BulkSettingDialog
       :open="senderBulkDialogVisible"
       :title="t('wms.shipmentOrder.senderBulkSetting', 'ご依頼主情報の一括設定')"
+      :selected-count="tableSelectedKeys.length"
+      :apply-label="t('wms.shipmentOrder.apply', '適用')"
       @close="senderBulkDialogVisible = false"
+      @apply="applySenderBulkCompany"
     >
-      <div class="bulk-dialog">
-        <div class="bulk-dialog__badge">
-          {{ t('wms.shipmentOrder.target', '対象') }} <strong>{{ tableSelectedKeys.length }}</strong> {{ t('wms.shipmentOrder.items', '件') }}
-        </div>
-        <div class="bulk-dialog__field">
-          <label class="bulk-dialog__label">{{ t('wms.shipmentOrder.sender', 'ご依頼主') }}</label>
-          <select class="bulk-dialog__select" v-model="senderBulkCompanyId">
-            <option value="">{{ t('wms.shipmentOrder.selectSender', 'ご依頼主を選択してください') }}</option>
-            <option v-for="company in orderSourceCompanies" :key="company._id" :value="company._id">{{ company.senderName }}</option>
-          </select>
-        </div>
-        <div class="bulk-dialog__field">
-          <label class="bulk-dialog__checkbox">
-            <input type="checkbox" v-model="senderBulkOverwriteBaseNo">
-            <span>{{ t('wms.shipmentOrder.overwrite', '上書きする') }}</span>
-          </label>
-        </div>
+      <div class="bulk-dialog__field">
+        <label class="bulk-dialog__label">{{ t('wms.shipmentOrder.sender', 'ご依頼主') }}</label>
+        <select class="bulk-dialog__select" v-model="senderBulkCompanyId">
+          <option value="">{{ t('wms.shipmentOrder.selectSender', 'ご依頼主を選択してください') }}</option>
+          <option v-for="company in orderSourceCompanies" :key="company._id" :value="company._id">{{ company.senderName }}</option>
+        </select>
       </div>
-      <template #footer>
-        <div class="bulk-dialog__footer-split">
-          <OButton variant="secondary" @click="senderBulkDialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-          <OButton variant="primary" @click="applySenderBulkCompany">{{ t('wms.shipmentOrder.apply', '適用') }}</OButton>
-        </div>
-      </template>
-    </ODialog>
+      <div class="bulk-dialog__field">
+        <label class="bulk-dialog__checkbox">
+          <input type="checkbox" v-model="senderBulkOverwriteBaseNo">
+          <span>{{ t('wms.shipmentOrder.overwrite', '上書きする') }}</span>
+        </label>
+      </div>
+    </BulkSettingDialog>
 
-    <!-- 配送業者一括設定 -->
-    <ODialog
+    <!-- 配送業者一括設定 / 配送业者批量设置 -->
+    <BulkSettingDialog
       :open="carrierBulkDialogVisible"
       :title="t('wms.shipmentOrder.carrierBulkSetting', '配送業者一括設定')"
+      :selected-count="tableSelectedKeys.length"
+      :apply-label="t('wms.shipmentOrder.apply', '適用')"
       @close="carrierBulkDialogVisible = false"
+      @apply="applyCarrierBulk"
     >
-      <div class="bulk-dialog">
-        <div class="bulk-dialog__badge">
-          {{ t('wms.shipmentOrder.target', '対象') }} <strong>{{ tableSelectedKeys.length }}</strong> {{ t('wms.shipmentOrder.items', '件') }}
-        </div>
-        <div class="bulk-dialog__field">
-          <label class="bulk-dialog__label">{{ t('wms.shipmentOrder.carrierLabel', '配送業者') }}</label>
-          <select class="bulk-dialog__select" v-model="carrierBulkId">
-            <option value="">{{ t('wms.shipmentOrder.selectCarrier', '配送業者を選択してください') }}</option>
-            <option v-for="opt in carrierOptions" :key="String(opt.value)" :value="opt.value">{{ opt.label }}</option>
-          </select>
-        </div>
+      <div class="bulk-dialog__field">
+        <label class="bulk-dialog__label">{{ t('wms.shipmentOrder.carrierLabel', '配送業者') }}</label>
+        <select class="bulk-dialog__select" v-model="carrierBulkId">
+          <option value="">{{ t('wms.shipmentOrder.selectCarrier', '配送業者を選択してください') }}</option>
+          <option v-for="opt in carrierOptions" :key="String(opt.value)" :value="opt.value">{{ opt.label }}</option>
+        </select>
       </div>
-      <template #footer>
-        <div class="bulk-dialog__footer-split">
-          <OButton variant="secondary" @click="carrierBulkDialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-          <OButton variant="primary" @click="applyCarrierBulk">{{ t('wms.shipmentOrder.apply', '適用') }}</OButton>
-        </div>
-      </template>
-    </ODialog>
+    </BulkSettingDialog>
 
-    <!-- 出荷予定日一括設定 -->
-    <ODialog
+    <!-- 出荷予定日一括設定 / 出货预定日批量设置 -->
+    <BulkSettingDialog
       :open="shipPlanDateDialogVisible"
       :title="t('wms.shipmentOrder.shipPlanDateBulkSetting', '出荷予定日一括設定')"
+      :selected-count="tableSelectedKeys.length"
+      :apply-label="t('wms.shipmentOrder.apply', '適用')"
       @close="shipPlanDateDialogVisible = false"
+      @apply="applyShipPlanDateToSelected"
     >
-      <div class="bulk-dialog">
-        <div class="bulk-dialog__badge">
-          {{ t('wms.shipmentOrder.target', '対象') }} <strong>{{ tableSelectedKeys.length }}</strong> {{ t('wms.shipmentOrder.items', '件') }}
-        </div>
-        <div class="bulk-dialog__field">
-          <label class="bulk-dialog__label">{{ t('wms.shipmentOrder.shipPlanDate', '出荷予定日') }}</label>
-          <input type="date" class="bulk-dialog__input" v-model="shipPlanDateSelected" :min="todayDate" />
-        </div>
+      <div class="bulk-dialog__field">
+        <label class="bulk-dialog__label">{{ t('wms.shipmentOrder.shipPlanDate', '出荷予定日') }}</label>
+        <input type="date" class="bulk-dialog__input" v-model="shipPlanDateSelected" :min="todayDate" />
       </div>
-      <template #footer>
-        <div class="bulk-dialog__footer-split">
-          <OButton variant="secondary" @click="shipPlanDateDialogVisible = false">{{ t('wms.common.cancel', 'キャンセル') }}</OButton>
-          <OButton variant="primary" @click="applyShipPlanDateToSelected">{{ t('wms.shipmentOrder.apply', '適用') }}</OButton>
-        </div>
-      </template>
-    </ODialog>
+    </BulkSettingDialog>
 
     <!-- 削除確認ダイアログ -->
     <ODialog
@@ -572,6 +548,7 @@ import CarrierImportDialog from '@/components/import/CarrierImportDialog.vue'
 import OBatchActionBar from '@/components/odoo/OBatchActionBar.vue'
 import ShipmentOrderImportDialog from '@/components/import/ShipmentOrderImportDialog.vue'
 import BundleFilterDialog from '@/components/bundle/BundleFilterDialog.vue'
+import BulkSettingDialog from '@/components/dialogs/BulkSettingDialog.vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import ControlPanel from '@/components/odoo/ControlPanel.vue'
 import OButton from '@/components/odoo/OButton.vue'
@@ -585,319 +562,169 @@ import { useI18n } from '@/composables/useI18n'
 import { useShipmentOrderDraftStore } from '@/stores/shipmentOrderDraft'
 import type { UserOrderRow } from '@/types/orderRow'
 import { useOrderValidation } from './composables/useOrderValidation'
-import { useOrderHold } from './composables/useOrderHold'
-import { useOrderBulkActions } from './composables/useOrderBulkActions'
-import { useOrderTable } from './composables/useOrderTable'
-import { useOrderDelete } from './composables/useOrderDelete'
-import { useOrderBundle } from './composables/useOrderBundle'
 import { useOrderForm } from './composables/useOrderForm'
 import { useOrderSubmit } from './composables/useOrderSubmit'
 import { useOrderB2Cloud } from './composables/useOrderB2Cloud'
 import { useOrderCarrierExport } from './composables/useOrderCarrierExport'
 import { useOrderDuplicateCheck } from './composables/useOrderDuplicateCheck'
-import { useColumnVisibility } from './composables/useColumnVisibility'
 import { useOrderKeyboard } from './composables/useOrderKeyboard'
-import { useOrderBatchBar } from './composables/useOrderBatchBar'
 import { useOrderDataLoader } from './composables/useOrderDataLoader'
+import { useShipmentCreateColumns } from './create/useShipmentCreateColumns'
+import { useShipmentCreateBatchActions } from './create/useShipmentCreateBatchActions'
 import { resolveImageUrl } from '@/utils/imageUrl'
 import noImageSrc from '@/assets/images/no_image.png'
 
-// --- i18n ---
+// --- i18n / 国际化 ---
 const { t } = useI18n()
 
-// --- Toast ---
+// --- Toast / 提示 ---
 const toast = useToast()
 
 // --- Pinia Store ---
 const draftStore = useShipmentOrderDraftStore()
 const { allRows, heldRowIds } = storeToRefs(draftStore)
 
-// --- ダイアログ状態 ---
+// --- ダイアログ状態 / 对话框状态 ---
 const showCarrierImportDialog = ref(false)
 
-// --- フィルター・表示 ---
+// --- フィルター・表示 / 过滤・显示 ---
 const displayFilter = ref<'pending_confirm' | 'processing' | 'pending_waybill' | 'held'>('pending_confirm')
 
-// --- マスターデータ・バックエンド注文読み込み ---
+// --- マスターデータ・バックエンド注文読み込み / 主数据・后端订单加载 ---
 let _reapplyProductDefaults: () => void = () => {}
 const dataLoader = useOrderDataLoader(toast, t, () => _reapplyProductDefaults())
 const { orderSourceCompanies, products, carriers, pendingWaybillRows, isLoadingPendingWaybill, loadPendingWaybillOrders, loadAllMasterData } = dataLoader
 
-// --- 循環依存を解消するための遅延参照 ---
+// --- 循環依存を解消するための遅延参照 / 延迟引用以解决循环依赖 ---
 let _isHeld: (id: string | number) => boolean = () => false
 let _hasRowErrors: (row: UserOrderRow) => boolean = () => false
 
-// --- テーブル composable ---
-const bundle = useOrderBundle(
-  allRows,
-  computed(() => filteredRows.value),
-  computed(() => displayRows.value),
-  computed({ get: () => tableSelectedKeys.value, set: (v) => { tableSelectedKeys.value = v } }) as any,
-  displayFilter,
-  toast,
-)
-const {
-  bundleFilterKeys,
-  bundleModeEnabled,
-  showBundleFilterDialog,
-  bundleFilterFields,
-  bundleFilterLabels,
-  isBundleable,
-  hasUnbundleableRows,
-  selectedBundleGroupKeys,
-  handleBundleMergeAllSelected,
-  handleUnbundleSelected,
-  handleOpenBundleList,
-  handleExitBundleMode,
-  handleBundleFilterSave,
-  handleBundleFilterUpdate,
-  restoreFromCookies: restoreBundleCookies,
-} = bundle
-
-const table = useOrderTable(
+// ========================================
+// 列定義・表示・ソート・リサイズ（集約composable）
+// 列定义/显示/排序/列宽调整（聚合composable）
+// ========================================
+const columns = useShipmentCreateColumns({
   allRows,
   pendingWaybillRows,
   carriers,
-  bundleModeEnabled,
-  bundleFilterKeys,
+  // bundleModeEnabled は batchActions 初期化後に設定 / bundleModeEnabled 在 batchActions 初始化后设置
+  bundleModeEnabled: computed(() => bundleModeEnabled.value),
+  bundleFilterKeys: computed(() => bundleFilterKeys.value),
   displayFilter,
-  (id) => _isHeld(id),
-  (row) => _hasRowErrors(row),
-)
+  isHeld: (id) => _isHeld(id),
+  hasRowErrors: (row) => _hasRowErrors(row),
+})
 const {
-  carrierOptions,
-  baseColumns,
-  formColumns,
-  displayColumns,
-  resizingCol,
-  getColWidth,
-  onResizeStart,
-  currentPage,
-  pageSize,
-  sortKey,
-  sortOrder,
-  handleSortClick,
+  carrierOptions, baseColumns, formColumns, displayColumns,
+  visibleColumns, toggleColumn, isColumnVisible, showAllColumns, showColumnSettingsDialog,
+  resizingCol, getColWidth, onResizeStart,
+  sortKey, sortOrder, handleSortClick,
   globalSearchText,
-  filteredRows,
-  displayRows,
-  sortedRows,
-  totalPages,
-  paginatedRows,
-  tableSelectedKeys,
-  isAllCurrentPageSelected,
-  isSomeCurrentPageSelected,
-  toggleSelectAll,
-  toggleRowSelection,
-  getCellValue,
-  getCarrierLabel,
-  getInvoiceTypeLabel,
-  getTimeSlotLabel,
-  fmtDateTime,
-  fmtPostal,
-  getCoolTypeInfo,
-  isOkinawa,
-  isRemoteIsland,
-  hasDeliverySpec,
-} = table
-
-// --- バッチアクションバー composable ---
-const batchBar = useOrderBatchBar(
-  {
-    displayFilter,
-    tableSelectedKeys,
-    sortedRows,
-    bundleModeEnabled,
-    isSubmitting: computed(() => isSubmitting.value),
-    backendErrorCount: computed(() => backendErrorCount.value),
-    b2Validating: computed(() => b2Validating.value),
-    isAutoValidating: computed(() => isAutoValidating.value),
-    b2Exporting: computed(() => b2Exporting.value),
-    canSendToB2Cloud: computed(() => canSendToB2Cloud.value),
-  },
-  {
-    bundleMerge: () => handleBundleMergeAllSelected(),
-    unbundle: () => handleUnbundleSelected(),
-    shipPlanDate: () => { shipPlanDateDialogVisible.value = true },
-    senderBulk: () => { senderBulkDialogVisible.value = true },
-    carrierBulk: () => { carrierBulkDialogVisible.value = true },
-    submit: () => handleSubmitClick(),
-    clearSelected: () => handleBatchDeleteFromBar(),
-    holdToggle: () => toggleHoldSelected(),
-    showErrorDetail: () => { submitErrorDialogVisible.value = true },
-    deletePending: () => handleDeletePending(),
-    confirmPrintReady: () => handleConfirmPrintReady(),
-    reloadPending: () => loadPendingWaybillOrders(),
-    b2Export: () => handleB2Export(),
-    carrierExport: () => handleCarrierExport(),
-    clearBackendErrors: () => clearBackendErrors(),
-    releaseHold: () => handleReleaseHold(),
-    deleteHeld: () => handleDeleteHeld(),
-    exportCsv: () => { /* handled internally by composable */ },
-  },
-  t,
-)
-const { batchActions, handleBatchAction, handleSelectAll, customExportDialogVisible, customExportOrders } = batchBar
-
-// --- 列表示設定 composable ---
-const {
-  visibleColumns,
-  toggleColumn,
-  isColumnVisible,
-  showAllColumns,
-  showColumnSettingsDialog,
-} = useColumnVisibility(displayColumns)
-
-// --- フォーム composable ---
-const form = useOrderForm(allRows, products, (row) => getRowErrorMessages(row), loadPendingWaybillOrders, toast)
-const {
-  showDialog,
-  showImportDialog,
-  editingRow,
-  handleEdit,
-  handleAdd,
-  handleFormSubmit,
-  handleImport,
-  handleImportClick,
-  reapplyProductDefaults,
-} = form
-_reapplyProductDefaults = reapplyProductDefaults
+  filteredRows, displayRows, sortedRows,
+  currentPage, pageSize, totalPages, paginatedRows,
+  tableSelectedKeys, isAllCurrentPageSelected, isSomeCurrentPageSelected, toggleSelectAll, toggleRowSelection,
+  getCellValue, getCarrierLabel, getInvoiceTypeLabel, getTimeSlotLabel, fmtDateTime, fmtPostal, getCoolTypeInfo,
+  isOkinawa, isRemoteIsland, hasDeliverySpec,
+} = columns
 
 // --- B2 Cloud composable ---
 const b2cloud = useOrderB2Cloud(
-  pendingWaybillRows,
-  carriers,
-  tableSelectedKeys,
-  sortedRows,
-  loadPendingWaybillOrders,
-  toast,
+  pendingWaybillRows, carriers, tableSelectedKeys, sortedRows,
+  loadPendingWaybillOrders, toast,
 )
 const {
-  b2Validating,
-  b2ValidateDialogVisible,
-  b2ValidateResult,
-  b2ValidateOrderMap,
-  b2ApiErrorDialogVisible,
-  b2ApiErrorMessage,
-  b2ValidationErrors,
-  isAutoValidating,
-  getB2Errors,
-  handleConfirmPrintReady,
-  handleB2ValidateDialogCancel,
-  handleB2ValidateDialogConfirm,
+  b2Validating, b2ValidateDialogVisible, b2ValidateResult, b2ValidateOrderMap,
+  b2ApiErrorDialogVisible, b2ApiErrorMessage, b2ValidationErrors, isAutoValidating,
+  getB2Errors, handleConfirmPrintReady, handleB2ValidateDialogCancel, handleB2ValidateDialogConfirm,
   autoValidateProcessingOrders,
-  b2Exporting,
-  b2ExportResultDialogVisible,
-  b2ExportResult,
-  canSendToB2Cloud,
-  handleB2Export,
-  handleB2ExportResultClose,
+  b2Exporting, b2ExportResultDialogVisible, b2ExportResult, canSendToB2Cloud,
+  handleB2Export, handleB2ExportResultClose,
   cleanup: cleanupB2Cloud,
 } = b2cloud
 
-// --- Submit composable ---
+// --- Submit composable / 提交composable ---
 const submit = useOrderSubmit(
-  allRows,
-  pendingWaybillRows,
-  tableSelectedKeys,
-  heldRowIds,
-  baseColumns,
-  displayFilter,
+  allRows, pendingWaybillRows, tableSelectedKeys, heldRowIds,
+  baseColumns, displayFilter,
   (row) => hasFrontendRowErrors(row),
   (ids) => draftStore.setHeldIds(ids),
   () => draftStore.clearAll(),
-  loadPendingWaybillOrders,
-  autoValidateProcessingOrders,
-  toast,
+  loadPendingWaybillOrders, autoValidateProcessingOrders, toast,
 )
 const {
-  isSubmitting,
-  submitErrorDialogVisible,
-  backendErrorsByRowId,
-  backendErrorCount,
-  backendErrorList,
-  clearBackendErrors,
-  handleSubmitClick,
-  handleReleaseHold,
+  isSubmitting, submitErrorDialogVisible,
+  backendErrorsByRowId, backendErrorCount, backendErrorList,
+  clearBackendErrors, handleSubmitClick, handleReleaseHold,
 } = submit
 
-// --- バリデーション composable（tableのbaseColumnsを参照） ---
+// --- バリデーション composable / 验证composable ---
 const validation = useOrderValidation(baseColumns, backendErrorsByRowId)
 const { hasRowErrors, hasFrontendRowErrors, isCellError, getRowErrorMessages } = validation
 _hasRowErrors = hasRowErrors
 
-// --- 保留 composable ---
-const hold = useOrderHold(
-  allRows,
-  pendingWaybillRows,
-  tableSelectedKeys,
-  (_rows, hIds) => { draftStore.setHeldIds(hIds) },
-  loadPendingWaybillOrders,
-  toast,
-)
-const { isHeld, pendingConfirmCount, totalHeldCount, processingNonHeldCount, pendingWaybillNonHeldCount, toggleHoldSelected } = hold
-_isHeld = isHeld
-
-// --- 一括操作 composable ---
-const bulk = useOrderBulkActions(
-  allRows,
-  tableSelectedKeys,
-  orderSourceCompanies,
-  (_rows, hIds) => { draftStore.setHeldIds(hIds) },
-  heldRowIds,
-  toast,
-)
-const {
-  senderBulkDialogVisible,
-  senderBulkCompanyId,
-  senderBulkOverwriteBaseNo,
-  carrierBulkDialogVisible,
-  carrierBulkId,
-  shipPlanDateDialogVisible,
-  shipPlanDateSelected,
-  todayDate,
-  applyShipPlanDateToSelected,
-  applySenderBulkCompany,
-  applyCarrierBulk,
-} = bulk
-
-// --- 削除 composable ---
-const del = useOrderDelete(
-  allRows,
-  pendingWaybillRows,
-  tableSelectedKeys,
-  heldRowIds,
-  (ids) => draftStore.setHeldIds(ids),
-  sortedRows,
-  loadPendingWaybillOrders,
-  toast,
-)
-const {
-  deleteDialogOpen,
-  deleteDialogMessage,
-  confirmDelete,
-  handleBatchDeleteFromBar,
-  handleDeletePending,
-  handleDeleteHeld,
-} = del
-
-// --- 配送業者データ出力 composable ---
+// --- 配送業者データ出力 composable / 配送数据导出composable ---
 const carrierExp = useOrderCarrierExport(pendingWaybillRows, carriers, tableSelectedKeys, toast)
 const {
-  carrierExportDialogVisible,
-  carrierExportCarrierLabel,
-  carrierExportFileNameBase,
-  carrierExportHeaders,
-  carrierExportOutputRows,
-  carrierExportMappingOptions,
-  carrierExportSelectedMappingId,
-  handleCarrierExport,
+  carrierExportDialogVisible, carrierExportCarrierLabel, carrierExportFileNameBase,
+  carrierExportHeaders, carrierExportOutputRows,
+  carrierExportMappingOptions, carrierExportSelectedMappingId,
 } = carrierExp
 
-// --- 重複チェック composable ---
-const { isDuplicate, isDuplicateLocal, isDuplicateBackend } = useOrderDuplicateCheck(allRows, pendingWaybillRows)
+// ========================================
+// バッチアクション（同梱・一括設定・保留・削除・バッチバー 集約composable）
+// 批量操作（同捆/批量设置/保留/删除/批量工具栏 聚合composable）
+// ========================================
+const batch = useShipmentCreateBatchActions(
+  {
+    allRows, heldRowIds, tableSelectedKeys, sortedRows, filteredRows, displayRows,
+    pendingWaybillRows, orderSourceCompanies, displayFilter,
+    isSubmitting, backendErrorCount, b2Validating, isAutoValidating, b2Exporting, canSendToB2Cloud,
+    submitErrorDialogVisible,
+    saveHeldIds: (ids) => draftStore.setHeldIds(ids),
+    saveStorage: (_rows, hIds) => { draftStore.setHeldIds(hIds) },
+    loadPendingWaybillOrders,
+    handleSubmitClick, handleConfirmPrintReady, handleB2Export,
+    handleCarrierExport: carrierExp.handleCarrierExport,
+    clearBackendErrors, handleReleaseHold,
+  },
+  toast, t,
+)
+const {
+  // 同梱 / 同捆
+  bundleFilterKeys, bundleModeEnabled, showBundleFilterDialog,
+  bundleFilterFields, bundleFilterLabels,
+  isBundleable, hasUnbundleableRows, selectedBundleGroupKeys,
+  handleBundleMergeAllSelected, handleUnbundleSelected,
+  handleOpenBundleList, handleExitBundleMode, handleBundleFilterSave, handleBundleFilterUpdate,
+  restoreBundleCookies,
+  // 一括設定 / 批量设置
+  senderBulkDialogVisible, senderBulkCompanyId, senderBulkOverwriteBaseNo,
+  carrierBulkDialogVisible, carrierBulkId,
+  shipPlanDateDialogVisible, shipPlanDateSelected, todayDate,
+  applyShipPlanDateToSelected, applySenderBulkCompany, applyCarrierBulk,
+  // 保留 / 保留
+  isHeld, pendingConfirmCount, totalHeldCount, processingNonHeldCount, pendingWaybillNonHeldCount,
+  // 削除 / 删除
+  deleteDialogOpen, deleteDialogMessage, confirmDelete, handleBatchDeleteFromBar,
+  // バッチアクションバー / 批量操作工具栏
+  batchActions, handleBatchAction, handleSelectAll,
+  customExportDialogVisible, customExportOrders,
+} = batch
+_isHeld = isHeld
 
+// --- フォーム composable / 表单composable ---
+const form = useOrderForm(allRows, products, (row) => getRowErrorMessages(row), loadPendingWaybillOrders, toast)
+const {
+  showDialog, showImportDialog, editingRow,
+  handleEdit, handleAdd, handleFormSubmit, handleImport, handleImportClick,
+  reapplyProductDefaults,
+} = form
+_reapplyProductDefaults = reapplyProductDefaults
 
-// --- フィルター変更時の処理 ---
+// --- 重複チェック composable / 重复检查composable ---
+const { isDuplicate, isDuplicateBackend } = useOrderDuplicateCheck(allRows, pendingWaybillRows)
+
+// --- フィルター変更時の処理 / 过滤切换时的处理 ---
 watch(displayFilter, (val) => {
   tableSelectedKeys.value = []
   if (val === 'processing' || val === 'pending_waybill') {
@@ -905,8 +732,7 @@ watch(displayFilter, (val) => {
   }
 })
 
-
-// --- キーボードショートカット ---
+// --- キーボードショートカット / 键盘快捷键 ---
 useOrderKeyboard(tableSelectedKeys, sortedRows, {
   selectAll: handleSelectAll,
   deselectAll: () => { tableSelectedKeys.value = [] },
@@ -915,7 +741,7 @@ useOrderKeyboard(tableSelectedKeys, sortedRows, {
   exportCsv: () => { customExportDialogVisible.value = true },
 })
 
-// --- 初期化 ---
+// --- 初期化 / 初始化 ---
 onMounted(() => {
   loadAllMasterData()
   restoreBundleCookies()

@@ -4,8 +4,10 @@ import { WavesService } from './waves.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { createWaveSchema, updateWaveSchema, type CreateWaveDto, type UpdateWaveDto } from './dto/create-wave.dto.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/waves')
+@RequireRole('admin', 'manager', 'operator')
 export class WavesController {
   constructor(private readonly wavesService: WavesService) {}
 

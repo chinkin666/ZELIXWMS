@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { PassthroughService } from './passthrough.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/passthrough')
+@RequireRole('admin', 'manager', 'operator')
 export class PassthroughController {
   constructor(private readonly passthroughService: PassthroughService) {}
 

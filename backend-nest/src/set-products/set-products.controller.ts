@@ -3,8 +3,10 @@ import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe }
 import { SetProductsService } from './set-products.service.js';
 import { SetOrdersService } from '../set-orders/set-orders.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/set-products')
+@RequireRole('admin', 'manager', 'operator')
 export class SetProductsController {
   constructor(
     private readonly setProductsService: SetProductsService,

@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { InventoryCategoriesService } from './inventory-categories.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/inventory-categories')
+@RequireRole('admin', 'manager', 'operator')
 export class InventoryCategoriesController {
   constructor(private readonly inventoryCategoriesService: InventoryCategoriesService) {}
 

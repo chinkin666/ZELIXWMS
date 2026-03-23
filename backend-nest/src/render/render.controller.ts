@@ -3,8 +3,10 @@ import { Controller, Get, Post, Body, Param, Query, Res } from '@nestjs/common';
 import type { Response } from 'express';
 import { RenderService } from './render.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/render')
+@RequireRole('admin', 'manager', 'operator')
 export class RenderController {
   constructor(private readonly renderService: RenderService) {}
 

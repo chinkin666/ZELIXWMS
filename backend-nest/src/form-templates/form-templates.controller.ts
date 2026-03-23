@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { FormTemplatesService } from './form-templates.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/form-templates')
+@RequireRole('admin', 'manager', 'operator')
 export class FormTemplatesController {
   constructor(private readonly service: FormTemplatesService) {}
 

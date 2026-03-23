@@ -11,9 +11,15 @@ async function bootstrap() {
   });
   const config = app.get(ConfigService);
 
-  // CORS 設定 / CORS设置
+  // CORS 設定（環境変数で制御）/ CORS设置（通过环境变量控制）
+  const corsOrigins = config.get<string>('CORS_ORIGINS');
+  if (!corsOrigins && config.get('NODE_ENV') === 'production') {
+    console.warn('⚠️  CORS_ORIGINS 未設定: 本番環境ではオリジンを制限してください / CORS_ORIGINS未设置: 生产环境请限制允许的来源');
+  }
   app.enableCors({
-    origin: true,
+    origin: corsOrigins
+      ? corsOrigins.split(',').map((o: string) => o.trim())
+      : true,  // 未設定時は全オリジン許可（開発用）/ 未设置时允许所有来源（开发用）
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Warehouse-Id', 'X-Tenant-Id', 'X-Request-Id', 'X-Api-Key'],

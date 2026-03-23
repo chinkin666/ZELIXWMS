@@ -9,6 +9,7 @@ import { registerSchema, type RegisterDto } from './dto/register.dto.js';
 import { updateProfileSchema, type UpdateProfileDto } from './dto/update-profile.dto.js';
 
 @Controller('api/auth')
+@Public()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -61,6 +62,7 @@ export class AuthController {
 
 // ポータル認証コントローラ / 门户认证控制器
 @Controller('api/portal')
+@Public()
 export class PortalAuthController {
   constructor(private readonly authService: AuthService) {}
 

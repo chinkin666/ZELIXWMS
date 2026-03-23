@@ -3,6 +3,7 @@ import { Controller, Get, Post, Put, Patch, Delete, Param, Query, Body, ParseUUI
 import { ShipmentService } from './shipment.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 import {
   createShipmentOrderSchema,
   updateShipmentOrderSchema,
@@ -11,6 +12,7 @@ import {
 } from './dto/create-shipment-order.dto.js';
 
 @Controller('api/shipment-orders')
+@RequireRole('admin', 'manager', 'operator')
 export class ShipmentController {
   constructor(private readonly shipmentService: ShipmentService) {}
 

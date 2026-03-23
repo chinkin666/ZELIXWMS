@@ -1,9 +1,10 @@
 // 棚卸サービス / 盘点服务
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { WmsException } from '../common/exceptions/wms.exception.js';
 import { eq, and, isNull, sql, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../database/database.module.js';
-import { stocktakingOrders } from '../database/schema/warehouse-ops.js';
+import { stocktakingOrders, stocktakingDiscrepancies } from '../database/schema/warehouse-ops.js';
+import { stockQuants } from '../database/schema/inventory.js';
 import type { CreateStocktakingDto, UpdateStocktakingDto } from './dto/create-stocktaking.dto.js';
 import { createPaginatedResult } from '../common/dto/pagination.dto.js';
 import type { DrizzleDB } from '../database/database.types.js';
@@ -18,6 +19,8 @@ interface FindAllQuery {
 
 @Injectable()
 export class StocktakingService {
+  private readonly logger = new Logger(StocktakingService.name);
+
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 棚卸一覧取得（テナント分離・ページネーション・フィルタ）/ 获取盘点列表（租户隔离・分页・筛选）
@@ -186,10 +189,53 @@ export class StocktakingService {
       .where(and(eq(stocktakingOrders.id, id), eq(stocktakingOrders.tenantId, tenantId)))
       .returning();
 
-    // TODO: 棚卸完了時に stocktaking_discrepancies テーブルへ差異データを自動生成する
-    // TODO: 盘点完成时自动向 stocktaking_discrepancies 表生成差异数据
-    // 比較: items内のcountedQuantity vs inventoryのsystemQuantity → discrepancy レコード作成
-    // 对比: items中的countedQuantity vs inventory的systemQuantity → 创建discrepancy记录
+    // 差異データ自動生成: items内のcountedQuantity vs 在庫のsystemQuantity
+    // 自动生成差异数据: items中的countedQuantity vs 库存的systemQuantity
+    const items = Array.isArray(order.items) ? order.items as Array<{ productId: string; locationId: string; countedQuantity: number }> : [];
+    if (items.length > 0) {
+      // productId+locationId でグループ化（最後のカウント値を採用）/ 按productId+locationId分组（采用最后的计数值）
+      const grouped = new Map<string, { productId: string; locationId: string; countedQuantity: number }>();
+      for (const item of items) {
+        grouped.set(`${item.productId}:${item.locationId}`, item);
+      }
+
+      const discrepancyRows: Array<{
+        tenantId: string; stocktakingOrderId: string; productId: string;
+        locationId: string; systemQuantity: number; countedQuantity: number; discrepancy: number;
+      }> = [];
+
+      for (const [, item] of grouped) {
+        // システム在庫取得 / 获取系统库存
+        const sqResult = await this.db
+          .select({ quantity: sql<number>`coalesce(sum(${stockQuants.quantity}), 0)::int` })
+          .from(stockQuants)
+          .where(and(
+            eq(stockQuants.tenantId, tenantId),
+            eq(stockQuants.productId, item.productId),
+            eq(stockQuants.locationId, item.locationId),
+          ));
+        const systemQty = sqResult[0]?.quantity ?? 0;
+        const diff = item.countedQuantity - systemQty;
+
+        // 差異がある場合のみレコード作成 / 仅在有差异时创建记录
+        if (diff !== 0) {
+          discrepancyRows.push({
+            tenantId,
+            stocktakingOrderId: id,
+            productId: item.productId,
+            locationId: item.locationId,
+            systemQuantity: systemQty,
+            countedQuantity: item.countedQuantity,
+            discrepancy: diff,
+          });
+        }
+      }
+
+      if (discrepancyRows.length > 0) {
+        await this.db.insert(stocktakingDiscrepancies).values(discrepancyRows);
+        this.logger.log(`棚卸 ${id}: ${discrepancyRows.length} 件の差異レコードを生成 / 盘点 ${id}: 生成了 ${discrepancyRows.length} 条差异记录`);
+      }
+    }
 
     return rows[0];
   }

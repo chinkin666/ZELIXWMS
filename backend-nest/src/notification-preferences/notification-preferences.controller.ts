@@ -2,8 +2,10 @@
 import { Controller, Get, Put, Body } from '@nestjs/common';
 import { NotificationPreferencesService } from './notification-preferences.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/notification-preferences')
+@RequireRole('admin', 'manager', 'operator', 'viewer')
 export class NotificationPreferencesController {
   constructor(private readonly notificationPreferencesService: NotificationPreferencesService) {}
 

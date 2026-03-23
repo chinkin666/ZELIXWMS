@@ -4,8 +4,10 @@ import { StocktakingService } from './stocktaking.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
 import { createStocktakingSchema, updateStocktakingSchema, type CreateStocktakingDto, type UpdateStocktakingDto } from './dto/create-stocktaking.dto.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/stocktaking')
+@RequireRole('admin', 'manager', 'operator')
 export class StocktakingController {
   constructor(private readonly stocktakingService: StocktakingService) {}
 

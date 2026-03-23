@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { FbaShipmentPlansService } from './fba-shipment-plans.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/fba-shipment-plans')
+@RequireRole('admin', 'manager', 'operator')
 export class FbaShipmentPlansController {
   constructor(private readonly fbaShipmentPlansService: FbaShipmentPlansService) {}
 

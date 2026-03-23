@@ -1,8 +1,10 @@
 // キューコントローラ / 队列控制器
 import { Controller, Get } from '@nestjs/common';
 import { QueueService } from './queue.service.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/queue')
+@RequireRole('admin', 'manager', 'operator')
 export class QueueController {
   constructor(private readonly queueService: QueueService) {}
 

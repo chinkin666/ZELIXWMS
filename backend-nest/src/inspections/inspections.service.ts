@@ -17,11 +17,12 @@ export class InspectionsService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // 検品一覧取得（プレースホルダー）/ 获取检验列表（占位符）
+  // TODO: [stub] 検品テーブル作成後に実データ取得を実装 / 创建检验表后实现实际数据获取
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
     const limit = Math.min(200, Math.max(1, query.limit || 20));
 
-    // プレースホルダー / 占位符
+    // TODO: [stub] プレースホルダー: 検品テーブルからデータ取得を実装 / 占位符: 实现从检验表获取数据
     return createPaginatedResult([], 0, page, limit);
   }
 

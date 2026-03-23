@@ -2,8 +2,10 @@
 import { Controller, Get, Put, Post, Param, Body } from '@nestjs/common';
 import { CarrierAutomationService } from './carrier-automation.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/carrier-automation')
+@RequireRole('admin', 'manager', 'operator')
 export class CarrierAutomationController {
   constructor(private readonly carrierAutomationService: CarrierAutomationService) {}
 

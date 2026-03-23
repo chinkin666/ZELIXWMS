@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe } from '@nestjs/common';
 import { WorkflowsService } from './workflows.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller()
+@RequireRole('admin', 'manager', 'operator')
 export class WorkflowsController {
   constructor(private readonly workflowsService: WorkflowsService) {}
 

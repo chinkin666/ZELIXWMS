@@ -4,6 +4,7 @@ import { HandlingLabelTypesService } from './handling-label-types.service.js';
 import { Public } from '../common/decorators/public.decorator.js';
 
 @Controller('api/handling-label-types')
+@Public()
 export class HandlingLabelTypesController {
   constructor(private readonly handlingLabelTypesService: HandlingLabelTypesService) {}
 

@@ -1146,23 +1146,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, watch, ref, onMounted } from 'vue'
+/**
+ * マッピング詳細ダイアログ / 映射详情对话框
+ *
+ * フォームロジックは useMappingForm コンポーザブルに抽出済み
+ * 表单逻辑已提取到 useMappingForm 组合式函数
+ */
+import { computed, toRef } from 'vue'
 import ODialog from '@/components/odoo/ODialog.vue'
 import OButton from '@/components/odoo/OButton.vue'
-import { getTransformPlugins, type TransformPluginInfo, type TransformPipeline, type TransformStep, type TransformMapping, type InputSource } from '@/api/mappingConfig'
-import { jsonSchemaToFormFields, buildParamsFromForm, type FormField } from '@/utils/transformForm'
-import { runTransformMapping } from '@/utils/transformRunner'
+import type { TransformMapping } from '@/api/mappingConfig'
 import { getOrderFieldDefinitions } from '@/types/order'
-
-interface TargetRow {
-  field: string
-  required: boolean
-}
-
-interface SourceRow {
-  name: string
-  label?: string
-}
+import { useMappingForm, type TargetRow, type SourceRow } from './detail/useMappingForm'
 
 const props = defineProps<{
   modelValue: boolean
@@ -1185,16 +1180,63 @@ const visibleProxy = computed({
   set: (v) => emits('update:modelValue', v),
 })
 
-const transformPlugins = ref<TransformPluginInfo[]>([])
+// コンポーザブルからフォームロジックを取得 / 从组合式函数获取表单逻辑
+const {
+  form,
+  inputStepFields,
+  outputStepFields,
+  transformPlugins,
+  availableColumns,
+  previewValue,
+  referencedSources,
+  getPluginDescription,
+  addInput,
+  removeInput,
+  moveInputUp,
+  moveInputDown,
+  onInputTypeChange,
+  addInputStep,
+  removeInputStep,
+  onInputStepPluginChange,
+  addOutputStep,
+  removeOutputStep,
+  onOutputStepPluginChange,
+  getLookupMapEntries,
+  addLookupMapEntry,
+  removeLookupMapEntry,
+  updateLookupMapEntryKey,
+  updateLookupMapEntryValue,
+  addLookupContainsRule,
+  removeLookupContainsRule,
+  addStringReplaceRule,
+  removeStringReplaceRule,
+  addBodyParam,
+  removeBodyParam,
+  onBodyParamSourceChange,
+  addInsertSymbolPosition,
+  removeInsertSymbolPosition,
+  onDateParseFormatsChanged,
+  addDateFormat,
+  buildSubmitMapping,
+} = useMappingForm({
+  modelValue: toRef(props, 'modelValue'),
+  target: toRef(props, 'target'),
+  mapping: toRef(props, 'mapping'),
+  preSelectedSources: toRef(props, 'preSelectedSources'),
+  sampleRow: toRef(props, 'sampleRow'),
+  configType: toRef(props, 'configType'),
+  carrierId: toRef(props, 'carrierId'),
+  carrierOptions: toRef(props, 'carrierOptions'),
+})
 
-// 注文フィールド定義を取得
+// 注文フィールド定義を取得 / 获取订单字段定义
 const orderFieldDefinitions = getOrderFieldDefinitions()
 
-// 対象フィールドの説明を取得
+// 対象フィールドの説明を取得 / 获取目标字段说明
 const targetDescription = computed<string | null>(() => {
   if (!props.target?.field) return null
 
-  // order-to-carrier の場合、配送業者の formatDefinition から取得
+  // order-to-carrier の場合、配送業者の formatDefinition から取得 / 从承运商格式定义获取
   if (props.configType === 'order-to-carrier' && props.carrierId && props.carrierOptions) {
     const carrier = props.carrierOptions.find((c) => c._id === props.carrierId)
     if (carrier?.formatDefinition?.columns) {
@@ -1203,7 +1245,7 @@ const targetDescription = computed<string | null>(() => {
     }
   }
 
-  // ec-company-to-order の場合、注文フィールド定義から取得
+  // ec-company-to-order の場合、注文フィールド定義から取得 / 从订单字段定义获取
   if (props.configType === 'ec-company-to-order') {
     const def = orderFieldDefinitions.find((d) => d.dataKey === props.target?.field)
     return def?.description || null
@@ -1212,126 +1254,14 @@ const targetDescription = computed<string | null>(() => {
   return null
 })
 
-interface FormInput {
-  id: string
-  type: 'column' | 'literal'
-  column?: string
-  value?: any
-  pipelineSteps: Array<{ id: string; plugin: string; params: Record<string, any> }>
-}
-
-const form = reactive<{
-  defaultValue: any
-  inputs: FormInput[]
-  outputPipelineSteps: Array<{ id: string; plugin: string; params: Record<string, any> }>
-}>({
-  defaultValue: undefined,
-  inputs: [],
-  outputPipelineSteps: [],
-})
-
-const inputStepFields = ref<FormField[][][]>([]) // [inputIdx][stepIdx][fields]
-const outputStepFields = ref<FormField[][]>([]) // [stepIdx][fields]
-
-const availableColumns = computed(() => {
-  if (!props.sampleRow) return []
-  return Object.keys(props.sampleRow)
-})
-
-onMounted(async () => {
-  try {
-    const plugins = await getTransformPlugins()
-    transformPlugins.value = plugins.transforms
-  } catch (e) {
-    // プラグイン読み込み失敗 / Failed to load plugins
-  }
-})
-
-// プラグイン説明を取得（ホバーツールチップ用）
-const getPluginDescription = (pluginName: string): string | null => {
-  const plugin = transformPlugins.value.find((p) => p.name === pluginName)
-  if (!plugin?.descriptionJa) return null
-  return plugin.descriptionJa.replace(/\n/g, '<br>')
-}
-
-watch(
-  () => [props.mapping, props.modelValue, props.preSelectedSources] as const,
-  ([m, visible, preSelected]) => {
-    if (visible) {
-      if (m) {
-        // 既存の mapping を読み込む
-        form.defaultValue = m.defaultValue
-        form.inputs = m.inputs
-          .filter((inp) => inp.type === 'column' || inp.type === 'literal')
-          .map((inp) => ({
-            id: inp.id,
-            type: inp.type as 'column' | 'literal',
-            column: inp.type === 'column' ? inp.column : undefined,
-            value: inp.type === 'literal' ? inp.value : undefined,
-            pipelineSteps: inp.pipeline?.steps?.map((s) => ({
-              id: s.id,
-              plugin: s.plugin,
-              params: s.params || {},
-            })) || [],
-          }))
-        form.outputPipelineSteps = m.outputPipeline?.steps?.map((s) => ({
-          id: s.id,
-          plugin: s.plugin,
-          params: s.params || {},
-        })) || []
-
-        // フィールド設定を初期化
-        inputStepFields.value = form.inputs.map((inp) =>
-          inp.pipelineSteps.map(() => [] as FormField[]),
-        )
-        outputStepFields.value = form.outputPipelineSteps.map(() => [] as FormField[])
-
-        // 各ステップのフィールド設定を読み込む
-        form.inputs.forEach((inp, inpIdx) => {
-          inp.pipelineSteps.forEach((step, stepIdx) => {
-            if (step.plugin) {
-              onInputStepPluginChange(inpIdx, stepIdx)
-            }
-          })
-        })
-        form.outputPipelineSteps.forEach((step, stepIdx) => {
-          if (step.plugin) {
-            onOutputStepPluginChange(stepIdx)
-          }
-        })
-      } else if (preSelected && preSelected.length > 0) {
-        // mapping なし、事前選択の入力元を自動追加
-        form.defaultValue = undefined
-        form.inputs = preSelected.map((src, idx) => ({
-          id: `input-${Date.now()}-${idx}`,
-          type: 'column' as const,
-          column: src.name,
-          pipelineSteps: [],
-        }))
-        form.outputPipelineSteps = []
-        inputStepFields.value = form.inputs.map(() => [])
-        outputStepFields.value = []
-      } else {
-        // 新規作成
-        form.defaultValue = undefined
-        form.inputs = []
-        form.outputPipelineSteps = []
-        inputStepFields.value = []
-        outputStepFields.value = []
-      }
-    }
-  },
-  { immediate: true },
-)
-
-// フィールド表示名を取得
+// フィールド表示名を取得 / 获取字段显示名
 const getFieldDisplayName = (fieldKey: string): string => {
   if (!fieldKey) return ''
 
   const fieldDef = orderFieldDefinitions.find((f) => f.key === fieldKey || f.dataKey === fieldKey)
   if (fieldDef?.title) return fieldDef.title
 
-  // ネストされたパスのベースフィールド名で照合
+  // ネストされたパスのベースフィールド名で照合 / 用嵌套路径的基础字段名匹配
   const baseField = fieldKey.split('.')[0]
   if (baseField) {
     const baseDef = orderFieldDefinitions.find((f) => f.key === baseField || f.dataKey === baseField)
@@ -1341,7 +1271,7 @@ const getFieldDisplayName = (fieldKey: string): string => {
   return fieldKey
 }
 
-// 入力元の表示名を取得
+// 入力元の表示名を取得 / 获取输入源显示名
 const getSourceDisplayName = (sourceKey: string): string => {
   if (!sourceKey) return ''
 
@@ -1350,11 +1280,10 @@ const getSourceDisplayName = (sourceKey: string): string => {
     if (source?.label) return source.label
   }
 
-  // フィールド定義から取得
   return getFieldDisplayName(sourceKey)
 }
 
-// 出力先の表示名を取得
+// 出力先の表示名を取得 / 获取输出目标显示名
 const getTargetDisplayName = (targetKey: string): string => {
   if (!targetKey) return ''
 
@@ -1362,10 +1291,10 @@ const getTargetDisplayName = (targetKey: string): string => {
     return (props.target as any).label
   }
 
-  // フィールド定義から取得
   return getFieldDisplayName(targetKey)
 }
 
+// ダイアログタイトル / 对话框标题
 const title = computed(() => {
   const targetName = props.target ? getTargetDisplayName(props.target.field) : ''
   if (props.preSelectedSources && props.preSelectedSources.length > 0) {
@@ -1374,736 +1303,12 @@ const title = computed(() => {
   return `マッピング詳細: ${targetName}`
 })
 
-const referencedSources = computed(() => {
-  return form.inputs.filter((i) => i.type === 'column').map((i) => i.column || '')
-})
-
-// プレビュー値（transformRunner で実際のインポートと一致させる）
-const previewValue = ref<string>('（計算中...）')
-
-// 現在の TransformMapping オブジェクトを構築（プレビュー用）
-const buildCurrentMapping = (): TransformMapping | null => {
-  if (form.inputs.length === 0) return null
-
-  const inputs: InputSource[] = form.inputs.map((inp): InputSource | null => {
-    const pipelineSteps: TransformStep[] = inp.pipelineSteps
-      .filter((s) => s.plugin)
-      .map((s) => ({
-        id: s.id,
-        plugin: s.plugin,
-        params: s.params || {},
-        enabled: true,
-      }))
-
-    const pipeline: TransformPipeline | undefined =
-      pipelineSteps.length > 0 ? { steps: pipelineSteps } : undefined
-
-    if (inp.type === 'column') {
-      return {
-        id: inp.id,
-        type: 'column' as const,
-        column: inp.column || '',
-        pipeline,
-      }
-    } else if (inp.type === 'literal') {
-      return {
-        id: inp.id,
-        type: 'literal' as const,
-        value: inp.value,
-        pipeline,
-      }
-    }
-    return null
-  })
-  .filter((inp): inp is InputSource => inp !== null)
-
-  const outputSteps: TransformStep[] = form.outputPipelineSteps
-    .filter((s) => s.plugin)
-    .map((s) => ({
-      id: s.id,
-      plugin: s.plugin,
-      params: s.params || {},
-      enabled: true,
-    }))
-
-  const combinePlugin = inputs.length > 1 ? 'combine.concat' : 'combine.first'
-
-  return {
-    targetField: props.target?.field || '',
-    inputs,
-    combine: {
-      plugin: combinePlugin,
-      params: {},
-    },
-    outputPipeline: outputSteps.length > 0 ? { steps: outputSteps } : undefined,
-    defaultValue: form.defaultValue,
-  }
-}
-
-// フォーム変更を監視し、プレビューを非同期更新
-watch(
-  () => [form.inputs, form.outputPipelineSteps, form.defaultValue, props.sampleRow],
-  async () => {
-    if (!props.sampleRow) {
-      previewValue.value = '（サンプルなし）'
-      return
-    }
-
-    const mapping = buildCurrentMapping()
-    if (!mapping) {
-      previewValue.value = '（入力なし）'
-      return
-    }
-
-    try {
-      const result = await runTransformMapping(mapping, props.sampleRow)
-      if (result === null || result === undefined) {
-        previewValue.value = '（空）'
-      } else if (typeof result === 'object') {
-        previewValue.value = JSON.stringify(result)
-      } else {
-        previewValue.value = String(result)
-      }
-    } catch (error) {
-      // プレビューエラー / Preview error
-      previewValue.value = `（エラー: ${error instanceof Error ? error.message : '不明なエラー'}）`
-    }
-  },
-  { deep: true, immediate: true }
-)
-
-const addInput = () => {
-  const id = `input-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-  form.inputs.push({
-    id,
-    type: 'column',
-    column: '',
-    pipelineSteps: [],
-  })
-  inputStepFields.value.push([])
-}
-
-const removeInput = (idx: number) => {
-  form.inputs.splice(idx, 1)
-  inputStepFields.value.splice(idx, 1)
-}
-
-const moveInputUp = (idx: number) => {
-  if (idx === 0) return
-  // 入力を入れ替え
-  const temp = form.inputs[idx]
-  const prev = form.inputs[idx - 1]
-  if (temp && prev) {
-    form.inputs[idx] = prev
-    form.inputs[idx - 1] = temp
-    // フィールド設定も入れ替え
-    const tempFields = inputStepFields.value[idx]
-    const prevFields = inputStepFields.value[idx - 1]
-    inputStepFields.value[idx] = prevFields || []
-    inputStepFields.value[idx - 1] = tempFields || []
-  }
-}
-
-const moveInputDown = (idx: number) => {
-  if (idx === form.inputs.length - 1) return
-  // 入力を入れ替え
-  const temp = form.inputs[idx]
-  const next = form.inputs[idx + 1]
-  if (temp && next) {
-    form.inputs[idx] = next
-    form.inputs[idx + 1] = temp
-    // フィールド設定も入れ替え
-    const tempFields = inputStepFields.value[idx]
-    const nextFields = inputStepFields.value[idx + 1]
-    inputStepFields.value[idx] = nextFields || []
-    inputStepFields.value[idx + 1] = tempFields || []
-  }
-}
-
-const addInputStep = (inputIdx: number) => {
-  const input = form.inputs[inputIdx]
-  if (!input) return
-  const id = `step-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-  input.pipelineSteps.push({ id, plugin: '', params: {} })
-  if (!inputStepFields.value[inputIdx]) inputStepFields.value[inputIdx] = []
-  inputStepFields.value[inputIdx].push([])
-}
-
-const removeInputStep = (inputIdx: number, stepIdx: number) => {
-  const input = form.inputs[inputIdx]
-  if (!input) return
-  input.pipelineSteps.splice(stepIdx, 1)
-  if (inputStepFields.value[inputIdx]) {
-    inputStepFields.value[inputIdx].splice(stepIdx, 1)
-  }
-}
-
-const onInputTypeChange = (idx: number) => {
-  const input = form.inputs[idx]
-  if (!input) return
-  if (input.type === 'column') {
-    input.column = ''
-  } else if (input.type === 'literal') {
-    input.value = ''
-  }
-}
-
-const onInputStepPluginChange = (inputIdx: number, stepIdx: number) => {
-  const input = form.inputs[inputIdx]
-  if (!input) return
-  const step = input.pipelineSteps[stepIdx]
-  if (!step) return
-
-  const pluginInfo = transformPlugins.value.find((p) => p.name === step.plugin)
-  if (pluginInfo?.paramsSchema) {
-    if (!inputStepFields.value[inputIdx]) inputStepFields.value[inputIdx] = []
-    let fields = jsonSchemaToFormFields(pluginInfo.paramsSchema)
-
-    // date.parse / date.format / date.addDays のフォーマットフィールド
-    if (step.plugin === 'date.parse' || step.plugin === 'date.format' || step.plugin === 'date.addDays') {
-      fields = fields.map((field) => {
-        // formats / format フィールドをドロップダウンに変更
-        if (field.key === 'formats') {
-          return {
-            ...field,
-            label: '入力日付形式（複数指定可）',
-            type: 'select' as const,
-            options: getDateFormatOptions(step.plugin, field.key),
-          }
-        } else if (field.key === 'format' || field.key === 'dateFormat' || field.key === 'timeFormat') {
-          return {
-            ...field,
-            type: 'select' as const,
-            options: getDateFormatOptions(step.plugin, field.key),
-          }
-        } else if (field.key === 'precision') {
-          // precision ラベルをカスタマイズ
-          return {
-            ...field,
-            label: step.plugin === 'date.parse' ? 'データベース保存精度（日/秒）' : '出力精度（日/秒）',
-          }
-        }
-        return field
-      })
-    }
-
-    // date.format: 出力フォーマット選択（単一ドロップダウン）
-    if (step.plugin === 'date.format') {
-      fields = [
-        {
-          key: 'format',
-          label: '出力フォーマット',
-          type: 'select' as const,
-          options: getDateFormatOptions('date.format', 'format'),
-          default: 'YYYY/MM/DD',
-        } as FormField,
-      ]
-    }
-
-    inputStepFields.value[inputIdx][stepIdx] = fields
-    // 既存のパラメータ値を保持（DB読み込み時）
-    const existingParams = { ...step.params }
-    step.params = {}
-    for (const field of fields) {
-      // DB から読み込んだ値があればそれを使用、なければデフォルト値
-      if (existingParams[field.key] !== undefined) {
-        step.params[field.key] = existingParams[field.key]
-      } else if (field.default !== undefined) {
-        step.params[field.key] = field.default
-      }
-    }
-    // lookup.map: cases を復元
-    if (step.plugin === 'lookup.map') {
-      if (existingParams.cases && typeof existingParams.cases === 'object') {
-        step.params.cases = existingParams.cases
-      } else {
-        step.params.cases = {}
-      }
-    }
-    // lookup.contains: rules を初期化
-    if (step.plugin === 'lookup.contains') {
-      if (Array.isArray(existingParams.rules)) {
-        step.params.rules = existingParams.rules
-      } else {
-        step.params.rules = []
-      }
-    }
-    // string.replace: rules を初期化
-    if (step.plugin === 'string.replace') {
-      if (Array.isArray(existingParams.rules)) {
-        step.params.rules = existingParams.rules
-      } else {
-        step.params.rules = []
-      }
-    }
-    // http.fetchJson: bodyParams を初期化
-    if (step.plugin === 'http.fetchJson' && !step.params.bodyParams) {
-      step.params.bodyParams = []
-    }
-    // date.parse: formats 配列と precision（DB保存精度）を初期化
-    if (step.plugin === 'date.parse') {
-      if (!step.params.formats) {
-        step.params.formats = ['YYYY-MM-DD']
-      }
-      if (!step.params.precision) {
-        step.params.precision = inferDateParsePrecision(step.params.formats)
-      }
-    }
-    // date.format: precision を初期化
-    if (step.plugin === 'date.format' && !step.params.precision) {
-      step.params.precision = 'datetime'
-    }
-    // jp.sliceByWidth: boundary のデフォルトを keepLeft に設定
-    if (step.plugin === 'jp.sliceByWidth' && !step.params.boundary) {
-      step.params.boundary = 'keepLeft'
-    }
-    // string.insertSymbol: positions 配列を初期化
-    if (step.plugin === 'string.insertSymbol') {
-      if (!Array.isArray(step.params.positions)) {
-        step.params.positions = [0]
-      } else {
-        // 全て数値であることを保証、無効値を除外
-        step.params.positions = step.params.positions
-          .map((p: any) => (typeof p === 'number' && p >= 0 ? p : 0))
-          .filter((p: number, idx: number, arr: number[]) => arr.indexOf(p) === idx)
-        if (step.params.positions.length === 0) {
-          step.params.positions = [0]
-        }
-      }
-      if (!step.params.symbol) {
-        step.params.symbol = '-'
-      }
-    }
-  } else {
-    if (!inputStepFields.value[inputIdx]) inputStepFields.value[inputIdx] = []
-    inputStepFields.value[inputIdx][stepIdx] = []
-    // paramsSchema がなくても既存パラメータを保持
-  }
-}
-
-const addOutputStep = () => {
-  const id = `step-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-  form.outputPipelineSteps.push({ id, plugin: '', params: {} })
-  outputStepFields.value.push([])
-}
-
-const removeOutputStep = (stepIdx: number) => {
-  form.outputPipelineSteps.splice(stepIdx, 1)
-  outputStepFields.value.splice(stepIdx, 1)
-}
-
-const onOutputStepPluginChange = (stepIdx: number) => {
-  const step = form.outputPipelineSteps[stepIdx]
-  if (!step) return
-
-  const pluginInfo = transformPlugins.value.find((p) => p.name === step.plugin)
-  if (pluginInfo?.paramsSchema) {
-    let fields = jsonSchemaToFormFields(pluginInfo.paramsSchema)
-
-    // date.parse / date.format / date.addDays のフォーマットフィールド
-    if (step.plugin === 'date.parse' || step.plugin === 'date.format' || step.plugin === 'date.addDays') {
-      fields = fields.map((field) => {
-        // formats / format フィールドをドロップダウンに変更
-        if (field.key === 'formats') {
-          return {
-            ...field,
-            label: '入力日付形式（複数指定可）',
-            type: 'select' as const,
-            options: getDateFormatOptions(step.plugin, field.key),
-          }
-        } else if (field.key === 'format' || field.key === 'dateFormat' || field.key === 'timeFormat') {
-          return {
-            ...field,
-            type: 'select' as const,
-            options: getDateFormatOptions(step.plugin, field.key),
-          }
-        } else if (field.key === 'precision') {
-          // precision ラベルをカスタマイズ
-          return {
-            ...field,
-            label: step.plugin === 'date.parse' ? 'データベース保存精度（日/秒）' : '出力精度（日/秒）',
-          }
-        }
-        return field
-      })
-    }
-
-    // date.format: 出力フォーマット選択（単一ドロップダウン）
-    if (step.plugin === 'date.format') {
-      fields = [
-        {
-          key: 'format',
-          label: '出力フォーマット',
-          type: 'select' as const,
-          options: getDateFormatOptions('date.format', 'format'),
-          default: 'YYYY/MM/DD',
-        } as FormField,
-      ]
-    }
-
-    outputStepFields.value[stepIdx] = fields
-    // 既存のパラメータ値を保持（DB読み込み時）
-    const existingParams = { ...step.params }
-    step.params = {}
-    for (const field of outputStepFields.value[stepIdx]) {
-      // DB から読み込んだ値があればそれを使用、なければデフォルト値
-      if (existingParams[field.key] !== undefined) {
-        step.params[field.key] = existingParams[field.key]
-      } else if (field.default !== undefined) {
-        step.params[field.key] = field.default
-      }
-    }
-    // lookup.map: cases を復元
-    if (step.plugin === 'lookup.map') {
-      if (existingParams.cases && typeof existingParams.cases === 'object') {
-        step.params.cases = existingParams.cases
-      } else {
-        step.params.cases = {}
-      }
-    }
-    // lookup.contains: rules を初期化
-    if (step.plugin === 'lookup.contains') {
-      if (Array.isArray(existingParams.rules)) {
-        step.params.rules = existingParams.rules
-      } else {
-        step.params.rules = []
-      }
-    }
-    // string.replace: rules を初期化
-    if (step.plugin === 'string.replace') {
-      if (Array.isArray(existingParams.rules)) {
-        step.params.rules = existingParams.rules
-      } else {
-        step.params.rules = []
-      }
-    }
-    // http.fetchJson: bodyParams を初期化
-    if (step.plugin === 'http.fetchJson' && !step.params.bodyParams) {
-      step.params.bodyParams = []
-    }
-    // date.parse: formats 配列と precision（DB保存精度）を初期化
-    if (step.plugin === 'date.parse') {
-      if (!step.params.formats) {
-        step.params.formats = ['YYYY-MM-DD']
-      }
-      if (!step.params.precision) {
-        step.params.precision = inferDateParsePrecision(step.params.formats)
-      }
-    }
-    // date.format: precision を初期化
-    if (step.plugin === 'date.format' && !step.params.precision) {
-      step.params.precision = 'datetime'
-    }
-    // date.addDays: days を初期化（デフォルト30）
-    if (step.plugin === 'date.addDays') {
-      if (step.params.days === undefined || step.params.days === null) {
-        step.params.days = 30
-      }
-    }
-    // jp.sliceByWidth: boundary のデフォルトを keepLeft に設定
-    if (step.plugin === 'jp.sliceByWidth' && !step.params.boundary) {
-      step.params.boundary = 'keepLeft'
-    }
-    // string.insertSymbol: positions 配列を初期化
-    if (step.plugin === 'string.insertSymbol') {
-      if (!Array.isArray(step.params.positions)) {
-        step.params.positions = [0]
-      } else {
-        // 全て数値であることを保証、無効値を除外
-        step.params.positions = step.params.positions
-          .map((p: any) => (typeof p === 'number' && p >= 0 ? p : 0))
-          .filter((p: number, idx: number, arr: number[]) => arr.indexOf(p) === idx)
-        if (step.params.positions.length === 0) {
-          step.params.positions = [0]
-        }
-      }
-      if (!step.params.symbol) {
-        step.params.symbol = '-'
-      }
-    }
-  } else {
-    outputStepFields.value[stepIdx] = []
-    // paramsSchema がなくても既存パラメータを保持
-  }
-}
-
-// 日付フォーマット選択肢を取得
-const getDateFormatOptions = (plugin: string, fieldKey: string): Array<{ label: string; value: any }> => {
-  const dateFormats = [
-    { label: 'YYYY-MM-DD (日まで)', value: 'YYYY-MM-DD', precision: 'date' },
-    { label: 'YYYY/MM/DD (日まで)', value: 'YYYY/MM/DD', precision: 'date' },
-    { label: 'MM/DD/YYYY (日まで)', value: 'MM/DD/YYYY', precision: 'date' },
-    { label: 'DD/MM/YYYY (日まで)', value: 'DD/MM/YYYY', precision: 'date' },
-    { label: 'YYYY-MM-DD HH:mm:ss (秒まで)', value: 'YYYY-MM-DD HH:mm:ss', precision: 'datetime' },
-    { label: 'YYYY/MM/DD HH:mm:ss (秒まで)', value: 'YYYY/MM/DD HH:mm:ss', precision: 'datetime' },
-    { label: 'YYYY-MM-DD HH:mm (分まで)', value: 'YYYY-MM-DD HH:mm', precision: 'datetime' },
-    { label: 'YYYY/MM/DD HH:mm (分まで)', value: 'YYYY/MM/DD HH:mm', precision: 'datetime' },
-  ]
-
-  if (plugin === 'date.parse') {
-    if (fieldKey === 'formats') {
-      // formats は配列のため個別処理
-      return dateFormats.map((f) => ({ label: f.label, value: f.value }))
-    }
-  } else if (plugin === 'date.format') {
-    if (fieldKey === 'format' || fieldKey === 'dateFormat') {
-      // 追加のフォーマット選択肢
-      const formatOptions = [
-        ...dateFormats.map((f) => ({ label: f.label, value: f.value })),
-        { label: 'YYYY (年のみ)', value: 'YYYY' },
-        { label: 'MM (月のみ、0埋め)', value: 'MM' },
-        { label: 'M (月のみ)', value: 'M' },
-        { label: 'DD (日のみ、0埋め)', value: 'DD' },
-        { label: 'D (日のみ)', value: 'D' },
-        { label: 'YYYY年MM月DD日 (日本語、0埋め)', value: 'YYYY年MM月DD日' },
-        { label: 'YYYY年M月D日 (日本語)', value: 'YYYY年M月D日' },
-      ]
-      return formatOptions
-    } else if (fieldKey === 'timeFormat') {
-      return [
-        { label: 'HH:mm:ss (秒まで)', value: 'HH:mm:ss' },
-        { label: 'HH:mm (分まで)', value: 'HH:mm' },
-      ]
-    }
-  }
-
-  return []
-}
-
-// lookup.map ヘルパー関数
-const getLookupMapEntries = (params: Record<string, any>): Array<{ id: string; key: string; value: any }> => {
-  if (!params?.cases || typeof params.cases !== 'object') {
-    return []
-  }
-  return Object.entries(params.cases).map(([key, value]) => ({
-    id: `entry-${key}`,
-    key,
-    value
-  }))
-}
-
-const addLookupMapEntry = (params: Record<string, any>) => {
-  if (!params.cases) params.cases = {}
-  // 一意の新規キーを生成
-  let newKey = ''
-  let i = 1
-  while (Object.prototype.hasOwnProperty.call(params.cases, newKey) || newKey === '') {
-    newKey = `新規キー${i++}`
-  }
-  params.cases[newKey] = ''
-}
-
-const removeLookupMapEntry = (params: Record<string, any>, key: string) => {
-  if (params?.cases) {
-    delete params.cases[key]
-  }
-}
-
-const updateLookupMapEntryKey = (params: Record<string, any>, oldKey: string, newKey: string) => {
-  if (!params?.cases || oldKey === newKey) return
-  const value = params.cases[oldKey]
-  delete params.cases[oldKey]
-  params.cases[newKey] = value
-}
-
-const updateLookupMapEntryValue = (params: Record<string, any>, key: string, newValue: any) => {
-  if (params?.cases) {
-    params.cases[key] = newValue
-  }
-}
-
-// lookup.contains rules ヘルパー関数
-const addLookupContainsRule = (params: Record<string, any>) => {
-  if (!params.rules) params.rules = []
-  params.rules.push({ search: '', value: '' })
-}
-
-const removeLookupContainsRule = (params: Record<string, any>, idx: number) => {
-  if (params?.rules) {
-    params.rules.splice(idx, 1)
-  }
-}
-
-// string.replace rules ヘルパー関数
-const addStringReplaceRule = (params: Record<string, any>) => {
-  if (!params.rules) params.rules = []
-  params.rules.push({ search: '', replace: '', count: 0 })
-}
-
-const removeStringReplaceRule = (params: Record<string, any>, idx: number) => {
-  if (params?.rules) {
-    params.rules.splice(idx, 1)
-  }
-}
-
-// http.fetchJson bodyParams ヘルパー関数
-const addBodyParam = (params: Record<string, any>) => {
-  if (!params.bodyParams) {
-    params.bodyParams = []
-  }
-  params.bodyParams.push({
-    key: '',
-    value: '',
-    source: 'literal',
-    column: undefined,
-  })
-}
-
-const removeBodyParam = (params: Record<string, any>, idx: number) => {
-  if (params.bodyParams) {
-    params.bodyParams.splice(idx, 1)
-  }
-}
-
-const onBodyParamSourceChange = (param: any) => {
-  if (param.source === 'column') {
-    param.value = undefined
-  } else {
-    param.column = undefined
-  }
-}
-
-// string.insertSymbol positions ヘルパー関数
-const addInsertSymbolPosition = (params: Record<string, any>) => {
-  if (!Array.isArray(params.positions)) {
-    params.positions = []
-  }
-  params.positions.push(0)
-}
-
-const removeInsertSymbolPosition = (params: Record<string, any>, idx: number) => {
-  if (Array.isArray(params.positions)) {
-    params.positions.splice(idx, 1)
-    // 配列が空になった場合、最低1つは保持
-    if (params.positions.length === 0) {
-      params.positions.push(0)
-    }
-  }
-}
-
-const inferDateParsePrecision = (formats: any): 'date' | 'datetime' => {
-  const list = Array.isArray(formats) ? formats : []
-  // 入力フォーマットに時刻が含まれる場合は秒精度、そうでなければ日精度
-  const hasTime = list.some((f) => typeof f === 'string' && (f.includes('HH') || f.includes(':')))
-  return hasTime ? 'datetime' : 'date'
-}
-
-const onDateParseFormatsChanged = (step: any) => {
-  if (!step || step.plugin !== 'date.parse') return
-  const inferred = inferDateParsePrecision(step.params?.formats)
-  step.params = step.params || {}
-  step.params.precision = inferred
-}
-
-// date.parse formats ヘルパー関数
-const addDateFormat = (params: Record<string, any>) => {
-  if (!params.formats) {
-    params.formats = []
-  }
-  params.formats.push('YYYY-MM-DD')
-  // 新規フォーマット追加後にデフォルト精度を同期
-  if (!params.precision) {
-    params.precision = inferDateParsePrecision(params.formats)
-  }
-}
-
-
+// 送信ハンドラ / 提交处理
 const handleSubmit = () => {
-  if (!props.target) return
-
-  // lookup.map ステップの一時データを除去（_ 始まりのフィールド）
-  const cleanupLookupMapParams = (params: Record<string, any>) => {
-    for (const key of Object.keys(params)) {
-      if (key.startsWith('_')) {
-        delete params[key]
-      }
-    }
+  const resultMapping = buildSubmitMapping()
+  if (resultMapping) {
+    emits('submit', resultMapping)
   }
-
-  const inputs: InputSource[] = form.inputs.map((inp, inpIdx): InputSource | null => {
-    const steps: TransformStep[] = inp.pipelineSteps
-      .filter((s) => s.plugin)
-      .map((s, stepIdx) => {
-        const params = buildParamsFromForm(
-          inputStepFields.value[inpIdx]?.[stepIdx] || [],
-          s.params,
-        )
-        // 一時データの最終除去
-        if (s.plugin === 'lookup.map') {
-          cleanupLookupMapParams(params)
-        }
-        return {
-          id: s.id,
-          plugin: s.plugin,
-          params,
-          enabled: true,
-        }
-      })
-
-    const pipeline: TransformPipeline = { steps }
-
-    if (inp.type === 'column') {
-      return {
-        id: inp.id,
-        type: 'column' as const,
-        column: inp.column || '',
-        pipeline,
-      }
-    } else if (inp.type === 'literal') {
-      return {
-        id: inp.id,
-        type: 'literal' as const,
-        value: inp.value,
-        pipeline,
-      }
-    }
-    return null
-  })
-  .filter((inp): inp is InputSource => inp !== null)
-
-  const outputSteps: TransformStep[] = form.outputPipelineSteps
-    .filter((s) => s.plugin)
-    .map((s, stepIdx) => {
-      const params = buildParamsFromForm(outputStepFields.value[stepIdx] || [], s.params)
-      // 一時データの最終除去
-      if (s.plugin === 'lookup.map') {
-        cleanupLookupMapParams(params)
-      }
-      return {
-        id: s.id,
-        plugin: s.plugin,
-        params,
-        enabled: true,
-      }
-    })
-
-  // 複数入力の場合は concat、単一入力の場合は first
-  const combinePlugin = inputs.length > 1 ? 'combine.concat' : 'combine.first'
-
-  // 最終クリーンアップ：全 lookup.map ステップの一時データを除去
-  const finalCleanup = (steps: TransformStep[]) => {
-    steps.forEach((step) => {
-      if (step.plugin === 'lookup.map' && step.params) {
-        cleanupLookupMapParams(step.params)
-      }
-    })
-  }
-  finalCleanup(inputs.flatMap((inp) => inp.pipeline?.steps || []))
-  finalCleanup(outputSteps)
-
-  const mapping: TransformMapping = {
-    targetField: props.target.field,
-    inputs,
-    combine: {
-      plugin: combinePlugin,
-      params: {},
-    },
-    outputPipeline: outputSteps.length > 0 ? { steps: outputSteps } : undefined,
-    required: props.target?.required ?? false,
-    defaultValue: form.defaultValue || undefined,
-  }
-
-  emits('submit', mapping)
 }
 </script>
 

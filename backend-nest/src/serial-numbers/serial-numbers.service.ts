@@ -19,11 +19,12 @@ export class SerialNumbersService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   // シリアル番号一覧取得（プレースホルダー）/ 获取序列号列表（占位符）
+  // TODO: [stub] stockQuantsテーブルからシリアル番号データ取得を実装 / 实现从stockQuants表获取序列号数据
   async findAll(tenantId: string, query: FindAllQuery) {
     const page = Math.max(1, query.page || 1);
     const limit = Math.min(200, Math.max(1, query.limit || 20));
 
-    // プレースホルダー: 将来 stockQuants から取得 / 占位符: 将来从 stockQuants 获取
+    // TODO: [stub] プレースホルダー: stockQuants から取得 / 占位符: 从 stockQuants 获取
     return createPaginatedResult([], 0, page, limit);
   }
 

@@ -228,11 +228,16 @@ export class ClientPortalService {
     const limit = Math.min(200, Math.max(1, query.limit || 20));
     const offset = (page - 1) * limit;
 
-    // stockQuantsはclientIdを直接持たないため、テナント全体の在庫を返す
-    // stockQuants没有直接的clientId字段，因此返回租户全体库存
-    // NOTE: クライアント別フィルタは商品マスタとの結合が必要（将来実装）
-    // 注意: 按客户筛选需要与商品主数据连接（将来实现）
-    const whereClause = eq(stockQuants.tenantId, tenantId);
+    // stockQuantsをclientId（商品マスタ経由）でフィルタ / 通过商品主数据按clientId筛选stockQuants
+    // productsテーブルのclientIdと結合してフィルタリング / 与products表的clientId连接筛选
+    const conditions = [eq(stockQuants.tenantId, tenantId)];
+    if (clientId) {
+      // stockQuants → products 結合でクライアント別フィルタ / 通过stockQuants → products连接按客户筛选
+      conditions.push(
+        sql`${stockQuants.productId} IN (SELECT id FROM products WHERE tenant_id = ${tenantId} AND client_id = ${clientId})`,
+      );
+    }
+    const whereClause = and(...conditions);
 
     const [countResult, items] = await Promise.all([
       this.db.select({ value: count() }).from(stockQuants).where(whereClause),

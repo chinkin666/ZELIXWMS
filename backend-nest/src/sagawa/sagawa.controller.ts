@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Body } from '@nestjs/common';
 import { SagawaService } from './sagawa.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/sagawa')
+@RequireRole('admin', 'manager', 'operator')
 export class SagawaController {
   constructor(private readonly sagawaService: SagawaService) {}
 

@@ -2,8 +2,10 @@
 import { Controller, Get, Post, Put, Body } from '@nestjs/common';
 import { SeinoService } from './seino.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
+import { RequireRole } from '../common/decorators/require-role.decorator.js';
 
 @Controller('api/seino')
+@RequireRole('admin', 'manager', 'operator')
 export class SeinoController {
   constructor(private readonly seinoService: SeinoService) {}
 

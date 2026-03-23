@@ -4,6 +4,7 @@ import { CountryCodesService } from './country-codes.service.js';
 import { Public } from '../common/decorators/public.decorator.js';
 
 @Controller('api/country-codes')
+@Public()
 export class CountryCodesController {
   constructor(private readonly countryCodesService: CountryCodesService) {}
 

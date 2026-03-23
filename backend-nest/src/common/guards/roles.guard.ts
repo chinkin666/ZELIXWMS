@@ -14,8 +14,11 @@ export class RolesGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    // ロール指定なしの場合はアクセス許可 / 未指定角色时允许访问
-    if (!requiredRoles || requiredRoles.length === 0) return true;
+    // ロール指定なしの場合はデフォルト拒否（@Public 以外は @RequireRole 必須）
+    // 未指定角色时默认拒绝（除@Public外必须使用@RequireRole）
+    if (!requiredRoles || requiredRoles.length === 0) {
+      throw new ForbiddenException('No role configured for this endpoint / このエンドポイントにロールが設定されていません / 此端点未配置角色');
+    }
 
     // リクエストからユーザー情報を取得（AuthGuardで設定済み）/ 从请求获取用户信息（由AuthGuard设置）
     const { user } = context.switchToHttp().getRequest();
