@@ -8,7 +8,7 @@
 
     <!-- Filter bar -->
     <div class="search-section">
-      <input
+      <Input
         v-model="searchText"
         type="text"
        
@@ -69,14 +69,10 @@
           <TableRow v-for="w in waves" :key="w._id">
             <TableCell>{{ w.waveNumber }}</TableCell>
             <TableCell>
-              <span :class="['o-status-tag', statusTagClass(w.status)]">
-                {{ waveStatusLabel(w.status) }}
-              </span>
+              <Badge variant="secondary" :class="statusTagClass(w.status)">{{ waveStatusLabel(w.status) }}</Badge>
             </TableCell>
             <TableCell>
-              <span :class="['o-status-tag', priorityTagClass(w.priority)]">
-                {{ wavePriorityLabel(w.priority) }}
-              </span>
+              <Badge variant="secondary" :class="priorityTagClass(w.priority)">{{ wavePriorityLabel(w.priority) }}</Badge>
             </TableCell>
             <TableCell style="text-align: center">{{ w.shipmentIds?.length ?? 0 }}</TableCell>
             <TableCell style="text-align: center">{{ w.totalItems ?? '-' }}</TableCell>
@@ -124,11 +120,11 @@
       <div class="form-grid">
         <div class="form-field">
           <label>{{ t('wms.warehouse.waveNumber', 'ウェーブ番号') }} <span class="text-destructive text-xs">*</span></label>
-          <input v-model="form.waveNumber" type="text" />
+          <Input v-model="form.waveNumber" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.warehouseId', '倉庫ID') }} <span class="text-destructive text-xs">*</span></label>
-          <input v-model="form.warehouseId" type="text" />
+          <Input v-model="form.warehouseId" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.priority', '優先度') }}</label>
@@ -141,11 +137,11 @@
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.assigneeId', '担当者ID') }}</label>
-          <input v-model="form.assignedTo" type="text" />
+          <Input v-model="form.assignedTo" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.assigneeName', '担当者名') }}</label>
-          <input v-model="form.assignedName" type="text" />
+          <Input v-model="form.assignedName" type="text" />
         </div>
         <div class="form-field form-field--full">
           <label>{{ t('wms.warehouse.remarks', '備考') }}</label>

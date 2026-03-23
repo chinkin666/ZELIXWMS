@@ -5,9 +5,9 @@
     <!-- 日付範囲選択 / 日期范围选择 -->
     <div class="stats-filter-bar">
       <label class="stats-label">期間:</label>
-      <input v-model="dateFrom" type="date" class="h-8 text-sm" />
+      <Input v-model="dateFrom" type="date" class="h-8 text-sm" />
       <span class="stats-separator">〜</span>
-      <input v-model="dateTo" type="date" class="h-8 text-sm" />
+      <Input v-model="dateTo" type="date" class="h-8 text-sm" />
       <Button variant="default" size="sm" @click="loadStats">集計</Button>
       <div class="stats-presets">
         <Button class="stats-preset-btn" @click="setRange(7)">7日</Button>

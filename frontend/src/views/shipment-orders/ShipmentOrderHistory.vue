@@ -2,7 +2,7 @@
   <div class="shipment-order-history">
     <PageHeader :title="t('wms.shipmentOrder.historyTitle', '出荷実績一覧')" :show-search="false" />
 
-      class="search-section"
+      class="flex flex-wrap items-end gap-3 py-3"
       :columns="searchColumns"
       :initial-values="searchInitialValues"
       storage-key="shipment_order_history"

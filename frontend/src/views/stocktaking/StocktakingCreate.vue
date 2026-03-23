@@ -26,7 +26,7 @@
 
       <div class="form-row">
         <label>{{ t('wms.stocktaking.scheduledDate', '予定日') }}</label>
-        <input v-model="form.scheduledDate" type="date" style="width:200px;" />
+        <Input v-model="form.scheduledDate" type="date" style="width:200px;" />
       </div>
 
       <div class="form-row">

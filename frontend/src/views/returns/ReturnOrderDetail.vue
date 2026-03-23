@@ -21,7 +21,7 @@
 
     <template v-else-if="order">
       <div class="info-bar">
-        <span><strong>{{ t('wms.returns.statusLabel', '状態') }}:</strong> <span class="o-status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span></span>
+        <span><strong>{{ t('wms.returns.statusLabel', '状態') }}:</strong> <Badge variant="secondary">{{ statusLabel(order.status) }}</Badge></span>
         <span><strong>{{ t('wms.returns.reasonLabel', '理由') }}:</strong> {{ reasonLabel(order.returnReason) }}</span>
         <span v-if="order.customerName"><strong>{{ t('wms.returns.customerLabel', '顧客') }}:</strong> {{ order.customerName }}</span>
         <span v-if="order.shipmentOrderNumber"><strong>{{ t('wms.returns.originalShipment', '元出荷') }}:</strong> {{ order.shipmentOrderNumber }}</span>
@@ -55,7 +55,7 @@
               <TableCell>{{ line.productName || '-' }}</TableCell>
               <TableCell class="text-right">{{ line.quantity }}</TableCell>
               <TableCell class="text-right">
-                <input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.inspectedQuantity" type="number" min="0" class="h-8 text-sm" :class="{ 'input-error': lineErrors[idx]?.includes('inspected') }" style="width:60px;text-align:right;" />
+                <Input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.inspectedQuantity" type="number" min="0" class="h-8 text-sm" :class="{ 'input-error': lineErrors[idx]?.includes('inspected') }" style="width:60px;text-align:right;" />
                 <span v-else>{{ line.inspectedQuantity }}</span>
               </TableCell>
               <TableCell>
@@ -68,11 +68,11 @@
                 <span v-else :class="`disp-${line.disposition}`">{{ dispLabel(line.disposition) }}</span>
               </TableCell>
               <TableCell class="text-right">
-                <input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.restockedQuantity" type="number" min="0" class="h-8 text-sm" style="width:60px;text-align:right;" />
+                <Input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.restockedQuantity" type="number" min="0" class="h-8 text-sm" style="width:60px;text-align:right;" />
                 <span v-else>{{ line.restockedQuantity }}</span>
               </TableCell>
               <TableCell class="text-right">
-                <input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.disposedQuantity" type="number" min="0" class="h-8 text-sm" style="width:60px;text-align:right;" />
+                <Input v-if="order?.status === 'inspecting'" v-model.number="inspInputs[idx]!.disposedQuantity" type="number" min="0" class="h-8 text-sm" style="width:60px;text-align:right;" />
                 <span v-else>{{ line.disposedQuantity }}</span>
               </TableCell>
               <TableCell v-if="hasRestockLine">

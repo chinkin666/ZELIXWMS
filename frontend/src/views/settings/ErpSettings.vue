@@ -12,13 +12,9 @@
     <Card class="status-card">
       <CardHeader class="status-header">
         <CardTitle>接続ステータス / 连接状态</CardTitle>
-        <span
-          :class="status.connected
-            ? 'o-status-tag o-status-tag--confirmed'
-            : 'o-status-tag o-status-tag--cancelled'"
-        >
+        <Badge variant="default">
           {{ status.connected ? '接続済み / 已连接' : '未接続 / 未连接' }}
-        </span>
+        </Badge>
       </CardHeader>
       <div v-if="status.erpType" class="status-detail">
         ERP タイプ / ERP 类型: {{ status.erpType }}
@@ -60,7 +56,7 @@
         <div class="form-field form-field--full">
           <Label>API キー / API 密钥 <span class="text-destructive">*</span></Label>
           <div class="secret-field">
-            <input
+            <Input
               v-model="config.apiKey"
               :type="showApiKey ? 'text' : 'password'"
              
@@ -78,7 +74,7 @@
         <div class="form-field">
           <Label>パスワード / 密码</Label>
           <div class="secret-field">
-            <input
+            <Input
               v-model="config.password"
               :type="showPassword ? 'text' : 'password'"
              

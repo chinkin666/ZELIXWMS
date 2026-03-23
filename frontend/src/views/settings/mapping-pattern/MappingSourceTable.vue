@@ -23,7 +23,7 @@
             style="cursor: pointer"
           >
             <TableCell>
-              <input
+              <Input
                 type="checkbox"
                 :checked="isSelected(row)"
                 style="margin-right: 8px; pointer-events: none"

@@ -31,11 +31,11 @@
       <div class="dialog-form">
         <div class="form-field">
           <label>{{ t('wms.setProduct.sku', '品番') }} <span class="req">{{ t('wms.setProduct.required', '必須') }}</span></label>
-          <input v-model="form.sku" type="text" :placeholder="t('wms.setProduct.setSkuPlaceholder', 'セット組品番')" />
+          <Input v-model="form.sku" type="text" :placeholder="t('wms.setProduct.setSkuPlaceholder', 'セット組品番')" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.setProduct.name', '名称') }} <span class="req">{{ t('wms.setProduct.required', '必須') }}</span></label>
-          <input v-model="form.name" type="text" :placeholder="t('wms.setProduct.setNamePlaceholder', 'セット組名称')" />
+          <Input v-model="form.name" type="text" :placeholder="t('wms.setProduct.setNamePlaceholder', 'セット組名称')" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.setProduct.memo', 'メモ') }}</label>
@@ -67,7 +67,7 @@
                   </select>
                 </td>
                 <td>
-                  <input
+                  <Input
                    
                     type="number"
                     :value="comp.quantity"

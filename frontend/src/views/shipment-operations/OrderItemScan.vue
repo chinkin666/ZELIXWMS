@@ -34,7 +34,7 @@
 
     <!-- 中间输入区域 -->
     <div class="input-section" :class="{ 'scan-success-flash': lastScanSuccess }">
-      <input
+      <Input
         class="main-input"
         v-model="inputValue"
         :placeholder="t('wms.inspection.scanOrEnter', 'スキャンまたは入力してください')"

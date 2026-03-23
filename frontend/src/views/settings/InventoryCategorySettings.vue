@@ -40,7 +40,7 @@
       <div class="form-group">
         <label>色ラベル</label>
         <div class="color-input-row">
-          <input
+          <Input
             v-model="formData.colorLabel"
             type="color"
             class="form-color"

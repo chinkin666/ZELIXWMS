@@ -189,7 +189,7 @@
               </Table>
             </div>
 
-          <div class="form-actions">
+          <div class="flex justify-end gap-2 pt-4">
             <Button variant="secondary" @click="testConnection" :disabled="testing || !canTest">
               {{ testing ? 'テスト中...' : '接続テスト' }}
             </Button>

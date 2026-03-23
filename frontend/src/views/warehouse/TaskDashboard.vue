@@ -176,11 +176,11 @@
           </div>
           <div class="form-field">
             <label>{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
-            <input v-model="createForm.warehouseId" type="text" />
+            <Input v-model="createForm.warehouseId" type="text" />
           </div>
           <div class="form-field">
             <label>{{ t('wms.warehouse.quantity', '数量') }}</label>
-            <input v-model.number="createForm.quantity" type="number" min="0" />
+            <Input v-model.number="createForm.quantity" type="number" min="0" />
           </div>
           <div class="form-field form-field--full">
             <label>{{ t('wms.warehouse.memo', '備考') }}</label>
@@ -201,11 +201,11 @@
         <div class="form-grid">
           <div class="form-field form-field--full">
             <label>{{ t('wms.warehouse.assigneeId', '担当者ID') }} <span class="text-destructive text-xs">*</span></label>
-            <input v-model="assignForm.assignedTo" type="text" />
+            <Input v-model="assignForm.assignedTo" type="text" />
           </div>
           <div class="form-field form-field--full">
             <label>{{ t('wms.warehouse.assigneeName', '担当者名') }}</label>
-            <input v-model="assignForm.assignedName" type="text" />
+            <Input v-model="assignForm.assignedName" type="text" />
           </div>
         </div>
         <DialogFooter>
@@ -222,11 +222,11 @@
         <div class="form-grid">
           <div class="form-field form-field--full">
             <label>{{ t('wms.warehouse.completedQuantity', '完了数量') }} <span class="text-destructive text-xs">*</span></label>
-            <input v-model.number="completeForm.completedQuantity" type="number" min="0" />
+            <Input v-model.number="completeForm.completedQuantity" type="number" min="0" />
           </div>
           <div class="form-field form-field--full">
             <label>{{ t('wms.warehouse.executor', '実行者') }}</label>
-            <input v-model="completeForm.executedBy" type="text" />
+            <Input v-model="completeForm.executedBy" type="text" />
           </div>
         </div>
         <DialogFooter>

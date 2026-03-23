@@ -77,7 +77,7 @@
             <span class="control-hint">{{ t('wms.peakMode.peakModeHint', '繁忙期の特別運用モードを有効にします') }}</span>
           </div>
           <label class="o-toggle">
-            <input
+            <Input
               type="checkbox"
               :checked="status.enabled"
               @change="togglePeakMode(($event.target as HTMLInputElement).checked)"
@@ -92,7 +92,7 @@
             <span class="control-hint">{{ t('wms.peakMode.inboundFreezeHint', '新規入庫受付を一時停止します') }}</span>
           </div>
           <label class="o-toggle">
-            <input
+            <Input
               type="checkbox"
               :checked="status.inboundFrozen"
               @change="toggleInboundFreeze(($event.target as HTMLInputElement).checked)"

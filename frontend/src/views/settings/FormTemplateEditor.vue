@@ -184,7 +184,7 @@
                     <div class="o-form-group">
                       <label>{{ t('wms.formEditor.headerRows', 'ヘッダー行数') }}</label>
                       <div style="display: flex; align-items: center; gap: 8px">
-                        <input type="number" :value="item.table?.tableStyle?.headerRows ?? 0" min="0" :max="item.table?.body?.length ?? 0" style="width: 80px" @input="setTableStyle(item, 'headerRows', parseInt(($event.target as HTMLInputElement).value))" />
+                        <Input type="number" :value="item.table?.tableStyle?.headerRows ?? 0" min="0" :max="item.table?.body?.length ?? 0" style="width: 80px" @input="setTableStyle(item, 'headerRows', parseInt(($event.target as HTMLInputElement).value))" />
                         <span class="hint">{{ t('wms.formEditor.headerRowsHint', '0の場合はヘッダーなし') }}</span>
                       </div>
                     </div>
@@ -216,7 +216,7 @@
                     <div class="o-form-group">
                       <label>{{ t('wms.formEditor.cellPadding', 'セル内余白') }}</label>
                       <div style="display: flex; align-items: center; gap: 8px">
-                        <input type="number" :value="item.table?.tableStyle?.cellPadding ?? 4" min="0" max="20" style="width: 80px" @input="setTableStyle(item, 'cellPadding', parseInt(($event.target as HTMLInputElement).value))" />
+                        <Input type="number" :value="item.table?.tableStyle?.cellPadding ?? 4" min="0" max="20" style="width: 80px" @input="setTableStyle(item, 'cellPadding', parseInt(($event.target as HTMLInputElement).value))" />
                         <span class="unit">pt</span>
                       </div>
                     </div>
@@ -424,9 +424,9 @@
                         <div class="o-form-group">
                           <label>{{ t('wms.formEditor.size', 'サイズ') }}</label>
                           <div class="barcode-size-inputs">
-                            <input type="number" :value="col.barcodeConfig?.width || (col.renderType === 'barcode' ? 120 : 60)" min="20" max="200" style="width: 80px" @input="setBarcodeSize(col, 'width', parseInt(($event.target as HTMLInputElement).value))" />
+                            <Input type="number" :value="col.barcodeConfig?.width || (col.renderType === 'barcode' ? 120 : 60)" min="20" max="200" style="width: 80px" @input="setBarcodeSize(col, 'width', parseInt(($event.target as HTMLInputElement).value))" />
                             <span class="size-separator">x</span>
-                            <input type="number" :value="col.barcodeConfig?.height || (col.renderType === 'barcode' ? 40 : 60)" min="20" max="200" style="width: 80px" @input="setBarcodeSize(col, 'height', parseInt(($event.target as HTMLInputElement).value))" />
+                            <Input type="number" :value="col.barcodeConfig?.height || (col.renderType === 'barcode' ? 40 : 60)" min="20" max="200" style="width: 80px" @input="setBarcodeSize(col, 'height', parseInt(($event.target as HTMLInputElement).value))" />
                             <span class="unit">px</span>
                           </div>
                         </div>
@@ -551,9 +551,9 @@
                             <div class="o-form-group">
                               <label>{{ t('wms.formEditor.size', 'サイズ') }}</label>
                               <div class="barcode-size-inputs small">
-                                <input type="number" :value="child.barcodeConfig?.width || (child.renderType === 'barcode' ? 120 : 60)" min="20" max="400" style="width: 80px" @input="setChildBarcodeSize(child, 'width', parseInt(($event.target as HTMLInputElement).value))" />
+                                <Input type="number" :value="child.barcodeConfig?.width || (child.renderType === 'barcode' ? 120 : 60)" min="20" max="400" style="width: 80px" @input="setChildBarcodeSize(child, 'width', parseInt(($event.target as HTMLInputElement).value))" />
                                 <span class="size-separator">x</span>
-                                <input type="number" :value="child.barcodeConfig?.height || (child.renderType === 'barcode' ? 40 : 60)" min="20" max="400" style="width: 80px" @input="setChildBarcodeSize(child, 'height', parseInt(($event.target as HTMLInputElement).value))" />
+                                <Input type="number" :value="child.barcodeConfig?.height || (child.renderType === 'barcode' ? 40 : 60)" min="20" max="400" style="width: 80px" @input="setChildBarcodeSize(child, 'height', parseInt(($event.target as HTMLInputElement).value))" />
                                 <span class="unit">px</span>
                               </div>
                             </div>

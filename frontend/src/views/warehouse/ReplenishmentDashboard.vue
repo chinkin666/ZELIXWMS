@@ -49,7 +49,7 @@
       </div>
       <div class="filter-group">
         <label class="filter-label">{{ t('wms.warehouse.skuFilter', '商品SKU') }}</label>
-        <input
+        <Input
           v-model="filterSku"
           type="text"
           class="filter-input"
@@ -129,7 +129,7 @@
           </p>
           <div class="dialog-field">
             <label>{{ t('wms.warehouse.actualQuantity', '実際の補充数量') }}</label>
-            <input
+            <Input
               v-model.number="completeQuantity"
               type="number"
               min="0"

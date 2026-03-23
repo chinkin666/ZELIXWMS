@@ -224,7 +224,7 @@
         <DialogHeader><DialogTitle>{{ t('wms.inspection.adjustQuantity', '検品数を調整') }}</DialogTitle></DialogHeader>
       <div v-if="adjustTarget" class="adjust-dialog-content">
         <p>{{ adjustTarget.name }}</p>
-        <input
+        <Input
           ref="adjustInputRef"
           v-model.number="adjustValue"
           type="number"

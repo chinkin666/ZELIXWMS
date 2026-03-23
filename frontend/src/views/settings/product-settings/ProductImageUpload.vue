@@ -20,7 +20,7 @@
         </div>
         <!-- URL input mode -->
         <div v-else class="image-input-row">
-          <input
+          <Input
             :value="imageUrl"
             @input="$emit('update:imageUrl', ($event.target as HTMLInputElement).value)"
             type="text"

@@ -84,7 +84,7 @@
                 </select>
               </TableCell>
               <TableCell class="p-2">
-                <input
+                <Input
                   type="number"
                   :value="getParams(row._id).margin_mm ?? 6"
                   min="0"
@@ -94,7 +94,7 @@
                 />
               </TableCell>
               <TableCell class="p-2">
-                <input
+                <Input
                   type="number"
                   :value="getParams(row._id).copies ?? 1"
                   min="1"

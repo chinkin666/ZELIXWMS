@@ -143,7 +143,7 @@ onMounted(loadOrder)
               <label class="inline-flex items-center gap-1 text-sm"><input type="radio" v-model="inspectionMode" value="sampling" /> 抜取検品 / 抽检</label>
             </div>
             <div v-if="inspectionMode === 'sampling'" style="margin-top: 8px">
-              抜取率 / 抽检比例: <input v-model.number="samplingRate" type="number" min="0.01" max="1" step="0.05" class="inline-flex h-8 w-20 rounded-md border border-input bg-transparent px-2 py-1 text-sm" /> ({{ Math.round(samplingRate * 100) }}%)
+              抜取率 / 抽检比例: <Input v-model.number="samplingRate" type="number" min="0.01" max="1" step="0.05" class="inline-flex h-8 w-20 rounded-md border border-input bg-transparent px-2 py-1 text-sm" /> ({{ Math.round(samplingRate * 100) }}%)
             </div>
           </div>
         </div>
@@ -182,15 +182,15 @@ onMounted(loadOrder)
             <div class="grid grid-cols-3 gap-4">
               <div>
                 <div style="color: #909399; font-size: 12px">検品数量</div>
-                <input v-model.number="inspectedQuantity" type="number" min="0" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                <Input v-model.number="inspectedQuantity" type="number" min="0" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
               </div>
               <div>
                 <div style="color: #909399; font-size: 12px">合格数量</div>
-                <input v-model.number="passedQuantity" type="number" min="0" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                <Input v-model.number="passedQuantity" type="number" min="0" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
               </div>
               <div>
                 <div style="color: #909399; font-size: 12px">不合格数量</div>
-                <input v-model.number="failedQuantity" type="number" min="0" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+                <Input v-model.number="failedQuantity" type="number" min="0" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
               </div>
             </div>
           </div>
@@ -213,10 +213,10 @@ onMounted(loadOrder)
                   </select>
                 </div>
                 <div class="col-span-2">
-                  <input v-model.number="exc.quantity" type="number" min="0" class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm" />
+                  <Input v-model.number="exc.quantity" type="number" min="0" class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm" />
                 </div>
                 <div class="col-span-5">
-                  <input v-model="exc.description" placeholder="説明 / 描述" class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm" />
+                  <Input v-model="exc.description" placeholder="説明 / 描述" class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm" />
                 </div>
                 <div class="col-span-1">
                   <Button class="text-sm text-destructive hover:underline" @click="removeException(idx)">X</Button>

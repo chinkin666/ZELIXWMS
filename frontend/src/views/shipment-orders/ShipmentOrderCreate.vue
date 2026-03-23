@@ -6,7 +6,7 @@
       :show-search="false"
     >
       <template #center>
-        <input
+        <Input
           class="o-cp-search-input"
           v-model="globalSearchText"
           :placeholder="t('wms.common.search', '検索') + '...'"
@@ -173,16 +173,16 @@
               </TableCell>
               <TableCell>
                 <div class="status-cell">
-                  <span v-if="displayFilter === 'pending_waybill'" class="o-status-tag o-status-tag--processing">{{ t('wms.shipmentOrder.pendingWaybill', '送り状未発行') }}</span>
-                  <span v-else-if="b2ValidationErrors.has(String(row._id || row.id))" class="o-status-tag o-status-tag--error" :title="getB2Errors(row).join('\n')">{{ t('wms.shipmentOrder.error', 'エラー') }}</span>
-                  <span v-else-if="displayFilter === 'pending_confirm' && hasRowErrors(row)" class="o-status-tag o-status-tag--error">{{ t('wms.shipmentOrder.error', 'エラー') }}</span>
-                  <span v-else-if="isHeld(row.id)" class="o-status-tag o-status-tag--held">{{ t('wms.shipmentOrder.held', '保留') }}</span>
-                  <span v-else-if="displayFilter === 'processing' && isAutoValidating" class="o-status-tag o-status-tag--validating">{{ t('wms.shipmentOrder.validating', '検証中...') }}</span>
-                  <span v-if="isBundleable(row)" class="o-status-tag o-status-tag--bundleable">{{ t('wms.shipmentOrder.bundleable', '同捆可能') }}</span>
-                  <span v-if="hasDeliverySpec(row)" class="o-status-tag o-status-tag--delivery">{{ t('wms.shipmentOrder.deliverySpec', '配送指定') }}</span>
-                  <span v-if="isOkinawa(row)" class="o-status-tag o-status-tag--okinawa">{{ t('wms.shipmentOrder.okinawaDelivery', '沖縄配送') }}</span>
-                  <span v-if="isRemoteIsland(row)" class="o-status-tag o-status-tag--remote">{{ t('wms.shipmentOrder.remoteIslandDelivery', '離島配送') }}</span>
-                  <span v-if="isDuplicate(row.id)" class="o-status-tag o-status-tag--duplicate" :title="isDuplicateBackend(row.id) ? t('wms.shipmentOrder.duplicateExisting', '既存注文と重複') : t('wms.shipmentOrder.duplicateInput', '入力データ内で重複')">{{ t('wms.shipmentOrder.duplicate', '重複') }}</span>
+                  <Badge v-if="displayFilter === 'pending_waybill'" variant="secondary" >{{ t('wms.shipmentOrder.pendingWaybill', '送り状未発行') }}</Badge>
+                  <Badge v-else-if="b2ValidationErrors.has(String(row._id || row.id))" variant="secondary"  :title="getB2Errors(row).join('\n')">{{ t('wms.shipmentOrder.error', 'エラー') }}</Badge>
+                  <Badge v-else-if="displayFilter === 'pending_confirm' && hasRowErrors(row)" variant="secondary" >{{ t('wms.shipmentOrder.error', 'エラー') }}</Badge>
+                  <Badge v-else-if="row.statusHeld" class="bg-yellow-100 text-yellow-800">{{ t('wms.shipmentOrder.held', '保留') }}</Badge>
+                  <Badge v-else-if="displayFilter === 'processing' && isAutoValidating" variant="secondary" >{{ t('wms.shipmentOrder.validating', '検証中...') }}</Badge>
+                  <Badge v-if="isBundleable(row)" variant="secondary" >{{ t('wms.shipmentOrder.bundleable', '同捆可能') }}</Badge>
+                  <Badge v-if="hasDeliverySpec(row)" variant="secondary" >{{ t('wms.shipmentOrder.deliverySpec', '配送指定') }}</Badge>
+                  <Badge v-if="isOkinawa(row)" variant="secondary" >{{ t('wms.shipmentOrder.okinawaDelivery', '沖縄配送') }}</Badge>
+                  <Badge v-if="isRemoteIsland(row)" variant="secondary" >{{ t('wms.shipmentOrder.remoteIslandDelivery', '離島配送') }}</Badge>
+                  <Badge v-if="isDuplicate(row.id)" variant="secondary"  :title="isDuplicateBackend(row.id) ? t('wms.shipmentOrder.duplicateExisting', '既存注文と重複') : t('wms.shipmentOrder.duplicateInput', '入力データ内で重複')">{{ t('wms.shipmentOrder.duplicate', '重複') }}</Badge>
                 </div>
               </TableCell>
               <!-- 出荷管理番号（3行表示） -->
@@ -379,7 +379,7 @@
         </div>
         <div class="column-settings__list">
           <label v-for="col in displayColumns" :key="col.key" class="column-settings__item">
-            <input
+            <Input
               type="checkbox"
               :checked="isColumnVisible(String(col.dataKey || col.key))"
               @change="toggleColumn(String(col.dataKey || col.key))"
@@ -477,7 +477,7 @@
     >
       <div class="bulk-dialog__field">
         <label class="bulk-dialog__label">{{ t('wms.shipmentOrder.shipPlanDate', '出荷予定日') }}</label>
-        <input type="date" class="bulk-dialog__input" v-model="shipPlanDateSelected" :min="todayDate" />
+        <Input type="date" class="bulk-dialog__input" v-model="shipPlanDateSelected" :min="todayDate" />
       </div>
     </BulkSettingDialog>
 

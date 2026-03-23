@@ -23,7 +23,7 @@
     <!-- 扫描输入框 -->
     <div class="scan-input-section">
       <div class="scan-input-wrapper">
-        <input
+        <Input
           ref="scanInputRef"
           :value="inputValue"
           type="text"

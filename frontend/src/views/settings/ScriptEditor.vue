@@ -52,13 +52,9 @@
           </TableRow>
           <TableRow v-for="s in scripts" :key="s._id">
             <TableCell style="text-align: center">
-              <span
-                :class="s.enabled ? 'o-status-tag o-status-tag--confirmed' : 'o-status-tag o-status-tag--cancelled'"
-                style="cursor: pointer"
-                @click="handleToggle(s)"
-              >
+              <Badge variant="default">
                 {{ s.enabled ? 'ON' : 'OFF' }}
-              </span>
+              </Badge>
             </TableCell>
             <TableCell><strong>{{ s.name }}</strong></TableCell>
             <TableCell><code class="event-code">{{ s.event }}</code></TableCell>

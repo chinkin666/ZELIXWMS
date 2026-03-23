@@ -46,7 +46,7 @@
         <div class="form-field">
           <label>Secret</label>
           <div class="secret-field">
-            <input
+            <Input
               v-model="form.secret"
               :type="showSecret ? 'text' : 'password'"
              

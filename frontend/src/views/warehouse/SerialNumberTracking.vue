@@ -9,7 +9,7 @@
 
     <!-- Search bar -->
     <div class="search-section">
-      <input
+      <Input
         v-model="searchText"
         type="text"
        
@@ -62,9 +62,7 @@
             <TableCell>{{ sn.serialNumber }}</TableCell>
             <TableCell>{{ sn.productId }}</TableCell>
             <TableCell>
-              <span :class="'o-status-tag o-status-tag--' + statusClass(sn.status)">
-                {{ snStatusLabel(sn.status) }}
-              </span>
+              <Badge variant="secondary" :class="statusClass(sn.status)">{{ snStatusLabel(sn.status) }}</Badge>
             </TableCell>
             <TableCell>{{ sn.warehouseId || '-' }}</TableCell>
             <TableCell>{{ sn.locationId || '-' }}</TableCell>
@@ -107,23 +105,23 @@
       <div class="form-grid">
         <div class="form-field">
           <label>{{ t('wms.warehouse.serialNumber', 'シリアル番号') }} <span class="text-destructive text-xs">*</span></label>
-          <input v-model="createForm.serialNumber" type="text" />
+          <Input v-model="createForm.serialNumber" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.productId', '商品ID') }} <span class="text-destructive text-xs">*</span></label>
-          <input v-model="createForm.productId" type="text" />
+          <Input v-model="createForm.productId" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
-          <input v-model="createForm.warehouseId" type="text" />
+          <Input v-model="createForm.warehouseId" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.location', 'ロケーション') }}</label>
-          <input v-model="createForm.locationId" type="text" />
+          <Input v-model="createForm.locationId" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.lotId', 'ロットID') }}</label>
-          <input v-model="createForm.lotId" type="text" />
+          <Input v-model="createForm.lotId" type="text" />
         </div>
         <div class="form-field form-field--full">
           <label>{{ t('wms.warehouse.remarks', '備考') }}</label>
@@ -144,11 +142,11 @@
       <div class="form-grid">
         <div class="form-field">
           <label>{{ t('wms.warehouse.productId', '商品ID') }} <span class="text-destructive text-xs">*</span></label>
-          <input v-model="bulkForm.productId" type="text" />
+          <Input v-model="bulkForm.productId" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
-          <input v-model="bulkForm.warehouseId" type="text" />
+          <Input v-model="bulkForm.warehouseId" type="text" />
         </div>
         <div class="form-field form-field--full">
           <label>{{ t('wms.warehouse.serialNumbersPerLine', 'シリアル番号（1行に1つ）') }} <span class="text-destructive text-xs">*</span></label>
@@ -178,9 +176,7 @@
       <div class="form-grid">
         <div class="form-field form-field--full">
           <label>{{ t('wms.warehouse.currentStatus', '現在のステータス') }}</label>
-          <span :class="'o-status-tag o-status-tag--' + statusClass(statusChangeTarget?.status || 'available')">
-            {{ snStatusLabel(statusChangeTarget?.status || 'available') }}
-          </span>
+          <Badge variant="secondary" :class="statusClass(statusChangeTarget?.status || 'available')">{{ snStatusLabel(statusChangeTarget?.status || 'available') }}</Badge>
         </div>
         <div class="form-field form-field--full">
           <label>{{ t('wms.warehouse.newStatus', '新しいステータス') }}</label>
@@ -208,23 +204,23 @@
       <div class="form-grid">
         <div class="form-field">
           <label>{{ t('wms.warehouse.serialNumber', 'シリアル番号') }}</label>
-          <input :value="editForm.serialNumber" type="text" readonly disabled />
+          <Input :value="editForm.serialNumber" type="text" readonly disabled />
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.productId', '商品ID') }}</label>
-          <input :value="editForm.productId" type="text" readonly disabled />
+          <Input :value="editForm.productId" type="text" readonly disabled />
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>
-          <input v-model="editForm.warehouseId" type="text" />
+          <Input v-model="editForm.warehouseId" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.location', 'ロケーション') }}</label>
-          <input v-model="editForm.locationId" type="text" />
+          <Input v-model="editForm.locationId" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.lotId', 'ロットID') }}</label>
-          <input v-model="editForm.lotId" type="text" />
+          <Input v-model="editForm.lotId" type="text" />
         </div>
         <div class="form-field form-field--full">
           <label>{{ t('wms.warehouse.remarks', '備考') }}</label>

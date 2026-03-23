@@ -163,35 +163,35 @@ onMounted(loadBoxes)
           <div class="grid gap-4 py-4">
             <div class="grid grid-cols-4 items-center gap-4">
               <label class="text-right text-sm">SKU</label>
-              <input v-model="addForm.items[0]!.sku" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              <Input v-model="addForm.items[0]!.sku" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
             </div>
             <div class="grid grid-cols-4 items-center gap-4">
               <label class="text-right text-sm">FNSKU</label>
-              <input v-model="addForm.items[0]!.fnsku" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              <Input v-model="addForm.items[0]!.fnsku" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
             </div>
             <div class="grid grid-cols-4 items-center gap-4">
               <label class="text-right text-sm">数量</label>
-              <input v-model.number="addForm.items[0]!.quantity" type="number" min="1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              <Input v-model.number="addForm.items[0]!.quantity" type="number" min="1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
             </div>
             <div class="grid grid-cols-4 items-center gap-4">
               <label class="text-right text-sm">重量(kg)</label>
-              <input v-model.number="addForm.weight" type="number" min="0" step="0.1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              <Input v-model.number="addForm.weight" type="number" min="0" step="0.1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
             </div>
             <div class="grid grid-cols-4 items-center gap-4">
               <label class="text-right text-sm">長さ(cm)</label>
-              <input v-model.number="addForm.length" type="number" min="0" step="0.1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              <Input v-model.number="addForm.length" type="number" min="0" step="0.1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
             </div>
             <div class="grid grid-cols-4 items-center gap-4">
               <label class="text-right text-sm">幅(cm)</label>
-              <input v-model.number="addForm.width" type="number" min="0" step="0.1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              <Input v-model.number="addForm.width" type="number" min="0" step="0.1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
             </div>
             <div class="grid grid-cols-4 items-center gap-4">
               <label class="text-right text-sm">高さ(cm)</label>
-              <input v-model.number="addForm.height" type="number" min="0" step="0.1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              <Input v-model.number="addForm.height" type="number" min="0" step="0.1" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
             </div>
             <div class="grid grid-cols-4 items-center gap-4">
               <label class="text-right text-sm">目的FC</label>
-              <input v-model="addForm.destinationFc" placeholder="NRT5" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+              <Input v-model="addForm.destinationFc" placeholder="NRT5" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
             </div>
           </div>
           <DialogFooter>

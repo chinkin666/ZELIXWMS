@@ -37,7 +37,7 @@
         @drop.prevent="handleDrop"
         @click="triggerFileInput"
       >
-        <input
+        <Input
           ref="fileInputRef"
           type="file"
           multiple
@@ -62,7 +62,7 @@
       </div>
 
       <!-- アップロードボタン / 上传按钮 -->
-      <div class="form-actions">
+      <div class="flex justify-end gap-2 pt-4">
         <Button
           variant="default"
           :disabled="!canUpload || isUploading"

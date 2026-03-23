@@ -24,7 +24,7 @@
           </div>
           <div class="info-item">
             <span class="info-label">{{ t('wms.common.status', '状態') }}</span>
-            <span class="o-status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
+            <Badge variant="secondary">{{ statusLabel(order.status) }}</Badge>
           </div>
           <div class="info-item">
             <span class="info-label">{{ t('wms.inbound.supplier', '仕入先') }}</span>
@@ -73,8 +73,8 @@
               <TableCell style="text-align:right">{{ vl.receivedQuantity }}</TableCell>
               <TableCell style="text-align:right;font-weight:600" :class="{ 'text-danger': vl.variance < 0 }">{{ vl.variance }}</TableCell>
               <TableCell>
-                <span v-if="vl.status === 'shortage'" class="o-status-tag o-status-tag--cancelled">{{ t('wms.inbound.shortage', '不足') }}</span>
-                <span v-else-if="vl.status === 'pending'" class="o-status-tag o-status-tag--draft">{{ t('wms.inbound.pending', '未検品') }}</span>
+                <Badge variant="destructive">{{ t('wms.inbound.shortage', '不足') }}</Badge>
+                <Badge variant="secondary">{{ t('wms.inbound.pending', '未検品') }}</Badge>
               </TableCell>
             </TableRow>
           </TableBody>

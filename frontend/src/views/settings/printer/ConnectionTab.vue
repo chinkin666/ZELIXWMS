@@ -7,7 +7,7 @@
     </div>
 
     <!-- Connection Actions -->
-    <div class="form-actions">
+    <div class="flex justify-end gap-2 pt-4">
       <Button variant="default" :disabled="connecting" @click="handleConnect">
         {{ connecting ? t('wms.printer.connecting', '接続中...') : t('wms.printer.connectionTest', '接続テスト') }}
       </Button>

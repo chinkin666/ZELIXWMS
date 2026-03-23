@@ -10,7 +10,7 @@
     />
 
       ref="searchFormRef"
-      class="search-section"
+      class="flex flex-wrap items-end gap-3 py-3"
       :columns="searchColumns"
       :initial-values="searchInitialValues"
       storage-key="shipment_list"
@@ -94,10 +94,10 @@
             </TableCell>
             <TableCell>
               <div class="status-cell">
-                <span v-if="row.statusConfirmed" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipment.confirmed', '確定済') }}</span>
-                <span v-if="row.statusCarrierReceived" class="o-status-tag o-status-tag--issued">{{ t('wms.shipment.invoiceIssued', '送り状発行済') }}</span>
-                <span v-if="row.statusPrinted" class="o-status-tag o-status-tag--printed">{{ t('wms.shipment.printed', '印刷済') }}</span>
-                <span v-if="row.statusInspected" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipment.inspected', '検品済') }}</span>
+                <Badge variant="default">{{ t('wms.shipment.confirmed', '確定済') }}</Badge>
+                <Badge variant="default">{{ t('wms.shipment.invoiceIssued', '送り状発行済') }}</Badge>
+                <Badge variant="outline">{{ t('wms.shipment.printed', '印刷済') }}</Badge>
+                <Badge variant="default">{{ t('wms.shipment.inspected', '検品済') }}</Badge>
               </div>
             </TableCell>
             <!-- 出荷管理番号 -->

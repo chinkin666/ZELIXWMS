@@ -24,13 +24,9 @@
         <div class="provider-header">
           <div class="provider-info">
             <span class="provider-name">{{ provider.name }}</span>
-            <span
-              :class="provider.status === 'connected'
-                ? 'o-status-tag o-status-tag--confirmed'
-                : 'o-status-tag o-status-tag--cancelled'"
-            >
+            <Badge variant="default">
               {{ provider.status === 'connected' ? '接続済み / 已连接' : '未接続 / 未连接' }}
-            </span>
+            </Badge>
           </div>
           <span class="provider-platform">{{ platformLabel(provider.platform) }}</span>
         </div>

@@ -134,7 +134,7 @@ function reset() {
     <div class="rounded-lg border bg-card shadow-sm p-4" style="margin-bottom: 16px">
       <div class="flex items-center gap-2">
         <span>📦</span>
-        <input
+        <Input
           v-model="scanInput"
           :placeholder="order ? '箱ラベルをスキャン / 扫箱标' : '入庫予約番号をスキャン / 扫入库预定号'"
           class="flex h-11 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base"
@@ -194,7 +194,7 @@ function reset() {
                   <TableCell class="p-2">{{ row.productName }}</TableCell>
                   <TableCell class="p-2">{{ row.expectedQuantity }}</TableCell>
                   <TableCell class="p-2">
-                    <input v-model.number="row.actualQuantity" type="number" min="0" class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm" @change="updateVariance($index)" />
+                    <Input v-model.number="row.actualQuantity" type="number" min="0" class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm" @change="updateVariance($index)" />
                   </TableCell>
                   <TableCell class="p-2">
                     <span :style="{ color: row.variance !== 0 ? '#f56c6c' : '#67c23a' }">

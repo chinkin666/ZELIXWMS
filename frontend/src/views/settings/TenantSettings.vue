@@ -105,9 +105,9 @@
       <div class="status-change-form">
         <div class="form-field">
           <label>現在のステータス</label>
-          <span class="o-status-tag" :class="statusTagClass(statusChangeTarget?.status || 'active')">
+          <Badge variant="secondary">
             {{ statusLabel(statusChangeTarget?.status || 'active') }}
-          </span>
+          </Badge>
         </div>
         <div class="form-field" style="margin-top: 16px;">
           <label>新しいステータス</label>

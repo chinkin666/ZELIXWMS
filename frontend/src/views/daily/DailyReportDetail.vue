@@ -21,7 +21,7 @@
 
     <template v-else-if="report">
       <div class="info-bar">
-        <span><strong>{{ t('wms.daily.state', '状態') }}:</strong> <span class="o-status-tag" :class="dailyStatusClass(report.status)">{{ dailyStatusLabel(report.status) }}</span></span>
+        <span><strong>{{ t('wms.daily.state', '状態') }}:</strong> <Badge variant="secondary">{{ dailyStatusLabel(report.status) }}</Badge></span>
         <span v-if="report.closedAt"><strong>{{ t('wms.daily.closedAt', '締め日時') }}:</strong> {{ new Date(report.closedAt).toLocaleString('ja-JP') }}</span>
         <span v-if="report.closedBy"><strong>{{ t('wms.daily.closedBy', '締め実行者') }}:</strong> {{ report.closedBy }}</span>
       </div>

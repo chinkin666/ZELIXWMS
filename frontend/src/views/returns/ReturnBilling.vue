@@ -6,7 +6,7 @@
     <div class="rounded-lg border bg-card p-4 filter-bar">
       <div class="form-field">
         <label>{{ t('wms.billing.period', '対象月') }}</label>
-        <input v-model="selectedMonth" type="month" @change="loadBilling" />
+        <Input v-model="selectedMonth" type="month" @change="loadBilling" />
       </div>
     </div>
 

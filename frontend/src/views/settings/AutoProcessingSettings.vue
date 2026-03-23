@@ -78,7 +78,7 @@
 
             <div class="rule-actions">
               <label class="o-toggle" :title="rule.enabled ? '無効にする' : '有効にする'">
-                <input
+                <Input
                   type="checkbox"
                   :checked="rule.enabled"
                   @change="handleEnableChange(rule, ($event.target as HTMLInputElement).checked)"

@@ -2,7 +2,7 @@
   <div class="shipment-results">
     <PageHeader :title="t('wms.shipmentResult.title', '出荷実績一覧')" :show-search="false" />
 
-      class="search-section"
+      class="flex flex-wrap items-end gap-3 py-3"
       :columns="searchColumns"
       :initial-values="searchInitialValues"
       storage-key="shipment_results"
@@ -73,12 +73,12 @@
             </TableCell>
             <TableCell>
               <div class="status-cell">
-                <span v-if="row.statusConfirmed" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipmentResult.statusConfirmed', '確定済') }}</span>
-                <span v-if="row.statusCarrierReceived" class="o-status-tag o-status-tag--issued">{{ t('wms.shipmentResult.statusWaybillIssued', '送り状発行済') }}</span>
-                <span v-if="row.statusPrinted" class="o-status-tag o-status-tag--printed">{{ t('wms.shipmentResult.statusPrinted', '印刷済') }}</span>
-                <span v-if="row.statusInspected" class="o-status-tag o-status-tag--confirmed">{{ t('wms.shipmentResult.statusInspected', '検品済') }}</span>
-                <span v-if="row.statusShipped" class="o-status-tag o-status-tag--shipped">{{ t('wms.shipmentResult.statusShipped', '出荷済') }}</span>
-                <span v-if="row.statusEcExported" class="o-status-tag o-status-tag--exported">{{ t('wms.shipmentResult.statusExported', '連携済') }}</span>
+                <Badge variant="default">{{ t('wms.shipmentResult.statusConfirmed', '確定済') }}</Badge>
+                <Badge variant="default">{{ t('wms.shipmentResult.statusWaybillIssued', '送り状発行済') }}</Badge>
+                <Badge variant="outline">{{ t('wms.shipmentResult.statusPrinted', '印刷済') }}</Badge>
+                <Badge variant="default">{{ t('wms.shipmentResult.statusInspected', '検品済') }}</Badge>
+                <Badge class="bg-green-100 text-green-800">{{ t('wms.shipmentResult.statusShipped', '出荷済') }}</Badge>
+                <Badge v-if="row.statusEcExported" variant="secondary" >{{ t('wms.shipmentResult.statusExported', '連携済') }}</Badge>
               </div>
             </TableCell>
             <!-- 出荷管理番号 -->

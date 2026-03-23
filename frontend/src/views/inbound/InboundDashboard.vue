@@ -61,7 +61,7 @@
             <CardContent class="p-4">
               <div class="today-header">
                 <span class="order-number">{{ row.orderNumber }}</span>
-                <span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span>
+                <Badge variant="secondary">{{ statusLabel(row.status) }}</Badge>
               </div>
               <div class="today-info">
                 <span v-if="row.supplier?.name">{{ row.supplier.name }}</span>
@@ -99,7 +99,7 @@
             <TableBody>
               <TableRow v-for="row in pendingOrders" :key="row._id">
                 <TableCell><span class="order-number">{{ row.orderNumber }}</span></TableCell>
-                <TableCell><span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></TableCell>
+                <TableCell><Badge variant="secondary">{{ statusLabel(row.status) }}</Badge></TableCell>
                 <TableCell>{{ row.supplier?.name || '-' }}</TableCell>
                 <TableCell class="text-right">{{ (row.lines ?? []).length }}</TableCell>
                 <TableCell class="text-right">{{ totalReceived(row) }} / {{ totalExpected(row) }}</TableCell>
@@ -131,7 +131,7 @@
             <TableBody>
               <TableRow v-for="row in overdueOrders" :key="row._id">
                 <TableCell><span class="order-number">{{ row.orderNumber }}</span></TableCell>
-                <TableCell><span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></TableCell>
+                <TableCell><Badge variant="secondary">{{ statusLabel(row.status) }}</Badge></TableCell>
                 <TableCell>{{ row.supplier?.name || '-' }}</TableCell>
                 <TableCell class="text-danger">{{ formatDate(row.expectedDate!) }}</TableCell>
                 <TableCell class="text-danger">{{ daysOverdue(row.expectedDate!) }}{{ t('wms.inbound.days', '日') }}</TableCell>

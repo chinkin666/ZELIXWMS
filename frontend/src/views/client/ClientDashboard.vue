@@ -170,7 +170,7 @@
       <Card class="search-card">
         <CardContent class="p-4">
         <div class="tracking-search-row">
-          <input
+          <Input
             v-model="trackingQuery"
             type="text"
             class="tracking-input"

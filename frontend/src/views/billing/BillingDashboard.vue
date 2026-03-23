@@ -67,7 +67,7 @@
                 <TableCell class="text-right">{{ (row.orderCount || 0).toLocaleString() }}</TableCell>
                 <TableCell class="text-right">&yen;{{ (row.totalAmount || 0).toLocaleString() }}</TableCell>
                 <TableCell>
-                  <span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span>
+                  <Badge variant="secondary">{{ statusLabel(row.status) }}</Badge>
                 </TableCell>
               </TableRow>
             </TableBody>

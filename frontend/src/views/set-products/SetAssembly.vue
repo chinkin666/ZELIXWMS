@@ -58,27 +58,27 @@
         <div class="order-form">
           <div class="form-row">
             <label>{{ t('wms.setProduct.quantity', '数量') }} <span class="req">{{ t('wms.setProduct.required', '必須') }}</span></label>
-            <input v-model.number="orderQuantity" type="number" min="1" style="width:120px;" />
+            <Input v-model.number="orderQuantity" type="number" min="1" style="width:120px;" />
           </div>
           <div class="form-row">
             <label>{{ t('wms.setProduct.stockCategory', '在庫区分') }}</label>
-            <input v-model="orderStockCategory" type="text" :placeholder="t('wms.setProduct.stockCategoryPlaceholder', '例: 良品、不良品')" style="width:200px;" />
+            <Input v-model="orderStockCategory" type="text" :placeholder="t('wms.setProduct.stockCategoryPlaceholder', '例: 良品、不良品')" style="width:200px;" />
           </div>
           <div class="form-row">
             <label>{{ t('wms.setProduct.desiredDate', '完成希望日') }}</label>
-            <input v-model="orderDesiredDate" type="date" style="width:180px;" />
+            <Input v-model="orderDesiredDate" type="date" style="width:180px;" />
           </div>
           <div class="form-row">
             <label>{{ t('wms.setProduct.lot', 'ロット') }}</label>
-            <input v-model="orderLotNumber" type="text" :placeholder="t('wms.setProduct.optional', '任意')" style="width:200px;" />
+            <Input v-model="orderLotNumber" type="text" :placeholder="t('wms.setProduct.optional', '任意')" style="width:200px;" />
           </div>
           <div class="form-row">
             <label>{{ t('wms.setProduct.expiryDate', '消費期限') }}</label>
-            <input v-model="orderExpiryDate" type="date" style="width:180px;" />
+            <Input v-model="orderExpiryDate" type="date" style="width:180px;" />
           </div>
           <div class="form-row">
             <label>{{ t('wms.setProduct.memo', 'メモ') }}</label>
-            <input v-model="orderMemo" type="text" :placeholder="t('wms.setProduct.optional', '任意')" style="width:300px;" />
+            <Input v-model="orderMemo" type="text" :placeholder="t('wms.setProduct.optional', '任意')" style="width:300px;" />
           </div>
         </div>
         <div style="margin-top:16px;">
@@ -164,7 +164,7 @@
           <p>{{ t('wms.setProduct.orderQuantity', '指示数') }}: {{ completingOrder?.quantity }}</p>
           <div class="form-field">
             <label>{{ t('wms.setProduct.completedQuantity', '完成数') }}</label>
-            <input v-model.number="completeQuantity" type="number" min="1" />
+            <Input v-model.number="completeQuantity" type="number" min="1" />
           </div>
         </div>
         <DialogFooter>

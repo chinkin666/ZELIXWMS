@@ -12,7 +12,7 @@
         <label>{{ t('wms.settings.printMethod', '印刷方法') }}</label>
         <div class="radio-group">
           <label class="radio-option">
-            <input
+            <Input
               type="radio"
               name="printMethod"
               value="browser"
@@ -22,7 +22,7 @@
             <span>{{ t('wms.settings.browserPrint', 'ブラウザ印刷') }}</span>
           </label>
           <label class="radio-option">
-            <input
+            <Input
               type="radio"
               name="printMethod"
               value="local-bridge"

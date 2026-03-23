@@ -32,7 +32,7 @@
           </div>
           <div class="info-item">
             <span class="info-label">{{ t('wms.common.status', '状態') }}</span>
-            <span class="o-status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span>
+            <Badge variant="secondary">{{ statusLabel(order.status) }}</Badge>
           </div>
           <div class="info-item">
             <span class="info-label">{{ t('wms.inbound.defaultDestination', 'デフォルト入庫先') }}</span>

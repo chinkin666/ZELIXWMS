@@ -12,13 +12,9 @@
     <Card class="status-card">
       <div class="status-header">
         <h3 class="section-title">接続ステータス / 连接状态</h3>
-        <span
-          :class="status.connected
-            ? 'o-status-tag o-status-tag--confirmed'
-            : 'o-status-tag o-status-tag--cancelled'"
-        >
+        <Badge variant="default">
           {{ status.connected ? '接続済み / 已连接' : '未接続 / 未连接' }}
-        </span>
+        </Badge>
       </div>
       <div v-if="status.lastSyncAt" class="status-detail">
         最終同期 / 最后同步: {{ formatDate(status.lastSyncAt) }}
@@ -39,7 +35,7 @@
         <div class="form-field form-field--full">
           <label>API キー / API 密钥 <span class="text-destructive text-xs">*</span></label>
           <div class="secret-field">
-            <input
+            <Input
               v-model="config.apiKey"
               :type="showApiKey ? 'text' : 'password'"
              

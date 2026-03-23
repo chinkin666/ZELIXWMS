@@ -7,7 +7,7 @@
       <div class="form-grid">
         <div class="form-field">
           <label>{{ t('wms.shipment.searchKeyword', '検索キーワード') }}</label>
-          <input
+          <Input
             v-model="searchKeyword"
             type="text"
            

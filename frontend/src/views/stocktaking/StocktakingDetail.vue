@@ -23,7 +23,7 @@
     <template v-else-if="order">
       <div class="info-bar">
         <span><strong>{{ t('wms.stocktaking.type', 'タイプ') }}:</strong> {{ typeLabel(order.type) }}</span>
-        <span><strong>{{ t('wms.stocktaking.state', '状態') }}:</strong> <span class="o-status-tag" :class="statusClass(order.status)">{{ statusLabel(order.status) }}</span></span>
+        <span><strong>{{ t('wms.stocktaking.state', '状態') }}:</strong> <Badge variant="secondary">{{ statusLabel(order.status) }}</Badge></span>
         <span v-if="order.scheduledDate"><strong>{{ t('wms.stocktaking.scheduledDate', '予定日') }}:</strong> {{ formatDate(order.scheduledDate) }}</span>
         <span><strong>{{ t('wms.stocktaking.lines', '明細') }}:</strong> {{ order.lines.length }}{{ t('wms.stocktaking.items', '件') }}</span>
       </div>
@@ -52,7 +52,7 @@
               <TableCell>{{ line.lotNumber || '-' }}</TableCell>
               <TableCell class="text-right">{{ line.systemQuantity }}</TableCell>
               <TableCell class="text-right">
-                <input
+                <Input
                   v-if="order.status === 'in_progress'"
                   v-model.number="countInputs[idx]"
                   type="number"

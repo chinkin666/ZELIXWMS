@@ -12,9 +12,9 @@
             :class="{ active: activeDays === preset.days }"
             @click="setPeriod(preset.days)"
           >{{ preset.label }}</Button>
-          <input type="date" v-model="customFrom" class="h-8 text-sm" />
+          <Input type="date" v-model="customFrom" class="h-8 text-sm" />
           <span style="color:var(--o-gray-400)">〜</span>
-          <input type="date" v-model="customTo" class="h-8 text-sm" />
+          <Input type="date" v-model="customTo" class="h-8 text-sm" />
           <Button variant="secondary" size="sm" @click="loadCustom">{{ t('wms.common.search', '検索') }}</Button>
         </div>
       </template>

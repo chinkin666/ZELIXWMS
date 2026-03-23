@@ -77,7 +77,7 @@
               <span v-else class="optional-hint">（変更する場合のみ入力）</span>
             </label>
             <div class="password-wrapper">
-              <input
+              <Input
                 class="password-input"
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"

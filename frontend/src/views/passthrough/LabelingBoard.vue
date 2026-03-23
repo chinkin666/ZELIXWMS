@@ -141,7 +141,7 @@ onMounted(loadTasks)
           </div>
           <div v-if="verifyResult === 'fail'" class="grid grid-cols-4 items-center gap-4">
             <label class="text-right text-sm">不合格数</label>
-            <input v-model.number="verifyFailedQty" type="number" min="0" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            <Input v-model.number="verifyFailedQty" type="number" min="0" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
           </div>
         </div>
         <DialogFooter>

@@ -109,7 +109,7 @@ onMounted(loadOrders)
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
       <h2 style="margin: 0">通過型作業タスク / 通过型作业任务</h2>
       <div style="display: flex; gap: 8px; align-items: center">
-        <input
+        <Input
           v-model="searchQuery"
           placeholder="注文番号検索 / 搜索订单号"
           class="flex h-9 w-56 rounded-md border border-input bg-transparent px-3 py-1 text-sm"
@@ -198,7 +198,7 @@ onMounted(loadOrders)
           </div>
           <div class="grid grid-cols-4 items-center gap-4">
             <label class="text-right text-sm">実数量</label>
-            <input v-model.number="actualQuantity" type="number" min="0" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
+            <Input v-model.number="actualQuantity" type="number" min="0" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm" />
           </div>
         </div>
         <DialogFooter>

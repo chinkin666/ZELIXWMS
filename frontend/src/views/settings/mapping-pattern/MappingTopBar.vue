@@ -39,7 +39,7 @@
       >
         <div class="label">{{ t('wms.mapping.fileUpload', 'ファイルアップロード') }}</div>
         <div class="upload-row">
-          <input
+          <Input
             ref="fileInputRef"
             type="file"
             accept=".csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"

@@ -99,9 +99,9 @@
               <span v-else>-</span>
             </TableCell>
             <TableCell>
-              <span class="o-status-tag" :class="row.stockCategory === 'damaged' ? 'o-status-tag--held' : 'o-status-tag--confirmed'">
+              <Badge variant="default">
                 {{ row.stockCategory === 'damaged' ? t('wms.inbound.stockDamaged', '仕損') : t('wms.inbound.stockNew', '新品') }}
-              </span>
+              </Badge>
             </TableCell>
             <TableCell class="text-right">{{ row.expectedQuantity }}</TableCell>
             <TableCell class="text-right">

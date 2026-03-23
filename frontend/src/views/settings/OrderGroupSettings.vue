@@ -67,7 +67,7 @@
 
             <div class="group-actions">
               <label class="o-toggle" :title="group.enabled ? '無効にする' : '有効にする'">
-                <input
+                <Input
                   type="checkbox"
                   :checked="group.enabled"
                   @change="handleEnableChange(group, ($event.target as HTMLInputElement).checked)"

@@ -39,7 +39,7 @@
         </div>
       </div>
 
-      <div class="form-actions">
+      <div class="flex justify-end gap-2 pt-4">
         <Button
           variant="default"
           :disabled="!canSubmit || isSubmitting"

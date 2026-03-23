@@ -21,17 +21,17 @@
 
         <div class="form-row">
           <label>{{ t('wms.returns.customerName', '顧客名') }}</label>
-          <input v-model="form.customerName" style="width:200px;" :placeholder="t('wms.returns.customerName', '顧客名')" />
+          <Input v-model="form.customerName" style="width:200px;" :placeholder="t('wms.returns.customerName', '顧客名')" />
         </div>
 
         <div class="form-row">
           <label>{{ t('wms.returns.receivedDate', '受付日') }}</label>
-          <input v-model="form.receivedDate" type="date" style="width:200px;" />
+          <Input v-model="form.receivedDate" type="date" style="width:200px;" />
         </div>
 
         <div class="form-row">
           <label>{{ t('wms.returns.originalShipmentNumber', '元出荷番号') }}</label>
-          <input v-model="form.shipmentOrderNumber" style="width:200px;" placeholder="SH..." />
+          <Input v-model="form.shipmentOrderNumber" style="width:200px;" placeholder="SH..." />
         </div>
 
         <div class="form-row" style="grid-column:1/-1;">
@@ -63,10 +63,10 @@
                 </select>
               </TableCell>
               <TableCell class="text-right">
-                <input v-model.number="line.quantity" type="number" min="1" class="h-8 text-sm" style="width:70px;text-align:right;" />
+                <Input v-model.number="line.quantity" type="number" min="1" class="h-8 text-sm" style="width:70px;text-align:right;" />
               </TableCell>
               <TableCell>
-                <input v-model="line.memo" class="h-8 text-sm" style="width:100%;" />
+                <Input v-model="line.memo" class="h-8 text-sm" style="width:100%;" />
               </TableCell>
               <TableCell>
                 <Button class="remove-btn" @click="form.lines.splice(idx, 1)">&times;</Button>

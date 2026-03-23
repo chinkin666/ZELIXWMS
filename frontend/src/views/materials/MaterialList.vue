@@ -46,12 +46,12 @@
               <!-- SKU -->
               <div class="form-row">
                 <label>SKU <span class="text-destructive text-xs">*</span></label>
-                <input v-model="form.sku" required :disabled="isEditing" placeholder="半角英数字" />
+                <Input v-model="form.sku" required :disabled="isEditing" placeholder="半角英数字" />
               </div>
               <!-- 耗材名 / 耗材名称 -->
               <div class="form-row">
                 <label>耗材名 <span class="text-destructive text-xs">*</span></label>
-                <input v-model="form.name" required placeholder="耗材名を入力" />
+                <Input v-model="form.name" required placeholder="耗材名を入力" />
               </div>
               <!-- カテゴリ / 类别 -->
               <div class="form-row">
@@ -64,12 +64,12 @@
               <!-- 単価 / 单价 -->
               <div class="form-row">
                 <label>単価 (円)</label>
-                <input type="number" v-model.number="form.unitCost" min="0" step="0.01" placeholder="0" />
+                <Input type="number" v-model.number="form.unitCost" min="0" step="0.01" placeholder="0" />
               </div>
               <!-- 箱入数 / 箱入数量 -->
               <div class="form-row">
                 <label>箱入数</label>
-                <input type="number" v-model.number="form.caseQuantity" min="1" placeholder="1ケースあたりの個数" />
+                <Input type="number" v-model.number="form.caseQuantity" min="1" placeholder="1ケースあたりの個数" />
               </div>
             </div>
             <div class="form-col">
@@ -84,32 +84,32 @@
               <!-- 安全在庫 / 安全库存 -->
               <div class="form-row">
                 <label>安全在庫</label>
-                <input type="number" v-model.number="form.safetyStock" min="0" placeholder="安全在庫数" />
+                <Input type="number" v-model.number="form.safetyStock" min="0" placeholder="安全在庫数" />
               </div>
               <!-- サイズ（箱カテゴリのみ表示）/ 尺寸（仅箱类别显示） -->
               <template v-if="form.category === 'box'">
                 <div class="form-row">
                   <label>幅 (mm)</label>
-                  <input type="number" v-model.number="form.widthMm" min="0" step="0.1" />
+                  <Input type="number" v-model.number="form.widthMm" min="0" step="0.1" />
                 </div>
                 <div class="form-row">
                   <label>奥行 (mm)</label>
-                  <input type="number" v-model.number="form.depthMm" min="0" step="0.1" />
+                  <Input type="number" v-model.number="form.depthMm" min="0" step="0.1" />
                 </div>
                 <div class="form-row">
                   <label>高さ (mm)</label>
-                  <input type="number" v-model.number="form.heightMm" min="0" step="0.1" />
+                  <Input type="number" v-model.number="form.heightMm" min="0" step="0.1" />
                 </div>
               </template>
               <!-- 仕入先コード / 供应商代码 -->
               <div class="form-row">
                 <label>仕入先コード</label>
-                <input v-model="form.supplierCode" placeholder="仕入先コード" />
+                <Input v-model="form.supplierCode" placeholder="仕入先コード" />
               </div>
               <!-- リードタイム / 交付周期 -->
               <div class="form-row">
                 <label>リードタイム (日)</label>
-                <input type="number" v-model.number="form.leadTime" min="0" placeholder="日数" />
+                <Input type="number" v-model.number="form.leadTime" min="0" placeholder="日数" />
               </div>
               <!-- メモ / 备注 -->
               <div class="form-row">

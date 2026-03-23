@@ -35,15 +35,9 @@
           <TableBody>
             <TableRow v-for="wf in workflows" :key="wf._id">
               <TableCell>
-                <span
-                  :class="wf.enabled
-                    ? 'o-status-tag o-status-tag--confirmed'
-                    : 'o-status-tag o-status-tag--cancelled'"
-                  style="cursor: pointer"
-                  @click="handleToggle(wf)"
-                >
+                <Badge variant="default">
                   {{ wf.enabled ? 'ON' : 'OFF' }}
-                </span>
+                </Badge>
               </TableCell>
               <TableCell>
                 <span class="wf-name">{{ wf.name }}</span>

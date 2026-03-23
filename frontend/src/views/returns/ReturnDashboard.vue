@@ -107,7 +107,7 @@
             <TableBody>
               <TableRow v-for="row in (stats.recentReturns ?? [])" :key="row._id">
                 <TableCell><span class="order-number">{{ row.orderNumber }}</span></TableCell>
-                <TableCell><span class="o-status-tag" :class="statusClass(row.status)">{{ statusLabel(row.status) }}</span></TableCell>
+                <TableCell><Badge variant="secondary">{{ statusLabel(row.status) }}</Badge></TableCell>
                 <TableCell>{{ reasonLabel(row.returnReason) }}</TableCell>
                 <TableCell>{{ row.customerName || '-' }}</TableCell>
                 <TableCell class="text-right">{{ row.lines?.length ?? 0 }}</TableCell>

@@ -7,7 +7,7 @@
       <div class="form-field">
         <label>{{ t('wms.shipment.searchOrder', '注文番号 / 顧客管理番号') }}</label>
         <div class="search-row">
-          <input v-model="searchQuery" type="text" :placeholder="t('wms.shipment.searchPlaceholder', '注文番号または管理番号を入力...')" @keyup.enter="handleSearch" />
+          <Input v-model="searchQuery" type="text" :placeholder="t('wms.shipment.searchPlaceholder', '注文番号または管理番号を入力...')" @keyup.enter="handleSearch" />
           <Button variant="default" :disabled="!searchQuery || isSearching" @click="handleSearch">
             {{ t('wms.common.search', '検索') }}
           </Button>
@@ -26,23 +26,23 @@
         </div>
         <div class="form-field">
           <label>{{ t('wms.shipment.recipientName', '届け先氏名') }}</label>
-          <input v-model="order.recipientName" type="text" />
+          <Input v-model="order.recipientName" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.shipment.recipientPhone', '電話番号') }}</label>
-          <input v-model="order.recipientPhone" type="text" />
+          <Input v-model="order.recipientPhone" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.shipment.postalCode', '郵便番号') }}</label>
-          <input v-model="order.postalCode" type="text" />
+          <Input v-model="order.postalCode" type="text" />
         </div>
         <div class="form-field">
           <label>{{ t('wms.shipment.prefecture', '都道府県') }}</label>
-          <input v-model="order.prefecture" type="text" />
+          <Input v-model="order.prefecture" type="text" />
         </div>
         <div class="form-field" style="grid-column: 1 / -1">
           <label>{{ t('wms.shipment.address', '住所') }}</label>
-          <input v-model="order.address" type="text" />
+          <Input v-model="order.address" type="text" />
         </div>
 
         <!-- 商品明細 / 商品明细 -->
@@ -60,9 +60,9 @@
           <span class="col-action"></span>
         </div>
         <div v-for="(item, idx) in order.items" :key="idx" class="items-row">
-          <input v-model="item.sku" type="text" class="col-sku" />
-          <input v-model="item.productName" type="text" class="col-name" />
-          <input v-model.number="item.quantity" type="number" min="1" class="col-qty" />
+          <Input v-model="item.sku" type="text" class="col-sku" />
+          <Input v-model="item.productName" type="text" class="col-name" />
+          <Input v-model.number="item.quantity" type="number" min="1" class="col-qty" />
           <Button variant="secondary" size="sm" @click="removeItem(idx)">{{ t('wms.common.delete', '削除') }}</Button>
         </div>
         <Button variant="secondary" size="sm" style="margin-top: 8px" @click="addItem">
@@ -70,7 +70,7 @@
         </Button>
       </div>
 
-      <div class="form-actions">
+      <div class="flex justify-end gap-2 pt-4">
         <Button variant="default" :disabled="isSaving" @click="handleSave">
           {{ isSaving ? t('wms.common.processing', '処理中...') : t('wms.common.save', '保存') }}
         </Button>

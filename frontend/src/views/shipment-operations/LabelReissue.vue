@@ -7,7 +7,7 @@
       <div class="form-field">
         <label>{{ t('wms.shipment.searchByNumberOrTracking', '注文番号 / 追跡番号') }}</label>
         <div class="search-row">
-          <input
+          <Input
             v-model="searchQuery"
             type="text"
            
