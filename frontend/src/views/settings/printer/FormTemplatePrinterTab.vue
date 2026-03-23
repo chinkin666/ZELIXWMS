@@ -43,45 +43,61 @@
                 </div>
               </TableCell>
               <TableCell class="p-2">
-                <select
-                  :value="getParams(row._id).printer || ''"
-                  class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
-                  @change="(e: any) => updateParam(row._id, 'printer', e.target.value)"
+                <Select
+                  :model-value="getParams(row._id).printer || '__default__'"
+                  @update:model-value="(v: string) => updateParam(row._id, 'printer', v === '__default__' ? '' : v)"
                 >
-                  <option value="">{{ t('wms.printer.default', 'デフォルト') }}</option>
-                  <option v-for="p in printers" :key="p.name" :value="p.name">{{ p.name }}</option>
-                </select>
+                  <SelectTrigger class="h-8 w-full text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__default__">{{ t('wms.printer.default', 'デフォルト') }}</SelectItem>
+                    <SelectItem v-for="p in printers" :key="p.name" :value="p.name">{{ p.name }}</SelectItem>
+                  </SelectContent>
+                </Select>
               </TableCell>
               <TableCell class="p-2">
-                <select
-                  :value="getParams(row._id).paper || 'AUTO'"
-                  class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
-                  @change="(e: any) => updateParam(row._id, 'paper', e.target.value)"
+                <Select
+                  :model-value="getParams(row._id).paper || 'AUTO'"
+                  @update:model-value="(v: string) => updateParam(row._id, 'paper', v)"
                 >
-                  <option value="AUTO">{{ t('wms.printer.autoDefault', 'AUTO（デフォルト）') }}</option>
-                  <option v-for="ps in getPaperSizes(getParams(row._id).printer)" :key="ps.name" :value="ps.name">{{ ps.name }} ({{ ps.width_mm }}×{{ ps.height_mm }})</option>
-                </select>
+                  <SelectTrigger class="h-8 w-full text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AUTO">{{ t('wms.printer.autoDefault', 'AUTO（デフォルト）') }}</SelectItem>
+                    <SelectItem v-for="ps in getPaperSizes(getParams(row._id).printer)" :key="ps.name" :value="ps.name">{{ ps.name }} ({{ ps.width_mm }}×{{ ps.height_mm }})</SelectItem>
+                  </SelectContent>
+                </Select>
               </TableCell>
               <TableCell class="p-2">
-                <select
-                  :value="getParams(row._id).orientation || 'portrait'"
-                  class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
-                  @change="(e: any) => updateParam(row._id, 'orientation', e.target.value)"
+                <Select
+                  :model-value="getParams(row._id).orientation || 'portrait'"
+                  @update:model-value="(v: string) => updateParam(row._id, 'orientation', v)"
                 >
-                  <option value="portrait">{{ t('wms.printer.portrait', '縦') }}</option>
-                  <option value="landscape">{{ t('wms.printer.landscape', '横') }}</option>
-                </select>
+                  <SelectTrigger class="h-8 w-full text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="portrait">{{ t('wms.printer.portrait', '縦') }}</SelectItem>
+                    <SelectItem value="landscape">{{ t('wms.printer.landscape', '横') }}</SelectItem>
+                  </SelectContent>
+                </Select>
               </TableCell>
               <TableCell class="p-2">
-                <select
-                  :value="getParams(row._id).scale || 'fit'"
-                  class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
-                  @change="(e: any) => updateParam(row._id, 'scale', e.target.value)"
+                <Select
+                  :model-value="getParams(row._id).scale || 'fit'"
+                  @update:model-value="(v: string) => updateParam(row._id, 'scale', v)"
                 >
-                  <option value="fit">Fit</option>
-                  <option value="fill">Fill</option>
-                  <option value="actual">{{ t('wms.printer.actualSize', '実寸') }}</option>
-                </select>
+                  <SelectTrigger class="h-8 w-full text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fit">Fit</SelectItem>
+                    <SelectItem value="fill">Fill</SelectItem>
+                    <SelectItem value="actual">{{ t('wms.printer.actualSize', '実寸') }}</SelectItem>
+                  </SelectContent>
+                </Select>
               </TableCell>
               <TableCell class="p-2">
                 <Input
@@ -112,6 +128,7 @@
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ref, onMounted } from 'vue'
 import { useI18n } from '@/composables/useI18n'
 import { fetchFormTemplates } from '@/api/formTemplate'

@@ -9,19 +9,29 @@
     <div class="rounded-lg border bg-card p-4">
       <div class="form-row">
         <label>{{ t('wms.stocktaking.warehouse', '倉庫') }} <span style="color: #f56c6c">*</span></label>
-        <select v-model="form.warehouseId" style="width:200px;">
-          <option value="">{{ t('wms.stocktaking.selectWarehousePlaceholder', '-- 倉庫を選択 / 选择仓库 --') }}</option>
-          <option v-for="wh in warehouses" :key="wh._id" :value="wh._id">{{ wh.code }} - {{ wh.name }}</option>
-        </select>
+        <Select :model-value="form.warehouseId || '__empty__'" @update:model-value="(v: string) => form.warehouseId = v === '__empty__' ? '' : v">
+          <SelectTrigger class="h-9 w-[200px]">
+            <SelectValue :placeholder="t('wms.stocktaking.selectWarehousePlaceholder', '-- 倉庫を選択 / 选择仓库 --')" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__empty__">{{ t('wms.stocktaking.selectWarehousePlaceholder', '-- 倉庫を選択 / 选择仓库 --') }}</SelectItem>
+            <SelectItem v-for="wh in warehouses" :key="wh._id" :value="wh._id">{{ wh.code }} - {{ wh.name }}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div class="form-row">
         <label>{{ t('wms.stocktaking.type', '棚卸タイプ') }}</label>
-        <select v-model="form.type" style="width:200px;">
-          <option value="full">{{ t('wms.stocktaking.typeFull', '全棚卸') }}</option>
-          <option value="cycle">{{ t('wms.stocktaking.typeCycle', '循環棚卸') }}</option>
-          <option value="spot">{{ t('wms.stocktaking.typeSpot', 'スポット棚卸') }}</option>
-        </select>
+        <Select v-model="form.type">
+          <SelectTrigger class="h-9 w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="full">{{ t('wms.stocktaking.typeFull', '全棚卸') }}</SelectItem>
+            <SelectItem value="cycle">{{ t('wms.stocktaking.typeCycle', '循環棚卸') }}</SelectItem>
+            <SelectItem value="spot">{{ t('wms.stocktaking.typeSpot', 'スポット棚卸') }}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div class="form-row">
@@ -32,12 +42,17 @@
       <div class="form-row">
         <label>{{ t('wms.stocktaking.targetLocations', '対象ロケーション') }}</label>
         <div class="tag-select">
-          <select style="width:200px;" @change="addLocation($event)">
-            <option value="">{{ t('wms.stocktaking.selectLocationPlaceholder', '-- 選択（空=全て） --') }}</option>
-            <option v-for="loc in locations" :key="loc._id" :value="loc._id" :disabled="form.targetLocations.includes(loc._id)">
-              {{ loc.code }} - {{ loc.name }}
-            </option>
-          </select>
+          <Select :model-value="locationSelectValue" @update:model-value="addLocationFromSelect">
+            <SelectTrigger class="h-9 w-[200px]">
+              <SelectValue :placeholder="t('wms.stocktaking.selectLocationPlaceholder', '-- 選択（空=全て） --')" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__empty__">{{ t('wms.stocktaking.selectLocationPlaceholder', '-- 選択（空=全て） --') }}</SelectItem>
+              <SelectItem v-for="loc in locations" :key="loc._id" :value="loc._id" :disabled="form.targetLocations.includes(loc._id)">
+                {{ loc.code }} - {{ loc.name }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <div class="tags">
             <span v-for="id in form.targetLocations" :key="id" class="tag">
               {{ locationName(id) }}
@@ -112,6 +127,15 @@ const loadLocations = async () => {
 const locationName = (id: string) => {
   const loc = locations.value.find(l => l._id === id)
   return loc ? `${loc.code}` : id
+}
+
+const locationSelectValue = ref('__empty__')
+
+const addLocationFromSelect = (val: string) => {
+  if (val && val !== '__empty__' && !form.targetLocations.includes(val)) {
+    form.targetLocations.push(val)
+  }
+  locationSelectValue.value = '__empty__'
 }
 
 const addLocation = (e: Event) => {

@@ -208,9 +208,14 @@ onMounted(loadOrder)
             <div v-for="(exc, idx) in exceptions" :key="idx" style="border-bottom: 1px solid #f0f0f0; padding: 12px 0">
               <div class="grid grid-cols-12 gap-2">
                 <div class="col-span-4">
-                  <select v-model="exc.category" class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm">
-                    <option v-for="c in categoryOptions" :key="c.value" :value="c.value">{{ c.label }}</option>
-                  </select>
+                  <Select v-model="exc.category">
+          <SelectTrigger class="h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="c in categoryOptions" :key="c.value" :value="String(c.value)">{{ c.label }}</SelectItem>
+          </SelectContent>
+        </Select>
                 </div>
                 <div class="col-span-2">
                   <Input v-model.number="exc.quantity" type="number" min="0" class="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm" />

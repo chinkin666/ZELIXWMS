@@ -200,13 +200,18 @@
     <div class="o-table-pagination">
       <span class="o-table-pagination__info">{{ totalItems }} {{ t('wms.shipmentResult.ofTotal', '件中') }} {{ paginatedRows.length }} {{ t('wms.shipmentResult.displayed', '件表示') }}</span>
       <div class="o-table-pagination__controls">
-        <select class="h-8 text-sm" v-model.number="pageSize" style="width:80px;">
-          <option :value="10">10</option>
-          <option :value="25">25</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-          <option :value="500">500</option>
-        </select>
+        <Select v-model="pageSize">
+          <SelectTrigger class="h-9 w-[80px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10</SelectItem>
+            <SelectItem value="25">25</SelectItem>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+            <SelectItem value="500">500</SelectItem>
+          </SelectContent>
+        </Select>
         <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--">&lsaquo;</Button>
         <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
         <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">&rsaquo;</Button>

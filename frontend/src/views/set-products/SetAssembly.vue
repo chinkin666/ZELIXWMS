@@ -21,12 +21,17 @@
       <!-- Step 1: Select set product -->
       <div class="section">
         <h3 class="section-title">{{ t('wms.setProduct.step1SelectSet', '1. セット組を選択') }}</h3>
-        <select v-model="selectedSetProductId" style="width:400px;" @change="onSetProductChange">
-          <option value="">{{ t('wms.setProduct.selectSetPlaceholder', 'セット組を選択...') }}</option>
-          <option v-for="sp in setProducts" :key="sp._id" :value="sp._id">
-            {{ sp.sku }} - {{ sp.name }}
-          </option>
-        </select>
+        <Select :model-value="selectedSetProductId || '__empty__'" @update:model-value="(v: string) => { selectedSetProductId = v === '__empty__' ? '' : v; onSetProductChange() }">
+          <SelectTrigger class="h-9 w-[400px]">
+            <SelectValue :placeholder="t('wms.setProduct.selectSetPlaceholder', 'セット組を選択...')" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__empty__">{{ t('wms.setProduct.selectSetPlaceholder', 'セット組を選択...') }}</SelectItem>
+            <SelectItem v-for="sp in setProducts" :key="sp._id" :value="sp._id">
+              {{ sp.sku }} - {{ sp.name }}
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <!-- Components preview -->

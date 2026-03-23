@@ -16,22 +16,32 @@
         :placeholder="t('wms.warehouse.searchWavePlaceholder', 'ウェーブ番号で検索...')"
         @keydown.enter="handleSearch"
       />
-      <select v-model="filterStatus" style="width: 160px;">
-        <option value="">{{ t('wms.warehouse.allStatuses', '全ステータス') }}</option>
-        <option value="draft">{{ t('wms.warehouse.waveStatusDraft', '下書き') }}</option>
-        <option value="picking">{{ t('wms.warehouse.waveStatusPicking', 'ピッキング中') }}</option>
-        <option value="sorting">{{ t('wms.warehouse.waveStatusSorting', '仕分け中') }}</option>
-        <option value="packing">{{ t('wms.warehouse.waveStatusPacking', '梱包中') }}</option>
-        <option value="completed">{{ t('wms.warehouse.waveStatusCompleted', '完了') }}</option>
-        <option value="cancelled">{{ t('wms.warehouse.waveStatusCancelled', 'キャンセル') }}</option>
-      </select>
-      <select v-model="filterPriority" style="width: 130px;">
-        <option value="">{{ t('wms.warehouse.allPriorities', '全優先度') }}</option>
-        <option value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</option>
-        <option value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</option>
-        <option value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</option>
-        <option value="low">{{ t('wms.warehouse.priorityLow', '低') }}</option>
-      </select>
+      <Select :model-value="filterStatus || '__all__'" @update:model-value="(v: string) => filterStatus = v === '__all__' ? '' : v">
+        <SelectTrigger class="h-9 w-[160px]">
+          <SelectValue :placeholder="t('wms.warehouse.allStatuses', '全ステータス')" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">{{ t('wms.warehouse.allStatuses', '全ステータス') }}</SelectItem>
+          <SelectItem value="draft">{{ t('wms.warehouse.waveStatusDraft', '下書き') }}</SelectItem>
+          <SelectItem value="picking">{{ t('wms.warehouse.waveStatusPicking', 'ピッキング中') }}</SelectItem>
+          <SelectItem value="sorting">{{ t('wms.warehouse.waveStatusSorting', '仕分け中') }}</SelectItem>
+          <SelectItem value="packing">{{ t('wms.warehouse.waveStatusPacking', '梱包中') }}</SelectItem>
+          <SelectItem value="completed">{{ t('wms.warehouse.waveStatusCompleted', '完了') }}</SelectItem>
+          <SelectItem value="cancelled">{{ t('wms.warehouse.waveStatusCancelled', 'キャンセル') }}</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select :model-value="filterPriority || '__all__'" @update:model-value="(v: string) => filterPriority = v === '__all__' ? '' : v">
+        <SelectTrigger class="h-9 w-[130px]">
+          <SelectValue :placeholder="t('wms.warehouse.allPriorities', '全優先度')" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">{{ t('wms.warehouse.allPriorities', '全優先度') }}</SelectItem>
+          <SelectItem value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</SelectItem>
+          <SelectItem value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</SelectItem>
+          <SelectItem value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</SelectItem>
+          <SelectItem value="low">{{ t('wms.warehouse.priorityLow', '低') }}</SelectItem>
+        </SelectContent>
+      </Select>
       <Button variant="default" @click="handleSearch">{{ t('wms.warehouse.search', '検索') }}</Button>
     </div>
 
@@ -99,12 +109,17 @@
     <div class="o-table-pagination">
       <span class="o-table-pagination__info">{{ t('wms.warehouse.paginationInfo', `全${total}件中 ${paginationStart}-${paginationEnd}件`) }}</span>
       <div class="o-table-pagination__controls">
-        <select class="h-8 text-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-        </select>
+        <Select :model-value="String(pageSize)" @update:model-value="(v: string) => { pageSize = Number(v); handlePageSizeChange() }">
+          <SelectTrigger class="h-8 w-[80px] text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10</SelectItem>
+            <SelectItem value="20">20</SelectItem>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+          </SelectContent>
+        </Select>
         <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">&lsaquo;</Button>
         <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
         <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">&rsaquo;</Button>
@@ -128,12 +143,17 @@
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.priority', '優先度') }}</label>
-          <select v-model="form.priority">
-            <option value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</option>
-            <option value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</option>
-            <option value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</option>
-            <option value="low">{{ t('wms.warehouse.priorityLow', '低') }}</option>
-          </select>
+          <Select v-model="form.priority">
+            <SelectTrigger class="h-9 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</SelectItem>
+              <SelectItem value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</SelectItem>
+              <SelectItem value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</SelectItem>
+              <SelectItem value="low">{{ t('wms.warehouse.priorityLow', '低') }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div class="form-field">
           <label>{{ t('wms.warehouse.assigneeId', '担当者ID') }}</label>

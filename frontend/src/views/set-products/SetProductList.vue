@@ -55,16 +55,20 @@
             <tbody>
               <tr v-for="(comp, idx) in form.components" :key="idx">
                 <td>
-                  <select
-                   
-                    :value="comp.productId"
-                    @change="onComponentProductChange(idx, ($event.target as HTMLSelectElement).value)"
+                  <Select
+                    :model-value="comp.productId || '__empty__'"
+                    @update:model-value="(v: string) => onComponentProductChange(idx, v === '__empty__' ? '' : v)"
                   >
-                    <option value="">{{ t('wms.setProduct.selectProduct', '商品を選択...') }}</option>
-                    <option v-for="p in productOptions" :key="p._id" :value="p._id">
-                      {{ p.sku }} - {{ p.name }}
-                    </option>
-                  </select>
+                    <SelectTrigger class="h-8 w-full text-sm">
+                      <SelectValue :placeholder="t('wms.setProduct.selectProduct', '商品を選択...')" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__empty__">{{ t('wms.setProduct.selectProduct', '商品を選択...') }}</SelectItem>
+                      <SelectItem v-for="p in productOptions" :key="p._id" :value="p._id">
+                        {{ p.sku }} - {{ p.name }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </td>
                 <td>
                   <Input
@@ -97,6 +101,7 @@
 </template>
 
 <script setup lang="ts">
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import PageHeader from '@/components/shared/PageHeader.vue'
 import { Button } from '@/components/ui/button'

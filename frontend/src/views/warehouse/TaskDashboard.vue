@@ -8,33 +8,48 @@
 
     <!-- Filter bar -->
     <div class="filter-bar">
-      <select v-model="filterType" class="h-8 text-sm" style="width: 140px;">
-        <option value="">{{ t('wms.warehouse.allTypes', '全タイプ') }}</option>
-        <option value="picking">{{ t('wms.warehouse.typePicking', 'ピッキング') }}</option>
-        <option value="putaway">{{ t('wms.warehouse.typePutaway', '棚入れ') }}</option>
-        <option value="replenishment">{{ t('wms.warehouse.typeReplenishment', '補充') }}</option>
-        <option value="counting">{{ t('wms.warehouse.typeCounting', '棚卸') }}</option>
-        <option value="sorting">{{ t('wms.warehouse.typeSorting', '仕分け') }}</option>
-        <option value="packing">{{ t('wms.warehouse.typePacking', '梱包') }}</option>
-        <option value="receiving">{{ t('wms.warehouse.typeReceiving', '入荷') }}</option>
-        <option value="shipping">{{ t('wms.warehouse.typeShipping', '出荷') }}</option>
-      </select>
-      <select v-model="filterStatus" class="h-8 text-sm" style="width: 140px;">
-        <option value="">{{ t('wms.warehouse.allStatuses', '全ステータス') }}</option>
-        <option value="pending">{{ t('wms.warehouse.statusPending', '未着手') }}</option>
-        <option value="assigned">{{ t('wms.warehouse.statusAssigned', '割当済') }}</option>
-        <option value="in_progress">{{ t('wms.warehouse.statusInProgress', '作業中') }}</option>
-        <option value="completed">{{ t('wms.warehouse.statusCompleted', '完了') }}</option>
-        <option value="cancelled">{{ t('wms.warehouse.statusCancelled', 'キャンセル') }}</option>
-        <option value="on_hold">{{ t('wms.warehouse.statusOnHold', '保留') }}</option>
-      </select>
-      <select v-model="filterPriority" class="h-8 text-sm" style="width: 130px;">
-        <option value="">{{ t('wms.warehouse.allPriorities', '全優先度') }}</option>
-        <option value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</option>
-        <option value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</option>
-        <option value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</option>
-        <option value="low">{{ t('wms.warehouse.priorityLow', '低') }}</option>
-      </select>
+      <Select :model-value="filterType || '__all__'" @update:model-value="(v: string) => filterType = v === '__all__' ? '' : v">
+        <SelectTrigger class="h-8 w-[140px] text-sm">
+          <SelectValue :placeholder="t('wms.warehouse.allTypes', '全タイプ')" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">{{ t('wms.warehouse.allTypes', '全タイプ') }}</SelectItem>
+          <SelectItem value="picking">{{ t('wms.warehouse.typePicking', 'ピッキング') }}</SelectItem>
+          <SelectItem value="putaway">{{ t('wms.warehouse.typePutaway', '棚入れ') }}</SelectItem>
+          <SelectItem value="replenishment">{{ t('wms.warehouse.typeReplenishment', '補充') }}</SelectItem>
+          <SelectItem value="counting">{{ t('wms.warehouse.typeCounting', '棚卸') }}</SelectItem>
+          <SelectItem value="sorting">{{ t('wms.warehouse.typeSorting', '仕分け') }}</SelectItem>
+          <SelectItem value="packing">{{ t('wms.warehouse.typePacking', '梱包') }}</SelectItem>
+          <SelectItem value="receiving">{{ t('wms.warehouse.typeReceiving', '入荷') }}</SelectItem>
+          <SelectItem value="shipping">{{ t('wms.warehouse.typeShipping', '出荷') }}</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select :model-value="filterStatus || '__all__'" @update:model-value="(v: string) => filterStatus = v === '__all__' ? '' : v">
+        <SelectTrigger class="h-8 w-[140px] text-sm">
+          <SelectValue :placeholder="t('wms.warehouse.allStatuses', '全ステータス')" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">{{ t('wms.warehouse.allStatuses', '全ステータス') }}</SelectItem>
+          <SelectItem value="pending">{{ t('wms.warehouse.statusPending', '未着手') }}</SelectItem>
+          <SelectItem value="assigned">{{ t('wms.warehouse.statusAssigned', '割当済') }}</SelectItem>
+          <SelectItem value="in_progress">{{ t('wms.warehouse.statusInProgress', '作業中') }}</SelectItem>
+          <SelectItem value="completed">{{ t('wms.warehouse.statusCompleted', '完了') }}</SelectItem>
+          <SelectItem value="cancelled">{{ t('wms.warehouse.statusCancelled', 'キャンセル') }}</SelectItem>
+          <SelectItem value="on_hold">{{ t('wms.warehouse.statusOnHold', '保留') }}</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select :model-value="filterPriority || '__all__'" @update:model-value="(v: string) => filterPriority = v === '__all__' ? '' : v">
+        <SelectTrigger class="h-8 w-[130px] text-sm">
+          <SelectValue :placeholder="t('wms.warehouse.allPriorities', '全優先度')" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">{{ t('wms.warehouse.allPriorities', '全優先度') }}</SelectItem>
+          <SelectItem value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</SelectItem>
+          <SelectItem value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</SelectItem>
+          <SelectItem value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</SelectItem>
+          <SelectItem value="low">{{ t('wms.warehouse.priorityLow', '低') }}</SelectItem>
+        </SelectContent>
+      </Select>
       <Button variant="default" @click="handleSearch">{{ t('wms.common.search', '検索') }}</Button>
     </div>
 
@@ -134,12 +149,17 @@
     <div class="o-table-pagination">
       <span class="o-table-pagination__info">{{ t('wms.common.totalOf', '全') }}{{ total }}{{ t('wms.common.items', '件') }}{{ t('wms.common.of', '中') }} {{ paginationStart }}-{{ paginationEnd }}{{ t('wms.common.items', '件') }}</span>
       <div class="o-table-pagination__controls">
-        <select class="h-8 text-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-        </select>
+        <Select :model-value="String(pageSize)" @update:model-value="(v: string) => { pageSize = Number(v); handlePageSizeChange() }">
+          <SelectTrigger class="h-8 w-[80px] text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10</SelectItem>
+            <SelectItem value="20">20</SelectItem>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+          </SelectContent>
+        </Select>
         <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">&lsaquo;</Button>
         <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
         <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">&rsaquo;</Button>
@@ -153,26 +173,36 @@
         <div class="form-grid">
           <div class="form-field">
             <label>{{ t('wms.warehouse.type', 'タイプ') }} <span class="text-destructive text-xs">*</span></label>
-            <select v-model="createForm.type">
-              <option value="">{{ t('wms.common.pleaseSelect', '選択してください') }}</option>
-              <option value="picking">{{ t('wms.warehouse.typePicking', 'ピッキング') }}</option>
-              <option value="putaway">{{ t('wms.warehouse.typePutaway', '棚入れ') }}</option>
-              <option value="replenishment">{{ t('wms.warehouse.typeReplenishment', '補充') }}</option>
-              <option value="counting">{{ t('wms.warehouse.typeCounting', '棚卸') }}</option>
-              <option value="sorting">{{ t('wms.warehouse.typeSorting', '仕分け') }}</option>
-              <option value="packing">{{ t('wms.warehouse.typePacking', '梱包') }}</option>
-              <option value="receiving">{{ t('wms.warehouse.typeReceiving', '入荷') }}</option>
-              <option value="shipping">{{ t('wms.warehouse.typeShipping', '出荷') }}</option>
-            </select>
+            <Select :model-value="createForm.type || '__empty__'" @update:model-value="(v: string) => createForm.type = v === '__empty__' ? '' : v">
+              <SelectTrigger class="h-9 w-full">
+                <SelectValue :placeholder="t('wms.common.pleaseSelect', '選択してください')" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__empty__">{{ t('wms.common.pleaseSelect', '選択してください') }}</SelectItem>
+                <SelectItem value="picking">{{ t('wms.warehouse.typePicking', 'ピッキング') }}</SelectItem>
+                <SelectItem value="putaway">{{ t('wms.warehouse.typePutaway', '棚入れ') }}</SelectItem>
+                <SelectItem value="replenishment">{{ t('wms.warehouse.typeReplenishment', '補充') }}</SelectItem>
+                <SelectItem value="counting">{{ t('wms.warehouse.typeCounting', '棚卸') }}</SelectItem>
+                <SelectItem value="sorting">{{ t('wms.warehouse.typeSorting', '仕分け') }}</SelectItem>
+                <SelectItem value="packing">{{ t('wms.warehouse.typePacking', '梱包') }}</SelectItem>
+                <SelectItem value="receiving">{{ t('wms.warehouse.typeReceiving', '入荷') }}</SelectItem>
+                <SelectItem value="shipping">{{ t('wms.warehouse.typeShipping', '出荷') }}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div class="form-field">
             <label>{{ t('wms.warehouse.priority', '優先度') }} <span class="text-destructive text-xs">*</span></label>
-            <select v-model="createForm.priority">
-              <option value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</option>
-              <option value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</option>
-              <option value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</option>
-              <option value="low">{{ t('wms.warehouse.priorityLow', '低') }}</option>
-            </select>
+            <Select v-model="createForm.priority">
+              <SelectTrigger class="h-9 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="normal">{{ t('wms.warehouse.priorityNormal', '通常') }}</SelectItem>
+                <SelectItem value="urgent">{{ t('wms.warehouse.priorityUrgent', '緊急') }}</SelectItem>
+                <SelectItem value="high">{{ t('wms.warehouse.priorityHigh', '高') }}</SelectItem>
+                <SelectItem value="low">{{ t('wms.warehouse.priorityLow', '低') }}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div class="form-field">
             <label>{{ t('wms.warehouse.warehouseId', '倉庫ID') }}</label>

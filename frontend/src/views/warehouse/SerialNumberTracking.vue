@@ -17,15 +17,20 @@
         :placeholder="t('wms.warehouse.searchSerialPlaceholder', 'シリアル番号で検索...')"
         @keydown.enter="handleSearch"
       />
-      <select v-model="statusFilter" style="width: 160px;" @change="handleSearch">
-        <option value="">{{ t('wms.warehouse.allStatuses', '全ステータス') }}</option>
-        <option value="available">{{ t('wms.warehouse.statusAvailable', '利用可能') }}</option>
-        <option value="reserved">{{ t('wms.warehouse.statusReserved', '引当済') }}</option>
-        <option value="shipped">{{ t('wms.warehouse.statusShipped', '出荷済') }}</option>
-        <option value="returned">{{ t('wms.warehouse.statusReturned', '返品') }}</option>
-        <option value="damaged">{{ t('wms.warehouse.statusDamaged', '破損') }}</option>
-        <option value="scrapped">{{ t('wms.warehouse.statusScrapped', '廃棄') }}</option>
-      </select>
+      <Select :model-value="statusFilter || '__all__'" @update:model-value="(v: string) => { statusFilter = v === '__all__' ? '' : v; handleSearch() }">
+        <SelectTrigger class="h-9 w-[160px]">
+          <SelectValue :placeholder="t('wms.warehouse.allStatuses', '全ステータス')" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__all__">{{ t('wms.warehouse.allStatuses', '全ステータス') }}</SelectItem>
+          <SelectItem value="available">{{ t('wms.warehouse.statusAvailable', '利用可能') }}</SelectItem>
+          <SelectItem value="reserved">{{ t('wms.warehouse.statusReserved', '引当済') }}</SelectItem>
+          <SelectItem value="shipped">{{ t('wms.warehouse.statusShipped', '出荷済') }}</SelectItem>
+          <SelectItem value="returned">{{ t('wms.warehouse.statusReturned', '返品') }}</SelectItem>
+          <SelectItem value="damaged">{{ t('wms.warehouse.statusDamaged', '破損') }}</SelectItem>
+          <SelectItem value="scrapped">{{ t('wms.warehouse.statusScrapped', '廃棄') }}</SelectItem>
+        </SelectContent>
+      </Select>
       <Button variant="default" @click="handleSearch">{{ t('wms.warehouse.search', '検索') }}</Button>
     </div>
 
@@ -86,12 +91,17 @@
     <div class="o-table-pagination">
       <span class="o-table-pagination__info">{{ t('wms.warehouse.paginationInfo', `全${total}件中 ${paginationStart}-${paginationEnd}件`) }}</span>
       <div class="o-table-pagination__controls">
-        <select class="h-8 text-sm" v-model.number="pageSize" style="width:80px;" @change="handlePageSizeChange">
-          <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
-        </select>
+        <Select :model-value="String(pageSize)" @update:model-value="(v: string) => { pageSize = Number(v); handlePageSizeChange() }">
+          <SelectTrigger class="h-8 w-[80px] text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10</SelectItem>
+            <SelectItem value="20">20</SelectItem>
+            <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+          </SelectContent>
+        </Select>
         <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">&lsaquo;</Button>
         <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
         <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">&rsaquo;</Button>
@@ -180,14 +190,19 @@
         </div>
         <div class="form-field form-field--full">
           <label>{{ t('wms.warehouse.newStatus', '新しいステータス') }}</label>
-          <select v-model="newStatus">
-            <option value="available">{{ t('wms.warehouse.statusAvailable', '利用可能') }}</option>
-            <option value="reserved">{{ t('wms.warehouse.statusReserved', '引当済') }}</option>
-            <option value="shipped">{{ t('wms.warehouse.statusShipped', '出荷済') }}</option>
-            <option value="returned">{{ t('wms.warehouse.statusReturned', '返品') }}</option>
-            <option value="damaged">{{ t('wms.warehouse.statusDamaged', '破損') }}</option>
-            <option value="scrapped">{{ t('wms.warehouse.statusScrapped', '廃棄') }}</option>
-          </select>
+          <Select v-model="newStatus">
+            <SelectTrigger class="h-9 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="available">{{ t('wms.warehouse.statusAvailable', '利用可能') }}</SelectItem>
+              <SelectItem value="reserved">{{ t('wms.warehouse.statusReserved', '引当済') }}</SelectItem>
+              <SelectItem value="shipped">{{ t('wms.warehouse.statusShipped', '出荷済') }}</SelectItem>
+              <SelectItem value="returned">{{ t('wms.warehouse.statusReturned', '返品') }}</SelectItem>
+              <SelectItem value="damaged">{{ t('wms.warehouse.statusDamaged', '破損') }}</SelectItem>
+              <SelectItem value="scrapped">{{ t('wms.warehouse.statusScrapped', '廃棄') }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
         <DialogFooter>

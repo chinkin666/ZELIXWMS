@@ -115,13 +115,18 @@ onMounted(loadData)
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
       <h2 style="margin: 0">異常報告 / 异常报告</h2>
       <div style="display: flex; gap: 8px">
-        <select v-model="statusFilter" class="flex h-9 w-36 rounded-md border border-input bg-transparent px-3 py-1 text-sm" @change="() => { page = 1; loadData() }">
-          <option value="">ステータス</option>
-          <option value="open">Open</option>
-          <option value="notified">Notified</option>
-          <option value="acknowledged">Acknowledged</option>
-          <option value="resolved">Resolved</option>
-        </select>
+        <Select v-model="statusFilter">
+          <SelectTrigger class="h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">ステータス</SelectItem>
+            <SelectItem value="open">Open</SelectItem>
+            <SelectItem value="notified">Notified</SelectItem>
+            <SelectItem value="acknowledged">Acknowledged</SelectItem>
+            <SelectItem value="resolved">Resolved</SelectItem>
+          </SelectContent>
+        </Select>
         <Button class="inline-flex items-center justify-center rounded-md text-sm font-medium h-9 px-4 bg-destructive text-destructive-foreground hover:bg-destructive/90" @click="showCreateDialog = true">+ 異常報告</Button>
       </div>
     </div>
@@ -215,14 +220,19 @@ onMounted(loadData)
           </div>
           <div class="grid grid-cols-4 items-center gap-4">
             <label class="text-right text-sm">区分</label>
-            <select v-model="createForm.category" class="col-span-3 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm">
-              <option value="quantity_variance">数量差異</option>
-              <option value="label_error">ラベル異常</option>
-              <option value="appearance_defect">外観不良</option>
-              <option value="packaging_issue">包装異常</option>
-              <option value="mixed_shipment">混載異常</option>
-              <option value="other">その他</option>
-            </select>
+            <Select v-model="createForm.category">
+          <SelectTrigger class="h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="quantity_variance">数量差異</SelectItem>
+            <SelectItem value="label_error">ラベル異常</SelectItem>
+            <SelectItem value="appearance_defect">外観不良</SelectItem>
+            <SelectItem value="packaging_issue">包装異常</SelectItem>
+            <SelectItem value="mixed_shipment">混載異常</SelectItem>
+            <SelectItem value="other">その他</SelectItem>
+          </SelectContent>
+        </Select>
           </div>
           <div class="grid grid-cols-4 items-center gap-4">
             <label class="text-right text-sm">SKU</label>

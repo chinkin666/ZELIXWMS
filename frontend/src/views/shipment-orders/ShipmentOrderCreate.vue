@@ -316,13 +316,18 @@
       <div class="o-table-pagination">
         <span class="o-table-pagination__info">{{ sortedRows.length }} {{ t('wms.shipmentOrder.items', '件') }}</span>
         <div class="o-table-pagination__controls">
-          <select class="h-8 text-sm" v-model.number="pageSize" style="width:80px;">
-            <option :value="10">10</option>
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-            <option :value="100">100</option>
-            <option :value="500">500</option>
-          </select>
+          <Select :model-value="String(pageSize)" @update:model-value="(v: string) => { pageSize = Number(v) }">
+            <SelectTrigger class="h-8 w-[80px] text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+              <SelectItem value="500">500</SelectItem>
+            </SelectContent>
+          </Select>
           <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--">&lsaquo;</Button>
           <span class="o-table-pagination__page">{{ currentPage }} / {{ totalPages }}</span>
           <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">&rsaquo;</Button>
@@ -435,10 +440,15 @@
     >
       <div class="bulk-dialog__field">
         <label class="bulk-dialog__label">{{ t('wms.shipmentOrder.sender', 'ご依頼主') }}</label>
-        <select class="bulk-dialog__select" v-model="senderBulkCompanyId">
-          <option value="">{{ t('wms.shipmentOrder.selectSender', 'ご依頼主を選択してください') }}</option>
-          <option v-for="company in orderSourceCompanies" :key="company._id" :value="company._id">{{ company.senderName }}</option>
-        </select>
+        <Select :model-value="senderBulkCompanyId || '__empty__'" @update:model-value="(v: string) => senderBulkCompanyId = v === '__empty__' ? '' : v">
+          <SelectTrigger class="h-9 w-full">
+            <SelectValue :placeholder="t('wms.shipmentOrder.selectSender', 'ご依頼主を選択してください')" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__empty__">{{ t('wms.shipmentOrder.selectSender', 'ご依頼主を選択してください') }}</SelectItem>
+            <SelectItem v-for="company in orderSourceCompanies" :key="company._id" :value="company._id">{{ company.senderName }}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div class="bulk-dialog__field">
         <label class="bulk-dialog__checkbox">
@@ -459,10 +469,15 @@
     >
       <div class="bulk-dialog__field">
         <label class="bulk-dialog__label">{{ t('wms.shipmentOrder.carrierLabel', '配送業者') }}</label>
-        <select class="bulk-dialog__select" v-model="carrierBulkId">
-          <option value="">{{ t('wms.shipmentOrder.selectCarrier', '配送業者を選択してください') }}</option>
-          <option v-for="opt in carrierOptions" :key="String(opt.value)" :value="opt.value">{{ opt.label }}</option>
-        </select>
+        <Select :model-value="carrierBulkId || '__empty__'" @update:model-value="(v: string) => carrierBulkId = v === '__empty__' ? '' : v">
+          <SelectTrigger class="h-9 w-full">
+            <SelectValue :placeholder="t('wms.shipmentOrder.selectCarrier', '配送業者を選択してください')" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__empty__">{{ t('wms.shipmentOrder.selectCarrier', '配送業者を選択してください') }}</SelectItem>
+            <SelectItem v-for="opt in carrierOptions" :key="String(opt.value)" :value="String(opt.value)">{{ opt.label }}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </BulkSettingDialog>
 

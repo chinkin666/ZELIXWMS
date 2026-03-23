@@ -2,13 +2,18 @@
   <div class="assembly-orders">
     <PageHeader :title="t('wms.warehouse.assembly.title', 'セット組み作業')" :show-search="false">
       <template #actions>
-        <select v-model="statusFilter" class="flex h-9 w-40 rounded-md border border-input bg-transparent px-3 py-1 text-sm" @change="load">
-          <option value="">{{ t('wms.common.status', 'ステータス') }}</option>
-          <option value="pending">未着手 / 未开始</option>
-          <option value="in_progress">作業中 / 进行中</option>
-          <option value="completed">完了 / 已完成</option>
-          <option value="cancelled">キャンセル / 已取消</option>
-        </select>
+        <Select v-model="statusFilter">
+          <SelectTrigger class="h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">{{ t('wms.common.status', 'ステータス') }}</SelectItem>
+            <SelectItem value="pending">未着手 / 未开始</SelectItem>
+            <SelectItem value="in_progress">作業中 / 进行中</SelectItem>
+            <SelectItem value="completed">完了 / 已完成</SelectItem>
+            <SelectItem value="cancelled">キャンセル / 已取消</SelectItem>
+          </SelectContent>
+        </Select>
       </template>
     </PageHeader>
 

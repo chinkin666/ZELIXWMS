@@ -40,12 +40,17 @@
     <div class="filter-bar">
       <div class="filter-group">
         <label class="filter-label">{{ t('wms.warehouse.statusFilter', 'ステータス') }}</label>
-        <select v-model="filterStatus" class="filter-select" @change="loadTasks">
-          <option value="">{{ t('wms.common.all', 'すべて') }}</option>
-          <option value="pending">{{ t('wms.warehouse.pending', '未処理') }}</option>
-          <option value="in_progress">{{ t('wms.warehouse.inProgress', '処理中') }}</option>
-          <option value="completed">{{ t('wms.warehouse.completed', '完了') }}</option>
-        </select>
+        <Select :model-value="filterStatus || '__all__'" @update:model-value="(v: string) => { filterStatus = v === '__all__' ? '' : v; loadTasks() }">
+          <SelectTrigger class="h-9 w-[160px]">
+            <SelectValue :placeholder="t('wms.common.all', 'すべて')" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">{{ t('wms.common.all', 'すべて') }}</SelectItem>
+            <SelectItem value="pending">{{ t('wms.warehouse.pending', '未処理') }}</SelectItem>
+            <SelectItem value="in_progress">{{ t('wms.warehouse.inProgress', '処理中') }}</SelectItem>
+            <SelectItem value="completed">{{ t('wms.warehouse.completed', '完了') }}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <div class="filter-group">
         <label class="filter-label">{{ t('wms.warehouse.skuFilter', '商品SKU') }}</label>

@@ -10,7 +10,6 @@ interface ImportMeta {
   readonly env: ImportMetaEnv
 }
 
-declare module 'element-plus/dist/locale/ja.mjs' {
   const locale: any
   export default locale
 }

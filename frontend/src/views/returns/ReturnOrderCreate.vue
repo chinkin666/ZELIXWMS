@@ -10,13 +10,18 @@
       <div class="form-grid">
         <div class="form-row">
           <label>{{ t('wms.returns.returnReason', '返品理由') }} <span class="text-destructive text-xs">*</span></label>
-          <select v-model="form.returnReason" style="width:200px;">
-            <option value="customer_request">{{ t('wms.returns.reasonCustomerRequest', 'お客様都合') }}</option>
-            <option value="defective">{{ t('wms.returns.reasonDefective', '不良品') }}</option>
-            <option value="wrong_item">{{ t('wms.returns.reasonWrongItem', '誤配送') }}</option>
-            <option value="damaged">{{ t('wms.returns.reasonDamaged', '破損') }}</option>
-            <option value="other">{{ t('wms.returns.reasonOther', 'その他') }}</option>
-          </select>
+          <Select v-model="form.returnReason">
+            <SelectTrigger class="h-9 w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="customer_request">{{ t('wms.returns.reasonCustomerRequest', 'お客様都合') }}</SelectItem>
+              <SelectItem value="defective">{{ t('wms.returns.reasonDefective', '不良品') }}</SelectItem>
+              <SelectItem value="wrong_item">{{ t('wms.returns.reasonWrongItem', '誤配送') }}</SelectItem>
+              <SelectItem value="damaged">{{ t('wms.returns.reasonDamaged', '破損') }}</SelectItem>
+              <SelectItem value="other">{{ t('wms.returns.reasonOther', 'その他') }}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div class="form-row">
@@ -55,12 +60,17 @@
           <TableBody>
             <TableRow v-for="(line, idx) in form.lines" :key="idx">
               <TableCell>
-                <select v-model="line.productId" class="h-8 text-sm" style="width:100%;" @change="onProductSelect(idx)">
-                  <option value="">{{ t('wms.returns.selectProduct', '商品を選択...') }}</option>
-                  <option v-for="p in products" :key="p._id" :value="p._id">
-                    {{ p.sku }} - {{ p.name }}
-                  </option>
-                </select>
+                <Select :model-value="line.productId || '__empty__'" @update:model-value="(v: string) => { line.productId = v === '__empty__' ? '' : v; onProductSelect(idx) }">
+                  <SelectTrigger class="h-8 w-full text-sm">
+                    <SelectValue :placeholder="t('wms.returns.selectProduct', '商品を選択...')" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__empty__">{{ t('wms.returns.selectProduct', '商品を選択...') }}</SelectItem>
+                    <SelectItem v-for="p in products" :key="p._id" :value="p._id">
+                      {{ p.sku }} - {{ p.name }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </TableCell>
               <TableCell class="text-right">
                 <Input v-model.number="line.quantity" type="number" min="1" class="h-8 text-sm" style="width:70px;text-align:right;" />

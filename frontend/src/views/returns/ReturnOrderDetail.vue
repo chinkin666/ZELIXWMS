@@ -59,12 +59,17 @@
                 <span v-else>{{ line.inspectedQuantity }}</span>
               </TableCell>
               <TableCell>
-                <select v-if="order?.status === 'inspecting'" v-model="inspInputs[idx]!.disposition" class="h-8 text-sm" style="width:90px;">
-                  <option value="pending">{{ t('wms.returns.dispPending', '未判定') }}</option>
-                  <option value="restock">{{ t('wms.returns.dispRestock', '再入庫') }}</option>
-                  <option value="dispose">{{ t('wms.returns.dispDispose', '廃棄') }}</option>
-                  <option value="repair">{{ t('wms.returns.dispRepair', '修理') }}</option>
-                </select>
+                <Select v-if="order?.status === 'inspecting'" v-model="inspInputs[idx]!.disposition">
+                  <SelectTrigger class="h-8 w-[90px] text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">{{ t('wms.returns.dispPending', '未判定') }}</SelectItem>
+                    <SelectItem value="restock">{{ t('wms.returns.dispRestock', '再入庫') }}</SelectItem>
+                    <SelectItem value="dispose">{{ t('wms.returns.dispDispose', '廃棄') }}</SelectItem>
+                    <SelectItem value="repair">{{ t('wms.returns.dispRepair', '修理') }}</SelectItem>
+                  </SelectContent>
+                </Select>
                 <span v-else :class="`disp-${line.disposition}`">{{ dispLabel(line.disposition) }}</span>
               </TableCell>
               <TableCell class="text-right">
@@ -76,17 +81,21 @@
                 <span v-else>{{ line.disposedQuantity }}</span>
               </TableCell>
               <TableCell v-if="hasRestockLine">
-                <select
+                <Select
                   v-if="order?.status === 'inspecting' && inspInputs[idx]!.disposition === 'restock'"
-                  v-model="inspInputs[idx]!.locationId"
-                  class="h-8 text-sm"
-                  style="width:130px;"
+                  :model-value="inspInputs[idx]!.locationId || '__empty__'"
+                  @update:model-value="(v: string) => inspInputs[idx]!.locationId = v === '__empty__' ? '' : v"
                 >
-                  <option value="">{{ t('wms.common.pleaseSelect', '選択...') }}</option>
-                  <option v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
-                    {{ loc.code }}
-                  </option>
-                </select>
+                  <SelectTrigger class="h-8 w-[130px] text-sm">
+                    <SelectValue :placeholder="t('wms.common.pleaseSelect', '選択...')" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__empty__">{{ t('wms.common.pleaseSelect', '選択...') }}</SelectItem>
+                    <SelectItem v-for="loc in physicalLocations" :key="loc._id" :value="loc._id">
+                      {{ loc.code }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
                 <span v-else-if="order?.status !== 'inspecting' && line.locationId">
                   {{ locationName(line.locationId) }}
                 </span>

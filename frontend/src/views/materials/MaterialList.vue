@@ -56,10 +56,15 @@
               <!-- カテゴリ / 类别 -->
               <div class="form-row">
                 <label>カテゴリ <span class="text-destructive text-xs">*</span></label>
-                <select v-model="form.category" required>
-                  <option value="">選択してください</option>
-                  <option v-for="opt in CATEGORY_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-                </select>
+                <Select :model-value="form.category || '__empty__'" @update:model-value="(v: string) => form.category = v === '__empty__' ? '' : v">
+                  <SelectTrigger class="h-9 w-full">
+                    <SelectValue placeholder="選択してください" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__empty__">選択してください</SelectItem>
+                    <SelectItem v-for="opt in CATEGORY_OPTIONS" :key="opt.value" :value="opt.value">{{ opt.label }}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <!-- 単価 / 单价 -->
               <div class="form-row">
@@ -76,10 +81,15 @@
               <!-- 在庫管理 / 库存管理 -->
               <div class="form-row">
                 <label>在庫管理</label>
-                <select v-model="form.inventoryEnabled">
-                  <option :value="false">しない</option>
-                  <option :value="true">する</option>
-                </select>
+                <Select :model-value="form.inventoryEnabled ? 'true' : 'false'" @update:model-value="(v: string) => form.inventoryEnabled = v === 'true'">
+                  <SelectTrigger class="h-9 w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="false">しない</SelectItem>
+                    <SelectItem value="true">する</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <!-- 安全在庫 / 安全库存 -->
               <div class="form-row">
