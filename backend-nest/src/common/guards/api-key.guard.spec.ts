@@ -25,7 +25,7 @@ describe('ApiKeyGuard', () => {
   // 有効なAPIキー / 有效的API密钥
   it('should allow request with valid API key', () => {
     configService.get.mockReturnValue('key1,key2,key3');
-    const ctx = createMockContext({ 'x-api-key': 'key2' });
+    const ctx = createMockContext({ 'x-api-key': 'key2', 'x-tenant-id': 'tenant-abc' });
 
     const result = guard.canActivate(ctx);
 
@@ -77,14 +77,11 @@ describe('ApiKeyGuard', () => {
     });
   });
 
-  // テナントIDデフォルト値 / 租户ID默认值
-  it('should use default tenant ID when not provided', () => {
+  // テナントID未指定で401 / 未指定租户ID返回401
+  it('should throw UnauthorizedException when tenant ID not provided', () => {
     configService.get.mockReturnValue('valid-key');
     const ctx = createMockContext({ 'x-api-key': 'valid-key' });
 
-    guard.canActivate(ctx);
-
-    const request = ctx.switchToHttp().getRequest();
-    expect(request.user.tenantId).toBe('default');
+    expect(() => guard.canActivate(ctx)).toThrow(UnauthorizedException);
   });
 });

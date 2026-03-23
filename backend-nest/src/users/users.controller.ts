@@ -3,6 +3,8 @@ import { Controller, Get, Post, Put, Delete, Param, Query, Body, ParseUUIDPipe }
 import { UsersService } from './users.service.js';
 import { TenantId } from '../common/decorators/tenant-id.decorator.js';
 import { RequireRole } from '../common/decorators/require-role.decorator.js';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe.js';
+import { createUserSchema, updateUserSchema, type CreateUserDto, type UpdateUserDto } from './dto/create-user.dto.js';
 
 @Controller('api/users')
 @RequireRole('admin')
@@ -50,7 +52,7 @@ export class UsersController {
   @Post()
   create(
     @TenantId() tenantId: string,
-    @Body() dto: Record<string, unknown>,
+    @Body(new ZodValidationPipe(createUserSchema)) dto: CreateUserDto,
   ) {
     return this.usersService.create(tenantId, dto);
   }
@@ -60,7 +62,7 @@ export class UsersController {
   update(
     @TenantId() tenantId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: Record<string, unknown>,
+    @Body(new ZodValidationPipe(updateUserSchema)) dto: UpdateUserDto,
   ) {
     return this.usersService.update(tenantId, id, dto);
   }

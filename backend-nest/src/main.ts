@@ -19,7 +19,9 @@ async function bootstrap() {
   app.enableCors({
     origin: corsOrigins
       ? corsOrigins.split(',').map((o: string) => o.trim())
-      : true,  // 未設定時は全オリジン許可（開発用）/ 未设置时允许所有来源（开发用）
+      : config.get('NODE_ENV') === 'production'
+        ? false  // 本番環境で未設定の場合は全拒否 / 生产环境未设置时全部拒绝
+        : true,  // 開発環境のみ全オリジン許可 / 仅开发环境允许所有来源
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Warehouse-Id', 'X-Tenant-Id', 'X-Request-Id', 'X-Api-Key'],

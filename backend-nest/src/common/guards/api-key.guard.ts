@@ -20,10 +20,14 @@ export class ApiKeyGuard implements CanActivate {
     }
 
     // API key ユーザーコンテキスト / API密钥用户上下文
+    const tenantId = request.headers['x-tenant-id'];
+    if (!tenantId) {
+      throw new UnauthorizedException('X-Tenant-Id header required for API key auth / APIキー認証にはX-Tenant-Idヘッダーが必要です / API密钥认证需要X-Tenant-Id头');
+    }
     request.user = {
       id: 'api-key-user',
       email: 'api@system',
-      tenantId: request.headers['x-tenant-id'] || 'default',
+      tenantId,
       role: 'operator',
       isApiKey: true,
     };

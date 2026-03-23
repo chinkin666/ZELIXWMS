@@ -20,16 +20,16 @@ describe('RolesGuard / ロールガード / 角色守卫', () => {
     }),
   });
 
-  // ロール不要ならアクセス許可 / 无需角色时允许访问
-  it('ロール指定なしでアクセスを許可する / 无角色要求时允许访问', () => {
+  // ロール未指定はデフォルト拒否 / 未指定角色时默认拒绝
+  it('ロール指定なしでアクセスを拒否する / 无角色要求时拒绝访问（デフォルト拒否）', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
-    expect(guard.canActivate(createContext('viewer') as any)).toBe(true);
+    expect(() => guard.canActivate(createContext('viewer') as any)).toThrow(ForbiddenException);
   });
 
-  // 空配列でもアクセス許可 / 空数组也允许访问
-  it('空ロール配列でアクセスを許可する / 空角色数组时允许访问', () => {
+  // 空配列もデフォルト拒否 / 空数组也默认拒绝
+  it('空ロール配列でアクセスを拒否する / 空角色数组时拒绝访问', () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([]);
-    expect(guard.canActivate(createContext('viewer') as any)).toBe(true);
+    expect(() => guard.canActivate(createContext('viewer') as any)).toThrow(ForbiddenException);
   });
 
   // 正しいロールでアクセス許可 / 正确角色允许访问

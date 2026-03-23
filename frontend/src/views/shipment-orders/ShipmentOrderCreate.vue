@@ -598,6 +598,8 @@ const { orderSourceCompanies, products, carriers, pendingWaybillRows, isLoadingP
 // --- 循環依存を解消するための遅延参照 / 延迟引用以解决循环依赖 ---
 let _isHeld: (id: string | number) => boolean = () => false
 let _hasRowErrors: (row: UserOrderRow) => boolean = () => false
+const _bundleModeEnabled = ref(false)
+const _bundleFilterKeys = ref<string[]>([])
 
 // ========================================
 // 列定義・表示・ソート・リサイズ（集約composable）
@@ -607,9 +609,10 @@ const columns = useShipmentCreateColumns({
   allRows,
   pendingWaybillRows,
   carriers,
-  // bundleModeEnabled は batchActions 初期化後に設定 / bundleModeEnabled 在 batchActions 初始化后设置
-  bundleModeEnabled: computed(() => bundleModeEnabled.value),
-  bundleFilterKeys: computed(() => bundleFilterKeys.value),
+  // bundleModeEnabled は batchActions 初期化後に設定（遅延参照）
+  // bundleModeEnabled 在 batchActions 初始化后设置（延迟引用）
+  bundleModeEnabled: computed(() => _bundleModeEnabled.value),
+  bundleFilterKeys: computed(() => _bundleFilterKeys.value),
   displayFilter,
   isHeld: (id) => _isHeld(id),
   hasRowErrors: (row) => _hasRowErrors(row),
@@ -711,6 +714,9 @@ const {
   customExportDialogVisible, customExportOrders,
 } = batch
 _isHeld = isHeld
+// 遅延参照を実値に接続 / 将延迟引用连接到实际值
+watch(bundleModeEnabled, (v) => { _bundleModeEnabled.value = v }, { immediate: true })
+watch(bundleFilterKeys, (v) => { _bundleFilterKeys.value = v }, { immediate: true })
 
 // --- フォーム composable / 表单composable ---
 const form = useOrderForm(allRows, products, (row) => getRowErrorMessages(row), loadPendingWaybillOrders, toast)
